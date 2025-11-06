@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1762432867682,
+      "tag": "20251106124107_abnormal_karma",
+      "breakpoints": true
+    }
+  ]
+}
