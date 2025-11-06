@@ -1,0 +1,30 @@
+version: '3.9'
+
+services:
+  nextcms-db:
+    image: postgres:15
+    container_name: nextcms_db
+    restart: always
+    environment:
+      POSTGRES_USER: nextcms
+      POSTGRES_PASSWORD: nextcms_pass
+      POSTGRES_DB: nextcms
+    ports:
+      - "5432:5432"
+    volumes:
+      - nextcms_data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: nextcms_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@nextcms.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    depends_on:
+      - nextcms-db
+
+volumes:
+  nextcms_data:

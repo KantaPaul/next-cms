@@ -2,6 +2,13 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+```bash
+# Initial setup (first time only)
+docker network create nextcms_network
+docker-compose up -d
+
+```
+
 First, run the development server:
 
 ```bash
