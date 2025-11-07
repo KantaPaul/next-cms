@@ -29,3 +29,8 @@ export const relationConfig = {
   restrict: { onDelete: 'restrict', onUpdate: 'cascade' },
   noAction: { onDelete: 'no action', onUpdate: 'cascade' },
 } as const;
+
+export const skipBaseColumns = {
+  createdAt: true,
+  updatedAt: true,
+} as const;

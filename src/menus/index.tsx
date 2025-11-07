@@ -4,8 +4,8 @@ import { PAGES } from '@/config/pages';
 export function getMenuItems() {
   return [
     {
-      name: "Categories",
-      href: PAGES.DASHBOARD.CATEGORIES.INDEX,
+      name: 'Pages',
+      href: PAGES.DASHBOARD.PAGES.INDEX,
       icon: <GalleryVertical className="w-[18px]" />,
     },
   ];

@@ -4,11 +4,11 @@ export const PAGES = {
   },
   DASHBOARD: {
     ROOT: '/dashboard',
-    CATEGORIES: {
-      CREATE: '/dashboard/categories/create',
-      INDEX: '/dashboard/categories',
-      VIEW: (id: string) => `/dashboard/categories/${id}`,
-      EDIT: (id: string) => `/dashboard/categories/${id}/edit`,
+    PAGES: {
+      CREATE: '/dashboard/pages/create',
+      INDEX: '/dashboard/pages',
+      VIEW: (id: string) => `/dashboard/pages/${id}`,
+      EDIT: (id: string) => `/dashboard/pages/${id}/edit`,
     },
   },
 };
