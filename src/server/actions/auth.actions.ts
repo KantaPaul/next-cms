@@ -19,6 +19,8 @@ import {
   validateSession as validateSessionFromSession,
   type Session,
 } from "@/lib/auth/session";
+import { cache } from 'react';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function validateRequest() {
   return validateSession();
@@ -40,8 +42,10 @@ export async function signOut() {
   return AuthService.signOut();
 }
 
-
-export async function getSession(): Promise<{ session: Session; user: User } | null> {
+export async function getSession(): Promise<{
+  session: Session;
+  user: User;
+} | null> {
   const sessionId = await getSessionId();
 
   if (!sessionId) {
@@ -60,7 +64,10 @@ export async function getSession(): Promise<{ session: Session; user: User } | n
   };
 }
 
-export async function requireSession(): Promise<{ session: Session; user: User }> {
+export async function requireSession(): Promise<{
+  session: Session;
+  user: User;
+}> {
   const session = await getSession();
 
   if (!session) {
@@ -91,7 +98,11 @@ export async function logoutAllSessions(userId: string): Promise<void> {
 }
 
 export async function getUserById(userId: string): Promise<User | null> {
-  const result = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
 
   if (result.length === 0) {
     return null;
@@ -101,7 +112,11 @@ export async function getUserById(userId: string): Promise<User | null> {
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
-  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
 
   if (result.length === 0) {
     return null;
@@ -110,8 +125,14 @@ export async function getUserByEmail(email: string): Promise<User | null> {
   return result[0] as User;
 }
 
-export async function getUserByGoogleId(googleId: string): Promise<User | null> {
-  const result = await db.select().from(users).where(eq(users.googleId, googleId)).limit(1);
+export async function getUserByGoogleId(
+  googleId: string
+): Promise<User | null> {
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.googleId, googleId))
+    .limit(1);
 
   if (result.length === 0) {
     return null;
@@ -124,6 +145,16 @@ export async function getUserSessionsForUser(userId: string) {
   return await getUserSessions(userId);
 }
 
-export async function invalidateUserSession(sessionId: string, userId: string): Promise<boolean> {
+export async function invalidateUserSession(
+  sessionId: string,
+  userId: string
+): Promise<boolean> {
   return await invalidateSessionById(sessionId, userId);
 }
+
+export const me = cache(async () => {
+  const user = await getCurrentUser();
+
+  const profile = await AuthService.getUserDetails(user.id);
+  return { profile, user };
+});

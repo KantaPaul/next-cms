@@ -67,7 +67,11 @@ export const AuthService = {
     });
   },
 
-  getUserDetails: async (id: string) => {
+  getUserDetails: async (id?: string) => {
+    if (!id) {
+      return;
+    }
+
     const user = await db.query.users.findFirst({
       where: (users, { eq }) => eq(users.id, id),
     });
