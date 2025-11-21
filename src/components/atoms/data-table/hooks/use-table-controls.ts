@@ -13,7 +13,7 @@ import {
   createPersonalizedSection,
   updatePersonalizedSection,
 } from '@/db/common/personalizations/personalization.actions';
-import type { PersonalizedProps } from '../types';
+import type { PersonalizedProps } from '@/components/atoms/data-table/types';
 
 // const safeQuerySchema =(defaults)=> z.object({
 //   q: z.string().optional(),

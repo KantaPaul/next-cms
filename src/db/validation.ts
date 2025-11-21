@@ -1,0 +1,1 @@
+export * from '@/db/validations/personalization.validation'

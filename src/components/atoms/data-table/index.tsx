@@ -35,13 +35,16 @@ import {
 import { focusOutline } from '@/components/atoms/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils/cn';
-import { useTableControls } from './hooks/use-table-controls';
-import { usePinningStyles } from './lib/get-common-pinning-styles';
-import type { DrawerFiltersProps } from './table-drawer-filters';
-import { TablePagination } from './table-pagination';
-import { SearchFallback, TableSearch } from './table-search';
-import { TableToolbar } from './table-toolbar';
-import type { PersonalizedProps } from './types';
+import { useTableControls } from '@/components/atoms/data-table/hooks/use-table-controls';
+import { usePinningStyles } from '@/components/atoms/data-table/lib/get-common-pinning-styles';
+import type { DrawerFiltersProps } from '@/components/atoms/data-table/table-drawer-filters';
+import { TablePagination } from '@/components/atoms/data-table/table-pagination';
+import {
+  SearchFallback,
+  TableSearch,
+} from '@/components/atoms/data-table/table-search';
+import { TableToolbar } from '@/components/atoms/data-table/table-toolbar';
+import type { PersonalizedProps } from '@/components/atoms/data-table/types';
 
 export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
