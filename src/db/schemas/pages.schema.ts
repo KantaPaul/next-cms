@@ -36,6 +36,7 @@ export const pages = pgTable('pages', {
   createdBy: text('created_by')
     .references(() => users.id, cascade)
     .notNull(),
+  isBuilderEnable: boolean('is_builder_enable').default(false),
   ...timestampColumns,
 });
 
