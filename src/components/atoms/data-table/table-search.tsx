@@ -5,16 +5,19 @@ import { SearchIcon, X } from 'lucide-react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { Loader } from 'rizzui';
-import { Input, type RizzUIInputProps } from '@/components/atoms/forms';
+// import { Loader } from 'rizzui';
+import type { InputProps } from '@/components/atoms/forms';
+import { Input } from '@/components/atoms/forms';
 import { focusRing } from '@/components/atoms/utils';
 import { Button } from '@/components/ui/button';
 import useQueryParams from '@/hooks/useQueryParam';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils/cn';
 import { useBackpressure } from './hooks/use-backpressure';
+import { Spinner } from '@/components/atoms/icons/loader/spinner';
 
-interface SearchBaseProps extends RizzUIInputProps {
+interface SearchBaseProps extends InputProps {
   initialQuery: string;
+  inputClassName?: string;
   formClassName?: string;
   page?: string;
 }
@@ -37,7 +40,9 @@ function SearchBase({
   async function onSubmit(formData: FormData) {
     const query = formData.get('search') as string;
 
-    const { search, page, ...includes } = Object.fromEntries(searchParams.entries());
+    const { search, page, ...includes } = Object.fromEntries(
+      searchParams.entries()
+    );
 
     const urlSearchParams = new URLSearchParams({
       ...includes,
@@ -69,14 +74,10 @@ function SearchBase({
         type="search"
         name="search"
         label="Search"
-        prefix={<SearchIcon size={15} className="text-steel-400" />}
-        labelClassName="sr-only"
         inputClassName={cn(inputClassName)}
         placeholder={placeholder ?? 'Search...'}
         value={value}
         onChange={onChange}
-        suffixClassName="inline-flex justify-center"
-        suffix={<LoadingSpinner initialQuery={initialQuery} />}
         {...rest}
       />
     </form>
@@ -86,17 +87,17 @@ function SearchBase({
 function LoadingSpinner({ initialQuery }: { initialQuery: string }) {
   const { pending } = useFormStatus();
   // const pending = true;
-  const { removeParams } = useQueryParams();
+  const { removeQueryParams } = useQueryParams();
 
   return pending ? (
-    <Loader variant="spinner" size="sm" />
+    <Spinner />
   ) : (
     initialQuery.length > 0 && (
       <Button
         size="sm"
         variant="ghost"
         className={cn('size-8 p-0', focusRing)}
-        onClick={() => removeParams(['search'])}
+        onClick={() => removeQueryParams(['search'])}
       >
         <X size={18} />
       </Button>

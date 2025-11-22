@@ -208,7 +208,7 @@ export function DataTable<TData, TValue>({
           showLayoutToggle={showLayoutToggle}
           searchBarClassName={searchBarClassName}
         />
-        <ScrollArea orientation="horizontal">
+        <ScrollArea>
           <TableRoot
             className="relative"
             // style={{
