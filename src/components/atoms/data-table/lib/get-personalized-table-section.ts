@@ -1,10 +1,12 @@
-import appConfig from '@/app.config';
 import type { personalizationQuery } from '@/db/common/personalizations/personalization.queries';
 import type { PersonalizationDataset } from '@/db/schema';
 import type { PromiseResult } from '@/lib/types';
+import appConfig from '@/lib/types/app.config';
 
 // PersonalizedProps
-type PersonalizationProps = PromiseResult<typeof personalizationQuery.getByPathname>;
+type PersonalizationProps = PromiseResult<
+  typeof personalizationQuery.getByPathname
+>;
 
 export function getPersonalizedTableSection({
   personalization,
@@ -17,7 +19,9 @@ export function getPersonalizedTableSection({
   pathname: string;
   columnControl?: boolean;
 }) {
-  const exist = personalization?.sections?.find((section) => section.dataset === dataset);
+  const exist = personalization?.sections?.find(
+    section => section.dataset === dataset
+  );
 
   if (!exist) {
     return {

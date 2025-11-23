@@ -2,7 +2,7 @@ import { type JSX, useTransition } from 'react';
 import { Text } from '@/components/atoms/content';
 import { Flex } from '@/components/atoms/layout';
 import { handleSelected, type Option, ReactSelect } from '@/components/atoms/react-select';
-import { SimplifiedPagination } from '@/components/data-table/pagination';
+import { SimplifiedPagination } from '@/components/atoms/data-table/pagination';
 import { DEFAULT_PAGE_SIZE } from '@/config/constant';
 import useQueryParams from '@/hooks/useQueryParam';
 import { cn } from '@/lib/utils/cn';

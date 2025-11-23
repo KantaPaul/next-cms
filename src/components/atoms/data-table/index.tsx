@@ -265,7 +265,6 @@ export function DataTable<TData, TValue>({
                           data-sticky-position={footer.column.getIsPinned()}
                           className={cn(
                             getPinnedColumnStyles(footer.column),
-                            table.options.meta?.getRowStyles?.(footerGroup),
                             footer.column.columnDef.meta?.className
                           )}
                           style={getCommonPinningStyles(footer.column)}

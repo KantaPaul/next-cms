@@ -1,6 +1,6 @@
-import type { PersonalizationDataset } from '@workspace/db/schema';
-import type { Personalization, PersonalizedSection } from '@workspace/db/validation';
-import { DEFAULT_PAGE_SIZE } from '@workspace/utils/constants';
+import { DEFAULT_PAGE_SIZE } from '@/config/constant';
+import type { PersonalizationDataset } from '@/db/schema';
+import type { Personalization, PersonalizedSection } from '@/db/validation';
 import isEmpty from 'lodash/isEmpty';
 
 interface GetPersonalizedTableSection extends Personalization {
@@ -20,7 +20,7 @@ export function getPersonalizedTableSection({
     return { pathname, dataset, limit: DEFAULT_PAGE_SIZE };
   }
 
-  const exist = personalization?.sections?.find((sc) => sc.dataset === dataset);
+  const exist = personalization?.sections?.find(sc => sc.dataset === dataset);
 
   if (!exist) {
     return {
@@ -40,4 +40,6 @@ export function getPersonalizedTableSection({
   };
 }
 
-export type PersonalizationPropsType = ReturnType<typeof getPersonalizedTableSection>;
+export type PersonalizationPropsType = ReturnType<
+  typeof getPersonalizedTableSection
+>;

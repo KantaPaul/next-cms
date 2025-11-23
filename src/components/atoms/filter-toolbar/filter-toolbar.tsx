@@ -44,14 +44,16 @@ export function FilterToolbar({
     <Flex className={cn('gap-4', className)} justify="end">
       {isDesktop &&
         (!isEmpty(filters) || hasFilters) &&
-        filters.map((filter) => <FilterItem key={filter.name} size={size} {...filter} />)}
+        filters.map(filter => (
+          <FilterItem key={filter.name} size={size} {...filter} />
+        ))}
 
       <TableDrawerFilters isDesktop={isDesktop} {...combinedFilters} />
 
       {!hideClearButton && (
         <Button
           disabled={!hasFilters}
-          isLoading={isPending}
+          // isLoading={isPending}
           onClick={() => removeParams(filterNames)}
           variant="outline"
         >

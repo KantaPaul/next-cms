@@ -1,9 +1,21 @@
 'use client';
 
+import {
+  buildQueryString,
+  cleanParams,
+  mergeParams,
+  removeParamKeys,
+} from '@/lib/utils/query-params';
 import { isNotEmpty } from '@/lib/utils/string-manipulations';
 import type { NavigateOptions } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from 'react';
 
 /**
  * Checks if a value is empty (null, undefined, empty string, or empty array)
@@ -19,7 +31,10 @@ type QueryParams = Record<string, any>;
 /**
  * Deep merges two objects while handling nested properties and removing empty values
  */
-function deepMergeObjects(target: QueryParams, source: Partial<QueryParams>): QueryParams {
+function deepMergeObjects(
+  target: QueryParams,
+  source: Partial<QueryParams>
+): QueryParams {
   const result: QueryParams = {};
 
   // First, copy all non-empty values from target
@@ -50,7 +65,7 @@ export default function useQueryParams<T extends QueryParams = QueryParams>() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-
+  const [isPending, startTransition] = useTransition();
   // Memoize the initial state to prevent unnecessary recalculations
   const initialParams = useMemo(
     () => Object.fromEntries(searchParams.entries()) as T,
@@ -65,31 +80,47 @@ export default function useQueryParams<T extends QueryParams = QueryParams>() {
   }, [searchParams]);
 
   /**
-   * Updates query parameters in the URL
-   * @param data - Object containing new query parameters
-   * @param options - Optional navigation options
+   * Updates (merges) query parameters
+   *
+   * @param updates - Object containing parameter updates
+   * @param options - Optional Next.js navigation options
+   *
+   * @example
+   * updateParams({ type: 'sick', status: 'approved' })
+   * updateParams({ page: '2' })
+   */
+  const updateParams = useCallback(
+    (updates: Partial<T>, options?: NavigateOptions) => {
+      startTransition(() => {
+        const newParams = mergeParams(
+          initialParams,
+          updates as Partial<QueryParams>
+        );
+        const cleaned = cleanParams(newParams);
+        const searchString = buildQueryString(cleaned);
+        const newUrl = searchString ? `${pathname}?${searchString}` : pathname;
+
+        router.push(newUrl, options);
+      });
+    },
+    [pathname, router, initialParams]
+  );
+
+  /**
+   * Sets query parameters (merge mode)
+   * @deprecated Use `updateParams(data)` instead
    */
   const setQueryParams = useCallback(
     (data: Partial<T>, options?: NavigateOptions) => {
-      const params = deepMergeObjects(urlParams, data as Partial<QueryParams>);
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(
+          '[useQueryParams] setQueryParams is deprecated. Use updateParams(data) instead.'
+        );
+      }
 
-      // Remove falsy values from the params
-      const cleanedParams = Object.fromEntries(
-        Object.entries(params).filter(([_, value]) => {
-          if (value === null || value === undefined) return false;
-          if (value === '') return false;
-          if (Array.isArray(value) && value.length === 0) return false;
-          return true;
-        })
-      );
-
-      const searchString = new URLSearchParams(cleanedParams).toString();
-      const newUrl = searchString ? `${pathname}?${searchString}` : pathname;
-
-      router.push(newUrl, options);
-      setUrlParams(cleanedParams as T);
+      updateParams(data, options);
     },
-    [pathname, router, urlParams]
+    [updateParams]
   );
 
   /**
@@ -107,7 +138,7 @@ export default function useQueryParams<T extends QueryParams = QueryParams>() {
       const keysArray = Array.isArray(keys) ? keys : [keys];
       const tempQuery = { ...urlParams };
 
-      keysArray.forEach((key) => delete tempQuery[key]);
+      keysArray.forEach(key => delete tempQuery[key]);
 
       // Remove falsy values from the query params
       const cleanedParams = Object.fromEntries(
@@ -135,10 +166,41 @@ export default function useQueryParams<T extends QueryParams = QueryParams>() {
   const removeQueryParams = useCallback(
     (keys: string[]) => {
       const url = new URL(window.location.href);
-      keys.forEach((key) => url.searchParams.delete(key));
+      keys.forEach(key => url.searchParams.delete(key));
       router.push(`${pathname}${url.search}`);
     },
     [pathname, router]
+  );
+
+  /**
+   * Removes specified query parameters, or all if no keys provided
+   *
+   * @param keys - Keys to remove (string or array of strings). If not provided, removes all params
+   * @param options - Optional Next.js navigation options
+   *
+   * @example
+   * removeParams(['type', 'status'])  // Remove specific params
+   * removeParams('type')               // Remove single param
+   * removeParams()                     // Clear all params
+   */
+  const removeParams = useCallback(
+    (keys?: string | string[], options?: NavigateOptions) => {
+      startTransition(() => {
+        // If no keys provided, clear all params
+        if (!keys) {
+          router.push(pathname, options);
+          return;
+        }
+
+        const newParams = removeParamKeys(initialParams, keys);
+        const cleaned = cleanParams(newParams);
+        const searchString = buildQueryString(cleaned);
+        const newUrl = searchString ? `${pathname}?${searchString}` : pathname;
+
+        router.push(newUrl, options);
+      });
+    },
+    [pathname, router, initialParams]
   );
 
   return {
@@ -146,5 +208,8 @@ export default function useQueryParams<T extends QueryParams = QueryParams>() {
     clearQueryParams,
     setQueryParams,
     queryParams: urlParams,
+    isPending,
+    updateParams,
+    removeParams,
   };
 }

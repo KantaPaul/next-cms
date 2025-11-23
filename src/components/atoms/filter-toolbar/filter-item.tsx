@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import { CONFIG_COLUMNS } from '@/config/accounting/finance-config';
-import { useDirectServerQuery } from '@/hooks/use-server-query';
+// import { CONFIG_COLUMNS } from '@/config/accounting/finance-config';
+// import { useDirectServerQuery } from '@/hooks/use-server-query';
 import useQueryParams from '@/hooks/useQueryParam';
-import { getConfigurationByColumn } from '@/server/actions/finance-configuration.action';
+// import { getConfigurationByColumn } from '@/server/actions/finance-configuration.action';
 import { DatePickerFilter } from './filters/date-picker-filter';
 import { DateRangeFilter } from './filters/date-range-filter';
 import { MultiSelectFilter } from './filters/multi-select-filter';
@@ -13,6 +13,7 @@ import { SwitchFilter } from './filters/switch-filter';
 import { TextFilter } from './filters/text-filter';
 import type { FilterConfig } from './types';
 import { useFilterHandlers } from './use-filter-handlers';
+// import { useDirectServerQuery } from '@/hooks/use-server-query';
 
 export function FilterItem({
   size = 'md',
@@ -26,7 +27,8 @@ export function FilterItem({
   placeholder = '',
   ...config
 }: FilterConfig) {
-  const { queryParams, isPending, updateParams, removeParams } = useQueryParams();
+  const { queryParams, isPending, updateParams, removeParams } =
+    useQueryParams();
   const handlers = useFilterHandlers(name, updateParams, removeParams);
 
   const paramValue = queryParams[name];
@@ -36,11 +38,11 @@ export function FilterItem({
   );
 
   // Only fetch segments data when filter type is 'segment' and segmentOptions is not provided
-  const { data } = useDirectServerQuery(
-    ['filter-segments', CONFIG_COLUMNS.SEGMENTS],
-    () => getConfigurationByColumn(CONFIG_COLUMNS.SEGMENTS),
-    { enabled: type === 'segment' && !config.segmentOptions }
-  );
+  // const { data } = useDirectServerQuery(
+  //   ['filter-segments', CONFIG_COLUMNS.SEGMENTS],
+  //   () => getConfigurationByColumn(CONFIG_COLUMNS.SEGMENTS),
+  //   { enabled: type === 'segment' && !config.segmentOptions }
+  // );
 
   const commonProps = {
     value: paramValueStr,
@@ -56,7 +58,7 @@ export function FilterItem({
 
   switch (type) {
     case 'text':
-      return <TextFilter {...commonProps} prefix={prefix} />;
+      return <TextFilter {...commonProps} />;
 
     case 'select':
       return (
@@ -75,7 +77,9 @@ export function FilterItem({
       return <SwitchFilter {...commonProps} />;
 
     case 'datepicker':
-      return <DatePickerFilter {...commonProps} isClearable={config.isClearable} />;
+      return (
+        <DatePickerFilter {...commonProps} isClearable={config.isClearable} />
+      );
 
     case 'daterange':
       return <DateRangeFilter {...commonProps} />;
@@ -83,14 +87,15 @@ export function FilterItem({
     case 'numberRange':
       return <NumberRangeFilter {...commonProps} />;
 
-    case 'segment': {
-      const segments = config.segmentOptions || data?.segments;
-      if (!segments) {
-        return null;
-      }
+    // case 'segment': {
+    //   const segments = config.segmentOptions || data?.segments;
 
-      return <SegmentFilter {...commonProps} isDrawer={isDrawer} segments={segments} />;
-    }
+    //   if (!segments) {
+    //     return null;
+    //   }
+
+    //   return <SegmentFilter {...commonProps} isDrawer={isDrawer} segments={segments} />;
+    // }
 
     default:
       return null;

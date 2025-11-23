@@ -4,22 +4,23 @@ import type { Table } from '@tanstack/react-table';
 import isEmpty from 'lodash/isEmpty';
 import { Grid3x3, List, X } from 'lucide-react';
 import { type JSX, Suspense } from 'react';
-import { ActionButton } from '@/components/atoms/action-button';
-import { Button } from '@/components/atoms/button/button';
-import { RefreshButton } from '@/components/atoms/button/refresh-button';
+// import { ActionButton } from '@/components/atoms/action-button';
+// import { Button } from '@/components/atoms/button/button';
+// import { RefreshButton } from '@/components/atoms/button/refresh-button';
 import { Text } from '@/components/atoms/content';
 import { FilterItem } from '@/components/atoms/filter-toolbar/filter-item';
 import type { FilterConfig } from '@/components/atoms/filter-toolbar/types';
 import { Flex } from '@/components/atoms/layout';
-import { ToggleFullscreenTrigger } from '@/components/ui/sidebar';
+// import { ToggleFullscreenTrigger } from '@/components/ui/sidebar';
 import { DEFAULT_PAGE_SIZE } from '@/config/constant';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import useQueryParams from '@/hooks/useQueryParam';
 import { cn } from '@/lib/utils/cn';
 import { type DrawerFiltersProps, TableDrawerFilters } from './table-drawer-filters';
 import { SearchFallback, TableSearch } from './table-search';
-import { TableViewOptions } from './table-view-options';
+// import { TableViewOptions } from './table-view-options';
 import type { PersonalizedProps } from './types';
+import { Button } from '@/components/ui/button';
 
 type TableToolbarProps<TData> = {
   table?: Table<TData>;
@@ -105,8 +106,10 @@ export function TableToolbar<TData>({
       )}
     >
       {totalCount !== undefined && (
-        <Text className="whitespace-nowrap font-geist-mono font-medium text-sm text-steel-700 dark:text-steel-200">
-          {totalCount > 0 ? `Showing ${startItem}-${endItem} of ${totalCount}` : 'No Records found'}
+        <Text className="font-geist-mono text-steel-700 dark:text-steel-200 text-sm font-medium whitespace-nowrap">
+          {totalCount > 0
+            ? `Showing ${startItem}-${endItem} of ${totalCount}`
+            : 'No Records found'}
         </Text>
       )}
       {inlineSearch && !disableSearch && (
@@ -114,19 +117,31 @@ export function TableToolbar<TData>({
           <TableSearch
             formClassName={cn(formClassName, 'ms-auto md:min-w-96')}
             placeholder={searchPlaceHolder}
-            size="sm"
+            // size="sm"
           />
         </Suspense>
       )}
 
       {isDesktop && (!isEmpty(filters) || isFiltered) && (
-        <Flex className={cn('ms-auto w-auto gap-2', searchBarClassName)} justify="end">
-          {filters?.map((filter) => (
-            <FilterItem key={filter.name} size="sm" {...filter} name={filter.name} />
+        <Flex
+          className={cn('ms-auto w-auto gap-2', searchBarClassName)}
+          justify="end"
+        >
+          {filters?.map(filter => (
+            <FilterItem
+              key={filter.name}
+              size="sm"
+              {...filter}
+              name={filter.name}
+            />
           ))}
         </Flex>
       )}
-      <Flex className={cn('w-auto gap-2', toolBarClassName)} data-toolbar="bottom" justify="end">
+      <Flex
+        className={cn('w-auto gap-2', toolBarClassName)}
+        data-toolbar="bottom"
+        justify="end"
+      >
         {!isEmpty(drawerFilters.filters) && (
           <TableDrawerFilters
             isDesktop={isDesktop}
@@ -136,22 +151,22 @@ export function TableToolbar<TData>({
         )}
 
         {showClearButton && isFiltered && (
-          <ActionButton
+          <Button
             className="rounded-md px-2 shadow-none lg:px-3"
-            isLoading={isPending}
+            // isLoading={isPending}
             onClick={() => removeParams(allFilters)}
             size="sm"
           >
             Clear
             <X size={15} />
-          </ActionButton>
+          </Button>
         )}
 
         {table && renderActions?.(table)}
 
         {showLayoutToggle && (
           <Button
-            isLoading={isPending}
+            // isLoading={isPending}
             onClick={handleLayoutToggle}
             size="sm"
             title={`Switch to ${queryParams.layout === 'grid' ? 'List' : 'Grid'}`}
@@ -165,13 +180,13 @@ export function TableToolbar<TData>({
           </Button>
         )}
 
-        {!isPublic && <ToggleFullscreenTrigger size="sm" variant="outline" />}
+        {/* {!isPublic && <ToggleFullscreenTrigger size="sm" variant="outline" />} */}
 
-        {showRefreshButton && <RefreshButton />}
+        {/* {showRefreshButton && <RefreshButton />} */}
 
-        {table && personalizedProps && columnControl && (
+        {/* {table && personalizedProps && columnControl && (
           <TableViewOptions personalizedProps={personalizedProps} table={table} />
-        )}
+        )} */}
       </Flex>
     </Flex>
   );

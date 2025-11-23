@@ -2,6 +2,8 @@
 import type { FilterConfig } from '@/components/atoms/filter-toolbar/types';
 import { Grid } from '@/components/atoms/layout';
 import { useSheet } from '@/components/organisms/sheet';
+import { Button } from '@/components/ui/button';
+import { FilterItem } from '../filter-toolbar';
 // import { useSheet } from '@/components/organisms/sheet';
 
 export type DrawerFiltersProps = {
@@ -33,19 +35,30 @@ export function TableDrawerFilters({
   }
 
   if (!filters) return null;
-  // return (
-  //   <ActionButton className="rounded-md shadow-none" onClick={handleOpenDrawer} size="sm">
-  //     {isDesktop ? 'More Filters' : 'Filters'}
-  //   </ActionButton>
-  // );
+  return (
+    <Button
+      className="rounded-md shadow-none"
+      onClick={handleOpenDrawer}
+      size="sm"
+    >
+      {isDesktop ? 'More Filters' : 'Filters'}
+    </Button>
+  );
 }
 
 function DrawerFilters({ filters }: { filters: FilterConfig[] }) {
   return (
     <Grid>
-      {/* {filters?.map((filter) => (
-        <FilterItem isDrawer key={filter.name} showLabel size="lg" {...filter} name={filter.name} />
-      ))} */}
+      {filters?.map(filter => (
+        <FilterItem
+          isDrawer
+          key={filter.name}
+          showLabel
+          size="lg"
+          {...filter}
+          name={filter.name}
+        />
+      ))}
     </Grid>
   );
 }
