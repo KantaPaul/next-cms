@@ -19,12 +19,16 @@ export const Input = ({
 }) => {
   return (
     <div className={cn('grid w-full max-w-sm items-center gap-3', className)}>
-      <Label htmlFor={id} className={cn(labelClassName)}>
-        {label}
-        {isRequired && (
-          <span className="dark:text-red-dark text-red-500">*</span>
-        )}
-      </Label>
+      {label ? (
+        <Label htmlFor={id} className={cn(labelClassName)}>
+          {label}
+          {isRequired && (
+            <span className="dark:text-red-dark text-red-500">*</span>
+          )}
+        </Label>
+      ) : (
+        ''
+      )}
       <FormInput {...props} className={cn(inputClassName)} />
     </div>
   );

@@ -1,6 +1,7 @@
 // import { FilterItem } from '@/components/atoms/filter-toolbar/filter-item';
 import type { FilterConfig } from '@/components/atoms/filter-toolbar/types';
 import { Grid } from '@/components/atoms/layout';
+import { useSheet } from '@/components/organisms/sheet';
 // import { useSheet } from '@/components/organisms/sheet';
 
 export type DrawerFiltersProps = {
@@ -18,18 +19,18 @@ export function TableDrawerFilters({
   isDesktop,
   description,
 }: TableDrawerFiltersProps) {
-  // const { openSheet } = useSheet();
+  const { openSheet } = useSheet();
 
-  // function handleOpenDrawer() {
-  //   openSheet({
-  //     component: DrawerFilters,
-  //     title,
-  //     description,
-  //     props: {
-  //       filters,
-  //     },
-  //   });
-  // }
+  function handleOpenDrawer() {
+    openSheet({
+      component: DrawerFilters,
+      title,
+      description,
+      props: {
+        filters,
+      },
+    });
+  }
 
   if (!filters) return null;
   // return (
