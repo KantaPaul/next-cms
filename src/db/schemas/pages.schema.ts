@@ -46,7 +46,6 @@ export const pageContents = pgTable('page_contents', {
     .references(() => pages.id, cascade)
     .notNull(),
   content: jsonb('content').notNull(),
-  excerpt: text('excerpt'),
   ...timestampColumns,
 });
 
