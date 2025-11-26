@@ -13,10 +13,12 @@ import { borderColor } from '@/components/atoms/table-grid';
 import { EditorBubbleMenu } from '@/components/atoms/text-editor/bubble-menu';
 import { cn } from '@/lib/utils/cn';
 import { Toolbar } from './toolbar';
+import { Placeholder } from '@tiptap/extensions';
 
 export interface TextEditorProps {
   value?: string;
   label?: string;
+  placeholder?: string;
   error?: string;
   errorClassName?: string;
   isRequired?: boolean;
@@ -30,6 +32,7 @@ export function TextEditor({
   isRequired,
   errorClassName,
   onChange,
+  placeholder = 'Write something …',
 }: TextEditorProps) {
   const editor = useEditor({
     content: value,
@@ -50,7 +53,7 @@ export function TextEditor({
       StarterKit.configure({
         paragraph: {
           HTMLAttributes: {
-            class: 'leading-loose my-6 text-sm',
+            class: 'leading-loose text-sm',
           },
         },
         bulletList: {
@@ -87,6 +90,9 @@ export function TextEditor({
           },
         },
       }),
+      Placeholder.configure({
+        placeholder,
+      }),
       TiptapLink.configure({
         HTMLAttributes: {
           class:
@@ -120,9 +126,14 @@ export function TextEditor({
       <EditorBubbleMenu editor={editor} />
       <EditorContent
         editor={editor}
-        className={cn('editor-content max-h-96 overflow-y-scroll rounded-b-lg border', borderColor)}
+        className={cn(
+          'editor-content max-h-96 min-h-72 overflow-y-scroll rounded-b-lg border',
+          borderColor
+        )}
       />
-      {error && <FieldError error={error} className={cn('mt-2', errorClassName)} />}
+      {error && (
+        <FieldError error={error} className={cn('mt-2', errorClassName)} />
+      )}
     </div>
   );
 }

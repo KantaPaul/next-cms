@@ -17,6 +17,8 @@ import {
   pageStatusEnum,
   UserStatus,
   userStatusEnum,
+  VisibilityStatus,
+  visibilityStatusEnum,
 } from '@/db/schemas/shared.schema';
 import { json, type z } from 'zod';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
@@ -30,6 +32,7 @@ export const pages = pgTable('pages', {
   title: varchar('title', { length: 255 }).notNull(),
   slug: varchar('slug', { length: 255 }).notNull(),
   status: pageStatusEnum().default(PageStatus.draft),
+  visibility: visibilityStatusEnum().default(VisibilityStatus.public),
   isHome: boolean('is_home').default(false),
   isBlogIndex: boolean('is_blog_index').default(false),
   language: text('language').default('en'),

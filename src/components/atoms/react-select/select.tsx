@@ -192,8 +192,11 @@ export const ReactSelect = forwardRef(
     return (
       <Box className={cn('proa-rs', className)}>
         {label && (
-          <Label className={cn(labelClassName)}>
-            {label} {isRequired && <span className="text-red-500 dark:text-red-dark">*</span>}
+          <Label className={cn('mb-2', labelClassName)}>
+            {label}{' '}
+            {isRequired && (
+              <span className="dark:text-red-dark text-red-500">*</span>
+            )}
           </Label>
         )}
         <ReSelect
@@ -210,7 +213,12 @@ export const ReactSelect = forwardRef(
           isSearchable={isSearchable}
           menuPortalTarget={menuPortalTarget}
           {...(!isEmpty(value) && {
-            isClearable: isClearable === false ? false : isRequired ? false : (isClearable ?? true),
+            isClearable:
+              isClearable === false
+                ? false
+                : isRequired
+                  ? false
+                  : (isClearable ?? true),
           })}
           {...(isMulti && {
             formatGroupLabel,
@@ -244,7 +252,10 @@ export const ReactSelect = forwardRef(
               />
             ),
             MultiValue: ({ ...forwardProps }) => (
-              <MultiValue selectedItemCount={selectedItemCount} {...forwardProps} />
+              <MultiValue
+                selectedItemCount={selectedItemCount}
+                {...forwardProps}
+              />
             ),
             ClearIndicator: ({ ...forwardProps }) => (
               <ClearIndicator onClear={onClear} {...forwardProps} />
@@ -256,10 +267,15 @@ export const ReactSelect = forwardRef(
           }}
           {...omit(rest, 'className')}
         />
-        {error && <FieldError error={error} className={cn('mt-2', errorClassName)} />}
+        {error && (
+          <FieldError error={error} className={cn('mt-2', errorClassName)} />
+        )}
 
         {helperText && (
-          <FieldHelperText size="md" className={cn('mt-2 text-muted-foreground', helperClassName)}>
+          <FieldHelperText
+            size="md"
+            className={cn('text-muted-foreground mt-2', helperClassName)}
+          >
             {helperText}
           </FieldHelperText>
         )}

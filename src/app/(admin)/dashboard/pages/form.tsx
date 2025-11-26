@@ -13,8 +13,10 @@ import { PAGES } from '@/config/pages';
 // import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import { useDataProvider } from '@/providers/data.provider';
 import { FormFactory } from '@/components/atoms/forms/factory';
-import type { CreatePagesInput} from './_modules/pages.validation';
-import { createPagesSchema } from './_modules/pages.validation';
+import type { CreatePagesInput } from '@/app/(admin)/dashboard/pages/_modules/pages.validation';
+import { createPagesSchema } from '@/app/(admin)/dashboard/pages/_modules/pages.validation';
+import { MainEditor } from '@/app/(admin)/dashboard/pages/_components/main-editor';
+import { SidebarEditor } from '@/app/(admin)/dashboard/pages/_components/sidebar-editor';
 // import { createShift, updateShift } from './_modules/shift.actions';
 // import type { GetShift } from './_modules/shift.queries';
 // import { type CreateShiftInput, createShiftSchema } from './_modules/shift.schema';
@@ -58,8 +60,16 @@ export default function CreateOrUpdateForm({ id }: CreateOrUpdateFormProps) {
           }
         }
         schema={createPagesSchema}
+        className="h-full"
       >
-        <div>Foo</div>
+        <div className="flex flex-1 overflow-hidden">
+          <div className="flex-1 overflow-auto">
+            <MainEditor />
+          </div>
+          <div className="w-80 border-l border-gray-200 bg-white">
+            <SidebarEditor />
+          </div>
+        </div>
       </FormFactory>
       {/* <FormFactory<CreateShiftInput>
         onSubmit={onSubmit}

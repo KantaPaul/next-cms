@@ -20,9 +20,7 @@ export default async function SidebarProvider({
       <AppSidebar />
       <SidebarInset>
         <Header />
-        <div
-          className="flex flex-1 flex-col bg-white p-5 @container has-[.sticky-footer]:pb-28 dark:bg-dark-50 xl:p-8"
-        >
+        <div className="dark:bg-dark-50 @container flex h-full flex-1 flex-col bg-white p-5 has-[.sticky-footer]:pb-28 xl:p-8">
           {children}
         </div>
       </SidebarInset>

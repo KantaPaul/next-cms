@@ -34,7 +34,8 @@ export default function AuthDropdown({
       <MenuTrigger
         user={user}
         isLoading={isPending}
-        className="min-w-0 bg-transparent p-0 hover:bg-transparent dark:bg-transparent [&>div>span]:size-7 md:[&>div>span]:size-6"
+        // className="min-w-0 bg-transparent p-0 hover:bg-transparent dark:bg-transparent [&>div>span]:size-7 md:[&>div>span]:size-6"
+        className="cursor-pointer"
       />
       <Transition
         as={Fragment}
@@ -45,10 +46,13 @@ export default function AuthDropdown({
         leaveFrom="transform opacity-100 scale-100"
         leaveTo="transform opacity-0 scale-95"
       >
-        <MenuItems className="absolute right-0 mt-2 flex w-60 origin-top-right flex-col overflow-hidden rounded-md border border-steel-100 bg-white focus:outline-none dark:border-dark-400 dark:bg-dark-280 dark:shadow-[0_3px_18px_rgba(0,0,0,0.1)]">
+        <MenuItems className="border-steel-100 dark:border-dark-400 dark:bg-dark-280 absolute right-0 mt-2 flex w-60 origin-top-right flex-col overflow-hidden rounded-md border bg-white focus:outline-none dark:shadow-[0_3px_18px_rgba(0,0,0,0.1)]">
           <MenuItem>
-            <MenuButton className="focus-visible:bg-steel-50" onClick={handleLogOut}>
-              <LogOut className="size-5 text-steel-400" />
+            <MenuButton
+              className="focus-visible:bg-steel-50"
+              onClick={handleLogOut}
+            >
+              <LogOut className="text-steel-400 size-5" />
               <span className="truncate">Sign Out 🏃‍♂️</span>
             </MenuButton>
           </MenuItem>

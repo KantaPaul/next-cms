@@ -12,11 +12,11 @@ export async function CreateOrUpdate({
 }) {
   const params = await props.params;
   return (
-    <>
-      <PageHeader
+    <div className="h-full xl:-m-8">
+      {/* <PageHeader
         title={params?.id ? `Update ${TITLE}` : `Add a ${TITLE}`}
         breadcrumbs={breadcrumbs}
-      />
+      /> */}
       <QueryProvider
         promises={
           {
@@ -28,6 +28,6 @@ export async function CreateOrUpdate({
       >
         <CreateOrUpdateForm id={id} />
       </QueryProvider>
-    </>
+    </div>
   );
 }

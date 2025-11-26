@@ -6,6 +6,7 @@ import Avatar from '@/components/atoms/avatar';
 import { cn } from '@/lib/utils/cn';
 import { ChevronsUpDown, Ellipsis, Loader2 } from 'lucide-react';
 import type { User } from '@/db/schema';
+import { Flex } from '@/components/atoms/layout';
 
 // import { ChevronDownIcon } from '@heroicons/react/24/solid';
 
@@ -24,7 +25,7 @@ export const MenuTrigger = ({
     <MenuButton
       disabled={isLoading}
       className={cn(
-        'bg-steel-50 dark:bg-dark-300 h-10 gap-3 px-3',
+        'dark:bg-dark-300 h-10 gap-3 bg-slate-50 px-3',
         className,
         isLoading
           ? 'hover:bg-steel-50 dark:hover:bg-dark-300'
@@ -36,15 +37,15 @@ export const MenuTrigger = ({
           <Loader2 className="me-1.5 animate-spin" size={18} /> Logging Out
         </span>
       ) : (
-        <>
+        <Flex>
           <Avatar
             src={userAvatar}
             name={user?.name}
             className="[&>div]:size-6 [&>span]:size-6 [&>span]:text-base"
           />
-          <span className="hidden md:flex">{user?.name}</span>
+          <span className="hidden shrink-0 md:flex">{user?.name}</span>
           <ChevronsUpDown className="ml-auto hidden size-4 md:flex" />
-        </>
+        </Flex>
       )}
 
       {/* <Text className="whitespace-nowrap">{titleCase(user.name)}</Text>

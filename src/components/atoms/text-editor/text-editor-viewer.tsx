@@ -36,7 +36,7 @@ export function TextEditorViewer({
         StarterKit.configure({
           paragraph: {
             HTMLAttributes: {
-              class: 'leading-loose my-6 text-sm',
+              class: 'leading-loose text-sm',
             },
           },
           bulletList: {
