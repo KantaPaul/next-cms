@@ -13,10 +13,19 @@ import { PAGES } from '@/config/pages';
 // import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import { useDataProvider } from '@/providers/data.provider';
 import { FormFactory } from '@/components/atoms/forms/factory';
-import type { CreatePagesInput } from '@/app/(admin)/dashboard/pages/_modules/pages.validation';
-import { createPagesSchema } from '@/app/(admin)/dashboard/pages/_modules/pages.validation';
+import type { CreatePagesInput } from '@/db/validations/pages.validation';
+import { createPagesSchema } from '@/db/validations/pages.validation';
 import { MainEditor } from '@/app/(admin)/dashboard/pages/_components/main-editor';
 import { SidebarEditor } from '@/app/(admin)/dashboard/pages/_components/sidebar-editor';
+import { StickyFooter } from '@/components/atoms/sticky-footer';
+import { Button } from '@/components/ui/button';
+import { Pencil } from 'lucide-react';
+import Link from 'next/link';
+import { handleActionResponse } from '@/lib/utils/handle-action-response';
+import {
+  createPage,
+  updatePage,
+} from '@/app/(admin)/dashboard/pages/_modules/pages.actions';
 // import { createShift, updateShift } from './_modules/shift.actions';
 // import type { GetShift } from './_modules/shift.queries';
 // import { type CreateShiftInput, createShiftSchema } from './_modules/shift.schema';
@@ -34,25 +43,29 @@ export default function CreateOrUpdateForm({ id }: CreateOrUpdateFormProps) {
   const [isPending, startTransition] = useTransition();
   const { initialValues } = useDataProvider<ShiftDataProvider>();
 
-  // function onSubmit(inputs: CreateShiftInput) {
-  //   startTransition(async () => {
-  //     const response = initialValues
-  //       ? await updateShift({ ...inputs, id: initialValues.id })
-  //       : await createShift(inputs);
+  function onSubmit(inputs: CreatePagesInput) {
+    startTransition(async () => {
+      const response = initialValues
+        ? await updatePage({ ...inputs, id: initialValues.id })
+        : await createPage(inputs);
 
-  //     handleActionResponse(response, () => {
-  //       initialValues
-  //         ? toast.success(MESSAGES.MODULE_ACTION_SUCCESSFULLY('Shift', 'updated'))
-  //         : toast.success(MESSAGES.MODULE_ACTION_SUCCESSFULLY('Shift', 'created'));
-  //       router.push(PAGES.DASHBOARD.HRM.SHIFTS.INDEX);
-  //     });
-  //   });
-  // }
+      handleActionResponse(response, () => {
+        initialValues
+          ? toast.success(
+              MESSAGES.MODULE_ACTION_SUCCESSFULLY('Pages', 'updated')
+            )
+          : toast.success(
+              MESSAGES.MODULE_ACTION_SUCCESSFULLY('Pages', 'created')
+            );
+        router.push(PAGES.DASHBOARD.PAGES.INDEX);
+      });
+    });
+  }
 
   return (
     <>
       <FormFactory<CreatePagesInput>
-        onSubmit={() => console.log('void')}
+        onSubmit={onSubmit}
         id={id}
         defaultValues={
           {
@@ -100,6 +113,17 @@ export default function CreateOrUpdateForm({ id }: CreateOrUpdateFormProps) {
           Save
         </Button>
       </StickyFooter> */}
+      <StickyFooter>
+        <BackButton disabled={isPending} />
+        <Button
+          type="submit"
+          form={id}
+          disabled={isPending}
+          // isLoading={isPending}
+        >
+          Save
+        </Button>
+      </StickyFooter>
     </>
   );
 }

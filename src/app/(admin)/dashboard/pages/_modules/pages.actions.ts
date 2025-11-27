@@ -6,10 +6,9 @@ import { pagesServices } from "@/app/(admin)/dashboard/pages/_modules/pages.serv
 import {
   createPagesSchema,
   updatePagesSchema,
-} from '@/app/(admin)/dashboard/pages/_modules/pages.validation';
+} from '@/db/validations/pages.validation';
 
-
-export const createPages = protectedProcedure
+export const createPage = protectedProcedure
   .input(createPagesSchema)
   .action(async ({ input, ctx }) => {
     const created = await pagesServices.create({ ...input, ...ctx.user });
@@ -17,7 +16,7 @@ export const createPages = protectedProcedure
     return created;
   });
 
-export const updatePages = protectedProcedure
+export const updatePage = protectedProcedure
   .input(updatePagesSchema)
   .action(async ({ input, ctx }) => {
     const updated = await pagesServices.update({

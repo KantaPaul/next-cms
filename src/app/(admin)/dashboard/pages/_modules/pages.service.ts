@@ -9,8 +9,8 @@ import { and, eq, isNull } from "drizzle-orm";
 import type {
   CreatePagesInput,
   UpdatePagesInput,
-} from '@/app/(admin)/dashboard/pages/_modules/pages.validation';
-import { pages } from "@/db/schema";
+} from '@/db/validations/pages.validation';
+import { pages } from '@/db/schema';
 
 export const pagesServices = {
   /**
@@ -122,11 +122,12 @@ export const pagesServices = {
     orm: DBTrx = db
   ) => {
     // Main transaction
-    const inserted = await orm.transaction(async (tx) => {
+    const inserted = await orm.transaction(async tx => {
       return await tx
         .insert(pages)
         .values({
           ...inputs,
+          createdBy: inputs?.userId,
         })
         .returning();
     });
@@ -146,7 +147,7 @@ export const pagesServices = {
   ) => {
     const { id, userId, ...input } = inputs;
     // Main transaction
-    const updated = await orm.transaction(async (tx) => {
+    const updated = await orm.transaction(async tx => {
       return await tx
         .update(pages)
         .set({ ...input })

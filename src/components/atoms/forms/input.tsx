@@ -1,5 +1,5 @@
 import type { InputProps } from '@/components/atoms/forms';
-import { FormInput, Label } from '@/components/atoms/forms';
+import { FieldError, FormInput, Label } from '@/components/atoms/forms';
 import { cn } from '@/lib/utils/cn';
 
 export const Input = ({
@@ -9,12 +9,16 @@ export const Input = ({
   inputClassName,
   isRequired,
   className,
+  error,
+  errorClassName,
   ...props
 }: InputProps & {
   labelClassName?: string;
   inputClassName?: string;
   className?: string;
   label?: string;
+  error?: string;
+  errorClassName?: string;
   isRequired?: boolean;
 }) => {
   return (
@@ -23,13 +27,16 @@ export const Input = ({
         <Label htmlFor={id} className={cn(labelClassName)}>
           {label}
           {isRequired && (
-            <span className="dark:text-red-dark text-red-500">*</span>
+            <span className="text-red-500 dark:text-red-dark">*</span>
           )}
         </Label>
       ) : (
         ''
       )}
       <FormInput {...props} className={cn(inputClassName)} />
+      {error && (
+        <FieldError error={error} className={cn('mt-2', errorClassName)} />
+      )}
     </div>
   );
 };

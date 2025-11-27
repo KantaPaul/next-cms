@@ -7,6 +7,10 @@ import { ThemeToggle } from '@/components/atoms/theme-toggle';
 
 import { cn } from '@/lib/utils/cn';
 import { me } from '@/server/actions/auth.actions';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { PAGES } from '@/config/pages';
+import { Pencil } from 'lucide-react';
 
 export default async function Header() {
   const [currentUser] = await Promise.all([me()]);
@@ -15,7 +19,7 @@ export default async function Header() {
   return (
     <header
       className={cn(
-        'border-steel-200/70 dark:border-dark-300 dark:bg-dark-100 flex h-16 shrink-0 items-center gap-4 border-b bg-white px-5 transition-[width,height] ease-linear xl:px-8',
+        'flex h-16 shrink-0 items-center gap-4 border-b border-steel-200/70 bg-white px-5 transition-[width,height] ease-linear dark:border-dark-300 dark:bg-dark-100 xl:px-8',
         //group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12
         'sticky inset-x-0 top-0 z-50'
       )}
@@ -23,6 +27,13 @@ export default async function Header() {
       {/* <SidebarTrigger className="ml-1" /> */}
 
       <SidebarTrigger />
+      <div className="">
+        <Button asChild>
+          <Link href={PAGES.DASHBOARD.PAGES.BUiLDER}>
+            <Pencil /> Edit With Page Builder
+          </Link>
+        </Button>
+      </div>
       <Flex justify="between" className="h-full gap-3 pl-1">
         <Logo className="order-2 block md:ms-1 lg:hidden" />
 
