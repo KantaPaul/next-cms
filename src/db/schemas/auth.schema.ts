@@ -7,8 +7,10 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   varchar,
 } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
 import { baseColumns, relationConfig } from '@/db/helpers/base.columns';
 import { UserStatus, userStatusEnum } from '@/db/schemas/shared.schema';
 import type { z } from 'zod';
@@ -30,7 +32,7 @@ export const users = pgTable(
       .notNull()
       .default(UserStatus.Inactive),
     roleId: text('role_id')
-      .references(() => roles.id),
+      .references(() => roles.id, setNull),
     ...timestampColumns,
   },
   t => [
@@ -49,16 +51,33 @@ export const roles = pgTable('roles', {
   ...timestampColumns,
 });
 
-export const permissions = pgTable('permissions', {
-  id,
-  roleId: text('role_id')
-    .references(() => roles.id)
-    .notNull(),
-  resource: varchar('resource', { length: 100 }).notNull(), // e.g. "page", "category", "tag"
-  action: varchar('action', { length: 50 }).notNull(), // "view" | "edit" | "delete" | "publish"
-  allowed: boolean('allowed').default(true),
-  ...timestampColumns,
-});
+export const permissions = pgTable(
+  'permissions',
+  {
+    id,
+    roleId: text('role_id')
+      .references(() => roles.id, cascade)
+      .notNull(),
+    resource: varchar('resource', { length: 100 }).notNull(), // e.g. "pages", "media", "settings"
+    action: varchar('action', { length: 50 }).notNull(), // e.g. "create" | "edit" | "publish"
+    allowed: boolean('allowed').default(true).notNull(),
+    ...timestampColumns,
+  },
+  t => [uniqueIndex('permissions_role_resource_action_unique').on(t.roleId, t.resource, t.action)]
+);
+
+export const usersRelations = relations(users, ({ one }) => ({
+  role: one(roles, { fields: [users.roleId], references: [roles.id] }),
+}));
+
+export const rolesRelations = relations(roles, ({ many }) => ({
+  permissions: many(permissions),
+  users: many(users),
+}));
+
+export const permissionsRelations = relations(permissions, ({ one }) => ({
+  role: one(roles, { fields: [permissions.roleId], references: [roles.id] }),
+}));
 
 export const sessions = pgTable(
   'session',

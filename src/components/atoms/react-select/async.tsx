@@ -1,5 +1,6 @@
 'use client';
 
+import { useId } from 'react';
 import type { GroupBase } from 'react-select';
 import Select, { type AsyncProps } from 'react-select/async';
 import { FieldError, Label } from '@/components/atoms/forms';
@@ -44,6 +45,7 @@ export const AsyncSelect = <
   helperClassName,
   ...props
 }: SelectProps<Option, IsMulti, Group>) => {
+  const instanceId = useId();
   return (
     <Box className={cn('grid w-full grid-cols-1', boxClassName)}>
       {label && (
@@ -52,6 +54,7 @@ export const AsyncSelect = <
         </Label>
       )}
       <Select
+        instanceId={instanceId}
         isDisabled={isDisabled}
         components={{
           ClearIndicator,

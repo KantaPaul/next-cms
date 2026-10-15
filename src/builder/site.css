@@ -1,0 +1,88 @@
+/*
+ * Public-site design tokens. The builder root (and the public site layout) set these
+ * variables from site settings, so blocks never depend on the admin's own theme.
+ */
+.site-root {
+  --site-primary: #6366f1;
+  --site-accent: #ec4899;
+  --site-radius: 0.75rem;
+  --site-font: inherit;
+  --site-bg: #ffffff;
+  --site-fg: #0f172a;
+  --site-muted: #64748b;
+  --site-surface: #f8fafc;
+  --site-border: #e2e8f0;
+  --site-on-primary: #ffffff;
+
+  background: var(--site-bg);
+  color: var(--site-fg);
+  font-family: var(--site-font);
+}
+
+.site-root[data-site-theme='dark'] {
+  --site-bg: #0b1020;
+  --site-fg: #e2e8f0;
+  --site-muted: #94a3b8;
+  --site-surface: #131a2e;
+  --site-border: #1f2a44;
+}
+
+.site-root .s-surface { background: var(--site-surface); }
+.site-root .s-muted { color: var(--site-muted); }
+.site-root .s-border { border-color: var(--site-border); }
+.site-root .s-primary-text { color: var(--site-primary); }
+.site-root .s-accent-text { color: var(--site-accent); }
+.site-root .s-primary-bg { background: var(--site-primary); color: var(--site-on-primary); }
+.site-root .s-radius { border-radius: var(--site-radius); }
+.site-root .s-gradient {
+  background: linear-gradient(135deg, var(--site-primary), var(--site-accent));
+  color: var(--site-on-primary);
+}
+.site-root .s-soft-primary {
+  background: color-mix(in srgb, var(--site-primary) 12%, transparent);
+  color: var(--site-primary);
+}
+
+.site-root .s-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--site-radius);
+  padding: 0.7rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: opacity 150ms, background 150ms;
+}
+.site-root .s-btn:hover { opacity: 0.9; }
+.site-root .s-btn-primary { background: var(--site-primary); color: var(--site-on-primary); }
+.site-root .s-btn-secondary {
+  border: 1px solid var(--site-border);
+  background: var(--site-bg);
+  color: var(--site-fg);
+}
+.site-root .s-btn-light { background: #ffffff; color: #0f172a; }
+.site-root .s-btn-ghost-light { border: 1px solid rgb(255 255 255 / 0.45); color: #ffffff; }
+
+.site-root .s-input {
+  width: 100%;
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius);
+  background: var(--site-bg);
+  color: var(--site-fg);
+  padding: 0.6rem 0.8rem;
+}
+
+/* Section backgrounds */
+.site-root .s-section-muted { background: var(--site-surface); }
+.site-root .s-section-primary { background: var(--site-primary); color: var(--site-on-primary); }
+.site-root .s-section-primary .s-muted { color: rgb(255 255 255 / 0.8); }
+.site-root .s-section-dark { background: #0b1020; color: #e2e8f0; }
+.site-root .s-section-dark .s-muted { color: #94a3b8; }
+
+/* Rich text inherits site colors */
+.site-root .s-prose { color: var(--site-fg); }
+.site-root .s-prose :where(a) { color: var(--site-primary); }
+.site-root .s-prose :where(h1, h2, h3, h4, strong, blockquote) { color: inherit; }
+.site-root .s-prose :where(code) { color: inherit; }
+.site-root .s-prose :where(blockquote) { border-left-color: var(--site-primary); }

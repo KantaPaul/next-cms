@@ -5,6 +5,7 @@ import { useAtomValue } from 'jotai';
 import { X } from 'lucide-react';
 import type { JSX } from 'react';
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 // import { Button } from '@/components/atoms/button/but';
 import { Grid } from '@/components/atoms/layout';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -77,7 +78,7 @@ const selectSheetActions = (state: SheetStore) => ({
 });
 
 // Custom Hook
-export const useSheet = () => useSheetStore(selectSheetActions);
+export const useSheet = () => useSheetStore(useShallow(selectSheetActions));
 
 // Component
 export function SheetProvider(): JSX.Element {

@@ -87,6 +87,7 @@ export function CreatableSelect<IsMulti extends boolean = false>({
         </Label>
       )}
       <AsyncCreatableSelect<Option, IsMulti, GroupBase<Option>>
+        instanceId={selectId}
         value={value}
         isMulti={isMulti}
         classNamePrefix="proa"

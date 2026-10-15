@@ -78,6 +78,9 @@ web_modules/
 .next
 out
 
+# Local media storage (MEDIA_LOCAL_DIR)
+/uploads
+
 # Nuxt.js build / generate output
 .nuxt
 dist

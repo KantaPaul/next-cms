@@ -18,9 +18,10 @@ const getEnvConfig = () => {
 /** Create pg.Pool config based on environment */
 const createPoolConfig = (env: TEnv, url: string): PoolConfig => ({
   connectionString: url,
-  max: env === 'production' ? 10 : 5, // small pool, adjust if needed
+  max: 10,
   idleTimeoutMillis: 30000, // close idle clients after 30s
-  connectionTimeoutMillis: 2000, // fail fast if connection cannot be established
+  // Also bounds the wait for a free pooled client; dev compiles can stall requests for several seconds.
+  connectionTimeoutMillis: env === 'production' ? 5000 : 15000,
   statement_timeout: 30000, // optional, prevent long queries
   // ssl: env === 'production' ? { rejectUnauthorized: true } : undefined,
 });

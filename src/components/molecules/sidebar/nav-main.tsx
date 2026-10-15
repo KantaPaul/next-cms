@@ -14,18 +14,22 @@ import { useParams, usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils/cn';
 import Link from '@/components/atoms/next/link';
 import { getMenuItems } from '@/menus';
+import { useAccess } from '@/providers/access.provider';
 
 export function NavMain() {
   const pathname = usePathname();
+  const { permissions } = useAccess();
 
-  const menuItems = getMenuItems();
+  const menuItems = getMenuItems().filter(
+    item => !item.permission || permissions.includes(item.permission)
+  );
 
   return (
     <SidebarGroup>
       <SidebarGroupLabel>MENU ITEMS</SidebarGroupLabel>
       <SidebarMenu>
         {menuItems.map((item) => {
-          const isActive = item.href === pathname;
+          const isActive = item.href === pathname || pathname.startsWith(`${item.href}/`);
           const { name, icon, href } = item;
           return (
             <Collapsible

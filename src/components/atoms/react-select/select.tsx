@@ -5,7 +5,7 @@ import has from 'lodash/has';
 import isEmpty from 'lodash/isEmpty';
 import isPlainObject from 'lodash/isPlainObject';
 import omit from 'lodash/omit';
-import { type ForwardedRef, forwardRef, useCallback } from 'react';
+import { type ForwardedRef, forwardRef, useCallback, useId } from 'react';
 import ReSelect, {
   type ActionMeta,
   type GroupBase,
@@ -188,6 +188,7 @@ export const ReactSelect = forwardRef(
     }
 
     const menuPortalTarget = getSafeDocumentBody();
+    const instanceId = useId();
 
     return (
       <Box className={cn('proa-rs', className)}>
@@ -201,6 +202,7 @@ export const ReactSelect = forwardRef(
         )}
         <ReSelect
           ref={ref}
+          instanceId={instanceId}
           value={value}
           isMulti={isMulti}
           isLoading={isLoading}

@@ -13,8 +13,8 @@ export function useMediaQuery(query: string): boolean {
     return false;
   };
 
-  // Use lazy initial state to avoid unnecessary calculations during SSR
-  const [matches, setMatches] = useState<boolean>(() => getMatches());
+  // Start false on both server and client so hydration matches; sync after mount.
+  const [matches, setMatches] = useState<boolean>(false);
 
   useEffect(() => {
     // Update matches if query changes

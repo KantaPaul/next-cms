@@ -10,7 +10,9 @@ import { me } from '@/server/actions/auth.actions';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { PAGES } from '@/config/pages';
-import { Pencil } from 'lucide-react';
+import { PERMISSIONS } from '@/config/permissions';
+import { Can } from '@/providers/access.provider';
+import { Plus } from 'lucide-react';
 
 export default async function Header() {
   const [currentUser] = await Promise.all([me()]);
@@ -27,13 +29,15 @@ export default async function Header() {
       {/* <SidebarTrigger className="ml-1" /> */}
 
       <SidebarTrigger />
-      <div className="">
-        <Button asChild>
-          <Link href={PAGES.DASHBOARD.PAGES.BUiLDER}>
-            <Pencil /> Edit With Page Builder
-          </Link>
-        </Button>
-      </div>
+      <Can permission={PERMISSIONS.PAGES_CREATE}>
+        <div className="">
+          <Button asChild size="sm">
+            <Link href={PAGES.DASHBOARD.PAGES.CREATE}>
+              <Plus /> New page
+            </Link>
+          </Button>
+        </div>
+      </Can>
       <Flex justify="between" className="h-full gap-3 pl-1">
         <Logo className="order-2 block md:ms-1 lg:hidden" />
 

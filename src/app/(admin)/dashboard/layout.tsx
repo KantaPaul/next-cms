@@ -1,9 +1,14 @@
-import DefaultLayout from '@/components/molecules/layouts/default';
+import { getCurrentUserAndTeamId } from '@/lib/auth';
+import { AccessProvider } from '@/providers/access.provider';
+import { accessService } from '@/server/services/access.service';
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <DefaultLayout>{children}</DefaultLayout>;
+  const { userId } = await getCurrentUserAndTeamId();
+  const access = await accessService.getUserAccess(userId);
+
+  return <AccessProvider value={access}>{children}</AccessProvider>;
 }

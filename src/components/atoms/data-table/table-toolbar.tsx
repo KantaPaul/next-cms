@@ -3,7 +3,7 @@
 import type { Table } from '@tanstack/react-table';
 import isEmpty from 'lodash/isEmpty';
 import { Grid3x3, List, X } from 'lucide-react';
-import { type JSX, Suspense } from 'react';
+import type { JSX } from 'react';
 // import { ActionButton } from '@/components/atoms/action-button';
 // import { Button } from '@/components/atoms/button/button';
 // import { RefreshButton } from '@/components/atoms/button/refresh-button';
@@ -17,7 +17,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import useQueryParams from '@/hooks/useQueryParam';
 import { cn } from '@/lib/utils/cn';
 import { type DrawerFiltersProps, TableDrawerFilters } from './table-drawer-filters';
-import { SearchFallback, TableSearch } from './table-search';
+import { TableSearch } from './table-search';
 // import { TableViewOptions } from './table-view-options';
 import type { PersonalizedProps } from './types';
 import { Button } from '@/components/ui/button';
@@ -113,13 +113,10 @@ export function TableToolbar<TData>({
         </Text>
       )}
       {inlineSearch && !disableSearch && (
-        <Suspense fallback={<SearchFallback />}>
-          <TableSearch
-            formClassName={cn(formClassName, 'ms-auto md:min-w-96')}
-            placeholder={searchPlaceHolder}
-            // size="sm"
-          />
-        </Suspense>
+        <TableSearch
+          formClassName={cn(formClassName, 'ms-auto md:min-w-96')}
+          placeholder={searchPlaceHolder}
+        />
       )}
 
       {isDesktop && (!isEmpty(filters) || isFiltered) && (

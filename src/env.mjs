@@ -15,6 +15,21 @@ export const env = createEnv({
     GOOGLE_CLIENT_ID: z.string().min(1),
     GOOGLE_CLIENT_SECRET: z.string().min(1),
     GOOGLE_REDIRECT_URI: z.string().url(),
+
+    STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
+    MEDIA_LOCAL_DIR: z.string().default('uploads'),
+    MEDIA_MAX_UPLOAD_MB: z.coerce.number().positive().default(10),
+    S3_BUCKET: z.string().optional(),
+    S3_REGION: z.string().optional(),
+    S3_ENDPOINT: z.string().url().optional(),
+    S3_ACCESS_KEY_ID: z.string().optional(),
+    S3_SECRET_ACCESS_KEY: z.string().optional(),
+    S3_PUBLIC_URL: z.string().url().optional(),
+
+    GEMINI_API_KEY: z.string().optional(),
+    GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
+
+    CRON_SECRET: z.string().optional(),
   },
   /*
    * Environment variables available on the client (and server).
@@ -42,6 +57,21 @@ export const env = createEnv({
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
     GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
+
+    STORAGE_DRIVER: process.env.STORAGE_DRIVER,
+    MEDIA_LOCAL_DIR: process.env.MEDIA_LOCAL_DIR,
+    MEDIA_MAX_UPLOAD_MB: process.env.MEDIA_MAX_UPLOAD_MB,
+    S3_BUCKET: process.env.S3_BUCKET,
+    S3_REGION: process.env.S3_REGION,
+    S3_ENDPOINT: process.env.S3_ENDPOINT,
+    S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID,
+    S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY,
+    S3_PUBLIC_URL: process.env.S3_PUBLIC_URL,
+
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+    GEMINI_MODEL: process.env.GEMINI_MODEL,
+
+    CRON_SECRET: process.env.CRON_SECRET,
 
     NEXT_PUBLIC_APP_VERSION: process.env.NEXT_PUBLIC_APP_VERSION,
   },

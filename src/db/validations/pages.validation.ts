@@ -1,46 +1,132 @@
-import { createInsertSchema } from "drizzle-zod";
-import type { z } from "zod";
-import { pages, pageContents, pageCategories, pageTags, PAGE_STATUS, VISIBILITY_STATUS } from '@/db/schema';
-import { skipBaseColumns } from '@/db/helpers/base.columns';
-import { enumValidation, stringRequired } from "@/lib/utils/zod-helper";
-import { MESSAGES } from "@/config/messages";
+import { z } from 'zod';
+import {
+  EDITOR_TYPE,
+  LANGUAGE_CODES,
+  PAGE_STATUS,
+  VISIBILITY_STATUS,
+} from '@/db/schemas/shared.schema';
+import { MESSAGES } from '@/config/messages';
 
-export const createPageContentsSchema = createInsertSchema(pageContents).omit({
-  ...skipBaseColumns,
-  pageId: true,
+const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/** First URL segments owned by app routes or language prefixes. */
+export const RESERVED_SLUGS = [
+  'api',
+  'dashboard',
+  'login',
+  'logout',
+  'media',
+  'sitemap.xml',
+  'robots.txt',
+  '_next',
+  ...LANGUAGE_CODES,
+];
+
+const optionalText = (max = 500) =>
+  z
+    .string()
+    .max(max)
+    .nullish()
+    .transform(v => (v?.trim() ? v.trim() : null));
+
+export const seoSchema = z.object({
+  title: optionalText(255),
+  description: optionalText(1000),
+  keywords: optionalText(500),
+  canonicalUrl: optionalText(500),
+  ogTitle: optionalText(255),
+  ogDescription: optionalText(1000),
+  ogImage: optionalText(500),
+  ogType: optionalText(50),
+  twitterCard: optionalText(50),
+  noIndex: z.boolean().default(false),
+  structuredDataType: optionalText(50),
 });
 
-export const createPageCategoriesSchema = createInsertSchema(pageCategories).omit({
-  id: true,
-  pageId: true
-});
+export type SeoInput = z.infer<typeof seoSchema>;
 
-export const createPageTagsSchema = createInsertSchema(pageTags).omit({
-  id: true,
-  pageId: true,
-});
-
-export const createPagesSchema = createInsertSchema(pages)
-  .omit({
-    ...skipBaseColumns,
-    createdBy: true,
-  })
-  .extend({
-    status: enumValidation(PAGE_STATUS, {
-      name: MESSAGES.IS_REQUIRED('Status'),
-    }),
-    visibility: enumValidation(VISIBILITY_STATUS, {
-      name: MESSAGES.IS_REQUIRED('visibility'),
-    }),
-    content: createPageContentsSchema.shape.content,
-    // categories: createPageCategoriesSchema.shape.categoryId.array().nullable(),
-    // tags: createPageTagsSchema.shape.tagId.array().nullable(),
+const dateish = z
+  .union([z.string(), z.date()])
+  .nullish()
+  .transform(v => {
+    if (v === undefined) return undefined;
+    if (!v) return null;
+    const d = v instanceof Date ? v : new Date(v);
+    return Number.isNaN(d.getTime()) ? null : d;
   });
 
-export const updatePagesSchema = createPagesSchema
-  .partial()
-  .required({ id: true });
+const language = z.string().refine(v => LANGUAGE_CODES.includes(v), 'Unsupported language');
 
-export type CreatePagesInput = z.infer<typeof createPagesSchema>;
-export type UpdatePagesInput = z.infer<typeof updatePagesSchema>;
-export type DeletePagesInput = z.infer<typeof updatePagesSchema>;
+/** Shared fields without defaults; defaults only belong to creation. */
+const pageFields = {
+  title: z.string().trim().min(1, MESSAGES.IS_REQUIRED('Title')).max(255),
+  slug: z
+    .string()
+    .trim()
+    .min(1, MESSAGES.IS_REQUIRED('Slug'))
+    .max(255)
+    .regex(slugRegex, 'Slug can only contain lowercase letters, numbers, and dashes')
+    .refine(v => !RESERVED_SLUGS.includes(v), 'This slug is reserved by the app. Pick another one.'),
+  status: z.enum(PAGE_STATUS, { error: MESSAGES.IS_REQUIRED('Status') }),
+  visibility: z.enum(VISIBILITY_STATUS, { error: MESSAGES.IS_REQUIRED('Visibility') }),
+  editorType: z.enum(EDITOR_TYPE),
+  language,
+  isHome: z.boolean(),
+  scheduledAt: dateish,
+  content: z.unknown().optional(),
+  categories: z.array(z.string()).nullish(),
+  tags: z.array(z.string()).nullish(),
+  seo: seoSchema.partial().optional(),
+  templateId: z.string().nullish(),
+};
+
+export const createPagesSchema = z.object({
+  ...pageFields,
+  editorType: pageFields.editorType.default('richtext'),
+  language: z.string().default('en').pipe(language),
+  isHome: pageFields.isHome.default(false),
+});
+
+/** Every field is optional and nothing is defaulted, so partial updates never reset columns. */
+export const updatePagesSchema = z
+  .object(pageFields)
+  .partial()
+  .extend({ id: z.string().min(1) });
+
+export const idSchema = z.object({ id: z.string().min(1) });
+
+export const saveDraftSchema = z.object({
+  id: z.string().min(1),
+  content: z.unknown(),
+  title: z.string().trim().min(1).max(255).optional(),
+  autosave: z.boolean().default(false),
+});
+
+export const switchEditorSchema = z.object({
+  id: z.string().min(1),
+  editorType: z.enum(EDITOR_TYPE),
+});
+
+export const createRevisionSchema = z.object({
+  id: z.string().min(1),
+  label: z.string().trim().max(255).optional(),
+});
+
+export const restoreRevisionSchema = z.object({
+  revisionId: z.string().min(1),
+});
+
+export const createTranslationSchema = z.object({
+  id: z.string().min(1),
+  language: z.string().refine(v => LANGUAGE_CODES.includes(v), 'Unsupported language'),
+});
+
+export const createPreviewTokenSchema = z.object({
+  pageId: z.string().min(1),
+  expiresInDays: z.number().int().min(1).max(365).nullish(),
+});
+
+export type CreatePagesInput = z.input<typeof createPagesSchema>;
+export type CreatePagesOutput = z.output<typeof createPagesSchema>;
+export type UpdatePagesInput = z.output<typeof updatePagesSchema>;
+export type SaveDraftInput = z.output<typeof saveDraftSchema>;

@@ -1,0 +1,35 @@
+'use client';
+
+import { createContext, useContext } from 'react';
+import type { AutosaveStatus } from '@/app/(admin)/dashboard/(shell)/pages/_components/use-autosave';
+
+export type BuilderTarget = { id: string; type: string; props: Record<string, unknown> & { id: string } };
+
+export type BuilderContextValue = {
+  pageId: string;
+  pageTitle: string;
+  status: string;
+  canPublish: boolean;
+  busy: null | 'save' | 'publish' | 'review';
+  autosaveStatus: AutosaveStatus;
+  savedAt: Date | null;
+  aiEnabled: boolean;
+  save: () => Promise<boolean>;
+  publish: () => Promise<void>;
+  submitForReview: () => Promise<void>;
+  openRevisions: () => void;
+  aiGenerateOpen: boolean;
+  setAiGenerateOpen: (open: boolean) => void;
+  rewriteTarget: BuilderTarget | null;
+  setRewriteTarget: (target: BuilderTarget | null) => void;
+  globalTarget: BuilderTarget | null;
+  setGlobalTarget: (target: BuilderTarget | null) => void;
+};
+
+export const BuilderContext = createContext<BuilderContextValue | null>(null);
+
+export function useBuilder() {
+  const value = useContext(BuilderContext);
+  if (!value) throw new Error('useBuilder must be used inside the builder');
+  return value;
+}
