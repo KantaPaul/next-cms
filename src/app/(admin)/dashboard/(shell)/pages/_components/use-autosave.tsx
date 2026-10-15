@@ -9,24 +9,33 @@ export type AutosaveStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'error';
  * Debounced draft autosave. `value` must be referentially stable between
  * renders when nothing changed (pass a serialised string or memoised object).
  */
-export function useAutosave({
+export function useAutosave<
+  Payload extends object = { content: unknown; title?: string },
+>({
   pageId,
   value,
   enabled,
   delay = 3000,
   toPayload,
+  save,
 }: {
   pageId?: string;
   value: string;
   enabled: boolean;
   delay?: number;
-  toPayload: () => { content: unknown; title?: string };
+  toPayload: () => Payload;
+  /** Defaults to the page draft action. */
+  save?: (input: { id: string; autosave: true } & Payload) => Promise<unknown>;
 }) {
   const [status, setStatus] = useState<AutosaveStatus>('idle');
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const lastSaved = useRef(value);
   const payloadRef = useRef(toPayload);
   payloadRef.current = toPayload;
+  const saveRef = useRef(
+    save ?? (saveDraft as unknown as NonNullable<typeof save>)
+  );
+  saveRef.current = save ?? (saveDraft as unknown as NonNullable<typeof save>);
 
   const isDirty = value !== lastSaved.current;
 
@@ -36,9 +45,17 @@ export function useAutosave({
     setStatus('pending');
     const timer = setTimeout(async () => {
       setStatus('saving');
-      const response = await saveDraft({ id: pageId, autosave: true, ...payloadRef.current() });
+      const response = await saveRef.current({
+        id: pageId,
+        autosave: true,
+        ...payloadRef.current(),
+      });
 
-      if (response && typeof response === 'object' && ('hasError' in response || 'errors' in response)) {
+      if (
+        response &&
+        typeof response === 'object' &&
+        ('hasError' in response || 'errors' in response)
+      ) {
         setStatus('error');
         return;
       }
@@ -64,16 +81,24 @@ export function useAutosave({
 export function useUnsavedChangesGuard(isDirty: boolean) {
   useEffect(() => {
     if (!isDirty) return;
+
     const handler = (event: BeforeUnloadEvent) => {
       event.preventDefault();
       event.returnValue = '';
     };
+
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [isDirty]);
 }
 
-export function AutosaveIndicator({ status, savedAt }: { status: AutosaveStatus; savedAt: Date | null }) {
+export function AutosaveIndicator({
+  status,
+  savedAt,
+}: {
+  status: AutosaveStatus;
+  savedAt: Date | null;
+}) {
   const label = {
     idle: savedAt ? `Saved ${savedAt.toLocaleTimeString()}` : 'No changes',
     pending: 'Unsaved changes',
@@ -91,7 +116,10 @@ export function AutosaveIndicator({ status, savedAt }: { status: AutosaveStatus;
   }[status];
 
   return (
-    <span className="flex items-center gap-2 text-xs text-steel-500" aria-live="polite">
+    <span
+      className="flex items-center gap-2 text-xs text-steel-500"
+      aria-live="polite"
+    >
       <span className={`size-2 rounded-full ${color}`} />
       {label}
     </span>

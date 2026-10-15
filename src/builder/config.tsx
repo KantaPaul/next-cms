@@ -2,22 +2,61 @@ import type { Config, Field, Fields } from '@measured/puck';
 import type { ComponentType } from 'react';
 import { getGlobalBlockContent } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
 import { cn } from '@/lib/utils/cn';
+import {
+  getBlogFilterOptions,
+  getRelatedPosts,
+  queryBlogPosts,
+} from '@/server/actions/blog.actions';
 import type { BuilderItem } from './data';
-import { Columns, ContactForm, GlobalRef, ImageBlock, RichText } from './blocks/content';
-import { Cta, Faq, Features, Hero, Pricing, Stats, Testimonials } from './blocks/marketing';
+import {
+  BlogPosts,
+  PostContent,
+  PostFeaturedImage,
+  PostMeta,
+  PostTitle,
+  RelatedPosts,
+  type BlogActiveFilters,
+  type BlogPostsProps,
+} from './blocks/blog';
+import {
+  Columns,
+  ContactForm,
+  GlobalRef,
+  ImageBlock,
+  RichText,
+} from './blocks/content';
+import {
+  Cta,
+  Faq,
+  Features,
+  Hero,
+  Pricing,
+  Stats,
+  Testimonials,
+} from './blocks/marketing';
 import { DEFAULT_SECTION } from './blocks/section';
 import { PageTransitionField } from './controls/page-transition';
 import { SectionField } from './controls/section-inspector';
-import { GlobalBlockSelectField, MediaUrlField, RichTextField } from './fields/client-fields';
+import {
+  CategoryLockField,
+  GlobalBlockSelectField,
+  MediaUrlField,
+  RichTextField,
+  TagLockField,
+} from './fields/client-fields';
 import { ICON_OPTIONS } from './icons';
 import { MotionScope } from './motion';
+import { POST_BLOCK_TYPES, SAMPLE_POST, type PostView } from './post-template';
 import { fontStylesheetUrl, resolveThemeTokens, themeStyle } from './theme';
 
 /* ---------- field helpers ---------- */
 
 const text = (label: string): Field => ({ type: 'text', label });
 const textarea = (label: string): Field => ({ type: 'textarea', label });
-const select = (label: string, options: { label: string; value: string | number | boolean }[]): Field => ({
+const select = (
+  label: string,
+  options: { label: string; value: string | number | boolean }[]
+): Field => ({
   type: 'select',
   label,
   options,
@@ -30,12 +69,23 @@ const yesNo = (label: string): Field => ({
     { label: 'No', value: false },
   ],
 });
-const media = (label: string): Field => ({ type: 'custom', label, render: MediaUrlField as never });
+const media = (label: string): Field => ({
+  type: 'custom',
+  label,
+  render: MediaUrlField as never,
+});
 
 /** Style, layout, and motion for every block. The floating inspector shows it as the Style and Layout tabs. */
-const sectionField: Field = { type: 'custom', label: 'Section', render: SectionField as never };
+const sectionField: Field = {
+  type: 'custom',
+  label: 'Section',
+  render: SectionField as never,
+};
 
-const withSection = (fields: Fields): Fields => ({ ...fields, section: sectionField });
+const withSection = (fields: Fields): Fields => ({
+  ...fields,
+  section: sectionField,
+});
 
 const ALIGN_OPTIONS = [
   { label: 'Center', value: 'center' },
@@ -57,13 +107,14 @@ const ROOT_PADDING = { none: '', sm: 'py-4', md: 'py-8', lg: 'py-16' };
 
 /* ---------- config ---------- */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyProps = Record<string, any>;
 
 /** Adapts a plain block component to Puck's render signature. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 const renderBlock = (Component: ComponentType<any>) => {
-  const Render = ({ puck, id: _id, ...props }: AnyProps) => <Component {...props} editing={!!puck?.isEditing} />;
+  const Render = ({ puck, id: _id, ...props }: AnyProps) => (
+    <Component {...props} editing={!!puck?.isEditing} />
+  );
   Render.displayName = `Block(${Component.displayName || Component.name || 'Component'})`;
   return Render;
 };
@@ -71,8 +122,15 @@ const renderBlock = (Component: ComponentType<any>) => {
 export const builderConfig: Config = {
   categories: {
     heroes: { title: 'Heroes & calls to action', components: ['Hero', 'CTA'] },
-    marketing: { title: 'Marketing', components: ['Features', 'Stats', 'Pricing', 'Testimonials', 'FAQ'] },
-    content: { title: 'Content', components: ['RichText', 'Image', 'ContactForm'] },
+    marketing: {
+      title: 'Marketing',
+      components: ['Features', 'Stats', 'Pricing', 'Testimonials', 'FAQ'],
+    },
+    content: {
+      title: 'Content',
+      components: ['RichText', 'Image', 'ContactForm'],
+    },
+    blog: { title: 'Blog', components: ['BlogPosts'] },
     layout: { title: 'Layout', components: ['Columns'] },
     global: { title: 'Global blocks', components: ['GlobalRef'] },
   },
@@ -95,31 +153,65 @@ export const builderConfig: Config = {
         { label: 'Medium', value: 'md' },
         { label: 'Large', value: 'lg' },
       ]),
-      pageTransition: { type: 'custom', label: 'Page transition', render: PageTransitionField as never },
+      pageTransition: {
+        type: 'custom',
+        label: 'Page transition',
+        render: PageTransitionField as never,
+      },
     },
-    defaultProps: { maxWidth: 'xl', theme: 'site', paddingY: 'none', pageTransition: 'none' },
-    render: ({ children, maxWidth, theme, paddingY, pageTransition, puck }: AnyProps) => {
+    defaultProps: {
+      maxWidth: 'xl',
+      theme: 'site',
+      paddingY: 'none',
+      pageTransition: 'none',
+    },
+    render: ({
+      children,
+      maxWidth,
+      theme,
+      paddingY,
+      pageTransition,
+      puck,
+    }: AnyProps) => {
       const tokens = resolveThemeTokens(puck?.metadata?.themeTokens);
-      const mode = theme === 'light' || theme === 'dark' ? theme : tokens.colorMode === 'dark' ? 'dark' : 'light';
+      const mode =
+        theme === 'light' || theme === 'dark'
+          ? theme
+          : tokens.colorMode === 'dark'
+            ? 'dark'
+            : 'light';
       const fontUrl = fontStylesheetUrl(tokens);
       const editing = !!puck?.isEditing;
 
       return (
         <div
-          className={cn('site-root min-h-full', ROOT_PADDING[(paddingY as keyof typeof ROOT_PADDING) ?? 'none'])}
+          className={cn(
+            'site-root min-h-full',
+            ROOT_PADDING[(paddingY as keyof typeof ROOT_PADDING) ?? 'none']
+          )}
           data-site-theme={mode}
           style={{
             ...themeStyle(tokens),
-            ['--site-max-width' as string]: MAX_WIDTH[(maxWidth as keyof typeof MAX_WIDTH) ?? 'xl'] ?? MAX_WIDTH.xl,
+            ['--site-max-width' as string]:
+              MAX_WIDTH[(maxWidth as keyof typeof MAX_WIDTH) ?? 'xl'] ??
+              MAX_WIDTH.xl,
           }}
         >
           {fontUrl && <link rel="stylesheet" href={fontUrl} />}
           {!editing && (
             <noscript>
-              <style>{'[data-motion]{opacity:1!important;transform:none!important;filter:none!important}'}</style>
+              <style>
+                {
+                  '[data-motion]{opacity:1!important;transform:none!important;filter:none!important}'
+                }
+              </style>
             </noscript>
           )}
-          <MotionScope editing={editing} preview={!!puck?.metadata?.motionPreview} transition={pageTransition}>
+          <MotionScope
+            editing={editing}
+            preview={!!puck?.metadata?.motionPreview}
+            transition={pageTransition}
+          >
             {children}
           </MotionScope>
         </div>
@@ -139,12 +231,17 @@ export const builderConfig: Config = {
         secondaryButtonLink: text('Secondary button link'),
         imageUrl: media('Image'),
         imageAlt: text('Image alt text'),
-        alignment: { type: 'radio', label: 'Alignment', options: ALIGN_OPTIONS },
+        alignment: {
+          type: 'radio',
+          label: 'Alignment',
+          options: ALIGN_OPTIONS,
+        },
       }),
       defaultProps: {
         badge: 'New',
         title: 'A headline that explains what you do',
-        subtitle: 'One or two sentences that describe the value for your visitors.',
+        subtitle:
+          'One or two sentences that describe the value for your visitors.',
         primaryButtonText: 'Get started',
         primaryButtonLink: '#',
         secondaryButtonText: 'Learn more',
@@ -171,7 +268,11 @@ export const builderConfig: Config = {
           type: 'array',
           label: 'Features',
           getItemSummary: (item: { title?: string }) => item.title || 'Feature',
-          defaultItemProps: { icon: 'Sparkles', title: 'Feature', description: 'Describe the benefit.' },
+          defaultItemProps: {
+            icon: 'Sparkles',
+            title: 'Feature',
+            description: 'Describe the benefit.',
+          },
           arrayFields: {
             icon: select('Icon', ICON_OPTIONS),
             title: text('Title'),
@@ -185,9 +286,21 @@ export const builderConfig: Config = {
         subtitle: '',
         columns: 3,
         items: [
-          { icon: 'Zap', title: 'Fast', description: 'Pages render at the edge in milliseconds.' },
-          { icon: 'ShieldCheck', title: 'Secure', description: 'Role-based access and audit logs built in.' },
-          { icon: 'Layers', title: 'Flexible', description: 'Visual builder and rich text in one place.' },
+          {
+            icon: 'Zap',
+            title: 'Fast',
+            description: 'Pages render at the edge in milliseconds.',
+          },
+          {
+            icon: 'ShieldCheck',
+            title: 'Secure',
+            description: 'Role-based access and audit logs built in.',
+          },
+          {
+            icon: 'Layers',
+            title: 'Flexible',
+            description: 'Visual builder and rich text in one place.',
+          },
         ],
         section: DEFAULT_SECTION,
       },
@@ -200,9 +313,14 @@ export const builderConfig: Config = {
         items: {
           type: 'array',
           label: 'Stats',
-          getItemSummary: (item: { value?: string; label?: string }) => [item.value, item.label].filter(Boolean).join(' · ') || 'Stat',
+          getItemSummary: (item: { value?: string; label?: string }) =>
+            [item.value, item.label].filter(Boolean).join(' · ') || 'Stat',
           defaultItemProps: { value: '99%', label: 'Label', change: '' },
-          arrayFields: { value: text('Value'), label: text('Label'), change: text('Note') },
+          arrayFields: {
+            value: text('Value'),
+            label: text('Label'),
+            change: text('Note'),
+          },
         },
       }),
       defaultProps: {
@@ -248,7 +366,8 @@ export const builderConfig: Config = {
             features: {
               type: 'array',
               label: 'Features',
-              getItemSummary: (item: { text?: string }) => item.text || 'Feature',
+              getItemSummary: (item: { text?: string }) =>
+                item.text || 'Feature',
               arrayFields: { text: text('Feature') },
             },
             buttonText: text('Button text'),
@@ -263,9 +382,39 @@ export const builderConfig: Config = {
         subtitle: '',
         showToggle: false,
         plans: [
-          { name: 'Starter', price: '$0', period: 'forever', description: 'For side projects.', features: [{ text: '1 site' }, { text: 'Community support' }], buttonText: 'Start free', buttonLink: '#', popular: false },
-          { name: 'Pro', price: '$29', period: 'per month', description: 'For growing teams.', features: [{ text: 'Unlimited sites' }, { text: 'Priority support' }], buttonText: 'Start trial', buttonLink: '#', popular: true },
-          { name: 'Enterprise', price: 'Custom', period: '', description: 'For large organisations.', features: [{ text: 'SSO' }, { text: 'SLA' }], buttonText: 'Contact sales', buttonLink: '#', popular: false },
+          {
+            name: 'Starter',
+            price: '$0',
+            period: 'forever',
+            description: 'For side projects.',
+            features: [{ text: '1 site' }, { text: 'Community support' }],
+            buttonText: 'Start free',
+            buttonLink: '#',
+            popular: false,
+          },
+          {
+            name: 'Pro',
+            price: '$29',
+            period: 'per month',
+            description: 'For growing teams.',
+            features: [
+              { text: 'Unlimited sites' },
+              { text: 'Priority support' },
+            ],
+            buttonText: 'Start trial',
+            buttonLink: '#',
+            popular: true,
+          },
+          {
+            name: 'Enterprise',
+            price: 'Custom',
+            period: '',
+            description: 'For large organisations.',
+            features: [{ text: 'SSO' }, { text: 'SLA' }],
+            buttonText: 'Contact sales',
+            buttonLink: '#',
+            popular: false,
+          },
         ],
         section: DEFAULT_SECTION,
       },
@@ -279,8 +428,15 @@ export const builderConfig: Config = {
         items: {
           type: 'array',
           label: 'Testimonials',
-          getItemSummary: (item: { author?: string }) => item.author || 'Testimonial',
-          defaultItemProps: { quote: 'A great product.', author: 'Name', role: '', company: '', avatar: '' },
+          getItemSummary: (item: { author?: string }) =>
+            item.author || 'Testimonial',
+          defaultItemProps: {
+            quote: 'A great product.',
+            author: 'Name',
+            role: '',
+            company: '',
+            avatar: '',
+          },
           arrayFields: {
             quote: textarea('Quote'),
             author: text('Author'),
@@ -294,8 +450,20 @@ export const builderConfig: Config = {
         eyebrow: 'Testimonials',
         title: 'Loved by our customers',
         items: [
-          { quote: 'It changed how our team ships pages.', author: 'Alex Kim', role: 'Head of Marketing', company: 'Acme', avatar: '' },
-          { quote: 'The editor is a joy to use.', author: 'Sam Lee', role: 'Designer', company: 'Globex', avatar: '' },
+          {
+            quote: 'It changed how our team ships pages.',
+            author: 'Alex Kim',
+            role: 'Head of Marketing',
+            company: 'Acme',
+            avatar: '',
+          },
+          {
+            quote: 'The editor is a joy to use.',
+            author: 'Sam Lee',
+            role: 'Designer',
+            company: 'Globex',
+            avatar: '',
+          },
         ],
         section: DEFAULT_SECTION,
       },
@@ -309,17 +477,27 @@ export const builderConfig: Config = {
         items: {
           type: 'array',
           label: 'Questions',
-          getItemSummary: (item: { question?: string }) => item.question || 'Question',
+          getItemSummary: (item: { question?: string }) =>
+            item.question || 'Question',
           defaultItemProps: { question: 'Question?', answer: 'Answer.' },
-          arrayFields: { question: text('Question'), answer: textarea('Answer') },
+          arrayFields: {
+            question: text('Question'),
+            answer: textarea('Answer'),
+          },
         },
       }),
       defaultProps: {
         eyebrow: 'FAQ',
         title: 'Frequently asked questions',
         items: [
-          { question: 'How do I get started?', answer: 'Sign up and create your first page in minutes.' },
-          { question: 'Can I cancel anytime?', answer: 'Yes, there are no long-term contracts.' },
+          {
+            question: 'How do I get started?',
+            answer: 'Sign up and create your first page in minutes.',
+          },
+          {
+            question: 'Can I cancel anytime?',
+            answer: 'Yes, there are no long-term contracts.',
+          },
         ],
         section: DEFAULT_SECTION,
       },
@@ -394,7 +572,11 @@ export const builderConfig: Config = {
     RichText: {
       label: 'Rich text',
       fields: withSection({
-        content: { type: 'custom', label: 'Content', render: RichTextField as never },
+        content: {
+          type: 'custom',
+          label: 'Content',
+          render: RichTextField as never,
+        },
         width: select('Width', [
           { label: 'Narrow', value: 'narrow' },
           { label: 'Normal', value: 'normal' },
@@ -427,7 +609,15 @@ export const builderConfig: Config = {
         ]),
         link: text('Link (optional)'),
       }),
-      defaultProps: { url: '', alt: '', caption: '', aspect: 'auto', width: 'normal', link: '', section: DEFAULT_SECTION },
+      defaultProps: {
+        url: '',
+        alt: '',
+        caption: '',
+        aspect: 'auto',
+        width: 'normal',
+        link: '',
+        section: DEFAULT_SECTION,
+      },
       render: renderBlock(ImageBlock),
     },
     ContactForm: {
@@ -439,7 +629,12 @@ export const builderConfig: Config = {
           type: 'array',
           label: 'Fields',
           getItemSummary: (item: { label?: string }) => item.label || 'Field',
-          defaultItemProps: { label: 'Field', name: 'field', type: 'text', required: false },
+          defaultItemProps: {
+            label: 'Field',
+            name: 'field',
+            type: 'text',
+            required: false,
+          },
           arrayFields: {
             label: text('Label'),
             name: text('Field name'),
@@ -462,7 +657,12 @@ export const builderConfig: Config = {
         fields: [
           { label: 'Name', name: 'name', type: 'text', required: true },
           { label: 'Email', name: 'email', type: 'email', required: true },
-          { label: 'Message', name: 'message', type: 'textarea', required: true },
+          {
+            label: 'Message',
+            name: 'message',
+            type: 'textarea',
+            required: true,
+          },
         ],
         submitText: 'Send message',
         successMessage: 'Thanks! We will be in touch soon.',
@@ -474,14 +674,29 @@ export const builderConfig: Config = {
     GlobalRef: {
       label: 'Global block',
       fields: {
-        globalBlockId: { type: 'custom', label: 'Global block', render: GlobalBlockSelectField as never },
+        globalBlockId: {
+          type: 'custom',
+          label: 'Global block',
+          render: GlobalBlockSelectField as never,
+        },
       },
       defaultProps: { globalBlockId: '', blocks: [], globalBlockName: '' },
       resolveData: async (data, { changed, trigger }) => {
-        const props = data.props as { globalBlockId?: string; blocks?: BuilderItem[] };
-        const shouldFetch = changed.globalBlockId || trigger === 'load' || trigger === 'force' || !props.blocks?.length;
+        const props = data.props as {
+          globalBlockId?: string;
+          blocks?: BuilderItem[];
+        };
+        const shouldFetch =
+          changed.globalBlockId ||
+          trigger === 'load' ||
+          trigger === 'force' ||
+          !props.blocks?.length;
         if (!shouldFetch) return data;
-        if (!props.globalBlockId) return { ...data, props: { ...data.props, blocks: [], globalBlockName: '' } };
+        if (!props.globalBlockId)
+          return {
+            ...data,
+            props: { ...data.props, blocks: [], globalBlockName: '' },
+          };
 
         const block = await getGlobalBlockContent(props.globalBlockId);
         return {
@@ -495,13 +710,271 @@ export const builderConfig: Config = {
       },
       render: renderBlock(GlobalRef),
     },
+    BlogPosts: {
+      label: 'Blog posts',
+      fields: withSection({
+        title: text('Title'),
+        subtitle: textarea('Subtitle'),
+        layout: {
+          type: 'radio',
+          label: 'Layout',
+          options: [
+            { label: 'Grid', value: 'grid' },
+            { label: 'List', value: 'list' },
+          ],
+        },
+        columns: select('Grid columns', [
+          { label: '2', value: 2 },
+          { label: '3', value: 3 },
+          { label: '4', value: 4 },
+        ]),
+        pageSize: { type: 'number', label: 'Posts per page', min: 1, max: 48 },
+        showSearch: yesNo('Search box'),
+        showCategoryFilter: yesNo('Category filter'),
+        showTagFilter: yesNo('Tag filter'),
+        showSort: yesNo('Sort menu'),
+        showPagination: yesNo('Pagination'),
+        lockedCategory: {
+          type: 'custom',
+          label: 'Only this category',
+          render: CategoryLockField as never,
+        },
+        lockedTag: {
+          type: 'custom',
+          label: 'Only this tag',
+          render: TagLockField as never,
+        },
+        showImage: yesNo('Card image'),
+        showExcerpt: yesNo('Card excerpt'),
+        showAuthor: yesNo('Card author'),
+        showDate: yesNo('Card date'),
+        emptyMessage: text('Message when there are no posts'),
+      }),
+      defaultProps: {
+        title: 'Latest posts',
+        subtitle: '',
+        layout: 'grid',
+        columns: 3,
+        pageSize: 9,
+        showSearch: true,
+        showCategoryFilter: true,
+        showTagFilter: true,
+        showSort: true,
+        showPagination: true,
+        showImage: true,
+        showExcerpt: true,
+        showAuthor: true,
+        showDate: true,
+        emptyMessage: '',
+        section: DEFAULT_SECTION,
+      },
+      resolveData: async (data, { metadata }) => {
+        const props = data.props as BlogPostsProps;
+        const query = metadata?.searchParams as
+          | Record<string, string | string[] | undefined>
+          | undefined;
+
+        const param = (key: string) => {
+          const value = query?.[key];
+          return (Array.isArray(value) ? value[0] : value)?.trim() || undefined;
+        };
+
+        const active: BlogActiveFilters = {
+          q: props.showSearch ? param('q') : undefined,
+          category:
+            props.showCategoryFilter && !props.lockedCategory
+              ? param('category')
+              : undefined,
+          tag:
+            props.showTagFilter && !props.lockedTag ? param('tag') : undefined,
+          sort: props.showSort ? param('sort') : undefined,
+          page: props.showPagination === false ? 1 : Number(param('page')) || 1,
+        };
+        const language =
+          typeof metadata?.language === 'string' ? metadata.language : null;
+
+        const [result, filterOptions] = await Promise.all([
+          queryBlogPosts({
+            language,
+            q: active.q,
+            category: props.lockedCategory || active.category,
+            tag: props.lockedTag || active.tag,
+            sort: active.sort as never,
+            page: active.page,
+            size: props.pageSize,
+          }),
+          props.showCategoryFilter || props.showTagFilter
+            ? getBlogFilterOptions(language)
+            : Promise.resolve({ categories: [], tags: [] }),
+        ]);
+
+        return {
+          ...data,
+          props: {
+            ...data.props,
+            posts: result.posts,
+            total: result.total,
+            totalPages: result.totalPages,
+            active: { ...active, page: result.page },
+            filterOptions,
+          },
+        };
+      },
+      render: renderBlock(BlogPosts),
+    },
+  },
+};
+
+/** Reads the post being rendered from Puck metadata; the template builder supplies a sample post. */
+
+const renderPostBlock = (Component: ComponentType<any>) => {
+  const Render = ({ puck, id: _id, ...props }: AnyProps) => (
+    <Component
+      {...props}
+      post={(puck?.metadata?.post as PostView | undefined) ?? SAMPLE_POST}
+      editing={!!puck?.isEditing}
+    />
+  );
+  Render.displayName = `PostBlock(${Component.displayName || Component.name || 'Component'})`;
+  return Render;
+};
+
+/** The page blocks plus blocks bound to the current post, for the single-post template and custom post layouts. */
+const POST_SECTION = { ...DEFAULT_SECTION, paddingY: 'sm' as const };
+
+export const postBuilderConfig: Config = {
+  ...builderConfig,
+  categories: {
+    post: { title: 'Post', components: [...POST_BLOCK_TYPES] },
+    ...builderConfig.categories,
+  },
+  components: {
+    ...builderConfig.components,
+    PostTitle: {
+      label: 'Post title',
+      fields: withSection({
+        showBackLink: yesNo('Link back to the blog page'),
+        showExcerpt: yesNo('Show excerpt'),
+        alignment: {
+          type: 'radio',
+          label: 'Alignment',
+          options: ALIGN_OPTIONS,
+        },
+      }),
+      defaultProps: {
+        showBackLink: true,
+        showExcerpt: true,
+        alignment: 'left',
+        section: POST_SECTION,
+      },
+      render: renderPostBlock(PostTitle),
+    },
+    PostFeaturedImage: {
+      label: 'Featured image',
+      fields: withSection({
+        aspect: select('Aspect ratio', [
+          { label: 'Wide (21:9)', value: 'wide' },
+          { label: 'Video (16:9)', value: 'video' },
+          { label: 'Square', value: 'square' },
+          { label: 'Original', value: 'auto' },
+        ]),
+        width: select('Width', [
+          { label: 'Normal', value: 'normal' },
+          { label: 'Wide', value: 'wide' },
+          { label: 'Full', value: 'full' },
+        ]),
+      }),
+      defaultProps: { aspect: 'wide', width: 'wide', section: POST_SECTION },
+      render: renderPostBlock(PostFeaturedImage),
+    },
+    PostMeta: {
+      label: 'Post details',
+      fields: withSection({
+        showAuthor: yesNo('Author'),
+        showDate: yesNo('Date'),
+        showCategories: yesNo('Categories'),
+        showTags: yesNo('Tags'),
+      }),
+      defaultProps: {
+        showAuthor: true,
+        showDate: true,
+        showCategories: true,
+        showTags: true,
+        section: POST_SECTION,
+      },
+      render: renderPostBlock(PostMeta),
+    },
+    PostContent: {
+      label: 'Post content',
+      fields: withSection({
+        width: select('Width', [
+          { label: 'Narrow', value: 'narrow' },
+          { label: 'Normal', value: 'normal' },
+          { label: 'Wide', value: 'wide' },
+        ]),
+      }),
+      defaultProps: { width: 'normal', section: POST_SECTION },
+      render: renderPostBlock(PostContent),
+    },
+    RelatedPosts: {
+      label: 'Related posts',
+      fields: withSection({
+        title: text('Title'),
+        limit: { type: 'number', label: 'Number of posts', min: 1, max: 12 },
+        columns: select('Columns', [
+          { label: '2', value: 2 },
+          { label: '3', value: 3 },
+          { label: '4', value: 4 },
+        ]),
+        showImage: yesNo('Card image'),
+        showExcerpt: yesNo('Card excerpt'),
+        showAuthor: yesNo('Card author'),
+        showDate: yesNo('Card date'),
+      }),
+      defaultProps: {
+        title: 'Related posts',
+        limit: 3,
+        columns: 3,
+        showImage: true,
+        showExcerpt: true,
+        showAuthor: false,
+        showDate: true,
+        section: DEFAULT_SECTION,
+      },
+      resolveData: async (data, { metadata }) => {
+        const post = (metadata?.post as PostView | undefined) ?? SAMPLE_POST;
+        const posts = await getRelatedPosts({
+          postId: post.id,
+          categoryIds: post.categories.map(c => c.id),
+          language: post.language,
+          limit: Number((data.props as { limit?: number }).limit) || 3,
+        });
+        return { ...data, props: { ...data.props, posts } };
+      },
+      render: renderBlock(RelatedPosts),
+    },
   },
 };
 
 export const BLOCK_TYPES = Object.keys(builderConfig.components);
 
 export const BUILDER_VIEWPORTS = [
-  { width: 375, height: 'auto' as const, label: 'Mobile', icon: 'Smartphone' as const },
-  { width: 768, height: 'auto' as const, label: 'Tablet', icon: 'Tablet' as const },
-  { width: 1280, height: 'auto' as const, label: 'Desktop', icon: 'Monitor' as const },
+  {
+    width: 375,
+    height: 'auto' as const,
+    label: 'Mobile',
+    icon: 'Smartphone' as const,
+  },
+  {
+    width: 768,
+    height: 'auto' as const,
+    label: 'Tablet',
+    icon: 'Tablet' as const,
+  },
+  {
+    width: 1280,
+    height: 'auto' as const,
+    label: 'Desktop',
+    icon: 'Monitor' as const,
+  },
 ];

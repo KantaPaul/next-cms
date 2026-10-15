@@ -1,7 +1,16 @@
 'use client';
 
 import { ActionBar, createUsePuck } from '@measured/puck';
-import { ArrowLeft, Component, Eye, History, LayoutTemplate, Loader2, Sparkles, Wand2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  Component,
+  Eye,
+  History,
+  LayoutTemplate,
+  Loader2,
+  Sparkles,
+  Wand2,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
@@ -27,8 +36,8 @@ export function BuilderHeaderActions() {
   return (
     <div className="flex items-center gap-2 whitespace-nowrap">
       <Button type="button" variant="ghost" size="sm" asChild>
-        <Link href={PAGES.DASHBOARD.PAGES.EDIT(b.pageId)} aria-label="Page settings">
-          <ArrowLeft /> <span className="hidden xl:inline">Page settings</span>
+        <Link href={b.backHref} aria-label={b.backLabel}>
+          <ArrowLeft /> <span className="hidden xl:inline">{b.backLabel}</span>
         </Link>
       </Button>
       <StatusBadge status={status} statusColor={PAGE_STATUS_COLORS[status]} />
@@ -36,24 +45,56 @@ export function BuilderHeaderActions() {
         <AutosaveIndicator status={b.autosaveStatus} savedAt={b.savedAt} />
       </span>
       {b.aiEnabled && (
-        <Button type="button" variant="outline" size="sm" onClick={() => b.setAiGenerateOpen(true)}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => b.setAiGenerateOpen(true)}
+        >
           <Wand2 /> Generate
         </Button>
       )}
-      <Button type="button" variant="ghost" size="sm" onClick={b.openRevisions} aria-label="Revision history">
-        <History />
-      </Button>
-      {canCreate && (
-        <Button type="button" variant="ghost" size="sm" onClick={() => setTemplateOpen(true)} aria-label="Save as template">
+      {b.hasRevisions && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={b.openRevisions}
+          aria-label="Revision history"
+        >
+          <History />
+        </Button>
+      )}
+      {canCreate && b.kind === 'page' && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setTemplateOpen(true)}
+          aria-label="Save as template"
+        >
           <LayoutTemplate />
         </Button>
       )}
-      <Button type="button" variant="ghost" size="sm" asChild>
-        <a href={PAGES.SITE.PREVIEW(b.pageId)} target="_blank" rel="noreferrer" aria-label="Preview draft">
-          <Eye />
-        </a>
-      </Button>
-      <Button type="button" variant="outline" size="sm" onClick={() => void b.save()} disabled={!!b.busy}>
+      {b.previewHref && (
+        <Button type="button" variant="ghost" size="sm" asChild>
+          <a
+            href={b.previewHref}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Preview draft"
+          >
+            <Eye />
+          </a>
+        </Button>
+      )}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => void b.save()}
+        disabled={!!b.busy}
+      >
         {b.busy === 'save' && <Loader2 className="animate-spin" />} Save draft
       </Button>
       {b.canPublish ? (
@@ -65,7 +106,7 @@ export function BuilderHeaderActions() {
           disabled={!!b.busy}
         >
           {b.busy === 'publish' && <Loader2 className="animate-spin" />}
-          {b.status === 'published' ? 'Update live page' : 'Publish'}
+          {b.status === 'published' ? b.liveLabel : 'Publish'}
         </Button>
       ) : (
         <Button
@@ -80,10 +121,30 @@ export function BuilderHeaderActions() {
         </Button>
       )}
 
-      <AiGenerateDialog open={b.aiGenerateOpen} onOpenChange={b.setAiGenerateOpen} />
-      <AiRewriteDialog target={b.rewriteTarget} onClose={() => b.setRewriteTarget(null)} />
-      <SaveGlobalDialog target={b.globalTarget} onClose={() => b.setGlobalTarget(null)} />
-      <SaveTemplateDialog key={String(templateOpen)} open={templateOpen} onOpenChange={setTemplateOpen} pageTitle={b.pageTitle} />
+      {b.aiEnabled && (
+        <AiGenerateDialog
+          open={b.aiGenerateOpen}
+          onOpenChange={b.setAiGenerateOpen}
+        />
+      )}
+      {b.aiEnabled && (
+        <AiRewriteDialog
+          target={b.rewriteTarget}
+          onClose={() => b.setRewriteTarget(null)}
+        />
+      )}
+      <SaveGlobalDialog
+        target={b.globalTarget}
+        onClose={() => b.setGlobalTarget(null)}
+      />
+      {b.kind === 'page' && (
+        <SaveTemplateDialog
+          key={String(templateOpen)}
+          open={templateOpen}
+          onOpenChange={setTemplateOpen}
+          pageTitle={b.pageTitle}
+        />
+      )}
     </div>
   );
 }
@@ -100,7 +161,11 @@ export function BuilderActionBar({
   const b = useBuilder();
   const selected = usePuck(s => s.selectedItem);
   const target: BuilderTarget | null = selected
-    ? { id: selected.props.id as string, type: selected.type as string, props: selected.props as BuilderTarget['props'] }
+    ? {
+        id: selected.props.id as string,
+        type: selected.type as string,
+        props: selected.props as BuilderTarget['props'],
+      }
     : null;
   const canSaveGlobal = target && target.type !== 'GlobalRef';
 
@@ -112,12 +177,18 @@ export function BuilderActionBar({
       </ActionBar.Group>
       <ActionBar.Group>
         {b.aiEnabled && target && target.type !== 'GlobalRef' && (
-          <ActionBar.Action label="Rewrite with AI" onClick={() => b.setRewriteTarget(target)}>
+          <ActionBar.Action
+            label="Rewrite with AI"
+            onClick={() => b.setRewriteTarget(target)}
+          >
             <Sparkles size={16} />
           </ActionBar.Action>
         )}
         {canSaveGlobal && (
-          <ActionBar.Action label="Save as global block" onClick={() => b.setGlobalTarget(target)}>
+          <ActionBar.Action
+            label="Save as global block"
+            onClick={() => b.setGlobalTarget(target)}
+          >
             <Component size={16} />
           </ActionBar.Action>
         )}

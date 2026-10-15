@@ -15,6 +15,20 @@
       "when": 1792049528316,
       "tag": "20261015073208_page_builder_port",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792066728523,
+      "tag": "20261015121848_blog_posts",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792068226122,
+      "tag": "20261015124346_post_templates",
+      "breakpoints": true
     }
   ]
 }

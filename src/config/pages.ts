@@ -10,6 +10,15 @@ export const PAGES = {
       EDIT: (id: string) => `/dashboard/pages/${id}/edit`,
       BUILDER: (id: string) => `/dashboard/pages/${id}/builder`,
     },
+    POSTS: {
+      INDEX: '/dashboard/posts',
+      CREATE: '/dashboard/posts/create',
+      EDIT: (id: string) => `/dashboard/posts/${id}/edit`,
+      BUILDER: (id: string) => `/dashboard/posts/${id}/builder`,
+      TEMPLATES: '/dashboard/posts/templates',
+      TEMPLATE_BUILDER: (id: string) =>
+        `/dashboard/posts/templates/${id}/builder`,
+    },
     MEDIA: '/dashboard/media',
     TAXONOMY: '/dashboard/taxonomy',
     MENUS: '/dashboard/menus',
@@ -24,8 +33,14 @@ export const PAGES = {
       const prefix = language === 'en' ? '' : `/${language}`;
       return isHome ? prefix || '/' : `${prefix}/${slug}`;
     },
-    PREVIEW: (pageId: string) => `/api/preview?pageId=${encodeURIComponent(pageId)}`,
-    PREVIEW_TOKEN: (token: string) => `/api/preview?token=${encodeURIComponent(token)}`,
+    post: (slug: string, language = 'en') =>
+      `${language === 'en' ? '' : `/${language}`}/blog/${slug}`,
+    PREVIEW: (pageId: string) =>
+      `/api/preview?pageId=${encodeURIComponent(pageId)}`,
+    PREVIEW_POST: (postId: string) =>
+      `/api/preview?postId=${encodeURIComponent(postId)}`,
+    PREVIEW_TOKEN: (token: string) =>
+      `/api/preview?token=${encodeURIComponent(token)}`,
     EXIT_PREVIEW: '/api/preview/exit',
   },
 };

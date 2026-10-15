@@ -55,7 +55,9 @@ const dateish = z
     return Number.isNaN(d.getTime()) ? null : d;
   });
 
-const language = z.string().refine(v => LANGUAGE_CODES.includes(v), 'Unsupported language');
+const language = z
+  .string()
+  .refine(v => LANGUAGE_CODES.includes(v), 'Unsupported language');
 
 /** Shared fields without defaults; defaults only belong to creation. */
 const pageFields = {
@@ -65,13 +67,22 @@ const pageFields = {
     .trim()
     .min(1, MESSAGES.IS_REQUIRED('Slug'))
     .max(255)
-    .regex(slugRegex, 'Slug can only contain lowercase letters, numbers, and dashes')
-    .refine(v => !RESERVED_SLUGS.includes(v), 'This slug is reserved by the app. Pick another one.'),
+    .regex(
+      slugRegex,
+      'Slug can only contain lowercase letters, numbers, and dashes'
+    )
+    .refine(
+      v => !RESERVED_SLUGS.includes(v),
+      'This slug is reserved by the app. Pick another one.'
+    ),
   status: z.enum(PAGE_STATUS, { error: MESSAGES.IS_REQUIRED('Status') }),
-  visibility: z.enum(VISIBILITY_STATUS, { error: MESSAGES.IS_REQUIRED('Visibility') }),
+  visibility: z.enum(VISIBILITY_STATUS, {
+    error: MESSAGES.IS_REQUIRED('Visibility'),
+  }),
   editorType: z.enum(EDITOR_TYPE),
   language,
   isHome: z.boolean(),
+  isBlogIndex: z.boolean(),
   scheduledAt: dateish,
   content: z.unknown().optional(),
   categories: z.array(z.string()).nullish(),
@@ -85,6 +96,7 @@ export const createPagesSchema = z.object({
   editorType: pageFields.editorType.default('richtext'),
   language: z.string().default('en').pipe(language),
   isHome: pageFields.isHome.default(false),
+  isBlogIndex: pageFields.isBlogIndex.default(false),
 });
 
 /** Every field is optional and nothing is defaulted, so partial updates never reset columns. */
@@ -118,13 +130,21 @@ export const restoreRevisionSchema = z.object({
 
 export const createTranslationSchema = z.object({
   id: z.string().min(1),
-  language: z.string().refine(v => LANGUAGE_CODES.includes(v), 'Unsupported language'),
+  language: z
+    .string()
+    .refine(v => LANGUAGE_CODES.includes(v), 'Unsupported language'),
 });
 
-export const createPreviewTokenSchema = z.object({
-  pageId: z.string().min(1),
-  expiresInDays: z.number().int().min(1).max(365).nullish(),
-});
+export const createPreviewTokenSchema = z
+  .object({
+    pageId: z.string().min(1).nullish(),
+    postId: z.string().min(1).nullish(),
+    expiresInDays: z.number().int().min(1).max(365).nullish(),
+  })
+  .refine(
+    v => !!v.pageId !== !!v.postId,
+    'Choose a page or a post to preview.'
+  );
 
 export type CreatePagesInput = z.input<typeof createPagesSchema>;
 export type CreatePagesOutput = z.output<typeof createPagesSchema>;

@@ -5,6 +5,7 @@ import {
   KeyRound,
   LayoutTemplate,
   MenuIcon,
+  Newspaper,
   Palette,
   ShieldCheck,
 } from 'lucide-react';
@@ -22,6 +23,11 @@ export function getMenuItems(): {
       name: 'Pages',
       href: PAGES.DASHBOARD.PAGES.INDEX,
       icon: <GalleryVertical className="w-[18px]" />,
+    },
+    {
+      name: 'Posts',
+      href: PAGES.DASHBOARD.POSTS.INDEX,
+      icon: <Newspaper className="w-[18px]" />,
     },
     {
       name: 'Media Library',

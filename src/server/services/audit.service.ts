@@ -17,7 +17,18 @@ export type AuditAction =
   | 'role_change'
   | 'revoke';
 
-export type AuditTarget = 'page' | 'media' | 'menu' | 'settings' | 'role' | 'taxonomy' | 'template' | 'global_block' | 'api_key' | 'user';
+export type AuditTarget =
+  | 'page'
+  | 'post'
+  | 'media'
+  | 'menu'
+  | 'settings'
+  | 'role'
+  | 'taxonomy'
+  | 'template'
+  | 'global_block'
+  | 'api_key'
+  | 'user';
 
 export const auditService = {
   log: async (
@@ -41,6 +52,8 @@ export const auditService = {
     db.query.auditLogs.findMany({
       orderBy: desc(auditLogs.createdAt),
       limit,
-      with: { actor: { columns: { id: true, name: true, email: true, image: true } } },
+      with: {
+        actor: { columns: { id: true, name: true, email: true, image: true } },
+      },
     }),
 };

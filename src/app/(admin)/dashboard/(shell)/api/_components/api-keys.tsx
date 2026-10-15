@@ -21,11 +21,37 @@ import type { ApiKeyListItem } from '@/server/services/api-keys.service';
 import { createApiKey, revokeApiKey } from '../_modules/api-keys.actions';
 
 const ENDPOINTS = [
-  { path: '/pages', description: 'Published pages. Supports ?lang=, ?page= and ?limit= (max 100).' },
-  { path: '/pages/{slug}', description: 'One published page with content, SEO and translations. Supports ?lang=.' },
-  { path: '/menus', description: 'Menus with nested items. Supports ?location=header|footer|sidebar.' },
+  {
+    path: '/pages',
+    description:
+      'Published pages. Supports ?lang=, ?page= and ?limit= (max 100).',
+  },
+  {
+    path: '/pages/{slug}',
+    description:
+      'One published page with content, SEO and translations. Supports ?lang=.',
+  },
+  {
+    path: '/posts',
+    description:
+      'Published posts. Supports ?lang=, ?q=, ?category=, ?tag=, ?sort=newest|oldest|title, ?page= and ?limit=.',
+  },
+  {
+    path: '/posts/{slug}',
+    description:
+      'One published post with sanitized body, resolved layout and SEO. Supports ?lang=.',
+  },
+  {
+    path: '/menus',
+    description:
+      'Menus with nested items. Supports ?location=header|footer|sidebar.',
+  },
   { path: '/settings', description: 'Public site settings and theme tokens.' },
-  { path: '/media', description: 'Media library. Supports ?q=, ?type=image|video|document, ?folder=.' },
+  {
+    path: '/media',
+    description:
+      'Media library. Supports ?q=, ?type=image|video|document, ?folder=.',
+  },
 ];
 
 function CopyButton({ value, label }: { value: string; label: string }) {
@@ -38,14 +64,26 @@ function CopyButton({ value, label }: { value: string; label: string }) {
   };
 
   return (
-    <Button type="button" variant="outline" size="sm" onClick={copy} aria-label={label}>
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      onClick={copy}
+      aria-label={label}
+    >
       {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
       {copied ? 'Copied' : 'Copy'}
     </Button>
   );
 }
 
-function CreateKeyDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+function CreateKeyDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const router = useRouter();
   const [name, setName] = useState('');
   const [pending, setPending] = useState(false);
@@ -80,7 +118,8 @@ function CreateKeyDialog({ open, onOpenChange }: { open: boolean; onOpenChange: 
             <DialogHeader>
               <DialogTitle>Copy your new API key</DialogTitle>
               <DialogDescription>
-                This is the only time the full key is shown. Store it somewhere safe, such as an environment variable.
+                This is the only time the full key is shown. Store it somewhere
+                safe, such as an environment variable.
               </DialogDescription>
             </DialogHeader>
             <div className="flex items-center gap-2">
@@ -99,7 +138,10 @@ function CreateKeyDialog({ open, onOpenChange }: { open: boolean; onOpenChange: 
           <form onSubmit={submit} className="flex flex-col gap-4">
             <DialogHeader>
               <DialogTitle>Create API key</DialogTitle>
-              <DialogDescription>Keys give read-only access to published content through the v1 API.</DialogDescription>
+              <DialogDescription>
+                Keys give read-only access to published content through the v1
+                API.
+              </DialogDescription>
             </DialogHeader>
             <label className="flex flex-col gap-1.5 text-sm font-medium">
               Name
@@ -112,7 +154,11 @@ function CreateKeyDialog({ open, onOpenChange }: { open: boolean; onOpenChange: 
               />
             </label>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => close(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => close(false)}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={pending || !name.trim()}>
@@ -132,7 +178,12 @@ function KeysTable({ keys }: { keys: ApiKeyListItem[] }) {
   const [pendingId, setPendingId] = useState<string | null>(null);
 
   const revoke = async (key: ApiKeyListItem) => {
-    if (!window.confirm(`Revoke "${key.name}"? Apps using this key will stop working immediately.`)) return;
+    if (
+      !window.confirm(
+        `Revoke "${key.name}"? Apps using this key will stop working immediately.`
+      )
+    )
+      return;
     setPendingId(key.id);
 
     try {
@@ -150,7 +201,10 @@ function KeysTable({ keys }: { keys: ApiKeyListItem[] }) {
       <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-steel-300 px-6 py-12 text-center dark:border-dark-300">
         <KeyRound className="size-8 text-steel-400" />
         <p className="font-medium">No API keys yet</p>
-        <p className="max-w-sm text-sm text-steel-500">Create a key to read pages, menus, settings and media from another app.</p>
+        <p className="max-w-sm text-sm text-steel-500">
+          Create a key to read pages, posts, menus, settings and media from
+          another app.
+        </p>
       </div>
     );
   }
@@ -177,10 +231,18 @@ function KeysTable({ keys }: { keys: ApiKeyListItem[] }) {
                 <td className="px-4 py-3 font-mono text-xs">{key.prefix}…</td>
                 <td className="px-4 py-3">
                   <div>{format(new Date(key.createdAt), 'MMM d, yyyy')}</div>
-                  {key.createdByName && <div className="text-xs text-steel-500">by {key.createdByName}</div>}
+                  {key.createdByName && (
+                    <div className="text-xs text-steel-500">
+                      by {key.createdByName}
+                    </div>
+                  )}
                 </td>
                 <td className="px-4 py-3">
-                  {key.lastUsedAt ? formatDistanceToNow(new Date(key.lastUsedAt), { addSuffix: true }) : 'Never'}
+                  {key.lastUsedAt
+                    ? formatDistanceToNow(new Date(key.lastUsedAt), {
+                        addSuffix: true,
+                      })
+                    : 'Never'}
                 </td>
                 <td className="px-4 py-3">
                   <span
@@ -204,7 +266,9 @@ function KeysTable({ keys }: { keys: ApiKeyListItem[] }) {
                       onClick={() => revoke(key)}
                       aria-label={`Revoke ${key.name}`}
                     >
-                      {pendingId === key.id && <Loader2 className="size-4 animate-spin" />}
+                      {pendingId === key.id && (
+                        <Loader2 className="size-4 animate-spin" />
+                      )}
                       Revoke
                     </Button>
                   )}
@@ -218,7 +282,13 @@ function KeysTable({ keys }: { keys: ApiKeyListItem[] }) {
   );
 }
 
-export function ApiKeys({ keys, baseUrl }: { keys: ApiKeyListItem[]; baseUrl: string }) {
+export function ApiKeys({
+  keys,
+  baseUrl,
+}: {
+  keys: ApiKeyListItem[];
+  baseUrl: string;
+}) {
   const [open, setOpen] = useState(false);
   const example = `curl ${baseUrl}/pages \\\n  -H "Authorization: Bearer <your-key>"`;
 
@@ -227,7 +297,8 @@ export function ApiKeys({ keys, baseUrl }: { keys: ApiKeyListItem[]; baseUrl: st
       <section className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-steel-500">
-            Read-only access to published content. Each key is limited to 60 requests per minute.
+            Read-only access to published content. Each key is limited to 60
+            requests per minute.
           </p>
           <Button type="button" onClick={() => setOpen(true)}>
             <Plus className="size-4" />
@@ -241,14 +312,23 @@ export function ApiKeys({ keys, baseUrl }: { keys: ApiKeyListItem[]; baseUrl: st
         <h2 className="font-semibold">Quick start</h2>
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <span className="text-steel-500">Base URL</span>
-          <code className="rounded bg-steel-100 px-2 py-1 font-mono text-xs dark:bg-dark-200">{baseUrl}</code>
+          <code className="rounded bg-steel-100 px-2 py-1 font-mono text-xs dark:bg-dark-200">
+            {baseUrl}
+          </code>
           <CopyButton value={baseUrl} label="Copy base URL" />
         </div>
-        <pre className="overflow-x-auto rounded-md bg-dark-100 p-3 font-mono text-xs text-steel-100">{example}</pre>
+        <pre className="overflow-x-auto rounded-md bg-dark-100 p-3 font-mono text-xs text-steel-100">
+          {example}
+        </pre>
         <ul className="flex flex-col divide-y divide-steel-200 text-sm dark:divide-dark-300">
           {ENDPOINTS.map(endpoint => (
-            <li key={endpoint.path} className="flex flex-col gap-0.5 py-2 sm:flex-row sm:gap-4">
-              <code className="shrink-0 font-mono text-xs sm:w-40">GET {endpoint.path}</code>
+            <li
+              key={endpoint.path}
+              className="flex flex-col gap-0.5 py-2 sm:flex-row sm:gap-4"
+            >
+              <code className="shrink-0 font-mono text-xs sm:w-40">
+                GET {endpoint.path}
+              </code>
               <span className="text-steel-500">{endpoint.description}</span>
             </li>
           ))}

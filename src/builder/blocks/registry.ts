@@ -1,5 +1,20 @@
-import { Columns, ContactForm, GlobalRef, ImageBlock, RichText } from './content';
-import { Cta, Faq, Features, Hero, Pricing, Stats, Testimonials } from './marketing';
+import { BlogPosts } from './blog';
+import {
+  Columns,
+  ContactForm,
+  GlobalRef,
+  ImageBlock,
+  RichText,
+} from './content';
+import {
+  Cta,
+  Faq,
+  Features,
+  Hero,
+  Pricing,
+  Stats,
+  Testimonials,
+} from './marketing';
 
 export const getBlockComponents = () => ({
   Hero,
@@ -14,6 +29,7 @@ export const getBlockComponents = () => ({
   Image: ImageBlock,
   ContactForm,
   GlobalRef,
+  BlogPosts,
 });
 
 export type BlockType = keyof ReturnType<typeof getBlockComponents>;

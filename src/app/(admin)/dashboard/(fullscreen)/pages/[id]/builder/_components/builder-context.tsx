@@ -11,7 +11,17 @@ export type BuilderTarget = {
   instruction?: string;
 };
 
+/** What the builder edits: a page, one post's custom layout, or the shared single-post template. */
+export type BuilderKind = 'page' | 'post' | 'post-template';
+
 export type BuilderContextValue = {
+  kind: BuilderKind;
+  label: string;
+  backHref: string;
+  backLabel: string;
+  previewHref: string | null;
+  liveLabel: string;
+  hasRevisions: boolean;
   pageId: string;
   pageTitle: string;
   status: string;

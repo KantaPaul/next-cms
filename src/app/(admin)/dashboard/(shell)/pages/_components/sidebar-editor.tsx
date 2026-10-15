@@ -73,7 +73,10 @@ export const SidebarEditor = ({
               name: 'language',
               label: 'Language',
               type: 'select',
-              options: SUPPORTED_LANGUAGES.map(l => ({ label: l.label, value: l.value })),
+              options: SUPPORTED_LANGUAGES.map(l => ({
+                label: l.label,
+                value: l.value,
+              })),
               isClearable: false,
             },
             {
@@ -82,10 +85,17 @@ export const SidebarEditor = ({
               type: 'switch',
             },
             {
+              name: 'isBlogIndex',
+              label: 'Use as blog page',
+              type: 'switch',
+            },
+            {
               name: 'categories',
               label: 'Categories',
               type: 'multiselect',
-              placeholder: taxonomy.categories.length ? 'Select categories' : 'No categories yet',
+              placeholder: taxonomy.categories.length
+                ? 'Select categories'
+                : 'No categories yet',
               options: taxonomy.categories,
             },
             {
@@ -106,13 +116,19 @@ export const SidebarEditor = ({
             hint="The page goes live automatically at this time."
             error={formState.errors.scheduledAt?.message as string | undefined}
           >
-            <input id="scheduledAt" type="datetime-local" className={inputClass} {...register('scheduledAt')} />
+            <input
+              id="scheduledAt"
+              type="datetime-local"
+              className={inputClass}
+              {...register('scheduledAt')}
+            />
           </FieldShell>
         </div>
       )}
       {!canPublish && (
         <p className="mx-4 mt-4 rounded-md bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
-          Your role can save drafts and submit pages for review. An editor publishes them.
+          Your role can save drafts and submit pages for review. An editor
+          publishes them.
         </p>
       )}
     </div>

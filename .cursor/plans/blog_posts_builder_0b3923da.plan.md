@@ -4,19 +4,19 @@ overview: Add blog posts as their own content type, a filterable posts widget fo
 todos:
   - id: schema
     content: Add posts, contents, revisions, SEO, taxonomy joins, template columns, and preview postId; generate the migration
-    status: pending
+    status: completed
   - id: admin
     content: Posts list, edit form (body, media, taxonomy, SEO), layout switch, and nav entry using page permissions
-    status: pending
+    status: completed
   - id: widget
     content: BlogPosts block with inspector filters and public search-param filtering; wire isBlogIndex and a starter blog template
-    status: pending
+    status: completed
   - id: single-builder
     content: Shared single-post template and per-post canvas, with post-bound blocks reusing the page builder shell
-    status: pending
+    status: completed
   - id: public
     content: Public /blog/[slug] routes, preview, sitemap, cron publish, and /api/v1/posts
-    status: pending
+    status: completed
 isProject: false
 ---
 

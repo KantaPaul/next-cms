@@ -1,6 +1,7 @@
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import {
   boolean,
+  check,
   index,
   integer,
   jsonb,
@@ -21,6 +22,8 @@ import {
   menuLocationEnum,
   PageStatus,
   pageStatusEnum,
+  PostLayout,
+  postLayoutEnum,
   previewTokenStatusEnum,
   revisionKindEnum,
   VisibilityStatus,
@@ -38,10 +41,15 @@ export const pages = pgTable(
     title: varchar('title', { length: 255 }).notNull(),
     slug: varchar('slug', { length: 255 }).notNull(),
     status: pageStatusEnum().default(PageStatus.draft).notNull(),
-    visibility: visibilityStatusEnum().default(VisibilityStatus.public).notNull(),
-    editorType: editorTypeEnum('editor_type').default(EditorType.richtext).notNull(),
+    visibility: visibilityStatusEnum()
+      .default(VisibilityStatus.public)
+      .notNull(),
+    editorType: editorTypeEnum('editor_type')
+      .default(EditorType.richtext)
+      .notNull(),
     isHome: boolean('is_home').default(false).notNull(),
-    isBlogIndex: boolean('is_blog_index').default(false),
+    /** The page that lists posts for its language; post pages link back to it. */
+    isBlogIndex: boolean('is_blog_index').default(false).notNull(),
     language: text('language').default('en').notNull(),
     translationGroupId: text('translation_group_id'),
     publishedAt: timestamp('published_at', { withTimezone: true }),
@@ -93,19 +101,28 @@ export const pageRevisions = pgTable(
   t => [index('page_revisions_page_index').on(t.pageId, t.createdAt)]
 );
 
-export const previewTokens = pgTable('preview_tokens', {
-  id,
-  pageId: text('page_id')
-    .references(() => pages.id, cascade)
-    .notNull(),
-  token: text('token').notNull().unique(),
-  status: previewTokenStatusEnum('status').default('active').notNull(),
-  expiresAt: timestamp('expires_at', { withTimezone: true }),
-  viewCount: integer('view_count').default(0).notNull(),
-  lastAccessedAt: timestamp('last_accessed_at', { withTimezone: true }),
-  createdBy: text('created_by').references(() => users.id, setNull),
-  ...timestampColumns,
-});
+/** A token previews exactly one page or one post. */
+export const previewTokens = pgTable(
+  'preview_tokens',
+  {
+    id,
+    pageId: text('page_id').references(() => pages.id, cascade),
+    postId: text('post_id').references((): AnyPgColumn => posts.id, cascade),
+    token: text('token').notNull().unique(),
+    status: previewTokenStatusEnum('status').default('active').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    viewCount: integer('view_count').default(0).notNull(),
+    lastAccessedAt: timestamp('last_accessed_at', { withTimezone: true }),
+    createdBy: text('created_by').references(() => users.id, setNull),
+    ...timestampColumns,
+  },
+  t => [
+    check(
+      'preview_tokens_target_check',
+      sql`num_nonnulls(${t.pageId}, ${t.postId}) = 1`
+    ),
+  ]
+);
 
 export const seoMeta = pgTable('seo_meta', {
   id,
@@ -132,7 +149,10 @@ export const categories = pgTable('categories', {
   name: varchar('name', { length: 100 }).notNull(),
   slug: varchar('slug', { length: 150 }).notNull(),
   description: text('description'),
-  parentId: text('parent_id').references((): AnyPgColumn => categories.id, setNull),
+  parentId: text('parent_id').references(
+    (): AnyPgColumn => categories.id,
+    setNull
+  ),
   language: text('language').default('en'),
   createdBy: text('created_by')
     .references(() => users.id, cascade)
@@ -212,7 +232,10 @@ export const menuItems = pgTable(
     menuId: text('menu_id')
       .references(() => menus.id, cascade)
       .notNull(),
-    parentId: text('parent_id').references((): AnyPgColumn => menuItems.id, cascade),
+    parentId: text('parent_id').references(
+      (): AnyPgColumn => menuItems.id,
+      cascade
+    ),
     label: varchar('label', { length: 100 }).notNull(),
     url: varchar('url', { length: 500 }).notNull(),
     target: varchar('target', { length: 10 }).default('_self').notNull(),
@@ -251,7 +274,10 @@ export const siteSettings = pgTable('site_settings', {
   defaultOgImage: text('default_og_image'),
   headerMenuId: text('header_menu_id').references(() => menus.id, setNull),
   footerMenuId: text('footer_menu_id').references(() => menus.id, setNull),
-  themeTokens: jsonb('theme_tokens').$type<ThemeTokens>().default(DEFAULT_THEME_TOKENS).notNull(),
+  themeTokens: jsonb('theme_tokens')
+    .$type<ThemeTokens>()
+    .default(DEFAULT_THEME_TOKENS)
+    .notNull(),
   robotsTxt: text('robots_txt'),
   googleAnalyticsId: varchar('google_analytics_id', { length: 50 }),
   updatedAt: baseColumns.updatedAt,
@@ -271,7 +297,9 @@ export const pageTemplates = pgTable('page_templates', {
   name: varchar('name', { length: 150 }).notNull(),
   description: text('description'),
   category: varchar('category', { length: 50 }).default('Landing').notNull(),
-  editorType: editorTypeEnum('editor_type').default(EditorType.builder).notNull(),
+  editorType: editorTypeEnum('editor_type')
+    .default(EditorType.builder)
+    .notNull(),
   content: jsonb('content').notNull(),
   thumbnailUrl: text('thumbnail_url'),
   isSystem: boolean('is_system').default(false).notNull(),
@@ -305,6 +333,187 @@ export const apiKeys = pgTable('api_keys', {
   createdAt: baseColumns.createdAt,
 });
 
+/**
+ * Named single-post layouts. `content` is the live Puck data (null until first publish); `draftContent`
+ * autosaves. The one `isDefault` row applies to every `layout = template` post without a `templateId`.
+ */
+export const postTemplates = pgTable(
+  'post_templates',
+  {
+    id,
+    name: varchar('name', { length: 150 }).notNull(),
+    description: text('description'),
+    content: jsonb('content'),
+    draftContent: jsonb('draft_content'),
+    isDefault: boolean('is_default').default(false).notNull(),
+    createdBy: text('created_by').references(() => users.id, setNull),
+    ...timestampColumns,
+  },
+  t => [
+    uniqueIndex('post_templates_default_unique')
+      .on(t.isDefault)
+      .where(sql`${t.isDefault} = true`),
+  ]
+);
+
+export const posts = pgTable(
+  'posts',
+  {
+    id,
+    title: varchar('title', { length: 255 }).notNull(),
+    slug: varchar('slug', { length: 255 }).notNull(),
+    excerpt: text('excerpt'),
+    featuredImage: text('featured_image'),
+    status: pageStatusEnum().default(PageStatus.draft).notNull(),
+    visibility: visibilityStatusEnum()
+      .default(VisibilityStatus.public)
+      .notNull(),
+    layout: postLayoutEnum('layout').default(PostLayout.template).notNull(),
+    /** Null uses the default template. */
+    templateId: text('template_id').references(() => postTemplates.id, setNull),
+    language: text('language').default('en').notNull(),
+    translationGroupId: text('translation_group_id'),
+    publishedAt: timestamp('published_at', { withTimezone: true }),
+    scheduledAt: timestamp('scheduled_at', { withTimezone: true }),
+    createdBy: text('created_by')
+      .references(() => users.id, cascade)
+      .notNull(),
+    ...timestampColumns,
+  },
+  t => [
+    uniqueIndex('posts_slug_language_unique')
+      .on(t.slug, t.language)
+      .where(sql`${t.deletedAt} is null`),
+    index('posts_status_published_index').on(t.status, t.publishedAt),
+    index('posts_deleted_at_index').on(t.deletedAt),
+  ]
+);
+
+/** `body` is the rich-text article. `canvas` is Puck data, only used while the post's layout is `custom`. */
+export const postContents = pgTable(
+  'post_contents',
+  {
+    id,
+    postId: text('post_id')
+      .references(() => posts.id, cascade)
+      .notNull(),
+    kind: contentKindEnum('kind').default(ContentKind.draft).notNull(),
+    body: text('body').default('').notNull(),
+    canvas: jsonb('canvas'),
+    ...timestampColumns,
+  },
+  t => [uniqueIndex('post_contents_post_kind_unique').on(t.postId, t.kind)]
+);
+
+export const postRevisions = pgTable(
+  'post_revisions',
+  {
+    id,
+    postId: text('post_id')
+      .references(() => posts.id, cascade)
+      .notNull(),
+    kind: revisionKindEnum('kind').notNull(),
+    title: varchar('title', { length: 255 }).notNull(),
+    label: varchar('label', { length: 255 }),
+    layout: postLayoutEnum('layout').notNull(),
+    body: text('body'),
+    canvas: jsonb('canvas'),
+    authorId: text('author_id').references(() => users.id, setNull),
+    createdAt: baseColumns.createdAt,
+  },
+  t => [index('post_revisions_post_index').on(t.postId, t.createdAt)]
+);
+
+export const postSeo = pgTable('post_seo', {
+  id,
+  postId: text('post_id')
+    .references(() => posts.id, cascade)
+    .notNull()
+    .unique(),
+  title: varchar('title', { length: 255 }),
+  description: text('description'),
+  keywords: text('keywords'),
+  canonicalUrl: varchar('canonical_url', { length: 500 }),
+  ogTitle: varchar('og_title', { length: 255 }),
+  ogDescription: text('og_description'),
+  ogImage: varchar('og_image', { length: 500 }),
+  ogType: varchar('og_type', { length: 50 }),
+  twitterCard: varchar('twitter_card', { length: 50 }),
+  noIndex: boolean('no_index').default(false).notNull(),
+  structuredDataType: varchar('structured_data_type', { length: 50 }),
+  ...timestampColumns,
+});
+
+export const postCategories = pgTable(
+  'post_categories',
+  {
+    postId: text('post_id')
+      .references(() => posts.id, cascade)
+      .notNull(),
+    categoryId: text('category_id')
+      .references(() => categories.id, cascade)
+      .notNull(),
+  },
+  t => [
+    primaryKey({ columns: [t.postId, t.categoryId] }),
+    index('post_categories_category_index').on(t.categoryId),
+  ]
+);
+
+export const postTags = pgTable(
+  'post_tags',
+  {
+    postId: text('post_id')
+      .references(() => posts.id, cascade)
+      .notNull(),
+    tagId: text('tag_id')
+      .references(() => tags.id, cascade)
+      .notNull(),
+  },
+  t => [
+    primaryKey({ columns: [t.postId, t.tagId] }),
+    index('post_tags_tag_index').on(t.tagId),
+  ]
+);
+
+export const postsRelations = relations(posts, ({ one, many }) => ({
+  author: one(users, { fields: [posts.createdBy], references: [users.id] }),
+  template: one(postTemplates, {
+    fields: [posts.templateId],
+    references: [postTemplates.id],
+  }),
+  contents: many(postContents),
+  seo: one(postSeo, { fields: [posts.id], references: [postSeo.postId] }),
+  categories: many(postCategories),
+  tags: many(postTags),
+  revisions: many(postRevisions),
+}));
+
+export const postContentsRelations = relations(postContents, ({ one }) => ({
+  post: one(posts, { fields: [postContents.postId], references: [posts.id] }),
+}));
+
+export const postRevisionsRelations = relations(postRevisions, ({ one }) => ({
+  post: one(posts, { fields: [postRevisions.postId], references: [posts.id] }),
+  author: one(users, {
+    fields: [postRevisions.authorId],
+    references: [users.id],
+  }),
+}));
+
+export const postCategoriesRelations = relations(postCategories, ({ one }) => ({
+  post: one(posts, { fields: [postCategories.postId], references: [posts.id] }),
+  category: one(categories, {
+    fields: [postCategories.categoryId],
+    references: [categories.id],
+  }),
+}));
+
+export const postTagsRelations = relations(postTags, ({ one }) => ({
+  post: one(posts, { fields: [postTags.postId], references: [posts.id] }),
+  tag: one(tags, { fields: [postTags.tagId], references: [tags.id] }),
+}));
+
 export const pagesRelations = relations(pages, ({ one, many }) => ({
   author: one(users, { fields: [pages.createdBy], references: [users.id] }),
   contents: many(pageContents),
@@ -321,11 +530,15 @@ export const pageContentsRelations = relations(pageContents, ({ one }) => ({
 
 export const pageRevisionsRelations = relations(pageRevisions, ({ one }) => ({
   page: one(pages, { fields: [pageRevisions.pageId], references: [pages.id] }),
-  author: one(users, { fields: [pageRevisions.authorId], references: [users.id] }),
+  author: one(users, {
+    fields: [pageRevisions.authorId],
+    references: [users.id],
+  }),
 }));
 
 export const previewTokensRelations = relations(previewTokens, ({ one }) => ({
   page: one(pages, { fields: [previewTokens.pageId], references: [pages.id] }),
+  post: one(posts, { fields: [previewTokens.postId], references: [posts.id] }),
 }));
 
 export const pageCategoriesRelations = relations(pageCategories, ({ one }) => ({
@@ -349,10 +562,12 @@ export const categoriesRelations = relations(categories, ({ one, many }) => ({
   }),
   children: many(categories, { relationName: 'category_parent' }),
   pages: many(pageCategories),
+  posts: many(postCategories),
 }));
 
 export const tagsRelations = relations(tags, ({ many }) => ({
   pages: many(pageTags),
+  posts: many(postTags),
 }));
 
 export const menusRelations = relations(menus, ({ many }) => ({

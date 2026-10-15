@@ -1,0 +1,52 @@
+import { notFound, redirect } from 'next/navigation';
+import { PAGES } from '@/config/pages';
+import { PERMISSIONS } from '@/config/permissions';
+import { getCurrentUserAndTeamId } from '@/lib/auth';
+import { NotFoundException } from '@/lib/utils/error';
+import { metaObject } from '@/lib/utils/metadata';
+import { accessService } from '@/server/services/access.service';
+import { siteSettingsService } from '@/server/services/site-settings.service';
+import { postTemplatesService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
+import { BuilderLoader } from '@/app/(admin)/dashboard/(fullscreen)/pages/[id]/builder/_components/builder-loader';
+
+export const metadata = metaObject('Post template');
+
+export default async function PostTemplateBuilderPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const { userId } = await getCurrentUserAndTeamId();
+  const access = await accessService.getUserAccess(userId);
+  if (!accessService.can(access, PERMISSIONS.PAGES_PUBLISH))
+    redirect(PAGES.DASHBOARD.POSTS.INDEX);
+
+  const [template, settings] = await Promise.all([
+    postTemplatesService.getForEditor(id).catch(error => {
+      if (error instanceof NotFoundException) notFound();
+      throw error;
+    }),
+    siteSettingsService.get(),
+  ]);
+
+  return (
+    <BuilderLoader
+      kind="post-template"
+      page={{
+        id: template.id,
+        title: template.name,
+        slug: '',
+        language: 'en',
+        isHome: false,
+        status:
+          template.isPublished && !template.hasUnpublishedChanges
+            ? 'published'
+            : 'draft',
+        hasUnpublishedChanges: template.hasUnpublishedChanges,
+        content: template.draft,
+      }}
+      themeTokens={settings.themeTokens}
+    />
+  );
+}
