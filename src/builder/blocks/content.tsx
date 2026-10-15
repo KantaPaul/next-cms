@@ -4,7 +4,7 @@ import type { BuilderItem } from '../data';
 import { sanitizeRichText } from '../sanitize';
 import { BlockList } from './block-list';
 import { ContactFormClient } from './contact-form-client';
-import { Section, SectionHeading, type SectionSettings } from './section';
+import { MotionItem, Section, SectionHeading, type SectionSettings } from './section';
 
 type WithSection = { section?: SectionSettings; editing?: boolean };
 
@@ -134,12 +134,12 @@ export function Columns(p: ColumnsProps) {
   const slots = [p.column1, p.column2, p.column3, p.column4].slice(0, layout.count);
 
   return (
-    <Section section={p.section} editing={p.editing}>
+    <Section section={p.section} editing={p.editing} hasItems>
       <div className={cn('grid grid-cols-1 [&_section]:py-0 [&_section>div]:px-0', layout.grid, GAP[p.gap ?? 'md'], ALIGN[p.verticalAlign ?? 'start'])}>
         {slots.map((slot, i) => (
-          <div key={i} className="min-w-0">
+          <MotionItem key={i} className="min-w-0">
             {renderSlot(slot)}
-          </div>
+          </MotionItem>
         ))}
       </div>
     </Section>

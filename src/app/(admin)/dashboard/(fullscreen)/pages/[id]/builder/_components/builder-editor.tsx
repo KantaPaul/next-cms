@@ -22,7 +22,9 @@ import {
 } from '@/app/(admin)/dashboard/(shell)/pages/_components/use-autosave';
 import { RevisionsDrawer } from '@/app/(admin)/dashboard/(shell)/pages/_components/revisions-drawer';
 import { BuilderContext, type BuilderContextValue, type BuilderTarget } from './builder-context';
-import { BuilderActionBar, BuilderHeaderActions } from './builder-chrome';
+import { BuilderActionBar } from './builder-chrome';
+import { BuilderShell } from './builder-shell';
+import { InspectorFields } from './selection-card';
 
 export type BuilderPageProps = {
   page: {
@@ -39,7 +41,7 @@ export type BuilderPageProps = {
 };
 
 const overrides = {
-  headerActions: () => <BuilderHeaderActions />,
+  fields: InspectorFields,
   actionBar: ({ children, label, parentAction }: { children: React.ReactNode; label?: string; parentAction: React.ReactNode }) => (
     <BuilderActionBar label={label} parentAction={parentAction}>
       {children}
@@ -59,6 +61,8 @@ export function BuilderEditor({ page, themeTokens }: BuilderPageProps) {
   const [aiGenerateOpen, setAiGenerateOpen] = useState(false);
   const [rewriteTarget, setRewriteTarget] = useState<BuilderTarget | null>(null);
   const [globalTarget, setGlobalTarget] = useState<BuilderTarget | null>(null);
+  const [motionPreview, setMotionPreview] = useState(false);
+  const metadata = useMemo(() => ({ themeTokens, motionPreview }), [themeTokens, motionPreview]);
 
   useEffect(() => {
     if (!aiEnabled) return;
@@ -141,11 +145,13 @@ export function BuilderEditor({ page, themeTokens }: BuilderPageProps) {
     setRewriteTarget,
     globalTarget,
     setGlobalTarget,
+    motionPreview,
+    setMotionPreview,
   };
 
   return (
     <BuilderContext.Provider value={value}>
-      <div data-theme="light" className="h-screen bg-white text-steel-700 [&_[class*='Puck--']]:h-full">
+      <div data-theme="light" className="h-screen overflow-hidden bg-white text-steel-700 [color-scheme:light]">
         <Puck
           config={builderConfig}
           data={initialData}
@@ -154,9 +160,11 @@ export function BuilderEditor({ page, themeTokens }: BuilderPageProps) {
           headerTitle={page.title}
           headerPath={PAGES.SITE.page(page.slug, page.language, page.isHome)}
           viewports={BUILDER_VIEWPORTS}
-          metadata={{ themeTokens }}
+          metadata={metadata}
           iframe={{ enabled: true }}
-        />
+        >
+          <BuilderShell />
+        </Puck>
       </div>
       <RevisionsDrawer
         open={revisionsOpen}

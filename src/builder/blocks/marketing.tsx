@@ -1,7 +1,7 @@
 import { Check, Quote } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { BlockIcon } from '../icons';
-import { ButtonLink, Section, SectionHeading, type SectionSettings } from './section';
+import { ButtonLink, MotionItem, Section, SectionHeading, type SectionSettings } from './section';
 import { PricingToggle } from './pricing-toggle';
 
 type WithSection = { section?: SectionSettings; editing?: boolean };
@@ -66,11 +66,11 @@ const GRID_COLS = { 2: 'md:grid-cols-2', 3: 'md:grid-cols-2 lg:grid-cols-3', 4: 
 
 export function Features(p: FeaturesProps) {
   return (
-    <Section section={p.section} editing={p.editing}>
+    <Section section={p.section} editing={p.editing} hasItems>
       <SectionHeading eyebrow={p.eyebrow} title={p.title} subtitle={p.subtitle} />
       <div className={cn('grid gap-6', GRID_COLS[p.columns ?? 3])}>
         {(p.items ?? []).map((item, i) => (
-          <div key={i} className="s-surface s-border s-radius border p-6">
+          <MotionItem key={i} className="s-surface s-border s-radius border p-6">
             {item.icon && (
               <div className="s-soft-primary s-radius mb-4 inline-flex p-2.5">
                 <BlockIcon name={item.icon} className="size-5" />
@@ -78,7 +78,7 @@ export function Features(p: FeaturesProps) {
             )}
             <h3 className="text-lg font-semibold">{item.title}</h3>
             {item.description && <p className="s-muted mt-2 leading-relaxed">{item.description}</p>}
-          </div>
+          </MotionItem>
         ))}
       </div>
     </Section>
@@ -92,15 +92,15 @@ export type StatsProps = WithSection & {
 
 export function Stats(p: StatsProps) {
   return (
-    <Section section={p.section} editing={p.editing}>
+    <Section section={p.section} editing={p.editing} hasItems>
       {p.headline && <p className="s-muted mb-8 text-center text-sm font-semibold uppercase tracking-wider">{p.headline}</p>}
       <dl className="grid grid-cols-2 gap-6 lg:grid-cols-4">
         {(p.items ?? []).map((item, i) => (
-          <div key={i} className="flex flex-col text-center">
+          <MotionItem key={i} className="flex flex-col text-center">
             <dt className="order-2 mt-1 text-sm font-medium">{item.label}</dt>
             <dd className="s-primary-text order-1 text-3xl font-extrabold md:text-4xl">{item.value}</dd>
             {item.change && <dd className="s-muted order-3 mt-1 text-xs">{item.change}</dd>}
-          </div>
+          </MotionItem>
         ))}
       </dl>
     </Section>
@@ -136,7 +136,7 @@ export function Pricing(p: PricingProps) {
   const cards = (yearly: boolean) => (
     <div className={cn('grid gap-6', plans.length >= 3 ? 'lg:grid-cols-3' : 'md:grid-cols-2', 'items-stretch')}>
       {plans.map((plan, i) => (
-        <div
+        <MotionItem
           key={i}
           className={cn(
             's-radius relative flex flex-col border p-7',
@@ -169,13 +169,13 @@ export function Pricing(p: PricingProps) {
               </ButtonLink>
             </div>
           )}
-        </div>
+        </MotionItem>
       ))}
     </div>
   );
 
   return (
-    <Section section={p.section} editing={p.editing}>
+    <Section section={p.section} editing={p.editing} hasItems>
       <SectionHeading eyebrow={p.eyebrow} title={p.title} subtitle={p.subtitle} />
       {p.showToggle && hasYearly ? <PricingToggle monthly={cards(false)} yearly={cards(true)} /> : cards(false)}
     </Section>
@@ -190,11 +190,11 @@ export type TestimonialsProps = WithSection & {
 
 export function Testimonials(p: TestimonialsProps) {
   return (
-    <Section section={p.section} editing={p.editing}>
+    <Section section={p.section} editing={p.editing} hasItems>
       <SectionHeading eyebrow={p.eyebrow} title={p.title} />
       <div className="grid gap-6 md:grid-cols-2">
         {(p.items ?? []).map((item, i) => (
-          <figure key={i} className="s-surface s-border s-radius flex flex-col border p-7">
+          <MotionItem as="figure" key={i} className="s-surface s-border s-radius flex flex-col border p-7">
             <Quote className="s-primary-text mb-4 size-6" aria-hidden />
             <blockquote className="flex-1 text-lg leading-relaxed">“{item.quote}”</blockquote>
             <figcaption className="mt-6 flex items-center gap-3">
@@ -209,7 +209,7 @@ export function Testimonials(p: TestimonialsProps) {
                 )}
               </div>
             </figcaption>
-          </figure>
+          </MotionItem>
         ))}
       </div>
     </Section>
@@ -224,11 +224,11 @@ export type FaqProps = WithSection & {
 
 export function Faq(p: FaqProps) {
   return (
-    <Section section={p.section} editing={p.editing} innerClassName="max-w-3xl">
+    <Section section={p.section} editing={p.editing} innerClassName="max-w-3xl" hasItems>
       <SectionHeading eyebrow={p.eyebrow} title={p.title} />
       <div className="s-border divide-y divide-[color:var(--site-border)] border-y">
         {(p.items ?? []).map((item, i) => (
-          <details key={i} className="group py-5" open={p.editing && i === 0}>
+          <MotionItem as="details" key={i} className="group py-5" open={p.editing && i === 0}>
             <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold">
               {item.question}
               <span className="s-muted text-xl transition group-open:rotate-45" aria-hidden>
@@ -236,7 +236,7 @@ export function Faq(p: FaqProps) {
               </span>
             </summary>
             <p className="s-muted mt-3 leading-relaxed">{item.answer}</p>
-          </details>
+          </MotionItem>
         ))}
       </div>
     </Section>

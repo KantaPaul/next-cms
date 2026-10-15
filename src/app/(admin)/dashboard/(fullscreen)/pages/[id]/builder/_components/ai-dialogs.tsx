@@ -169,12 +169,11 @@ export function AiRewriteDialog({ target, onClose }: { target: BuilderTarget | n
   const [tone, setTone] = useState('');
   const [nextProps, setNextProps] = useState<Record<string, unknown> | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [view, setView] = useState(target);
+  if (target && target !== view) setView(target);
+  const instruction = view?.instruction;
 
-  useEffect(() => {
-    setNextProps(null);
-  }, [target]);
-
-  const before = target ? collectCopy(target.props) : {};
+  const before = view ? collectCopy(view.props) : {};
   const after = nextProps ? collectCopy(nextProps) : {};
   const changed = Object.keys(after).filter(key => after[key] !== before[key]);
 
@@ -182,10 +181,22 @@ export function AiRewriteDialog({ target, onClose }: { target: BuilderTarget | n
     startTransition(async () => {
       if (!target) return;
       await handleActionResponse(
-        await rewriteBlock({ props: target.props, mode, language: mode === 'translate' ? language : undefined, tone: tone || undefined }),
+        await rewriteBlock({
+          props: target.props,
+          mode: instruction ? 'rewrite' : mode,
+          language: !instruction && mode === 'translate' ? language : undefined,
+          tone: tone || undefined,
+          instruction,
+        }),
         value => setNextProps((value as { props: Record<string, unknown> }).props)
       );
     });
+
+  useEffect(() => {
+    setNextProps(null);
+    if (target?.instruction) generate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target]);
 
   const apply = () => {
     if (!target || !nextProps) return;
@@ -212,11 +223,21 @@ export function AiRewriteDialog({ target, onClose }: { target: BuilderTarget | n
       <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="size-5 text-violet-500" /> Rewrite {target?.type} with AI
+            <Sparkles className="size-5 text-violet-500" /> {instruction ? 'Change' : 'Rewrite'} {view?.type} with AI
           </DialogTitle>
           <DialogDescription>Only the text changes. Links, images, and layout settings stay the same.</DialogDescription>
         </DialogHeader>
 
+        {instruction ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="min-w-0 flex-1 rounded-md bg-violet-50 px-3 py-2 text-sm text-violet-900 dark:bg-violet-950/40 dark:text-violet-100">
+              {instruction}
+            </p>
+            <Button type="button" variant="outline" onClick={generate} disabled={isPending}>
+              {isPending ? <Loader2 className="animate-spin" /> : <Sparkles />} Try again
+            </Button>
+          </div>
+        ) : (
         <div className="flex flex-wrap items-end gap-3">
           <div role="radiogroup" aria-label="Rewrite mode" className="flex gap-1 rounded-md border border-steel-200 p-1 dark:border-dark-300">
             {MODES.map(m => (
@@ -247,6 +268,13 @@ export function AiRewriteDialog({ target, onClose }: { target: BuilderTarget | n
             {isPending ? <Loader2 className="animate-spin" /> : <Sparkles />} {nextProps ? 'Try again' : 'Generate'}
           </Button>
         </div>
+        )}
+
+        {isPending && !nextProps && instruction && (
+          <p className="flex items-center gap-2 text-sm text-steel-500">
+            <Loader2 className="size-4 animate-spin" /> Writing the change…
+          </p>
+        )}
 
         {nextProps && (
           <div className="flex-1 overflow-y-auto">

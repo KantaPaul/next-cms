@@ -60,6 +60,7 @@ const rewriteSchema = z.object({
   mode: z.enum(['rewrite', 'shorten', 'expand', 'translate']),
   language: z.string().optional(),
   tone: z.string().max(60).optional(),
+  instruction: z.string().trim().max(300).optional(),
 });
 
 export const rewriteBlock = aiProcedure.input(rewriteSchema).action(async ({ input }) => {
@@ -68,8 +69,11 @@ export const rewriteBlock = aiProcedure.input(rewriteSchema).action(async ({ inp
   if (!keys.length) throw new ApplicationException('This block has no text to rewrite.');
 
   const target = input.mode === 'translate' ? ` into ${languageName(input.language)}` : '';
+  const task = input.instruction
+    ? `Apply this change requested by the editor to the texts, and leave texts it does not concern unchanged: ${JSON.stringify(input.instruction)}.`
+    : `${REWRITE_INSTRUCTIONS[input.mode]}${target}`;
   const result = await generateJson(
-    `${REWRITE_INSTRUCTIONS[input.mode]}${target}${input.tone ? ` Use a ${input.tone} tone.` : ''}
+    `${task}${input.tone ? ` Use a ${input.tone} tone.` : ''}
 Keep any HTML tags exactly as they are and only change the text between them.
 Return a JSON object with exactly the same keys as the input and the new text as values.
 Input:

@@ -3,7 +3,13 @@
 import { createContext, useContext } from 'react';
 import type { AutosaveStatus } from '@/app/(admin)/dashboard/(shell)/pages/_components/use-autosave';
 
-export type BuilderTarget = { id: string; type: string; props: Record<string, unknown> & { id: string } };
+export type BuilderTarget = {
+  id: string;
+  type: string;
+  props: Record<string, unknown> & { id: string };
+  /** Free-form change from the inspector's "Describe a change" box. */
+  instruction?: string;
+};
 
 export type BuilderContextValue = {
   pageId: string;
@@ -24,6 +30,8 @@ export type BuilderContextValue = {
   setRewriteTarget: (target: BuilderTarget | null) => void;
   globalTarget: BuilderTarget | null;
   setGlobalTarget: (target: BuilderTarget | null) => void;
+  motionPreview: boolean;
+  setMotionPreview: (on: boolean) => void;
 };
 
 export const BuilderContext = createContext<BuilderContextValue | null>(null);

@@ -6,8 +6,11 @@ import type { BuilderItem } from './data';
 import { Columns, ContactForm, GlobalRef, ImageBlock, RichText } from './blocks/content';
 import { Cta, Faq, Features, Hero, Pricing, Stats, Testimonials } from './blocks/marketing';
 import { DEFAULT_SECTION } from './blocks/section';
+import { PageTransitionField } from './controls/page-transition';
+import { SectionField } from './controls/section-inspector';
 import { GlobalBlockSelectField, MediaUrlField, RichTextField } from './fields/client-fields';
 import { ICON_OPTIONS } from './icons';
+import { MotionScope } from './motion';
 import { fontStylesheetUrl, resolveThemeTokens, themeStyle } from './theme';
 
 /* ---------- field helpers ---------- */
@@ -29,28 +32,8 @@ const yesNo = (label: string): Field => ({
 });
 const media = (label: string): Field => ({ type: 'custom', label, render: MediaUrlField as never });
 
-const sectionField: Field = {
-  type: 'object',
-  label: 'Section & responsive',
-  objectFields: {
-    paddingY: select('Vertical padding', [
-      { label: 'None', value: 'none' },
-      { label: 'Small', value: 'sm' },
-      { label: 'Medium', value: 'md' },
-      { label: 'Large', value: 'lg' },
-    ]),
-    background: select('Background', [
-      { label: 'Page default', value: 'default' },
-      { label: 'Muted', value: 'muted' },
-      { label: 'Primary color', value: 'primary' },
-      { label: 'Dark', value: 'dark' },
-    ]),
-    anchor: text('Anchor id (for #links)'),
-    hideOnMobile: yesNo('Hide on mobile'),
-    hideOnTablet: yesNo('Hide on tablet'),
-    hideOnDesktop: yesNo('Hide on desktop'),
-  },
-};
+/** Style, layout, and motion for every block. The floating inspector shows it as the Style and Layout tabs. */
+const sectionField: Field = { type: 'custom', label: 'Section', render: SectionField as never };
 
 const withSection = (fields: Fields): Fields => ({ ...fields, section: sectionField });
 
@@ -66,6 +49,7 @@ export type RootProps = {
   maxWidth?: 'md' | 'lg' | 'xl' | 'full';
   theme?: 'site' | 'default' | 'light' | 'dark';
   paddingY?: 'none' | 'sm' | 'md' | 'lg';
+  pageTransition?: 'none' | 'fade' | 'slide-up';
 };
 
 const MAX_WIDTH = { md: '48rem', lg: '64rem', xl: '72rem', full: '100%' };
@@ -111,12 +95,14 @@ export const builderConfig: Config = {
         { label: 'Medium', value: 'md' },
         { label: 'Large', value: 'lg' },
       ]),
+      pageTransition: { type: 'custom', label: 'Page transition', render: PageTransitionField as never },
     },
-    defaultProps: { maxWidth: 'xl', theme: 'site', paddingY: 'none' },
-    render: ({ children, maxWidth, theme, paddingY, puck }: AnyProps) => {
+    defaultProps: { maxWidth: 'xl', theme: 'site', paddingY: 'none', pageTransition: 'none' },
+    render: ({ children, maxWidth, theme, paddingY, pageTransition, puck }: AnyProps) => {
       const tokens = resolveThemeTokens(puck?.metadata?.themeTokens);
       const mode = theme === 'light' || theme === 'dark' ? theme : tokens.colorMode === 'dark' ? 'dark' : 'light';
       const fontUrl = fontStylesheetUrl(tokens);
+      const editing = !!puck?.isEditing;
 
       return (
         <div
@@ -128,7 +114,14 @@ export const builderConfig: Config = {
           }}
         >
           {fontUrl && <link rel="stylesheet" href={fontUrl} />}
-          {children}
+          {!editing && (
+            <noscript>
+              <style>{'[data-motion]{opacity:1!important;transform:none!important;filter:none!important}'}</style>
+            </noscript>
+          )}
+          <MotionScope editing={editing} preview={!!puck?.metadata?.motionPreview} transition={pageTransition}>
+            {children}
+          </MotionScope>
         </div>
       );
     },

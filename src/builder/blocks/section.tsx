@@ -1,14 +1,10 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils/cn';
+import { MotionBoundary, MotionSection } from '../motion';
+import { resolveAnimation, resolveSectionStyle, type SectionSettings } from '../style';
 
-export type SectionSettings = {
-  paddingY?: 'none' | 'sm' | 'md' | 'lg';
-  background?: 'default' | 'muted' | 'primary' | 'dark';
-  hideOnMobile?: boolean;
-  hideOnTablet?: boolean;
-  hideOnDesktop?: boolean;
-  anchor?: string;
-};
+export type { SectionSettings } from '../style';
+export { MotionItem } from '../motion';
 
 export const DEFAULT_SECTION: SectionSettings = {
   paddingY: 'md',
@@ -33,19 +29,24 @@ const BACKGROUND = {
   dark: 's-section-dark',
 };
 
-/** Outer wrapper shared by every block: spacing, background, anchors, and responsive visibility. */
+/**
+ * Outer wrapper shared by every block: spacing, background, style, anchors, responsive visibility, and motion.
+ * `hasItems` marks blocks whose repeated children use `MotionItem`, so stagger and hover target those children.
+ */
 export function Section({
   section,
   children,
   className,
   innerClassName,
   editing,
+  hasItems,
 }: {
   section?: SectionSettings;
   children: ReactNode;
   className?: string;
   innerClassName?: string;
   editing?: boolean;
+  hasItems?: boolean;
 }) {
   const s = { ...DEFAULT_SECTION, ...section };
   const hidden = cn(
@@ -53,13 +54,35 @@ export function Section({
     s.hideOnTablet && (editing ? 'md:max-lg:opacity-30' : 'md:max-lg:hidden'),
     s.hideOnDesktop && (editing ? 'lg:opacity-30' : 'lg:hidden')
   );
+  const styles = resolveSectionStyle(s);
+  const outer = cn(
+    PADDING[s.paddingY ?? 'md'],
+    !styles.hasFill && BACKGROUND[s.background ?? 'default'],
+    styles.outerClasses,
+    hidden,
+    className
+  );
+  const inner = cn('mx-auto w-full max-w-[var(--site-max-width,72rem)] px-5 md:px-8', styles.innerClasses, innerClassName);
+  const animation = resolveAnimation(s.animation);
+
+  if (animation) {
+    return (
+      <MotionSection
+        animation={animation}
+        hasItems={hasItems}
+        id={s.anchor || undefined}
+        className={outer}
+        innerClassName={inner}
+        style={styles.style}
+      >
+        {children}
+      </MotionSection>
+    );
+  }
 
   return (
-    <section
-      id={s.anchor || undefined}
-      className={cn(PADDING[s.paddingY ?? 'md'], BACKGROUND[s.background ?? 'default'], hidden, className)}
-    >
-      <div className={cn('mx-auto w-full max-w-[var(--site-max-width,72rem)] px-5 md:px-8', innerClassName)}>{children}</div>
+    <section id={s.anchor || undefined} className={outer} style={styles.style}>
+      <div className={inner}>{hasItems ? <MotionBoundary>{children}</MotionBoundary> : children}</div>
     </section>
   );
 }
