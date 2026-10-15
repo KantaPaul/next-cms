@@ -1,66 +1,49 @@
 'use client';
 
-import { MenuButton } from '@headlessui/react';
-
+import * as React from 'react';
 import Avatar from '@/components/atoms/avatar';
-import { cn } from '@/lib/utils/cn';
-import { ChevronsUpDown, Ellipsis, Loader2 } from 'lucide-react';
-import type { User } from '@/db/schema';
 import { Flex } from '@/components/atoms/layout';
+import type { User } from '@/db/schema';
+import { cn } from '@/lib/utils/cn';
+import { ChevronsUpDown, Loader2 } from 'lucide-react';
 
-// import { ChevronDownIcon } from '@heroicons/react/24/solid';
-
-export const MenuTrigger = ({
-  className,
-  user,
-  isLoading,
-}: {
-  className?: string;
-  user: User;
-  isLoading?: boolean;
-}) => {
+export const MenuTrigger = React.forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    user: User;
+    isLoading?: boolean;
+  }
+>(({ className, user, isLoading, ...props }, ref) => {
   const userAvatar = user?.image;
 
   return (
-    <MenuButton
+    <button
+      ref={ref}
+      type="button"
       disabled={isLoading}
       className={cn(
-        'dark:bg-dark-300 h-10 gap-3 bg-slate-50 px-3',
-        className,
-        isLoading
-          ? 'hover:bg-steel-50 dark:hover:bg-dark-300'
-          : 'hover:bg-steel-100 dark:hover:bg-dark-400'
+        'flex h-10 items-center gap-3 rounded-md border border-border bg-card px-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+        className
       )}
+      {...props}
     >
       {isLoading ? (
-        <span className="progressive-dots flex items-center">
-          <Loader2 className="me-1.5 animate-spin" size={18} /> Logging Out
+        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" /> Logging Out
         </span>
       ) : (
-        <Flex>
+        <Flex align="center" className="gap-2">
           <Avatar
             src={userAvatar}
             name={user?.name}
-            className="[&>div]:size-6 [&>span]:size-6 [&>span]:text-base"
+            className="[&>div]:size-6 [&>span]:size-6 [&>span]:text-xs"
           />
-          <span className="hidden shrink-0 md:flex">{user?.name}</span>
-          <ChevronsUpDown className="ml-auto hidden size-4 md:flex" />
+          <span className="hidden shrink-0 font-medium md:flex">{user?.name}</span>
+          <ChevronsUpDown className="ml-auto hidden size-4 opacity-50 md:flex" />
         </Flex>
       )}
-
-      {/* <Text className="whitespace-nowrap">{titleCase(user.name)}</Text>
-      <Avatar
-        src={userAvatar}
-        name={user?.name}
-        className="[&>span]:h-6 [&>span]:w-6 [&>span]:text-base"
-      /> */}
-      {/* <Avatar
-        name={user?.name ?? 'User'}
-        src={userAvatar}
-        // className="w-6 h-6 text-lg"
-        className="[&>span]:h-6 [&>span]:w-6 [&>span]:text-base"
-      /> */}
-      {/* <ChevronDownIcon className="w-5 h-5 text-steel-400" aria-hidden="true" /> */}
-    </MenuButton>
+    </button>
   );
-};
+});
+
+MenuTrigger.displayName = 'MenuTrigger';

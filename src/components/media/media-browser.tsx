@@ -2,7 +2,7 @@
 
 import { FileText, Film, Folder, Loader2, Search, Upload } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { listMedia } from '@/app/(admin)/dashboard/(shell)/media/_modules/media.actions';
 import type { MediaItem } from '@/app/(admin)/dashboard/(shell)/media/_modules/media.service';

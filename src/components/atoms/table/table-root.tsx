@@ -1,5 +1,4 @@
 import { forwardRef } from 'react';
-
 import { cn } from '@/lib/utils/cn';
 
 interface TableProps extends React.HTMLAttributes<HTMLTableElement> {
@@ -11,7 +10,7 @@ export const TableRoot = forwardRef<HTMLTableElement, TableProps>(({ className, 
     <table
       ref={ref}
       className={cn(
-        'Table-table w-full table-fixed border-spacing-0 border-steel-200 border-y dark:border-steel-600',
+        'Table-table w-full table-fixed border-spacing-0 border-border border-y text-sm',
         className
       )}
       {...rest}

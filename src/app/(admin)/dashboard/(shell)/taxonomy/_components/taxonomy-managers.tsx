@@ -3,7 +3,7 @@
 import { Loader2, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition, type FormEvent, type ReactNode } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import { slugify } from '@/lib/utils/slugify';

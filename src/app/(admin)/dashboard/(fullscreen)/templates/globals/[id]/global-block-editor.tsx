@@ -6,7 +6,7 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useRef, useState, useTransition } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { builderConfig, BUILDER_VIEWPORTS } from '@/builder/config';
 import type { BuilderItem } from '@/builder/data';
@@ -48,7 +48,7 @@ export function GlobalBlockEditor({ block, themeTokens }: GlobalBlockEditorProps
     });
 
   return (
-    <div data-theme="light" className="h-screen bg-white text-steel-700 [&_[class*='Puck--']]:h-full">
+    <div data-theme="light" className="h-screen bg-background text-foreground [&_[class*='Puck--']]:h-full">
       <Puck
         config={globalConfig}
         data={initialData}
@@ -66,7 +66,7 @@ export function GlobalBlockEditor({ block, themeTokens }: GlobalBlockEditorProps
                 </Link>
               </Button>
               {dirty && <span className="hidden text-xs text-amber-600 lg:inline">Unsaved changes</span>}
-              <Button type="button" size="sm" className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={save} disabled={!dirty || isPending}>
+              <Button type="button" size="sm" onClick={save} disabled={!dirty || isPending}>
                 {isPending && <Loader2 className="animate-spin" />} Save global block
               </Button>
             </div>

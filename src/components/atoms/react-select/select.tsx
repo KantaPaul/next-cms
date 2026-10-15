@@ -1,38 +1,26 @@
 'use client';
 
-// import { useAtomValue } from 'jotai';
-import has from 'lodash/has';
-import isEmpty from 'lodash/isEmpty';
-import isPlainObject from 'lodash/isPlainObject';
-import omit from 'lodash/omit';
-import { type ForwardedRef, forwardRef, useCallback, useId } from 'react';
-import ReSelect, {
-  type ActionMeta,
-  type GroupBase,
-  type OnChangeValue,
-  type Props,
-  type SelectInstance,
-} from 'react-select';
+import * as React from 'react';
+import { Check, ChevronsUpDown, Loader2, X } from 'lucide-react';
 import { FieldError, Label } from '@/components/atoms/forms';
-// import { FieldError } from '@/components/atoms/forms/helper/field-error-text';
-// import FieldHelperText from '@/components/atoms/forms/helper/field-helper-text';
-import { Box } from '@/components/atoms/layout';
-import {
-  ClearIndicator,
-  CustomOption,
-  DropdownIndicator,
-  formatGroupLabel,
-  LoadingIndicator,
-  MultiValue,
-  Placeholder,
-  SingleValue,
-} from '@/components/atoms/react-select/components';
-// import { FULLSCREEN_TARGET } from '@/config/constant';
-// import { fullscreenStateAtom } from '@/lib/atoms/fullscreen';
-// import { useModal } from '@/lib/store/modal.store';
-import { getSafeDocumentBody, getSafeElementById } from '@/lib/utils/browser-only';
-import { cn } from '@/lib/utils/cn';
 import FieldHelperText from '@/components/atoms/forms/helpers/field-helper-text';
+import { Box } from '@/components/atoms/layout';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { cn } from '@/lib/utils/cn';
 
 export type Option = {
   label: string;
@@ -43,17 +31,19 @@ export type Option = {
 };
 
 export const sizes = {
-  sm: ' h-9 px-2',
-  md: ' h-10 px-2.5',
-  lg: ' h-10 md:px-3 3xl:px-3.5 xl:h-11 5xl:h-12',
+  sm: 'h-8 text-xs px-2.5 py-1',
+  md: 'h-9 text-sm px-3 py-1.5',
+  lg: 'h-10 text-sm px-3.5 py-2',
 };
+
 export type Size = keyof typeof sizes;
 
 export interface SelectProps<
-  Option,
+  TOption = Option,
   IsMulti extends boolean = false,
-  Group extends GroupBase<Option> = GroupBase<Option>,
-> extends Props<Option, IsMulti, Group> {
+  _Group = any,
+> {
+  value?: any;
   error?: string;
   label?: string;
   size?: Size;
@@ -69,29 +59,61 @@ export interface SelectProps<
   singleValueClassName?: string;
   selectedItemCount?: number;
   onClear?: () => void;
+  isMulti?: IsMulti;
+  isSearchable?: boolean;
+  isClearable?: boolean;
+  isDisabled?: boolean;
+  isLoading?: boolean;
+  className?: string;
+  classNames?: any;
+  placeholder?: string;
+  options?: any;
+  onChange?: (newValue: any, actionMeta?: any) => void;
+  onBlur?: (e: any) => void;
+  onFocus?: (e: any) => void;
+  name?: string;
+  id?: string;
+  menuPlacement?: 'auto' | 'bottom' | 'top';
+  [key: string]: any;
 }
 
-// Define a constant for the "Select All" option
-const SELECT_ALL_OPTION: Option = { label: 'Select All', value: '*' };
+type GroupOption = {
+  label?: string;
+  options: Option[];
+};
 
-export const ReactSelect = forwardRef(
-  <Option, IsMulti extends boolean = false, Group extends GroupBase<Option> = GroupBase<Option>>(
-    props: SelectProps<Option, IsMulti, Group>,
-    ref: ForwardedRef<SelectInstance<Option, IsMulti, Group>>
-  ) => {
+function normalizeOptions(options: any): { flat: Option[]; groups: GroupOption[] } {
+  if (!options || !Array.isArray(options)) {
+    return { flat: [], groups: [] };
+  }
+
+  if (options.length > 0 && Array.isArray(options[0]?.options)) {
+    const groups = options as GroupOption[];
+    const flat = groups.flatMap((g) => g.options || []);
+    return { flat, groups };
+  }
+
+  const flat = options as Option[];
+  return { flat, groups: [{ options: flat }] };
+}
+
+export function ReactSelect({
+  ref,
+  ...props
+}: SelectProps<Option, boolean> & { ref?: React.Ref<HTMLButtonElement> }) {
     const {
       value,
       error,
       label,
       size = 'lg',
       variant = 'outline',
-      isMulti,
+      isMulti = false,
       prefix,
       isReadOnly,
       isRequired,
       helperText,
       helperClassName,
-      selectedItemCount,
+      selectedItemCount = 3,
       labelClassName,
       isSearchable = true,
       isClearable,
@@ -99,191 +121,251 @@ export const ReactSelect = forwardRef(
       errorClassName,
       onClear,
       className,
-      classNames,
-      singleValueClassName,
+      placeholder = 'Select...',
       allowSelectAll,
       options,
       onChange,
       isLoading,
-      ...rest
+      id,
     } = props;
-    // const isFullscreen = useAtomValue(fullscreenStateAtom);
-    // const portalTarget = getSafeElementById(FULLSCREEN_TARGET);
 
-    // Add the "Select All" option for multi-select if allowSelectAll is true
-    const enhancedOptions = useCallback(() => {
-      if (isMulti && allowSelectAll && options) {
-        return [SELECT_ALL_OPTION, ...(Array.isArray(options) ? options : [])];
+    const [open, setOpen] = React.useState(false);
+    const [searchValue, setSearchValue] = React.useState('');
+
+    const { flat: allOptions, groups } = React.useMemo(
+      () => normalizeOptions(options),
+      [options]
+    );
+
+    // Selected values extraction
+    const selectedValues: string[] = React.useMemo(() => {
+      if (value === undefined || value === null || value === '') return [];
+      if (Array.isArray(value)) {
+        return value.map((v) => (typeof v === 'object' && v !== null ? v.value : String(v)));
       }
-
-      return options;
-    }, [allowSelectAll, isMulti, options]);
-
-    function handleOnChange(
-      newValue: OnChangeValue<Option, IsMulti>,
-      actionMeta: ActionMeta<Option>
-    ) {
-      if (!onChange) return;
-
-      // Only handle Select All for multi-select
-      if (!(isMulti && allowSelectAll)) {
-        onChange(newValue, actionMeta);
-        return;
+      if (typeof value === 'object' && value !== null) {
+        return value.value !== undefined ? [String(value.value)] : [];
       }
+      return [String(value)];
+    }, [value]);
 
-      // Handle Select All option
-      if (
-        isPlainObject(actionMeta.option) &&
-        has(actionMeta.option, 'value') &&
-        actionMeta.option.value === '*'
-      ) {
-        // If Select All is clicked and there are already selections, clear everything
-        if (Array.isArray(value) && value.length > 0) {
-          onChange([] as OnChangeValue<Option, IsMulti>, actionMeta);
+    const selectedOptions: Option[] = React.useMemo(() => {
+      return selectedValues.map((val) => {
+        const found = allOptions.find((opt) => String(opt.value) === val);
+        return found ?? { label: val, value: val };
+      });
+    }, [selectedValues, allOptions]);
+
+    const isAllSelected =
+      allOptions.length > 0 &&
+      allOptions.every((opt) => selectedValues.includes(String(opt.value)));
+    const isIndeterminate =
+      !isAllSelected &&
+      allOptions.some((opt) => selectedValues.includes(String(opt.value)));
+
+    const handleSelectOption = (opt: Option) => {
+      const optVal = String(opt.value);
+      if (isMulti) {
+        let updated: Option[];
+        const exists = selectedValues.includes(optVal);
+        if (exists) {
+          updated = selectedOptions.filter((o) => String(o.value) !== optVal);
+          onChange?.(updated, { action: 'deselect-option', option: opt });
         } else {
-          // Otherwise select all options except Select All
-          const allOptions = Array.isArray(options) ? options : [];
-          onChange(allOptions as OnChangeValue<Option, IsMulti>, actionMeta);
+          updated = [...selectedOptions, opt];
+          onChange?.(updated, { action: 'select-option', option: opt });
         }
-
-        return;
+      } else {
+        onChange?.(opt, { action: 'select-option', option: opt });
+        setOpen(false);
       }
+    };
 
-      // Handle removing Select All
-      if (
-        isPlainObject(actionMeta.removedValue) &&
-        has(actionMeta.removedValue, 'value') &&
-        actionMeta.removedValue.value === '*'
-      ) {
-        // Remove all selections
-        onChange([] as OnChangeValue<Option, IsMulti>, actionMeta);
-        return;
+    const handleSelectAll = () => {
+      if (isAllSelected) {
+        onChange?.([], { action: 'clear' });
+      } else {
+        onChange?.(allOptions, { action: 'select-option' });
       }
+    };
 
-      // Handle selecting all options individually
-      const selectedValues = Array.isArray(newValue) ? newValue : [];
-      const allOptionsExceptSelectAll = Array.isArray(options) ? options : [];
-
-      // If all options are selected, add the Select All option
-      if (
-        allOptionsExceptSelectAll.length > 0 &&
-        selectedValues.length === allOptionsExceptSelectAll.length
-      ) {
-        onChange([...selectedValues, SELECT_ALL_OPTION] as any, actionMeta);
-        return;
+    const handleClear = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (onClear) {
+        onClear();
+      } else {
+        onChange?.(isMulti ? [] : null, { action: 'clear' });
       }
+    };
 
-      // If Select All is in the selection but not all options are selected, remove it
-      if (
-        selectedValues.some((opt: any) => opt.value === '*') &&
-        selectedValues.length <= allOptionsExceptSelectAll.length
-      ) {
-        const filteredValues = selectedValues.filter((opt: any) => opt.value !== '*');
-        onChange(filteredValues as any, actionMeta);
-        return;
-      }
+    const handleRemoveOption = (e: React.MouseEvent, opt: Option) => {
+      e.stopPropagation();
+      const updated = selectedOptions.filter((o) => String(o.value) !== String(opt.value));
+      onChange?.(updated, { action: 'remove-value', removedValue: opt });
+    };
 
-      // Default: pass through the selection
-      onChange(newValue, actionMeta);
-    }
-
-    const menuPortalTarget = getSafeDocumentBody();
-    const instanceId = useId();
+    const showClearButton =
+      !isDisabled &&
+      !isReadOnly &&
+      (isClearable ?? (isRequired ? false : true)) &&
+      selectedValues.length > 0;
 
     return (
-      <Box className={cn('proa-rs', className)}>
+      <Box className={cn('grid w-full grid-cols-1 gap-1.5', className)}>
         {label && (
-          <Label className={cn('mb-2', labelClassName)}>
+          <Label className={cn('text-sm font-medium', labelClassName)}>
             {label}{' '}
-            {isRequired && (
-              <span className="dark:text-red-dark text-red-500">*</span>
-            )}
+            {isRequired && <span className="text-destructive">*</span>}
           </Label>
         )}
-        <ReSelect
-          ref={ref}
-          instanceId={instanceId}
-          value={value}
-          isMulti={isMulti}
-          isLoading={isLoading}
-          isDisabled={isDisabled}
-          options={enhancedOptions()}
-          onChange={handleOnChange}
-          className={cn('proa-rs proa__container')}
-          classNamePrefix="proa"
-          menuPosition="fixed"
-          isSearchable={isSearchable}
-          menuPortalTarget={menuPortalTarget}
-          {...(!isEmpty(value) && {
-            isClearable:
-              isClearable === false
-                ? false
-                : isRequired
-                  ? false
-                  : (isClearable ?? true),
-          })}
-          {...(isMulti && {
-            formatGroupLabel,
-            closeMenuOnSelect: false,
-            hideSelectedOptions: false,
-          })}
-          classNames={{
-            control: () =>
-              cn(
-                'custom-control',
+
+        <Popover open={open} onOpenChange={isDisabled || isReadOnly ? undefined : setOpen}>
+          <PopoverTrigger asChild>
+            <button
+              ref={ref}
+              type="button"
+              id={id}
+              disabled={isDisabled || isReadOnly}
+              aria-expanded={open}
+              className={cn(
+                'group flex w-full items-center justify-between rounded-md border border-input bg-background text-left transition-colors',
+                'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none',
+                'disabled:cursor-not-allowed disabled:opacity-50',
                 sizes[size],
-                `proa__variant-${variant}`,
-                error && 'proa__control--is-error',
-                isReadOnly && 'pointer-events-none select-none',
-                classNames?.control
-              ),
-            ...classNames,
-          }}
-          components={{
-            // This control component creates a misplaced dropdown menu in the multiselect.
-            // Do not uncomment this code.
-            // Control: ({ ...forwardProps }) => <Control isReadOnly={isReadOnly} {...forwardProps} />,
-            Placeholder: ({ ...forwardProps }) => (
-              <Placeholder prefix={prefix} className="flex" {...forwardProps} />
-            ),
-            SingleValue: ({ className, ...forwardProps }) => (
-              <SingleValue
-                prefix={prefix}
-                className={cn('flex', singleValueClassName)}
-                {...forwardProps}
-              />
-            ),
-            MultiValue: ({ ...forwardProps }) => (
-              <MultiValue
-                selectedItemCount={selectedItemCount}
-                {...forwardProps}
-              />
-            ),
-            ClearIndicator: ({ ...forwardProps }) => (
-              <ClearIndicator onClear={onClear} {...forwardProps} />
-            ),
-            DropdownIndicator,
-            LoadingIndicator,
-            // IndicatorSeparator: () => null,
-            Option: CustomOption,
-          }}
-          {...omit(rest, 'className')}
-        />
+                error && 'border-destructive focus-visible:ring-destructive/20',
+                variant === 'shadow' && 'shadow-xs',
+                variant === 'text' && 'border-transparent bg-transparent shadow-none hover:bg-accent/40'
+              )}
+            >
+              <div className="flex flex-1 items-center gap-1.5 overflow-hidden">
+                {prefix && <span className="shrink-0">{prefix}</span>}
+
+                {/* Display selections */}
+                {selectedValues.length === 0 ? (
+                  <span className="truncate text-muted-foreground">{placeholder}</span>
+                ) : isMulti ? (
+                  <div className="flex flex-wrap items-center gap-1 overflow-hidden py-0.5">
+                    {selectedOptions.slice(0, selectedItemCount).map((opt) => (
+                      <Badge
+                        key={String(opt.value)}
+                        variant="secondary"
+                        className="flex items-center gap-1 px-1.5 py-0 text-xs font-normal"
+                      >
+                        {opt.icon && <span className="shrink-0">{opt.icon}</span>}
+                        <span className="truncate max-w-[120px]">{opt.label}</span>
+                        {!isDisabled && !isReadOnly && (
+                          <X
+                            className="size-3 cursor-pointer opacity-70 hover:opacity-100"
+                            onClick={(e) => handleRemoveOption(e, opt)}
+                          />
+                        )}
+                      </Badge>
+                    ))}
+                    {selectedOptions.length > selectedItemCount && (
+                      <Badge variant="secondary" className="px-1.5 py-0 text-xs font-normal">
+                        +{selectedOptions.length - selectedItemCount}
+                      </Badge>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 truncate">
+                    {selectedOptions[0]?.icon}
+                    <span className="truncate">{selectedOptions[0]?.label}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Trailing icons */}
+              <div className="flex items-center gap-1 pl-1">
+                {isLoading && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
+                {showClearButton && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={handleClear}
+                    className="rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                  >
+                    <X className="size-3.5" />
+                  </span>
+                )}
+                <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
+              </div>
+            </button>
+          </PopoverTrigger>
+
+          <PopoverContent
+            className="w-[var(--radix-popover-trigger-width)] min-w-[200px] p-0"
+            align="start"
+            sideOffset={4}
+          >
+            <Command className="w-full">
+              {isSearchable && (
+                <CommandInput
+                  placeholder="Search..."
+                  value={searchValue}
+                  onValueChange={setSearchValue}
+                />
+              )}
+              <CommandList className="max-h-60 overflow-y-auto">
+                <CommandEmpty>No options found.</CommandEmpty>
+
+                {isMulti && allowSelectAll && allOptions.length > 0 && (
+                  <CommandGroup>
+                    <CommandItem
+                      onSelect={handleSelectAll}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={isAllSelected ? true : isIndeterminate ? 'indeterminate' : false}
+                      />
+                      <span className="font-medium">Select All</span>
+                    </CommandItem>
+                  </CommandGroup>
+                )}
+
+                {groups.map((group, groupIdx) => (
+                  <CommandGroup key={groupIdx} heading={group.label}>
+                    {group.options.map((opt) => {
+                      const isSelected = selectedValues.includes(String(opt.value));
+                      return (
+                        <CommandItem
+                          key={String(opt.value)}
+                          value={`${opt.label} ${String(opt.value)}`}
+                          onSelect={() => handleSelectOption(opt)}
+                          className="flex items-center justify-between gap-2 cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            {isMulti && (
+                              <Checkbox checked={isSelected} className="pointer-events-none" />
+                            )}
+                            {opt.icon}
+                            <span className="truncate">{opt.label}</span>
+                          </div>
+                          {!isMulti && isSelected && (
+                            <Check className="size-4 text-primary shrink-0" />
+                          )}
+                        </CommandItem>
+                      );
+                    })}
+                  </CommandGroup>
+                ))}
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+
         {error && (
-          <FieldError error={error} className={cn('mt-2', errorClassName)} />
+          <FieldError error={error} className={cn('text-xs', errorClassName)} />
         )}
 
         {helperText && (
           <FieldHelperText
             size="md"
-            className={cn('text-muted-foreground mt-2', helperClassName)}
+            className={cn('text-muted-foreground', helperClassName)}
           >
             {helperText}
           </FieldHelperText>
         )}
       </Box>
     );
-  }
-);
-
-ReactSelect.displayName = 'ReactSelect';
+}

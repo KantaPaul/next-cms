@@ -1,171 +1,16 @@
+'use client';
+
+import * as React from 'react';
+import {
+  Pagination as UiPagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 import { cn } from '@/lib/utils/cn';
-import RcPagination, {
-  type PaginationProps as RcPaginationProps,
-} from 'rc-pagination';
-
-import 'rc-pagination/assets/index.css';
-
-const paginationStyles = {
-  base: {
-    item: cn(
-      '[&>.rc-pagination-item:not(.rc-pagination-item-active)]:bg-transparent [&>li.rc-pagination-item]:border-muted',
-      // anchor tag
-      '[&>.rc-pagination-item>a]:!no-underline [&>.rc-pagination-item>a]:font-medium'
-    ),
-    icon: '[&>.rc-pagination-prev]:align-baseline [&>.rc-pagination-next]:align-baseline',
-    outline:
-      '[&>.rc-pagination-item]:leading-8 [&>.rc-pagination-item]:min-w-8 [&>.rc-pagination-item]:h-8 [&>.rc-pagination-item]:border-0',
-    jumperDiv:
-      '[&>.rc-pagination-options>.rc-pagination-options-quick-jumper]:text-sm [&>.rc-pagination-options>.rc-pagination-options-quick-jumper]:text-gray-500',
-    jumperInput:
-      '[&>.rc-pagination-options>.rc-pagination-options-quick-jumper>input]:!py-[3px] [&>.rc-pagination-options>.rc-pagination-options-quick-jumper>input]:text-sm [&>.rc-pagination-options>.rc-pagination-options-quick-jumper>input]:border-muted [&>.rc-pagination-options>.rc-pagination-options-quick-jumper>input]:ring-0',
-  },
-  rounded: {
-    none: '[&>.rc-pagination-item]:rounded-none [&>.rc-pagination-options>.rc-pagination-options-quick-jumper>input]:rounded-none',
-    sm: '[&>.rc-pagination-item]:rounded-sm [&>.rc-pagination-options>.rc-pagination-options-quick-jumper>input]:rounded-sm',
-    md: '[&>.rc-pagination-item]:rounded-md [&>.rc-pagination-options>.rc-pagination-options-quick-jumper>input]:rounded-md',
-    lg: '[&>.rc-pagination-item]:rounded-lg [&>.rc-pagination-options>.rc-pagination-options-quick-jumper>input]:rounded-lg',
-    full: '[&>.rc-pagination-item]:rounded-full [&>.rc-pagination-options>.rc-pagination-options-quick-jumper>input]:rounded-full',
-  },
-  variant: {
-    solid: {
-      base: '',
-      color: {
-        primary: cn(
-          // light base
-          '[&>.rc-pagination-item-active>a]:text-white [&>.rc-pagination-item-active]:focus:border-primary [&>.rc-pagination-item]:bg-primary [&>li.rc-pagination-item-active]:border-primary',
-          // light hover
-          '[&>.rc-pagination-item-active>a]:hover:text-white [&>.rc-pagination-item-active]:hover:border-primary',
-          // dark base
-          'dark:[&>.rc-pagination-item>a]:text-dark-800',
-          // dark hover
-          'dark:[&>.rc-pagination-item>a:hover]:text-white',
-          // dark active
-          'dark:[&>.rc-pagination-item-active>a]:!text-white dark:[&>.rc-pagination-item-active]:bg-blue-custom'
-        ),
-        secondary:
-          '[&>.rc-pagination-item-active]:bg-secondary [&>.rc-pagination-item-active>a]:!text-secondary-foreground [&>li.rc-pagination-item-active]:border-secondary [&>.rc-pagination-item-active]:hover:border-secondary [&>.rc-pagination-item-active]:focus:border-secondary',
-        danger:
-          '[&>.rc-pagination-item-active]:bg-red [&>.rc-pagination-item-active>a]:!text-white [&>li.rc-pagination-item-active]:border-red [&>.rc-pagination-item-active]:hover:border-red [&>.rc-pagination-item-active]:focus:border-red',
-      },
-    },
-    flat: {
-      base: '',
-      color: {
-        primary:
-          '[&>.rc-pagination-item-active]:bg-primary-lighter [&>li.rc-pagination-item-active]:border-primary-lighter [&>.rc-pagination-item-active>a]:text-primary-dark [&>.rc-pagination-item-active>a]:hover:text-primary-dark [&>.rc-pagination-item-active>a]:focus:text-primary-dark [&>.rc-pagination-item-active]:hover:border-primary-lighter [&>.rc-pagination-item-active]:focus:border-primary-lighter',
-        secondary:
-          '[&>.rc-pagination-item-active]:bg-secondary-lighter [&>li.rc-pagination-item-active]:border-secondary-lighter [&>.rc-pagination-item-active>a]:text-secondary-dark [&>.rc-pagination-item-active>a]:hover:text-secondary-dark [&>.rc-pagination-item-active>a]:focus:text-secondary-dark [&>.rc-pagination-item-active]:hover:border-secondary-lighter [&>.rc-pagination-item-active]:focus:border-secondary-lighter',
-        danger:
-          '[&>.rc-pagination-item-active]:bg-red-lighter [&>li.rc-pagination-item-active]:border-red-lighter [&>.rc-pagination-item-active>a]:text-red-dark [&>.rc-pagination-item-active>a]:hover:text-red-dark [&>.rc-pagination-item-active>a]:focus:text-red-dark [&>.rc-pagination-item-active]:hover:border-red-lighter [&>.rc-pagination-item-active]:focus:border-red-lighter',
-      },
-    },
-  },
-};
-
-const iconStyles = {
-  base: 'text-foreground',
-  outline: 'border border-muted p-[5px]',
-  center: 'inline-block align-middle',
-  rounded: {
-    none: 'rounded-none',
-    sm: 'rounded-sm',
-    md: 'rounded-md',
-    lg: 'rounded-lg',
-    full: 'rounded-full',
-  },
-};
-
-type IconProps = {
-  icon: React.ReactNode;
-  rounded: keyof typeof iconStyles.rounded;
-  outline: boolean;
-  className: string;
-};
-
-export const PrevIcon = ({ icon, rounded, outline, className }: IconProps) => (
-  <div
-    className={cn(
-      iconStyles.base,
-      outline ? iconStyles.outline : iconStyles.center,
-      iconStyles.rounded[rounded],
-      className
-    )}
-  >
-    {icon || (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        strokeWidth={2}
-        stroke="currentColor"
-        className="m-auto h-4 w-4"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M15.75 19.5L8.25 12l7.5-7.5"
-        />
-      </svg>
-    )}
-  </div>
-);
-
-export const NextIcon = ({ icon, rounded, outline, className }: IconProps) => (
-  <div
-    className={cn(
-      iconStyles.base,
-      outline ? iconStyles.outline : iconStyles.center,
-      iconStyles.rounded[rounded],
-      className
-    )}
-  >
-    {icon || (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        strokeWidth={2}
-        stroke="currentColor"
-        className="m-auto h-4 w-4"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M8.25 4.5l7.5 7.5-7.5 7.5"
-        />
-      </svg>
-    )}
-  </div>
-);
-
-const JumpPrevIcon = ({ icon, rounded, outline, className }: IconProps) => (
-  <div
-    className={cn(
-      iconStyles.base,
-      outline ? iconStyles.outline : iconStyles.center,
-      iconStyles.rounded[rounded],
-      !icon && outline && 'py-0 leading-[26px]',
-      className
-    )}
-  >
-    {icon || '•••'}
-  </div>
-);
-
-const JumpNextIcon = ({ icon, rounded, outline, className }: IconProps) => (
-  <div
-    className={cn(
-      iconStyles.base,
-      outline ? iconStyles.outline : iconStyles.center,
-      iconStyles.rounded[rounded],
-      !icon && outline && 'py-0 leading-[26px]',
-      className
-    )}
-  >
-    {icon || '•••'}
-  </div>
-);
 
 export const localeDefault = {
   items_per_page: '/ page',
@@ -181,82 +26,210 @@ export const localeDefault = {
   page_size: 'Page Size',
 };
 
-export interface PaginationProps extends RcPaginationProps {
+export interface PaginationProps {
+  current?: number;
+  total?: number;
+  pageSize?: number;
+  defaultCurrent?: number;
+  onChange?: (page: number) => void;
+  className?: string;
+  showLessItems?: boolean;
   outline?: boolean;
-  rounded?: keyof typeof paginationStyles.rounded;
-  variant?: keyof typeof paginationStyles.variant;
-  color?: keyof typeof paginationStyles.variant.flat.color;
-  prevIconClassName?: string;
-  nextIconClassName?: string;
-  jumpPrevIconClassName?: string;
-  jumpNextIconClassName?: string;
+  rounded?: string;
+  variant?: string;
+  color?: string;
+  [key: string]: any;
 }
 
+export const PrevIcon = () => null;
+export const NextIcon = () => null;
+
 export default function Pagination({
-  outline = false,
-  rounded = 'md',
-  variant = 'solid',
-  color = 'primary',
-  locale,
-  nextIcon,
-  prevIcon,
-  prevIconClassName,
-  nextIconClassName,
-  jumpPrevIcon,
-  jumpNextIcon,
-  jumpPrevIconClassName,
-  jumpNextIconClassName,
+  current = 1,
+  total = 0,
+  pageSize = 10,
+  onChange,
   className,
-  ...props
 }: PaginationProps) {
+  const totalPages = Math.ceil(total / (pageSize || 10));
+
+  if (totalPages <= 1) {
+    return null;
+  }
+
+  const renderPageItems = () => {
+    const items: React.ReactNode[] = [];
+
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) {
+        items.push(
+          <PaginationItem key={i}>
+            <PaginationLink
+              href="#"
+              isActive={current === i}
+              onClick={(e) => {
+                e.preventDefault();
+                onChange?.(i);
+              }}
+            >
+              {i}
+            </PaginationLink>
+          </PaginationItem>
+        );
+      }
+      return items;
+    }
+
+    // Always show page 1
+    items.push(
+      <PaginationItem key={1}>
+        <PaginationLink
+          href="#"
+          isActive={current === 1}
+          onClick={(e) => {
+            e.preventDefault();
+            onChange?.(1);
+          }}
+        >
+          1
+        </PaginationLink>
+      </PaginationItem>
+    );
+
+    if (current <= 4) {
+      for (let i = 2; i <= 5; i++) {
+        items.push(
+          <PaginationItem key={i}>
+            <PaginationLink
+              href="#"
+              isActive={current === i}
+              onClick={(e) => {
+                e.preventDefault();
+                onChange?.(i);
+              }}
+            >
+              {i}
+            </PaginationLink>
+          </PaginationItem>
+        );
+      }
+      items.push(
+        <PaginationItem key="ellipsis-end">
+          <PaginationEllipsis />
+        </PaginationItem>
+      );
+      items.push(
+        <PaginationItem key={totalPages}>
+          <PaginationLink
+            href="#"
+            isActive={current === totalPages}
+            onClick={(e) => {
+              e.preventDefault();
+              onChange?.(totalPages);
+            }}
+          >
+            {totalPages}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    } else if (current >= totalPages - 3) {
+      items.push(
+        <PaginationItem key="ellipsis-start">
+          <PaginationEllipsis />
+        </PaginationItem>
+      );
+      for (let i = totalPages - 4; i <= totalPages; i++) {
+        items.push(
+          <PaginationItem key={i}>
+            <PaginationLink
+              href="#"
+              isActive={current === i}
+              onClick={(e) => {
+                e.preventDefault();
+                onChange?.(i);
+              }}
+            >
+              {i}
+            </PaginationLink>
+          </PaginationItem>
+        );
+      }
+    } else {
+      items.push(
+        <PaginationItem key="ellipsis-start">
+          <PaginationEllipsis />
+        </PaginationItem>
+      );
+      for (let i = current - 1; i <= current + 1; i++) {
+        items.push(
+          <PaginationItem key={i}>
+            <PaginationLink
+              href="#"
+              isActive={current === i}
+              onClick={(e) => {
+                e.preventDefault();
+                onChange?.(i);
+              }}
+            >
+              {i}
+            </PaginationLink>
+          </PaginationItem>
+        );
+      }
+      items.push(
+        <PaginationItem key="ellipsis-end">
+          <PaginationEllipsis />
+        </PaginationItem>
+      );
+      items.push(
+        <PaginationItem key={totalPages}>
+          <PaginationLink
+            href="#"
+            isActive={current === totalPages}
+            onClick={(e) => {
+              e.preventDefault();
+              onChange?.(totalPages);
+            }}
+          >
+            {totalPages}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+
+    return items;
+  };
+
   return (
-    <RcPagination
-      locale={locale || localeDefault}
-      nextIcon={
-        <NextIcon
-          icon={nextIcon as React.ReactNode}
-          rounded={rounded}
-          outline={outline}
-          className={nextIconClassName as string}
-        />
-      }
-      prevIcon={
-        <PrevIcon
-          icon={prevIcon as React.ReactNode}
-          rounded={rounded}
-          outline={outline}
-          className={prevIconClassName as string}
-        />
-      }
-      jumpPrevIcon={
-        <JumpPrevIcon
-          icon={jumpPrevIcon as React.ReactNode}
-          rounded={rounded}
-          outline={outline}
-          className={jumpPrevIconClassName as string}
-        />
-      }
-      jumpNextIcon={
-        <JumpNextIcon
-          icon={jumpNextIcon as React.ReactNode}
-          rounded={rounded}
-          outline={outline}
-          className={jumpNextIconClassName as string}
-        />
-      }
-      className={cn(
-        paginationStyles.base.item,
-        paginationStyles.base.jumperDiv,
-        paginationStyles.base.jumperInput,
-        !outline && paginationStyles.base.outline,
-        !outline && paginationStyles.base.icon,
-        paginationStyles.rounded[rounded],
-        paginationStyles.variant[variant].base,
-        paginationStyles.variant[variant].color[color],
-        className
-      )}
-      {...props}
-    />
+    <UiPagination className={cn('justify-end', className)}>
+      <PaginationContent>
+        <PaginationItem>
+          <PaginationPrevious
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              if (current > 1) onChange?.(current - 1);
+            }}
+            aria-disabled={current <= 1}
+            className={cn(current <= 1 && 'pointer-events-none opacity-50')}
+          />
+        </PaginationItem>
+
+        {renderPageItems()}
+
+        <PaginationItem>
+          <PaginationNext
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              if (current < totalPages) onChange?.(current + 1);
+            }}
+            aria-disabled={current >= totalPages}
+            className={cn(current >= totalPages && 'pointer-events-none opacity-50')}
+          />
+        </PaginationItem>
+      </PaginationContent>
+    </UiPagination>
   );
 }
 

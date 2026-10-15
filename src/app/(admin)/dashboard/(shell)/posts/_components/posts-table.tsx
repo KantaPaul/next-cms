@@ -11,7 +11,7 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import {
   ActionDropdown,
   ActionDropdownItem,

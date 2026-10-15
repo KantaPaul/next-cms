@@ -8,7 +8,7 @@ import { isValidUrl } from '@/lib/utils';
 import { cn } from '@/lib/utils/cn';
 import { CheckIcon, LinkIcon } from 'lucide-react';
 import { type Dispatch, type SetStateAction, useEffect, useRef, useState } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 interface LinkSelectorProps {
   editor: any;

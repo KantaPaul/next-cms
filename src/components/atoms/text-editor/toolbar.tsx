@@ -20,7 +20,7 @@ import {
   UnderlineIcon,
 } from 'lucide-react';
 import { useState } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { borderColor } from '@/components/atoms/table-grid';
 import { Button } from '@/components/ui/button';
 import {

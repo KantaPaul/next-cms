@@ -33,7 +33,7 @@ function HistoryButtons() {
         disabled={!history.hasPast}
         aria-label="Undo"
         title="Undo"
-        className="rounded p-1.5 text-steel-500 hover:bg-steel-100 disabled:opacity-30"
+        className="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-30"
       >
         <Undo2 className="size-4" />
       </button>
@@ -43,7 +43,7 @@ function HistoryButtons() {
         disabled={!history.hasFuture}
         aria-label="Redo"
         title="Redo"
-        className="rounded p-1.5 text-steel-500 hover:bg-steel-100 disabled:opacity-30"
+        className="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-30"
       >
         <Redo2 className="size-4" />
       </button>
@@ -64,7 +64,7 @@ function MotionPreviewToggle() {
         'flex items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs font-medium transition-colors',
         b.motionPreview
           ? 'border-violet-200 bg-violet-50 text-violet-700'
-          : 'border-steel-200 text-steel-500 hover:text-steel-800'
+          : 'border-border text-muted-foreground hover:text-foreground'
       )}
     >
       <Sparkles className="size-3.5" />{' '}
@@ -77,19 +77,19 @@ function TopBar() {
   const b = useBuilder();
   const width = usePuck(s => s.appState.ui.viewports.current.width);
   return (
-    <header className="flex h-14 shrink-0 items-center gap-4 border-b border-steel-200 bg-white px-4">
+    <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border bg-background px-4">
       <div className="min-w-28 flex-1">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-steel-400">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           {b.label}
         </p>
-        <p className="truncate text-sm font-semibold text-steel-800">
+        <p className="truncate text-sm font-semibold text-foreground">
           {b.pageTitle}
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        <div className="flex items-center gap-2 rounded-lg bg-steel-50 px-2 py-1">
+        <div className="flex items-center gap-2 rounded-lg bg-muted px-2 py-1">
           <DeviceRow className="[&_svg]:size-4" />
-          <span className="hidden w-12 text-right text-xs tabular-nums text-steel-400 xl:inline">
+          <span className="hidden w-12 text-right text-xs tabular-nums text-muted-foreground xl:inline">
             {width}px
           </span>
         </div>
@@ -135,7 +135,7 @@ function BlocksPanel() {
     if (!names.length) return null;
     return (
       <section key={group.key} className="space-y-1.5">
-        <h3 className="text-[10px] font-semibold uppercase tracking-widest text-steel-400">
+        <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           {group.title}
         </h3>
         <Drawer>
@@ -150,18 +150,18 @@ function BlocksPanel() {
   return (
     <div className="space-y-4">
       <label className="relative block">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-steel-400" />
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
         <input
           value={query}
           onChange={e => setQuery(e.target.value)}
           placeholder="Search blocks"
           aria-label="Search blocks"
-          className="h-8 w-full rounded-md border border-steel-200 pl-8 text-sm placeholder:text-steel-400"
+          className="h-8 w-full rounded-md border border-input bg-transparent pl-8 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
         />
       </label>
       {sections}
       {!shown && (
-        <p className="py-6 text-center text-xs text-steel-400">
+        <p className="py-6 text-center text-xs text-muted-foreground">
           No blocks match “{query}”.
         </p>
       )}
@@ -175,14 +175,14 @@ function PagePanel() {
 
   if (selected) {
     return (
-      <div className="space-y-3 py-4 text-center text-sm text-steel-500">
+      <div className="space-y-3 py-4 text-center text-sm text-muted-foreground">
         <p>A block is selected. Page settings show when nothing is selected.</p>
         <button
           type="button"
           onClick={() =>
             dispatch({ type: 'setUi', ui: { itemSelector: null } })
           }
-          className="rounded-md border border-steel-200 px-3 py-1.5 text-xs font-medium text-steel-700 hover:bg-steel-50"
+          className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
         >
           Deselect block
         </button>
@@ -213,11 +213,11 @@ function LeftRail() {
   else panel = <PagePanel />;
 
   return (
-    <aside className="flex w-64 shrink-0 flex-col border-r border-steel-200 bg-white">
+    <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-background">
       <div
         role="tablist"
         aria-label="Builder panels"
-        className="grid grid-cols-3 gap-1 border-b border-steel-100 p-2"
+        className="grid grid-cols-3 gap-1 border-b border-border p-2"
       >
         {RAIL_TABS.map(t => (
           <button
@@ -229,8 +229,8 @@ function LeftRail() {
             className={cn(
               'flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-medium transition-colors',
               tab === t.value
-                ? 'bg-steel-100 text-steel-900'
-                : 'text-steel-500 hover:text-steel-800'
+                ? 'bg-accent text-accent-foreground'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
             <t.icon className="size-3.5" /> {t.label}
@@ -252,10 +252,10 @@ function Canvas() {
       ref={canvasRef}
       tabIndex={-1}
       aria-label="Canvas"
-      className="relative min-w-0 flex-1 overflow-hidden bg-steel-100 p-4 outline-none"
+      className="relative min-w-0 flex-1 overflow-hidden bg-muted p-4 outline-none"
     >
       <div
-        className="mx-auto h-full overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-steel-200 transition-[width] duration-300"
+        className="mx-auto h-full overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-border transition-[width] duration-300"
         style={{ width, maxWidth: '100%' }}
       >
         <Puck.Preview />

@@ -36,11 +36,11 @@ export function usePinningStyles() {
       // sticky cell border
       isPinned ? 'relative md:sticky' : 'relative',
       isPinned &&
-        'before:absolute before:top-0 before:h-full before:w-[1px] before:bg-steel-100 before:content-[""] dark:before:bg-dark-300',
+        'before:absolute before:top-0 before:h-full before:w-[1px] before:bg-border before:content-[""]',
       isPinned === 'left' && 'before:-right-px',
       isPinned === 'right' && 'before:-left-px',
       // sticky cell bg color
-      isPinned && 'after:-z-[1] after:absolute after:bg-white after:dark:bg-dark-50',
+      isPinned && 'after:-z-[1] after:absolute after:bg-card',
       isPinned && 'after:top-[1px] after:right-0 after:bottom-0 after:left-0'
     );
   }

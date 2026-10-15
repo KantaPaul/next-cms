@@ -35,7 +35,7 @@ export default function TablePagination({
       )}
     >
       <Flex justify="start" className="w-auto">
-        <span className="text-sm text-steel-700 dark:text-steel-100">Rows per page:</span>
+        <span className="text-sm text-muted-foreground">Rows per page:</span>
         <ReactSelect
           size="sm"
           menuPlacement="auto"

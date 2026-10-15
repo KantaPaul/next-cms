@@ -21,8 +21,7 @@ export default async function Header() {
   return (
     <header
       className={cn(
-        'flex h-16 shrink-0 items-center gap-4 border-b border-steel-200/70 bg-white px-5 transition-[width,height] ease-linear dark:border-dark-300 dark:bg-dark-100 xl:px-8',
-        //group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12
+        'flex h-16 shrink-0 items-center gap-4 border-b border-border bg-background px-5 transition-[width,height] ease-linear xl:px-8',
         'sticky inset-x-0 top-0 z-50'
       )}
     >

@@ -23,7 +23,7 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
         {APP_VERSION && state !== "collapsed" && (
           <Badge
             variant="outline"
-            className="rounded-md border-steel-200 bg-white [box-shadow:0_0.8px_0_rgb(var(--muted))] dark:border-steel-600 dark:bg-transparent dark:shadow-none"
+            className="rounded-md"
           >
             {APP_VERSION}
           </Badge>

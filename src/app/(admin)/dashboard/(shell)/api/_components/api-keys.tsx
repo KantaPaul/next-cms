@@ -4,7 +4,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { Check, Copy, KeyRound, Loader2, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,

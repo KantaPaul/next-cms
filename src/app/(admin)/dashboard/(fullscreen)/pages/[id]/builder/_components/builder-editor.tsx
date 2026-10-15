@@ -3,7 +3,7 @@
 import '@measured/puck/puck.css';
 import { Puck, type Config, type Data } from '@measured/puck';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import {
   builderConfig,
   postBuilderConfig,
@@ -287,7 +287,7 @@ export function BuilderEditor({
     <BuilderContext.Provider value={value}>
       <div
         data-theme="light"
-        className="h-screen overflow-hidden bg-white text-steel-700 [color-scheme:light]"
+        className="h-screen overflow-hidden bg-background text-foreground [color-scheme:light]"
       >
         <Puck
           config={adapter.config}
@@ -309,6 +309,7 @@ export function BuilderEditor({
           onOpenChange={setRevisionsOpen}
           pageId={page.id}
           actions={kind === 'post' ? POST_REVISION_ACTIONS : undefined}
+          themeScope="light"
           onRestored={() => {
             autosave.markSaved(serialized);
             window.location.reload();

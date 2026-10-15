@@ -1,19 +1,24 @@
 'use client';
 
-import { forwardRef, useId } from 'react';
-
+import * as React from 'react';
+import { Checkbox as UiCheckbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils/cn';
 
-interface CheckBoxProps extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface CheckBoxProps
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
   children?: React.ReactNode;
   className?: string;
   wrapperClassName?: string;
   labelClassName?: string;
   indeterminate?: boolean;
-  description?: string; // Optional additional description for screen readers
+  description?: string;
+  checked?: boolean;
+  defaultChecked?: boolean;
+  onChange?: (e: any) => void;
+  onCheckedChange?: (checked: boolean | 'indeterminate') => void;
 }
 
-const Checkbox = forwardRef<HTMLInputElement, CheckBoxProps>(
+export const Checkbox = React.forwardRef<HTMLButtonElement, CheckBoxProps>(
   (
     {
       className,
@@ -23,59 +28,68 @@ const Checkbox = forwardRef<HTMLInputElement, CheckBoxProps>(
       labelClassName,
       description,
       id: providedId,
+      checked,
+      defaultChecked,
+      disabled,
+      required,
+      onChange,
+      onCheckedChange,
       'aria-describedby': ariaDescribedBy,
       ...rest
     },
     ref
   ) => {
-    // Generate a unique ID if not provided
-    const generatedId = useId();
+    const generatedId = React.useId();
     const checkboxId = providedId || generatedId;
     const descriptionId = `${checkboxId}-description`;
 
-    return (
-      <div className={cn('flex items-center', wrapperClassName)}>
-        <label
-          htmlFor={checkboxId}
-          className={cn(
-            'checkbox-component group flex w-auto shrink-0 cursor-pointer items-center justify-start text-sm transition-all',
+    const handleCheckedChange = (isChecked: boolean | 'indeterminate') => {
+      onCheckedChange?.(isChecked);
+      if (onChange) {
+        const syntheticEvent = {
+          target: {
+            checked: isChecked === true,
+            type: 'checkbox',
+            id: checkboxId,
+          },
+          currentTarget: {
+            checked: isChecked === true,
+            type: 'checkbox',
+            id: checkboxId,
+          },
+          stopPropagation: () => {},
+          preventDefault: () => {},
+        };
+        onChange(syntheticEvent);
+      }
+    };
 
-            className
-          )}
-        >
-          <input
-            ref={ref}
-            id={checkboxId}
-            type="checkbox"
-            className="checkbox-input peer -z-1 invisible absolute opacity-0"
-            aria-checked={indeterminate ? 'mixed' : rest.checked}
-            aria-invalid={rest.required && !rest.checked ? 'true' : 'false'}
-            aria-describedby={description ? descriptionId : ariaDescribedBy}
-            {...rest}
-          />
-          <span
-            tabIndex={0}
+    const resolvedChecked = indeterminate ? 'indeterminate' : checked;
+
+    return (
+      <div className={cn('inline-flex items-center gap-2', wrapperClassName)}>
+        <UiCheckbox
+          ref={ref}
+          id={checkboxId}
+          disabled={disabled}
+          required={required}
+          checked={resolvedChecked}
+          defaultChecked={defaultChecked}
+          onCheckedChange={handleCheckedChange}
+          aria-describedby={description ? descriptionId : ariaDescribedBy}
+          className={className}
+        />
+        {children && (
+          <label
+            htmlFor={checkboxId}
             className={cn(
-              'checkbox_box relative h-[20px] w-[20px] shrink-0 cursor-pointer rounded border-2 border-steel-100 transition duration-300 dark:border-dark-400',
-              // focus
-              'outline-steel-200 outline-offset-4 focus:outline-1',
-              { indeterminate }
+              'cursor-pointer select-none text-sm font-medium leading-none text-foreground peer-disabled:cursor-not-allowed peer-disabled:opacity-70',
+              labelClassName
             )}
-            role="checkbox"
-            aria-checked={rest.checked}
-            aria-hidden="true"
-          />
-          {children && (
-            <span
-              className={cn(
-                'ml-2 text-steel-700 dark:text-dark-800/80 peer-disabled:dark:text-white/40',
-                labelClassName
-              )}
-            >
-              {children}
-            </span>
-          )}
-        </label>
+          >
+            {children}
+          </label>
+        )}
         {description && (
           <span id={descriptionId} className="sr-only">
             {description}
@@ -87,5 +101,3 @@ const Checkbox = forwardRef<HTMLInputElement, CheckBoxProps>(
 );
 
 Checkbox.displayName = 'Checkbox';
-
-export { Checkbox };

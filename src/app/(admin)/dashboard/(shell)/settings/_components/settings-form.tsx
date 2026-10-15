@@ -4,7 +4,7 @@ import { Loader2, RotateCcw, Save } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition, type FormEvent, type ReactNode } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { MediaField } from '@/components/media/media-picker';
 import { PAGES } from '@/config/pages';

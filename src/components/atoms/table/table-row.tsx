@@ -14,9 +14,8 @@ export function TableRow({
   return (
     <tr
       className={cn(
-        'TableRow-root border-steel-200 dark:border-dark-400 border-t',
-        hoverStyle &&
-          'hover:bg-steel-50 dark:hover:bg-dark-400 transition-colors duration-200',
+        'TableRow-root border-border border-t transition-colors',
+        hoverStyle && 'hover:bg-muted/50 data-[state=selected]:bg-muted',
         onClick && 'cursor-pointer',
         className
       )}

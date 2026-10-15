@@ -26,7 +26,7 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useId, useMemo, useState, useTransition, type FormEvent } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { PAGES } from '@/config/pages';
 import { MENU_LOCATION, type MenuLocationType } from '@/db/schemas/shared.schema';

@@ -53,8 +53,8 @@ export function useFilterHandlers(
       }
 
       const formattedRange = [
-        start ? formatDate(start, 'yyyy-MM-dd') : null,
-        end ? formatDate(end, 'yyyy-MM-dd') : null,
+        start ? formatDate(start, 'YYYY-MM-DD') : null,
+        end ? formatDate(end, 'YYYY-MM-DD') : null,
       ];
       const value = formattedRange.join(RANGE_SEPARATOR);
       updateParams({ [name]: value, ...PAGE_RESET });

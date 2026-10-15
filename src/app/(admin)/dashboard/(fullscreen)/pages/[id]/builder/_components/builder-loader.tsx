@@ -7,7 +7,7 @@ import type { BuilderPageProps } from './builder-editor';
 const BuilderEditor = dynamic(() => import('./builder-editor').then(m => m.BuilderEditor), {
   ssr: false,
   loading: () => (
-    <div className="flex h-screen items-center justify-center gap-2 text-sm text-steel-500">
+    <div className="flex h-screen items-center justify-center gap-2 text-sm text-muted-foreground">
       <Loader2 className="size-4 animate-spin" /> Loading the visual builder…
     </div>
   ),

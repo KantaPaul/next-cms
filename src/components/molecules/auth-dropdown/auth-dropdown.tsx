@@ -1,63 +1,52 @@
 'use client';
 
-import { type User } from '@/db/schema';
-import { Menu, MenuItem, MenuItems, Transition } from '@headlessui/react';
+import * as React from 'react';
+import { LogOut } from 'lucide-react';
+import type { User } from '@/db/schema';
+import { MenuTrigger } from '@/components/molecules/auth-dropdown/menu-trigger';
 import {
-  LogOut
-} from 'lucide-react';
-import { Fragment, useTransition } from 'react';
-
-import { MenuButton } from '@/components/molecules/auth-dropdown/menu-button';
-import { MenuTrigger } from "@/components/molecules/auth-dropdown/menu-trigger";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { signOut } from '@/server/actions/auth.actions';
 
-
-export default function AuthDropdown({
-  user,
-}: {
-  user: User;
-}) {
-  const [isPending, startTransition] = useTransition();
+export default function AuthDropdown({ user }: { user: User }) {
+  const [isPending, startTransition] = React.useTransition();
 
   function handleLogOut() {
     startTransition(async () => {
       const result = await signOut();
-
-      if (result.error) {
+      if (result?.error) {
         console.error('Logout error:', result.error);
       }
     });
   }
 
   return (
-    <Menu as="div" className="relative inline-block text-left">
-      <MenuTrigger
-        user={user}
-        isLoading={isPending}
-        // className="min-w-0 bg-transparent p-0 hover:bg-transparent dark:bg-transparent [&>div>span]:size-7 md:[&>div>span]:size-6"
-        className="cursor-pointer"
-      />
-      <Transition
-        as={Fragment}
-        enter="transition ease-out duration-100"
-        enterFrom="transform opacity-0 scale-95"
-        enterTo="transform opacity-100 scale-100"
-        leave="transition ease-in duration-75"
-        leaveFrom="transform opacity-100 scale-100"
-        leaveTo="transform opacity-0 scale-95"
-      >
-        <MenuItems className="border-steel-100 dark:border-dark-400 dark:bg-dark-280 absolute right-0 mt-2 flex w-60 origin-top-right flex-col overflow-hidden rounded-md border bg-white focus:outline-none dark:shadow-[0_3px_18px_rgba(0,0,0,0.1)]">
-          <MenuItem>
-            <MenuButton
-              className="focus-visible:bg-steel-50"
-              onClick={handleLogOut}
-            >
-              <LogOut className="text-steel-400 size-5" />
-              <span className="truncate">Sign Out 🏃‍♂️</span>
-            </MenuButton>
-          </MenuItem>
-        </MenuItems>
-      </Transition>
-    </Menu>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <MenuTrigger user={user} isLoading={isPending} className="cursor-pointer" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium leading-none">{user.name}</p>
+            <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={handleLogOut}
+          className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive"
+        >
+          <LogOut className="mr-2 size-4" />
+          <span>Sign Out</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

@@ -3,7 +3,7 @@
 import { useGetPuck, type Data } from '@measured/puck';
 import { Loader2, Sparkles } from 'lucide-react';
 import { useEffect, useState, useTransition } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -69,7 +69,7 @@ export function AiGenerateDialog({ open, onOpenChange }: { open: boolean; onOpen
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-2xl">
+      <DialogContent data-theme="light" className="flex max-h-[85vh] flex-col text-foreground sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="size-5 text-violet-500" /> Generate a page with AI
@@ -120,9 +120,9 @@ export function AiGenerateDialog({ open, onOpenChange }: { open: boolean; onOpen
             </p>
             <ol className="mt-3 space-y-2">
               {result.data.content.map(block => (
-                <li key={block.props.id} className="rounded-md border border-steel-200 p-3 dark:border-dark-300">
+                <li key={block.props.id} className="rounded-md border border-border p-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">{block.type}</p>
-                  <p className="mt-1 line-clamp-3 whitespace-pre-line text-sm text-steel-600 dark:text-steel-300">
+                  <p className="mt-1 line-clamp-3 whitespace-pre-line text-sm text-muted-foreground">
                     {extractPlainText({ root: {}, content: [block] }, 300)}
                   </p>
                 </li>
@@ -220,7 +220,7 @@ export function AiRewriteDialog({ target, onClose }: { target: BuilderTarget | n
 
   return (
     <Dialog open={!!target} onOpenChange={open => !open && onClose()}>
-      <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-2xl">
+      <DialogContent data-theme="light" className="flex max-h-[85vh] flex-col text-foreground sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="size-5 text-violet-500" /> {instruction ? 'Change' : 'Rewrite'} {view?.type} with AI
@@ -239,7 +239,7 @@ export function AiRewriteDialog({ target, onClose }: { target: BuilderTarget | n
           </div>
         ) : (
         <div className="flex flex-wrap items-end gap-3">
-          <div role="radiogroup" aria-label="Rewrite mode" className="flex gap-1 rounded-md border border-steel-200 p-1 dark:border-dark-300">
+          <div role="radiogroup" aria-label="Rewrite mode" className="flex gap-1 rounded-md border border-border p-1">
             {MODES.map(m => (
               <button
                 key={m.value}
@@ -247,7 +247,7 @@ export function AiRewriteDialog({ target, onClose }: { target: BuilderTarget | n
                 role="radio"
                 aria-checked={mode === m.value}
                 onClick={() => setMode(m.value)}
-                className={`rounded px-3 py-1 text-sm ${mode === m.value ? 'bg-violet-600 text-white' : 'text-steel-600 hover:bg-steel-100 dark:text-steel-300'}`}
+                className={`rounded px-3 py-1 text-sm ${mode === m.value ? 'bg-violet-600 text-white' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'}`}
               >
                 {m.label}
               </button>
@@ -271,7 +271,7 @@ export function AiRewriteDialog({ target, onClose }: { target: BuilderTarget | n
         )}
 
         {isPending && !nextProps && instruction && (
-          <p className="flex items-center gap-2 text-sm text-steel-500">
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" /> Writing the change…
           </p>
         )}
@@ -279,13 +279,13 @@ export function AiRewriteDialog({ target, onClose }: { target: BuilderTarget | n
         {nextProps && (
           <div className="flex-1 overflow-y-auto">
             {changed.length === 0 ? (
-              <p className="text-sm text-steel-500">The AI returned the same text.</p>
+              <p className="text-sm text-muted-foreground">The AI returned the same text.</p>
             ) : (
               <ul className="space-y-3">
                 {changed.map(key => (
-                  <li key={key} className="rounded-md border border-steel-200 p-3 text-sm dark:border-dark-300">
-                    <p className="mb-1 font-mono text-[11px] text-steel-400">{key}</p>
-                    <p className="text-steel-400 line-through">{before[key]}</p>
+                  <li key={key} className="rounded-md border border-border p-3 text-sm">
+                    <p className="mb-1 font-mono text-[11px] text-muted-foreground">{key}</p>
+                    <p className="text-muted-foreground line-through">{before[key]}</p>
                     <p className="mt-1">{after[key]}</p>
                   </li>
                 ))}

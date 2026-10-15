@@ -13,7 +13,7 @@ import {
 } from 'react';
 import { Controller, useFormContext, useWatch } from 'react-hook-form';
 import slugify from 'react-slugify';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { BackButton } from '@/components/atoms/buttons/back-button';
 import { FormFactory } from '@/components/atoms/forms/factory';
 import { FieldFactory } from '@/components/atoms/forms/factory/field-factory';

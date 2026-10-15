@@ -12,7 +12,7 @@ export function TableHeaderCell({ children, ...props }: TableHeaderCellProps) {
       colSpan={colSpan}
       rowSpan={rowSpan}
       className={cn(
-        'TableHeaderCell-root top-0 whitespace-nowrap border-steel-200 border-r px-4 py-2 text-left font-geist-mono font-medium text-sm text-steel-400 last:border-r-0 dark:border-dark-300 dark:text-dark-600',
+        'TableHeaderCell-root top-0 whitespace-nowrap border-border border-r px-4 py-2.5 text-left font-medium text-xs text-muted-foreground bg-muted/40 last:border-r-0',
         className
       )}
       {...rest}

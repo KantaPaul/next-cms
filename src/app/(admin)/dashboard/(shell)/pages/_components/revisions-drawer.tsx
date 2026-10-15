@@ -4,7 +4,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Eye, History, Loader2, RotateCcw, Save } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, useTransition } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -46,10 +46,9 @@ type RevisionRow = {
 type RevisionDetail = Omit<RevisionRow, 'authorName'> & { content: unknown };
 
 const KIND_STYLES = {
-  published:
-    'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-  manual: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
-  autosave: 'bg-steel-100 text-steel-600 dark:bg-dark-200 dark:text-steel-300',
+  published: 'bg-emerald-500/15 text-emerald-600',
+  manual: 'bg-sky-500/15 text-sky-600',
+  autosave: 'bg-muted text-muted-foreground',
 };
 
 export type RevisionActions = {
@@ -72,12 +71,15 @@ export function RevisionsDrawer({
   pageId,
   onRestored,
   actions = PAGE_REVISION_ACTIONS,
+  themeScope,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   pageId: string;
   onRestored?: () => void;
   actions?: RevisionActions;
+  /** Overlays portal to `body`, so surfaces pinned to one theme (the builder) must pass it through. */
+  themeScope?: 'light' | 'dark';
 }) {
   const {
     list: listRevisions,
@@ -140,8 +142,8 @@ export function RevisionsDrawer({
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
-          <SheetHeader className="border-b border-steel-200 p-5 dark:border-dark-300">
+        <SheetContent data-theme={themeScope} className="flex w-full flex-col gap-0 p-0 text-foreground sm:max-w-md">
+          <SheetHeader className="border-b border-border p-5">
             <SheetTitle className="flex items-center gap-2">
               <History className="size-5" /> Revision history
             </SheetTitle>
@@ -162,15 +164,15 @@ export function RevisionsDrawer({
           </SheetHeader>
           <div className="flex-1 overflow-y-auto">
             {rows === null ? (
-              <p className="flex items-center gap-2 p-5 text-sm text-steel-500">
+              <p className="flex items-center gap-2 p-5 text-sm text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" /> Loading…
               </p>
             ) : rows.length === 0 ? (
-              <p className="p-5 text-sm text-steel-500">
+              <p className="p-5 text-sm text-muted-foreground">
                 No revisions yet. They appear after you save or publish.
               </p>
             ) : (
-              <ol className="divide-y divide-steel-100 dark:divide-dark-300">
+              <ol className="divide-y divide-border">
                 {rows.map(row => (
                   <li key={row.id} className="flex items-start gap-3 px-5 py-3">
                     <div className="min-w-0 flex-1">
@@ -187,7 +189,7 @@ export function RevisionsDrawer({
                           {row.label ?? row.title}
                         </span>
                       </div>
-                      <p className="mt-1 text-xs text-steel-500">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(row.createdAt), {
                           addSuffix: true,
                         })}
@@ -227,16 +229,16 @@ export function RevisionsDrawer({
         open={!!preview}
         onOpenChange={value => !value && setPreview(null)}
       >
-        <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-3xl">
+        <DialogContent data-theme={themeScope} className="flex max-h-[85vh] flex-col text-foreground sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>
               {preview?.label ?? 'Revision'} ·{' '}
               {preview && new Date(preview.createdAt).toLocaleString()}
             </DialogTitle>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto rounded-md border border-steel-200 p-5 dark:border-dark-300">
+          <div className="flex-1 overflow-y-auto rounded-md border border-border p-5">
             <h2 className="mb-4 text-2xl font-bold">{preview?.title}</h2>
-            {preview && <RevisionBody content={preview.content} />}
+            {preview && <RevisionBody content={preview.content} themeScope={themeScope} />}
           </div>
           <DialogFooter>
             <Button
@@ -260,11 +262,11 @@ export function RevisionsDrawer({
   );
 }
 
-function RevisionBody({ content }: { content: unknown }) {
+function RevisionBody({ content, themeScope }: { content: unknown; themeScope?: 'light' | 'dark' }) {
   if (typeof content === 'string') {
     return (
       <div
-        className="prose max-w-none dark:prose-invert"
+        className={cn('prose max-w-none', themeScope !== 'light' && 'dark:prose-invert')}
         dangerouslySetInnerHTML={{ __html: sanitizeRichText(content) }}
       />
     );
@@ -276,22 +278,22 @@ function RevisionBody({ content }: { content: unknown }) {
         {content.content.map((block, i) => (
           <li
             key={block.props.id ?? i}
-            className="rounded-md border border-steel-200 p-3 dark:border-dark-300"
+            className="rounded-md border border-border p-3"
           >
-            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {block.type}
             </p>
-            <p className="mt-1 line-clamp-3 whitespace-pre-line text-sm text-steel-600 dark:text-steel-300">
+            <p className="mt-1 line-clamp-3 whitespace-pre-line text-sm text-muted-foreground">
               {extractPlainText({ root: {}, content: [block] }, 400) || '—'}
             </p>
           </li>
         ))}
         {!content.content.length && (
-          <li className="text-sm text-steel-500">Empty page</li>
+          <li className="text-sm text-muted-foreground">Empty page</li>
         )}
       </ol>
     );
   }
 
-  return <p className="text-sm text-steel-500">Empty draft</p>;
+  return <p className="text-sm text-muted-foreground">Empty draft</p>;
 }

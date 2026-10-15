@@ -4,7 +4,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { Check, Loader2, Minus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PERMISSION_MATRIX, ROLE_DESCRIPTIONS, ROLE_NAMES, type RoleName } from '@/config/permissions';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';

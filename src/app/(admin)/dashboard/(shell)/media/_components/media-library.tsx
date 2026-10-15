@@ -3,7 +3,7 @@
 import { format } from 'date-fns';
 import { Copy, ExternalLink, Loader2, Sparkles, Trash2 } from 'lucide-react';
 import { useEffect, useState, useTransition } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useAiEnabled } from '@/components/ai/use-ai-status';
 import { MediaBrowser, MediaThumb } from '@/components/media/media-browser';

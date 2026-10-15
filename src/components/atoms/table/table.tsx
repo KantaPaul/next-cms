@@ -42,12 +42,12 @@ export type TableType<T extends Record<string, any>> = {
   onRowClick?: (row: Row<T>) => void;
 };
 
-export const stickyCellBorderColor = `before:w-[1px] before:absolute before:h-full before:content-[""] before:bg-steel-200 dark:before:bg-dark-300 before:top-0`;
+export const stickyCellBorderColor = `before:w-[1px] before:absolute before:h-full before:content-[""] before:bg-border before:top-0`;
 export const stickyCellBgColor =
-  'after:bg-white after:dark:bg-dark-100 after:absolute after:-z-[1] after:left-0 after:top-[1px] after:bottom-0 after:right-0';
+  'after:bg-card after:absolute after:-z-[1] after:left-0 after:top-[1px] after:bottom-0 after:right-0';
 
 export const tableBorder =
-  'w-full rounded-xl border border-steel-200 bg-white dark:border-dark-400 dark:bg-dark-100';
+  'w-full rounded-xl border border-border bg-card';
 
 export function Table<TData extends Record<string, any>>({
   table,
@@ -176,10 +176,10 @@ export function Table<TData extends Record<string, any>>({
                 <Fragment key={row.id}>
                   <TableRow
                     className={cn(
-                      row.getIsSelected() && 'bg-steel-50 dark:bg-dark-200',
+                      row.getIsSelected() && 'bg-muted/70',
                       expandable && 'rounded-lg',
                       expandable && !row.getIsExpanded() && 'shadow-button',
-                      expandable && row.getIsExpanded() && 'rounded-b-none bg-gray-50',
+                      expandable && row.getIsExpanded() && 'rounded-b-none bg-muted/40',
                       table.options.meta?.getRowStyles?.(row)
                     )}
                     {...(onRowClick && { onClick: () => onRowClick(row) })}
@@ -222,7 +222,7 @@ export function Table<TData extends Record<string, any>>({
                             //   isScrollable &&
                             //   'sticky-table-cell-right bg-white dark:bg-dark-50',
                             isStickyLeft && 'sticky-table-cell-left left-0 border-r-0',
-                            row.getIsSelected() && isSticky && 'bg-steel-50 dark:bg-dark-200',
+                            row.getIsSelected() && isSticky && 'bg-muted/70',
                             // isStickyLeft && isNotScroll && 'bg-transparent dark:bg-transparent',
                             cell.column.columnDef.meta?.align === 'center' && 'text-center',
                             cell.column.columnDef.meta?.align === 'right' && 'text-right',

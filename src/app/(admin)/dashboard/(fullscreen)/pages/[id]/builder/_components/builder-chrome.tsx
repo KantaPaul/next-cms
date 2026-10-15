@@ -101,7 +101,6 @@ export function BuilderHeaderActions() {
         <Button
           type="button"
           size="sm"
-          className="bg-indigo-600 text-white hover:bg-indigo-700"
           onClick={() => void b.publish()}
           disabled={!!b.busy}
         >
@@ -112,7 +111,6 @@ export function BuilderHeaderActions() {
         <Button
           type="button"
           size="sm"
-          className="bg-indigo-600 text-white hover:bg-indigo-700"
           onClick={() => void b.submitForReview()}
           disabled={!!b.busy || b.status === 'review'}
         >

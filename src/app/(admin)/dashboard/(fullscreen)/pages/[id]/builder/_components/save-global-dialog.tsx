@@ -3,7 +3,7 @@
 import { useGetPuck } from '@measured/puck';
 import { Component, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -70,7 +70,7 @@ export function SaveGlobalDialog({ target, onClose }: { target: BuilderTarget | 
 
   return (
     <Dialog open={!!target} onOpenChange={open => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent data-theme="light" className="text-foreground sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Component className="size-5 text-violet-500" /> Save as global block

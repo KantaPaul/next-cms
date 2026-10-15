@@ -22,12 +22,12 @@ export const Input = ({
   isRequired?: boolean;
 }) => {
   return (
-    <div className={cn('grid w-full max-w-sm items-center gap-3', className)}>
+    <div className={cn('grid w-full items-center gap-3', className)}>
       {label ? (
         <Label htmlFor={id} className={cn(labelClassName)}>
           {label}
           {isRequired && (
-            <span className="text-red-500 dark:text-red-dark">*</span>
+            <span className="text-destructive">*</span>
           )}
         </Label>
       ) : (

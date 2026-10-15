@@ -250,7 +250,7 @@ export function DataTable<TData, TValue>({
             {showFooter && (
               <TableFoot
                 className={cn(
-                  'border-steel-100 dark:border-steel-600 border-t'
+                  'border-border border-t'
                 )}
               >
                 {table.getFooterGroups().map(footerGroup => (

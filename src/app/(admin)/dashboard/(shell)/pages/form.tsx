@@ -11,7 +11,7 @@ import {
   useTransition,
 } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { BackButton } from '@/components/atoms/buttons/back-button';
 import { FormFactory } from '@/components/atoms/forms/factory';
 import { StatusBadge } from '@/components/atoms/status-badge';

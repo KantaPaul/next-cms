@@ -4,22 +4,22 @@ overview: Replace the admin and builder-chrome controls with official shadcn/ui 
 todos:
   - id: add-primitives
     content: Add shadcn select, command, calendar, checkbox, pagination, table, and sonner
-    status: pending
+    status: completed
   - id: select-date
     content: Rewrite ReactSelect/Creatable and DatePicker on Combobox and Calendar, keeping factory and filter APIs
-    status: pending
+    status: completed
   - id: table-pagination
     content: Restyle table markup and both paginations onto shadcn Table and Pagination
-    status: pending
+    status: completed
   - id: checkbox-switch-toast-menu
     content: Swap checkbox, restyle switch, move toasts to Sonner, and rebuild the account menu with DropdownMenu
-    status: pending
+    status: completed
   - id: chrome-tokens
     content: Retoken header, sidebar, dropdown, admin shell, and builder publish button
-    status: pending
+    status: completed
   - id: cleanup-verify
     content: Remove unused libraries and verify admin plus builder chrome in the browser
-    status: pending
+    status: completed
 isProject: false
 ---
 

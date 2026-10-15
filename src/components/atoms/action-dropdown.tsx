@@ -44,12 +44,7 @@ export function ActionDropdown({
         <Button
           variant={isVertical ? 'ghost' : 'outline'}
           size={isVertical ? 'sm' : triggerProps?.size || 'sm'}
-          className={cn(
-            'gap-2',
-            // 'gap-2 border-steel-200 font-geist-mono shadow-none focus-visible:ring-0 dark:border-dark-300 dark:bg-dark-200 dark:shadow-none',
-            // isVertical ? 'px-0' : '[box-shadow:0_0.8px_0_rgb(var(--muted))] hover:bg-steel-50',
-            className
-          )}
+          className={cn('gap-2', className)}
           {...triggerProps}
         >
           {isLoading ? (
@@ -77,7 +72,7 @@ export function ActionDropdown({
         side="bottom"
         align="end"
         className={cn(
-          'min-w-48 divide-y divide-steel-100 border-steel-100 p-0 shadow-md dark:divide-dark-300 dark:border-dark-300 dark:bg-dark-200',
+          'min-w-48 divide-y divide-border p-0 shadow-md',
           menuClassName
         )}
       >
@@ -109,7 +104,7 @@ export function ActionDropdownItem({
         variant="ghost"
         {...rest}
         className={cn(
-          'deration-300 w-full cursor-pointer justify-start rounded-none border-0 px-3 py-2 font-normal text-steel-600 transition first:rounded-t-md last:rounded-b-md focus-visible:ring-0 dark:text-steel-300',
+          'w-full cursor-pointer justify-start rounded-none border-0 px-3 py-2 font-normal text-foreground transition first:rounded-t-md last:rounded-b-md focus-visible:ring-0',
           rest?.disabled && 'pointer-events-none cursor-not-allowed opacity-50',
           className
         )}

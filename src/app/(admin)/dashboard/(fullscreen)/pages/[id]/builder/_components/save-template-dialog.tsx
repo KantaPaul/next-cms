@@ -3,7 +3,7 @@
 import { useGetPuck } from '@measured/puck';
 import { LayoutTemplate, Loader2 } from 'lucide-react';
 import { useState, useTransition } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
@@ -31,10 +31,10 @@ export function SaveTemplateDialog({ open, onOpenChange, pageTitle }: { open: bo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent data-theme="light" className="text-foreground sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <LayoutTemplate className="size-5 text-indigo-500" /> Save as template
+            <LayoutTemplate className="size-5 text-muted-foreground" /> Save as template
           </DialogTitle>
           <DialogDescription>New pages can start from this layout. The template is a copy, so later edits to this page do not change it.</DialogDescription>
         </DialogHeader>

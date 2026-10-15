@@ -1,11 +1,17 @@
-import { ChevronLeft, ChevronRight, Ellipsis } from 'lucide-react';
-import { useTransition } from 'react';
+'use client';
 
-// import { ActionIcon } from '@/components/atoms/button/action-icon';
-import { Box } from '@/components/atoms/layout';
+import { useTransition } from 'react';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 import useQueryParams from '@/hooks/useQueryParam';
 import { cn } from '@/lib/utils/cn';
-import { Button } from '@/components/ui/button';
 
 interface SimplifiedPaginationProps {
   pageSize?: number;
@@ -19,7 +25,6 @@ export function SimplifiedPagination({
   const [isPending, startTransition] = useTransition();
   const { queryParams, setQueryParams } = useQueryParams();
 
-  // Handle undefined totalCount
   if (!totalCount || totalCount <= 0) {
     return null;
   }
@@ -28,12 +33,16 @@ export function SimplifiedPagination({
   const currentSize = Number.parseInt(queryParams.size) || pageSize;
   const totalPages = Math.ceil(totalCount / currentSize);
 
+  if (totalPages <= 1) {
+    return null;
+  }
+
   function handlePageChange(page: number) {
     startTransition(() => {
       setQueryParams(
         {
-          page,
-          size: currentSize,
+          page: String(page),
+          size: String(currentSize),
         },
         {
           scroll: false,
@@ -42,116 +51,185 @@ export function SimplifiedPagination({
     });
   }
 
-  function renderPageButtons() {
-    const buttons = [];
+  function renderPageItems() {
+    const items = [];
 
-    // If 7 or fewer pages, show all
     if (totalPages <= 7) {
       for (let i = 1; i <= totalPages; i++) {
-        buttons.push(renderPageButton(i));
+        items.push(
+          <PaginationItem key={i}>
+            <PaginationLink
+              href="#"
+              isActive={currentPage === i}
+              aria-disabled={isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                handlePageChange(i);
+              }}
+            >
+              {i}
+            </PaginationLink>
+          </PaginationItem>
+        );
       }
-
-      return buttons;
+      return items;
     }
 
     // Always show first page
-    buttons.push(renderPageButton(1));
+    items.push(
+      <PaginationItem key={1}>
+        <PaginationLink
+          href="#"
+          isActive={currentPage === 1}
+          aria-disabled={isPending}
+          onClick={(e) => {
+            e.preventDefault();
+            handlePageChange(1);
+          }}
+        >
+          1
+        </PaginationLink>
+      </PaginationItem>
+    );
 
     if (currentPage <= 4) {
-      // Near beginning: [1] [2] [3] [4] [5] ... [10]
       for (let i = 2; i <= 5; i++) {
-        buttons.push(renderPageButton(i));
+        items.push(
+          <PaginationItem key={i}>
+            <PaginationLink
+              href="#"
+              isActive={currentPage === i}
+              aria-disabled={isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                handlePageChange(i);
+              }}
+            >
+              {i}
+            </PaginationLink>
+          </PaginationItem>
+        );
       }
-
-      buttons.push(
-        <span key="ellipsis" className="px-2">
-          <Ellipsis className="h-4 w-4" />
-        </span>
+      items.push(
+        <PaginationItem key="ellipsis-end">
+          <PaginationEllipsis />
+        </PaginationItem>
       );
-      buttons.push(renderPageButton(totalPages));
+      items.push(
+        <PaginationItem key={totalPages}>
+          <PaginationLink
+            href="#"
+            isActive={currentPage === totalPages}
+            aria-disabled={isPending}
+            onClick={(e) => {
+              e.preventDefault();
+              handlePageChange(totalPages);
+            }}
+          >
+            {totalPages}
+          </PaginationLink>
+        </PaginationItem>
+      );
     } else if (currentPage >= totalPages - 3) {
-      // Near end: [1] ... [6] [7] [8] [9] [10]
-      buttons.push(
-        <span key="ellipsis" className="px-2">
-          <Ellipsis className="h-4 w-4" />
-        </span>
+      items.push(
+        <PaginationItem key="ellipsis-start">
+          <PaginationEllipsis />
+        </PaginationItem>
       );
-
       for (let i = totalPages - 4; i <= totalPages; i++) {
-        buttons.push(renderPageButton(i));
+        items.push(
+          <PaginationItem key={i}>
+            <PaginationLink
+              href="#"
+              isActive={currentPage === i}
+              aria-disabled={isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                handlePageChange(i);
+              }}
+            >
+              {i}
+            </PaginationLink>
+          </PaginationItem>
+        );
       }
     } else {
-      // Middle: [1] ... [3] [4] [5] [6] [7] ... [10]
-      buttons.push(
-        <span key="ellipsis1" className="px-2">
-          <Ellipsis className="h-4 w-4" />
-        </span>
+      items.push(
+        <PaginationItem key="ellipsis-start">
+          <PaginationEllipsis />
+        </PaginationItem>
       );
-
-      for (let i = currentPage - 2; i <= currentPage + 2; i++) {
-        buttons.push(renderPageButton(i));
+      for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+        items.push(
+          <PaginationItem key={i}>
+            <PaginationLink
+              href="#"
+              isActive={currentPage === i}
+              aria-disabled={isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                handlePageChange(i);
+              }}
+            >
+              {i}
+            </PaginationLink>
+          </PaginationItem>
+        );
       }
-
-      buttons.push(
-        <span key="ellipsis2" className="px-2">
-          <Ellipsis className="h-4 w-4" />
-        </span>
+      items.push(
+        <PaginationItem key="ellipsis-end">
+          <PaginationEllipsis />
+        </PaginationItem>
       );
-      buttons.push(renderPageButton(totalPages));
+      items.push(
+        <PaginationItem key={totalPages}>
+          <PaginationLink
+            href="#"
+            isActive={currentPage === totalPages}
+            aria-disabled={isPending}
+            onClick={(e) => {
+              e.preventDefault();
+              handlePageChange(totalPages);
+            }}
+          >
+            {totalPages}
+          </PaginationLink>
+        </PaginationItem>
+      );
     }
 
-    return buttons;
+    return items;
   }
 
-  const renderPageButton = (pageNumber: number) => {
-    // Don't render if page number is invalid
-    if (!pageNumber || pageNumber < 1 || pageNumber > totalPages) {
-      return null;
-    }
-
-    return (
-      <Button
-        key={pageNumber}
-        disabled={isPending}
-        onClick={() => handlePageChange(pageNumber)}
-        className={cn(
-          'mx-1 border border-steel-100 shadow-none transition-none dark:border-dark-300',
-          currentPage === pageNumber
-            ? 'border-steel-700 bg-steel-700 text-white hover:text-white dark:bg-dark-300 dark:text-white'
-            : 'bg-white text-steel-700 dark:bg-dark-50 dark:text-dark-700 dark:hover:bg-dark-300'
-        )}
-      >
-        {pageNumber}
-      </Button>
-    );
-  };
-
   return (
-    <Box className="flex items-center justify-center gap-2">
-      {/* Previous page button */}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => handlePageChange(currentPage - 1)}
-        disabled={currentPage === 1 || isPending}
-        className="border border-steel-100 shadow-none dark:border-dark-300 dark:text-dark-700"
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </Button>
+    <Pagination className="w-auto mx-0">
+      <PaginationContent>
+        <PaginationItem>
+          <PaginationPrevious
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              if (currentPage > 1) handlePageChange(currentPage - 1);
+            }}
+            aria-disabled={currentPage === 1 || isPending}
+            className={cn((currentPage === 1 || isPending) && 'pointer-events-none opacity-50')}
+          />
+        </PaginationItem>
 
-      {/* Page numbers */}
-      <div className="flex items-center">{renderPageButtons()}</div>
+        {renderPageItems()}
 
-      {/* Next page button */}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => handlePageChange(currentPage + 1)}
-        disabled={currentPage === totalPages || isPending}
-        className="border border-steel-100 shadow-none dark:border-dark-300 dark:text-dark-700"
-      >
-        <ChevronRight className="h-4 w-4" />
-      </Button>
-    </Box>
+        <PaginationItem>
+          <PaginationNext
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              if (currentPage < totalPages) handlePageChange(currentPage + 1);
+            }}
+            aria-disabled={currentPage === totalPages || isPending}
+            className={cn((currentPage === totalPages || isPending) && 'pointer-events-none opacity-50')}
+          />
+        </PaginationItem>
+      </PaginationContent>
+    </Pagination>
   );
 }

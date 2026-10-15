@@ -5,7 +5,7 @@ import { LayoutTemplate, Loader2, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import {
   ActionDropdown,
   ActionDropdownItem,

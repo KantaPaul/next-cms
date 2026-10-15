@@ -10,8 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { useParams, usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils/cn';
+import { usePathname } from 'next/navigation';
 import Link from '@/components/atoms/next/link';
 import { getMenuItems } from '@/menus';
 import { useAccess } from '@/providers/access.provider';
@@ -44,11 +43,7 @@ export function NavMain() {
                     <SidebarMenuButton
                       asChild
                       tooltip={name}
-                      data-active={String(isActive)}
-                      // className={cn(
-                      //   'cursor-pointer font-medium hover:bg-steel-100 dark:hover:bg-dark-300/80'
-                      // )}
-                      className={cn('dark:hover:bg-dark-300/80', isActive && 'dark:bg-dark-300/80')}
+                      isActive={isActive}
                     >
                       <Link href={href}>
                         {icon}
@@ -58,11 +53,8 @@ export function NavMain() {
                   </CollapsibleTrigger>
                 ) : (
                   <>
-                    <CollapsibleTrigger
-                      asChild
-                      className={cn(isActive && 'text-steel-700')} //bg-steel-100 dark:bg-dark-300/80
-                    >
-                      <SidebarMenuButton tooltip={name}>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton tooltip={name} isActive={isActive}>
                         {icon}
                         <span>{name}</span>
                         <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
