@@ -5,8 +5,8 @@
   "scripts": {
     "clean": "rimraf -g \"{node_modules,.next,.cache,email-templates/node_modules}\"",
     "clean:cache": "rimraf -g \".next,.cache\"",
-    "dev": "next dev",
-    "dev:only": "next dev",
+    "dev": "next dev -p 3000 -H 0.0.0.0",
+    "dev:only": "next dev -p 3000 -H 0.0.0.0",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -82,6 +82,7 @@
     "postcss": "^8.5.30",
     "radix-ui": "^1.8.1",
     "react": "19.2.0",
+    "react-colorful": "^5.6.1",
     "react-day-picker": "^10.0.2",
     "react-dom": "19.2.0",
     "react-dropzone": "^14.3.8",

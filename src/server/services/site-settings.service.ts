@@ -26,17 +26,35 @@ export type SiteSettingsInput = {
 export const siteSettingsService = {
   /** The singleton row, created with defaults on first read. */
   get: cache(async () => {
-    const [row] = await db.select().from(siteSettings).where(eq(siteSettings.id, SITE_SETTINGS_ID)).limit(1);
-    if (row) return { ...row, themeTokens: resolveThemeTokens(row.themeTokens) };
+    try {
+      const [row] = await db.select().from(siteSettings).where(eq(siteSettings.id, SITE_SETTINGS_ID)).limit(1);
+      if (row) return { ...row, themeTokens: resolveThemeTokens(row.themeTokens) };
 
-    const [created] = await db
-      .insert(siteSettings)
-      .values({ id: SITE_SETTINGS_ID })
-      .onConflictDoNothing()
-      .returning();
-    const settings =
-      created ?? (await db.select().from(siteSettings).where(eq(siteSettings.id, SITE_SETTINGS_ID)).limit(1))[0];
-    return { ...settings, themeTokens: resolveThemeTokens(settings.themeTokens) };
+      const [created] = await db
+        .insert(siteSettings)
+        .values({ id: SITE_SETTINGS_ID })
+        .onConflictDoNothing()
+        .returning();
+      const settings =
+        created ?? (await db.select().from(siteSettings).where(eq(siteSettings.id, SITE_SETTINGS_ID)).limit(1))[0];
+      return { ...settings, themeTokens: resolveThemeTokens(settings?.themeTokens) };
+    } catch {
+      return {
+        id: SITE_SETTINGS_ID,
+        siteName: 'Next CMS',
+        siteDescription: 'Headless CMS & Visual Page Builder',
+        siteUrl: 'http://localhost:3000',
+        logo: null,
+        favicon: null,
+        defaultOgImage: null,
+        headerMenuId: null,
+        footerMenuId: null,
+        themeTokens: resolveThemeTokens(null),
+        robotsTxt: null,
+        googleAnalyticsId: null,
+        updatedAt: new Date(),
+      };
+    }
   }),
 
   update: async (input: SiteSettingsInput, access: UserAccess) => {

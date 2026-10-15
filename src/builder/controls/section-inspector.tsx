@@ -1,16 +1,26 @@
 'use client';
 
 import { createUsePuck } from '@measured/puck';
-import { AlignCenter, AlignLeft, AlignRight, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, AlignVerticalJustifyStart, Ban } from 'lucide-react';
+import {
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
+  AlignVerticalJustifyCenter,
+  AlignVerticalJustifyEnd,
+  AlignVerticalJustifyStart,
+  Ban,
+} from 'lucide-react';
 import { useId } from 'react';
 import type { Device, SectionSettings } from '../style';
 import { AnimationControl } from './animation';
 import { BackgroundControl } from './background';
-import { BorderControl, ShadowControl } from './border';
+import { BorderControl } from './border';
+import { ColorPicker } from './color-picker';
 import { DeviceToggles } from './device-row';
 import { Dimensions } from './dimensions';
 import { useInspectorTab } from './inspector-tab';
-import { Choose, ColorInput, ControlLabel, Group } from './primitives';
+import { Choose, ControlLabel, Group, ResponsiveChoose } from './primitives';
+import { ShadowControl } from './shadow';
 
 const usePuck = createUsePuck();
 
@@ -22,7 +32,15 @@ type Props = {
   onChange: (value: SectionSettings) => void;
 };
 
-function StyleControls({ value: s, set, blockType }: { value: SectionSettings; set: (patch: Partial<SectionSettings>) => void; blockType?: string }) {
+function StyleControls({
+  value: s,
+  set,
+  blockType,
+}: {
+  value: SectionSettings;
+  set: (patch: Partial<SectionSettings>) => void;
+  blockType?: string;
+}) {
   return (
     <div>
       <Group title="Colors" defaultOpen>
@@ -38,12 +56,17 @@ function StyleControls({ value: s, set, blockType }: { value: SectionSettings; s
           onChange={background => set({ background })}
         />
         <BackgroundControl value={s.fill} onChange={fill => set({ fill })} />
-        <ColorInput label="Text color" value={s.textColor} onChange={textColor => set({ textColor })} />
+        <ColorPicker
+          label="Text color"
+          value={s.textColor}
+          onChange={textColor => set({ textColor })}
+        />
       </Group>
+
       <Group title="Typography">
-        <Choose
+        <ResponsiveChoose
           label="Base size"
-          value={s.typography?.size || ''}
+          value={s.typography?.size}
           options={[
             { value: '', label: 'Auto' },
             { value: 'sm', label: 'S' },
@@ -51,48 +74,55 @@ function StyleControls({ value: s, set, blockType }: { value: SectionSettings; s
             { value: 'lg', label: 'L' },
             { value: 'xl', label: 'XL' },
           ]}
-          onChange={size => set({ typography: { ...s.typography, size } })}
+          onChange={size => set({ typography: { ...s.typography, size: size || undefined } })}
         />
-        <Choose
+        <ResponsiveChoose
           label="Weight"
-          value={s.typography?.weight || ''}
+          value={s.typography?.weight}
           options={[
             { value: '', label: 'Auto' },
             { value: 'regular', label: 'Regular' },
             { value: 'medium', label: 'Medium' },
             { value: 'bold', label: 'Bold' },
           ]}
-          onChange={weight => set({ typography: { ...s.typography, weight } })}
+          onChange={weight =>
+            set({ typography: { ...s.typography, weight: weight || undefined } })
+          }
         />
       </Group>
+
       <Group title="Border">
         <BorderControl value={s.border} onChange={border => set({ border })} />
         <ShadowControl value={s.shadow} onChange={shadow => set({ shadow })} />
       </Group>
+
       <Group title="Display">
-        <Choose
+        <ResponsiveChoose
           label="Minimum height"
-          value={s.display?.minHeight ?? 'auto'}
+          value={s.display?.minHeight}
           options={[
             { value: 'auto', label: 'Auto' },
             { value: 'half', label: 'Half screen' },
             { value: 'screen', label: 'Full screen' },
           ]}
-          onChange={minHeight => set({ display: { ...s.display, minHeight } })}
+          onChange={minHeight =>
+            set({ display: { ...s.display, minHeight: minHeight || undefined } })
+          }
         />
-        {s.display?.minHeight && s.display.minHeight !== 'auto' && (
-          <Choose
-            label="Content position"
-            value={s.display?.contentAlign ?? 'center'}
-            options={[
-              { value: 'start', label: 'Top', icon: <AlignVerticalJustifyStart /> },
-              { value: 'center', label: 'Middle', icon: <AlignVerticalJustifyCenter /> },
-              { value: 'end', label: 'Bottom', icon: <AlignVerticalJustifyEnd /> },
-            ]}
-            onChange={contentAlign => set({ display: { ...s.display, contentAlign } })}
-          />
-        )}
+        <ResponsiveChoose
+          label="Content position"
+          value={s.display?.contentAlign}
+          options={[
+            { value: 'start', label: 'Top', icon: <AlignVerticalJustifyStart /> },
+            { value: 'center', label: 'Middle', icon: <AlignVerticalJustifyCenter /> },
+            { value: 'end', label: 'Bottom', icon: <AlignVerticalJustifyEnd /> },
+          ]}
+          onChange={contentAlign =>
+            set({ display: { ...s.display, contentAlign: contentAlign || undefined } })
+          }
+        />
       </Group>
+
       <Group title="Animation" defaultOpen>
         <AnimationControl
           value={s.animation}
@@ -104,9 +134,19 @@ function StyleControls({ value: s, set, blockType }: { value: SectionSettings; s
   );
 }
 
-function LayoutControls({ value: s, set }: { value: SectionSettings; set: (patch: Partial<SectionSettings>) => void }) {
+function LayoutControls({
+  value: s,
+  set,
+}: {
+  value: SectionSettings;
+  set: (patch: Partial<SectionSettings>) => void;
+}) {
   const anchorId = useId();
-  const shown: Record<Device, boolean> = { desktop: !s.hideOnDesktop, tablet: !s.hideOnTablet, mobile: !s.hideOnMobile };
+  const shown: Record<Device, boolean> = {
+    desktop: !s.hideOnDesktop,
+    tablet: !s.hideOnTablet,
+    mobile: !s.hideOnMobile,
+  };
 
   return (
     <div>
@@ -122,30 +162,45 @@ function LayoutControls({ value: s, set }: { value: SectionSettings; set: (patch
           ]}
           onChange={paddingY => set({ paddingY })}
         />
-        <Dimensions label="Custom padding" value={s.spacing} max={400} onChange={spacing => set({ spacing })} />
+        <Dimensions
+          label="Custom padding"
+          value={s.spacing}
+          unit={s.spacingUnit ?? 'px'}
+          onUnitChange={spacingUnit => set({ spacingUnit })}
+          onChange={spacing => set({ spacing })}
+        />
       </Group>
+
       <Group title="Alignment" defaultOpen>
-        <Choose
+        <ResponsiveChoose
           label="Text alignment"
-          value={s.align || ''}
+          value={s.align}
           options={[
             { value: '', label: 'Block default', icon: <Ban /> },
             { value: 'left', label: 'Left', icon: <AlignLeft /> },
             { value: 'center', label: 'Center', icon: <AlignCenter /> },
             { value: 'right', label: 'Right', icon: <AlignRight /> },
           ]}
-          onChange={align => set({ align })}
+          onChange={align => set({ align: align || undefined })}
         />
       </Group>
+
       <Group title="Visibility">
         <div>
           <ControlLabel label="Show on" />
           <DeviceToggles
             value={shown}
-            onChange={next => set({ hideOnDesktop: !next.desktop, hideOnTablet: !next.tablet, hideOnMobile: !next.mobile })}
+            onChange={next =>
+              set({
+                hideOnDesktop: !next.desktop,
+                hideOnTablet: !next.tablet,
+                hideOnMobile: !next.mobile,
+              })
+            }
           />
         </div>
       </Group>
+
       <Group title="Anchor">
         <div>
           <ControlLabel label="Anchor id (for #links)" htmlFor={anchorId} />
@@ -174,11 +229,12 @@ export function SectionField({ value, onChange }: Props) {
 
   if (tab === 'style') return <StyleControls value={s} set={set} blockType={blockType} />;
   if (tab === 'layout') return <LayoutControls value={s} set={set} />;
+
   return (
     <div className="space-y-2">
-      <p className="text-xs font-semibold uppercase tracking-wide text-steel-400">Style</p>
+      <p className="text-xs font-semibold tracking-wide text-steel-400 uppercase">Style</p>
       <StyleControls value={s} set={set} blockType={blockType} />
-      <p className="pt-2 text-xs font-semibold uppercase tracking-wide text-steel-400">Layout</p>
+      <p className="pt-2 text-xs font-semibold tracking-wide text-steel-400 uppercase">Layout</p>
       <LayoutControls value={s} set={set} />
     </div>
   );

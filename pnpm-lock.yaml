@@ -185,6 +185,9 @@ importers:
       react:
         specifier: 19.2.0
         version: 19.2.0
+      react-colorful:
+        specifier: ^5.6.1
+        version: 5.8.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       react-day-picker:
         specifier: ^10.0.2
         version: 10.0.2(@types/react@19.2.7)(react@19.2.0)
@@ -4620,6 +4623,12 @@ packages:
         optional: true
       '@types/react-dom':
         optional: true
+
+  react-colorful@5.8.1:
+    resolution: {integrity: sha512-oz68bhsnFWnpDf1ZR8daiQbYpXUnM2h2J6hl9Zg2rTpM/DU6vCqe1E+CpqmqLnJucMZetHZeifSAfJ+geN9lcA==}
+    peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
 
   react-day-picker@10.0.2:
     resolution: {integrity: sha512-QetiKtZWE9Uaw/pM/SYNv6WPYOTRnSJ2puL0GgwkmUFMIwiY0dtjH1W4B7DOVXVNQM0ZOClGpH/heOfBSzWeiA==}
@@ -9477,6 +9486,11 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.7
       '@types/react-dom': 19.2.3(@types/react@19.2.7)
+
+  react-colorful@5.8.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
+    dependencies:
+      react: 19.2.0
+      react-dom: 19.2.0(react@19.2.0)
 
   react-day-picker@10.0.2(@types/react@19.2.7)(react@19.2.0):
     dependencies:

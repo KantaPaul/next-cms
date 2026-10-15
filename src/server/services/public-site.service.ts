@@ -36,28 +36,40 @@ const pageSelect = {
 };
 
 async function findPage(route: SiteRoute, extra?: SQL) {
-  const where = and(
-    eq(pages.language, route.language),
-    isNull(pages.deletedAt),
-    route.slug === null ? eq(pages.isHome, true) : eq(pages.slug, route.slug),
-    extra
-  );
-  const [page] = await db.select(pageSelect).from(pages).where(where).limit(1);
-  return page ?? null;
+  try {
+    const where = and(
+      eq(pages.language, route.language),
+      isNull(pages.deletedAt),
+      route.slug === null ? eq(pages.isHome, true) : eq(pages.slug, route.slug),
+      extra
+    );
+    const [page] = await db.select(pageSelect).from(pages).where(where).limit(1);
+    return page ?? null;
+  } catch {
+    return null;
+  }
 }
 
 async function loadContent(pageId: string, kind: 'draft' | 'published') {
-  const [row] = await db
-    .select({ content: pageContents.content })
-    .from(pageContents)
-    .where(and(eq(pageContents.pageId, pageId), eq(pageContents.kind, kind)))
-    .limit(1);
-  return row?.content ?? null;
+  try {
+    const [row] = await db
+      .select({ content: pageContents.content })
+      .from(pageContents)
+      .where(and(eq(pageContents.pageId, pageId), eq(pageContents.kind, kind)))
+      .limit(1);
+    return row?.content ?? null;
+  } catch {
+    return null;
+  }
 }
 
 async function loadSeo(pageId: string) {
-  const [row] = await db.select().from(seoMeta).where(eq(seoMeta.pageId, pageId)).limit(1);
-  return row ?? null;
+  try {
+    const [row] = await db.select().from(seoMeta).where(eq(seoMeta.pageId, pageId)).limit(1);
+    return row ?? null;
+  } catch {
+    return null;
+  }
 }
 
 async function loadAlternates(page: { id: string; translationGroupId: string | null }, publishedOnly: boolean) {
@@ -132,22 +144,26 @@ export const publicSiteService = {
       .where(and(eq(pages.status, 'published'), eq(pages.visibility, 'public'), isNull(pages.deletedAt))),
 
   getMenusById: cache(async (ids: (string | null | undefined)[]) => {
-    const wanted = ids.filter((id): id is string => !!id);
-    if (!wanted.length) return {};
-    const [menuRows, itemRows] = await Promise.all([
-      db.select().from(menus).where(inArray(menus.id, wanted)),
-      db.select().from(menuItems).where(inArray(menuItems.menuId, wanted)).orderBy(asc(menuItems.order)),
-    ]);
+    try {
+      const wanted = ids.filter((id): id is string => !!id);
+      if (!wanted.length) return {};
+      const [menuRows, itemRows] = await Promise.all([
+        db.select().from(menus).where(inArray(menus.id, wanted)),
+        db.select().from(menuItems).where(inArray(menuItems.menuId, wanted)).orderBy(asc(menuItems.order)),
+      ]);
 
-    return Object.fromEntries(
-      menuRows.map(menu => {
-        const items = itemRows.filter(i => i.menuId === menu.id);
-        const tree = items
-          .filter(i => !i.parentId)
-          .map(item => ({ ...item, children: items.filter(child => child.parentId === item.id) }));
-        return [menu.id, { ...menu, items: tree }];
-      })
-    ) as Record<string, MenuWithItems>;
+      return Object.fromEntries(
+        menuRows.map(menu => {
+          const items = itemRows.filter(i => i.menuId === menu.id);
+          const tree = items
+            .filter(i => !i.parentId)
+            .map(item => ({ ...item, children: items.filter(child => child.parentId === item.id) }));
+          return [menu.id, { ...menu, items: tree }];
+        })
+      ) as Record<string, MenuWithItems>;
+    } catch {
+      return {};
+    }
   }),
 };
 

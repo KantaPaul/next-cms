@@ -18,6 +18,7 @@ dayjs.extend(minMax);
 type StringOrNull<T = ConfigType> = T extends null | undefined ? null : string;
 export type NonNullableConfigType = NonNullable<ConfigType>;
 export type IDateUnionType = string | number | Date | null | undefined;
+export type DateInput = IDateUnionType;
 
 /**
  * Gets the server's timezone
@@ -133,6 +134,7 @@ export const toISODateTime = (date: ConfigType): string => {
   if (!date) return '';
   return dayjs(date).utc(true).format('YYYY-MM-DD HH:mm:ssZ');
 };
+export const toPostgresUTCTimestamptz = toISODateTime;
 
 export const formatTime = (date: ConfigType): string => {
   if (!date) return '';

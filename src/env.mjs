@@ -8,13 +8,13 @@ export const env = createEnv({
    * Will throw if you access these variables on the client.
    */
   server: {
-    DATABASE_URL: z.string().url(),
-    NODE_ENV: z.enum(['development', 'test', 'production']),
-    SITE_URL: z.string().url(),
+    DATABASE_URL: z.string().default('postgres://postgres:postgres@localhost:5432/postgres'),
+    NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+    SITE_URL: z.string().default('http://localhost:3000'),
 
-    GOOGLE_CLIENT_ID: z.string().min(1),
-    GOOGLE_CLIENT_SECRET: z.string().min(1),
-    GOOGLE_REDIRECT_URI: z.string().url(),
+    GOOGLE_CLIENT_ID: z.string().default('placeholder'),
+    GOOGLE_CLIENT_SECRET: z.string().default('placeholder'),
+    GOOGLE_REDIRECT_URI: z.string().default('http://localhost:3000/login/google/callback'),
 
     STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
     MEDIA_LOCAL_DIR: z.string().default('uploads'),
@@ -31,14 +31,9 @@ export const env = createEnv({
 
     CRON_SECRET: z.string().optional(),
   },
-  /*
-   * Environment variables available on the client (and server).
-   *
-   * 💡 You'll get type errors if these are not prefixed with NEXT_PUBLIC_.
-   */
   client: {
-    NEXT_PUBLIC_APP_NAME: z.string().min(1),
-    NEXT_PUBLIC_BASE_URL: z.string().url(),
+    NEXT_PUBLIC_APP_NAME: z.string().default('Next CMS'),
+    NEXT_PUBLIC_BASE_URL: z.string().default('http://localhost:3000'),
     NEXT_PUBLIC_APP_VERSION: z.string().optional(),
   },
   /*

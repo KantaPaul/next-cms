@@ -15,6 +15,28 @@ export const SIDES: Side[] = ['top', 'right', 'bottom', 'left'];
 export type Sides = Partial<Record<Side, number>>;
 export type Responsive<T> = Partial<Record<Device, T>>;
 
+export type MaybeResponsive<T> = T | Responsive<T>;
+
+export type ShadowSettings = {
+  x?: number;
+  y?: number;
+  blur?: number;
+  spread?: number;
+  color?: string;
+  opacity?: number;
+  inset?: boolean;
+};
+
+export type SpacingUnit = 'px' | 'rem' | 'em' | '%';
+export const SPACING_UNITS: readonly SpacingUnit[] = ['px', 'rem', 'em', '%'] as const;
+
+export const SPACING_LIMITS: Record<SpacingUnit, { min: number; max: number; step: number }> = {
+  px: { min: 0, max: 400, step: 1 },
+  rem: { min: 0, max: 25, step: 0.25 },
+  em: { min: 0, max: 25, step: 0.25 },
+  '%': { min: 0, max: 50, step: 1 },
+};
+
 export type Fill = {
   type?: 'color' | 'gradient' | 'image';
   color?: string;
@@ -37,13 +59,13 @@ export type BorderSettings = {
 };
 
 export type Typography = {
-  size?: '' | 'sm' | 'md' | 'lg' | 'xl';
-  weight?: '' | 'regular' | 'medium' | 'bold';
+  size?: MaybeResponsive<'' | 'sm' | 'md' | 'lg' | 'xl'>;
+  weight?: MaybeResponsive<'' | 'regular' | 'medium' | 'bold'>;
 };
 
 export type DisplaySettings = {
-  minHeight?: 'auto' | 'half' | 'screen';
-  contentAlign?: 'start' | 'center' | 'end';
+  minHeight?: MaybeResponsive<'auto' | 'half' | 'screen'>;
+  contentAlign?: MaybeResponsive<'start' | 'center' | 'end'>;
 };
 
 export const ENTRANCES = ['none', 'fade', 'fade-up', 'fade-down', 'slide-left', 'slide-right', 'zoom', 'blur'] as const;
@@ -93,12 +115,13 @@ export type SectionSettings = {
   hideOnDesktop?: boolean;
   anchor?: string;
   spacing?: Responsive<Sides>;
-  align?: '' | 'left' | 'center' | 'right';
+  spacingUnit?: SpacingUnit;
+  align?: MaybeResponsive<'' | 'left' | 'center' | 'right'>;
   fill?: Fill;
   textColor?: string;
   typography?: Typography;
   border?: BorderSettings;
-  shadow?: 'none' | 'sm' | 'md' | 'lg';
+  shadow?: 'none' | 'sm' | 'md' | 'lg' | ShadowSettings;
   display?: DisplaySettings;
   animation?: AnimationSettings;
 };
@@ -119,7 +142,41 @@ export const clamp = (value: unknown, min: number, max: number) => {
 export const pick = <T extends string>(value: unknown, allowed: readonly T[]) =>
   allowed.includes(value as T) ? (value as T) : undefined;
 
-/* ---------- responsive sides ---------- */
+export function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const clean = hex.replace(/^#/, '');
+
+  if (clean.length === 3) {
+    return {
+      r: parseInt(clean[0] + clean[0], 16),
+      g: parseInt(clean[1] + clean[1], 16),
+      b: parseInt(clean[2] + clean[2], 16),
+    };
+  }
+
+  if (clean.length === 6 || clean.length === 8) {
+    return {
+      r: parseInt(clean.slice(0, 2), 16),
+      g: parseInt(clean.slice(2, 4), 16),
+      b: parseInt(clean.slice(4, 6), 16),
+    };
+  }
+
+  return null;
+}
+
+export function formatShadow(shadow: ShadowSettings): string | null {
+  const x = clamp(shadow.x, -50, 50) ?? 0;
+  const y = clamp(shadow.y, -50, 50) ?? 0;
+  const blur = clamp(shadow.blur, 0, 100) ?? 0;
+  const spread = clamp(shadow.spread, -50, 50) ?? 0;
+  const opacity = clamp(shadow.opacity, 0, 1) ?? 1;
+  const color = safeColor(shadow.color) ?? '#000000';
+  const rgb = hexToRgb(color) ?? { r: 0, g: 0, b: 0 };
+  const colorWithAlpha = `rgb(${rgb.r} ${rgb.g} ${rgb.b} / ${opacity})`;
+  return `${shadow.inset ? 'inset ' : ''}${x}px ${y}px ${blur}px ${spread}px ${colorWithAlpha}`;
+}
+
+/* ---------- responsive resolution ---------- */
 
 const DEVICE_ORDER: Record<Device, Device[]> = {
   desktop: ['desktop', 'tablet', 'mobile'],
@@ -128,6 +185,27 @@ const DEVICE_ORDER: Record<Device, Device[]> = {
 };
 const DEVICE_SUFFIX: Record<Device, string> = { desktop: 'd', tablet: 't', mobile: 'm' };
 const SIDE_SUFFIX: Record<Side, string> = { top: 't', right: 'r', bottom: 'b', left: 'l' };
+
+export function resolveResponsive<T>(
+  v: MaybeResponsive<T> | undefined,
+  device: Device,
+  valid: (x: unknown) => T | undefined
+): T | undefined {
+  if (v === undefined || v === null) return undefined;
+
+  if (typeof v === 'object' && !Array.isArray(v)) {
+    const resp = v as Partial<Record<Device, unknown>>;
+
+    for (const d of DEVICE_ORDER[device]) {
+      const parsed = valid(resp[d]);
+      if (parsed !== undefined) return parsed;
+    }
+
+    return undefined;
+  }
+
+  return valid(v);
+}
 
 /** Resolves a side for a device, falling back to the nearest device that sets it. */
 const resolveSide = (value: Responsive<Sides> | undefined, device: Device, side: Side, max: number) => {
@@ -140,7 +218,7 @@ const resolveSide = (value: Responsive<Sides> | undefined, device: Device, side:
 };
 
 /** Emits `--s-{prefix}{side}-{device}` variables plus one class per side that has any value. */
-function responsiveSides(value: Responsive<Sides> | undefined, prefix: 'p' | 'b', max: number) {
+function responsiveSides(value: Responsive<Sides> | undefined, prefix: 'p' | 'b', max: number, unit = 'px') {
   const classes: string[] = [];
   const vars: Record<string, string> = {};
 
@@ -149,7 +227,7 @@ function responsiveSides(value: Responsive<Sides> | undefined, prefix: 'p' | 'b'
     classes.push(`s-${prefix}${SIDE_SUFFIX[side]}`);
 
     for (const device of DEVICES) {
-      vars[`--s-${prefix}${SIDE_SUFFIX[side]}-${DEVICE_SUFFIX[device]}`] = `${resolveSide(value, device, side, max)}px`;
+      vars[`--s-${prefix}${SIDE_SUFFIX[side]}-${DEVICE_SUFFIX[device]}`] = `${resolveSide(value, device, side, max)}${unit}`;
     }
   }
 
@@ -186,14 +264,14 @@ function fillValue(fill: Fill | undefined) {
   return { light: value, dark: value };
 }
 
-/* ---------- class maps ---------- */
+/* ---------- class maps & constants ---------- */
 
-const TYPE_SIZE = { sm: 'text-sm', md: 'text-base', lg: 'text-lg', xl: 'text-xl' };
-const TYPE_WEIGHT = { regular: 'font-normal', medium: 'font-medium', bold: 'font-bold' };
 const SHADOW = { none: '', sm: 'shadow-sm', md: 'shadow-md', lg: 'shadow-xl' };
-const ALIGN = { left: 'text-left', center: 'text-center', right: 'text-right' };
-const MIN_HEIGHT = { auto: '', half: 'min-h-[50vh]', screen: 'min-h-screen' };
-const CONTENT_ALIGN = { start: 'justify-start', center: 'justify-center', end: 'justify-end' };
+const FONT_SIZE_REM: Record<string, string> = { sm: '0.875rem', md: '1rem', lg: '1.125rem', xl: '1.25rem' };
+const FONT_WEIGHT_MAP: Record<string, string> = { regular: '400', medium: '500', bold: '700' };
+const TEXT_ALIGN_MAP: Record<string, string> = { left: 'left', center: 'center', right: 'right' };
+const MIN_HEIGHT_MAP: Record<string, string> = { auto: 'auto', half: '50vh', screen: '100vh' };
+const JUSTIFY_MAP: Record<string, string> = { start: 'flex-start', center: 'center', end: 'flex-end' };
 
 export type ResolvedSectionStyle = {
   outerClasses: string[];
@@ -208,7 +286,9 @@ export function resolveSectionStyle(s: SectionSettings): ResolvedSectionStyle {
   const innerClasses: string[] = [];
   const style: Record<string, string> = {};
 
-  const spacing = responsiveSides(s.spacing, 'p', 400);
+  const spacingUnit = pick(s.spacingUnit, SPACING_UNITS) ?? 'px';
+  const maxSpacing = SPACING_LIMITS[spacingUnit].max;
+  const spacing = responsiveSides(s.spacing, 'p', maxSpacing, spacingUnit);
   outerClasses.push(...spacing.classes);
   Object.assign(style, spacing.vars);
 
@@ -223,15 +303,44 @@ export function resolveSectionStyle(s: SectionSettings): ResolvedSectionStyle {
   const textColor = safeColor(s.textColor);
   if (textColor) style.color = textColor;
 
-  const size = pick(s.typography?.size, ['sm', 'md', 'lg', 'xl'] as const);
-  if (size) outerClasses.push(TYPE_SIZE[size]);
-  const weight = pick(s.typography?.weight, ['regular', 'medium', 'bold'] as const);
-  if (weight) outerClasses.push(TYPE_WEIGHT[weight]);
+  // Typography size (responsive)
+  const hasSize = DEVICES.some(
+    d => resolveResponsive(s.typography?.size, d, x => pick(x, ['sm', 'md', 'lg', 'xl'] as const)) !== undefined
+  );
+
+  if (hasSize) {
+    outerClasses.push('s-fs');
+
+    for (const d of DEVICES) {
+      const resolved = resolveResponsive(s.typography?.size, d, x => pick(x, ['sm', 'md', 'lg', 'xl'] as const));
+
+      if (resolved) {
+        style[`--s-fs-${DEVICE_SUFFIX[d]}`] = FONT_SIZE_REM[resolved];
+      }
+    }
+  }
+
+  // Typography weight (responsive)
+  const hasWeight = DEVICES.some(
+    d => resolveResponsive(s.typography?.weight, d, x => pick(x, ['regular', 'medium', 'bold'] as const)) !== undefined
+  );
+
+  if (hasWeight) {
+    outerClasses.push('s-fw');
+
+    for (const d of DEVICES) {
+      const resolved = resolveResponsive(s.typography?.weight, d, x => pick(x, ['regular', 'medium', 'bold'] as const));
+
+      if (resolved) {
+        style[`--s-fw-${DEVICE_SUFFIX[d]}`] = FONT_WEIGHT_MAP[resolved];
+      }
+    }
+  }
 
   const borderStyle = pick(s.border?.style, ['none', 'solid', 'dashed'] as const);
 
   if (borderStyle && borderStyle !== 'none') {
-    const widths = responsiveSides(s.border?.width, 'b', 40);
+    const widths = responsiveSides(s.border?.width, 'b', 40, 'px');
 
     if (widths.classes.length) {
       outerClasses.push(`s-bd-${borderStyle}`, ...widths.classes);
@@ -241,17 +350,63 @@ export function resolveSectionStyle(s: SectionSettings): ResolvedSectionStyle {
     }
   }
 
-  const shadow = pick(s.shadow, ['none', 'sm', 'md', 'lg'] as const);
-  if (shadow) outerClasses.push(SHADOW[shadow]);
+  // Shadow (structured object or legacy string)
+  if (typeof s.shadow === 'string') {
+    const legacy = pick(s.shadow, ['none', 'sm', 'md', 'lg'] as const);
+    if (legacy && legacy !== 'none') outerClasses.push(SHADOW[legacy]);
+  } else if (s.shadow && typeof s.shadow === 'object') {
+    const shadowVal = formatShadow(s.shadow);
 
-  const align = pick(s.align, ['left', 'center', 'right'] as const);
-  if (align) innerClasses.push(ALIGN[align]);
+    if (shadowVal) {
+      outerClasses.push('s-shadow');
+      style['--s-shadow'] = shadowVal;
+    }
+  }
 
-  const minHeight = pick(s.display?.minHeight, ['auto', 'half', 'screen'] as const);
+  // Text align (responsive)
+  const hasAlign = DEVICES.some(
+    d => resolveResponsive(s.align, d, x => pick(x, ['left', 'center', 'right'] as const)) !== undefined
+  );
 
-  if (minHeight && minHeight !== 'auto') {
-    const contentAlign = pick(s.display?.contentAlign, ['start', 'center', 'end'] as const) ?? 'center';
-    outerClasses.push(MIN_HEIGHT[minHeight], 'flex flex-col', CONTENT_ALIGN[contentAlign]);
+  if (hasAlign) {
+    innerClasses.push('s-ta');
+
+    for (const d of DEVICES) {
+      const resolved = resolveResponsive(s.align, d, x => pick(x, ['left', 'center', 'right'] as const));
+
+      if (resolved) {
+        style[`--s-ta-${DEVICE_SUFFIX[d]}`] = TEXT_ALIGN_MAP[resolved];
+      }
+    }
+  }
+
+  // Minimum height (responsive)
+  const hasMinHeight = DEVICES.some(d => {
+    const r = resolveResponsive(s.display?.minHeight, d, x => pick(x, ['auto', 'half', 'screen'] as const));
+    return r && r !== 'auto';
+  });
+
+  if (hasMinHeight) {
+    outerClasses.push('s-mh', 'flex', 'flex-col');
+
+    for (const d of DEVICES) {
+      const resolved = resolveResponsive(s.display?.minHeight, d, x => pick(x, ['auto', 'half', 'screen'] as const));
+      style[`--s-mh-${DEVICE_SUFFIX[d]}`] = resolved ? MIN_HEIGHT_MAP[resolved] : 'auto';
+    }
+  }
+
+  // Content alignment (responsive)
+  const hasContentAlign = DEVICES.some(
+    d => resolveResponsive(s.display?.contentAlign, d, x => pick(x, ['start', 'center', 'end'] as const)) !== undefined
+  );
+
+  if (hasContentAlign || hasMinHeight) {
+    outerClasses.push('s-jc');
+
+    for (const d of DEVICES) {
+      const resolved = resolveResponsive(s.display?.contentAlign, d, x => pick(x, ['start', 'center', 'end'] as const)) ?? 'center';
+      style[`--s-jc-${DEVICE_SUFFIX[d]}`] = JUSTIFY_MAP[resolved];
+    }
   }
 
   return { outerClasses: outerClasses.filter(Boolean), innerClasses, style: style as CSSProperties, hasFill: !!fill };
