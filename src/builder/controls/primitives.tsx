@@ -2,6 +2,22 @@
 
 import { ChevronDown, RotateCcw, X } from 'lucide-react';
 import { useEffect, useId, useState, type ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { FormInput } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils/cn';
 import { resolveResponsive, type Device, type MaybeResponsive, type Responsive } from '../style';
 import { DeviceRow, useCanvasDevice } from './device-row';
@@ -21,9 +37,9 @@ export function ControlLabel({
 }) {
   return (
     <div className="mb-1.5 flex min-h-5 items-center justify-between gap-2">
-      <label htmlFor={htmlFor} className="text-xs font-medium text-steel-600">
+      <Label htmlFor={htmlFor} className="text-xs font-medium text-steel-600">
         {label}
-      </label>
+      </Label>
       <div className="flex items-center gap-1.5">
         {responsive && <DeviceRow />}
         {aside ?? children}
@@ -38,30 +54,28 @@ export function Group({ title, defaultOpen = false, children }: { title: string;
   const id = useId();
 
   return (
-    <div className="border-t border-steel-100 first:border-t-0">
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-controls={id}
-        onClick={() => setOpen(o => !o)}
-        className="flex w-full items-center justify-between py-2.5 text-left text-sm font-medium text-steel-800"
-      >
-        {title}
-        <ChevronDown className={cn('size-4 text-steel-400 transition-transform', open && 'rotate-180')} />
-      </button>
-
-      {open && (
-        <div id={id} className="space-y-4 pb-4">
-          {children}
-        </div>
-      )}
-    </div>
+    <Collapsible open={open} onOpenChange={setOpen} className="border-t border-steel-100 first:border-t-0">
+      <CollapsibleTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          aria-controls={id}
+          className="flex h-auto w-full items-center justify-between rounded-none px-0 py-2.5 text-left text-sm font-medium text-steel-800 hover:bg-transparent"
+        >
+          {title}
+          <ChevronDown className={cn('size-4 text-steel-400 transition-transform', open && 'rotate-180')} />
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent id={id} className="space-y-4 pb-4">
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 
 export type ChooseOption<T extends string> = { value: T; label: string; icon?: ReactNode };
 
-/** Segmented button row: gear-trader style (divide-x, rounded-sm, equal flex-1 cells). */
+/** Segmented button row for mutually exclusive options. */
 export function Choose<T extends string>({
   label,
   value,
@@ -93,7 +107,7 @@ export function Choose<T extends string>({
         role="radiogroup"
         aria-label={label}
         className={cn(
-          'grid divide-x divide-steel-200 overflow-hidden rounded-sm border border-steel-200 bg-white text-xs',
+          'grid divide-x divide-border overflow-hidden rounded-md border border-border bg-background text-xs',
           !columns && 'auto-cols-fr grid-flow-col',
           isInherited && 'opacity-65'
         )}
@@ -103,21 +117,24 @@ export function Choose<T extends string>({
           const selected = option.value === value;
 
           return (
-            <button
+            <Button
               key={option.value}
               type="button"
               role="radio"
+              variant="ghost"
               aria-checked={selected}
               title={option.label}
               aria-label={option.icon ? option.label : undefined}
               onClick={() => onChange(option.value)}
               className={cn(
-                'flex min-h-8 items-center justify-center gap-1 px-1.5 py-1.5 transition-colors [&>svg]:size-4',
-                selected ? 'bg-steel-100 font-medium text-steel-900' : 'text-steel-600 hover:bg-steel-50'
+                'h-8 min-h-8 rounded-none px-1.5 py-1.5 text-xs [&>svg]:size-4',
+                selected
+                  ? 'bg-muted font-medium text-foreground hover:bg-muted'
+                  : 'text-muted-foreground hover:bg-muted/50'
               )}
             >
               {option.icon ?? <span className="truncate">{option.label}</span>}
-            </button>
+            </Button>
           );
         })}
       </div>
@@ -125,7 +142,7 @@ export function Choose<T extends string>({
   );
 }
 
-/** Range plus an editable number with gear-trader styling and optional unit select. */
+/** Range plus an editable number with optional unit select. */
 export function Slider({
   label,
   value,
@@ -173,17 +190,18 @@ export function Slider({
       <ControlLabel label={label} htmlFor={id} responsive={responsive}>
         <div className="flex items-center gap-1.5">
           {units && (
-            <select
-              value={units.value}
-              onChange={e => units.onChange(e.target.value)}
-              className="h-5 rounded border border-steel-200 bg-white px-1 text-[10px] font-medium text-steel-700"
-            >
-              {units.options.map(u => (
-                <option key={u} value={u}>
-                  {u}
-                </option>
-              ))}
-            </select>
+            <Select value={units.value} onValueChange={units.onChange}>
+              <SelectTrigger size="sm" className="h-5 w-auto min-w-12 gap-0.5 border-steel-200 px-1 text-[10px] font-medium">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {units.options.map(u => (
+                  <SelectItem key={u} value={u} className="text-xs">
+                    {u}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
           {aside}
         </div>
@@ -198,11 +216,11 @@ export function Slider({
           step={step}
           value={value ?? min}
           onChange={e => onChange(Number(e.target.value))}
-          className={cn('h-1.5 w-3/4 cursor-pointer accent-indigo-600', value === undefined && 'opacity-40')}
+          className={cn('h-1.5 w-3/4 cursor-pointer accent-primary', value === undefined && 'opacity-40')}
         />
 
-        <div className="flex h-8 w-1/4 min-w-16 items-center rounded-md border border-steel-200 bg-white pr-2 focus-within:border-indigo-400">
-          <input
+        <div className="flex h-8 w-1/4 min-w-16 items-center rounded-md border border-input bg-background pr-2 focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
+          <FormInput
             id={id}
             inputMode="decimal"
             value={draft}
@@ -210,16 +228,16 @@ export function Slider({
             onChange={e => setDraft(e.target.value)}
             onBlur={e => commit(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && commit(e.currentTarget.value)}
-            className="h-full w-full min-w-0 rounded-md border-0 bg-transparent px-2 text-xs focus:ring-0"
+            className="h-full border-0 bg-transparent px-2 text-xs shadow-none focus-visible:ring-0"
           />
-          {unit && <span className="text-[11px] text-steel-400">{unit}</span>}
+          {unit && <span className="text-[11px] text-muted-foreground">{unit}</span>}
         </div>
       </div>
     </div>
   );
 }
 
-/** Full-width select under label (gear-trader style). */
+/** Full-width select under label. */
 export function SelectInput<T extends string>({
   label,
   value,
@@ -244,21 +262,22 @@ export function SelectInput<T extends string>({
       <ControlLabel label={label} htmlFor={id} responsive={responsive}>
         {aside}
       </ControlLabel>
-      <select
-        id={id}
-        value={value}
-        onChange={e => onChange(e.target.value as T)}
-        className={cn(
-          'h-8 w-full rounded-md border border-steel-200 bg-white px-2 text-xs text-steel-800 focus:border-indigo-400 focus:outline-none',
-          isInherited && 'opacity-65 text-steel-500'
-        )}
-      >
-        {options.map(o => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+      <Select value={value} onValueChange={v => onChange(v as T)}>
+        <SelectTrigger
+          id={id}
+          size="sm"
+          className={cn('h-8 w-full text-xs', isInherited && 'opacity-65 text-muted-foreground')}
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map(o => (
+            <SelectItem key={o.value} value={o.value} className="text-xs">
+              {o.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }
@@ -283,7 +302,11 @@ export function ResponsiveChoose<T extends string>({
   const validator = valid ?? ((x: unknown) => (options.some(o => o.value === x) ? (x as T) : undefined));
 
   const isObject = typeof value === 'object' && value !== null && !Array.isArray(value);
-  const currentDeviceVal = isObject ? (value as Partial<Record<Device, T>>)[device] : (device === 'desktop' ? (value as T | undefined) : undefined);
+  const currentDeviceVal = isObject
+    ? (value as Partial<Record<Device, T>>)[device]
+    : device === 'desktop'
+      ? (value as T | undefined)
+      : undefined;
   const resolvedVal = resolveResponsive(value, device, validator);
   const hasOverride = currentDeviceVal !== undefined;
   const isInherited = !hasOverride && resolvedVal !== undefined && device !== 'desktop';
@@ -301,21 +324,27 @@ export function ResponsiveChoose<T extends string>({
   };
 
   const handleChange = (nextVal: T) => {
-    const base = isObject ? { ...(value as Record<Device, T>) } : (value !== undefined ? { desktop: value as T } : {});
+    const base = isObject
+      ? { ...(value as Record<Device, T>) }
+      : value !== undefined
+        ? { desktop: value as T }
+        : {};
     onChange({ ...base, [device]: nextVal });
   };
 
   const aside = hasOverride ? (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="sm"
       title={`Reset ${device} override`}
       onClick={resetOverride}
-      className="inline-flex items-center gap-0.5 text-[11px] text-indigo-600 hover:text-indigo-800"
+      className="h-auto gap-0.5 px-1 py-0 text-[11px] text-primary hover:text-primary"
     >
       <RotateCcw className="size-2.5" /> Reset
-    </button>
+    </Button>
   ) : isInherited ? (
-    <span className="text-[10px] text-steel-400 italic">Inherited</span>
+    <span className="text-[10px] text-muted-foreground italic">Inherited</span>
   ) : null;
 
   return (
@@ -350,7 +379,11 @@ export function ResponsiveSelect<T extends string>({
   const validator = valid ?? ((x: unknown) => (options.some(o => o.value === x) ? (x as T) : undefined));
 
   const isObject = typeof value === 'object' && value !== null && !Array.isArray(value);
-  const currentDeviceVal = isObject ? (value as Partial<Record<Device, T>>)[device] : (device === 'desktop' ? (value as T | undefined) : undefined);
+  const currentDeviceVal = isObject
+    ? (value as Partial<Record<Device, T>>)[device]
+    : device === 'desktop'
+      ? (value as T | undefined)
+      : undefined;
   const resolvedVal = resolveResponsive(value, device, validator) ?? options[0]?.value;
   const hasOverride = currentDeviceVal !== undefined;
   const isInherited = !hasOverride && resolvedVal !== undefined && device !== 'desktop';
@@ -368,21 +401,27 @@ export function ResponsiveSelect<T extends string>({
   };
 
   const handleChange = (nextVal: T) => {
-    const base = isObject ? { ...(value as Record<Device, T>) } : (value !== undefined ? { desktop: value as T } : {});
+    const base = isObject
+      ? { ...(value as Record<Device, T>) }
+      : value !== undefined
+        ? { desktop: value as T }
+        : {};
     onChange({ ...base, [device]: nextVal });
   };
 
   const aside = hasOverride ? (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="sm"
       title={`Reset ${device} override`}
       onClick={resetOverride}
-      className="inline-flex items-center gap-0.5 text-[11px] text-indigo-600 hover:text-indigo-800"
+      className="h-auto gap-0.5 px-1 py-0 text-[11px] text-primary hover:text-primary"
     >
       <RotateCcw className="size-2.5" /> Reset
-    </button>
+    </Button>
   ) : isInherited ? (
-    <span className="text-[10px] text-steel-400 italic">Inherited</span>
+    <span className="text-[10px] text-muted-foreground italic">Inherited</span>
   ) : null;
 
   return (
@@ -428,7 +467,11 @@ export function ResponsiveSlider({
   const validator = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) ? x : undefined);
 
   const isObject = typeof value === 'object' && value !== null && !Array.isArray(value);
-  const currentDeviceVal = isObject ? (value as Partial<Record<Device, number>>)[device] : (device === 'desktop' ? (value as number | undefined) : undefined);
+  const currentDeviceVal = isObject
+    ? (value as Partial<Record<Device, number>>)[device]
+    : device === 'desktop'
+      ? (value as number | undefined)
+      : undefined;
   const resolvedVal = resolveResponsive(value, device, validator);
   const hasOverride = currentDeviceVal !== undefined;
   const isInherited = !hasOverride && resolvedVal !== undefined && device !== 'desktop';
@@ -462,16 +505,18 @@ export function ResponsiveSlider({
   };
 
   const aside = hasOverride ? (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="sm"
       title={`Reset ${device} override`}
       onClick={resetOverride}
-      className="inline-flex items-center gap-0.5 text-[11px] text-indigo-600 hover:text-indigo-800"
+      className="h-auto gap-0.5 px-1 py-0 text-[11px] text-primary hover:text-primary"
     >
       <RotateCcw className="size-2.5" /> Reset
-    </button>
+    </Button>
   ) : isInherited ? (
-    <span className="text-[10px] text-steel-400 italic">Inherited</span>
+    <span className="text-[10px] text-muted-foreground italic">Inherited</span>
   ) : null;
 
   return (
@@ -492,7 +537,6 @@ export function ResponsiveSlider({
   );
 }
 
-// Keep ColorInput for backwards compatibility if referenced elsewhere
 const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 
 export function ColorInput({
@@ -521,10 +565,13 @@ export function ColorInput({
   return (
     <div>
       <ControlLabel label={label} htmlFor={id} />
-      <div className="flex h-9 items-center gap-2 rounded-md border border-steel-200 bg-steel-50 px-1.5 focus-within:border-indigo-400">
-        <span className="relative size-6 shrink-0 overflow-hidden rounded border border-steel-200">
+      <div className="flex h-9 items-center gap-2 rounded-md border border-input bg-muted/40 px-1.5 focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
+        <span className="relative size-6 shrink-0 overflow-hidden rounded border border-border">
           <span
-            className={cn('absolute inset-0', !value && 'bg-[repeating-conic-gradient(#e2e8f0_0_25%,#fff_0_50%)] bg-[length:8px_8px]')}
+            className={cn(
+              'absolute inset-0',
+              !value && 'bg-[repeating-conic-gradient(#e2e8f0_0_25%,#fff_0_50%)] bg-[length:8px_8px]'
+            )}
             style={value ? { background: value } : undefined}
           />
           <input
@@ -535,44 +582,54 @@ export function ColorInput({
             className="absolute inset-0 cursor-pointer opacity-0"
           />
         </span>
-        <input
+        <FormInput
           id={id}
           value={draft}
           placeholder={placeholder}
           onChange={e => setDraft(e.target.value)}
           onBlur={e => commit(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && commit(e.currentTarget.value)}
-          className="h-full min-w-0 flex-1 border-0 bg-transparent px-0 font-mono text-xs focus:ring-0"
+          className="h-full min-w-0 flex-1 border-0 bg-transparent px-0 font-mono text-xs shadow-none focus-visible:ring-0"
         />
         {value && (
-          <button type="button" aria-label={`Clear ${label}`} onClick={() => onChange(undefined)} className="text-steel-400 hover:text-steel-700">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label={`Clear ${label}`}
+            onClick={() => onChange(undefined)}
+            className="size-6 text-muted-foreground"
+          >
             <X className="size-3.5" />
-          </button>
+          </Button>
         )}
       </div>
     </div>
   );
 }
 
-/* ---------- Elementor-style extras ---------- */
-
 export function Description({ children }: { children: ReactNode }) {
-  return <p className="-mt-1 text-[11px] leading-snug text-steel-400">{children}</p>;
+  return <p className="-mt-1 text-[11px] leading-snug text-muted-foreground">{children}</p>;
 }
 
 export function PanelHeading({ children }: { children: ReactNode }) {
-  return <p className="pt-1 text-[11px] font-semibold tracking-wide text-steel-500 uppercase">{children}</p>;
+  return (
+    <p className="pt-1 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">{children}</p>
+  );
 }
 
 export function Divider() {
-  return <hr className="border-steel-100" />;
+  return <Separator className="bg-border" />;
 }
 
 export function Notice({ children }: { children: ReactNode }) {
-  return <div className="rounded-md border border-indigo-100 bg-indigo-50 px-2.5 py-2 text-[11px] text-indigo-800">{children}</div>;
+  return (
+    <div className="rounded-md border border-primary/20 bg-primary/5 px-2.5 py-2 text-[11px] text-primary">
+      {children}
+    </div>
+  );
 }
 
-/** Renders children only when the condition holds. Conditions live in code, never in page JSON. */
 export function ShowWhen({ when, children }: { when: boolean; children: ReactNode }) {
   return when ? <>{children}</> : null;
 }
@@ -590,26 +647,15 @@ export function Switcher({
 
   return (
     <div className="flex items-center justify-between gap-2">
-      <label htmlFor={id} className="text-xs font-medium text-steel-600">
+      <Label htmlFor={id} className="text-xs font-medium text-steel-600">
         {label}
-      </label>
-      <button
-        id={id}
-        type="button"
-        role="switch"
-        aria-checked={!!value}
-        onClick={() => onChange(!value)}
-        className={cn('relative h-5 w-9 rounded-full transition-colors', value ? 'bg-indigo-600' : 'bg-steel-200')}
-      >
-        <span className={cn('absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow transition-transform', value && 'translate-x-4')} />
-      </button>
+      </Label>
+      <Switch id={id} checked={!!value} onChange={checked => onChange(!!checked)} />
     </div>
   );
 }
 
-export type SelectGroup<T extends string> = { label: string; options: { value: T; label: string }[] };
-
-/** Select with `<optgroup>`s, e.g. grouped animation catalogs. */
+/** Select with grouped options, e.g. animation catalogs. */
 export function GroupedSelect<T extends string>({
   label,
   value,
@@ -618,7 +664,7 @@ export function GroupedSelect<T extends string>({
 }: {
   label: string;
   value: T;
-  groups: SelectGroup<T>[];
+  groups: { label: string; options: { value: T; label: string }[] }[];
   onChange: (value: T) => void;
 }) {
   const id = useId();
@@ -626,60 +672,61 @@ export function GroupedSelect<T extends string>({
   return (
     <div className="space-y-1.5">
       <ControlLabel label={label} htmlFor={id} />
-      <select
-        id={id}
-        value={value}
-        onChange={e => onChange(e.target.value as T)}
-        className="h-8 w-full rounded-md border border-steel-200 bg-white px-2 text-xs text-steel-800 focus:border-indigo-400 focus:outline-none"
-      >
-        {groups.map(g => (
-          <optgroup key={g.label} label={g.label}>
-            {g.options.map(o => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </optgroup>
-        ))}
-      </select>
+      <Select value={value} onValueChange={v => onChange(v as T)}>
+        <SelectTrigger id={id} size="sm" className="h-8 w-full text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {groups.map(g => (
+            <SelectGroup key={g.label}>
+              <SelectLabel className="text-[10px] text-muted-foreground">{g.label}</SelectLabel>
+              {g.options.map(o => (
+                <SelectItem key={o.value} value={o.value} className="text-xs">
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }
 
-/** Choose cells that show a thumbnail instead of text. */
+export type VisualOption<T extends string> = { value: T; label: string; thumb: ReactNode };
+
+/** Grid of visual choices (thumbnails). */
 export function VisualChoose<T extends string>({
   label,
   value,
   options,
   onChange,
-  columns = 3,
 }: {
-  label: string;
-  value: T | undefined;
-  options: { value: T; label: string; thumb: ReactNode }[];
+  label?: string;
+  value: T;
+  options: VisualOption<T>[];
   onChange: (value: T) => void;
-  columns?: number;
 }) {
   return (
     <div>
-      <ControlLabel label={label} />
-      <div role="radiogroup" aria-label={label} className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+      {label && <ControlLabel label={label} />}
+      <div className="grid grid-cols-3 gap-1.5">
         {options.map(o => (
-          <button
+          <Button
             key={o.value}
             type="button"
-            role="radio"
-            aria-checked={o.value === value}
-            title={o.label}
+            variant="outline"
             onClick={() => onChange(o.value)}
             className={cn(
-              'flex flex-col items-center gap-1 rounded-md border p-1.5 text-[10px] text-steel-600',
-              o.value === value ? 'border-indigo-400 bg-indigo-50' : 'border-steel-200 hover:bg-steel-50'
+              'h-auto flex-col gap-1 rounded-md p-1.5 text-[10px]',
+              o.value === value
+                ? 'border-primary bg-primary/5 text-foreground'
+                : 'text-muted-foreground'
             )}
           >
             {o.thumb}
             <span className="truncate">{o.label}</span>
-          </button>
+          </Button>
         ))}
       </div>
     </div>
@@ -688,26 +735,23 @@ export function VisualChoose<T extends string>({
 
 /** Normal / Hover tab pair; the hover pane is for optional overrides. */
 export function StateTabs({ normal, hover }: { normal: ReactNode; hover: ReactNode }) {
-  const [state, setState] = useState<'normal' | 'hover'>('normal');
-
   return (
-    <div className="space-y-3">
-      <div role="tablist" className="grid grid-cols-2 divide-x divide-steel-200 overflow-hidden rounded-sm border border-steel-200 text-xs">
-        {(['normal', 'hover'] as const).map(t => (
-          <button
-            key={t}
-            type="button"
-            role="tab"
-            aria-selected={state === t}
-            onClick={() => setState(t)}
-            className={cn('py-1.5 capitalize', state === t ? 'bg-steel-100 font-medium text-steel-900' : 'text-steel-600 hover:bg-steel-50')}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
-      {state === 'normal' ? normal : hover}
-    </div>
+    <Tabs defaultValue="normal" className="space-y-3">
+      <TabsList className="grid h-8 w-full grid-cols-2 rounded-md p-0">
+        <TabsTrigger value="normal" className="h-full rounded-none text-xs capitalize data-[state=active]:bg-muted">
+          Normal
+        </TabsTrigger>
+        <TabsTrigger value="hover" className="h-full rounded-none text-xs capitalize data-[state=active]:bg-muted">
+          Hover
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="normal" className="mt-0 space-y-3">
+        {normal}
+      </TabsContent>
+      <TabsContent value="hover" className="mt-0 space-y-3">
+        {hover}
+      </TabsContent>
+    </Tabs>
   );
 }
 
