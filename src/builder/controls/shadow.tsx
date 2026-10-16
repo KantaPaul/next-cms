@@ -1,11 +1,44 @@
 'use client';
 
 import { Pencil, RotateCcw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils/cn';
-import { formatShadow, type ShadowSettings } from '../style';
+import { clamp, safeColor, type ShadowSettings } from '../style';
 import { ColorPicker } from './color-picker';
-import { ControlLabel, Slider } from './primitives';
+import { Slider } from './primitives';
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const h = hex.replace('#', '');
+  const full =
+    h.length === 3
+      ? h
+          .split('')
+          .map(c => c + c)
+          .join('')
+      : h.slice(0, 6);
+  if (!/^[0-9a-f]{6}$/i.test(full)) return null;
+  return {
+    r: parseInt(full.slice(0, 2), 16),
+    g: parseInt(full.slice(2, 4), 16),
+    b: parseInt(full.slice(4, 6), 16),
+  };
+}
+
+function formatShadow(shadow: ShadowSettings): string | null {
+  const x = clamp(shadow.x, -50, 50) ?? 0;
+  const y = clamp(shadow.y, -50, 50) ?? 0;
+  const blur = clamp(shadow.blur, 0, 100) ?? 0;
+  const spread = clamp(shadow.spread, -50, 50) ?? 0;
+  const opacity = clamp(shadow.opacity, 0, 1) ?? 1;
+  const color = safeColor(shadow.color) ?? '#000000';
+  const rgb = hexToRgb(color) ?? { r: 0, g: 0, b: 0 };
+  const colorWithAlpha = `rgb(${rgb.r} ${rgb.g} ${rgb.b} / ${opacity})`;
+  return `${shadow.inset ? 'inset ' : ''}${x}px ${y}px ${blur}px ${spread}px ${colorWithAlpha}`;
+}
 
 const DEFAULT_SHADOW: Required<ShadowSettings> = {
   x: 0,
@@ -54,48 +87,45 @@ export function ShadowControl({
   return (
     <div>
       <div className="mb-1.5 flex min-h-5 items-center justify-between gap-2">
-        <label className="text-xs font-medium text-steel-600">Shadow</label>
+        <Label className="text-xs font-medium text-steel-600">Shadow</Label>
         <div className="flex items-center gap-2">
-          {/* Live preview chip */}
           <div
             title={shadowCss ?? 'No shadow'}
-            className="flex size-5 items-center justify-center rounded border border-steel-200 bg-white shadow-xs"
+            className="flex size-5 items-center justify-center rounded border border-border bg-background shadow-xs"
             style={shadowCss ? { boxShadow: shadowCss } : undefined}
           />
 
           <Popover>
             <PopoverTrigger asChild>
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="icon-sm"
                 title="Edit shadow"
                 aria-label="Edit shadow"
                 className={cn(
-                  'flex size-6 items-center justify-center rounded border border-steel-200 bg-white text-steel-600 transition hover:bg-steel-50 hover:text-steel-900',
-                  current && 'border-indigo-300 bg-indigo-50 text-indigo-600'
+                  'size-6 text-muted-foreground',
+                  current && 'border-primary/40 bg-primary/5 text-primary'
                 )}
               >
                 <Pencil className="size-3" />
-              </button>
+              </Button>
             </PopoverTrigger>
 
-            <PopoverContent
-              align="start"
-              side="left"
-              sideOffset={8}
-              className="w-72 space-y-3.5 rounded-lg border border-steel-200 bg-white p-3.5 shadow-xl"
-            >
-              {/* Presets row */}
+            <PopoverContent align="start" side="left" sideOffset={8} className="w-72 space-y-3.5 p-3.5">
               <div>
                 <div className="mb-1.5 flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-steel-500">Presets</span>
+                  <span className="text-[11px] font-semibold text-muted-foreground">Presets</span>
                   {current && (
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="sm"
                       onClick={() => onChange(undefined)}
-                      className="inline-flex items-center gap-1 text-[11px] text-steel-400 hover:text-steel-700"
+                      className="h-auto gap-1 px-1 py-0 text-[11px] text-muted-foreground"
                     >
                       <RotateCcw className="size-2.5" /> Clear
-                    </button>
+                    </Button>
                   )}
                 </div>
                 <div className="grid grid-cols-4 gap-1.5">
@@ -107,26 +137,27 @@ export function ShadowControl({
                         : current?.blur === preset?.blur && current?.y === preset?.y;
 
                     return (
-                      <button
+                      <Button
                         key={key}
                         type="button"
+                        variant="outline"
+                        size="sm"
                         onClick={() => onChange(preset)}
                         className={cn(
-                          'rounded border py-1 text-center text-xs font-medium transition',
-                          isSelected
-                            ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
-                            : 'border-steel-200 text-steel-600 hover:bg-steel-50'
+                          'h-7 text-xs font-medium',
+                          isSelected && 'border-primary bg-primary/5 text-primary'
                         )}
                       >
                         {key === 'none' ? 'None' : key.toUpperCase()}
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Sliders */}
-              <div className="space-y-2.5 border-t border-steel-100 pt-3">
+              <Separator />
+
+              <div className="space-y-2.5">
                 <Slider
                   label="Horizontal (X)"
                   value={s.x}
@@ -174,33 +205,18 @@ export function ShadowControl({
                 />
               </div>
 
-              {/* Color and Inset */}
-              <div className="space-y-3 border-t border-steel-100 pt-3">
+              <Separator />
+
+              <div className="space-y-3">
                 <ColorPicker
                   label="Shadow color"
                   value={s.color}
                   onChange={color => set({ color: color ?? '#000000' })}
                 />
 
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-medium text-steel-600">Inset shadow</label>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={s.inset}
-                    onClick={() => set({ inset: !s.inset })}
-                    className={cn(
-                      'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden',
-                      s.inset ? 'bg-indigo-600' : 'bg-steel-200'
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        'pointer-events-none inline-block size-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out',
-                        s.inset ? 'translate-x-4' : 'translate-x-0'
-                      )}
-                    />
-                  </button>
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="text-xs font-medium text-steel-600">Inset shadow</Label>
+                  <Switch checked={!!s.inset} onChange={checked => set({ inset: !!checked })} />
                 </div>
               </div>
             </PopoverContent>

@@ -4,6 +4,8 @@ import { createUsePuck } from '@measured/puck';
 import { Paintbrush, X } from 'lucide-react';
 import { HexColorPicker } from 'react-colorful';
 import { useEffect, useState, type ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
+import { FormInput } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils/cn';
 import { safeColor } from '../style';
@@ -44,7 +46,10 @@ export function ColorPicker({
   responsive,
 }: ColorPickerProps) {
   const themeTokens = usePuck(s => {
-    const anyS = s as unknown as { metadata?: { themeTokens?: Record<string, string> }; appState?: { metadata?: { themeTokens?: Record<string, string> } } };
+    const anyS = s as unknown as {
+      metadata?: { themeTokens?: Record<string, string> };
+      appState?: { metadata?: { themeTokens?: Record<string, string> } };
+    };
     return anyS?.metadata?.themeTokens ?? anyS?.appState?.metadata?.themeTokens;
   });
   const [draft, setDraft] = useState(value ?? '');
@@ -94,84 +99,82 @@ export function ColorPicker({
       <Popover>
         <div className="flex items-center gap-2">
           <PopoverTrigger asChild>
-            <button
+            <Button
               type="button"
+              variant="outline"
               title={value ?? placeholder}
               aria-label={label ? `${label} color picker` : 'Color picker'}
-              className="relative flex h-6 w-14 shrink-0 items-center justify-center overflow-hidden rounded border border-steel-200 bg-[repeating-conic-gradient(#e2e8f0_0_25%,#fff_0_50%)] bg-[length:8px_8px] shadow-xs transition hover:border-steel-400 focus:ring-2 focus:ring-indigo-500/20 focus:outline-hidden"
+              className="relative h-6 w-14 shrink-0 overflow-hidden rounded border border-border bg-[repeating-conic-gradient(#e2e8f0_0_25%,#fff_0_50%)] bg-[length:8px_8px] p-0 shadow-xs hover:border-muted-foreground"
             >
               {value ? (
                 <span className="absolute inset-0" style={{ backgroundColor: value }} />
               ) : (
-                <Paintbrush className="size-3 text-steel-400" />
+                <Paintbrush className="size-3 text-muted-foreground" />
               )}
-            </button>
+            </Button>
           </PopoverTrigger>
 
-          <span className="truncate font-mono text-xs text-steel-600">
-            {value ? value.toUpperCase() : <span className="text-steel-400">{placeholder}</span>}
+          <span className="truncate font-mono text-xs text-foreground">
+            {value ? value.toUpperCase() : <span className="text-muted-foreground">{placeholder}</span>}
           </span>
 
           {value && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-sm"
               aria-label="Clear color"
               onClick={() => onChange(undefined)}
-              className="ml-auto text-steel-400 hover:text-steel-700"
+              className="ml-auto size-6 text-muted-foreground"
             >
               <X className="size-3.5" />
-            </button>
+            </Button>
           )}
         </div>
 
-        <PopoverContent
-          align="start"
-          side="left"
-          sideOffset={8}
-          className="w-64 space-y-3 rounded-lg border border-steel-200 bg-white p-3 shadow-xl"
-        >
-          <div className="overflow-hidden rounded-md [&_.react-colorful]:w-full [&_.react-colorful]:h-36">
-            <HexColorPicker
-              color={safeColor(value) ?? '#6366f1'}
-              onChange={handleColorChange}
-            />
+        <PopoverContent align="start" side="left" sideOffset={8} className="w-64 space-y-3 p-3">
+          <div className="overflow-hidden rounded-md [&_.react-colorful]:h-36 [&_.react-colorful]:w-full">
+            <HexColorPicker color={safeColor(value) ?? '#6366f1'} onChange={handleColorChange} />
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-semibold text-steel-500">HEX</span>
-            <input
+            <span className="text-[11px] font-semibold text-muted-foreground">HEX</span>
+            <FormInput
               type="text"
               value={draft}
               placeholder="#000000"
               onChange={e => setDraft(e.target.value)}
               onBlur={e => commitHex(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && commitHex(e.currentTarget.value)}
-              className="h-7 min-w-0 flex-1 rounded border border-steel-200 bg-steel-50 px-2 font-mono text-xs text-steel-800 uppercase focus:border-indigo-500 focus:bg-white focus:outline-hidden"
+              className="h-7 flex-1 bg-muted/40 px-2 font-mono text-xs uppercase"
             />
             {value && (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => onChange(undefined)}
-                className="rounded px-2 py-1 text-[11px] font-medium text-steel-500 hover:bg-steel-100 hover:text-steel-800"
+                className="h-7 px-2 text-[11px] text-muted-foreground"
               >
                 Clear
-              </button>
+              </Button>
             )}
           </div>
 
           <div>
-            <p className="mb-1.5 text-[11px] font-medium text-steel-400">Theme Swatches</p>
+            <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">Theme Swatches</p>
             <div className="flex flex-wrap gap-1.5">
               {swatches.map(swatch => (
-                <button
+                <Button
                   key={swatch}
                   type="button"
+                  variant="outline"
                   title={swatch}
                   onClick={() => handleColorChange(swatch)}
                   style={{ backgroundColor: swatch }}
                   className={cn(
-                    'size-5 rounded-full border border-black/10 transition-transform hover:scale-110 focus:ring-2 focus:ring-indigo-500/30 focus:outline-hidden',
-                    value?.toLowerCase() === swatch.toLowerCase() && 'ring-2 ring-indigo-600 ring-offset-1'
+                    'size-5 rounded-full border-black/10 p-0 hover:scale-110',
+                    value?.toLowerCase() === swatch.toLowerCase() && 'ring-2 ring-primary ring-offset-1'
                   )}
                 />
               ))}
