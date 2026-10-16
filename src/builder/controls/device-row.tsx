@@ -2,6 +2,7 @@
 
 import { createUsePuck } from '@measured/puck';
 import { Monitor, Smartphone, Tablet } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils/cn';
 import { DEVICE_WIDTH, deviceForWidth, type Device } from '../style';
 
@@ -33,20 +34,22 @@ export function DeviceRow({ className }: { className?: string }) {
       {(Object.keys(ICONS) as Device[]).map(d => {
         const Icon = ICONS[d];
         return (
-          <button
+          <Button
             key={d}
             type="button"
+            variant="ghost"
+            size="icon-sm"
             title={LABELS[d]}
             aria-label={LABELS[d]}
             aria-pressed={device === d}
             onClick={() => setDevice(d)}
             className={cn(
-              'rounded p-1 text-steel-400 transition-colors hover:text-indigo-600',
-              device === d && 'bg-indigo-50 text-indigo-600'
+              'size-6 text-muted-foreground hover:text-primary',
+              device === d && 'bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary'
             )}
           >
             <Icon className="size-3.5" />
-          </button>
+          </Button>
         );
       })}
     </div>
@@ -66,21 +69,23 @@ export function DeviceToggles({
       {(Object.keys(ICONS) as Device[]).map(d => {
         const Icon = ICONS[d];
         return (
-          <button
+          <Button
             key={d}
             type="button"
+            variant="outline"
+            size="sm"
             aria-pressed={value[d]}
             title={`${value[d] ? 'Plays' : 'Static'} on ${LABELS[d].toLowerCase()}`}
             onClick={() => onChange({ ...value, [d]: !value[d] })}
             className={cn(
-              'flex flex-1 items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-xs transition-colors',
+              'h-8 flex-1 gap-1.5 px-2 text-xs',
               value[d]
-                ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
-                : 'border-steel-200 bg-white text-steel-400 line-through'
+                ? 'border-primary/30 bg-primary/5 text-primary hover:bg-primary/10'
+                : 'text-muted-foreground line-through'
             )}
           >
             <Icon className="size-3.5" /> {LABELS[d]}
-          </button>
+          </Button>
         );
       })}
     </div>

@@ -2,6 +2,14 @@
 
 import { Link2, Link2Off } from 'lucide-react';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils/cn';
 import {
   SIDES,
@@ -67,37 +75,43 @@ export function Dimensions({
         <div className="flex items-center gap-1.5">
           <DeviceRow />
 
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-sm"
             title={linked ? 'Edit sides separately' : 'Link all sides'}
             aria-pressed={linked}
             onClick={() => setLinked(l => !l)}
             className={cn(
-              'rounded p-1 text-steel-400 hover:text-indigo-600',
-              linked && 'bg-indigo-50 text-indigo-600'
+              'size-6 text-muted-foreground hover:text-primary',
+              linked && 'bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary'
             )}
           >
             {linked ? <Link2 className="size-3.5" /> : <Link2Off className="size-3.5" />}
-          </button>
+          </Button>
 
           {onUnitChange && (
-            <select
-              value={unit}
-              aria-label="Unit"
-              onChange={e => onUnitChange(e.target.value as SpacingUnit)}
-              className="h-5 rounded border border-steel-200 bg-white px-1 text-[10px] font-medium text-steel-700 focus:outline-hidden"
-            >
-              {SPACING_UNITS.map(u => (
-                <option key={u} value={u}>
-                  {u}
-                </option>
-              ))}
-            </select>
+            <Select value={unit} onValueChange={v => onUnitChange(v as SpacingUnit)}>
+              <SelectTrigger
+                size="sm"
+                aria-label="Unit"
+                className="h-5 w-auto min-w-12 gap-0.5 border-border px-1 text-[10px] font-medium"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SPACING_UNITS.map(u => (
+                  <SelectItem key={u} value={u} className="text-xs">
+                    {u}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
         </div>
       </ControlLabel>
 
-      <div className="space-y-2 rounded-md border border-steel-100 bg-steel-50/60 p-2.5">
+      <div className="space-y-2 rounded-md border border-border bg-muted/40 p-2.5">
         {(linked ? (['top'] as Side[]) : SIDES).map(side => (
           <Slider
             key={side}
