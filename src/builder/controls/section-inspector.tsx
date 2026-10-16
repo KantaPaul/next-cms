@@ -15,7 +15,6 @@ import {
   LENGTH_LIMITS,
   PROP_UNITS,
   SPACING_LIMITS,
-  SPACING_UNITS,
   type Device,
   type LengthUnit,
   type SectionSettings,
@@ -232,7 +231,6 @@ function LayoutControls({
           label="Margin"
           value={s.margin}
           unit={s.marginUnit ?? 'px'}
-          units={[...SPACING_UNITS]}
           max={SPACING_LIMITS[s.marginUnit ?? 'px'].max}
           onUnitChange={marginUnit => set({ marginUnit: marginUnit as SpacingUnit })}
           onChange={margin => set({ margin })}
