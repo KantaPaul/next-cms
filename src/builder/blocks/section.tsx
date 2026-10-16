@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils/cn';
 import { MotionBoundary, MotionSection } from '../motion';
+import { resolveLinkProps, type UrlValue } from '../fields/client-fields';
 import { resolveAnimation, resolveSectionStyle, type SectionSettings } from '../style';
 
 export type { SectionSettings } from '../style';
@@ -113,18 +114,14 @@ export function ButtonLink({
   children,
   variant = 'primary',
 }: {
-  href?: string;
+  href?: UrlValue;
   children: ReactNode;
   variant?: 'primary' | 'secondary' | 'light' | 'ghost-light';
 }) {
   if (!children) return null;
-  const external = !!href && /^https?:\/\//.test(href);
+  const link = resolveLinkProps(href);
   return (
-    <a
-      href={href || '#'}
-      className={cn('s-btn', `s-btn-${variant}`)}
-      {...(external && { target: '_blank', rel: 'noopener noreferrer' })}
-    >
+    <a href={link.href} className={cn('s-btn', `s-btn-${variant}`)} {...('target' in link ? { target: link.target, rel: link.rel } : {})}>
       {children}
     </a>
   );
