@@ -33,6 +33,11 @@ export type ImageProps = WithSection & {
   aspect?: 'auto' | 'video' | 'square' | 'wide';
   width?: 'normal' | 'wide' | 'full';
   link?: string;
+  /** CSS width in px (optional). */
+  imageWidth?: number;
+  /** CSS height in px (optional). */
+  imageHeight?: number;
+  objectFit?: 'cover' | 'contain' | 'fill';
 };
 
 const ASPECT = { auto: '', video: 'aspect-video', square: 'aspect-square', wide: 'aspect-[21/9]' };
@@ -49,13 +54,29 @@ export function ImageBlock(p: ImageProps) {
     ) : null;
   }
 
+  const fit = p.objectFit ?? 'cover';
+  const dimStyle =
+    p.imageWidth || p.imageHeight
+      ? {
+          width: p.imageWidth ? `${p.imageWidth}px` : undefined,
+          height: p.imageHeight ? `${p.imageHeight}px` : undefined,
+          maxWidth: '100%' as const,
+        }
+      : undefined;
+
   const img = (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={p.url}
       alt={p.alt ?? ''}
       loading="lazy"
-      className={cn('s-radius w-full object-cover', ASPECT[p.aspect ?? 'auto'])}
+      style={dimStyle}
+      className={cn(
+        's-radius',
+        !dimStyle && 'w-full',
+        fit === 'contain' ? 'object-contain' : fit === 'fill' ? 'object-fill' : 'object-cover',
+        ASPECT[p.aspect ?? 'auto']
+      )}
     />
   );
 
@@ -65,6 +86,69 @@ export function ImageBlock(p: ImageProps) {
         {p.link ? <a href={p.link}>{img}</a> : img}
         {p.caption && <figcaption className="s-muted mt-3 text-center text-sm">{p.caption}</figcaption>}
       </figure>
+    </Section>
+  );
+}
+
+/* ---------- Gallery ---------- */
+
+export type GalleryItem = {
+  url?: string;
+  alt?: string;
+  caption?: string;
+};
+
+export type GalleryProps = WithSection & {
+  eyebrow?: string;
+  title?: string;
+  subtitle?: string;
+  items?: GalleryItem[];
+  columns?: 2 | 3 | 4;
+  gap?: 'sm' | 'md' | 'lg';
+};
+
+const GALLERY_COLS = {
+  2: 'grid-cols-1 sm:grid-cols-2',
+  3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
+  4: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
+};
+const GALLERY_GAP = { sm: 'gap-2', md: 'gap-4', lg: 'gap-6' };
+
+export function Gallery(p: GalleryProps) {
+  const items = (p.items ?? []).filter(i => i.url);
+  const cols = (p.columns ?? 3) as 2 | 3 | 4;
+  const gap = p.gap ?? 'md';
+
+  if (!items.length) {
+    return p.editing ? (
+      <Section section={p.section} editing>
+        <SectionHeading eyebrow={p.eyebrow} title={p.title} subtitle={p.subtitle} />
+        <div className="s-surface s-border s-muted s-radius flex aspect-[21/9] items-center justify-center border border-dashed text-sm">
+          Add images in the sidebar
+        </div>
+      </Section>
+    ) : null;
+  }
+
+  return (
+    <Section section={p.section} editing={p.editing} hasItems>
+      <SectionHeading eyebrow={p.eyebrow} title={p.title} subtitle={p.subtitle} />
+      <div className={cn('grid', GALLERY_COLS[cols], GALLERY_GAP[gap])}>
+        {items.map((item, i) => (
+          <MotionItem key={`${item.url}-${i}`} as="figure" className="overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={item.url}
+              alt={item.alt ?? ''}
+              loading="lazy"
+              className="s-radius aspect-square w-full object-cover"
+            />
+            {item.caption && (
+              <figcaption className="s-muted mt-2 text-center text-sm">{item.caption}</figcaption>
+            )}
+          </MotionItem>
+        ))}
+      </div>
     </Section>
   );
 }
@@ -100,7 +184,8 @@ export function ContactForm(p: ContactFormProps) {
   );
 }
 
-type SlotValue = ((props?: { className?: string; minEmptyHeight?: number }) => ReactNode) | BuilderItem[] | undefined;
+type SlotRender = (props: { minEmptyHeight?: number | string }) => ReactNode;
+type SlotValue = ReactNode | BuilderItem[] | SlotRender | undefined;
 
 export type ColumnsProps = WithSection & {
   layout?: '1-1' | '1-1-1' | '1-1-1-1' | '2-1' | '1-2';
