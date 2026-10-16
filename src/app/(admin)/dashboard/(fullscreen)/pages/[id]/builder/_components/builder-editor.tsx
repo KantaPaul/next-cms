@@ -2,7 +2,7 @@
 
 import '@measured/puck/puck.css';
 import { Puck, type Config, type Data } from '@measured/puck';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import {
   builderConfig,
@@ -69,9 +69,9 @@ const overrides = {
     label,
     parentAction,
   }: {
-    children: React.ReactNode;
+    children: ReactNode;
     label?: string;
-    parentAction: React.ReactNode;
+    parentAction: ReactNode;
   }) => (
     <BuilderActionBar label={label} parentAction={parentAction}>
       {children}
