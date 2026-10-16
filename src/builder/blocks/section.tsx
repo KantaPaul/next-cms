@@ -1,8 +1,13 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils/cn';
 import { MotionBoundary, MotionSection } from '../motion';
-import { resolveLinkProps, type UrlValue } from '../fields/client-fields';
-import { resolveAnimation, resolveSectionStyle, type SectionSettings } from '../style';
+import {
+  resolveAnimation,
+  resolveLinkProps,
+  resolveSectionStyle,
+  type SectionSettings,
+  type UrlValue,
+} from '../style';
 
 export type { SectionSettings } from '../style';
 export { MotionItem } from '../motion';
@@ -121,7 +126,11 @@ export function ButtonLink({
   if (!children) return null;
   const link = resolveLinkProps(href);
   return (
-    <a href={link.href} className={cn('s-btn', `s-btn-${variant}`)} {...('target' in link ? { target: link.target, rel: link.rel } : {})}>
+    <a
+      href={link.href}
+      className={cn('s-btn', `s-btn-${variant}`)}
+      {...('target' in link ? { target: link.target, rel: link.rel } : {})}
+    >
       {children}
     </a>
   );

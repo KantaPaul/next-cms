@@ -9,9 +9,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils/cn';
 import { listGlobalBlockOptions } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
 import { getAllTaxonomyOptions } from '@/server/actions/blog.actions';
-import { BLOCK_ICONS, ICON_OPTIONS } from '../icons';
-import { safeUrl } from '../style';
 import { Switcher } from '../controls/primitives';
+import { BLOCK_ICONS, ICON_OPTIONS } from '../icons';
+import { normalizeUrlValue, type UrlValue } from '../style';
 
 type CustomFieldProps<T> = {
   name: string;
@@ -63,21 +63,7 @@ export function RichTextField({
 
 /* ---------- URL (string | { url, newTab, nofollow }) ---------- */
 
-export type UrlValue = string | { url?: string; newTab?: boolean; nofollow?: boolean };
-
-export function normalizeUrlValue(value: UrlValue | undefined): {
-  url: string;
-  newTab: boolean;
-  nofollow: boolean;
-} {
-  if (!value) return { url: '', newTab: false, nofollow: false };
-  if (typeof value === 'string') return { url: value, newTab: false, nofollow: false };
-  return {
-    url: value.url ?? '',
-    newTab: !!value.newTab,
-    nofollow: !!value.nofollow,
-  };
-}
+export type { UrlValue };
 
 export function UrlField({
   value,
@@ -88,7 +74,6 @@ export function UrlField({
 
   const commit = (patch: Partial<typeof v>) => {
     const next = { ...v, ...patch };
-    // Prefer plain string when flags are off so existing content stays simple
     if (!next.newTab && !next.nofollow) {
       onChange(next.url || undefined);
       return;
@@ -128,9 +113,7 @@ export function IconPickerField({
   const icons = useMemo(
     () =>
       ICON_OPTIONS.filter(
-        o =>
-          o.value &&
-          (!query || o.label.toLowerCase().includes(query.toLowerCase()))
+        o => o.value && (!query || o.label.toLowerCase().includes(query.toLowerCase()))
       ),
     [query]
   );
@@ -226,11 +209,7 @@ export function DateTimeField({
         className="rounded-md border border-steel-200 p-2"
       />
       {valid && (
-        <button
-          type="button"
-          onClick={() => onChange(undefined)}
-          className="mt-1 text-[11px] text-indigo-600"
-        >
+        <button type="button" onClick={() => onChange(undefined)} className="mt-1 text-[11px] text-indigo-600">
           Clear date
         </button>
       )}
@@ -253,10 +232,7 @@ export function SearchableSelectField({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const filtered = useMemo(
-    () =>
-      options.filter(
-        o => !query || o.label.toLowerCase().includes(query.toLowerCase())
-      ),
+    () => options.filter(o => !query || o.label.toLowerCase().includes(query.toLowerCase())),
     [options, query]
   );
   const current = options.find(o => o.value === value);
@@ -422,17 +398,4 @@ export function GlobalBlockSelectField({
       </p>
     </div>
   );
-}
-
-/** Resolve a stored URL value for rendering. */
-export function resolveLinkProps(value: UrlValue | undefined) {
-  const v = normalizeUrlValue(value);
-  const href = safeUrl(v.url) ?? (v.url?.startsWith('#') ? v.url : undefined);
-  if (!href) return { href: '#' as const };
-  const relParts = ['noopener', 'noreferrer'];
-  if (v.nofollow) relParts.push('nofollow');
-  return {
-    href,
-    ...(v.newTab ? { target: '_blank' as const, rel: relParts.join(' ') } : {}),
-  };
 }
