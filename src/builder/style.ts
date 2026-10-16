@@ -83,7 +83,6 @@ export const SIGNED_LENGTH_LIMITS: Record<LengthUnit, Limits> = {
   '%': { min: -50, max: 50, step: 1 },
   vw: { min: -20, max: 20, step: 0.5 },
 };
-/** Units each unit-slider property accepts. */
 export const PROP_UNITS = {
   fontSize: ['px', 'rem', 'em', 'vw'],
   lineHeight: ['em', 'px', 'rem'],
@@ -152,6 +151,7 @@ export {
   ENTRANCE_CLASS,
   EXIT_CLASS,
   HOVER_CLASS,
+  ATTENTION_SEEKERS,
   aliasEntrance,
   aliasExit,
   aliasHover,
@@ -205,8 +205,6 @@ export type SectionSettings = {
   maxWidthUnit?: LengthUnit;
 };
 
-/* ---------- URL helpers ---------- */
-
 export type UrlValue = { url?: string; newTab?: boolean; nofollow?: boolean };
 
 export function normalizeUrlValue(value: unknown): UrlValue {
@@ -232,8 +230,6 @@ export function resolveLinkProps(value: unknown): { href: string; target?: strin
     rel: [n.newTab ? 'noopener noreferrer' : '', n.nofollow ? 'nofollow' : ''].filter(Boolean).join(' ') || undefined,
   };
 }
-
-/* ---------- validators ---------- */
 
 export function pick<T extends string>(value: unknown, allowed: readonly T[]): T | undefined {
   return typeof value === 'string' && (allowed as readonly string[]).includes(value) ? (value as T) : undefined;
@@ -267,8 +263,6 @@ export function safeUrl(value: unknown): string | undefined {
   return undefined;
 }
 
-/* ---------- responsive resolution ---------- */
-
 const DEVICE_ORDER: Record<Device, Device[]> = {
   desktop: ['desktop', 'tablet', 'mobile'],
   tablet: ['tablet', 'desktop', 'mobile'],
@@ -293,8 +287,6 @@ export function resolveResponsive<T>(
 
   return valid(v);
 }
-
-/* ---------- resolve section style ---------- */
 
 const PADDING_Y = { none: '', sm: 'py-8', md: 'py-16', lg: 'py-24' } as const;
 const BACKGROUND = {

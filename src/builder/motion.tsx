@@ -43,13 +43,8 @@ function useReducedMotionAfterMount() {
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
   }, []);
-  return mounted && reduced;
+  return { reduced, mounted };
 }
-
-const useMotionEnabled = () => {
-  const scope = useContext(ScopeContext);
-  return !scope.editing || scope.preview;
-};
 
 export function MotionScope({
   editing,
@@ -58,251 +53,65 @@ export function MotionScope({
   children,
 }: {
   editing: boolean;
-  preview: boolean;
+  preview?: boolean;
   transition?: string;
   children: ReactNode;
 }) {
-  const reduced = useReducedMotionAfterMount();
-  const kind = pick(transition, PAGE_TRANSITIONS) ?? 'none';
-  const run = !editing || preview;
+  const { reduced, mounted } = useReducedMotionAfterMount();
+  const t = pick(transition, PAGE_TRANSITIONS) ?? 'none';
+  const play = mounted && !reduced && !editing && t !== 'none';
 
   return (
-    <ScopeContext.Provider value={{ editing, preview }}>
-      {kind === 'none' ? (
-        children
-      ) : (
-        <motion.div
-          key={run ? 'run' : 'idle'}
-          data-motion
-          initial={run ? { opacity: 0, y: kind === 'slide-up' ? 24 : 0 } : false}
-          animate={{ opacity: 1, y: 0 }}
-          transition={reduced ? { duration: 0 } : { duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        >
-          {children}
-        </motion.div>
-      )}
+    <ScopeContext.Provider value={{ editing, preview: !!preview }}>
+      <motion.div
+        className="contents"
+        initial={play ? (t === 'fade' ? { opacity: 0 } : { opacity: 0, y: 16 }) : false}
+        animate={play ? { opacity: 1, y: 0 } : undefined}
+        transition={play ? { duration: 0.4, ease: 'easeOut' } : undefined}
+      >
+        {children}
+      </motion.div>
     </ScopeContext.Provider>
   );
 }
 
-/* ---------- section ---------- */
+/* ---------- section motion ---------- */
 
-type ItemScope = {
-  stagger: boolean;
-  hoverClass: string | null;
-  active: boolean;
-  baseDelay: number;
-  duration: number;
-  easing: string;
+type MotionSectionProps = HTMLAttributes<HTMLElement> & {
+  as?: 'section' | 'div' | 'header' | 'footer' | 'article' | 'aside' | 'nav';
+  animation?: ResolvedAnimation | null;
+  children?: ReactNode;
 };
-const ItemContext = createContext<ItemScope | null>(null);
 
-function useInViewport(ref: React.RefObject<HTMLElement | null>, once: boolean, amount: number) {
-  const [inView, setInView] = useState(false);
+function useDevice(): Device {
+  const [device, setDevice] = useState<Device>('desktop');
   useEffect(() => {
-    const el = ref.current;
-    const view = el?.ownerDocument.defaultView;
-    if (!el || !view?.IntersectionObserver) return;
-    const observer = new view.IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          setInView(true);
-          if (once) observer.disconnect();
-        } else if (!once) {
-          setInView(false);
-        }
-      },
-      { threshold: amount }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [ref, once, amount]);
-  return inView;
-}
-
-function useDevice(ref: React.RefObject<HTMLElement | null>) {
-  const [device, setDevice] = useState<Device | null>(null);
-  useEffect(() => {
-    const view = ref.current?.ownerDocument.defaultView;
-    if (!view) return;
-    const update = () => setDevice(deviceForWidth(view.innerWidth));
+    const update = () => setDevice(deviceForWidth(window.innerWidth));
     update();
-    view.addEventListener('resize', update);
-    return () => view.removeEventListener('resize', update);
-  }, [ref]);
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
   return device;
 }
 
-const timingStyle = (duration: number, delay: number, easing: ResolvedAnimation['easing']): CSSProperties => ({
-  ['--animate-duration' as string]: `${duration}s`,
-  ['--animate-delay' as string]: `${delay}s`,
-  animationDuration: `${duration}s`,
-  animationDelay: `${delay}s`,
-  animationTimingFunction: easing === 'spring' ? 'cubic-bezier(0.34, 1.56, 0.64, 1)' : 'cubic-bezier(0.16, 1, 0.3, 1)',
-  animationFillMode: 'both',
-});
-
-type MotionSectionProps = {
-  animation: ResolvedAnimation;
-  hasItems?: boolean;
-  className?: string;
-  innerClassName?: string;
-  style?: CSSProperties;
-  id?: string;
-  children: ReactNode;
-};
+function allowedOnDevice(a: ResolvedAnimation | null | undefined, device: Device) {
+  if (!a?.devices) return true;
+  const d = a.devices;
+  if (d[device] === false) return false;
+  if (d[device] === true) return true;
+  // if any explicit true exists and this device is not true, skip
+  const hasTrue = Object.values(d).some(v => v === true);
+  return !hasTrue;
+}
 
 export function MotionSection(props: MotionSectionProps) {
-  const enabled = useMotionEnabled();
-  return <MotionSectionInner key={enabled ? 'on' : 'off'} enabled={enabled} {...props} />;
-}
+  const { as: Tag = 'section', animation, className, style, children, ...rest } = props;
+  const scope = useContext(ScopeContext);
+  const device = useDevice();
+  const { reduced, mounted } = useReducedMotionAfterMount();
+  const a = animation;
 
-function MotionSectionInner({
-  animation: a,
-  hasItems,
-  className,
-  innerClassName,
-  style,
-  id,
-  children,
-  enabled,
-}: MotionSectionProps & { enabled: boolean }) {
-  const ref = useRef<HTMLElement>(null);
-  const reduced = useReducedMotionAfterMount();
-  const device = useDevice(ref);
-  const inView = useInViewport(ref, a.once, 0.2);
-  const [mounted, setMounted] = useState(false);
-  const [interacted, setInteracted] = useState(false);
-  const [exited, setExited] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  const active = enabled && !reduced && (device === null || a.devices[device]);
-  const hasEntrance = a.entrance !== 'none';
-  const hasExit = a.exit !== 'none';
-  const attention = ATTENTION_SEEKERS.has(a.entrance);
-  const stagger = hasEntrance && a.stagger === 'children' && !!hasItems;
-
-  const shown =
-    !active ||
-    !hasEntrance ||
-    attention ||
-    (a.trigger === 'load' && mounted) ||
-    (a.trigger === 'scroll' && inView) ||
-    ((a.trigger === 'hover' || a.trigger === 'click') && interacted);
-
-  useEffect(() => {
-    if (!active || !hasExit) return;
-    if (a.trigger === 'scroll' || a.trigger === 'load') {
-      if (!inView && shown) setExited(true);
-      else if (inView) setExited(false);
-    }
-  }, [active, hasExit, a.trigger, inView, shown]);
-
-  const waitsForVisitor = a.trigger === 'hover' || a.trigger === 'click';
-  const interactive = active && hasEntrance && waitsForVisitor;
-  const setShown = (next: boolean) => setInteracted(prev => (a.once ? prev || next : next));
-  const triggerProps: Pick<
-    HTMLAttributes<HTMLElement>,
-    'onMouseEnter' | 'onMouseLeave' | 'onFocus' | 'onBlur' | 'onClick' | 'onKeyDown' | 'tabIndex' | 'role' | 'aria-expanded'
-  > = !interactive
-    ? {}
-    : a.trigger === 'hover'
-      ? {
-          onMouseEnter: () => setShown(true),
-          onMouseLeave: () => setShown(false),
-          onFocus: () => setShown(true),
-          onBlur: () => setShown(false),
-          tabIndex: 0,
-        }
-      : {
-          onClick: () => setShown(!interacted),
-          onKeyDown: (e: KeyboardEvent<HTMLElement>) => {
-            if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return;
-            e.preventDefault();
-            setShown(!interacted);
-          },
-          tabIndex: 0,
-          role: 'button',
-          'aria-expanded': interacted,
-        };
-
-  const entranceClass =
-    active && hasEntrance && shown && !exited
-      ? a.entrance === 'blur'
-        ? 's-entrance-blur'
-        : (ENTRANCE_CLASS[a.entrance] ?? '')
-      : '';
-  const exitClass = active && hasExit && exited ? (EXIT_CLASS[a.exit] ?? '') : '';
-  const hoverClass = active && a.hover !== 'none' && !hasItems ? (HOVER_CLASS[a.hover] ?? null) : null;
-  const hold = active && hasEntrance && !attention && !shown && !exited;
-
-  const animStyle: CSSProperties = {
-    ...style,
-    ...(entranceClass || exitClass ? timingStyle(a.duration, a.delay, a.easing) : {}),
-  };
-
-  return (
-    <ItemContext.Provider
-      value={{
-        stagger,
-        hoverClass: active && a.hover !== 'none' && hasItems ? (HOVER_CLASS[a.hover] ?? null) : null,
-        active,
-        baseDelay: a.delay,
-        duration: a.duration,
-        easing: a.easing === 'spring' ? 'cubic-bezier(0.34, 1.56, 0.64, 1)' : 'cubic-bezier(0.16, 1, 0.3, 1)',
-      }}
-    >
-      <section
-        ref={ref}
-        id={id}
-        data-motion
-        data-motion-hold={hold ? '' : undefined}
-        className={cn(
-          interactive && 'cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--site-primary)]',
-          entranceClass,
-          exitClass,
-          hoverClass,
-          className
-        )}
-        style={{
-          ...animStyle,
-          ...(hold ? { opacity: waitsForVisitor ? 0.4 : 0 } : {}),
-        }}
-        {...triggerProps}
-      >
-        <div className={innerClassName}>{children}</div>
-      </section>
-    </ItemContext.Provider>
-  );
-}
-
-export function MotionBoundary({ children }: { children: ReactNode }) {
-  return <ItemContext.Provider value={null}>{children}</ItemContext.Provider>;
-}
-
-/* ---------- list items ---------- */
-
-const ITEM_TAGS = { div: 'div', figure: 'figure', details: 'details', li: 'li' } as const;
-type ItemTag = keyof typeof ITEM_TAGS;
-
-export function MotionItem({
-  as = 'div',
-  className,
-  style,
-  children,
-  index = 0,
-  ...rest
-}: {
-  as?: ItemTag;
-  className?: string;
-  style?: CSSProperties;
-  children?: ReactNode;
-  index?: number;
-} & Omit<HTMLAttributes<HTMLElement>, 'style' | 'className' | 'children'>) {
-  const scope = useContext(ItemContext);
-  const Tag = ITEM_TAGS[as];
-
-  if (!scope || (!scope.stagger && !scope.hoverClass)) {
+  if (!a || reduced || !mounted || !allowedOnDevice(a, device)) {
     return (
       <Tag className={className} style={style} {...rest}>
         {children}
@@ -310,29 +119,111 @@ export function MotionItem({
     );
   }
 
-  const delay = scope.baseDelay + index * STAGGER_STEP;
-  const itemStyle: CSSProperties = {
-    ...style,
-    ...(scope.stagger
-      ? {
-          ['--animate-duration' as string]: `${scope.duration}s`,
-          ['--animate-delay' as string]: `${delay}s`,
-          animationDuration: `${scope.duration}s`,
-          animationDelay: `${delay}s`,
-          animationTimingFunction: scope.easing,
-          animationFillMode: 'both',
-        }
-      : {}),
-  };
+  const entranceName = a.entranceClass ? ENTRANCE_CLASS[a.entranceClass as keyof typeof ENTRANCE_CLASS] : undefined;
+  const exitName = a.exitClass ? EXIT_CLASS[a.exitClass as keyof typeof EXIT_CLASS] : undefined;
+  const hoverName = a.hoverClass ? HOVER_CLASS[a.hoverClass as keyof typeof HOVER_CLASS] : undefined;
+  const attention = a.entranceClass ? ATTENTION_SEEKERS.has(a.entranceClass) : false;
+
+  const durationMs = a.duration ?? 600;
+  const delayMs = a.delay ?? 0;
+  const cssVars = {
+    ...(style as CSSProperties),
+    ['--animate-duration' as string]: `${durationMs}ms`,
+    ['--animate-delay' as string]: `${delayMs}ms`,
+  } as CSSProperties;
+
+  // Editor: static unless motion preview is on
+  if (scope.editing && !scope.preview) {
+    return (
+      <Tag className={className} style={style} {...rest}>
+        {children}
+      </Tag>
+    );
+  }
+
+  const classes = cn(
+    className,
+    entranceName && 'animate__animated',
+    entranceName,
+    hoverName,
+    attention && 'animate__repeat-1'
+  );
 
   return (
     <Tag
-      className={cn(className, scope.hoverClass)}
-      data-motion
-      style={itemStyle}
+      className={classes}
+      style={cssVars}
+      data-motion={entranceName || exitName || hoverName ? '' : undefined}
+      data-exit={exitName || undefined}
       {...rest}
     >
       {children}
     </Tag>
+  );
+}
+
+/* ---------- stagger boundary + item ---------- */
+
+const StaggerContext = createContext<{ index: number; take: () => number } | null>(null);
+
+export function MotionBoundary({ children }: { children: ReactNode }) {
+  const indexRef = useRef(0);
+  const api = {
+    index: 0,
+    take: () => {
+      const i = indexRef.current;
+      indexRef.current += 1;
+      return i;
+    },
+  };
+  return <StaggerContext.Provider value={api}>{children}</StaggerContext.Provider>;
+}
+
+export function MotionItem({
+  className,
+  style,
+  children,
+  animation,
+  ...rest
+}: HTMLAttributes<HTMLDivElement> & { animation?: ResolvedAnimation | null }) {
+  const stagger = useContext(StaggerContext);
+  const scope = useContext(ScopeContext);
+  const { reduced, mounted } = useReducedMotionAfterMount();
+  const idx = useRef<number | null>(null);
+  if (idx.current === null && stagger) idx.current = stagger.take();
+
+  const a = animation;
+  const entranceName = a?.entranceClass
+    ? ENTRANCE_CLASS[a.entranceClass as keyof typeof ENTRANCE_CLASS]
+    : undefined;
+
+  if (!entranceName || reduced || !mounted || (scope.editing && !scope.preview)) {
+    return (
+      <div className={className} style={style} {...rest}>
+        {children}
+      </div>
+    );
+  }
+
+  const baseDelay = a?.delay ?? 0;
+  const step = a?.stagger ?? STAGGER_STEP * 1000;
+  const delayMs = baseDelay + (idx.current ?? 0) * step;
+  const durationMs = a?.duration ?? 600;
+
+  return (
+    <div
+      className={cn(className, 'animate__animated', entranceName)}
+      style={
+        {
+          ...(style as CSSProperties),
+          ['--animate-duration' as string]: `${durationMs}ms`,
+          ['--animate-delay' as string]: `${delayMs}ms`,
+        } as CSSProperties
+      }
+      data-motion=""
+      {...rest}
+    >
+      {children}
+    </div>
   );
 }
