@@ -30,7 +30,7 @@ export function useCanvasDevice() {
 export function DeviceRow({ className }: { className?: string }) {
   const [device, setDevice] = useCanvasDevice();
   return (
-    <div className={cn('flex items-center gap-0.5', className)} role="group" aria-label="Edit for device">
+    <fieldset className={cn('flex min-w-0 items-center gap-0.5 border-0 p-0', className)} aria-label="Edit for device">
       {(Object.keys(ICONS) as Device[]).map(d => {
         const Icon = ICONS[d];
         return (
@@ -52,7 +52,7 @@ export function DeviceRow({ className }: { className?: string }) {
           </Button>
         );
       })}
-    </div>
+    </fieldset>
   );
 }
 
@@ -65,7 +65,7 @@ export function DeviceToggles({
   onChange: (value: Record<Device, boolean>) => void;
 }) {
   return (
-    <div className="flex gap-1" role="group" aria-label="Devices">
+    <fieldset className="flex min-w-0 gap-1 border-0 p-0" aria-label="Devices">
       {(Object.keys(ICONS) as Device[]).map(d => {
         const Icon = ICONS[d];
         return (
@@ -88,6 +88,6 @@ export function DeviceToggles({
           </Button>
         );
       })}
-    </div>
+    </fieldset>
   );
 }

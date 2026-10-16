@@ -1,12 +1,7 @@
 'use client';
 
+import { ENTRANCE_GROUPS, EXIT_GROUPS, HOVER_GROUPS } from '../animation-catalog';
 import {
-  DEFAULT_ANIMATION,
-  DELAY_RANGE,
-  DURATION_RANGE,
-  ENTRANCE_GROUPS,
-  EXIT_GROUPS,
-  HOVER_GROUPS,
   resolveAnimation,
   type AnimationSettings,
   type Device,
@@ -17,6 +12,12 @@ import {
 import { DeviceToggles } from './device-row';
 import { Choose, ControlLabel, GroupedSelect, Slider } from './primitives';
 
+/** Shown in seconds. Stored in milliseconds, which is what playback reads. */
+const DURATION_RANGE = { min: 0.2, max: 5, step: 0.1, fallback: 0.6 };
+const DELAY_RANGE = { min: 0, max: 5, step: 0.1, fallback: 0 };
+/** Matches the default step in motion playback. 0 means the whole block moves together. */
+const STAGGER_MS = 80;
+
 const labelize = (key: string) =>
   key
     .replace(/([A-Z])/g, ' $1')
@@ -24,17 +25,27 @@ const labelize = (key: string) =>
     .replace(/^\w/, c => c.toUpperCase())
     .trim();
 
-const toGroups = <T extends string>(groups: Record<string, readonly T[]>) => [
-  { label: 'None', options: [{ value: 'none' as T, label: 'None' }] },
-  ...Object.entries(groups).map(([label, keys]) => ({
-    label,
-    options: keys.map(value => ({ value, label: labelize(value) })),
-  })),
-];
+type SelectGroups<T extends string> = { label: string; options: { value: T; label: string }[] }[];
 
-const ENTRANCE_SELECT = toGroups(ENTRANCE_GROUPS);
-const EXIT_SELECT = toGroups(EXIT_GROUPS);
-const HOVER_SELECT = toGroups(HOVER_GROUPS);
+function toGroups<T extends string>(groups: object): SelectGroups<T> {
+  const named = Object.entries(groups as Record<string, readonly string[]>).map(([label, keys]) => ({
+    label,
+    options: keys.map(value => ({ value: value as T, label: labelize(value) })),
+  }));
+  return [{ label: 'None', options: [{ value: 'none' as T, label: 'None' }] }, ...named];
+}
+
+const ENTRANCE_SELECT = toGroups<Entrance>(ENTRANCE_GROUPS);
+const EXIT_SELECT = toGroups<Exit>(EXIT_GROUPS);
+const HOVER_SELECT = toGroups<HoverEffect>(HOVER_GROUPS);
+
+function effect<T extends string>(value: T | '' | undefined): T | 'none' {
+  if (!value || value === 'none') return 'none';
+  return value;
+}
+
+const toMs = (seconds: number) => Math.round(seconds * 1000);
+const toSeconds = (ms: number | undefined, fallback: number) => (ms === undefined ? fallback : ms / 1000);
 
 /** Preset motion for a block. Editors pick named effects; durations and delays stay inside fixed ranges. */
 export function AnimationControl({
@@ -46,13 +57,13 @@ export function AnimationControl({
   onChange: (value: AnimationSettings | undefined) => void;
   supportsStagger: boolean;
 }) {
-  const resolved = resolveAnimation(value) ?? {
-    ...DEFAULT_ANIMATION,
-    devices: { desktop: true, tablet: true, mobile: true },
-  };
-  const a = {
-    ...resolved,
-    devices: { ...DEFAULT_ANIMATION.devices, ...value?.devices, ...resolved.devices },
+  const entrance = effect(value?.entrance);
+  const exit = effect(value?.exit);
+  const hover = effect(value?.hover);
+  const devices: Record<Device, boolean> = {
+    desktop: value?.devices?.desktop !== false,
+    tablet: value?.devices?.tablet !== false,
+    mobile: value?.devices?.mobile !== false,
   };
 
   const set = (patch: Partial<AnimationSettings>) => {
@@ -60,29 +71,29 @@ export function AnimationControl({
     onChange(resolveAnimation(next) ? next : undefined);
   };
 
-  const hasMotion = a.entrance !== 'none' || a.exit !== 'none';
-  const hasAny = hasMotion || a.hover !== 'none';
+  const hasMotion = entrance !== 'none' || exit !== 'none';
+  const hasAny = hasMotion || hover !== 'none';
 
   return (
     <div className="space-y-4">
       <GroupedSelect<Entrance>
         label="Entrance"
-        value={a.entrance}
+        value={entrance}
         groups={ENTRANCE_SELECT}
-        onChange={entrance => set({ entrance })}
+        onChange={next => set({ entrance: next })}
       />
       <GroupedSelect<Exit>
         label="Exit"
-        value={a.exit}
+        value={exit}
         groups={EXIT_SELECT}
-        onChange={exit => set({ exit })}
+        onChange={next => set({ exit: next })}
       />
 
       {hasMotion && (
         <>
           <Choose
             label="Trigger"
-            value={a.trigger}
+            value={value?.trigger ?? 'scroll'}
             options={[
               { value: 'load', label: 'On load' },
               { value: 'scroll', label: 'On scroll' },
@@ -93,56 +104,40 @@ export function AnimationControl({
           />
           <Slider
             label="Duration"
-            value={a.duration}
+            value={toSeconds(value?.duration, DURATION_RANGE.fallback)}
             min={DURATION_RANGE.min}
             max={DURATION_RANGE.max}
             step={DURATION_RANGE.step}
             unit="s"
-            onChange={duration => set({ duration: duration ?? DURATION_RANGE.fallback })}
+            onChange={duration => set({ duration: toMs(duration ?? DURATION_RANGE.fallback) })}
           />
           <Slider
             label="Delay"
-            value={a.delay}
+            value={toSeconds(value?.delay, DELAY_RANGE.fallback)}
             min={DELAY_RANGE.min}
             max={DELAY_RANGE.max}
             step={DELAY_RANGE.step}
             unit="s"
-            onChange={delay => set({ delay: delay ?? DELAY_RANGE.fallback })}
+            onChange={delay => set({ delay: toMs(delay ?? DELAY_RANGE.fallback) })}
           />
           <Choose
             label="Easing"
-            value={a.easing}
+            value={value?.easing ?? 'ease-out'}
             options={[
               { value: 'ease-out', label: 'Ease out' },
               { value: 'spring', label: 'Spring' },
             ]}
             onChange={easing => set({ easing })}
           />
-          <Choose
-            label={a.trigger === 'click' ? 'Clicking again' : 'Repeat'}
-            value={a.once ? 'once' : 'every'}
-            options={
-              a.trigger === 'click'
-                ? [
-                    { value: 'once', label: 'Stays shown' },
-                    { value: 'every', label: 'Hides again' },
-                  ]
-                : [
-                    { value: 'once', label: 'First time only' },
-                    { value: 'every', label: 'Every time' },
-                  ]
-            }
-            onChange={v => set({ once: v === 'once' })}
-          />
           {supportsStagger && (
             <Choose
               label="Stagger"
-              value={a.stagger}
+              value={(value?.stagger ?? STAGGER_MS) > 0 ? 'children' : 'none'}
               options={[
                 { value: 'none', label: 'Whole block' },
                 { value: 'children', label: 'One by one' },
               ]}
-              onChange={stagger => set({ stagger })}
+              onChange={stagger => set({ stagger: stagger === 'children' ? STAGGER_MS : 0 })}
             />
           )}
         </>
@@ -150,15 +145,15 @@ export function AnimationControl({
 
       <GroupedSelect<HoverEffect>
         label={supportsStagger ? 'Hover (each item)' : 'Hover'}
-        value={a.hover}
+        value={hover}
         groups={HOVER_SELECT}
-        onChange={hover => set({ hover })}
+        onChange={next => set({ hover: next })}
       />
 
       {hasAny && (
         <div>
           <ControlLabel label="Play on" />
-          <DeviceToggles value={a.devices as Record<Device, boolean>} onChange={devices => set({ devices })} />
+          <DeviceToggles value={devices} onChange={next => set({ devices: next })} />
         </div>
       )}
     </div>

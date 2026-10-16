@@ -99,6 +99,7 @@ export type FilterSettings = {
   saturate?: number;
   grayscale?: number;
   hueRotate?: number;
+  hue?: number;
 };
 
 export type TextShadowSettings = { x?: number; y?: number; blur?: number; color?: string };
@@ -106,11 +107,13 @@ export type TextStrokeSettings = { width?: number; color?: string };
 
 export type HoverSettings = {
   fill?: Fill;
+  fillColor?: string;
   textColor?: string;
   borderColor?: string;
   opacity?: number;
   scale?: number;
-  shadow?: ShadowSettings;
+  shadow?: ShadowSettings | 'none' | 'sm' | 'md' | 'lg';
+  filter?: FilterSettings;
 };
 
 export const FONT_FAMILIES = ['Inter', 'Plus Jakarta Sans', 'JetBrains Mono', 'System'] as const;
@@ -141,6 +144,7 @@ export type Typography = {
 export type DisplaySettings = {
   overflow?: 'visible' | 'hidden' | 'auto';
   minHeight?: MaybeResponsive<'auto' | 'half' | 'screen'>;
+  contentAlign?: MaybeResponsive<'start' | 'center' | 'end'>;
   zIndex?: number;
 };
 
@@ -152,9 +156,6 @@ export {
   EXIT_CLASS,
   HOVER_CLASS,
   ATTENTION_SEEKERS,
-  aliasEntrance,
-  aliasExit,
-  aliasHover,
 } from './animation-catalog';
 import { ENTRANCES, EXITS, HOVERS } from './animation-catalog';
 
@@ -167,6 +168,7 @@ export type Exit = (typeof EXITS)[number];
 export type Trigger = (typeof TRIGGERS)[number];
 export type HoverEffect = (typeof HOVERS)[number];
 export type Easing = (typeof EASINGS)[number];
+export type PageTransition = (typeof PAGE_TRANSITIONS)[number];
 
 export type AnimationSettings = {
   entrance?: Entrance | 'none' | '';
@@ -180,14 +182,11 @@ export type AnimationSettings = {
   devices?: Partial<Record<Device, boolean>>;
 };
 
-export type SpacingSettings = {
-  padding?: Responsive<Sides>;
-  margin?: Responsive<Sides>;
-  unit?: SpacingUnit;
-};
-
 export type SectionSettings = {
-  spacing?: SpacingSettings;
+  spacing?: Responsive<Sides>;
+  spacingUnit?: SpacingUnit;
+  margin?: Responsive<Sides>;
+  marginUnit?: SpacingUnit;
   paddingY?: 'none' | 'sm' | 'md' | 'lg';
   background?: 'default' | 'muted' | 'primary' | 'dark';
   fill?: Fill;
@@ -196,13 +195,19 @@ export type SectionSettings = {
   filter?: FilterSettings;
   typography?: Typography;
   textColor?: string;
-  align?: MaybeResponsive<'left' | 'center' | 'right'>;
+  align?: MaybeResponsive<'' | 'left' | 'center' | 'right'>;
   display?: DisplaySettings;
   animation?: AnimationSettings;
+  hover?: HoverSettings;
   width?: Responsive<number>;
   widthUnit?: LengthUnit;
   maxWidth?: Responsive<number>;
   maxWidthUnit?: LengthUnit;
+  zIndex?: number;
+  hideOnMobile?: boolean;
+  hideOnTablet?: boolean;
+  hideOnDesktop?: boolean;
+  anchor?: string;
 };
 
 export type UrlValue = { url?: string; newTab?: boolean; nofollow?: boolean };
@@ -377,9 +382,9 @@ export type ResolvedAnimation = {
 
 export function resolveAnimation(a: AnimationSettings | undefined): ResolvedAnimation | null {
   if (!a) return null;
-  const entrance = a.entrance && a.entrance !== 'none' && a.entrance !== '' ? a.entrance : undefined;
-  const exit = a.exit && a.exit !== 'none' && a.exit !== '' ? a.exit : undefined;
-  const hover = a.hover && a.hover !== 'none' && a.hover !== '' ? a.hover : undefined;
+  const entrance = a.entrance && a.entrance !== 'none' ? a.entrance : undefined;
+  const exit = a.exit && a.exit !== 'none' ? a.exit : undefined;
+  const hover = a.hover && a.hover !== 'none' ? a.hover : undefined;
   if (!entrance && !exit && !hover) return null;
 
   return {

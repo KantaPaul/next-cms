@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils/cn';
 import type { Fill } from '../style';
 import { ColorPicker } from './color-picker';
 import { ControlLabel, SelectInput, ShowWhen, Slider } from './primitives';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 
 const TYPES = [
   { value: 'color' as const, label: 'Color', icon: PaintBucket },
@@ -31,7 +33,7 @@ export function BackgroundControl({
     <div className="space-y-3">
       {/* Label row with tabs-in-label */}
       <div className="flex min-h-5 items-center justify-between gap-2">
-        <label className="text-xs font-medium text-steel-600">Custom background</label>
+        <Label>Custom background</Label>
         <div className="flex items-center gap-1">
           <div className="flex rounded-md border border-steel-200 bg-steel-50/80 p-0.5">
             {TYPES.map(t => {
@@ -39,7 +41,7 @@ export function BackgroundControl({
               const selected = hasCustom && type === t.value;
 
               return (
-                <button
+                <Button
                   key={t.value}
                   type="button"
                   title={t.label}
@@ -52,20 +54,20 @@ export function BackgroundControl({
                   )}
                 >
                   <Icon className="size-3.5" />
-                </button>
+                </Button>
               );
             })}
           </div>
 
           {hasCustom && (
-            <button
+            <Button
               type="button"
               title="Reset background"
               onClick={() => onChange(undefined)}
               className="ml-1 inline-flex items-center gap-0.5 text-[11px] text-steel-400 hover:text-steel-700"
             >
               <RotateCcw className="size-2.5" />
-            </button>
+            </Button>
           )}
         </div>
       </div>
