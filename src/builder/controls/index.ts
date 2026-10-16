@@ -10,6 +10,16 @@ export {
   Choose,
   ColorInput,
   ControlLabel,
+  Description,
+  Divider,
+  GroupedSelect,
+  Notice,
+  PanelHeading,
+  ShowWhen,
+  StateTabs,
+  Switcher,
+  UnitSlider,
+  VisualChoose,
   Group,
   ResponsiveChoose,
   ResponsiveSelect,
@@ -18,4 +28,6 @@ export {
   Slider,
 } from './primitives';
 export { SectionField, STAGGER_BLOCKS } from './section-inspector';
+export { FilterControl } from './filter';
+export { TypographyControl } from './typography';
 export { ShadowControl } from './shadow';

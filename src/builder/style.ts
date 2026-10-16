@@ -46,6 +46,10 @@ export type Fill = {
   angle?: number;
   start?: number;
   end?: number;
+  gradientType?: 'linear' | 'radial';
+  attachment?: 'scroll' | 'fixed';
+  posX?: number;
+  posY?: number;
   image?: string;
   size?: 'cover' | 'contain' | 'auto';
   position?: 'center' | 'top' | 'bottom' | 'left' | 'right';
@@ -53,14 +57,84 @@ export type Fill = {
 };
 
 export type BorderSettings = {
-  style?: 'none' | 'solid' | 'dashed';
+  style?: 'none' | 'solid' | 'dashed' | 'double' | 'dotted' | 'groove';
   color?: string;
   width?: Responsive<Sides>;
+  radius?: Responsive<number>;
+  radiusUnit?: LengthUnit;
 };
+
+export const BORDER_STYLES = ['solid', 'dashed', 'double', 'dotted', 'groove'] as const;
+
+export type LengthUnit = 'px' | 'rem' | 'em' | '%' | 'vw';
+export const LENGTH_UNITS: readonly LengthUnit[] = ['px', 'rem', 'em', '%', 'vw'] as const;
+type Limits = { min: number; max: number; step: number };
+export const LENGTH_LIMITS: Record<LengthUnit, Limits> = {
+  px: { min: 0, max: 200, step: 1 },
+  rem: { min: 0, max: 12, step: 0.1 },
+  em: { min: 0, max: 12, step: 0.1 },
+  '%': { min: 0, max: 100, step: 1 },
+  vw: { min: 0, max: 100, step: 0.5 },
+};
+export const SIGNED_LENGTH_LIMITS: Record<LengthUnit, Limits> = {
+  px: { min: -50, max: 50, step: 1 },
+  rem: { min: -5, max: 5, step: 0.1 },
+  em: { min: -5, max: 5, step: 0.1 },
+  '%': { min: -50, max: 50, step: 1 },
+  vw: { min: -20, max: 20, step: 0.5 },
+};
+/** Units each unit-slider property accepts. */
+export const PROP_UNITS = {
+  fontSize: ['px', 'rem', 'em', 'vw'],
+  lineHeight: ['em', 'px', 'rem'],
+  letterSpacing: ['px', 'em', 'rem'],
+  wordSpacing: ['px', 'em', 'rem'],
+  width: ['%', 'px', 'vw'],
+  radius: ['px', 'rem', '%'],
+} as const satisfies Record<string, readonly LengthUnit[]>;
+
+export type FilterSettings = {
+  blur?: number;
+  brightness?: number;
+  contrast?: number;
+  saturate?: number;
+  hue?: number;
+};
+
+export type TextShadowSettings = { x?: number; y?: number; blur?: number; color?: string };
+export type TextStrokeSettings = { width?: number; color?: string };
+
+export type HoverSettings = {
+  textColor?: string;
+  fillColor?: string;
+  borderColor?: string;
+  shadow?: ShadowSettings;
+  filter?: FilterSettings;
+};
+
+export const FONT_FAMILIES = ['Inter', 'Plus Jakarta Sans', 'JetBrains Mono', 'System'] as const;
+export const TEXT_TRANSFORMS = ['none', 'uppercase', 'lowercase', 'capitalize'] as const;
+export const FONT_STYLES = ['normal', 'italic', 'oblique'] as const;
+export const TEXT_DECORATIONS = ['none', 'underline', 'overline', 'line-through'] as const;
 
 export type Typography = {
   size?: MaybeResponsive<'' | 'sm' | 'md' | 'lg' | 'xl'>;
   weight?: MaybeResponsive<'' | 'regular' | 'medium' | 'bold'>;
+  family?: (typeof FONT_FAMILIES)[number];
+  /** Unit-based size; wins over the legacy `size` preset when set. */
+  fontSize?: Responsive<number>;
+  fontSizeUnit?: LengthUnit;
+  transform?: (typeof TEXT_TRANSFORMS)[number];
+  fontStyle?: (typeof FONT_STYLES)[number];
+  decoration?: (typeof TEXT_DECORATIONS)[number];
+  lineHeight?: Responsive<number>;
+  lineHeightUnit?: LengthUnit;
+  letterSpacing?: Responsive<number>;
+  letterSpacingUnit?: LengthUnit;
+  wordSpacing?: Responsive<number>;
+  wordSpacingUnit?: LengthUnit;
+  textShadow?: TextShadowSettings;
+  textStroke?: TextStrokeSettings;
 };
 
 export type DisplaySettings = {
@@ -124,6 +198,13 @@ export type SectionSettings = {
   shadow?: 'none' | 'sm' | 'md' | 'lg' | ShadowSettings;
   display?: DisplaySettings;
   animation?: AnimationSettings;
+  filter?: FilterSettings;
+  hover?: HoverSettings;
+  margin?: Responsive<Sides>;
+  marginUnit?: SpacingUnit;
+  width?: Responsive<number>;
+  widthUnit?: LengthUnit;
+  zIndex?: number;
 };
 
 /* ---------- validators ---------- */
@@ -176,6 +257,31 @@ export function formatShadow(shadow: ShadowSettings): string | null {
   return `${shadow.inset ? 'inset ' : ''}${x}px ${y}px ${blur}px ${spread}px ${colorWithAlpha}`;
 }
 
+export function formatFilter(f: FilterSettings | undefined): string | null {
+  if (!f) return null;
+  const parts: string[] = [];
+  const blur = clamp(f.blur, 0, 10);
+  const brightness = clamp(f.brightness, 0, 200);
+  const contrast = clamp(f.contrast, 0, 200);
+  const saturate = clamp(f.saturate, 0, 200);
+  const hue = clamp(f.hue, 0, 360);
+  if (blur !== undefined) parts.push(`blur(${blur}px)`);
+  if (brightness !== undefined) parts.push(`brightness(${brightness}%)`);
+  if (contrast !== undefined) parts.push(`contrast(${contrast}%)`);
+  if (saturate !== undefined) parts.push(`saturate(${saturate}%)`);
+  if (hue !== undefined) parts.push(`hue-rotate(${hue}deg)`);
+  return parts.length ? parts.join(' ') : null;
+}
+
+function formatTextShadow(t: TextShadowSettings | undefined): string | null {
+  if (!t || typeof t !== 'object') return null;
+  const x = clamp(t.x, -50, 50) ?? 0;
+  const y = clamp(t.y, -50, 50) ?? 0;
+  const blur = clamp(t.blur, 0, 100) ?? 0;
+  const color = safeColor(t.color) ?? '#000000';
+  return `${x}px ${y}px ${blur}px ${color}`;
+}
+
 /* ---------- responsive resolution ---------- */
 
 const DEVICE_ORDER: Record<Device, Device[]> = {
@@ -218,7 +324,7 @@ const resolveSide = (value: Responsive<Sides> | undefined, device: Device, side:
 };
 
 /** Emits `--s-{prefix}{side}-{device}` variables plus one class per side that has any value. */
-function responsiveSides(value: Responsive<Sides> | undefined, prefix: 'p' | 'b', max: number, unit = 'px') {
+function responsiveSides(value: Responsive<Sides> | undefined, prefix: 'p' | 'b' | 'm', max: number, unit = 'px') {
   const classes: string[] = [];
   const vars: Record<string, string> = {};
 
@@ -232,6 +338,35 @@ function responsiveSides(value: Responsive<Sides> | undefined, prefix: 'p' | 'b'
   }
 
   return { classes, vars };
+}
+
+/** Emits `--s-{name}-{device}` values for a responsive number plus a unit; returns true when any device has a value. */
+function responsiveLength(
+  value: Responsive<number> | undefined,
+  unit: unknown,
+  allowed: readonly LengthUnit[],
+  signed: boolean,
+  name: string,
+  style: Record<string, string>
+): boolean {
+  if (!value || typeof value !== 'object') return false;
+  const u = pick(unit, allowed) ?? allowed[0];
+  const lim = (signed ? SIGNED_LENGTH_LIMITS : LENGTH_LIMITS)[u];
+  const get = (device: Device) => {
+    for (const d of DEVICE_ORDER[device]) {
+      const n = clamp(value[d], lim.min, lim.max);
+      if (n !== undefined) return n;
+    }
+    return undefined;
+  };
+  if (!DEVICES.some(d => get(d) !== undefined)) return false;
+
+  for (const d of DEVICES) {
+    const n = get(d);
+    if (n !== undefined) style[`--s-${name}-${DEVICE_SUFFIX[d]}`] = `${n}${u}`;
+  }
+
+  return true;
 }
 
 /* ---------- fill ---------- */
@@ -251,22 +386,37 @@ function fillValue(fill: Fill | undefined) {
     const angle = clamp(fill.angle, 0, 360) ?? 135;
     const start = clamp(fill.start, 0, 100) ?? 0;
     const end = clamp(fill.end, 0, 100) ?? 100;
-    const value = `linear-gradient(${angle}deg, ${from} ${start}%, ${to} ${end}%)`;
+    const value =
+      fill.gradientType === 'radial'
+        ? `radial-gradient(circle, ${from} ${start}%, ${to} ${end}%)`
+        : `linear-gradient(${angle}deg, ${from} ${start}%, ${to} ${end}%)`;
     return { light: value, dark: value };
   }
 
   const url = safeUrl(fill.image);
   if (!url) return null;
   const size = pick(fill.size, ['cover', 'contain', 'auto'] as const) ?? 'cover';
-  const position = pick(fill.position, ['center', 'top', 'bottom', 'left', 'right'] as const) ?? 'center';
+  const posX = clamp(fill.posX, 0, 100);
+  const posY = clamp(fill.posY, 0, 100);
+  const position =
+    posX !== undefined || posY !== undefined
+      ? `${posX ?? 50}% ${posY ?? 50}%`
+      : (pick(fill.position, ['center', 'top', 'bottom', 'left', 'right'] as const) ?? 'center');
+  const attachment = pick(fill.attachment, ['scroll', 'fixed'] as const) ?? 'scroll';
   const repeat = pick(fill.repeat, ['no-repeat', 'repeat', 'repeat-x', 'repeat-y'] as const) ?? 'no-repeat';
-  const value = `url("${url}") ${position} / ${size} ${repeat}`;
+  const value = `url("${url}") ${position} / ${size} ${repeat} ${attachment}`;
   return { light: value, dark: value };
 }
 
 /* ---------- class maps & constants ---------- */
 
 const SHADOW = { none: '', sm: 'shadow-sm', md: 'shadow-md', lg: 'shadow-xl' };
+const FONT_STACK: Record<(typeof FONT_FAMILIES)[number], string> = {
+  Inter: "'Inter', ui-sans-serif, system-ui, sans-serif",
+  'Plus Jakarta Sans': "'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif",
+  'JetBrains Mono': "'JetBrains Mono', ui-monospace, monospace",
+  System: 'ui-sans-serif, system-ui, -apple-system, sans-serif',
+};
 const FONT_SIZE_REM: Record<string, string> = { sm: '0.875rem', md: '1rem', lg: '1.125rem', xl: '1.25rem' };
 const FONT_WEIGHT_MAP: Record<string, string> = { regular: '400', medium: '500', bold: '700' };
 const TEXT_ALIGN_MAP: Record<string, string> = { left: 'left', center: 'center', right: 'right' };
@@ -303,8 +453,12 @@ export function resolveSectionStyle(s: SectionSettings): ResolvedSectionStyle {
   const textColor = safeColor(s.textColor);
   if (textColor) style.color = textColor;
 
-  // Typography size (responsive)
-  const hasSize = DEVICES.some(
+  const ty = s.typography;
+  const unitSize = responsiveLength(ty?.fontSize, ty?.fontSizeUnit, PROP_UNITS.fontSize, false, 'fs', style);
+  if (unitSize) outerClasses.push('s-fs');
+
+  // Typography size (responsive, legacy presets)
+  const hasSize = !unitSize && DEVICES.some(
     d => resolveResponsive(s.typography?.size, d, x => pick(x, ['sm', 'md', 'lg', 'xl'] as const)) !== undefined
   );
 
@@ -318,6 +472,32 @@ export function resolveSectionStyle(s: SectionSettings): ResolvedSectionStyle {
         style[`--s-fs-${DEVICE_SUFFIX[d]}`] = FONT_SIZE_REM[resolved];
       }
     }
+  }
+
+  if (responsiveLength(ty?.lineHeight, ty?.lineHeightUnit, PROP_UNITS.lineHeight, false, 'lh', style)) outerClasses.push('s-lh');
+  if (responsiveLength(ty?.letterSpacing, ty?.letterSpacingUnit, PROP_UNITS.letterSpacing, true, 'ls', style)) outerClasses.push('s-ls');
+  if (responsiveLength(ty?.wordSpacing, ty?.wordSpacingUnit, PROP_UNITS.wordSpacing, true, 'ws', style)) outerClasses.push('s-ws');
+
+  const family = pick(ty?.family, FONT_FAMILIES);
+  if (family) {
+    outerClasses.push('s-ff');
+    style['--s-ff'] = FONT_STACK[family];
+  }
+  const transform = pick(ty?.transform, TEXT_TRANSFORMS);
+  if (transform && transform !== 'none') outerClasses.push(`s-tt-${transform}`);
+  const fontStyle = pick(ty?.fontStyle, FONT_STYLES);
+  if (fontStyle && fontStyle !== 'normal') outerClasses.push(`s-fst-${fontStyle}`);
+  const decoration = pick(ty?.decoration, TEXT_DECORATIONS);
+  if (decoration && decoration !== 'none') outerClasses.push(`s-td-${decoration}`);
+  const textShadow = formatTextShadow(ty?.textShadow);
+  if (textShadow) {
+    outerClasses.push('s-tsh');
+    style['--s-tsh'] = textShadow;
+  }
+  const strokeWidth = clamp(ty?.textStroke?.width, 0, 10);
+  if (strokeWidth) {
+    outerClasses.push('s-tst');
+    style['--s-tst'] = `${strokeWidth}px ${safeColor(ty?.textStroke?.color) ?? '#000000'}`;
   }
 
   // Typography weight (responsive)
@@ -337,7 +517,7 @@ export function resolveSectionStyle(s: SectionSettings): ResolvedSectionStyle {
     }
   }
 
-  const borderStyle = pick(s.border?.style, ['none', 'solid', 'dashed'] as const);
+  const borderStyle = pick(s.border?.style, ['none', ...BORDER_STYLES] as const);
 
   if (borderStyle && borderStyle !== 'none') {
     const widths = responsiveSides(s.border?.width, 'b', 40, 'px');
@@ -348,6 +528,11 @@ export function resolveSectionStyle(s: SectionSettings): ResolvedSectionStyle {
       const color = safeColor(s.border?.color);
       if (color) style['--s-bd-color'] = color;
     }
+  }
+
+  if (borderStyle) {
+    const radius = s.border;
+    if (responsiveLength(radius?.radius, radius?.radiusUnit, PROP_UNITS.radius, false, 'rad', style)) outerClasses.push('s-rad');
   }
 
   // Shadow (structured object or legacy string)
@@ -361,6 +546,53 @@ export function resolveSectionStyle(s: SectionSettings): ResolvedSectionStyle {
       outerClasses.push('s-shadow');
       style['--s-shadow'] = shadowVal;
     }
+  }
+
+  // CSS filters
+  const filter = formatFilter(s.filter);
+  if (filter) {
+    outerClasses.push('s-filter');
+    style['--s-filter'] = filter;
+  }
+
+  // Hover overrides (applied by `.s-hover:hover`)
+  const h = s.hover;
+  if (h && typeof h === 'object') {
+    const hv: Record<string, string> = {};
+    const hc = safeColor(h.textColor);
+    if (hc) hv['--s-h-color'] = hc;
+    const hf = safeColor(h.fillColor);
+    if (hf) hv['--s-h-fill'] = hf;
+    const hb = safeColor(h.borderColor);
+    if (hb) hv['--s-h-bd'] = hb;
+    const hs = h.shadow && typeof h.shadow === 'object' ? formatShadow(h.shadow) : null;
+    if (hs) hv['--s-h-shadow'] = hs;
+    const hfl = formatFilter(h.filter);
+    if (hfl) hv['--s-h-filter'] = hfl;
+
+    const HOVER_CLASS: Record<string, string> = {
+      '--s-h-color': 's-hc',
+      '--s-h-fill': 's-hf',
+      '--s-h-bd': 's-hb',
+      '--s-h-shadow': 's-hs',
+      '--s-h-filter': 's-hfl',
+    };
+    for (const key of Object.keys(hv)) outerClasses.push(HOVER_CLASS[key]);
+    Object.assign(style, hv);
+  }
+
+  // Margin (responsive, same units as padding)
+  const marginUnit = pick(s.marginUnit, SPACING_UNITS) ?? 'px';
+  const margin = responsiveSides(s.margin, 'm', SPACING_LIMITS[marginUnit].max, marginUnit);
+  outerClasses.push(...margin.classes);
+  Object.assign(style, margin.vars);
+
+  // Width (responsive) and z-index
+  if (responsiveLength(s.width, s.widthUnit, PROP_UNITS.width, false, 'w', style)) outerClasses.push('s-w');
+  const z = clamp(s.zIndex, 0, 50);
+  if (z !== undefined) {
+    outerClasses.push('s-z');
+    style['--s-z'] = String(Math.round(z));
   }
 
   // Text align (responsive)

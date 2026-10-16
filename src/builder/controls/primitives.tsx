@@ -3,7 +3,7 @@
 import { ChevronDown, RotateCcw, X } from 'lucide-react';
 import { useEffect, useId, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils/cn';
-import { resolveResponsive, type Device, type MaybeResponsive } from '../style';
+import { resolveResponsive, type Device, type MaybeResponsive, type Responsive } from '../style';
 import { DeviceRow, useCanvasDevice } from './device-row';
 
 export function ControlLabel({
@@ -552,4 +552,200 @@ export function ColorInput({
       </div>
     </div>
   );
+}
+
+/* ---------- Elementor-style extras ---------- */
+
+export function Description({ children }: { children: ReactNode }) {
+  return <p className="-mt-1 text-[11px] leading-snug text-steel-400">{children}</p>;
+}
+
+export function PanelHeading({ children }: { children: ReactNode }) {
+  return <p className="pt-1 text-[11px] font-semibold tracking-wide text-steel-500 uppercase">{children}</p>;
+}
+
+export function Divider() {
+  return <hr className="border-steel-100" />;
+}
+
+export function Notice({ children }: { children: ReactNode }) {
+  return <div className="rounded-md border border-indigo-100 bg-indigo-50 px-2.5 py-2 text-[11px] text-indigo-800">{children}</div>;
+}
+
+/** Renders children only when the condition holds. Conditions live in code, never in page JSON. */
+export function ShowWhen({ when, children }: { when: boolean; children: ReactNode }) {
+  return when ? <>{children}</> : null;
+}
+
+export function Switcher({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: boolean | undefined;
+  onChange: (value: boolean) => void;
+}) {
+  const id = useId();
+
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <label htmlFor={id} className="text-xs font-medium text-steel-600">
+        {label}
+      </label>
+      <button
+        id={id}
+        type="button"
+        role="switch"
+        aria-checked={!!value}
+        onClick={() => onChange(!value)}
+        className={cn('relative h-5 w-9 rounded-full transition-colors', value ? 'bg-indigo-600' : 'bg-steel-200')}
+      >
+        <span className={cn('absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow transition-transform', value && 'translate-x-4')} />
+      </button>
+    </div>
+  );
+}
+
+export type SelectGroup<T extends string> = { label: string; options: { value: T; label: string }[] };
+
+/** Select with `<optgroup>`s, e.g. grouped animation catalogs. */
+export function GroupedSelect<T extends string>({
+  label,
+  value,
+  groups,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  groups: SelectGroup<T>[];
+  onChange: (value: T) => void;
+}) {
+  const id = useId();
+
+  return (
+    <div className="space-y-1.5">
+      <ControlLabel label={label} htmlFor={id} />
+      <select
+        id={id}
+        value={value}
+        onChange={e => onChange(e.target.value as T)}
+        className="h-8 w-full rounded-md border border-steel-200 bg-white px-2 text-xs text-steel-800 focus:border-indigo-400 focus:outline-none"
+      >
+        {groups.map(g => (
+          <optgroup key={g.label} label={g.label}>
+            {g.options.map(o => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+/** Choose cells that show a thumbnail instead of text. */
+export function VisualChoose<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+  columns = 3,
+}: {
+  label: string;
+  value: T | undefined;
+  options: { value: T; label: string; thumb: ReactNode }[];
+  onChange: (value: T) => void;
+  columns?: number;
+}) {
+  return (
+    <div>
+      <ControlLabel label={label} />
+      <div role="radiogroup" aria-label={label} className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+        {options.map(o => (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={o.value === value}
+            title={o.label}
+            onClick={() => onChange(o.value)}
+            className={cn(
+              'flex flex-col items-center gap-1 rounded-md border p-1.5 text-[10px] text-steel-600',
+              o.value === value ? 'border-indigo-400 bg-indigo-50' : 'border-steel-200 hover:bg-steel-50'
+            )}
+          >
+            {o.thumb}
+            <span className="truncate">{o.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Normal / Hover tab pair; the hover pane is for optional overrides. */
+export function StateTabs({ normal, hover }: { normal: ReactNode; hover: ReactNode }) {
+  const [state, setState] = useState<'normal' | 'hover'>('normal');
+
+  return (
+    <div className="space-y-3">
+      <div role="tablist" className="grid grid-cols-2 divide-x divide-steel-200 overflow-hidden rounded-sm border border-steel-200 text-xs">
+        {(['normal', 'hover'] as const).map(t => (
+          <button
+            key={t}
+            type="button"
+            role="tab"
+            aria-selected={state === t}
+            onClick={() => setState(t)}
+            className={cn('py-1.5 capitalize', state === t ? 'bg-steel-100 font-medium text-steel-900' : 'text-steel-600 hover:bg-steel-50')}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+      {state === 'normal' ? normal : hover}
+    </div>
+  );
+}
+
+/** Responsive slider whose unit select is stored beside the values, each unit clamped to its own range. */
+export function UnitSlider<U extends string>({
+  label,
+  value,
+  unit,
+  units,
+  limits,
+  onChange,
+}: {
+  label: string;
+  value: Responsive<number> | undefined;
+  unit: U | undefined;
+  units: readonly U[];
+  limits: Record<U, { min: number; max: number; step: number }>;
+  onChange: (value: Responsive<number> | undefined, unit: U) => void;
+}) {
+  const current = unit && units.includes(unit) ? unit : units[0];
+  const lim = limits[current];
+
+  return (
+    <ResponsiveSlider
+      label={label}
+      value={value}
+      min={lim.min}
+      max={lim.max}
+      step={lim.step}
+      unit={current}
+      units={{ value: current, options: units, onChange: u => onChange(clampAll(value, limits[u as U]), u as U) }}
+      onChange={v => onChange(v as Responsive<number> | undefined, current)}
+    />
+  );
+}
+
+function clampAll(value: Responsive<number> | undefined, lim: { min: number; max: number }) {
+  if (value === undefined) return undefined;
+  const fit = (n: number) => Math.min(lim.max, Math.max(lim.min, n));
+  return Object.fromEntries(Object.entries(value).map(([d, n]) => [d, fit(n as number)])) as Responsive<number>;
 }
