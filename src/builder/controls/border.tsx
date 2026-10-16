@@ -1,16 +1,30 @@
 'use client';
 
 import { Minus, MoreHorizontal, X } from 'lucide-react';
-import type { BorderSettings } from '../style';
+import { BORDER_STYLES, LENGTH_LIMITS, PROP_UNITS, type BorderSettings, type LengthUnit } from '../style';
 import { ColorPicker } from './color-picker';
 import { Dimensions } from './dimensions';
-import { Choose } from './primitives';
+import { Choose, UnitSlider } from './primitives';
 
-const STYLES = [
-  { value: 'none' as const, label: 'None', icon: <X /> },
-  { value: 'solid' as const, label: 'Solid', icon: <Minus /> },
-  { value: 'dashed' as const, label: 'Dashed', icon: <MoreHorizontal /> },
-];
+const STYLE_ICONS: Record<string, React.ReactNode> = {
+  none: <X />,
+  solid: <Minus />,
+  dashed: <MoreHorizontal />,
+  double: <span className="text-[10px] font-bold leading-none">=</span>,
+  dotted: <span className="text-[10px] font-bold leading-none">···</span>,
+  groove: <span className="text-[10px] font-bold leading-none">≡</span>,
+};
+
+const STYLES = (['none', ...BORDER_STYLES] as const).map(value => ({
+  value,
+  label: value.charAt(0).toUpperCase() + value.slice(1),
+  icon: STYLE_ICONS[value],
+}));
+
+const RADIUS_UNITS = PROP_UNITS.radius as readonly LengthUnit[];
+const radiusLimits = Object.fromEntries(
+  RADIUS_UNITS.map(u => [u, LENGTH_LIMITS[u]])
+) as Record<LengthUnit, { min: number; max: number; step: number }>;
 
 export function BorderControl({
   value,
@@ -28,6 +42,7 @@ export function BorderControl({
         label="Style"
         value={style}
         options={STYLES}
+        columns={3}
         onChange={next =>
           onChange(
             next === 'none'
@@ -56,6 +71,14 @@ export function BorderControl({
           />
         </>
       )}
+      <UnitSlider
+        label="Radius"
+        value={border.radius}
+        unit={border.radiusUnit}
+        units={RADIUS_UNITS}
+        limits={radiusLimits}
+        onChange={(radius, radiusUnit) => onChange({ ...border, radius, radiusUnit })}
+      />
     </div>
   );
 }

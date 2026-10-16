@@ -5,7 +5,7 @@ import { MediaField } from '@/components/media/media-picker';
 import { cn } from '@/lib/utils/cn';
 import type { Fill } from '../style';
 import { ColorPicker } from './color-picker';
-import { ControlLabel, SelectInput, Slider } from './primitives';
+import { ControlLabel, SelectInput, ShowWhen, Slider } from './primitives';
 
 const TYPES = [
   { value: 'color' as const, label: 'Color', icon: PaintBucket },
@@ -72,11 +72,7 @@ export function BackgroundControl({
 
       {hasCustom && type === 'color' && (
         <div className="grid grid-cols-2 gap-2">
-          <ColorPicker
-            label="Light"
-            value={fill.color}
-            onChange={color => set({ color })}
-          />
+          <ColorPicker label="Light" value={fill.color} onChange={color => set({ color })} />
           <ColorPicker
             label="Dark"
             value={fill.colorDark}
@@ -88,29 +84,30 @@ export function BackgroundControl({
 
       {hasCustom && type === 'gradient' && (
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            <ColorPicker
-              label="Start"
-              value={fill.from}
-              onChange={from => set({ from })}
-              placeholder="#6366f1"
-            />
-            <ColorPicker
-              label="Stop"
-              value={fill.to}
-              onChange={to => set({ to })}
-              placeholder="#ec4899"
-            />
-          </div>
-          <Slider
-            label="Angle"
-            value={fill.angle}
-            min={0}
-            max={360}
-            unit="deg"
-            placeholder="135"
-            onChange={angle => set({ angle })}
+          <SelectInput
+            label="Type"
+            value={fill.gradientType ?? 'linear'}
+            options={[
+              { value: 'linear', label: 'Linear' },
+              { value: 'radial', label: 'Radial' },
+            ]}
+            onChange={gradientType => set({ gradientType })}
           />
+          <div className="grid grid-cols-2 gap-2">
+            <ColorPicker label="Start" value={fill.from} onChange={from => set({ from })} placeholder="#6366f1" />
+            <ColorPicker label="Stop" value={fill.to} onChange={to => set({ to })} placeholder="#ec4899" />
+          </div>
+          <ShowWhen when={(fill.gradientType ?? 'linear') === 'linear'}>
+            <Slider
+              label="Angle"
+              value={fill.angle}
+              min={0}
+              max={360}
+              unit="deg"
+              placeholder="135"
+              onChange={angle => set({ angle })}
+            />
+          </ShowWhen>
           <Slider
             label="Start location"
             value={fill.start}
@@ -136,10 +133,7 @@ export function BackgroundControl({
         <div className="space-y-3">
           <div>
             <ControlLabel label="Image" />
-            <MediaField
-              value={fill.image ?? ''}
-              onChange={image => set({ image: image || undefined })}
-            />
+            <MediaField value={fill.image ?? ''} onChange={image => set({ image: image || undefined })} />
           </div>
           <SelectInput
             label="Size"
@@ -152,7 +146,7 @@ export function BackgroundControl({
             onChange={size => set({ size })}
           />
           <SelectInput
-            label="Position"
+            label="Position preset"
             value={fill.position ?? 'center'}
             options={[
               { value: 'center', label: 'Center' },
@@ -161,7 +155,34 @@ export function BackgroundControl({
               { value: 'left', label: 'Left' },
               { value: 'right', label: 'Right' },
             ]}
-            onChange={position => set({ position })}
+            onChange={position => set({ position, posX: undefined, posY: undefined })}
+          />
+          <Slider
+            label="Custom X"
+            value={fill.posX}
+            min={0}
+            max={100}
+            unit="%"
+            placeholder="50"
+            onChange={posX => set({ posX })}
+          />
+          <Slider
+            label="Custom Y"
+            value={fill.posY}
+            min={0}
+            max={100}
+            unit="%"
+            placeholder="50"
+            onChange={posY => set({ posY })}
+          />
+          <SelectInput
+            label="Attachment"
+            value={fill.attachment ?? 'scroll'}
+            options={[
+              { value: 'scroll', label: 'Scroll' },
+              { value: 'fixed', label: 'Fixed' },
+            ]}
+            onChange={attachment => set({ attachment })}
           />
           <SelectInput
             label="Repeat"

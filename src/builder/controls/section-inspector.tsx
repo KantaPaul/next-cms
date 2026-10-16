@@ -11,16 +11,36 @@ import {
   Ban,
 } from 'lucide-react';
 import { useId } from 'react';
-import type { Device, SectionSettings } from '../style';
+import {
+  LENGTH_LIMITS,
+  PROP_UNITS,
+  SPACING_LIMITS,
+  SPACING_UNITS,
+  type Device,
+  type LengthUnit,
+  type SectionSettings,
+  type SpacingUnit,
+} from '../style';
 import { AnimationControl } from './animation';
 import { BackgroundControl } from './background';
 import { BorderControl } from './border';
 import { ColorPicker } from './color-picker';
 import { DeviceToggles } from './device-row';
 import { Dimensions } from './dimensions';
+import { FilterControl } from './filter';
 import { useInspectorTab } from './inspector-tab';
-import { Choose, ControlLabel, Group, ResponsiveChoose } from './primitives';
+import {
+  Choose,
+  ControlLabel,
+  Description,
+  Group,
+  ResponsiveChoose,
+  Slider,
+  StateTabs,
+  UnitSlider,
+} from './primitives';
 import { ShadowControl } from './shadow';
+import { TypographyControl } from './typography';
 
 const usePuck = createUsePuck();
 
@@ -41,6 +61,8 @@ function StyleControls({
   set: (patch: Partial<SectionSettings>) => void;
   blockType?: string;
 }) {
+  const hover = s.hover ?? {};
+
   return (
     <div>
       <Group title="Colors" defaultOpen>
@@ -55,45 +77,76 @@ function StyleControls({
           ]}
           onChange={background => set({ background })}
         />
-        <BackgroundControl value={s.fill} onChange={fill => set({ fill })} />
-        <ColorPicker
-          label="Text color"
-          value={s.textColor}
-          onChange={textColor => set({ textColor })}
-        />
-      </Group>
-
-      <Group title="Typography">
-        <ResponsiveChoose
-          label="Base size"
-          value={s.typography?.size}
-          options={[
-            { value: '', label: 'Auto' },
-            { value: 'sm', label: 'S' },
-            { value: 'md', label: 'M' },
-            { value: 'lg', label: 'L' },
-            { value: 'xl', label: 'XL' },
-          ]}
-          onChange={size => set({ typography: { ...s.typography, size: size || undefined } })}
-        />
-        <ResponsiveChoose
-          label="Weight"
-          value={s.typography?.weight}
-          options={[
-            { value: '', label: 'Auto' },
-            { value: 'regular', label: 'Regular' },
-            { value: 'medium', label: 'Medium' },
-            { value: 'bold', label: 'Bold' },
-          ]}
-          onChange={weight =>
-            set({ typography: { ...s.typography, weight: weight || undefined } })
+        <StateTabs
+          normal={
+            <div className="space-y-3">
+              <BackgroundControl value={s.fill} onChange={fill => set({ fill })} />
+              <ColorPicker label="Text color" value={s.textColor} onChange={textColor => set({ textColor })} />
+            </div>
+          }
+          hover={
+            <div className="space-y-3">
+              <Description>Optional overrides applied on hover.</Description>
+              <ColorPicker
+                label="Background color"
+                value={hover.fillColor}
+                onChange={fillColor => set({ hover: { ...hover, fillColor } })}
+              />
+              <ColorPicker
+                label="Text color"
+                value={hover.textColor}
+                onChange={textColor => set({ hover: { ...hover, textColor } })}
+              />
+            </div>
           }
         />
       </Group>
 
+      <Group title="Typography">
+        <TypographyControl
+          value={s.typography}
+          onChange={typography => set({ typography })}
+        />
+      </Group>
+
       <Group title="Border">
-        <BorderControl value={s.border} onChange={border => set({ border })} />
-        <ShadowControl value={s.shadow} onChange={shadow => set({ shadow })} />
+        <StateTabs
+          normal={
+            <div className="space-y-3">
+              <BorderControl value={s.border} onChange={border => set({ border })} />
+              <ShadowControl value={s.shadow} onChange={shadow => set({ shadow })} />
+            </div>
+          }
+          hover={
+            <div className="space-y-3">
+              <Description>Optional border and shadow on hover.</Description>
+              <ColorPicker
+                label="Border color"
+                value={hover.borderColor}
+                onChange={borderColor => set({ hover: { ...hover, borderColor } })}
+              />
+              <ShadowControl
+                value={hover.shadow}
+                onChange={shadow => set({ hover: { ...hover, shadow } })}
+              />
+            </div>
+          }
+        />
+      </Group>
+
+      <Group title="Filters">
+        <StateTabs
+          normal={<FilterControl value={s.filter} onChange={filter => set({ filter })} />}
+          hover={
+            <div className="space-y-3">
+              <Description>Optional filter overrides on hover.</Description>
+              <FilterControl
+                value={hover.filter}
+                onChange={filter => set({ hover: { ...hover, filter } })}
+              />
+            </div>
+          }
+        />
       </Group>
 
       <Group title="Display">
@@ -148,6 +201,12 @@ function LayoutControls({
     mobile: !s.hideOnMobile,
   };
 
+  const widthUnits = PROP_UNITS.width as readonly LengthUnit[];
+  const widthLimits = Object.fromEntries(widthUnits.map(u => [u, LENGTH_LIMITS[u]])) as Record<
+    LengthUnit,
+    { min: number; max: number; step: number }
+  >;
+
   return (
     <div>
       <Group title="Spacing" defaultOpen>
@@ -166,8 +225,37 @@ function LayoutControls({
           label="Custom padding"
           value={s.spacing}
           unit={s.spacingUnit ?? 'px'}
-          onUnitChange={spacingUnit => set({ spacingUnit })}
+          onUnitChange={spacingUnit => set({ spacingUnit: spacingUnit as SpacingUnit })}
           onChange={spacing => set({ spacing })}
+        />
+        <Dimensions
+          label="Margin"
+          value={s.margin}
+          unit={s.marginUnit ?? 'px'}
+          units={[...SPACING_UNITS]}
+          max={SPACING_LIMITS[s.marginUnit ?? 'px'].max}
+          onUnitChange={marginUnit => set({ marginUnit: marginUnit as SpacingUnit })}
+          onChange={margin => set({ margin })}
+        />
+      </Group>
+
+      <Group title="Size">
+        <UnitSlider
+          label="Width"
+          value={s.width}
+          unit={s.widthUnit}
+          units={widthUnits}
+          limits={widthLimits}
+          onChange={(width, widthUnit) => set({ width, widthUnit })}
+        />
+        <Slider
+          label="Z-index"
+          value={s.zIndex}
+          min={0}
+          max={50}
+          step={1}
+          placeholder="0"
+          onChange={zIndex => set({ zIndex })}
         />
       </Group>
 
