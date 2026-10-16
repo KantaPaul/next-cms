@@ -4,22 +4,22 @@ overview: Add the Elementor editor-control catalog the builder does not have yet
 todos:
   - id: primitives
     content: Add switcher, popover toggle, visual choice, grouped select, unit slider, normal/hover tabs, description, heading, divider, notice, and showWhen
-    status: pending
+    status: completed
   - id: typography
     content: Extend Typography with family, unit size, transform, style, decoration, line-height, letter-spacing, word-spacing, text shadow, and text stroke; emit allowlisted CSS
-    status: pending
+    status: completed
   - id: border-bg
     content: Add border styles and radius, radial gradient, attachment, custom background position, and hover state for color, background, border, shadow, and filters
-    status: pending
+    status: completed
   - id: filters-layout
     content: Add CSS filter group plus margin, width, and z-index on the layout tab
-    status: pending
+    status: completed
   - id: animation
     content: Replace entrance and hover lists with Elementor entrance, exit, and hover catalogs and allowlisted playback
     status: pending
   - id: content-fields
     content: Add URL, icon picker, image dimensions, gallery block, datetime on testimonials, and searchable select for taxonomy and icons
-    status: pending
+    status: in_progress
   - id: verify
     content: Typecheck and verify in the builder and on a public page, including legacy size and shadow values
     status: pending
@@ -39,6 +39,18 @@ flowchart LR
   resolve --> vars["classes plus --s-* vars"]
   vars --> css[site.css breakpoints]
 ```
+
+## Implementation audit (2026-10-16)
+
+| Todo | Status | Notes |
+|------|--------|-------|
+| **primitives** | ✅ completed | `Switcher`, `VisualChoose`, `GroupedSelect`, `UnitSlider`, `StateTabs`, `Description`, `PanelHeading`, `Divider`, `Notice`, `ShowWhen` in `primitives.tsx`. Popover-toggle pattern lives in `shadow.tsx`. |
+| **typography** | ✅ completed | `TypographyControl` + `resolveSectionStyle` + `site.css` for family, unit size, transform, style, decoration, lh/ls/ws, text shadow, text stroke. Wired in section inspector. Legacy size/weight presets still resolve. |
+| **border-bg** | ✅ completed | Border: double/dotted/groove + radius unit slider. Background: radial, attachment, posX/posY. Hover StateTabs for color/bg/border/shadow/filters. |
+| **filters-layout** | ✅ completed | `FilterControl` in Style → Filters. Layout: margin Dimensions, width UnitSlider, z-index Slider. |
+| **animation** | ⏳ pending | Still short lists in `animation.tsx`. Full Elementor catalogs + Animate.css playback tracked in `elementor_animation_controls_e45c47ac.plan.md`. |
+| **content-fields** | 🟡 partial | **Done:** `UrlField`, `IconPickerField`, `DateTimeField`, `SearchableSelectField` (taxonomy locks), `ButtonLink`/`resolveLinkProps`. **Missing:** wire Url/Icon into Hero/CTA/Pricing/Features config; image dimensions on Image; Gallery block; DateTime on Testimonials items + render. |
+| **verify** | ⏳ pending | Needs local `pnpm tsc --noEmit`, builder + public page checks for responsive/hover/legacy values. |
 
 ## Already in the app
 
@@ -80,19 +92,8 @@ Replace the short entrance and hover lists in [`animation.tsx`](src/builder/cont
 - **Icon picker**: popover grid over the existing Lucide allowlist in [`icons.tsx`](src/builder/icons.tsx). Use it wherever a block already stores an icon name. No uploaded SVG.
 - **Image dimensions** on the Image block: width, height, object-fit (`cover | contain | fill`). CSS only. Media storage has original pixel size, not generated thumbnails, so this is not a WordPress image-size crop.
 - **Gallery** field (ordered media URLs) plus a Gallery block that renders that list in a simple grid, with the shared section inspector.
-- **Date time**: a date/time field using the existing `react-day-picker` calendar. First consumer is a new optional “event date” on the Gallery is the wrong place — put it on a small **Notice** content block? Better: add the field component and use it as the schedule input is already elsewhere. Consumer: Image block does not need a date. Add the control and use it on a **Countdown** only if one exists. Check: no countdown block. So ship `DateTimeField` and attach it to nothing fake. The user asked for the control in the app. A single **Event** line in an existing block is stretched. I'll put DateTimeField in the fields kit and use it for the Gallery block's optional caption date? That's odd.
-
-Reconsider datetime: posts already have publish scheduling outside the builder. Shipping an unused field is weak. Plan: add `DateTimeField` and use it on the new Gallery block as an optional “show date” per item? Too much.
-
-Simplest honest consumer: the field exists in `client-fields.tsx` and the page-level... no.
-
-I'll say: Date time control is added and used for an optional date on testimonial items? Testimonials don't have dates.
-
-Looking at blocks... FAQ, features, stats, pricing, hero, cta, image, contact, columns, blog, post template.
-
-None need datetime. I'll include the field in the kit and note the first consumer is any array item that wants a date — and wire it onto Testimonials as an optional date line, rendered under the quote if set. That's a real, small consumer. Good.
-
-- **Select2**: searchable select (cmdk already in the app) for single choice. Use it for the icon picker’s filter and for category/tag locks so long lists are searchable. Multiple select only where the field is already an array of ids; category lock stays single.
+- **Date time**: optional date on Testimonials items, rendered under the quote if set.
+- **Select2**: searchable select for category/tag locks and icon filter.
 
 ## Not ported
 
