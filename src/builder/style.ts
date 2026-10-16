@@ -207,6 +207,37 @@ export type SectionSettings = {
   zIndex?: number;
 };
 
+/* ---------- URL helpers (shared, server-safe) ---------- */
+
+export type UrlValue = string | { url?: string; newTab?: boolean; nofollow?: boolean };
+
+export function normalizeUrlValue(value: UrlValue | undefined): {
+  url: string;
+  newTab: boolean;
+  nofollow: boolean;
+} {
+  if (!value) return { url: '', newTab: false, nofollow: false };
+  if (typeof value === 'string') return { url: value, newTab: false, nofollow: false };
+  return {
+    url: value.url ?? '',
+    newTab: !!value.newTab,
+    nofollow: !!value.nofollow,
+  };
+}
+
+/** Resolve a stored URL value for rendering anchors. */
+export function resolveLinkProps(value: UrlValue | undefined) {
+  const v = normalizeUrlValue(value);
+  const href = safeUrl(v.url) ?? (v.url?.startsWith('#') || v.url?.startsWith('/') ? v.url : undefined);
+  if (!href) return { href: '#' as const };
+  const relParts = ['noopener', 'noreferrer'];
+  if (v.nofollow) relParts.push('nofollow');
+  return {
+    href,
+    ...(v.newTab ? { target: '_blank' as const, rel: relParts.join(' ') } : {}),
+  };
+}
+
 /* ---------- validators ---------- */
 
 const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
@@ -292,7 +323,9 @@ const DEVICE_ORDER: Record<Device, Device[]> = {
 const DEVICE_SUFFIX: Record<Device, string> = { desktop: 'd', tablet: 't', mobile: 'm' };
 const SIDE_SUFFIX: Record<Side, string> = { top: 't', right: 'r', bottom: 'b', left: 'l' };
 
-export function resolveResponsive<T>(
+export function resolveResponsive<
+  T
+>(
   v: MaybeResponsive<T> | undefined,
   device: Device,
   valid: (x: unknown) => T | undefined
@@ -458,9 +491,11 @@ export function resolveSectionStyle(s: SectionSettings): ResolvedSectionStyle {
   if (unitSize) outerClasses.push('s-fs');
 
   // Typography size (responsive, legacy presets)
-  const hasSize = !unitSize && DEVICES.some(
-    d => resolveResponsive(s.typography?.size, d, x => pick(x, ['sm', 'md', 'lg', 'xl'] as const)) !== undefined
-  );
+  const hasSize =
+    !unitSize &&
+    DEVICES.some(
+      d => resolveResponsive(s.typography?.size, d, x => pick(x, ['sm', 'md', 'lg', 'xl'] as const)) !== undefined
+    );
 
   if (hasSize) {
     outerClasses.push('s-fs');
@@ -475,8 +510,10 @@ export function resolveSectionStyle(s: SectionSettings): ResolvedSectionStyle {
   }
 
   if (responsiveLength(ty?.lineHeight, ty?.lineHeightUnit, PROP_UNITS.lineHeight, false, 'lh', style)) outerClasses.push('s-lh');
-  if (responsiveLength(ty?.letterSpacing, ty?.letterSpacingUnit, PROP_UNITS.letterSpacing, true, 'ls', style)) outerClasses.push('s-ls');
-  if (responsiveLength(ty?.wordSpacing, ty?.wordSpacingUnit, PROP_UNITS.wordSpacing, true, 'ws', style)) outerClasses.push('s-ws');
+  if (responsiveLength(ty?.letterSpacing, ty?.letterSpacingUnit, PROP_UNITS.letterSpacing, true, 'ls', style))
+    outerClasses.push('s-ls');
+  if (responsiveLength(ty?.wordSpacing, ty?.wordSpacingUnit, PROP_UNITS.wordSpacing, true, 'ws', style))
+    outerClasses.push('s-ws');
 
   const family = pick(ty?.family, FONT_FAMILIES);
   if (family) {
@@ -590,18 +627,18 @@ export function resolveSectionStyle(s: SectionSettings): ResolvedSectionStyle {
   // Width (responsive) and z-index
   if (responsiveLength(s.width, s.widthUnit, PROP_UNITS.width, false, 'w', style)) outerClasses.push('s-w');
   const z = clamp(s.zIndex, 0, 50);
-  if (z !== undefined) {
+  if (z !== undefined && z > 0) {
     outerClasses.push('s-z');
-    style['--s-z'] = String(Math.round(z));
+    style['--s-z'] = String(z);
   }
 
-  // Text align (responsive)
+  // Text alignment (responsive)
   const hasAlign = DEVICES.some(
     d => resolveResponsive(s.align, d, x => pick(x, ['left', 'center', 'right'] as const)) !== undefined
   );
 
   if (hasAlign) {
-    innerClasses.push('s-ta');
+    outerClasses.push('s-ta');
 
     for (const d of DEVICES) {
       const resolved = resolveResponsive(s.align, d, x => pick(x, ['left', 'center', 'right'] as const));
@@ -636,7 +673,8 @@ export function resolveSectionStyle(s: SectionSettings): ResolvedSectionStyle {
     outerClasses.push('s-jc');
 
     for (const d of DEVICES) {
-      const resolved = resolveResponsive(s.display?.contentAlign, d, x => pick(x, ['start', 'center', 'end'] as const)) ?? 'center';
+      const resolved =
+        resolveResponsive(s.display?.contentAlign, d, x => pick(x, ['start', 'center', 'end'] as const)) ?? 'center';
       style[`--s-jc-${DEVICE_SUFFIX[d]}`] = JUSTIFY_MAP[resolved];
     }
   }
