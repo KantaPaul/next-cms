@@ -336,10 +336,16 @@ const RAIL_TABS: { value: RailTab; label: string; icon: typeof Blocks }[] = [
 ];
 
 function LeftRail() {
+  const b = useBuilder();
   const [tab, setTab] = useState<RailTab>('blocks');
+  const tabs =
+    b.kind === 'global'
+      ? RAIL_TABS.filter(t => t.value !== 'page')
+      : RAIL_TABS;
+  const activeTab = tabs.some(t => t.value === tab) ? tab : 'blocks';
   let panel: ReactNode;
-  if (tab === 'blocks') panel = <BlocksPanel />;
-  else if (tab === 'layers') panel = <LayersPanel />;
+  if (activeTab === 'blocks') panel = <BlocksPanel />;
+  else if (activeTab === 'layers') panel = <LayersPanel />;
   else panel = <PagePanel />;
 
   return (
@@ -348,18 +354,21 @@ function LeftRail() {
         <div
           role="tablist"
           aria-label="Builder panels"
-          className="grid grid-cols-3 gap-1 rounded-lg bg-muted/70 p-1"
+          className={cn(
+            'grid gap-1 rounded-lg bg-muted/70 p-1',
+            tabs.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
+          )}
         >
-          {RAIL_TABS.map(t => (
+          {tabs.map(t => (
             <button
               key={t.value}
               type="button"
               role="tab"
-              aria-selected={tab === t.value}
+              aria-selected={activeTab === t.value}
               onClick={() => setTab(t.value)}
               className={cn(
                 'flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs transition-all',
-                tab === t.value
+                activeTab === t.value
                   ? 'bg-background font-semibold text-foreground shadow-xs'
                   : 'font-medium text-muted-foreground hover:text-foreground'
               )}
