@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 import type { ContactFormField } from './content';
 
 const INPUT_TYPES = new Set(['text', 'email', 'tel', 'number', 'date', 'url']);
@@ -19,6 +21,39 @@ function parseOptions(options?: string): { value: string; label: string }[] {
       const label = line.slice(pipe + 1).trim() || value;
       return { value: value || label, label };
     });
+}
+
+function PhoneField({
+  id,
+  name,
+  required,
+  placeholder,
+}: {
+  id: string;
+  name: string;
+  required?: boolean;
+  placeholder?: string;
+}) {
+  const [value, setValue] = useState<string | undefined>();
+
+  return (
+    <>
+      <PhoneInput
+        id={id}
+        international
+        defaultCountry="US"
+        value={value}
+        onChange={setValue}
+        placeholder={placeholder}
+        numberInputProps={{
+          required,
+          className: 'PhoneInputInput',
+        }}
+        className="PhoneInput"
+      />
+      <input type="hidden" name={name} value={value ?? ''} />
+    </>
+  );
 }
 
 export function ContactFormClient({
@@ -148,6 +183,13 @@ export function ContactFormClient({
                   </option>
                 ))}
               </select>
+            ) : field.type === 'tel' ? (
+              <PhoneField
+                id={id}
+                name={field.name}
+                required={field.required}
+                placeholder={field.placeholder}
+              />
             ) : (
               <input
                 id={id}
