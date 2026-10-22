@@ -7,10 +7,25 @@ import { useRouter } from 'next/navigation';
 import { useState, useTransition, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { emptyBuilderData } from '@/builder/data';
 import { PAGES } from '@/config/pages';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
-import { deleteGlobalBlock, deleteTemplate, renameGlobalBlock } from '../_modules/templates.actions';
+import {
+  deleteGlobalBlock,
+  deleteTemplate,
+  renameGlobalBlock,
+  saveGlobalBlock,
+  saveTemplate,
+} from '../_modules/templates.actions';
 import type { TemplateListItem } from '../_modules/templates.service';
 
 type GlobalRow = {
@@ -56,6 +71,7 @@ export function TemplatesAndGlobals({
 function TemplatesGrid({ templates, can }: { templates: TemplateListItem[]; can: { create: boolean; manage: boolean } }) {
   const router = useRouter();
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const remove = async (template: TemplateListItem) => {
     if (!confirm(`Delete the "${template.name}" template? Pages created from it are not affected.`)) return;
@@ -69,9 +85,16 @@ function TemplatesGrid({ templates, can }: { templates: TemplateListItem[]; can:
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-steel-500">
-        Starter layouts offered when creating a page. Save any builder page as a template from its builder toolbar.
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <p className="text-sm text-steel-500">
+          Starter layouts offered when creating a page. Save any builder page as a template from its builder toolbar, or create one here.
+        </p>
+        {can.create && (
+          <Button type="button" size="sm" onClick={() => setCreateOpen(true)}>
+            <Plus /> New template
+          </Button>
+        )}
+      </div>
       <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {templates.map(template => {
           const Icon = template.editorType === 'builder' ? LayoutTemplate : FileText;
@@ -105,11 +128,18 @@ function TemplatesGrid({ templates, can }: { templates: TemplateListItem[]; can:
                   ))}
                 </ul>
               )}
-              <div className="mt-auto flex items-center gap-2 pt-4">
+              <div className="mt-auto flex flex-wrap items-center gap-2 pt-4">
                 {can.create && (
                   <Button asChild size="sm" variant="outline">
                     <Link href={`${PAGES.DASHBOARD.PAGES.CREATE}?template=${template.id}`}>
                       <Plus /> Use template
+                    </Link>
+                  </Button>
+                )}
+                {can.create && !template.isSystem && template.editorType === 'builder' && (
+                  <Button asChild size="sm" variant="outline">
+                    <Link href={PAGES.DASHBOARD.TEMPLATE(template.id)}>
+                      <PenSquare /> Edit layout
                     </Link>
                   </Button>
                 )}
@@ -131,7 +161,94 @@ function TemplatesGrid({ templates, can }: { templates: TemplateListItem[]; can:
           );
         })}
       </ul>
+      <NewTemplateDialog open={createOpen} onOpenChange={setCreateOpen} />
     </div>
+  );
+}
+
+function NewTemplateDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const router = useRouter();
+  const [name, setName] = useState('');
+  const [category, setCategory] = useState('Custom');
+  const [description, setDescription] = useState('');
+  const [isPending, startTransition] = useTransition();
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    startTransition(async () => {
+      await handleActionResponse(
+        saveTemplate({
+          name,
+          description: description || null,
+          category: category || 'Custom',
+          editorType: 'builder',
+          content: emptyBuilderData(),
+        }),
+        row => {
+          toast.success('Template created');
+          onOpenChange(false);
+          router.push(PAGES.DASHBOARD.TEMPLATE((row as { id: string }).id));
+        }
+      );
+    });
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={next => {
+        if (!next) {
+          setName('');
+          setCategory('Custom');
+          setDescription('');
+        }
+        onOpenChange(next);
+      }}
+    >
+      <DialogContent className="sm:max-w-md">
+        <form onSubmit={submit} className="flex flex-col gap-4">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <LayoutTemplate className="size-5 text-muted-foreground" /> New page template
+            </DialogTitle>
+            <DialogDescription>Name the template, then design its layout in the visual builder.</DialogDescription>
+          </DialogHeader>
+          <label className="flex flex-col gap-1 text-xs font-medium">
+            Name
+            <input
+              className={inputClass}
+              value={name}
+              onChange={e => setName(e.target.value)}
+              required
+              maxLength={150}
+              autoFocus
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-xs font-medium">
+            Category
+            <input className={inputClass} value={category} onChange={e => setCategory(e.target.value)} maxLength={50} />
+          </label>
+          <label className="flex flex-col gap-1 text-xs font-medium">
+            Description
+            <textarea
+              className={`${inputClass} h-auto py-2`}
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              rows={2}
+              maxLength={500}
+            />
+          </label>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isPending || !name.trim()}>
+              {isPending && <Loader2 className="animate-spin" />} Create &amp; edit
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -139,6 +256,7 @@ function GlobalsList({ globals, can }: { globals: GlobalRow[]; can: { deleteGlob
   const router = useRouter();
   const [renaming, setRenaming] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const remove = async (block: GlobalRow) => {
     const warning = block.pages
@@ -153,68 +271,147 @@ function GlobalsList({ globals, can }: { globals: GlobalRow[]; can: { deleteGlob
     setPendingId(null);
   };
 
-  if (!globals.length) {
-    return (
-      <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-steel-200 px-6 py-12 text-center dark:border-dark-300">
-        <Blocks className="size-8 text-steel-300" />
-        <p className="font-medium">No global blocks yet</p>
-        <p className="max-w-md text-sm text-steel-500">
-          In the visual builder, select a section and choose <span className="font-medium">Save as global</span>. Every page that uses it
-          updates when you edit it here.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-steel-500">Shared sections such as headers, CTAs, and footers. Editing one updates every page that uses it.</p>
-      <ul className="divide-y divide-steel-100 rounded-lg border border-steel-200 dark:divide-dark-300 dark:border-dark-300">
-        {globals.map(block => (
-          <li key={block.id} className="flex flex-col gap-3 p-4 md:flex-row md:items-center">
-            {renaming === block.id ? (
-              <RenameForm block={block} onDone={() => setRenaming(null)} />
-            ) : (
-              <>
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium">{block.name}</p>
-                  <p className="text-xs text-steel-500">
-                    {block.category} · {block.sectionTypes.map(humanize).join(', ') || 'Empty'}{block.updatedAt && ` · Updated ${format(new Date(block.updatedAt), 'PP')}`}
-                    {block.createdByName ? ` · by ${block.createdByName}` : ''}
-                  </p>
-                </div>
-                <span className="self-start rounded-full bg-steel-100 px-2 py-0.5 text-xs text-steel-600 md:self-auto dark:bg-dark-300 dark:text-steel-300">
-                  Used on {block.pages} page{block.pages === 1 ? '' : 's'}
-                </span>
-                <div className="flex gap-1">
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={PAGES.DASHBOARD.GLOBAL_BLOCK(block.id)}>
-                      <PenSquare /> Edit content
-                    </Link>
-                  </Button>
-                  <Button type="button" size="icon" variant="ghost" aria-label={`Rename ${block.name}`} onClick={() => setRenaming(block.id)}>
-                    <Pencil />
-                  </Button>
-                  {can.deleteGlobals && (
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      aria-label={`Delete ${block.name}`}
-                      className="text-red-600 hover:text-red-700"
-                      disabled={pendingId === block.id}
-                      onClick={() => remove(block)}
-                    >
-                      {pendingId === block.id ? <Loader2 className="animate-spin" /> : <Trash2 />}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <p className="text-sm text-steel-500">
+          Shared sections such as headers, CTAs, and footers. Editing one updates every page that uses it.
+        </p>
+        <Button type="button" size="sm" onClick={() => setCreateOpen(true)}>
+          <Plus /> New global block
+        </Button>
+      </div>
+
+      {!globals.length ? (
+        <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-steel-200 px-6 py-12 text-center dark:border-dark-300">
+          <Blocks className="size-8 text-steel-300" />
+          <p className="font-medium">No global blocks yet</p>
+          <p className="max-w-md text-sm text-steel-500">
+            Create one here, or in the visual builder select a section and choose <span className="font-medium">Save as global</span>.
+          </p>
+        </div>
+      ) : (
+        <ul className="divide-y divide-steel-100 rounded-lg border border-steel-200 dark:divide-dark-300 dark:border-dark-300">
+          {globals.map(block => (
+            <li key={block.id} className="flex flex-col gap-3 p-4 md:flex-row md:items-center">
+              {renaming === block.id ? (
+                <RenameForm block={block} onDone={() => setRenaming(null)} />
+              ) : (
+                <>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">{block.name}</p>
+                    <p className="text-xs text-steel-500">
+                      {block.category} · {block.sectionTypes.map(humanize).join(', ') || 'Empty'}
+                      {block.updatedAt && ` · Updated ${format(new Date(block.updatedAt), 'PP')}`}
+                      {block.createdByName ? ` · by ${block.createdByName}` : ''}
+                    </p>
+                  </div>
+                  <span className="self-start rounded-full bg-steel-100 px-2 py-0.5 text-xs text-steel-600 md:self-auto dark:bg-dark-300 dark:text-steel-300">
+                    Used on {block.pages} page{block.pages === 1 ? '' : 's'}
+                  </span>
+                  <div className="flex gap-1">
+                    <Button asChild size="sm" variant="outline">
+                      <Link href={PAGES.DASHBOARD.GLOBAL_BLOCK(block.id)}>
+                        <PenSquare /> Edit content
+                      </Link>
                     </Button>
-                  )}
-                </div>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
+                    <Button type="button" size="icon" variant="ghost" aria-label={`Rename ${block.name}`} onClick={() => setRenaming(block.id)}>
+                      <Pencil />
+                    </Button>
+                    {can.deleteGlobals && (
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        aria-label={`Delete ${block.name}`}
+                        className="text-red-600 hover:text-red-700"
+                        disabled={pendingId === block.id}
+                        onClick={() => remove(block)}
+                      >
+                        {pendingId === block.id ? <Loader2 className="animate-spin" /> : <Trash2 />}
+                      </Button>
+                    )}
+                  </div>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      <NewGlobalBlockDialog open={createOpen} onOpenChange={setCreateOpen} />
     </div>
+  );
+}
+
+function NewGlobalBlockDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const router = useRouter();
+  const [name, setName] = useState('');
+  const [category, setCategory] = useState('General');
+  const [isPending, startTransition] = useTransition();
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    startTransition(async () => {
+      await handleActionResponse(
+        saveGlobalBlock({
+          name,
+          category: category || 'General',
+          content: { content: [], zones: {} },
+        }),
+        row => {
+          toast.success('Global block created');
+          onOpenChange(false);
+          router.push(PAGES.DASHBOARD.GLOBAL_BLOCK((row as { id: string }).id));
+        }
+      );
+    });
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={next => {
+        if (!next) {
+          setName('');
+          setCategory('General');
+        }
+        onOpenChange(next);
+      }}
+    >
+      <DialogContent className="sm:max-w-md">
+        <form onSubmit={submit} className="flex flex-col gap-4">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Blocks className="size-5 text-muted-foreground" /> New global block
+            </DialogTitle>
+            <DialogDescription>Create a shared section, then add content in the visual builder.</DialogDescription>
+          </DialogHeader>
+          <label className="flex flex-col gap-1 text-xs font-medium">
+            Name
+            <input
+              className={inputClass}
+              value={name}
+              onChange={e => setName(e.target.value)}
+              required
+              maxLength={150}
+              autoFocus
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-xs font-medium">
+            Category
+            <input className={inputClass} value={category} onChange={e => setCategory(e.target.value)} maxLength={50} />
+          </label>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isPending || !name.trim()}>
+              {isPending && <Loader2 className="animate-spin" />} Create &amp; edit
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
