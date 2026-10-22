@@ -73,6 +73,22 @@
   padding: 0.6rem 0.8rem;
 }
 
+/* Compact choice controls (checkbox / radio) — not full-width like text inputs */
+.site-root .s-choice-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: fit-content;
+  max-width: 100%;
+  font-weight: 500;
+}
+.site-root .s-choice {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  accent-color: var(--site-primary);
+}
+
 /* Section backgrounds */
 .site-root .s-section-muted { background: var(--site-surface); }
 .site-root .s-section-primary { background: var(--site-primary); color: var(--site-on-primary); }
