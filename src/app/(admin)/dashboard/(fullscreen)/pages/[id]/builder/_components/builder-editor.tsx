@@ -292,6 +292,7 @@ export function BuilderEditor({
     busy,
     autosaveStatus: autosave.status,
     savedAt: autosave.savedAt,
+    isDirty: autosave.isDirty,
     aiEnabled,
     save: async () => {
       let ok = false;
