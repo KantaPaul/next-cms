@@ -4,13 +4,13 @@ overview: Add a dedicated /dashboard/analytics route that compares the current 7
 todos:
   - id: trends-query
     content: Add analyticsService.trends for current vs previous window, daily series, and only the active list (pages, paths, or referrers)
-    status: pending
+    status: completed
   - id: analytics-route
     content: Add /dashboard/analytics with trend cards, dual-bar chart, and one active list (pages, paths, or referrers)
-    status: pending
+    status: completed
   - id: home-and-nav
     content: Slim the dashboard traffic section to 30-day stats plus a link, and add the sidebar item
-    status: pending
+    status: completed
 isProject: false
 ---
 
