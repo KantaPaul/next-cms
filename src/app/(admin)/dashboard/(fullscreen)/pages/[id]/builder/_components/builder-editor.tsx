@@ -95,7 +95,8 @@ function globalBuilderConfig(): Config {
     components,
     categories,
     // Global blocks do not store page root fields (width, theme, padding, transition).
-    root: { fields: {} },
+    // Keep the site-root canvas wrapper so inputs pick up site.css (.s-input, PhoneInput).
+    root: { fields: {}, render: builderConfig.root?.render },
   } as Config;
 }
 

@@ -1,11 +1,24 @@
 'use client';
 
 import { format } from 'date-fns';
-import { Loader2, Mail, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Loader2, Mail, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition, type FormEvent } from 'react';
+import { useEffect, useState, useTransition, type FormEvent } from 'react';
 import { toast } from 'sonner';
+import {
+  ActionDropdown,
+  ActionDropdownItem,
+} from '@/components/atoms/action-dropdown';
+import {
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeaderCell,
+  TableRoot,
+  TableRow,
+} from '@/components/atoms/table';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -15,6 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { FormInput } from '@/components/ui/input';
 import { PAGES } from '@/config/pages';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import {
@@ -31,9 +45,6 @@ type FormRow = {
   createdByName: string | null;
   pages: number;
 };
-
-const inputClass =
-  'h-9 w-full rounded-md border border-steel-200 bg-white px-3 text-sm dark:border-dark-300 dark:bg-dark-100';
 
 const DEFAULT_CONTACT_FORM_CONTENT = {
   content: [
@@ -66,7 +77,7 @@ export function ContactFormsList({
   can: { create: boolean; delete: boolean };
 }) {
   const router = useRouter();
-  const [renaming, setRenaming] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState<FormRow | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -105,75 +116,103 @@ export function ContactFormsList({
           </p>
         </div>
       ) : (
-        <ul className="divide-y divide-steel-100 rounded-lg border border-steel-200 dark:divide-dark-300 dark:border-dark-300">
-          {forms.map(form => (
-            <li key={form.id} className="flex flex-col gap-3 p-4 md:flex-row md:items-center">
-              {renaming === form.id ? (
-                <RenameForm form={form} onDone={() => setRenaming(null)} />
-              ) : (
-                <>
-                  <div className="min-w-0 flex-1">
-                    <Link
-                      href={PAGES.DASHBOARD.CONTACT_FORM(form.id)}
-                      className="font-semibold hover:underline"
-                    >
-                      {form.name}
-                    </Link>
-                    <p className="text-xs text-steel-500">
-                      {form.pages
-                        ? `Used on ${form.pages} page${form.pages > 1 ? 's' : ''}`
-                        : 'Not used on any page yet'}
-                      {form.updatedAt ? ` · Updated ${format(new Date(form.updatedAt), 'MMM d, yyyy')}` : ''}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button type="button" size="sm" variant="outline" asChild>
-                      <Link href={PAGES.DASHBOARD.CONTACT_FORM(form.id)}>
-                        <Pencil className="size-3.5" /> Edit
-                      </Link>
-                    </Button>
-                    <Button type="button" size="sm" variant="outline" onClick={() => setRenaming(form.id)}>
-                      Rename
-                    </Button>
-                    {can.delete && (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        disabled={pendingId === form.id}
-                        onClick={() => remove(form)}
+        <div className="overflow-hidden rounded-lg border border-steel-200 dark:border-dark-300">
+          <TableContainer>
+            <TableRoot>
+              <TableHead>
+                <TableRow hoverStyle={false}>
+                  <TableHeaderCell>Name</TableHeaderCell>
+                  <TableHeaderCell>Used on</TableHeaderCell>
+                  <TableHeaderCell>Updated</TableHeaderCell>
+                  <TableHeaderCell>Author</TableHeaderCell>
+                  <TableHeaderCell className="w-12 text-right">Actions</TableHeaderCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {forms.map(form => (
+                  <TableRow key={form.id}>
+                    <TableCell>
+                      <Link
+                        href={PAGES.DASHBOARD.CONTACT_FORM(form.id)}
+                        className="font-medium hover:underline"
                       >
-                        {pendingId === form.id ? <Loader2 className="animate-spin" /> : <Trash2 className="size-3.5" />}
-                        Delete
-                      </Button>
-                    )}
-                  </div>
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
+                        {form.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {form.pages
+                        ? `${form.pages} page${form.pages > 1 ? 's' : ''}`
+                        : '—'}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {form.updatedAt
+                        ? format(new Date(form.updatedAt), 'MMM d, yyyy')
+                        : '—'}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {form.createdByName ?? '—'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <ActionDropdown
+                        isLoading={pendingId === form.id}
+                        variant="vertical"
+                      >
+                        <ActionDropdownItem
+                          href={PAGES.DASHBOARD.CONTACT_FORM(form.id)}
+                          label="Edit"
+                        />
+                        <ActionDropdownItem
+                          label="Rename"
+                          onClick={() => setRenaming(form)}
+                        />
+                        {can.delete && (
+                          <ActionDropdownItem
+                            label="Delete"
+                            className="text-red-600 dark:text-red-400"
+                            onClick={() => remove(form)}
+                          />
+                        )}
+                      </ActionDropdown>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </TableRoot>
+          </TableContainer>
+        </div>
       )}
 
       <CreateDialog open={createOpen} onOpenChange={setCreateOpen} />
+      <RenameDialog form={renaming} onClose={() => setRenaming(null)} />
     </div>
   );
 }
 
-function RenameForm({ form, onDone }: { form: FormRow; onDone: () => void }) {
+function RenameDialog({
+  form,
+  onClose,
+}: {
+  form: FormRow | null;
+  onClose: () => void;
+}) {
   const router = useRouter();
-  const [name, setName] = useState(form.name);
+  const [name, setName] = useState('');
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (form) setName(form.name);
+    else setName('');
+  }, [form]);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!form || !name.trim()) return;
     startTransition(async () => {
       await handleActionResponse(
         renameGlobalBlock({ id: form.id, name: name.trim(), category: 'contact-form' }),
         () => {
           toast.success('Renamed');
-          onDone();
+          onClose();
           router.refresh();
         }
       );
@@ -181,22 +220,41 @@ function RenameForm({ form, onDone }: { form: FormRow; onDone: () => void }) {
   };
 
   return (
-    <form onSubmit={submit} className="flex w-full flex-wrap items-center gap-2">
-      <input
-        className={inputClass + ' max-w-xs'}
-        value={name}
-        onChange={e => setName(e.target.value)}
-        required
-        maxLength={150}
-        autoFocus
-      />
-      <Button type="submit" size="sm" disabled={isPending || !name.trim()}>
-        {isPending && <Loader2 className="animate-spin" />} Save
-      </Button>
-      <Button type="button" size="sm" variant="outline" onClick={onDone}>
-        Cancel
-      </Button>
-    </form>
+    <Dialog
+      open={!!form}
+      onOpenChange={next => {
+        if (!next) onClose();
+      }}
+    >
+      <DialogContent className="sm:max-w-md">
+        <form onSubmit={submit} className="flex flex-col gap-4">
+          <DialogHeader>
+            <DialogTitle>Rename contact form</DialogTitle>
+            <DialogDescription>
+              Update the name shown in the list and Global block picker.
+            </DialogDescription>
+          </DialogHeader>
+          <label className="flex flex-col gap-1 text-xs font-medium">
+            Name
+            <FormInput
+              value={name}
+              onChange={e => setName(e.target.value)}
+              required
+              maxLength={150}
+              autoFocus
+            />
+          </label>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isPending || !name.trim()}>
+              {isPending && <Loader2 className="animate-spin" />} Save
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -218,6 +276,7 @@ function CreateDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v:
         (row: { id: string }) => {
           toast.success('Contact form created');
           onOpenChange(false);
+          setName('');
           router.push(PAGES.DASHBOARD.CONTACT_FORM(row.id));
         }
       );
@@ -244,8 +303,7 @@ function CreateDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v:
           </DialogHeader>
           <label className="flex flex-col gap-1 text-xs font-medium">
             Name
-            <input
-              className={inputClass}
+            <FormInput
               value={name}
               onChange={e => setName(e.target.value)}
               required

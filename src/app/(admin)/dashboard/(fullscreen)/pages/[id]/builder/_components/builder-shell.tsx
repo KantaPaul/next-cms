@@ -87,6 +87,8 @@ export function getCategoryTint(key: string) {
       return 'bg-sky-50 text-sky-600 border border-sky-200/60 dark:bg-sky-950/50 dark:text-sky-400 dark:border-sky-900/40';
     case 'content':
       return 'bg-amber-50 text-amber-600 border border-amber-200/60 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-900/40';
+    case 'contact':
+      return 'bg-rose-50 text-rose-600 border border-rose-200/60 dark:bg-rose-950/50 dark:text-rose-400 dark:border-rose-900/40';
     case 'layout':
       return 'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
     case 'global':
