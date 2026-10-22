@@ -11,8 +11,8 @@ export type BuilderTarget = {
   instruction?: string;
 };
 
-/** What the builder edits: a page, one post's custom layout, the shared single-post template, or a global block. */
-export type BuilderKind = 'page' | 'post' | 'post-template' | 'global';
+/** What the builder edits: a page, one post's custom layout, the shared single-post template, a page template, or a global block. */
+export type BuilderKind = 'page' | 'post' | 'post-template' | 'page-template' | 'global';
 
 export type BuilderContextValue = {
   kind: BuilderKind;
