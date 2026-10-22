@@ -4,6 +4,7 @@ export const PAGES = {
   },
   DASHBOARD: {
     ROOT: '/dashboard',
+    ANALYTICS: '/dashboard/analytics',
     PAGES: {
       CREATE: '/dashboard/pages/create',
       INDEX: '/dashboard/pages',
