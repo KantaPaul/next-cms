@@ -29,6 +29,8 @@ export type BuilderContextValue = {
   busy: null | 'save' | 'publish' | 'review';
   autosaveStatus: AutosaveStatus;
   savedAt: Date | null;
+  /** True when the canvas differs from the last saved snapshot. */
+  isDirty: boolean;
   aiEnabled: boolean;
   save: () => Promise<boolean>;
   publish: () => Promise<void>;
