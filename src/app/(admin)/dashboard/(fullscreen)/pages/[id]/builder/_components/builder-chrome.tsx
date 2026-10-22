@@ -32,7 +32,7 @@ export function BuilderHeaderActions() {
   const canCreate = useCan(PERMISSIONS.PAGES_CREATE);
   const [templateOpen, setTemplateOpen] = useState(false);
   const status = b.status as keyof typeof PAGE_STATUS_COLORS;
-  const isGlobal = b.kind === 'global' || b.kind === 'page-template';
+  const isGlobal = b.kind === 'global' || b.kind === 'page-template' || b.kind === 'contact-form';
 
   if (isGlobal) {
     return (
