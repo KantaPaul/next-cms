@@ -25,6 +25,8 @@ export const PAGES = {
     TEMPLATES: '/dashboard/templates',
     TEMPLATE: (id: string) => `/dashboard/templates/${id}`,
     GLOBAL_BLOCK: (id: string) => `/dashboard/templates/globals/${id}`,
+    CONTACT_FORMS: '/dashboard/contact-forms',
+    CONTACT_FORM: (id: string) => `/dashboard/contact-forms/${id}`,
     SETTINGS: '/dashboard/settings',
     USERS: '/dashboard/users',
     API: '/dashboard/api',

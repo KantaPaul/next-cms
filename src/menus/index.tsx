@@ -4,6 +4,7 @@ import {
   ImageIcon,
   KeyRound,
   LayoutTemplate,
+  Mail,
   MenuIcon,
   Newspaper,
   Palette,
@@ -38,6 +39,11 @@ export function getMenuItems(): {
       name: 'Templates & Globals',
       href: PAGES.DASHBOARD.TEMPLATES,
       icon: <LayoutTemplate className="w-[18px]" />,
+    },
+    {
+      name: 'Contact forms',
+      href: PAGES.DASHBOARD.CONTACT_FORMS,
+      icon: <Mail className="w-[18px]" />,
     },
     {
       name: 'Taxonomies',
