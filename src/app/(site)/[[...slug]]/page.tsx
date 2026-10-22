@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { builderConfig, postBuilderConfig } from '@/builder/config';
 import { sanitizeRichText } from '@/builder/sanitize';
+import { ViewBeacon } from '@/components/analytics/view-beacon';
 import { PAGES } from '@/config/pages';
 import { env } from '@/env.mjs';
 import {
@@ -276,6 +277,11 @@ export default async function SitePage({ params, searchParams }: Params) {
   if (!page) notFound();
 
   const base = settings.siteUrl || env.SITE_URL;
+  const path = PAGES.SITE.page(page.slug, page.language, page.isHome);
+  const beacon =
+    !page.isDraft ? (
+      <ViewBeacon pageId={page.id} path={path || '/'} />
+    ) : null;
 
   if (page.editorType === 'builder') {
     const metadata = {
@@ -290,6 +296,7 @@ export default async function SitePage({ params, searchParams }: Params) {
     );
     return (
       <>
+        {beacon}
         <StructuredData page={page} base={base} />
         <Render config={builderConfig} data={data} metadata={metadata} />
       </>
@@ -298,6 +305,7 @@ export default async function SitePage({ params, searchParams }: Params) {
 
   return (
     <>
+      {beacon}
       <StructuredData page={page} base={base} />
       <article
         className="mx-auto max-w-3xl px-5 py-14 md:px-8 md:py-20"
