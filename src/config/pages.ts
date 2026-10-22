@@ -23,6 +23,7 @@ export const PAGES = {
     TAXONOMY: '/dashboard/taxonomy',
     MENUS: '/dashboard/menus',
     TEMPLATES: '/dashboard/templates',
+    TEMPLATE: (id: string) => `/dashboard/templates/${id}`,
     GLOBAL_BLOCK: (id: string) => `/dashboard/templates/globals/${id}`,
     SETTINGS: '/dashboard/settings',
     USERS: '/dashboard/users',

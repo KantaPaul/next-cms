@@ -4,10 +4,10 @@ overview: The templates page can list and delete page templates and global block
 todos:
   - id: template-create-edit
     content: Add New template dialog, updateTemplate action, and a page-template Puck editor with an Edit layout link for custom templates
-    status: pending
+    status: completed
   - id: global-create
     content: Add New global block dialog, allow empty content on create, and open the existing global block editor
-    status: pending
+    status: completed
 isProject: false
 ---
 
