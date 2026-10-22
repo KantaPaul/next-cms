@@ -40,15 +40,16 @@ const DEFAULT_CONTACT_FORM_CONTENT = {
     {
       type: 'ContactForm',
       props: {
+        id: 'contact-form-default',
         title: 'Contact us',
         subtitle: '',
         submitText: 'Send message',
         successMessage: 'Thanks! We will be in touch soon.',
         actionUrl: '',
         fields: [
-          { label: 'Name', name: 'name', type: 'text', required: true },
-          { label: 'Email', name: 'email', type: 'email', required: true },
-          { label: 'Message', name: 'message', type: 'textarea', required: true },
+          { id: 'field-name', label: 'Name', name: 'name', type: 'text', required: true },
+          { id: 'field-email', label: 'Email', name: 'email', type: 'email', required: true },
+          { id: 'field-message', label: 'Message', name: 'message', type: 'textarea', required: true },
         ],
         section: {},
       },
