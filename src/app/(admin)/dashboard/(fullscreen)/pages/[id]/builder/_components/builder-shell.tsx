@@ -2,12 +2,30 @@
 
 import { createUsePuck, Drawer, Puck } from '@measured/puck';
 import {
+  BarChart3,
   Blocks,
+  BookOpen,
+  ChevronRight,
+  Columns3,
+  CreditCard,
   FileText,
+  FolderKanban,
+  GalleryHorizontal,
+  Globe,
+  GripVertical,
+  HelpCircle,
+  Image as ImageIcon,
+  Images,
   Layers,
+  LayoutGrid,
+  ListCollapse,
+  Mail,
+  Megaphone,
+  MessageSquareQuote,
   Redo2,
   Search,
   Sparkles,
+  Type,
   Undo2,
 } from 'lucide-react';
 import { useRef, useState, type ReactNode } from 'react';
@@ -15,9 +33,70 @@ import { cn } from '@/lib/utils/cn';
 import { DeviceRow } from '@/builder/controls';
 import { useBuilder } from './builder-context';
 import { BuilderHeaderActions } from './builder-chrome';
+import { LayersPanel } from './layers-panel';
 import { SelectionCard } from './selection-card';
 
 const usePuck = createUsePuck();
+
+export function getBlockIcon(name: string) {
+  switch (name) {
+    case 'Hero':
+      return Sparkles;
+    case 'CTA':
+      return Megaphone;
+    case 'Features':
+      return Sparkles;
+    case 'Stats':
+      return BarChart3;
+    case 'Pricing':
+      return CreditCard;
+    case 'Testimonials':
+      return MessageSquareQuote;
+    case 'FAQ':
+      return HelpCircle;
+    case 'RichText':
+      return Type;
+    case 'Image':
+      return ImageIcon;
+    case 'Gallery':
+      return Images;
+    case 'ContactForm':
+      return Mail;
+    case 'Columns':
+      return Columns3;
+    case 'Slider':
+      return GalleryHorizontal;
+    case 'Tabs':
+      return FolderKanban;
+    case 'Accordion':
+      return ListCollapse;
+    case 'GlobalRef':
+      return Globe;
+    case 'BlogPosts':
+      return BookOpen;
+    default:
+      return LayoutGrid;
+  }
+}
+
+export function getCategoryTint(key: string) {
+  switch (key) {
+    case 'heroes':
+      return 'bg-violet-50 text-violet-600 border border-violet-200/60 dark:bg-violet-950/50 dark:text-violet-400 dark:border-violet-900/40';
+    case 'marketing':
+      return 'bg-sky-50 text-sky-600 border border-sky-200/60 dark:bg-sky-950/50 dark:text-sky-400 dark:border-sky-900/40';
+    case 'content':
+      return 'bg-amber-50 text-amber-600 border border-amber-200/60 dark:bg-amber-950/50 dark:text-amber-400 dark:border-amber-900/40';
+    case 'layout':
+      return 'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
+    case 'global':
+      return 'bg-emerald-50 text-emerald-600 border border-emerald-200/60 dark:bg-emerald-950/50 dark:text-emerald-400 dark:border-emerald-900/40';
+    case 'blog':
+      return 'bg-indigo-50 text-indigo-600 border border-indigo-200/60 dark:bg-indigo-950/50 dark:text-indigo-400 dark:border-indigo-900/40';
+    default:
+      return 'bg-muted text-muted-foreground border border-border';
+  }
+}
 
 function HistoryButtons() {
   const history = usePuck(s => s.history);
@@ -106,7 +185,12 @@ function TopBar() {
 function BlocksPanel() {
   const config = usePuck(s => s.config);
   const [query, setQuery] = useState('');
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const q = query.trim().toLowerCase();
+
+  const toggleCategory = (key: string) => {
+    setCollapsed(prev => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const categories = Object.entries(config.categories ?? {}) as [
     string,
@@ -133,16 +217,62 @@ function BlocksPanel() {
     );
     shown += names.length;
     if (!names.length) return null;
+
+    const isOpen = q.length > 0 || !collapsed[group.key];
+
     return (
       <section key={group.key} className="space-y-1.5">
-        <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-          {group.title}
-        </h3>
-        <Drawer>
-          {names.map(name => (
-            <Drawer.Item key={name} name={name} label={labelOf(name)} />
-          ))}
-        </Drawer>
+        <button
+          type="button"
+          onClick={() => toggleCategory(group.key)}
+          className="flex w-full items-center justify-between py-1 text-left select-none hover:opacity-80 transition-opacity"
+        >
+          <div className="flex items-center gap-1.5">
+            <ChevronRight
+              className={cn(
+                'size-3 text-muted-foreground transition-transform duration-150',
+                isOpen && 'rotate-90'
+              )}
+            />
+            <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+              {group.title}
+            </h3>
+          </div>
+          <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+            {names.length}
+          </span>
+        </button>
+
+        {isOpen && (
+          <div className="space-y-1.5 pt-0.5">
+            <Drawer>
+              {names.map(name => {
+                const Icon = getBlockIcon(name);
+                const tint = getCategoryTint(group.key);
+                return (
+                  <Drawer.Item key={name} name={name}>
+                    {() => (
+                      <div className="group flex w-full items-center justify-between rounded-lg border border-border/70 bg-background p-2 text-xs font-medium text-foreground transition-all hover:border-border hover:shadow-xs cursor-grab active:cursor-grabbing">
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <div
+                            className={cn(
+                              'flex size-8 shrink-0 items-center justify-center rounded-md',
+                              tint
+                            )}
+                          >
+                            <Icon className="size-4" />
+                          </div>
+                          <span className="truncate">{labelOf(name)}</span>
+                        </div>
+                        <GripVertical className="size-3.5 shrink-0 text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100" />
+                      </div>
+                    )}
+                  </Drawer.Item>
+                );
+              })}
+            </Drawer>
+          </div>
+        )}
       </section>
     );
   });
@@ -156,10 +286,10 @@ function BlocksPanel() {
           onChange={e => setQuery(e.target.value)}
           placeholder="Search blocks"
           aria-label="Search blocks"
-          className="h-8 w-full rounded-md border border-input bg-transparent pl-8 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          className="h-8 w-full rounded-md border border-input bg-background/50 pl-8 pr-3 text-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring"
         />
       </label>
-      {sections}
+      <div className="space-y-3.5">{sections}</div>
       {!shown && (
         <p className="py-6 text-center text-xs text-muted-foreground">
           No blocks match “{query}”.
@@ -209,33 +339,35 @@ function LeftRail() {
   const [tab, setTab] = useState<RailTab>('blocks');
   let panel: ReactNode;
   if (tab === 'blocks') panel = <BlocksPanel />;
-  else if (tab === 'layers') panel = <Puck.Outline />;
+  else if (tab === 'layers') panel = <LayersPanel />;
   else panel = <PagePanel />;
 
   return (
-    <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-background">
-      <div
-        role="tablist"
-        aria-label="Builder panels"
-        className="grid grid-cols-3 gap-1 border-b border-border p-2"
-      >
-        {RAIL_TABS.map(t => (
-          <button
-            key={t.value}
-            type="button"
-            role="tab"
-            aria-selected={tab === t.value}
-            onClick={() => setTab(t.value)}
-            className={cn(
-              'flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-medium transition-colors',
-              tab === t.value
-                ? 'bg-accent text-accent-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <t.icon className="size-3.5" /> {t.label}
-          </button>
-        ))}
+    <aside className="flex w-72 shrink-0 flex-col border-r border-border bg-background">
+      <div className="border-b border-border p-2.5">
+        <div
+          role="tablist"
+          aria-label="Builder panels"
+          className="grid grid-cols-3 gap-1 rounded-lg bg-muted/70 p-1"
+        >
+          {RAIL_TABS.map(t => (
+            <button
+              key={t.value}
+              type="button"
+              role="tab"
+              aria-selected={tab === t.value}
+              onClick={() => setTab(t.value)}
+              className={cn(
+                'flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs transition-all',
+                tab === t.value
+                  ? 'bg-background font-semibold text-foreground shadow-xs'
+                  : 'font-medium text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <t.icon className="size-3.5" /> {t.label}
+            </button>
+          ))}
+        </div>
       </div>
       <div role="tabpanel" className="min-h-0 flex-1 overflow-y-auto p-3">
         {panel}

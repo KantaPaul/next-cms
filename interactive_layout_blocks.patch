@@ -1,0 +1,1130 @@
+From 06c4e49afc6033b54c864dba0ff9c3c3895e0751 Mon Sep 17 00:00:00 2001
+From: pobon <pobon@redq.io>
+Date: Thu, 22 Oct 2026 03:33:23 +0000
+Subject: [PATCH] feat(builder): add interactive layout blocks (Slider, Tabs,
+ Accordion) and persist Puck zones for global blocks
+
+---
+ ...interactive_layout_blocks_d71d1ec4.plan.md |   6 +-
+ .../_components/save-global-dialog.tsx        |  85 +++-
+ .../globals/[id]/global-block-editor.tsx      |  51 +-
+ .../templates/globals/[id]/page.tsx           |   2 +-
+ .../templates/_modules/templates.actions.ts   |  31 +-
+ .../templates/_modules/templates.service.ts   |  18 +-
+ .../dashboard/(shell)/templates/page.tsx      |   2 +-
+ src/builder/blocks/block-list.tsx             |  64 ++-
+ src/builder/blocks/content.tsx                |  11 +-
+ src/builder/blocks/interactive.tsx            | 481 ++++++++++++++++++
+ src/builder/blocks/registry.ts                |   4 +
+ src/builder/config.tsx                        | 105 +++-
+ 12 files changed, 809 insertions(+), 51 deletions(-)
+ create mode 100644 src/builder/blocks/interactive.tsx
+
+diff --git a/.cursor/plans/interactive_layout_blocks_d71d1ec4.plan.md b/.cursor/plans/interactive_layout_blocks_d71d1ec4.plan.md
+index 7e7c866..f17ed8a 100644
+--- a/.cursor/plans/interactive_layout_blocks_d71d1ec4.plan.md
++++ b/.cursor/plans/interactive_layout_blocks_d71d1ec4.plan.md
+@@ -4,13 +4,13 @@ overview: Add Slider, Tabs, and Accordion as layout blocks whose panels are drop
+ todos:
+   - id: blocks
+     content: Add Slider, Tabs, and Accordion slot blocks and register them in the Layout category
+-    status: pending
++    status: completed
+   - id: zones
+     content: Persist and rehydrate Puck zones for global blocks, including save-as-global and BlockList
+-    status: pending
++    status: completed
+   - id: verify
+     content: Verify nested drops in the page builder, public page, and global-block editor
+-    status: pending
++    status: completed
+ isProject: false
+ ---
+ 
+diff --git a/src/app/(admin)/dashboard/(fullscreen)/pages/[id]/builder/_components/save-global-dialog.tsx b/src/app/(admin)/dashboard/(fullscreen)/pages/[id]/builder/_components/save-global-dialog.tsx
+index 5a8b2e7..5ae00b3 100644
+--- a/src/app/(admin)/dashboard/(fullscreen)/pages/[id]/builder/_components/save-global-dialog.tsx
++++ b/src/app/(admin)/dashboard/(fullscreen)/pages/[id]/builder/_components/save-global-dialog.tsx
+@@ -38,31 +38,74 @@ export function SaveGlobalDialog({ target, onClose }: { target: BuilderTarget |
+     setPending(true);
+ 
+     try {
+-      const item: BuilderItem = { type: target.type, props: target.props };
+-      await handleActionResponse(await saveGlobalBlock({ name, category, content: [item] }), row => {
+-        const saved = row as { id: string; name: string };
+-
+-        if (link) {
+-          const { dispatch, getSelectorForId } = getPuck();
+-          const selector = getSelectorForId(target.id);
++      const { appState, dispatch, getSelectorForId } = getPuck();
++      const allZones = (appState?.data?.zones ?? {}) as Record<string, BuilderItem[]>;
+ 
+-          if (selector) {
+-            dispatch({
+-              type: 'replace',
+-              destinationIndex: selector.index,
+-              destinationZone: selector.zone,
+-              data: {
+-                type: 'GlobalRef',
+-                // Puck's replace action requires the node to keep its id.
+-                props: { id: target.id, globalBlockId: saved.id, globalBlockName: saved.name, blocks: [item] },
+-              },
+-            });
++      // BFS to find all child block ids and their nested zones
++      const collectedIds = new Set<string>([target.id]);
++      let added = true;
++      while (added) {
++        added = false;
++        for (const [zoneKey, items] of Object.entries(allZones)) {
++          const colonIdx = zoneKey.indexOf(':');
++          const ownerId = colonIdx !== -1 ? zoneKey.slice(0, colonIdx) : zoneKey;
++          if (collectedIds.has(ownerId)) {
++            for (const childItem of items ?? []) {
++              if (childItem?.props?.id && !collectedIds.has(childItem.props.id)) {
++                collectedIds.add(childItem.props.id);
++                added = true;
++              }
++            }
+           }
+         }
++      }
+ 
+-        toast.success(`Saved "${saved.name}" as a global block`);
+-        onClose();
+-      });
++      // Collect all zones belonging to target or any child block
++      const relevantZones: Record<string, BuilderItem[]> = {};
++      for (const [zoneKey, items] of Object.entries(allZones)) {
++        const colonIdx = zoneKey.indexOf(':');
++        const ownerId = colonIdx !== -1 ? zoneKey.slice(0, colonIdx) : zoneKey;
++        if (collectedIds.has(ownerId)) {
++          relevantZones[zoneKey] = items;
++        }
++      }
++
++      const item: BuilderItem = { type: target.type, props: target.props };
++      await handleActionResponse(
++        await saveGlobalBlock({
++          name,
++          category,
++          content: { content: [item], zones: relevantZones },
++        }),
++        row => {
++          const saved = row as { id: string; name: string };
++
++          if (link) {
++            const selector = getSelectorForId(target.id);
++            if (selector) {
++              dispatch({
++                type: 'replace',
++                destinationIndex: selector.index,
++                destinationZone: selector.zone,
++                data: {
++                  type: 'GlobalRef',
++                  // Puck's replace action requires the node to keep its id.
++                  props: {
++                    id: target.id,
++                    globalBlockId: saved.id,
++                    globalBlockName: saved.name,
++                    blocks: [item],
++                    zones: relevantZones,
++                  },
++                },
++              });
++            }
++          }
++
++          toast.success(`Saved "${saved.name}" as a global block`);
++          onClose();
++        }
++      );
+     } finally {
+       setPending(false);
+     }
+diff --git a/src/app/(admin)/dashboard/(fullscreen)/templates/globals/[id]/global-block-editor.tsx b/src/app/(admin)/dashboard/(fullscreen)/templates/globals/[id]/global-block-editor.tsx
+index 5c98454..7ec8f49 100644
+--- a/src/app/(admin)/dashboard/(fullscreen)/templates/globals/[id]/global-block-editor.tsx
++++ b/src/app/(admin)/dashboard/(fullscreen)/templates/globals/[id]/global-block-editor.tsx
+@@ -16,7 +16,7 @@ import { handleActionResponse } from '@/lib/utils/handle-action-response';
+ import { saveGlobalBlock } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
+ 
+ export type GlobalBlockEditorProps = {
+-  block: { id: string; name: string; category: string; content: unknown[] };
++  block: { id: string; name: string; category: string; content: unknown };
+   themeTokens: ThemeTokens;
+ };
+ 
+@@ -24,27 +24,58 @@ const { GlobalRef: _globalRef, ...components } = builderConfig.components;
+ const { global: _global, ...categories } = builderConfig.categories ?? {};
+ const globalConfig = { ...builderConfig, components, categories } as Config;
+ 
++const serializeState = (data: Data) =>
++  JSON.stringify({ content: data.content ?? [], zones: data.zones ?? {} });
++
+ export function GlobalBlockEditor({ block, themeTokens }: GlobalBlockEditorProps) {
+   const router = useRouter();
+-  const initialData = useMemo<Data>(() => ({ root: { props: {} }, content: block.content as Data['content'] }), [block.content]);
++
++  const initialData = useMemo<Data>(() => {
++    let content: Data['content'] = [];
++    let zones: Data['zones'] = {};
++
++    if (Array.isArray(block.content)) {
++      content = block.content as Data['content'];
++    } else if (block.content && typeof block.content === 'object') {
++      const obj = block.content as { content?: Data['content']; zones?: Data['zones'] };
++      content = Array.isArray(obj.content) ? obj.content : [];
++      zones = obj.zones && typeof obj.zones === 'object' ? obj.zones : {};
++    }
++
++    return {
++      root: { props: {} },
++      content,
++      zones,
++    };
++  }, [block.content]);
++
+   const dataRef = useRef<Data>(initialData);
+-  const [saved, setSaved] = useState(() => JSON.stringify(initialData.content));
++  const [saved, setSaved] = useState(() => serializeState(initialData));
+   const [current, setCurrent] = useState(saved);
+   const [isPending, startTransition] = useTransition();
+   const dirty = current !== saved;
+ 
+   const save = () =>
+     startTransition(async () => {
+-      const content = dataRef.current.content as BuilderItem[];
++      const content = (dataRef.current.content ?? []) as BuilderItem[];
++      const zones = (dataRef.current.zones ?? {}) as Record<string, BuilderItem[]>;
+       if (!content.length) {
+         toast.error('A global block needs at least one section.');
+         return;
+       }
+-      await handleActionResponse(saveGlobalBlock({ id: block.id, name: block.name, category: block.category, content }), () => {
+-        setSaved(JSON.stringify(content));
+-        toast.success('Global block saved. Every page using it now shows this version.');
+-        router.refresh();
+-      });
++      await handleActionResponse(
++        saveGlobalBlock({
++          id: block.id,
++          name: block.name,
++          category: block.category,
++          content: { content, zones },
++        }),
++        () => {
++          setSaved(serializeState(dataRef.current));
++          toast.success('Global block saved. Every page using it now shows this version.');
++          router.refresh();
++        }
++      );
+     });
+ 
+   return (
+@@ -54,7 +85,7 @@ export function GlobalBlockEditor({ block, themeTokens }: GlobalBlockEditorProps
+         data={initialData}
+         onChange={data => {
+           dataRef.current = data;
+-          setCurrent(JSON.stringify(data.content));
++          setCurrent(serializeState(data));
+         }}
+         headerTitle={`Global block · ${block.name}`}
+         overrides={{
+diff --git a/src/app/(admin)/dashboard/(fullscreen)/templates/globals/[id]/page.tsx b/src/app/(admin)/dashboard/(fullscreen)/templates/globals/[id]/page.tsx
+index 0d1de65..8484ff6 100644
+--- a/src/app/(admin)/dashboard/(fullscreen)/templates/globals/[id]/page.tsx
++++ b/src/app/(admin)/dashboard/(fullscreen)/templates/globals/[id]/page.tsx
+@@ -19,7 +19,7 @@ export default async function GlobalBlockPage({ params }: { params: Promise<{ id
+ 
+   return (
+     <GlobalBlockLoader
+-      block={{ id: block.id, name: block.name, category: block.category, content: Array.isArray(block.content) ? block.content : [] }}
++      block={{ id: block.id, name: block.name, category: block.category, content: block.content as any }}
+       themeTokens={settings.themeTokens}
+     />
+   );
+diff --git a/src/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions.ts b/src/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions.ts
+index 9ea0d1e..16dd197 100644
+--- a/src/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions.ts
++++ b/src/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions.ts
+@@ -15,6 +15,14 @@ const blockItemSchema = z.object({
+   props: z.record(z.string(), z.unknown()).and(z.object({ id: z.string() })),
+ });
+ 
++const globalBlockContentSchema = z.union([
++  z.array(blockItemSchema).min(1),
++  z.object({
++    content: z.array(blockItemSchema).min(1),
++    zones: z.record(z.string(), z.array(blockItemSchema)).optional(),
++  }),
++]);
++
+ export const listGlobalBlockOptions = permissionProcedure(PERMISSIONS.PAGES_EDIT).query(async () =>
+   db
+     .select({ id: globalBlocks.id, name: globalBlocks.name, category: globalBlocks.category })
+@@ -33,7 +41,26 @@ export async function getGlobalBlockContent(id: string) {
+     .from(globalBlocks)
+     .where(eq(globalBlocks.id, id))
+     .limit(1);
+-  return row ?? null;
++  if (!row) return null;
++
++  let blocks: unknown[] = [];
++  let zones: Record<string, unknown[]> = {};
++
++  if (Array.isArray(row.content)) {
++    blocks = row.content;
++  } else if (row.content && typeof row.content === 'object') {
++    const obj = row.content as { content?: unknown[]; zones?: Record<string, unknown[]> };
++    blocks = Array.isArray(obj.content) ? obj.content : [];
++    zones = obj.zones && typeof obj.zones === 'object' ? obj.zones : {};
++  }
++
++  return {
++    id: row.id,
++    name: row.name,
++    content: row.content,
++    blocks,
++    zones,
++  };
+ }
+ 
+ export const saveGlobalBlock = accessProcedure
+@@ -42,7 +69,7 @@ export const saveGlobalBlock = accessProcedure
+       id: z.string().optional(),
+       name: z.string().trim().min(1).max(150),
+       category: z.string().trim().max(50).optional(),
+-      content: z.array(blockItemSchema).min(1),
++      content: globalBlockContentSchema,
+     })
+   )
+   .action(async ({ input, ctx }) => {
+diff --git a/src/app/(admin)/dashboard/(shell)/templates/_modules/templates.service.ts b/src/app/(admin)/dashboard/(shell)/templates/_modules/templates.service.ts
+index 277f0bd..9d2203b 100644
+--- a/src/app/(admin)/dashboard/(shell)/templates/_modules/templates.service.ts
++++ b/src/app/(admin)/dashboard/(shell)/templates/_modules/templates.service.ts
+@@ -113,12 +113,26 @@ export const templatesService = {
+     return row ?? null;
+   },
+ 
++  getGlobalBlockItems: (content: unknown): BuilderItem[] => {
++    if (Array.isArray(content)) return content as BuilderItem[];
++    if (content && typeof content === 'object' && Array.isArray((content as { content?: unknown }).content)) {
++      return (content as { content: BuilderItem[] }).content;
++    }
++    return [];
++  },
++
+   saveGlobalBlock: async (
+-    input: { id?: string; name: string; category?: string; content: BuilderItem[] },
++    input: {
++      id?: string;
++      name: string;
++      category?: string;
++      content: BuilderItem[] | { content: BuilderItem[]; zones?: Record<string, BuilderItem[]> };
++    },
+     access: UserAccess
+   ) => {
+     await accessService.assertPermission(access.userId, PERMISSIONS.PAGES_EDIT);
+-    if (!input.content.length) throw new ApplicationException('A global block needs at least one section.');
++    const contentItems = Array.isArray(input.content) ? input.content : input.content?.content;
++    if (!contentItems?.length) throw new ApplicationException('A global block needs at least one section.');
+ 
+     const values = { name: input.name, category: input.category ?? 'General', content: input.content as object };
+     const [row] = input.id
+diff --git a/src/app/(admin)/dashboard/(shell)/templates/page.tsx b/src/app/(admin)/dashboard/(shell)/templates/page.tsx
+index 30da70b..5fc369b 100644
+--- a/src/app/(admin)/dashboard/(shell)/templates/page.tsx
++++ b/src/app/(admin)/dashboard/(shell)/templates/page.tsx
+@@ -42,7 +42,7 @@ export default async function TemplatesPage() {
+         templates={templates}
+         globals={globals.map(({ content, ...g }) => ({
+           ...g,
+-          sectionTypes: Array.isArray(content) ? (content as { type: string }[]).map(b => b.type) : [],
++          sectionTypes: templatesService.getGlobalBlockItems(content).map(b => b.type),
+           pages: usage[g.id] ?? 0,
+         }))}
+         can={{
+diff --git a/src/builder/blocks/block-list.tsx b/src/builder/blocks/block-list.tsx
+index e9ae0b1..a782940 100644
+--- a/src/builder/blocks/block-list.tsx
++++ b/src/builder/blocks/block-list.tsx
+@@ -2,19 +2,75 @@ import type { ComponentType } from 'react';
+ import type { BuilderItem } from '../data';
+ import * as registry from './registry';
+ 
++function setPath(obj: Record<string, unknown>, path: string, value: unknown) {
++  const parts = path.replace(/\[(\w+)\]/g, '.$1').split('.');
++  let current: any = obj;
++  for (let i = 0; i < parts.length - 1; i++) {
++    const part = parts[i];
++    if (current[part] === undefined || current[part] === null) {
++      const nextPart = parts[i + 1];
++      current[part] = /^\d+$/.test(nextPart) ? [] : {};
++    }
++    current = current[part];
++  }
++  if (current && typeof current === 'object') {
++    current[parts[parts.length - 1]] = value;
++  }
++}
++
++function rehydrateItem(item: BuilderItem, zones?: Record<string, BuilderItem[]>): BuilderItem {
++  if (!zones || !item.props?.id) return item;
++  const nextProps = structuredClone(item.props);
++  const prefix = `${item.props.id}:`;
++
++  for (const [key, rawZoneItems] of Object.entries(zones)) {
++    if (key.startsWith(prefix)) {
++      const slotPath = key.slice(prefix.length);
++      const rehydratedZoneItems = (rawZoneItems ?? []).map(child => rehydrateItem(child, zones));
++      setPath(nextProps, slotPath, rehydratedZoneItems);
++    }
++  }
++
++  return {
++    ...item,
++    props: nextProps,
++  };
++}
++
+ /**
+  * Renders stored block data outside Puck (global block contents and slots inside them).
+  * The registry is read at call time because it imports blocks that import this module.
+  */
+-export function BlockList({ items, nested }: { items: BuilderItem[]; nested?: boolean }) {
+-  const components = registry.getBlockComponents() as unknown as Record<string, ComponentType<Record<string, unknown>>>;
++export function BlockList({
++  items,
++  zones,
++  nested,
++}: {
++  items: BuilderItem[];
++  zones?: Record<string, BuilderItem[]>;
++  nested?: boolean;
++}) {
++  const components = registry.getBlockComponents() as unknown as Record<
++    string,
++    ComponentType<Record<string, unknown>>
++  >;
++
++  const rehydratedItems = zones ? items.map(item => rehydrateItem(item, zones)) : items;
+ 
+   return (
+     <>
+-      {items.map(item => {
++      {rehydratedItems.map(item => {
+         const Component = components[item.type];
+         if (!Component) return null;
+-        return <Component key={item.props.id} {...item.props} {...(nested && { section: { ...(item.props.section as object), paddingY: 'none' } })} />;
++        return (
++          <Component
++            key={item.props.id}
++            {...item.props}
++            {...(nested && {
++              section: { ...(item.props.section as object), paddingY: 'none' },
++            })}
++          />
++        );
+       })}
+     </>
+   );
+diff --git a/src/builder/blocks/content.tsx b/src/builder/blocks/content.tsx
+index b88cfa0..0e0d7b5 100644
+--- a/src/builder/blocks/content.tsx
++++ b/src/builder/blocks/content.tsx
+@@ -184,8 +184,8 @@ export function ContactForm(p: ContactFormProps) {
+   );
+ }
+ 
+-type SlotRender = (props: { minEmptyHeight?: number | string }) => ReactNode;
+-type SlotValue = ReactNode | BuilderItem[] | SlotRender | undefined;
++export type SlotRender = (props: { minEmptyHeight?: number | string }) => ReactNode;
++export type SlotValue = ReactNode | BuilderItem[] | SlotRender | undefined;
+ 
+ export type ColumnsProps = WithSection & {
+   layout?: '1-1' | '1-1-1' | '1-1-1-1' | '2-1' | '1-2';
+@@ -207,9 +207,9 @@ const LAYOUTS = {
+ const GAP = { sm: 'gap-4', md: 'gap-8', lg: 'gap-12' };
+ const ALIGN = { start: 'items-start', center: 'items-center', end: 'items-end' };
+ 
+-function renderSlot(slot: SlotValue) {
++export function renderSlot(slot: SlotValue, zones?: Record<string, BuilderItem[]>) {
+   if (typeof slot === 'function') return slot({ minEmptyHeight: 80 });
+-  if (Array.isArray(slot)) return <BlockList items={slot} nested />;
++  if (Array.isArray(slot)) return <BlockList items={slot} zones={zones} nested />;
+   return null;
+ }
+ 
+@@ -235,6 +235,7 @@ export type GlobalRefProps = {
+   globalBlockId?: string;
+   globalBlockName?: string;
+   blocks?: BuilderItem[];
++  zones?: Record<string, BuilderItem[]>;
+   editing?: boolean;
+ };
+ 
+@@ -254,7 +255,7 @@ export function GlobalRef(p: GlobalRefProps) {
+           Global · {p.globalBlockName ?? 'block'}
+         </span>
+       )}
+-      <BlockList items={p.blocks} />
++      <BlockList items={p.blocks} zones={p.zones} />
+     </div>
+   );
+ }
+diff --git a/src/builder/blocks/interactive.tsx b/src/builder/blocks/interactive.tsx
+new file mode 100644
+index 0000000..12b17a2
+--- /dev/null
++++ b/src/builder/blocks/interactive.tsx
+@@ -0,0 +1,481 @@
++'use client';
++
++import {
++  type KeyboardEvent,
++  useCallback,
++  useEffect,
++  useId,
++  useRef,
++  useState,
++} from 'react';
++import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
++import { cn } from '@/lib/utils/cn';
++import { renderSlot, type SlotValue } from './content';
++import { Section, type SectionSettings } from './section';
++
++type WithSection = { section?: SectionSettings; editing?: boolean };
++
++export type InteractivePanelItem = {
++  label?: string;
++  content?: SlotValue;
++};
++
++/* =========================================================================
++   1. SLIDER
++   ========================================================================= */
++
++export type SliderProps = WithSection & {
++  items?: InteractivePanelItem[];
++  loop?: boolean;
++  autoplay?: boolean;
++  autoplayInterval?: 3 | 5 | 7 | 10;
++  showArrows?: boolean;
++  showDots?: boolean;
++};
++
++export function Slider(p: SliderProps) {
++  const items = p.items ?? [];
++  const itemCount = items.length;
++  const loop = p.loop ?? false;
++  const autoplay = p.autoplay ?? false;
++  const autoplayInterval = p.autoplayInterval ?? 5;
++  const showArrows = p.showArrows ?? true;
++  const showDots = p.showDots ?? true;
++
++  const [currentIndex, setCurrentIndex] = useState(0);
++  const [isHovered, setIsHovered] = useState(false);
++  const trackRef = useRef<HTMLDivElement>(null);
++  const uid = useId();
++
++  // Scroll smoothly to a target slide index
++  const scrollToIndex = useCallback((index: number) => {
++    if (!trackRef.current) return;
++    const track = trackRef.current;
++    const slideWidth = track.clientWidth;
++    track.scrollTo({
++      left: index * slideWidth,
++      behavior: 'smooth',
++    });
++    setCurrentIndex(index);
++  }, []);
++
++  const goToPrev = useCallback(() => {
++    if (currentIndex > 0) {
++      scrollToIndex(currentIndex - 1);
++    } else if (loop && itemCount > 1) {
++      scrollToIndex(itemCount - 1);
++    }
++  }, [currentIndex, loop, itemCount, scrollToIndex]);
++
++  const goToNext = useCallback(() => {
++    if (currentIndex < itemCount - 1) {
++      scrollToIndex(currentIndex + 1);
++    } else if (loop && itemCount > 1) {
++      scrollToIndex(0);
++    }
++  }, [currentIndex, loop, itemCount, scrollToIndex]);
++
++  // Autoplay handler (disabled when editing, hovered, or only 1 item)
++  useEffect(() => {
++    if (p.editing || !autoplay || isHovered || itemCount <= 1) return;
++    const intervalMs = autoplayInterval * 1000;
++    const timer = setInterval(() => {
++      setCurrentIndex(curr => {
++        const next = curr + 1;
++        if (next >= itemCount) {
++          if (loop) {
++            scrollToIndex(0);
++            return 0;
++          }
++          return curr;
++        }
++        scrollToIndex(next);
++        return next;
++      });
++    }, intervalMs);
++
++    return () => clearInterval(timer);
++  }, [p.editing, autoplay, autoplayInterval, isHovered, itemCount, loop, scrollToIndex]);
++
++  // Track user swipe / manual scroll snap
++  const handleScroll = useCallback(() => {
++    if (!trackRef.current) return;
++    const track = trackRef.current;
++    const slideWidth = track.clientWidth;
++    if (slideWidth > 0) {
++      const newIndex = Math.round(track.scrollLeft / slideWidth);
++      if (newIndex >= 0 && newIndex < itemCount && newIndex !== currentIndex) {
++        setCurrentIndex(newIndex);
++      }
++    }
++  }, [currentIndex, itemCount]);
++
++  // In editing mode, stack every panel with its label above its drop zone
++  if (p.editing) {
++    return (
++      <Section section={p.section} editing hasItems>
++        <div className="flex flex-col gap-5">
++          {items.map((item, i) => (
++            <div key={i} className="s-surface s-border s-radius border p-4 shadow-xs">
++              <div className="s-muted mb-2.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider">
++                <span>Slide {i + 1}: {item.label || `Slide ${i + 1}`}</span>
++                <span className="rounded bg-black/5 px-2 py-0.5 text-[10px] font-medium dark:bg-white/10">
++                  Slide drop zone
++                </span>
++              </div>
++              <div className="min-w-0 [&_section]:py-0 [&_section>div]:px-0">
++                {renderSlot(item.content)}
++              </div>
++            </div>
++          ))}
++          {itemCount === 0 && (
++            <div className="s-surface s-border s-radius s-muted border border-dashed p-6 text-center text-sm">
++              No slides added. Add slides in the sidebar inspector.
++            </div>
++          )}
++        </div>
++      </Section>
++    );
++  }
++
++  // Public / preview interactive view
++  return (
++    <Section section={p.section} editing={p.editing} hasItems>
++      <div
++        className="group/slider relative w-full"
++        onMouseEnter={() => setIsHovered(true)}
++        onMouseLeave={() => setIsHovered(false)}
++      >
++        {/* Scroll snap track */}
++        <div
++          ref={trackRef}
++          onScroll={handleScroll}
++          className="flex w-full overflow-x-auto snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
++          style={{ scrollSnapType: 'x mandatory' }}
++        >
++          {items.map((item, i) => (
++            <div
++              key={i}
++              className="w-full min-w-full shrink-0 snap-center snap-always min-h-0 [&_section]:py-0 [&_section>div]:px-0"
++            >
++              {renderSlot(item.content)}
++            </div>
++          ))}
++        </div>
++
++        {/* Previous / Next buttons */}
++        {showArrows && itemCount > 1 && (
++          <>
++            <button
++              type="button"
++              onClick={goToPrev}
++              disabled={!loop && currentIndex === 0}
++              aria-label="Previous slide"
++              className="s-surface s-border s-muted absolute left-2 top-1/2 z-10 -translate-y-1/2 flex size-10 items-center justify-center rounded-full border shadow-md transition hover:opacity-100 disabled:pointer-events-none disabled:opacity-20"
++            >
++              <ChevronLeft className="size-5" />
++            </button>
++            <button
++              type="button"
++              onClick={goToNext}
++              disabled={!loop && currentIndex === itemCount - 1}
++              aria-label="Next slide"
++              className="s-surface s-border s-muted absolute right-2 top-1/2 z-10 -translate-y-1/2 flex size-10 items-center justify-center rounded-full border shadow-md transition hover:opacity-100 disabled:pointer-events-none disabled:opacity-20"
++            >
++              <ChevronRight className="size-5" />
++            </button>
++          </>
++        )}
++
++        {/* Indicator dots */}
++        {showDots && itemCount > 1 && (
++          <div
++            className="mt-6 flex items-center justify-center gap-2"
++            role="tablist"
++            aria-label="Slide indicators"
++          >
++            {items.map((item, i) => {
++              const active = i === currentIndex;
++              return (
++                <button
++                  key={i}
++                  type="button"
++                  role="tab"
++                  id={`slider-dot-${uid}-${i}`}
++                  aria-selected={active}
++                  aria-label={item.label || `Slide ${i + 1}`}
++                  onClick={() => scrollToIndex(i)}
++                  className={cn(
++                    'h-2.5 rounded-full transition-all duration-200',
++                    active
++                      ? 's-primary-bg w-6'
++                      : 's-border bg-[color:var(--site-border)] opacity-60 hover:opacity-100 w-2.5'
++                  )}
++                />
++              );
++            })}
++          </div>
++        )}
++      </div>
++    </Section>
++  );
++}
++
++/* =========================================================================
++   2. TABS
++   ========================================================================= */
++
++export type TabsProps = WithSection & {
++  items?: InteractivePanelItem[];
++  variant?: 'underline' | 'pills';
++  alignment?: 'start' | 'center';
++};
++
++export function Tabs(p: TabsProps) {
++  const items = p.items ?? [];
++  const itemCount = items.length;
++  const variant = p.variant ?? 'underline';
++  const alignment = p.alignment ?? 'start';
++  const [activeTab, setActiveTab] = useState(0);
++  const uid = useId();
++  const tabsRef = useRef<(HTMLButtonElement | null)[]>([]);
++
++  const handleKeyDown = (e: KeyboardEvent<HTMLButtonElement>, index: number) => {
++    let targetIndex = -1;
++    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
++      targetIndex = (index + 1) % itemCount;
++    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
++      targetIndex = (index - 1 + itemCount) % itemCount;
++    } else if (e.key === 'Home') {
++      targetIndex = 0;
++    } else if (e.key === 'End') {
++      targetIndex = itemCount - 1;
++    }
++
++    if (targetIndex !== -1) {
++      e.preventDefault();
++      setActiveTab(targetIndex);
++      tabsRef.current[targetIndex]?.focus();
++    }
++  };
++
++  // In editing mode, stack every panel with its label above its drop zone
++  if (p.editing) {
++    return (
++      <Section section={p.section} editing hasItems>
++        <div className="flex flex-col gap-5">
++          {items.map((item, i) => (
++            <div key={i} className="s-surface s-border s-radius border p-4 shadow-xs">
++              <div className="s-muted mb-2.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider">
++                <span>Tab {i + 1}: {item.label || `Tab ${i + 1}`}</span>
++                <span className="rounded bg-black/5 px-2 py-0.5 text-[10px] font-medium dark:bg-white/10">
++                  Tab drop zone
++                </span>
++              </div>
++              <div className="min-w-0 [&_section]:py-0 [&_section>div]:px-0">
++                {renderSlot(item.content)}
++              </div>
++            </div>
++          ))}
++          {itemCount === 0 && (
++            <div className="s-surface s-border s-radius s-muted border border-dashed p-6 text-center text-sm">
++              No tabs added. Add tabs in the sidebar inspector.
++            </div>
++          )}
++        </div>
++      </Section>
++    );
++  }
++
++  // Public / preview interactive view
++  return (
++    <Section section={p.section} editing={p.editing} hasItems>
++      <div className="w-full">
++        {/* Tab list */}
++        <div
++          className={cn(
++            'flex',
++            alignment === 'center' ? 'justify-center' : 'justify-start'
++          )}
++        >
++          {variant === 'pills' ? (
++            <div
++              role="tablist"
++              aria-label="Tabs"
++              className="s-surface s-border inline-flex rounded-full border p-1 text-sm font-medium"
++            >
++              {items.map((item, i) => {
++                const active = i === activeTab;
++                return (
++                  <button
++                    key={i}
++                    ref={el => { tabsRef.current[i] = el; }}
++                    type="button"
++                    role="tab"
++                    id={`tab-${uid}-${i}`}
++                    aria-selected={active}
++                    aria-controls={`tabpanel-${uid}-${i}`}
++                    tabIndex={active ? 0 : -1}
++                    onClick={() => setActiveTab(i)}
++                    onKeyDown={e => handleKeyDown(e, i)}
++                    className={cn(
++                      'rounded-full px-4 py-1.5 font-medium transition',
++                      active ? 's-primary-bg shadow-xs' : 's-muted hover:opacity-90'
++                    )}
++                  >
++                    {item.label || `Tab ${i + 1}`}
++                  </button>
++                );
++              })}
++            </div>
++          ) : (
++            <div
++              role="tablist"
++              aria-label="Tabs"
++              className="s-border flex w-full border-b gap-4 text-sm"
++            >
++              {items.map((item, i) => {
++                const active = i === activeTab;
++                return (
++                  <button
++                    key={i}
++                    ref={el => { tabsRef.current[i] = el; }}
++                    type="button"
++                    role="tab"
++                    id={`tab-${uid}-${i}`}
++                    aria-selected={active}
++                    aria-controls={`tabpanel-${uid}-${i}`}
++                    tabIndex={active ? 0 : -1}
++                    onClick={() => setActiveTab(i)}
++                    onKeyDown={e => handleKeyDown(e, i)}
++                    className={cn(
++                      '-mb-px border-b-2 px-4 py-2.5 font-medium transition',
++                      active
++                        ? 'border-[color:var(--site-primary)] s-primary-text font-semibold'
++                        : 'border-transparent s-muted hover:border-[color:var(--site-border)] hover:opacity-90'
++                    )}
++                  >
++                    {item.label || `Tab ${i + 1}`}
++                  </button>
++                );
++              })}
++            </div>
++          )}
++        </div>
++
++        {/* Visible panel */}
++        {items[activeTab] && (
++          <div
++            role="tabpanel"
++            id={`tabpanel-${uid}-${activeTab}`}
++            aria-labelledby={`tab-${uid}-${activeTab}`}
++            tabIndex={0}
++            className="mt-6 min-w-0 focus:outline-hidden [&_section]:py-0 [&_section>div]:px-0"
++          >
++            {renderSlot(items[activeTab].content)}
++          </div>
++        )}
++      </div>
++    </Section>
++  );
++}
++
++/* =========================================================================
++   3. ACCORDION
++   ========================================================================= */
++
++export type AccordionProps = WithSection & {
++  items?: InteractivePanelItem[];
++  allowMultiple?: boolean;
++};
++
++export function Accordion(p: AccordionProps) {
++  const items = p.items ?? [];
++  const itemCount = items.length;
++  const allowMultiple = p.allowMultiple ?? false;
++  const [openIndices, setOpenIndices] = useState<number[]>([0]);
++  const uid = useId();
++
++  const toggle = (index: number) => {
++    if (allowMultiple) {
++      setOpenIndices(prev =>
++        prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]
++      );
++    } else {
++      setOpenIndices(prev => (prev.includes(index) ? [] : [index]));
++    }
++  };
++
++  // In editing mode, stack every panel with its label above its drop zone
++  if (p.editing) {
++    return (
++      <Section section={p.section} editing hasItems>
++        <div className="flex flex-col gap-5">
++          {items.map((item, i) => (
++            <div key={i} className="s-surface s-border s-radius border p-4 shadow-xs">
++              <div className="s-muted mb-2.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider">
++                <span>Panel {i + 1}: {item.label || `Panel ${i + 1}`}</span>
++                <span className="rounded bg-black/5 px-2 py-0.5 text-[10px] font-medium dark:bg-white/10">
++                  Accordion drop zone
++                </span>
++              </div>
++              <div className="min-w-0 [&_section]:py-0 [&_section>div]:px-0">
++                {renderSlot(item.content)}
++              </div>
++            </div>
++          ))}
++          {itemCount === 0 && (
++            <div className="s-surface s-border s-radius s-muted border border-dashed p-6 text-center text-sm">
++              No panels added. Add panels in the sidebar inspector.
++            </div>
++          )}
++        </div>
++      </Section>
++    );
++  }
++
++  // Public / preview interactive view
++  return (
++    <Section section={p.section} editing={p.editing} hasItems>
++      <div className="s-border divide-y divide-[color:var(--site-border)] border-y">
++        {items.map((item, i) => {
++          const isOpen = openIndices.includes(i);
++          const triggerId = `accordion-trigger-${uid}-${i}`;
++          const panelId = `accordion-panel-${uid}-${i}`;
++
++          return (
++            <div key={i} className="py-4">
++              <button
++                type="button"
++                id={triggerId}
++                aria-expanded={isOpen}
++                aria-controls={panelId}
++                onClick={() => toggle(i)}
++                className="flex w-full cursor-pointer items-center justify-between gap-4 text-left font-semibold transition hover:opacity-85"
++              >
++                <span>{item.label || `Panel ${i + 1}`}</span>
++                <ChevronDown
++                  className={cn(
++                    's-muted size-5 shrink-0 transition-transform duration-200',
++                    isOpen && 'rotate-180'
++                  )}
++                  aria-hidden
++                />
++              </button>
++              {isOpen && (
++                <div
++                  id={panelId}
++                  role="region"
++                  aria-labelledby={triggerId}
++                  className="pt-3 min-w-0 [&_section]:py-0 [&_section>div]:px-0"
++                >
++                  {renderSlot(item.content)}
++                </div>
++              )}
++            </div>
++          );
++        })}
++      </div>
++    </Section>
++  );
++}
+diff --git a/src/builder/blocks/registry.ts b/src/builder/blocks/registry.ts
+index 8d43a3e..55b4be5 100644
+--- a/src/builder/blocks/registry.ts
++++ b/src/builder/blocks/registry.ts
+@@ -6,6 +6,7 @@ import {
+   ImageBlock,
+   RichText,
+ } from './content';
++import { Accordion, Slider, Tabs } from './interactive';
+ import {
+   Cta,
+   Faq,
+@@ -30,6 +31,9 @@ export const getBlockComponents = () => ({
+   ContactForm,
+   GlobalRef,
+   BlogPosts,
++  Slider,
++  Tabs,
++  Accordion,
+ });
+ 
+ export type BlockType = keyof ReturnType<typeof getBlockComponents>;
+diff --git a/src/builder/config.tsx b/src/builder/config.tsx
+index d321176..38ed757 100644
+--- a/src/builder/config.tsx
++++ b/src/builder/config.tsx
+@@ -26,6 +26,7 @@ import {
+   ImageBlock,
+   RichText,
+ } from './blocks/content';
++import { Accordion, Slider, Tabs } from './blocks/interactive';
+ import {
+   Cta,
+   Faq,
+@@ -132,7 +133,7 @@ export const builderConfig: Config = {
+       components: ['RichText', 'Image', 'Gallery', 'ContactForm'],
+     },
+     blog: { title: 'Blog', components: ['BlogPosts'] },
+-    layout: { title: 'Layout', components: ['Columns'] },
++    layout: { title: 'Layout', components: ['Columns', 'Slider', 'Tabs', 'Accordion'] },
+     global: { title: 'Global blocks', components: ['GlobalRef'] },
+   },
+   root: {
+@@ -570,6 +571,105 @@ export const builderConfig: Config = {
+       },
+       render: renderBlock(Columns),
+     },
++    Slider: {
++      label: 'Slider',
++      fields: withSection({
++        loop: yesNo('Infinite loop'),
++        autoplay: yesNo('Autoplay'),
++        autoplayInterval: select('Autoplay interval', [
++          { label: '3 seconds', value: 3 },
++          { label: '5 seconds', value: 5 },
++          { label: '7 seconds', value: 7 },
++          { label: '10 seconds', value: 10 },
++        ]),
++        showArrows: yesNo('Show previous/next buttons'),
++        showDots: yesNo('Show indicator dots'),
++        items: {
++          type: 'array',
++          label: 'Slides',
++          getItemSummary: (item: { label?: string }) => item.label || 'Slide',
++          defaultItemProps: { label: 'Slide' },
++          arrayFields: {
++            label: text('Label'),
++            content: { type: 'slot', disallow: ['Slider', 'Tabs', 'Accordion'] },
++          },
++        },
++      }),
++      defaultProps: {
++        loop: false,
++        autoplay: false,
++        autoplayInterval: 5,
++        showArrows: true,
++        showDots: true,
++        items: [
++          { label: 'Slide 1' },
++          { label: 'Slide 2' },
++          { label: 'Slide 3' },
++        ],
++        section: DEFAULT_SECTION,
++      },
++      render: renderBlock(Slider),
++    },
++    Tabs: {
++      label: 'Tabs',
++      fields: withSection({
++        variant: select('Tab style', [
++          { label: 'Underline', value: 'underline' },
++          { label: 'Pills', value: 'pills' },
++        ]),
++        alignment: select('Alignment', [
++          { label: 'Left', value: 'start' },
++          { label: 'Center', value: 'center' },
++        ]),
++        items: {
++          type: 'array',
++          label: 'Tabs',
++          getItemSummary: (item: { label?: string }) => item.label || 'Tab',
++          defaultItemProps: { label: 'Tab' },
++          arrayFields: {
++            label: text('Label'),
++            content: { type: 'slot', disallow: ['Slider', 'Tabs', 'Accordion'] },
++          },
++        },
++      }),
++      defaultProps: {
++        variant: 'underline',
++        alignment: 'start',
++        items: [
++          { label: 'Tab 1' },
++          { label: 'Tab 2' },
++          { label: 'Tab 3' },
++        ],
++        section: DEFAULT_SECTION,
++      },
++      render: renderBlock(Tabs),
++    },
++    Accordion: {
++      label: 'Accordion',
++      fields: withSection({
++        allowMultiple: yesNo('Open several at once'),
++        items: {
++          type: 'array',
++          label: 'Panels',
++          getItemSummary: (item: { label?: string }) => item.label || 'Panel',
++          defaultItemProps: { label: 'Panel' },
++          arrayFields: {
++            label: text('Label'),
++            content: { type: 'slot', disallow: ['Slider', 'Tabs', 'Accordion'] },
++          },
++        },
++      }),
++      defaultProps: {
++        allowMultiple: false,
++        items: [
++          { label: 'Panel 1' },
++          { label: 'Panel 2' },
++          { label: 'Panel 3' },
++        ],
++        section: DEFAULT_SECTION,
++      },
++      render: renderBlock(Accordion),
++    },
+     RichText: {
+       label: 'Rich text',
+       fields: withSection({
+@@ -731,13 +831,14 @@ export const builderConfig: Config = {
+       defaultProps: { globalBlockId: '' },
+       resolveData: async (data) => {
+         const id = (data.props as { globalBlockId?: string }).globalBlockId;
+-        if (!id) return { ...data, props: { ...data.props, blocks: [], globalBlockName: '' } };
++        if (!id) return { ...data, props: { ...data.props, blocks: [], zones: {}, globalBlockName: '' } };
+         const result = await getGlobalBlockContent(id);
+         return {
+           ...data,
+           props: {
+             ...data.props,
+             blocks: result?.blocks ?? [],
++            zones: result?.zones ?? {},
+             globalBlockName: result?.name ?? '',
+           },
+         };
+-- 
+2.34.1
+

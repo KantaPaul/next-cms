@@ -184,8 +184,8 @@ export function ContactForm(p: ContactFormProps) {
   );
 }
 
-type SlotRender = (props: { minEmptyHeight?: number | string }) => ReactNode;
-type SlotValue = ReactNode | BuilderItem[] | SlotRender | undefined;
+export type SlotRender = (props: { minEmptyHeight?: number | string }) => ReactNode;
+export type SlotValue = ReactNode | BuilderItem[] | SlotRender | undefined;
 
 export type ColumnsProps = WithSection & {
   layout?: '1-1' | '1-1-1' | '1-1-1-1' | '2-1' | '1-2';
@@ -207,9 +207,9 @@ const LAYOUTS = {
 const GAP = { sm: 'gap-4', md: 'gap-8', lg: 'gap-12' };
 const ALIGN = { start: 'items-start', center: 'items-center', end: 'items-end' };
 
-function renderSlot(slot: SlotValue) {
+export function renderSlot(slot: SlotValue, zones?: Record<string, BuilderItem[]>) {
   if (typeof slot === 'function') return slot({ minEmptyHeight: 80 });
-  if (Array.isArray(slot)) return <BlockList items={slot} nested />;
+  if (Array.isArray(slot)) return <BlockList items={slot} zones={zones} nested />;
   return null;
 }
 
@@ -235,6 +235,7 @@ export type GlobalRefProps = {
   globalBlockId?: string;
   globalBlockName?: string;
   blocks?: BuilderItem[];
+  zones?: Record<string, BuilderItem[]>;
   editing?: boolean;
 };
 
@@ -254,7 +255,7 @@ export function GlobalRef(p: GlobalRefProps) {
           Global · {p.globalBlockName ?? 'block'}
         </span>
       )}
-      <BlockList items={p.blocks} />
+      <BlockList items={p.blocks} zones={p.zones} />
     </div>
   );
 }

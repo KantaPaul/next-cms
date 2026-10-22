@@ -42,7 +42,7 @@ export default async function TemplatesPage() {
         templates={templates}
         globals={globals.map(({ content, ...g }) => ({
           ...g,
-          sectionTypes: Array.isArray(content) ? (content as { type: string }[]).map(b => b.type) : [],
+          sectionTypes: templatesService.getGlobalBlockItems(content).map(b => b.type),
           pages: usage[g.id] ?? 0,
         }))}
         can={{

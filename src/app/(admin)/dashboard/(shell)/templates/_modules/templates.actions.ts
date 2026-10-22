@@ -15,6 +15,14 @@ const blockItemSchema = z.object({
   props: z.record(z.string(), z.unknown()).and(z.object({ id: z.string() })),
 });
 
+const globalBlockContentSchema = z.union([
+  z.array(blockItemSchema).min(1),
+  z.object({
+    content: z.array(blockItemSchema).min(1),
+    zones: z.record(z.string(), z.array(blockItemSchema)).optional(),
+  }),
+]);
+
 export const listGlobalBlockOptions = permissionProcedure(PERMISSIONS.PAGES_EDIT).query(async () =>
   db
     .select({ id: globalBlocks.id, name: globalBlocks.name, category: globalBlocks.category })
@@ -33,7 +41,26 @@ export async function getGlobalBlockContent(id: string) {
     .from(globalBlocks)
     .where(eq(globalBlocks.id, id))
     .limit(1);
-  return row ?? null;
+  if (!row) return null;
+
+  let blocks: unknown[] = [];
+  let zones: Record<string, unknown[]> = {};
+
+  if (Array.isArray(row.content)) {
+    blocks = row.content;
+  } else if (row.content && typeof row.content === 'object') {
+    const obj = row.content as { content?: unknown[]; zones?: Record<string, unknown[]> };
+    blocks = Array.isArray(obj.content) ? obj.content : [];
+    zones = obj.zones && typeof obj.zones === 'object' ? obj.zones : {};
+  }
+
+  return {
+    id: row.id,
+    name: row.name,
+    content: row.content,
+    blocks,
+    zones,
+  };
 }
 
 export const saveGlobalBlock = accessProcedure
@@ -42,7 +69,7 @@ export const saveGlobalBlock = accessProcedure
       id: z.string().optional(),
       name: z.string().trim().min(1).max(150),
       category: z.string().trim().max(50).optional(),
-      content: z.array(blockItemSchema).min(1),
+      content: globalBlockContentSchema,
     })
   )
   .action(async ({ input, ctx }) => {

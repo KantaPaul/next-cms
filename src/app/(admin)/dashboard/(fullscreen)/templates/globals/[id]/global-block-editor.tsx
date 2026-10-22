@@ -16,7 +16,7 @@ import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import { saveGlobalBlock } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
 
 export type GlobalBlockEditorProps = {
-  block: { id: string; name: string; category: string; content: unknown[] };
+  block: { id: string; name: string; category: string; content: unknown };
   themeTokens: ThemeTokens;
 };
 
@@ -24,27 +24,58 @@ const { GlobalRef: _globalRef, ...components } = builderConfig.components;
 const { global: _global, ...categories } = builderConfig.categories ?? {};
 const globalConfig = { ...builderConfig, components, categories } as Config;
 
+const serializeState = (data: Data) =>
+  JSON.stringify({ content: data.content ?? [], zones: data.zones ?? {} });
+
 export function GlobalBlockEditor({ block, themeTokens }: GlobalBlockEditorProps) {
   const router = useRouter();
-  const initialData = useMemo<Data>(() => ({ root: { props: {} }, content: block.content as Data['content'] }), [block.content]);
+
+  const initialData = useMemo<Data>(() => {
+    let content: Data['content'] = [];
+    let zones: Data['zones'] = {};
+
+    if (Array.isArray(block.content)) {
+      content = block.content as Data['content'];
+    } else if (block.content && typeof block.content === 'object') {
+      const obj = block.content as { content?: Data['content']; zones?: Data['zones'] };
+      content = Array.isArray(obj.content) ? obj.content : [];
+      zones = obj.zones && typeof obj.zones === 'object' ? obj.zones : {};
+    }
+
+    return {
+      root: { props: {} },
+      content,
+      zones,
+    };
+  }, [block.content]);
+
   const dataRef = useRef<Data>(initialData);
-  const [saved, setSaved] = useState(() => JSON.stringify(initialData.content));
+  const [saved, setSaved] = useState(() => serializeState(initialData));
   const [current, setCurrent] = useState(saved);
   const [isPending, startTransition] = useTransition();
   const dirty = current !== saved;
 
   const save = () =>
     startTransition(async () => {
-      const content = dataRef.current.content as BuilderItem[];
+      const content = (dataRef.current.content ?? []) as BuilderItem[];
+      const zones = (dataRef.current.zones ?? {}) as Record<string, BuilderItem[]>;
       if (!content.length) {
         toast.error('A global block needs at least one section.');
         return;
       }
-      await handleActionResponse(saveGlobalBlock({ id: block.id, name: block.name, category: block.category, content }), () => {
-        setSaved(JSON.stringify(content));
-        toast.success('Global block saved. Every page using it now shows this version.');
-        router.refresh();
-      });
+      await handleActionResponse(
+        saveGlobalBlock({
+          id: block.id,
+          name: block.name,
+          category: block.category,
+          content: { content, zones },
+        }),
+        () => {
+          setSaved(serializeState(dataRef.current));
+          toast.success('Global block saved. Every page using it now shows this version.');
+          router.refresh();
+        }
+      );
     });
 
   return (
@@ -54,7 +85,7 @@ export function GlobalBlockEditor({ block, themeTokens }: GlobalBlockEditorProps
         data={initialData}
         onChange={data => {
           dataRef.current = data;
-          setCurrent(JSON.stringify(data.content));
+          setCurrent(serializeState(data));
         }}
         headerTitle={`Global block · ${block.name}`}
         overrides={{

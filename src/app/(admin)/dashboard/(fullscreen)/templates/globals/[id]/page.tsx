@@ -19,7 +19,7 @@ export default async function GlobalBlockPage({ params }: { params: Promise<{ id
 
   return (
     <GlobalBlockLoader
-      block={{ id: block.id, name: block.name, category: block.category, content: Array.isArray(block.content) ? block.content : [] }}
+      block={{ id: block.id, name: block.name, category: block.category, content: block.content as any }}
       themeTokens={settings.themeTokens}
     />
   );

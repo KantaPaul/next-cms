@@ -113,12 +113,26 @@ export const templatesService = {
     return row ?? null;
   },
 
+  getGlobalBlockItems: (content: unknown): BuilderItem[] => {
+    if (Array.isArray(content)) return content as BuilderItem[];
+    if (content && typeof content === 'object' && Array.isArray((content as { content?: unknown }).content)) {
+      return (content as { content: BuilderItem[] }).content;
+    }
+    return [];
+  },
+
   saveGlobalBlock: async (
-    input: { id?: string; name: string; category?: string; content: BuilderItem[] },
+    input: {
+      id?: string;
+      name: string;
+      category?: string;
+      content: BuilderItem[] | { content: BuilderItem[]; zones?: Record<string, BuilderItem[]> };
+    },
     access: UserAccess
   ) => {
     await accessService.assertPermission(access.userId, PERMISSIONS.PAGES_EDIT);
-    if (!input.content.length) throw new ApplicationException('A global block needs at least one section.');
+    const contentItems = Array.isArray(input.content) ? input.content : input.content?.content;
+    if (!contentItems?.length) throw new ApplicationException('A global block needs at least one section.');
 
     const values = { name: input.name, category: input.category ?? 'General', content: input.content as object };
     const [row] = input.id

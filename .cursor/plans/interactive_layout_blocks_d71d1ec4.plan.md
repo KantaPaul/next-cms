@@ -4,13 +4,13 @@ overview: Add Slider, Tabs, and Accordion as layout blocks whose panels are drop
 todos:
   - id: blocks
     content: Add Slider, Tabs, and Accordion slot blocks and register them in the Layout category
-    status: pending
+    status: completed
   - id: zones
     content: Persist and rehydrate Puck zones for global blocks, including save-as-global and BlockList
-    status: pending
+    status: completed
   - id: verify
     content: Verify nested drops in the page builder, public page, and global-block editor
-    status: pending
+    status: completed
 isProject: false
 ---
 

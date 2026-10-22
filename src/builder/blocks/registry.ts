@@ -6,6 +6,7 @@ import {
   ImageBlock,
   RichText,
 } from './content';
+import { Accordion, Slider, Tabs } from './interactive';
 import {
   Cta,
   Faq,
@@ -30,6 +31,9 @@ export const getBlockComponents = () => ({
   ContactForm,
   GlobalRef,
   BlogPosts,
+  Slider,
+  Tabs,
+  Accordion,
 });
 
 export type BlockType = keyof ReturnType<typeof getBlockComponents>;

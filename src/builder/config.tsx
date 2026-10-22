@@ -24,8 +24,11 @@ import {
   Gallery,
   GlobalRef,
   ImageBlock,
+  renderSlot,
   RichText,
+  type SlotValue,
 } from './blocks/content';
+import { Accordion, Slider, Tabs } from './blocks/interactive';
 import {
   Cta,
   Faq,
@@ -120,6 +123,42 @@ const renderBlock = (Component: ComponentType<any>) => {
   return Render;
 };
 
+/**
+ * Slider, Tabs, and Accordion are client components. Puck slot functions live inside
+ * each panel object, and Next.js cannot serialize those functions across the server
+ * boundary. Resolve every slot here, then pass plain nodes.
+ */
+const renderPanels = (Component: ComponentType<any>) => {
+  const Render = ({ puck, id: _id, items, ...props }: AnyProps) => (
+    <Component
+      {...props}
+      editing={!!puck?.isEditing}
+      panels={(items ?? []).map((item: { label?: string; content?: SlotValue }) => ({
+        label: item?.label,
+        node: renderSlot(item?.content),
+      }))}
+    />
+  );
+  Render.displayName = `Panels(${Component.displayName || Component.name || 'Component'})`;
+  return Render;
+};
+
+/**
+ * Puck only turns an array-item slot into a drop zone when the item has that key.
+ * Default panels and blocks saved before this fix omit `content`, so backfill it.
+ */
+const ensurePanelSlots = (data: { props?: AnyProps }) => {
+  const items = data.props?.items;
+  if (!Array.isArray(items) || items.every(item => Array.isArray(item?.content))) return data;
+  return {
+    ...data,
+    props: {
+      ...data.props,
+      items: items.map(item => (Array.isArray(item?.content) ? item : { ...item, content: [] })),
+    },
+  };
+};
+
 export const builderConfig: Config = {
   categories: {
     heroes: { title: 'Heroes & calls to action', components: ['Hero', 'CTA'] },
@@ -132,7 +171,7 @@ export const builderConfig: Config = {
       components: ['RichText', 'Image', 'Gallery', 'ContactForm'],
     },
     blog: { title: 'Blog', components: ['BlogPosts'] },
-    layout: { title: 'Layout', components: ['Columns'] },
+    layout: { title: 'Layout', components: ['Columns', 'Slider', 'Tabs', 'Accordion'] },
     global: { title: 'Global blocks', components: ['GlobalRef'] },
   },
   root: {
@@ -570,6 +609,108 @@ export const builderConfig: Config = {
       },
       render: renderBlock(Columns),
     },
+    Slider: {
+      label: 'Slider',
+      fields: withSection({
+        loop: yesNo('Infinite loop'),
+        autoplay: yesNo('Autoplay'),
+        autoplayInterval: select('Autoplay interval', [
+          { label: '3 seconds', value: 3 },
+          { label: '5 seconds', value: 5 },
+          { label: '7 seconds', value: 7 },
+          { label: '10 seconds', value: 10 },
+        ]),
+        showArrows: yesNo('Show previous/next buttons'),
+        showDots: yesNo('Show indicator dots'),
+        items: {
+          type: 'array',
+          label: 'Slides',
+          getItemSummary: (item: { label?: string }) => item.label || 'Slide',
+          defaultItemProps: { label: 'Slide', content: [] },
+          arrayFields: {
+            label: text('Label'),
+            content: { type: 'slot', disallow: ['Slider', 'Tabs', 'Accordion'] },
+          },
+        },
+      }),
+      defaultProps: {
+        loop: false,
+        autoplay: false,
+        autoplayInterval: 5,
+        showArrows: true,
+        showDots: true,
+        items: [
+          { label: 'Slide 1', content: [] },
+          { label: 'Slide 2', content: [] },
+          { label: 'Slide 3', content: [] },
+        ],
+        section: DEFAULT_SECTION,
+      },
+      resolveData: async data => ensurePanelSlots(data),
+      render: renderPanels(Slider),
+    },
+    Tabs: {
+      label: 'Tabs',
+      fields: withSection({
+        variant: select('Tab style', [
+          { label: 'Underline', value: 'underline' },
+          { label: 'Pills', value: 'pills' },
+        ]),
+        alignment: select('Alignment', [
+          { label: 'Left', value: 'start' },
+          { label: 'Center', value: 'center' },
+        ]),
+        items: {
+          type: 'array',
+          label: 'Tabs',
+          getItemSummary: (item: { label?: string }) => item.label || 'Tab',
+          defaultItemProps: { label: 'Tab', content: [] },
+          arrayFields: {
+            label: text('Label'),
+            content: { type: 'slot', disallow: ['Slider', 'Tabs', 'Accordion'] },
+          },
+        },
+      }),
+      defaultProps: {
+        variant: 'underline',
+        alignment: 'start',
+        items: [
+          { label: 'Tab 1', content: [] },
+          { label: 'Tab 2', content: [] },
+          { label: 'Tab 3', content: [] },
+        ],
+        section: DEFAULT_SECTION,
+      },
+      resolveData: async data => ensurePanelSlots(data),
+      render: renderPanels(Tabs),
+    },
+    Accordion: {
+      label: 'Accordion',
+      fields: withSection({
+        allowMultiple: yesNo('Open several at once'),
+        items: {
+          type: 'array',
+          label: 'Panels',
+          getItemSummary: (item: { label?: string }) => item.label || 'Panel',
+          defaultItemProps: { label: 'Panel', content: [] },
+          arrayFields: {
+            label: text('Label'),
+            content: { type: 'slot', disallow: ['Slider', 'Tabs', 'Accordion'] },
+          },
+        },
+      }),
+      defaultProps: {
+        allowMultiple: false,
+        items: [
+          { label: 'Panel 1', content: [] },
+          { label: 'Panel 2', content: [] },
+          { label: 'Panel 3', content: [] },
+        ],
+        section: DEFAULT_SECTION,
+      },
+      resolveData: async data => ensurePanelSlots(data),
+      render: renderPanels(Accordion),
+    },
     RichText: {
       label: 'Rich text',
       fields: withSection({
@@ -731,13 +872,14 @@ export const builderConfig: Config = {
       defaultProps: { globalBlockId: '' },
       resolveData: async (data) => {
         const id = (data.props as { globalBlockId?: string }).globalBlockId;
-        if (!id) return { ...data, props: { ...data.props, blocks: [], globalBlockName: '' } };
+        if (!id) return { ...data, props: { ...data.props, blocks: [], zones: {}, globalBlockName: '' } };
         const result = await getGlobalBlockContent(id);
         return {
           ...data,
           props: {
             ...data.props,
             blocks: result?.blocks ?? [],
+            zones: result?.zones ?? {},
             globalBlockName: result?.name ?? '',
           },
         };

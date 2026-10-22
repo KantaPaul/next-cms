@@ -38,31 +38,74 @@ export function SaveGlobalDialog({ target, onClose }: { target: BuilderTarget | 
     setPending(true);
 
     try {
-      const item: BuilderItem = { type: target.type, props: target.props };
-      await handleActionResponse(await saveGlobalBlock({ name, category, content: [item] }), row => {
-        const saved = row as { id: string; name: string };
+      const { appState, dispatch, getSelectorForId } = getPuck();
+      const allZones = (appState?.data?.zones ?? {}) as Record<string, BuilderItem[]>;
 
-        if (link) {
-          const { dispatch, getSelectorForId } = getPuck();
-          const selector = getSelectorForId(target.id);
-
-          if (selector) {
-            dispatch({
-              type: 'replace',
-              destinationIndex: selector.index,
-              destinationZone: selector.zone,
-              data: {
-                type: 'GlobalRef',
-                // Puck's replace action requires the node to keep its id.
-                props: { id: target.id, globalBlockId: saved.id, globalBlockName: saved.name, blocks: [item] },
-              },
-            });
+      // BFS to find all child block ids and their nested zones
+      const collectedIds = new Set<string>([target.id]);
+      let added = true;
+      while (added) {
+        added = false;
+        for (const [zoneKey, items] of Object.entries(allZones)) {
+          const colonIdx = zoneKey.indexOf(':');
+          const ownerId = colonIdx !== -1 ? zoneKey.slice(0, colonIdx) : zoneKey;
+          if (collectedIds.has(ownerId)) {
+            for (const childItem of items ?? []) {
+              if (childItem?.props?.id && !collectedIds.has(childItem.props.id)) {
+                collectedIds.add(childItem.props.id);
+                added = true;
+              }
+            }
           }
         }
+      }
 
-        toast.success(`Saved "${saved.name}" as a global block`);
-        onClose();
-      });
+      // Collect all zones belonging to target or any child block
+      const relevantZones: Record<string, BuilderItem[]> = {};
+      for (const [zoneKey, items] of Object.entries(allZones)) {
+        const colonIdx = zoneKey.indexOf(':');
+        const ownerId = colonIdx !== -1 ? zoneKey.slice(0, colonIdx) : zoneKey;
+        if (collectedIds.has(ownerId)) {
+          relevantZones[zoneKey] = items;
+        }
+      }
+
+      const item: BuilderItem = { type: target.type, props: target.props };
+      await handleActionResponse(
+        await saveGlobalBlock({
+          name,
+          category,
+          content: { content: [item], zones: relevantZones },
+        }),
+        row => {
+          const saved = row as { id: string; name: string };
+
+          if (link) {
+            const selector = getSelectorForId(target.id);
+            if (selector) {
+              dispatch({
+                type: 'replace',
+                destinationIndex: selector.index,
+                destinationZone: selector.zone,
+                data: {
+                  type: 'GlobalRef',
+                  // Puck's replace action requires the node to keep its id.
+                  props: {
+                    id: target.id,
+                    globalBlockId: saved.id,
+                    globalBlockName: saved.name,
+                    blocks: [item],
+                    zones: relevantZones,
+                  },
+                },
+              });
+            }
+          }
+
+          toast.success(`Saved "${saved.name}" as a global block`);
+          onClose();
+        }
+      );
     } finally {
       setPending(false);
     }
