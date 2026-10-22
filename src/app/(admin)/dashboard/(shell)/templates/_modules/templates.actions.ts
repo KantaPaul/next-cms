@@ -24,12 +24,17 @@ const globalBlockContentSchema = z.union([
   }),
 ]);
 
-export const listGlobalBlockOptions = permissionProcedure(PERMISSIONS.PAGES_EDIT).query(async () =>
-  db
+export const listGlobalBlockOptions = permissionProcedure(PERMISSIONS.PAGES_EDIT).query(async () => {
+  const rows = await db
     .select({ id: globalBlocks.id, name: globalBlocks.name, category: globalBlocks.category })
     .from(globalBlocks)
-    .orderBy(asc(globalBlocks.name))
-);
+    .orderBy(asc(globalBlocks.name));
+  return rows.map(r =>
+    r.category === 'contact-form'
+      ? { ...r, name: `${r.name} (contact form)` }
+      : r
+  );
+});
 
 /**
  * Public read of a global block's sections. Used by the GlobalRef block's `resolveData`
@@ -76,6 +81,7 @@ export const saveGlobalBlock = accessProcedure
   .action(async ({ input, ctx }) => {
     const row = await templatesService.saveGlobalBlock(input as never, ctx.access);
     revalidatePath(PAGES.DASHBOARD.TEMPLATES);
+    revalidatePath(PAGES.DASHBOARD.CONTACT_FORMS);
     return row;
   });
 
@@ -84,6 +90,7 @@ export const renameGlobalBlock = accessProcedure
   .action(async ({ input, ctx }) => {
     const row = await templatesService.renameGlobalBlock(input, ctx.access);
     revalidatePath(PAGES.DASHBOARD.TEMPLATES);
+    revalidatePath(PAGES.DASHBOARD.CONTACT_FORMS);
     return row;
   });
 
@@ -92,6 +99,7 @@ export const deleteGlobalBlock = accessProcedure
   .action(async ({ input, ctx }) => {
     const row = await templatesService.deleteGlobalBlock(input, ctx.access);
     revalidatePath(PAGES.DASHBOARD.TEMPLATES);
+    revalidatePath(PAGES.DASHBOARD.CONTACT_FORMS);
     return row;
   });
 
@@ -108,6 +116,7 @@ export const saveTemplate = accessProcedure
   .action(async ({ input, ctx }) => {
     const row = await templatesService.saveTemplate(input, ctx.access);
     revalidatePath(PAGES.DASHBOARD.TEMPLATES);
+    revalidatePath(PAGES.DASHBOARD.CONTACT_FORMS);
     return row;
   });
 
@@ -116,6 +125,7 @@ export const deleteTemplate = accessProcedure
   .action(async ({ input, ctx }) => {
     const row = await templatesService.deleteTemplate(input, ctx.access);
     revalidatePath(PAGES.DASHBOARD.TEMPLATES);
+    revalidatePath(PAGES.DASHBOARD.CONTACT_FORMS);
     return row;
   });
 
@@ -132,5 +142,6 @@ export const updateTemplate = accessProcedure
   .action(async ({ input, ctx }) => {
     const row = await templatesService.updateTemplate(input, ctx.access);
     revalidatePath(PAGES.DASHBOARD.TEMPLATES);
+    revalidatePath(PAGES.DASHBOARD.CONTACT_FORMS);
     return row;
   });
