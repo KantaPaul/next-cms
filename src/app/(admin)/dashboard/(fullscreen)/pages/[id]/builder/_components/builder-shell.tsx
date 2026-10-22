@@ -339,7 +339,7 @@ function LeftRail() {
   const b = useBuilder();
   const [tab, setTab] = useState<RailTab>('blocks');
   const tabs =
-    b.kind === 'global'
+    b.kind === 'global' || b.kind === 'page-template'
       ? RAIL_TABS.filter(t => t.value !== 'page')
       : RAIL_TABS;
   const activeTab = tabs.some(t => t.value === tab) ? tab : 'blocks';
