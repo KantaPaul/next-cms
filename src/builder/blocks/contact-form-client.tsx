@@ -3,6 +3,24 @@
 import { useState, type FormEvent } from 'react';
 import type { ContactFormField } from './content';
 
+const INPUT_TYPES = new Set(['text', 'email', 'tel', 'number', 'date', 'url']);
+
+function parseOptions(options?: string): { value: string; label: string }[] {
+  if (!options?.trim()) return [];
+  return options
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean)
+    .slice(0, 20)
+    .map(line => {
+      const pipe = line.indexOf('|');
+      if (pipe === -1) return { value: line, label: line };
+      const value = line.slice(0, pipe).trim();
+      const label = line.slice(pipe + 1).trim() || value;
+      return { value: value || label, label };
+    });
+}
+
 export function ContactFormClient({
   fields,
   submitText,
@@ -46,6 +64,58 @@ export function ContactFormClient({
     <form onSubmit={onSubmit} className="grid gap-4">
       {fields.map((field, i) => {
         const id = `cf-${field.name || i}`;
+        const opts = parseOptions(field.options);
+
+        if (field.type === 'checkbox') {
+          return (
+            <label key={id} htmlFor={id} className="s-choice-row text-sm font-medium">
+              <input
+                id={id}
+                name={field.name}
+                type="checkbox"
+                value="yes"
+                required={field.required}
+                className="s-choice"
+              />
+              <span>
+                {field.label}
+                {field.required && <span className="s-accent-text"> *</span>}
+              </span>
+            </label>
+          );
+        }
+
+        if (field.type === 'radio') {
+          return (
+            <fieldset key={id} className="grid gap-2">
+              <legend className="text-sm font-medium">
+                {field.label}
+                {field.required && <span className="s-accent-text"> *</span>}
+              </legend>
+              {opts.length === 0 ? (
+                <p className="s-muted text-xs">Add options in the sidebar (one per line).</p>
+              ) : (
+                opts.map((opt, j) => {
+                  const optId = `${id}-${j}`;
+                  return (
+                    <label key={optId} htmlFor={optId} className="s-choice-row text-sm font-medium">
+                      <input
+                        id={optId}
+                        name={field.name}
+                        type="radio"
+                        value={opt.value}
+                        required={field.required}
+                        className="s-choice"
+                      />
+                      <span>{opt.label}</span>
+                    </label>
+                  );
+                })
+              )}
+            </fieldset>
+          );
+        }
+
         return (
           <label key={id} htmlFor={id} className="grid gap-1.5 text-sm font-medium">
             <span>
@@ -53,9 +123,40 @@ export function ContactFormClient({
               {field.required && <span className="s-accent-text"> *</span>}
             </span>
             {field.type === 'textarea' ? (
-              <textarea id={id} name={field.name} required={field.required} rows={5} className="s-input" />
+              <textarea
+                id={id}
+                name={field.name}
+                required={field.required}
+                rows={5}
+                placeholder={field.placeholder}
+                className="s-input"
+              />
+            ) : field.type === 'select' ? (
+              <select
+                id={id}
+                name={field.name}
+                required={field.required}
+                className="s-input"
+                defaultValue=""
+              >
+                <option value="" disabled={field.required}>
+                  {field.placeholder || 'Select…'}
+                </option>
+                {opts.map(opt => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
             ) : (
-              <input id={id} name={field.name} type={field.type} required={field.required} className="s-input" />
+              <input
+                id={id}
+                name={field.name}
+                type={INPUT_TYPES.has(field.type) ? field.type : 'text'}
+                required={field.required}
+                placeholder={field.placeholder}
+                className="s-input"
+              />
             )}
           </label>
         );
