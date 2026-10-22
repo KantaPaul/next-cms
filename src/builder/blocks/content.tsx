@@ -156,8 +156,10 @@ export function Gallery(p: GalleryProps) {
 export type ContactFormField = {
   label: string;
   name: string;
-  type: 'text' | 'email' | 'tel' | 'textarea';
+  type: 'text' | 'email' | 'tel' | 'textarea' | 'number' | 'date' | 'url' | 'select' | 'radio' | 'checkbox';
   required?: boolean;
+  placeholder?: string;
+  options?: string;
 };
 
 export type ContactFormProps = WithSection & {
