@@ -333,6 +333,25 @@ export const apiKeys = pgTable('api_keys', {
   createdAt: baseColumns.createdAt,
 });
 
+/** First-party page view events recorded by the public beacon. */
+export const pageViews = pgTable(
+  'page_views',
+  {
+    id,
+    pageId: text('page_id')
+      .references(() => pages.id, cascade)
+      .notNull(),
+    path: varchar('path', { length: 500 }).notNull(),
+    referrerHost: varchar('referrer_host', { length: 255 }),
+    visitorId: text('visitor_id').notNull(),
+    createdAt: baseColumns.createdAt,
+  },
+  t => [
+    index('page_views_created_at_index').on(t.createdAt),
+    index('page_views_page_created_at_index').on(t.pageId, t.createdAt),
+  ]
+);
+
 /**
  * Named single-post layouts. `content` is the live Puck data (null until first publish); `draftContent`
  * autosaves. The one `isDefault` row applies to every `layout = template` post without a `templateId`.
@@ -522,6 +541,11 @@ export const pagesRelations = relations(pages, ({ one, many }) => ({
   tags: many(pageTags),
   revisions: many(pageRevisions),
   previewTokens: many(previewTokens),
+  views: many(pageViews),
+}));
+
+export const pageViewsRelations = relations(pageViews, ({ one }) => ({
+  page: one(pages, { fields: [pageViews.pageId], references: [pages.id] }),
 }));
 
 export const pageContentsRelations = relations(pageContents, ({ one }) => ({
