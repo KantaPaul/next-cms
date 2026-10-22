@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   FolderTree,
   GalleryVertical,
   ImageIcon,
@@ -24,6 +25,11 @@ export function getMenuItems(): {
       name: 'Pages',
       href: PAGES.DASHBOARD.PAGES.INDEX,
       icon: <GalleryVertical className="w-[18px]" />,
+    },
+    {
+      name: 'Analytics',
+      href: PAGES.DASHBOARD.ANALYTICS,
+      icon: <BarChart3 className="w-[18px]" />,
     },
     {
       name: 'Posts',
