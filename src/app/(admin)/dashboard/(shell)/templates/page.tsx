@@ -40,7 +40,9 @@ export default async function TemplatesPage() {
       <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
       <TemplatesAndGlobals
         templates={templates}
-        globals={globals.map(({ content, ...g }) => ({
+        globals={globals
+          .filter(g => g.category !== 'contact-form')
+          .map(({ content, ...g }) => ({
           ...g,
           sectionTypes: templatesService.getGlobalBlockItems(content).map(b => b.type),
           pages: usage[g.id] ?? 0,
