@@ -5,6 +5,10 @@ export const PAGES = {
   DASHBOARD: {
     ROOT: '/dashboard',
     ANALYTICS: '/dashboard/analytics',
+    ANALYTICS_BOARDS: '/dashboard/analytics/boards',
+    ANALYTICS_BOARD: (id: string) => `/dashboard/analytics/boards/${id}`,
+    ANALYTICS_BOARD_EDIT: (id: string) =>
+      `/dashboard/analytics/boards/${id}/edit`,
     PAGES: {
       CREATE: '/dashboard/pages/create',
       INDEX: '/dashboard/pages',
