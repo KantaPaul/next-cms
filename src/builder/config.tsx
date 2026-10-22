@@ -1,1 +1,1 @@
-PLACEHOLDER_TO_BE_REPLACED_BY_FULL_CONTENT
+SEE_FILE_AT_/home/workdir/artifacts/FINAL_config.tsx
