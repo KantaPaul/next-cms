@@ -609,3 +609,444 @@ export const builderConfig: Config = {
       },
       render: renderBlock(Columns),
     },
+    RichText: {
+      label: 'Rich text',
+      fields: withSection({
+        content: {
+          type: 'custom',
+          label: 'Content',
+          render: RichTextField as never,
+        },
+        width: select('Width', [
+          { label: 'Narrow', value: 'narrow' },
+          { label: 'Normal', value: 'normal' },
+          { label: 'Wide', value: 'wide' },
+        ]),
+      }),
+      defaultProps: {
+        content: '<h2>Section heading</h2><p>Write your content here.</p>',
+        width: 'normal',
+        section: DEFAULT_SECTION,
+      },
+      render: renderBlock(RichText),
+    },
+    Image: {
+      label: 'Image',
+      fields: withSection({
+        url: media('Image'),
+        alt: text('Alt text'),
+        caption: text('Caption'),
+        aspect: select('Aspect ratio', [
+          { label: 'Original', value: 'auto' },
+          { label: '16:9', value: 'video' },
+          { label: 'Square', value: 'square' },
+          { label: '21:9', value: 'wide' },
+        ]),
+        width: select('Width', [
+          { label: 'Normal', value: 'normal' },
+          { label: 'Wide', value: 'wide' },
+          { label: 'Full', value: 'full' },
+        ]),
+        imageWidth: { type: 'number', label: 'Image width (px)', min: 0, max: 4000 },
+        imageHeight: { type: 'number', label: 'Image height (px)', min: 0, max: 4000 },
+        objectFit: select('Object fit', [
+          { label: 'Cover', value: 'cover' },
+          { label: 'Contain', value: 'contain' },
+          { label: 'Fill', value: 'fill' },
+        ]),
+        link: text('Link (optional)'),
+      }),
+      defaultProps: {
+        url: '',
+        alt: '',
+        caption: '',
+        aspect: 'auto',
+        width: 'normal',
+        objectFit: 'cover',
+        link: '',
+        section: DEFAULT_SECTION,
+      },
+      render: renderBlock(ImageBlock),
+    },
+    Gallery: {
+      label: 'Gallery',
+      fields: withSection({
+        eyebrow: text('Eyebrow'),
+        title: text('Title'),
+        subtitle: textarea('Subtitle'),
+        columns: select('Columns', [
+          { label: '2', value: 2 },
+          { label: '3', value: 3 },
+          { label: '4', value: 4 },
+        ]),
+        gap: select('Gap', [
+          { label: 'Small', value: 'sm' },
+          { label: 'Medium', value: 'md' },
+          { label: 'Large', value: 'lg' },
+        ]),
+        items: {
+          type: 'array',
+          label: 'Images',
+          getItemSummary: (item: { alt?: string; caption?: string; url?: string }) =>
+            item.alt || item.caption || (item.url ? 'Image' : 'Empty'),
+          defaultItemProps: { url: '', alt: '', caption: '' },
+          arrayFields: {
+            url: media('Image'),
+            alt: text('Alt text'),
+            caption: text('Caption'),
+          },
+        },
+      }),
+      defaultProps: {
+        eyebrow: '',
+        title: 'Gallery',
+        subtitle: '',
+        columns: 3,
+        gap: 'md',
+        items: [
+          { url: '', alt: '', caption: '' },
+          { url: '', alt: '', caption: '' },
+          { url: '', alt: '', caption: '' },
+        ],
+        section: DEFAULT_SECTION,
+      },
+      render: renderBlock(Gallery),
+    },
+    ContactForm: {
+      label: 'Contact form',
+      fields: withSection({
+        title: text('Title'),
+        subtitle: textarea('Subtitle'),
+        submitText: text('Submit button'),
+        successMessage: text('Success message'),
+        actionUrl: text('Form action URL (optional)'),
+        fields: {
+          type: 'array',
+          label: 'Fields',
+          getItemSummary: (item: { label?: string }) => item.label || 'Field',
+          defaultItemProps: {
+            label: 'Field',
+            name: 'field',
+            type: 'text',
+            required: false,
+            placeholder: '',
+            options: '',
+          },
+          arrayFields: {
+            label: text('Label'),
+            name: text('Name'),
+            type: select('Type', [
+              { label: 'Text', value: 'text' },
+              { label: 'Email', value: 'email' },
+              { label: 'Phone', value: 'tel' },
+              { label: 'Textarea', value: 'textarea' },
+              { label: 'Number', value: 'number' },
+              { label: 'Date', value: 'date' },
+              { label: 'URL', value: 'url' },
+              { label: 'Dropdown', value: 'select' },
+              { label: 'Radio', value: 'radio' },
+              { label: 'Checkbox', value: 'checkbox' },
+            ]),
+            placeholder: text('Placeholder'),
+            options: textarea('Options, one per line (dropdown and radio)'),
+            required: yesNo('Required'),
+          },
+        },
+      }),
+      defaultProps: {
+        title: 'Contact us',
+        subtitle: '',
+        submitText: 'Send message',
+        successMessage: 'Thanks! We will be in touch soon.',
+        actionUrl: '',
+        fields: [
+          { label: 'Name', name: 'name', type: 'text', required: true },
+          { label: 'Email', name: 'email', type: 'email', required: true },
+          { label: 'Message', name: 'message', type: 'textarea', required: true },
+        ],
+        section: DEFAULT_SECTION,
+      },
+      render: renderBlock(ContactForm),
+    },
+    GlobalRef: {
+      label: 'Global block',
+      fields: {
+        globalBlockId: {
+          type: 'custom',
+          label: 'Block',
+          render: GlobalBlockSelectField as never,
+        },
+      },
+      defaultProps: { globalBlockId: '' },
+      resolveData: async (data) => {
+        const id = (data.props as { globalBlockId?: string }).globalBlockId;
+        if (!id) return { ...data, props: { ...data.props, blocks: [], globalBlockName: '' } };
+        const result = await getGlobalBlockContent(id);
+        return {
+          ...data,
+          props: {
+            ...data.props,
+            blocks: result?.blocks ?? [],
+            globalBlockName: result?.name ?? '',
+          },
+        };
+      },
+      render: renderBlock(GlobalRef),
+    },
+    BlogPosts: {
+      label: 'Blog posts',
+      fields: withSection({
+        title: text('Title'),
+        subtitle: textarea('Subtitle'),
+        layout: select('Layout', [
+          { label: 'Grid', value: 'grid' },
+          { label: 'List', value: 'list' },
+        ]),
+        columns: select('Columns', [
+          { label: '2', value: 2 },
+          { label: '3', value: 3 },
+          { label: '4', value: 4 },
+        ]),
+        pageSize: { type: 'number', label: 'Posts per page', min: 1, max: 48 },
+        showSearch: yesNo('Search'),
+        showCategoryFilter: yesNo('Category filter'),
+        showTagFilter: yesNo('Tag filter'),
+        showSort: yesNo('Sort'),
+        showPagination: yesNo('Pagination'),
+        showImage: yesNo('Card image'),
+        showExcerpt: yesNo('Card excerpt'),
+        showAuthor: yesNo('Card author'),
+        showDate: yesNo('Card date'),
+        lockedCategory: {
+          type: 'custom',
+          label: 'Category lock',
+          render: CategoryLockField as never,
+        },
+        lockedTag: {
+          type: 'custom',
+          label: 'Tag lock',
+          render: TagLockField as never,
+        },
+        emptyMessage: text('Empty message'),
+      }),
+      defaultProps: {
+        title: 'Latest posts',
+        subtitle: '',
+        layout: 'grid',
+        columns: 3,
+        pageSize: 9,
+        showSearch: true,
+        showCategoryFilter: true,
+        showTagFilter: true,
+        showSort: true,
+        showPagination: true,
+        showImage: true,
+        showExcerpt: true,
+        showAuthor: true,
+        showDate: true,
+        emptyMessage: '',
+        section: DEFAULT_SECTION,
+      },
+      resolveData: async (data, { metadata }) => {
+        const props = data.props as BlogPostsProps;
+        const params = (metadata?.searchParams ?? {}) as Record<
+          string,
+          string | string[] | undefined
+        >;
+        const one = (key: string) => {
+          const value = params[key];
+          return (Array.isArray(value) ? value[0] : value) || undefined;
+        };
+        const sortRaw = one('sort');
+        const sort =
+          sortRaw === 'newest' || sortRaw === 'oldest' || sortRaw === 'title'
+            ? sortRaw
+            : undefined;
+        const page = Number(one('page')) || 1;
+        const active: BlogActiveFilters = {
+          q: one('q'),
+          category: props.lockedCategory || one('category'),
+          tag: props.lockedTag || one('tag'),
+          sort,
+          page,
+        };
+        const language =
+          typeof metadata?.language === 'string' ? metadata.language : undefined;
+        const result = await queryBlogPosts({
+          language,
+          q: active.q,
+          category: active.category,
+          tag: active.tag,
+          sort,
+          page,
+          size: Number(props.pageSize) || 9,
+        });
+        const options = await getBlogFilterOptions(language);
+        return {
+          ...data,
+          props: {
+            ...data.props,
+            posts: result.posts,
+            total: result.total,
+            totalPages: result.totalPages,
+            active,
+            filterOptions: options,
+          },
+        };
+      },
+      render: renderBlock(BlogPosts),
+    },
+  },
+};
+
+/** Reads the post being rendered from Puck metadata; the template builder supplies a sample post. */
+
+const renderPostBlock = (Component: ComponentType<any>) => {
+  const Render = ({ puck, id: _id, ...props }: AnyProps) => (
+    <Component
+      {...props}
+      post={(puck?.metadata?.post as PostView | undefined) ?? SAMPLE_POST}
+      editing={!!puck?.isEditing}
+    />
+  );
+  Render.displayName = `PostBlock(${Component.displayName || Component.name || 'Component'})`;
+  return Render;
+};
+
+/** The page blocks plus blocks bound to the current post, for the single-post template and custom post layouts. */
+const POST_SECTION = { ...DEFAULT_SECTION, paddingY: 'sm' as const };
+
+export const postBuilderConfig: Config = {
+  ...builderConfig,
+  categories: {
+    post: { title: 'Post', components: [...POST_BLOCK_TYPES] },
+    ...builderConfig.categories,
+  },
+  components: {
+    ...builderConfig.components,
+    PostTitle: {
+      label: 'Post title',
+      fields: withSection({
+        showBackLink: yesNo('Link back to the blog page'),
+        showExcerpt: yesNo('Show excerpt'),
+        alignment: {
+          type: 'radio',
+          label: 'Alignment',
+          options: ALIGN_OPTIONS,
+        },
+      }),
+      defaultProps: {
+        showBackLink: true,
+        showExcerpt: true,
+        alignment: 'left',
+        section: POST_SECTION,
+      },
+      render: renderPostBlock(PostTitle),
+    },
+    PostFeaturedImage: {
+      label: 'Featured image',
+      fields: withSection({
+        aspect: select('Aspect ratio', [
+          { label: 'Wide (21:9)', value: 'wide' },
+          { label: 'Video (16:9)', value: 'video' },
+          { label: 'Square', value: 'square' },
+          { label: 'Original', value: 'auto' },
+        ]),
+      }),
+      defaultProps: {
+        aspect: 'wide',
+        section: POST_SECTION,
+      },
+      render: renderPostBlock(PostFeaturedImage),
+    },
+    PostMeta: {
+      label: 'Post details',
+      fields: withSection({
+        showAuthor: yesNo('Author'),
+        showDate: yesNo('Date'),
+        showCategories: yesNo('Categories'),
+        showTags: yesNo('Tags'),
+      }),
+      defaultProps: {
+        showAuthor: true,
+        showDate: true,
+        showCategories: true,
+        showTags: true,
+        section: POST_SECTION,
+      },
+      render: renderPostBlock(PostMeta),
+    },
+    PostContent: {
+      label: 'Post content',
+      fields: withSection({
+        width: select('Width', [
+          { label: 'Narrow', value: 'narrow' },
+          { label: 'Normal', value: 'normal' },
+          { label: 'Wide', value: 'wide' },
+        ]),
+      }),
+      defaultProps: { width: 'normal', section: POST_SECTION },
+      render: renderPostBlock(PostContent),
+    },
+    RelatedPosts: {
+      label: 'Related posts',
+      fields: withSection({
+        title: text('Title'),
+        limit: { type: 'number', label: 'Number of posts', min: 1, max: 12 },
+        columns: select('Columns', [
+          { label: '2', value: 2 },
+          { label: '3', value: 3 },
+          { label: '4', value: 4 },
+        ]),
+        showImage: yesNo('Card image'),
+        showExcerpt: yesNo('Card excerpt'),
+        showAuthor: yesNo('Card author'),
+        showDate: yesNo('Card date'),
+      }),
+      defaultProps: {
+        title: 'Related posts',
+        limit: 3,
+        columns: 3,
+        showImage: true,
+        showExcerpt: true,
+        showAuthor: false,
+        showDate: true,
+        section: DEFAULT_SECTION,
+      },
+      resolveData: async (data, { metadata }) => {
+        const post = (metadata?.post as PostView | undefined) ?? SAMPLE_POST;
+        const posts = await getRelatedPosts({
+          postId: post.id,
+          categoryIds: post.categories.map(c => c.id),
+          language: post.language,
+          limit: Number((data.props as { limit?: number }).limit) || 3,
+        });
+        return { ...data, props: { ...data.props, posts } };
+      },
+      render: renderBlock(RelatedPosts),
+    },
+  },
+};
+
+export const BLOCK_TYPES = Object.keys(builderConfig.components);
+
+export const BUILDER_VIEWPORTS = [
+  {
+    width: 375,
+    height: 'auto' as const,
+    label: 'Mobile',
+    icon: 'Smartphone' as const,
+  },
+  {
+    width: 768,
+    height: 'auto' as const,
+    label: 'Tablet',
+    icon: 'Tablet' as const,
+  },
+  {
+    width: 1280,
+    height: 'auto' as const,
+    label: 'Desktop',
+    icon: 'Monitor' as const,
+  },
+];
