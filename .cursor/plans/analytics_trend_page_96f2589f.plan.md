@@ -1,12 +1,12 @@
 ---
 name: Analytics trend page
-overview: Add a dedicated /dashboard/analytics route that compares the current 7- or 30-day window with the previous one, and leave the dashboard home as a short traffic summary that links there.
+overview: Add a dedicated /dashboard/analytics route that compares the current 7- or 30-day window with the previous one, and shows one breakdown list at a time. The dashboard home stays a short traffic summary that links there.
 todos:
   - id: trends-query
-    content: Add analyticsService.trends for current vs previous window, including daily, page, and referrer splits
+    content: Add analyticsService.trends for current vs previous window, daily series, and only the active list (pages, paths, or referrers)
     status: pending
   - id: analytics-route
-    content: Add /dashboard/analytics with trend cards, dual-bar chart, page filter, and referrer list
+    content: Add /dashboard/analytics with trend cards, dual-bar chart, and one active list (pages, paths, or referrers)
     status: pending
   - id: home-and-nav
     content: Slim the dashboard traffic section to 30-day stats plus a link, and add the sidebar item
@@ -42,9 +42,13 @@ Change is an integer percent, `(current - previous) / previous`. When the previo
 
 **Daily chart** (plain SVG, no chart library). One slot per day in the range. Each slot has two bars: this period, and the same day-offset in the previous period (day 1 of this window beside day 1 of the last window). Tooltip text includes the date and both counts. The series is views; unique visitors stay on the cards.
 
-**Page trends.** A list of pages with views now, views in the previous window, and the change. Clicking a row sets `pageId` so the cards and chart follow that page. A clear control drops the filter. Titles link to the page editor with [`PAGES.DASHBOARD.PAGES.EDIT`](src/config/pages.ts).
+**One breakdown list.** Cards and the chart stay on screen. Under them, a pill switcher (same control as the 7d / 30d toggle) picks a single list via `?list=pages|paths|referrers`. Default is `pages`. An unknown value falls back to `pages`. Only the active list is queried and rendered.
 
-**Referrer trends.** Hostname, views now, views before, and the change. Hostnames only, same as today.
+- **Pages.** Title, path, views now, views in the previous window, and the change. Clicking a row sets `pageId` so the cards, chart, and list follow that page. A clear control drops the filter. Titles link to the page editor with [`PAGES.DASHBOARD.PAGES.EDIT`](src/config/pages.ts).
+- **Paths.** The recorded path (a page can be hit at more than one path), with the same two view counts and the change.
+- **Referrers.** Hostname only, with the same two view counts and the change.
+
+Switching lists keeps `range` and `pageId`. With a page filter on, Paths and Referrers are limited to that page; Pages is that one row.
 
 Empty state matches the home page: dashed border, and the note that a published public page must be visited before anything is recorded. That state shows when both windows are empty.
 
@@ -56,8 +60,14 @@ Bounds, UTC, same as `summary`: `since` is the start of the current window; `pre
 
 - Totals: `count()` and `countDistinct(visitorId)` for each window.
 - Daily: group by `date_trunc('day', created_at)` across both windows, then align previous days forward by `rangeDays` in the page component (fill missing days with 0, same loop as `DailyBars` today).
-- Pages: group by `pageId`, path, and title, with filtered counts for each window, ordered by current views, limit 10. Skipped when `pageId` is set; the header uses that page’s title instead.
-- Referrers: group by `referrerHost` where it is not null, same two counts, limit 10.
+
+`trends` also takes `list: 'pages' | 'paths' | 'referrers'` and runs only that breakdown (limit 10, ordered by current views):
+
+- `pages`: group by `pageId`, path, and title.
+- `paths`: group by `path`.
+- `referrers`: group by `referrerHost` where it is not null.
+
+Each row has a current count and a previous-window count. When `pageId` is set, that filter applies to the active list too, and the header uses the page title.
 
 `summary` stays for the home page. `contentOverview` is unchanged.
 
@@ -71,4 +81,4 @@ The page is a server component at `src/app/(admin)/dashboard/(shell)/analytics/p
 
 ## Verification
 
-Open `/dashboard/analytics`, switch 7 and 30 days, and confirm each card shows a percent or **New** against the previous window, and that the chart has two bars per day. Open a page row and confirm the header, cards, and chart follow that page, then clear the filter. On `/dashboard`, confirm the 30-day views and visitors are still there, the chart is gone, and the analytics link lands on the new page.
+Open `/dashboard/analytics`, switch 7 and 30 days, and confirm each card shows a percent or **New** against the previous window, and that the chart has two bars per day. Confirm Pages is the list on screen, then switch to Paths and Referrers and confirm the other lists are gone. Open a page row and confirm the header, cards, and chart follow that page, then clear the filter. On `/dashboard`, confirm the 30-day views and visitors are still there, the chart is gone, and the analytics link lands on the new page.
