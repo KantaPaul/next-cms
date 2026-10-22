@@ -4,13 +4,13 @@ overview: Add number, date, URL, dropdown, radio, and checkbox fields to the pag
 todos:
   - id: model
     content: Widen ContactFormField and the Puck Fields array with the six types, placeholder, and options
-    status: pending
+    status: completed
   - id: render
     content: Render select, radio, checkbox, number, date, and url in ContactFormClient, with site.css for choice controls
-    status: pending
+    status: completed
   - id: verify
     content: Verify each field in the builder canvas and that a public submit still posts FormData
-    status: pending
+    status: completed
 isProject: false
 ---
 
