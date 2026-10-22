@@ -7,7 +7,6 @@ import {
   eq,
   gte,
   isNull,
-  lt,
   sql,
   sum,
 } from 'drizzle-orm';
@@ -19,6 +18,7 @@ import {
   pages,
   users,
 } from '@/db/schema';
+import type { WidgetQuery } from '@/db/schemas/analytics.schema';
 import { PageStatus, VisibilityStatus } from '@/db/schemas/shared.schema';
 
 const BOT_UA =
@@ -37,6 +37,42 @@ function parseReferrerHost(referrer: string | null | undefined): string | null {
 }
 
 export type TrendsList = 'pages' | 'paths' | 'referrers';
+
+export type WidgetStatResult = {
+  kind: 'stat';
+  value: number;
+  previous: number | null;
+};
+
+export type WidgetSeriesResult = {
+  kind: 'series';
+  points: { label: string; value: number; previous: number | null }[];
+};
+
+export type WidgetRowsResult = {
+  kind: 'rows';
+  rows: {
+    key: string;
+    label: string;
+    detail: string | null;
+    value: number;
+    previous: number | null;
+  }[];
+};
+
+export type WidgetResult =
+  | WidgetStatResult
+  | WidgetSeriesResult
+  | WidgetRowsResult;
+
+function windows(rangeDays: 7 | 30) {
+  const since = new Date();
+  since.setUTCDate(since.getUTCDate() - rangeDays);
+  since.setUTCHours(0, 0, 0, 0);
+  const previousSince = new Date(since);
+  previousSince.setUTCDate(previousSince.getUTCDate() - rangeDays);
+  return { since, previousSince, rangeDays };
+}
 
 export const analyticsService = {
   recordView: async (input: {
@@ -238,9 +274,7 @@ export const analyticsService = {
     // Align current window days; previous is the same day-offset in the prior window
     const currentDaily: { day: string; views: number; previousViews: number }[] =
       [];
-    const start = new Date(since);
-    // summary uses rangeDays back from today start; days are inclusive of today-ish
-    // Match DailyBars: start = today - rangeDays + 1
+    // Match DualBars: start = today - rangeDays + 1
     const chartStart = new Date();
     chartStart.setUTCDate(chartStart.getUTCDate() - rangeDays + 1);
     chartStart.setUTCHours(0, 0, 0, 0);
@@ -385,6 +419,214 @@ export const analyticsService = {
       previousUniqueVisitors: previousUnique,
       daily: currentDaily,
       rows: listRows,
+    };
+  },
+
+  /**
+   * Dashboard widget query. Same UTC windows as trends.
+   * Returns stat | series | rows depending on dimension.
+   */
+  widget: async (
+    query: WidgetQuery,
+    boardRange: 7 | 30
+  ): Promise<WidgetResult> => {
+    const rangeDays =
+      query.range === 'inherit' ? boardRange : (query.range as 7 | 30);
+    const { since, previousSince } = windows(rangeDays);
+    const pageId =
+      query.pageId && query.pageId.trim().length > 0
+        ? query.pageId.trim()
+        : null;
+    const pageFilter = pageId ? eq(pageViews.pageId, pageId) : undefined;
+    const compare = query.compare;
+
+    // ── Stat (dimension: none) ─────────────────────────────────────────────
+    if (query.dimension === 'none') {
+      const [totals] = await db
+        .select({
+          currentViews: sql<number>`count(*) filter (where ${pageViews.createdAt} >= ${since})`,
+          previousViews: sql<number>`count(*) filter (where ${pageViews.createdAt} >= ${previousSince} and ${pageViews.createdAt} < ${since})`,
+          currentUnique: sql<number>`count(distinct ${pageViews.visitorId}) filter (where ${pageViews.createdAt} >= ${since})`,
+          previousUnique: sql<number>`count(distinct ${pageViews.visitorId}) filter (where ${pageViews.createdAt} >= ${previousSince} and ${pageViews.createdAt} < ${since})`,
+        })
+        .from(pageViews)
+        .where(and(gte(pageViews.createdAt, previousSince), pageFilter));
+
+      const currentViews = Number(totals?.currentViews ?? 0);
+      const previousViews = Number(totals?.previousViews ?? 0);
+      const currentUnique = Number(totals?.currentUnique ?? 0);
+      const previousUnique = Number(totals?.previousUnique ?? 0);
+
+      let value = 0;
+      let previous: number | null = null;
+
+      if (query.metric === 'views') {
+        value = currentViews;
+        previous = compare ? previousViews : null;
+      } else if (query.metric === 'uniqueVisitors') {
+        value = currentUnique;
+        previous = compare ? previousUnique : null;
+      } else {
+        // viewsPerVisitor
+        value =
+          currentUnique > 0
+            ? Math.round((currentViews / currentUnique) * 10) / 10
+            : 0;
+        if (compare) {
+          previous =
+            previousUnique > 0
+              ? Math.round((previousViews / previousUnique) * 10) / 10
+              : 0;
+        }
+      }
+
+      return { kind: 'stat', value, previous };
+    }
+
+    // ── Day series ─────────────────────────────────────────────────────────
+    if (query.dimension === 'day') {
+      const metricExpr =
+        query.metric === 'uniqueVisitors'
+          ? sql<number>`count(distinct ${pageViews.visitorId})`
+          : count();
+
+      const dailyRows = await db
+        .select({
+          day: sql<string>`to_char(date_trunc('day', ${pageViews.createdAt}), 'YYYY-MM-DD')`,
+          value: metricExpr,
+        })
+        .from(pageViews)
+        .where(and(gte(pageViews.createdAt, previousSince), pageFilter))
+        .groupBy(sql`date_trunc('day', ${pageViews.createdAt})`)
+        .orderBy(sql`date_trunc('day', ${pageViews.createdAt})`);
+
+      const byDay = new Map(dailyRows.map(d => [d.day, Number(d.value)]));
+
+      const chartStart = new Date();
+      chartStart.setUTCDate(chartStart.getUTCDate() - rangeDays + 1);
+      chartStart.setUTCHours(0, 0, 0, 0);
+
+      const points: { label: string; value: number; previous: number | null }[] =
+        [];
+      for (let i = 0; i < rangeDays; i++) {
+        const d = new Date(chartStart);
+        d.setUTCDate(chartStart.getUTCDate() + i);
+        const key = d.toISOString().slice(0, 10);
+
+        const prev = new Date(d);
+        prev.setUTCDate(prev.getUTCDate() - rangeDays);
+        const prevKey = prev.toISOString().slice(0, 10);
+
+        points.push({
+          label: key,
+          value: byDay.get(key) ?? 0,
+          previous: compare ? (byDay.get(prevKey) ?? 0) : null,
+        });
+      }
+
+      return { kind: 'series', points };
+    }
+
+    // ── Categorical (page / path / referrer) ───────────────────────────────
+    const limit = query.limit ?? 10;
+    const metricFilter =
+      query.metric === 'uniqueVisitors'
+        ? sql`count(distinct ${pageViews.visitorId}) filter (where ${pageViews.createdAt} >= ${since})`
+        : sql`count(*) filter (where ${pageViews.createdAt} >= ${since})`;
+
+    if (query.dimension === 'page') {
+      const rows = await db
+        .select({
+          pageId: pageViews.pageId,
+          path: pageViews.path,
+          title: pages.title,
+          currentValue: sql<number>`${metricFilter}`,
+          previousValue: sql<number>`${
+            query.metric === 'uniqueVisitors'
+              ? sql`count(distinct ${pageViews.visitorId}) filter (where ${pageViews.createdAt} >= ${previousSince} and ${pageViews.createdAt} < ${since})`
+              : sql`count(*) filter (where ${pageViews.createdAt} >= ${previousSince} and ${pageViews.createdAt} < ${since})`
+          }`,
+        })
+        .from(pageViews)
+        .innerJoin(pages, eq(pages.id, pageViews.pageId))
+        .where(and(gte(pageViews.createdAt, previousSince), pageFilter))
+        .groupBy(pageViews.pageId, pageViews.path, pages.title)
+        .orderBy(desc(sql`${metricFilter}`))
+        .limit(limit);
+
+      return {
+        kind: 'rows',
+        rows: rows.map(r => ({
+          key: r.pageId,
+          label: r.title,
+          detail: r.path,
+          value: Number(r.currentValue),
+          previous: compare ? Number(r.previousValue) : null,
+        })),
+      };
+    }
+
+    if (query.dimension === 'path') {
+      const rows = await db
+        .select({
+          path: pageViews.path,
+          currentValue: sql<number>`${metricFilter}`,
+          previousValue: sql<number>`${
+            query.metric === 'uniqueVisitors'
+              ? sql`count(distinct ${pageViews.visitorId}) filter (where ${pageViews.createdAt} >= ${previousSince} and ${pageViews.createdAt} < ${since})`
+              : sql`count(*) filter (where ${pageViews.createdAt} >= ${previousSince} and ${pageViews.createdAt} < ${since})`
+          }`,
+        })
+        .from(pageViews)
+        .where(and(gte(pageViews.createdAt, previousSince), pageFilter))
+        .groupBy(pageViews.path)
+        .orderBy(desc(sql`${metricFilter}`))
+        .limit(limit);
+
+      return {
+        kind: 'rows',
+        rows: rows.map(r => ({
+          key: r.path,
+          label: r.path,
+          detail: null,
+          value: Number(r.currentValue),
+          previous: compare ? Number(r.previousValue) : null,
+        })),
+      };
+    }
+
+    // referrer
+    const rows = await db
+      .select({
+        host: pageViews.referrerHost,
+        currentValue: sql<number>`${metricFilter}`,
+        previousValue: sql<number>`${
+          query.metric === 'uniqueVisitors'
+            ? sql`count(distinct ${pageViews.visitorId}) filter (where ${pageViews.createdAt} >= ${previousSince} and ${pageViews.createdAt} < ${since})`
+            : sql`count(*) filter (where ${pageViews.createdAt} >= ${previousSince} and ${pageViews.createdAt} < ${since})`
+        }`,
+      })
+      .from(pageViews)
+      .where(
+        and(
+          gte(pageViews.createdAt, previousSince),
+          sql`${pageViews.referrerHost} is not null`,
+          pageFilter
+        )
+      )
+      .groupBy(pageViews.referrerHost)
+      .orderBy(desc(sql`${metricFilter}`))
+      .limit(limit);
+
+    return {
+      kind: 'rows',
+      rows: rows.map(r => ({
+        key: r.host!,
+        label: r.host!,
+        detail: null,
+        value: Number(r.currentValue),
+        previous: compare ? Number(r.previousValue) : null,
+      })),
     };
   },
 
