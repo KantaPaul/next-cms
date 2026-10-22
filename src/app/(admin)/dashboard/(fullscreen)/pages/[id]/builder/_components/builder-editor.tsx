@@ -10,6 +10,7 @@ import {
   BUILDER_VIEWPORTS,
 } from '@/builder/config';
 import { SAMPLE_POST, type PostView } from '@/builder/post-template';
+import type { BuilderItem } from '@/builder/data';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import type { ThemeTokens } from '@/db/schemas/pages.schema';
@@ -28,6 +29,7 @@ import {
   savePostTemplateDraft,
   updatePost,
 } from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.actions';
+import { saveGlobalBlock } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
 import { POST_REVISION_ACTIONS } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-revision-actions';
 import {
   useAutosave,
@@ -60,6 +62,8 @@ export type BuilderPageProps = {
   kind?: BuilderKind;
   /** Post rendered by post-bound blocks; the template builder falls back to sample content. */
   post?: PostView;
+  /** Global block category; only used when kind is `global`. */
+  category?: string;
 };
 
 const overrides = {
@@ -79,6 +83,19 @@ const overrides = {
   ),
 };
 
+/** Config for global blocks: no GlobalRef and no Global category so a global cannot nest another. */
+function globalBuilderConfig(): Config {
+  const { GlobalRef: _globalRef, ...components } = builderConfig.components;
+  const { global: _global, ...categories } = builderConfig.categories ?? {};
+  return {
+    ...builderConfig,
+    components,
+    categories,
+    // Global blocks do not store page root fields (width, theme, padding, transition).
+    root: { fields: {} },
+  } as Config;
+}
+
 type Adapter = {
   config: Config;
   label: string;
@@ -94,8 +111,37 @@ type Adapter = {
 
 function adapterFor(
   kind: BuilderKind,
-  page: BuilderPageProps['page']
+  page: BuilderPageProps['page'],
+  category?: string
 ): Adapter {
+  if (kind === 'global') {
+    return {
+      config: globalBuilderConfig(),
+      label: 'Global block',
+      backHref: PAGES.DASHBOARD.TEMPLATES,
+      backLabel: 'Templates & Globals',
+      headerPath: '',
+      previewHref: null,
+      liveLabel: 'Save',
+      saveDraft: async content => {
+        const blocks = (content.content ?? []) as BuilderItem[];
+        const zones = (content.zones ?? {}) as Record<string, BuilderItem[]>;
+        if (!blocks.length) {
+          toast.error('A global block needs at least one section.');
+          return { error: 'empty' };
+        }
+        return saveGlobalBlock({
+          id: page.id,
+          name: page.title,
+          category: category ?? 'general',
+          content: { content: blocks, zones },
+        });
+      },
+      publish: async () => null,
+      submitForReview: null,
+    };
+  }
+
   if (kind === 'post') {
     return {
       config: postBuilderConfig as Config,
@@ -147,11 +193,15 @@ export function BuilderEditor({
   themeTokens,
   kind = 'page',
   post,
+  category,
 }: BuilderPageProps) {
   const canPublish = useCan(PERMISSIONS.PAGES_PUBLISH);
   const aiAvailable = !!useAiEnabled();
   const aiEnabled = kind === 'page' && aiAvailable;
-  const adapter = useMemo(() => adapterFor(kind, page), [kind, page]);
+  const adapter = useMemo(
+    () => adapterFor(kind, page, category),
+    [kind, page, category]
+  );
   const initialData = useMemo(() => page.content as Data, [page.id]);
   const dataRef = useRef<Data>(initialData);
   const [serialized, setSerialized] = useState(() =>
@@ -171,7 +221,7 @@ export function BuilderEditor({
       themeTokens,
       motionPreview,
       language: page.language,
-      ...(kind !== 'page' && { post: post ?? SAMPLE_POST }),
+      ...(kind !== 'page' && kind !== 'global' && { post: post ?? SAMPLE_POST }),
     }),
     [themeTokens, motionPreview, page.language, kind, post]
   );
@@ -185,10 +235,11 @@ export function BuilderEditor({
     setAiGenerateOpen(true);
   }, [aiEnabled]);
 
+  // Globals have no draft: autosave is off but dirty tracking still drives the leave warning.
   const autosave = useAutosave<{ content: Data }>({
     pageId: page.id,
     value: serialized,
-    enabled: busy === null,
+    enabled: kind !== 'global' && busy === null,
     toPayload: () => ({ content: dataRef.current }),
     save: ({ content }) => adapter.saveDraft(content, true),
   });
@@ -202,6 +253,9 @@ export function BuilderEditor({
   const save = useCallback(async () => {
     const snapshot = JSON.stringify(dataRef.current);
     const response = await adapter.saveDraft(dataRef.current, false);
+    if (response && typeof response === 'object' && 'error' in response) {
+      return false;
+    }
     return handleActionResponse(response as never, () =>
       autosave.markSaved(snapshot)
     );
@@ -209,10 +263,10 @@ export function BuilderEditor({
 
   const run = useCallback(
     async (
-      kind: NonNullable<BuilderContextValue['busy']>,
+      action: NonNullable<BuilderContextValue['busy']>,
       fn: () => Promise<void>
     ) => {
-      setBusy(kind);
+      setBusy(action);
 
       try {
         await fn();
@@ -230,11 +284,11 @@ export function BuilderEditor({
     backLabel: adapter.backLabel,
     previewHref: adapter.previewHref,
     liveLabel: adapter.liveLabel,
-    hasRevisions: kind !== 'post-template',
+    hasRevisions: kind !== 'post-template' && kind !== 'global',
     pageId: page.id,
     pageTitle: page.title,
     status,
-    canPublish,
+    canPublish: kind === 'global' ? false : canPublish,
     busy,
     autosaveStatus: autosave.status,
     savedAt: autosave.savedAt,
@@ -243,7 +297,13 @@ export function BuilderEditor({
       let ok = false;
       await run('save', async () => {
         ok = await save();
-        if (ok) toast.success('Draft saved');
+        if (ok) {
+          toast.success(
+            kind === 'global'
+              ? 'Global block saved. Every page using it now shows this version.'
+              : 'Draft saved'
+          );
+        }
       });
       return ok;
     },
