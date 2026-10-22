@@ -15,10 +15,11 @@ const blockItemSchema = z.object({
   props: z.record(z.string(), z.unknown()).and(z.object({ id: z.string() })),
 });
 
+/** Empty content is allowed on create only; service enforces non-empty on update. */
 const globalBlockContentSchema = z.union([
-  z.array(blockItemSchema).min(1),
+  z.array(blockItemSchema),
   z.object({
-    content: z.array(blockItemSchema).min(1),
+    content: z.array(blockItemSchema),
     zones: z.record(z.string(), z.array(blockItemSchema)).optional(),
   }),
 ]);
@@ -114,6 +115,22 @@ export const deleteTemplate = accessProcedure
   .input(z.object({ id: z.string().min(1) }))
   .action(async ({ input, ctx }) => {
     const row = await templatesService.deleteTemplate(input, ctx.access);
+    revalidatePath(PAGES.DASHBOARD.TEMPLATES);
+    return row;
+  });
+
+export const updateTemplate = accessProcedure
+  .input(
+    z.object({
+      id: z.string().min(1),
+      content: z.unknown(),
+      name: z.string().trim().min(1).max(150).optional(),
+      description: z.string().trim().max(500).nullish(),
+      category: z.string().trim().max(50).optional(),
+    })
+  )
+  .action(async ({ input, ctx }) => {
+    const row = await templatesService.updateTemplate(input, ctx.access);
     revalidatePath(PAGES.DASHBOARD.TEMPLATES);
     return row;
   });
