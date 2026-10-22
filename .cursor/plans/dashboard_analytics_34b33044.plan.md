@@ -4,13 +4,13 @@ overview: Replace the blank /dashboard Welcome page with a CMS content overview 
 todos:
   - id: schema
     content: Add page_views table and Drizzle migration
-    status: pending
+    status: completed
   - id: beacon
     content: Record published-page views from a client beacon and POST route
-    status: pending
+    status: completed
   - id: dashboard
     content: Replace the Welcome page with traffic charts and CMS overview
-    status: pending
+    status: completed
 isProject: false
 ---
 
