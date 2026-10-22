@@ -3,11 +3,14 @@ export function TrendCard({
   value,
   change,
   previous,
+  hidePrevious = false,
 }: {
   label: string;
   value: number;
   change: string | null;
   previous: number;
+  /** When true, omit the "prev N" line (compare is off). */
+  hidePrevious?: boolean;
 }) {
   const positive =
     change === 'New' || (change != null && change.startsWith('+'));
@@ -34,9 +37,9 @@ export function TrendCard({
           </span>
         )}
       </div>
-      <div className="mt-0.5 text-xs text-steel-400">
-        prev {previous}
-      </div>
+      {!hidePrevious && (
+        <div className="mt-0.5 text-xs text-steel-400">prev {previous}</div>
+      )}
     </div>
   );
 }
