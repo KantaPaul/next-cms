@@ -68,6 +68,40 @@ export const templatesService = {
     return row;
   },
 
+  getTemplate: async (id: string) => {
+    const [row] = await db.select().from(pageTemplates).where(eq(pageTemplates.id, id));
+    return row ?? null;
+  },
+
+  updateTemplate: async (
+    input: { id: string; content: unknown; name?: string; description?: string | null; category?: string },
+    access: UserAccess
+  ) => {
+    await accessService.assertPermission(access.userId, PERMISSIONS.PAGES_CREATE);
+    const [existing] = await db.select().from(pageTemplates).where(eq(pageTemplates.id, input.id));
+    if (!existing) throw new NotFoundException('Template not found');
+    if (existing.isSystem) throw new ApplicationException('Starter templates cannot be edited.');
+    const [row] = await db
+      .update(pageTemplates)
+      .set({
+        content: normalizeContent(existing.editorType, input.content) as object,
+        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(input.description !== undefined ? { description: input.description } : {}),
+        ...(input.category !== undefined ? { category: input.category } : {}),
+      })
+      .where(eq(pageTemplates.id, input.id))
+      .returning();
+    if (!row) throw new NotFoundException('Template not found');
+    await auditService.log({
+      actorId: access.userId,
+      action: 'update',
+      targetType: 'template',
+      targetId: row.id,
+      targetName: row.name,
+    });
+    return row;
+  },
+
   listGlobalBlocks: async () =>
     db
       .select({
@@ -132,7 +166,10 @@ export const templatesService = {
   ) => {
     await accessService.assertPermission(access.userId, PERMISSIONS.PAGES_EDIT);
     const contentItems = Array.isArray(input.content) ? input.content : input.content?.content;
-    if (!contentItems?.length) throw new ApplicationException('A global block needs at least one section.');
+    // Allow empty body only when creating; the editor refuses to save until a section is added.
+    if (!contentItems?.length && input.id) {
+      throw new ApplicationException('A global block needs at least one section.');
+    }
 
     const values = { name: input.name, category: input.category ?? 'General', content: input.content as object };
     const [row] = input.id
