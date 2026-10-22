@@ -65,7 +65,7 @@ export type BuilderPageProps = {
   kind?: BuilderKind;
   /** Post rendered by post-bound blocks; the template builder falls back to sample content. */
   post?: PostView;
-  /** Global block category; only used when kind is `global`. */
+  /** Global block category; only used when kind is `global` or `contact-form`. */
   category?: string;
 };
 
@@ -117,12 +117,13 @@ function adapterFor(
   page: BuilderPageProps['page'],
   category?: string
 ): Adapter {
-  if (kind === 'global') {
+  if (kind === 'global' || kind === 'contact-form') {
+    const isContactForm = kind === 'contact-form';
     return {
       config: globalBuilderConfig(),
-      label: 'Global block',
-      backHref: PAGES.DASHBOARD.TEMPLATES,
-      backLabel: 'Templates & Globals',
+      label: isContactForm ? 'Contact form' : 'Global block',
+      backHref: isContactForm ? PAGES.DASHBOARD.CONTACT_FORMS : PAGES.DASHBOARD.TEMPLATES,
+      backLabel: isContactForm ? 'Contact forms' : 'Templates & Globals',
       headerPath: '',
       previewHref: null,
       liveLabel: 'Save',
@@ -130,13 +131,17 @@ function adapterFor(
         const blocks = (content.content ?? []) as BuilderItem[];
         const zones = (content.zones ?? {}) as Record<string, BuilderItem[]>;
         if (!blocks.length) {
-          toast.error('A global block needs at least one section.');
+          toast.error(
+            isContactForm
+              ? 'A contact form needs at least one section.'
+              : 'A global block needs at least one section.'
+          );
           return { error: 'empty' };
         }
         return saveGlobalBlock({
           id: page.id,
           name: page.title,
-          category: category ?? 'general',
+          category: category ?? (isContactForm ? 'contact-form' : 'general'),
           content: { content: blocks, zones },
         });
       },
@@ -234,14 +239,15 @@ export function BuilderEditor({
   );
   const [globalTarget, setGlobalTarget] = useState<BuilderTarget | null>(null);
   const [motionPreview, setMotionPreview] = useState(false);
+  const isGlobalLike = kind === 'global' || kind === 'contact-form';
   const metadata = useMemo(
     () => ({
       themeTokens,
       motionPreview,
       language: page.language,
-      ...(kind !== 'page' && kind !== 'global' && kind !== 'page-template' && { post: post ?? SAMPLE_POST }),
+      ...(kind !== 'page' && !isGlobalLike && kind !== 'page-template' && { post: post ?? SAMPLE_POST }),
     }),
-    [themeTokens, motionPreview, page.language, kind, post]
+    [themeTokens, motionPreview, page.language, kind, post, isGlobalLike]
   );
 
   useEffect(() => {
@@ -253,11 +259,11 @@ export function BuilderEditor({
     setAiGenerateOpen(true);
   }, [aiEnabled]);
 
-  // Globals have no draft: autosave is off but dirty tracking still drives the leave warning.
+  // Globals / contact forms have no draft: autosave is off but dirty tracking still drives the leave warning.
   const autosave = useAutosave<{ content: Data }>({
     pageId: page.id,
     value: serialized,
-    enabled: kind !== 'global' && kind !== 'page-template' && busy === null,
+    enabled: !isGlobalLike && kind !== 'page-template' && busy === null,
     toPayload: () => ({ content: dataRef.current }),
     save: ({ content }) => adapter.saveDraft(content, true),
   });
@@ -302,11 +308,11 @@ export function BuilderEditor({
     backLabel: adapter.backLabel,
     previewHref: adapter.previewHref,
     liveLabel: adapter.liveLabel,
-    hasRevisions: kind !== 'post-template' && kind !== 'global' && kind !== 'page-template',
+    hasRevisions: kind !== 'post-template' && !isGlobalLike && kind !== 'page-template',
     pageId: page.id,
     pageTitle: page.title,
     status,
-    canPublish: kind === 'global' || kind === 'page-template' ? false : canPublish,
+    canPublish: isGlobalLike || kind === 'page-template' ? false : canPublish,
     busy,
     autosaveStatus: autosave.status,
     savedAt: autosave.savedAt,
@@ -318,11 +324,13 @@ export function BuilderEditor({
         ok = await save();
         if (ok) {
           toast.success(
-            kind === 'global'
-              ? 'Global block saved. Every page using it now shows this version.'
-              : kind === 'page-template'
-                ? 'Template layout saved'
-                : 'Draft saved'
+            kind === 'contact-form'
+              ? 'Contact form saved. Pages embedding it will show this version.'
+              : kind === 'global'
+                ? 'Global block saved. Every page using it now shows this version.'
+                : kind === 'page-template'
+                  ? 'Template layout saved'
+                  : 'Draft saved'
           );
         }
       });
