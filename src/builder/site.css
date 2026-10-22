@@ -73,6 +73,38 @@
   padding: 0.6rem 0.8rem;
 }
 
+/* Country-aware phone input (react-phone-number-input) */
+.site-root .PhoneInput {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius);
+  background: var(--site-bg);
+  color: var(--site-fg);
+  padding: 0;
+  gap: 0;
+}
+.site-root .PhoneInputCountry {
+  margin-left: 0.6rem;
+  margin-right: 0.25rem;
+}
+.site-root .PhoneInputInput {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  padding: 0.6rem 0.8rem 0.6rem 0.25rem;
+  outline: none;
+  font: inherit;
+}
+.site-root .PhoneInputCountrySelect {
+  background: transparent;
+  color: inherit;
+  border: none;
+}
+
 /* Compact choice controls (checkbox / radio) — not full-width like text inputs */
 .site-root .s-choice-row {
   display: flex;
@@ -170,7 +202,7 @@
   .site-root .s-pb { padding-bottom: var(--s-pb-d); }
   .site-root .s-pl { padding-left: var(--s-pl-d); }
   .site-root .s-bt { border-top-width: var(--s-bt-d); }
-  .site-root .s-br { border-right-width: var(--s-br-d); }
+  .site-root .s-br { border-right-width: var(--s-bl-d); }
   .site-root .s-bb { border-bottom-width: var(--s-bb-d); }
   .site-root .s-bl { border-left-width: var(--s-bl-d); }
 
