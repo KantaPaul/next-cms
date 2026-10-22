@@ -29,7 +29,10 @@ import {
   savePostTemplateDraft,
   updatePost,
 } from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.actions';
-import { saveGlobalBlock } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
+import {
+  saveGlobalBlock,
+  updateTemplate,
+} from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
 import { POST_REVISION_ACTIONS } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-revision-actions';
 import {
   useAutosave,
@@ -173,6 +176,21 @@ function adapterFor(
     };
   }
 
+  if (kind === 'page-template') {
+    return {
+      config: builderConfig as Config,
+      label: `Page template: ${page.title}`,
+      backHref: PAGES.DASHBOARD.TEMPLATES,
+      backLabel: 'Templates & Globals',
+      headerPath: '',
+      previewHref: null,
+      liveLabel: 'Save template',
+      saveDraft: content => updateTemplate({ id: page.id, content }),
+      publish: async () => null,
+      submitForReview: null,
+    };
+  }
+
   return {
     config: builderConfig as Config,
     label: 'Page builder',
@@ -221,7 +239,7 @@ export function BuilderEditor({
       themeTokens,
       motionPreview,
       language: page.language,
-      ...(kind !== 'page' && kind !== 'global' && { post: post ?? SAMPLE_POST }),
+      ...(kind !== 'page' && kind !== 'global' && kind !== 'page-template' && { post: post ?? SAMPLE_POST }),
     }),
     [themeTokens, motionPreview, page.language, kind, post]
   );
@@ -239,7 +257,7 @@ export function BuilderEditor({
   const autosave = useAutosave<{ content: Data }>({
     pageId: page.id,
     value: serialized,
-    enabled: kind !== 'global' && busy === null,
+    enabled: kind !== 'global' && kind !== 'page-template' && busy === null,
     toPayload: () => ({ content: dataRef.current }),
     save: ({ content }) => adapter.saveDraft(content, true),
   });
@@ -284,11 +302,11 @@ export function BuilderEditor({
     backLabel: adapter.backLabel,
     previewHref: adapter.previewHref,
     liveLabel: adapter.liveLabel,
-    hasRevisions: kind !== 'post-template' && kind !== 'global',
+    hasRevisions: kind !== 'post-template' && kind !== 'global' && kind !== 'page-template',
     pageId: page.id,
     pageTitle: page.title,
     status,
-    canPublish: kind === 'global' ? false : canPublish,
+    canPublish: kind === 'global' || kind === 'page-template' ? false : canPublish,
     busy,
     autosaveStatus: autosave.status,
     savedAt: autosave.savedAt,
@@ -302,7 +320,9 @@ export function BuilderEditor({
           toast.success(
             kind === 'global'
               ? 'Global block saved. Every page using it now shows this version.'
-              : 'Draft saved'
+              : kind === 'page-template'
+                ? 'Template layout saved'
+                : 'Draft saved'
           );
         }
       });
