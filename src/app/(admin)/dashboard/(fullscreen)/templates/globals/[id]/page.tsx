@@ -43,6 +43,9 @@ export default async function GlobalBlockPage({
     siteSettingsService.get(),
   ]);
   if (!block) notFound();
+  if (block.category === 'contact-form') {
+    redirect(PAGES.DASHBOARD.CONTACT_FORM(id));
+  }
 
   return (
     <BuilderLoader
