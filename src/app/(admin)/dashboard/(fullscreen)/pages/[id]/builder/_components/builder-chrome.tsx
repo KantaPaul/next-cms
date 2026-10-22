@@ -46,7 +46,7 @@ export function BuilderHeaderActions() {
           type="button"
           size="sm"
           onClick={() => void b.save()}
-          disabled={!!b.busy || b.autosaveStatus === 'idle'}
+          disabled={!!b.busy || !b.isDirty}
         >
           {b.busy === 'save' && <Loader2 className="animate-spin" />} Save
         </Button>
