@@ -1,0 +1,19 @@
+{
+  "siteName": "Exported Site",
+  "siteDescription": null,
+  "siteUrl": "http://localhost:3000",
+  "logo": null,
+  "favicon": null,
+  "defaultOgImage": null,
+  "headerMenuId": null,
+  "footerMenuId": null,
+  "robotsTxt": null,
+  "googleAnalyticsId": null,
+  "themeTokens": {
+    "primaryColor": "#4f46e5",
+    "accentColor": "#0ea5e9",
+    "fontFamily": "Inter",
+    "borderRadius": "md",
+    "colorMode": "light"
+  }
+}
