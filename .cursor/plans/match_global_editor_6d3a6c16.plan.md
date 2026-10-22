@@ -4,16 +4,16 @@ overview: "Give the global-block editor the same chrome as the page builder: top
 todos:
   - id: global-kind
     content: Add a global builder kind that saves via saveGlobalBlock and uses a config without GlobalRef or page root fields
-    status: pending
+    status: completed
   - id: route
     content: Render the global page through BuilderLoader and remove the default Puck editor
-    status: pending
+    status: completed
   - id: chrome
     content: Hide page-only header actions, the Page tab, and save-as-global when editing a global block
-    status: pending
+    status: completed
   - id: verify
     content: Typecheck and compare both editor URLs in the browser
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -21,7 +21,7 @@ isProject: false
 
 The page builder at [`builder-editor.tsx`](src/app/(admin)/dashboard/(fullscreen)/pages/[id]/builder/_components/builder-editor.tsx) renders [`BuilderShell`](src/app/(admin)/dashboard/(fullscreen)/pages/[id]/builder/_components/builder-shell.tsx): top bar, Blocks/Layers/Page rail, canvas, and the floating inspector in [`selection-card.tsx`](src/app/(admin)/dashboard/(fullscreen)/pages/[id]/builder/_components/selection-card.tsx). Posts and post templates already use that shell.
 
-The global editor in [`global-block-editor.tsx`](src/app/(admin)/dashboard/(fullscreen)/templates/globals/[id]/global-block-editor.tsx) still mounts Puck’s default three-column UI. It will use the same shell instead.
+The global editor previously mounted Puck’s default three-column UI. It now uses the same shell instead.
 
 ```mermaid
 flowchart LR
