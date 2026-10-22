@@ -65,6 +65,12 @@ export default async function AnalyticsPage({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href={PAGES.DASHBOARD.ANALYTICS_BOARDS}
+            className="rounded-md border border-steel-200 px-3 py-1.5 text-sm font-medium text-indigo-600 hover:bg-steel-50 dark:border-dark-300 dark:hover:bg-dark-200"
+          >
+            Dashboards
+          </Link>
           {trends.pageId && (
             <Link
               href={buildHref({ range: rangeDays, list })}
