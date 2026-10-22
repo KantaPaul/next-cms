@@ -32,6 +32,27 @@ export function BuilderHeaderActions() {
   const canCreate = useCan(PERMISSIONS.PAGES_CREATE);
   const [templateOpen, setTemplateOpen] = useState(false);
   const status = b.status as keyof typeof PAGE_STATUS_COLORS;
+  const isGlobal = b.kind === 'global';
+
+  if (isGlobal) {
+    return (
+      <div className="flex items-center gap-2 whitespace-nowrap">
+        <Button type="button" variant="ghost" size="sm" asChild>
+          <Link href={b.backHref} aria-label={b.backLabel}>
+            <ArrowLeft /> <span className="hidden xl:inline">{b.backLabel}</span>
+          </Link>
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => void b.save()}
+          disabled={!!b.busy || b.autosaveStatus === 'idle'}
+        >
+          {b.busy === 'save' && <Loader2 className="animate-spin" />} Save
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center gap-2 whitespace-nowrap">
@@ -165,7 +186,8 @@ export function BuilderActionBar({
         props: selected.props as BuilderTarget['props'],
       }
     : null;
-  const canSaveGlobal = target && target.type !== 'GlobalRef';
+  const canSaveGlobal =
+    b.kind !== 'global' && target && target.type !== 'GlobalRef';
 
   return (
     <ActionBar>
