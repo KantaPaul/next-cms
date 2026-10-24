@@ -1,6 +1,6 @@
 ---
 name: Combined CMS refs
-overview: One checklist that runs the CMS gap, subscriber unlock, video library, training, licensing, then auth visibility and the Viewer default. Each step has a completion number (R001–R291). Name one number to implement only that piece.
+overview: One checklist that runs the CMS gap, subscriber unlock, video library, training, licensing, auth visibility and the Viewer default, the Studio Crafted light and Obsidian Studio dark admin restyle, then the modern starter site. Each step has a completion number (R001–R327). Name one number to implement only that piece.
 todos:
   - id: R001
     content: P1-01 Register Slider, Tabs, and Accordion as builderConfig component keys
@@ -153,13 +153,13 @@ todos:
     content: P5-03 Logo cloud block
     status: pending
   - id: R051
-    content: P5-04 Team block
+    content: P5-04 Team block with photo, name, and role; same block as R317
     status: pending
   - id: R052
     content: P5-05 Timeline block
     status: pending
   - id: R053
-    content: P5-06 Map block
+    content: P5-06 Map block; Location is R318
     status: pending
   - id: R054
     content: P5-07 Spacer block
@@ -875,14 +875,122 @@ todos:
   - id: R291
     content: A8-06 Browser check of the auth settings and a disabled login page
     status: pending
+  - id: R292
+    content: O1-01 Map Studio Crafted light and Obsidian Studio dark tokens and per-theme radius in globals.css
+    status: pending
+  - id: R293
+    content: O1-02 Per-theme shadows and status-pill colors
+    status: pending
+  - id: R294
+    content: O1-03 Inter for body; Hanken Grotesk for light headlines and Inter for dark headlines
+    status: pending
+  - id: R295
+    content: O2-01 Let admin, builder chrome, and auth follow the active theme; drop the builder light lock
+    status: pending
+  - id: R296
+    content: O2-02 Keep the header theme toggle wired to both token blocks
+    status: pending
+  - id: R297
+    content: O2-03 Toaster follows the active theme
+    status: pending
+  - id: R298
+    content: O3-01 Theme-aware button variants for both specs
+    status: pending
+  - id: R299
+    content: O3-02 Theme-aware inputs, checkboxes, and radios
+    status: pending
+  - id: R300
+    content: O3-03 Theme-aware badge and status badge
+    status: pending
+  - id: R301
+    content: O3-04 Theme-aware card, dialog, sheet, popover, and block cards
+    status: pending
+  - id: R302
+    content: O3-05 Sidebar width, divider, and nav items for both themes
+    status: pending
+  - id: R303
+    content: O3-06 Sticky header and breadcrumbs for both themes
+    status: pending
+  - id: R304
+    content: O4-01 Replace hardcoded steel and light pairs on admin routes
+    status: pending
+  - id: R305
+    content: O4-02 Restyle builder chrome so it follows the active theme
+    status: pending
+  - id: R306
+    content: O4-03 Restyle inspector controls and fields
+    status: pending
+  - id: R307
+    content: O4-04 Restyle tables, text editor chrome, media browser, and react-select
+    status: pending
+  - id: R308
+    content: O4-05 Restyle the login page and auth layout
+    status: pending
+  - id: R309
+    content: O4-06 Block-drawer category tints that read in both themes
+    status: pending
+  - id: R310
+    content: O5-01 Browser check of both themes and an unchanged public site theme
+    status: pending
+  - id: R311
+    content: M1-01 Add background, foreground, and muted to theme tokens
+    status: pending
+  - id: R312
+    content: M1-02 Add Instrument Sans and Newsreader to the font list
+    status: pending
+  - id: R313
+    content: M1-03 Consume the new color roles in theme.ts and site.css
+    status: pending
+  - id: R314
+    content: M1-04 Settings form fields for the new fonts and color roles
+    status: pending
+  - id: R315
+    content: M1-05 Seed a modern light theme only when tokens are still the defaults
+    status: pending
+  - id: R316
+    content: M2-01 Projects block with image, title, summary, link, and category
+    status: pending
+  - id: R317
+    content: M2-02 Team block with photo, name, and role; same block as R051
+    status: pending
+  - id: R318
+    content: M2-03 Location block with address, hours, and a map link
+    status: pending
+  - id: R319
+    content: M3-01 Restyle the six existing starter templates
+    status: pending
+  - id: R320
+    content: M3-02 Agency starter template
+    status: pending
+  - id: R321
+    content: M3-03 Portfolio starter template
+    status: pending
+  - id: R322
+    content: M3-04 Company starter template
+    status: pending
+  - id: R323
+    content: M3-05 Docs starter template
+    status: pending
+  - id: R324
+    content: M3-06 Local business starter template
+    status: pending
+  - id: R325
+    content: M4-01 Publish the multi-page demo when a user exists
+    status: pending
+  - id: R326
+    content: M4-02 Seed header and footer menus and wire them when empty
+    status: pending
+  - id: R327
+    content: M5-01 Browser check of the public demo, gallery, and unchanged admin chrome
+    status: pending
 isProject: false
 ---
 
-# Combined refs R001–R291
+# Combined refs R001–R327
 
-Say **implement R042** (or the original id, such as **P2-14**, **L3-01**, or **A2-01**). That ref is the whole task. Do not continue to the next ref unless you ask.
+Say **implement R042** (or the original id, such as **P2-14**, **L3-01**, **A2-01**, **O1-01**, or **M2-01**). That ref is the whole task. Do not continue to the next ref unless you ask.
 
-Specs for the first four blocks stay in the source plans. The licensing spec is in this file.
+Specs for the first four blocks stay in the source plans. Licensing, auth, the Studio light and Obsidian dark restyle, and the modern starter site are specified in this file.
 
 - CMS gap: [numbered_cms_refs_7ecd08c6.plan.md](.cursor/plans/numbered_cms_refs_7ecd08c6.plan.md) and [full_cms_gap_plan_8a7c0c53.plan.md](.cursor/plans/full_cms_gap_plan_8a7c0c53.plan.md)
 - Subscribers: [content_subscriptions_af1362e2.plan.md](.cursor/plans/content_subscriptions_af1362e2.plan.md)
@@ -890,8 +998,12 @@ Specs for the first four blocks stay in the source plans. The licensing spec is 
 - Training: [training_certificates_b50ce1b0.plan.md](.cursor/plans/training_certificates_b50ce1b0.plan.md)
 - Licensing: **R217–R261** below
 - Auth visibility and Viewer default: **R262–R291** below
+- Studio Crafted light and Obsidian Studio dark admin restyle: **R292–R310** below, from [design/light-screen.md](design/light-screen.md), [design/dark-screen.md](design/dark-screen.md), and [obsidian_studio_restyle_148e7524.plan.md](.cursor/plans/obsidian_studio_restyle_148e7524.plan.md)
+- Modern starter site: **R311–R327** below, from [modern_starter_site_719459d9.plan.md](.cursor/plans/modern_starter_site_719459d9.plan.md)
 
-Training follows the video library because it reuses `parseVideoUrl`, `buildEmbed`, and `src/components/video/`. Licensing does not depend on video or training. Auth visibility is last. It reuses the session cookie and the Admin, Editor, Author, and Viewer roles that already exist. In-app license notices use the notification helper from **R209** when that table exists, and always write the audit log.
+Training follows the video library because it reuses `parseVideoUrl`, `buildEmbed`, and `src/components/video/`. Licensing does not depend on video or training. Auth visibility reuses the session cookie and the Admin, Editor, Author, and Viewer roles that already exist. In-app license notices use the notification helper from **R209** when that table exists, and always write the audit log.
+
+The admin restyle and the modern starter site sit after auth in this list. Either one can start before **R001**. The restyle owns admin, builder, and login chrome, and the theme toggle switches Studio Crafted light and Obsidian Studio dark. The starter site owns the public theme, starter templates, and the one published demo. They do not edit each other’s surfaces.
 
 ```mermaid
 flowchart LR
@@ -900,6 +1012,8 @@ flowchart LR
   v --> t[R157_T_training]
   t --> l[R217_L_license]
   l --> a[R262_A_auth]
+  a --> o[R292_O_obsidian]
+  o --> m[R311_M_starter]
 ```
 
 ## Shared work (do not build twice)
@@ -913,6 +1027,11 @@ flowchart LR
 - **R095 (S3-07)** sends role Subscriber to `/account`. **R173 (T3-02)** sends role Learner to `/dashboard/my-training`. **R239 (L5-02)** adds the license fail-closed check in the same dashboard layout and keeps both redirects. **R279** runs the session check in that layout before those redirects.
 - License key hashing follows [src/server/services/api-keys.service.ts](src/server/services/api-keys.service.ts): sha256 via Node `crypto`, prefix stored, plaintext returned once. Signing uses Node `crypto` Ed25519. Do not add a second crypto package.
 - **R048 (P5-01)** is a single Video block. **R150 (V6-02)** is the `VideoLibrary` widget. Both stay.
+- **R051 (P5-04)** and **R317 (M2-02)** are one Team block: photo, name, and role, wrapped in `Section`, registered once in the builder config and registry. Whichever ref runs first builds it. The other confirms those fields.
+- **R053 (P5-06)** is the Map block. **R318 (M2-03)** is the Location block: address, hours, and a map link. Both stay.
+- **R292** maps Studio Crafted light and Obsidian Studio dark tokens in [src/app/globals.css](src/app/globals.css). **R311–R315** extend public `ThemeTokens` in the page schema, [src/builder/theme.ts](src/builder/theme.ts), and [src/builder/site.css](src/builder/site.css). **R294** sets Inter for product-chrome body text, Hanken Grotesk for light headlines, and Inter for dark headlines. **R315** seeds Plus Jakarta Sans on the public theme only while tokens still equal `DEFAULT_THEME_TOKENS`. A published page that sets its own font keeps that font.
+- **R295** leaves the root provider without `forcedTheme`. **R296** keeps the header toggle, which switches the two token blocks on admin, builder chrome, and login. **R311** keeps public color mode as light, dark, or system. The seeded demo is light.
+- Product-chrome refs leave published pages, the Puck iframe, color swatches, chart series, and the revision content preview on the page theme. The drawer around that preview uses the active admin theme. Starter-site refs leave admin chrome on the Studio light and Obsidian dark themes once **R292–R310** have run, and leave it untouched when they have not.
 
 New tables from **R012 (P2-01)** onward include `site_id` defaulting to `default` until **R034 (P3-03)** backfills it.
 
@@ -925,6 +1044,8 @@ New tables from **R012 (P2-01)** onward include `site_id` defaulting to `default
 - Do not start **R164 (T2-01)** until **R126**. Do not start **R186 (T5)** until **R143–R145**. Do not start **R178 (T4)** until **R163, R164, R172**.
 - Do not start **R228 (L3-01)** until **R221–R226**. Do not start **R234** until **R228–R232**. Do not start **R239** until **R238**. Do not start **R245** until **R243** and **R244**. **R217** can start before **R001**; licensing does not wait on the CMS gap.
 - Do not start **R265** until **R264**. Do not start **R270** until **R268**. Do not start **R282** until **R262** and **R268**. **R262** can start before **R001**. **R025** calls **R276** when that ref exists and does not add a second lockout table.
+- Do not start **R298** until **R292**. Do not start **R300** until **R293**. Do not start **R305** until **R295**. Do not start **R310** until **R304–R309**. **R292** can start before **R001**. Light and dark stay inside **R292–R310**. Do not add a new ref number for the second theme.
+- Do not start **R314** or **R315** until **R311** and **R312**. Do not start **R313** until **R311**. Do not start **R320** or **R321** until **R316**. Do not start **R322** until **R317**. Do not start **R324** until **R318**. Do not start **R325** until **R315** and **R319–R324**. Do not start **R326** until **R325**. Do not start **R327** until **R326**. **R311** can start before **R001**. **R317** and **R051** are the same block.
 
 ## R001–R079 — CMS gap (P1–P7)
 
@@ -994,9 +1115,9 @@ Do not start until R034.
 - **R048** (P5-01) Video block (single embed, not the library widget).
 - **R049** (P5-02) Embed block.
 - **R050** (P5-03) Logo cloud block.
-- **R051** (P5-04) Team block.
+- **R051** (P5-04) Team block: photo, name, and role, wrapped in `Section`. Same block as R317. Register it once.
 - **R052** (P5-05) Timeline block.
-- **R053** (P5-06) Map block.
+- **R053** (P5-06) Map block. Location (address, hours, and a map link) is R318.
 - **R054** (P5-07) Spacer block.
 - **R055** (P5-08) Button block.
 - **R056** (P5-09) Code block.
@@ -1451,6 +1572,123 @@ Use `node:test`. Add the `test` script only when R130 and R227 have not. No prod
 - **R290** (A8-05) `npm run lint`, `tsc --noEmit`, and the auth tests. Fix issues these refs introduced.
 - **R291** (A8-06) Browser: open Authentication & Access, turn login off, confirm the confirmation step, open `/login` and see the disabled message and no Google button, then turn login back on from the still-valid session. Confirm the default role control is text reading Viewer. Depends on R269, R270, and R282.
 
+## R292–R310 — Studio light and Obsidian dark admin restyle (O1–O5)
+
+Say **implement R298** to do only that piece. Product chrome (admin, page-builder toolbars, drawers, dialogs, and login) follows [design/light-screen.md](design/light-screen.md) in light mode and [design/dark-screen.md](design/dark-screen.md) in dark mode. The header toggle switches them. Published pages under [src/app/(site)](src/app/(site)) and the site theme in [src/builder/theme.ts](src/builder/theme.ts) / [src/builder/site.css](src/builder/site.css) stay on the public theme from **R311–R315**. The Puck iframe is the page preview.
+
+Component prose in each design file is the source of fills. Do not average the two specs into one radius or one status color. YAML Material tokens are not used for fills when they disagree. The dark YAML primary `#c0c1ff` is not the button fill. Dark primary buttons are `#6366F1` with white text. Light primary buttons are `#4338ca` with white text.
+
+```mermaid
+flowchart LR
+  toggle["Theme toggle"] --> lightTokens["Light tokens"]
+  toggle --> darkTokens["Dark tokens"]
+  lightTokens --> primitives["Button Input Badge Card Dialog Sidebar"]
+  darkTokens --> primitives
+  primitives --> admin["Admin pages and shell"]
+  primitives --> builder["Builder chrome"]
+  primitives --> auth["Login"]
+  siteTheme["Site theme"] --> publicPages["Published pages and canvas iframe"]
+```
+
+### O1 — Tokens
+
+- **R292** (O1-01) Map both themes in [src/app/globals.css](src/app/globals.css). `:root` and `[data-theme='light']` use the light component section. `--background` `#f8fafc`. `--card` and `--sidebar` `#ffffff`. `--popover` `#ffffff`. `--foreground` `#0f172a`. `--muted-foreground` `#475569`. Disabled text and timestamps `#94a3b8`. `--primary` `#4338ca`. `--primary-foreground` `#ffffff`. Hover `#3730a3`. `--ring` `#4338ca`. `--border` `#e2e8f0`. Stronger outline `#cbd5e1`. `--input` `#ffffff`. `--secondary` stays the white surface button. `#6366f1` is only for hover indicators and secondary badges. `.dark` and `[data-theme='dark']` use the dark component section. `--background` `#0B0F17`. `--card` and `--sidebar` `#111827`. `--popover` and the surface secondary `#1E293B`. `--muted` and `--accent` `#334155`. `--foreground` `#F9FAFB`. `--muted-foreground` `#94A3B8`. `--primary` `#6366F1`. `--primary-foreground` `#FFFFFF`. Hover `#4F46E5`. `--ring` `#6366F1`. `--border` `rgba(255,255,255,0.08)`. `--input` `#0B0F17`. Destructive button `rgba(239,68,68,0.12)` fill, `#FCA5A5` text, `rgba(239,68,68,0.3)` border. Radius is three variables, not one `--radius`. Light controls 8px, cards 16px, sheets 24px. Dark controls 4px, cards 8px, dialogs 12px. Set `--radius-control`, `--radius-card`, and `--radius-overlay` on each theme.
+- **R293** (O1-02) Shadows and status colors from R292. Light level 1 `0 1px 2px rgba(15,23,42,0.04)`. Light level 2 `0 4px 12px -2px rgba(15,23,42,0.08), 0 2px 4px -2px rgba(15,23,42,0.04)`. Light level 3 `0 16px 32px -8px rgba(15,23,42,0.12), 0 4px 8px -2px rgba(15,23,42,0.04)` with backdrop `rgba(15,23,42,0.2)`. Dark tray shadow `0 8px 24px -4px rgba(0,0,0,0.6), 0 2px 6px -1px rgba(0,0,0,0.4)`. Dark drag shadow `0 12px 32px -4px rgba(0,0,0,0.8)`. Light published pills are `#e0e7ff` with slate text. Light draft pills are `#f1f5f9`. Dark published pills are `rgba(16,185,129,0.12)` / `#34D399` with a 6px dot. Dark draft pills are `rgba(245,158,11,0.12)` / `#FBBF24`. Both are 22px pills. Emerald is not the dark secondary button. Depends on R292.
+- **R294** (O1-03) Body and controls are Inter in both themes. Light headlines use Hanken Grotesk. Dark headlines use Inter. Load both in [src/app/layout.tsx](src/app/layout.tsx) and set `--font-display` per theme. Headlines above 24px step down under 768px. A published page that sets its own font still uses that font. The public theme font from R315 is separate.
+
+### O2 — Theme toggle
+
+- **R295** (O2-01) Let [next-themes](src/components/providers/theme-provider.tsx) keep driving `.dark` and `data-theme`. Do not force dark. Leave the root provider without `forcedTheme`. Remove hardcoded `data-theme="light"` from [builder-editor.tsx](src/app/(admin)/dashboard/(fullscreen)/pages/[id]/builder/_components/builder-editor.tsx) and from the builder dialogs (`ai-dialogs`, save-template, save-global) so chrome follows the toggle. The revision content preview still uses the page theme. Depends on R292.
+- **R296** (O2-02) Keep [ThemeToggle](src/components/atoms/theme-toggle.tsx) in [src/components/organisms/header/header.tsx](src/components/organisms/header/header.tsx). It switches the light and dark token blocks from R292. Do not remove it. Depends on R292.
+- **R297** (O2-03) The toaster in [src/components/ui/sonner.tsx](src/components/ui/sonner.tsx) follows the active theme. Depends on R295.
+
+### O3 — Shared controls
+
+Colors come from the R292 tokens. Variants do not hardcode one theme’s hex. Radius comes from R292.
+
+- **R298** (O3-01) [src/components/ui/button.tsx](src/components/ui/button.tsx). Primary, surface or secondary, ghost, and destructive follow the active theme. Dark primary keeps the white/20 border, hover `#4F46E5`, and active scale `0.98`. Light primary uses the `#3730a3` border and the indigo micro-shadow. Radius is `--radius-control`. Depends on R292.
+- **R299** (O3-02) [src/components/ui/input.tsx](src/components/ui/input.tsx) and the atom form input. Theme background and border. Focus ring is 2px at 15% indigo in light and 20% indigo in dark. Dark placeholder `#475569`. Checkboxes and radios are 16px. The checked fill is `--primary`. Depends on R292.
+- **R300** (O3-03) [src/components/ui/badge.tsx](src/components/ui/badge.tsx) and [src/components/atoms/status-badge.tsx](src/components/atoms/status-badge.tsx). Pill status colors from R293. Version badges stay compact with tabular numbers. Dark version badges use `#1E293B`. Depends on R293.
+- **R301** (O3-04) [src/components/ui/card.tsx](src/components/ui/card.tsx), dialog, sheet, and popover. Cards use `--radius-card` and a hairline border. Light card hover shifts the border to `#cbd5e1` and adds the level-1 shadow. Dialogs, sheets, and popovers use `--radius-overlay` and the theme overlay shadow. Light modal backdrop is `rgba(15,23,42,0.2)`. Builder block cards in dark use base `#111827`, drag border `#6366F1`, and an indigo drop line. Light block cards stay white with the light border and hover lift. Depends on R292 and R293.
+- **R302** (O3-05) [src/components/ui/sidebar.tsx](src/components/ui/sidebar.tsx). Expanded width 240px, collapsed rail 64px. Ease the width change with `cubic-bezier(0.16, 1, 0.3, 1)`. Dark divider `rgba(255,255,255,0.06)` and 4px nav items. Light divider `#e2e8f0` and 8px nav items. Depends on R292.
+- **R303** (O3-06) Header and breadcrumbs. Dark sticky bar is `backdrop-blur(12px)` over `rgba(17,24,39,0.85)`. Light sticky bar is white with a `#e2e8f0` hairline and the level-1 shadow. Breadcrumb separators are slashes. Light active crumb is bold slate. Dark inactive crumbs are `#94A3B8`. Dark active crumb is `#F9FAFB` at weight 500. Depends on R292 and R293.
+
+### O4 — Screen sweep
+
+Replace `steel-*`, `dark-*`, and light/dark pairs (`border-steel-200 dark:border-dark-300`, `text-steel-500`, raw indigo links) with semantic classes (`bg-card`, `border-border`, `text-muted-foreground`, `text-primary`).
+
+- **R304** (O4-01) Admin routes under [src/app/(admin)](src/app/(admin)): dashboard, lists, settings, analytics, media, menus, users. Depends on R298–R303.
+- **R305** (O4-02) Builder chrome: [builder-shell.tsx](src/app/(admin)/dashboard/(fullscreen)/pages/[id]/builder/_components/builder-shell.tsx), [builder-editor.tsx](src/app/(admin)/dashboard/(fullscreen)/pages/[id]/builder/_components/builder-editor.tsx), selection card, layers, and builder dialogs. Chrome follows the active theme. Depends on R295.
+- **R306** (O4-03) Inspector controls in [src/builder/controls](src/builder/controls) and [src/builder/fields](src/builder/fields) that style the editor UI. Depends on R298 and R299.
+- **R307** (O4-04) Shared atoms those screens use: tables, text editor chrome, media browser, and react-select styles. Tables use borderless row dividers, 40px default row height, and a hover tint of the canvas color, with no zebra striping. Depends on R298 and R299.
+- **R308** (O4-05) Login page and auth layout: canvas background, raised card, theme primary action. Depends on R295 and R298.
+- **R309** (O4-06) Category tints in the block drawer: translucent indigo, violet, and emerald chips that stay readable in both themes. Replace `bg-violet-50` pastels.
+
+### O5 — Check
+
+- **R310** (O5-01) In the browser, toggle light and dark on login, dashboard, one list (pages or posts), media, and the page builder (sidebar, canvas chrome, a dialog). The public homepage still uses the site theme. Color swatches, chart series, and the revision content preview stay on the page theme. Depends on R304–R309.
+
+## R311–R327 — Modern starter site (M1–M5)
+
+Say **implement R320** to do only that piece. Every selected site kind is a modern starter. The public theme grows. The few layouts the current blocks cannot make get a block. One multi-page demo is published, with navigation.
+
+Selected site kinds: SaaS product site, agency or studio, portfolio, marketing site with a blog, company site, docs or changelog, local business, and the multi-page set (home, pricing, about, contact, blog).
+
+Selected scope: restyle the existing starters, set a modern public theme, expand theme tokens, add blocks the current set cannot carry, seed published pages, seed header and footer menus, treat the homepage as the flagship, and keep the other kinds as templates.
+
+One published demo is the multi-page marketing site. Agency, portfolio, company, docs, and local business are system templates in the gallery. They do not each publish a second homepage. The home page is the flagship composition. Admin chrome is **R292–R310**.
+
+[src/db/seed/starter-content.ts](src/db/seed/starter-content.ts) has six system templates (SaaS landing, pricing, about, contact, blog index, article). [src/db/seed/index.ts](src/db/seed/index.ts) updates those templates and does not create pages or menus, so [src/app/(site)/[[...slug]]/page.tsx](src/app/(site)/[[...slug]]/page.tsx) stays empty until a home page is published. Theme tokens in [src/db/schemas/pages.schema.ts](src/db/schemas/pages.schema.ts) today are primary, accent, four fonts, radius, and color mode. Blocks today are Hero, CTA, Features, Stats, Pricing, Testimonials, FAQ, RichText, Image, Gallery, ContactForm, BlogPosts, Columns, Slider, Tabs, Accordion, and GlobalRef.
+
+```mermaid
+flowchart LR
+  theme[Richer theme tokens] --> layout[Public site layout]
+  blocks[Projects Team Location] --> templates[Starter templates]
+  templates --> gallery[Template gallery]
+  templates --> pages[Published multi-page demo]
+  menus[Header and footer] --> layout
+  pages --> layout
+  layout --> home["Public /"]
+```
+
+### M1 — Theme
+
+- **R311** (M1-01) Extend `ThemeTokens` with background, foreground, and muted, in addition to primary and accent. Color mode stays light, dark, or system.
+- **R312** (M1-02) Keep Inter, Plus Jakarta Sans, JetBrains Mono, and System. Add Instrument Sans and Newsreader.
+- **R313** (M1-03) [src/builder/theme.ts](src/builder/theme.ts) and [src/builder/site.css](src/builder/site.css) consume background, foreground, and muted. Blocks keep using the existing `s-*` classes. Depends on R311.
+- **R314** (M1-04) Settings form in [src/app/(admin)/dashboard/(shell)/settings/_components/settings-form.tsx](src/app/(admin)/dashboard/(shell)/settings/_components/settings-form.tsx) edits the new fonts and color roles. Depends on R311 and R312.
+- **R315** (M1-05) Write seeded defaults only when tokens still equal `DEFAULT_THEME_TOKENS`: Plus Jakarta Sans, large radius, primary `#4F46E5`, accent `#0EA5E9`, and neutral background and foreground. A custom theme stays as saved. The seeded demo is light. Dark remains a setting. Depends on R311 and R312.
+
+### M2 — Blocks
+
+Register each block in [src/builder/config.tsx](src/builder/config.tsx) and [src/builder/blocks/registry.ts](src/builder/blocks/registry.ts), wrapped in the shared `Section`. Docs and changelog stay on Columns, RichText, and Accordion. SaaS sections stay on Hero, Features, Stats, Pricing, Testimonials, FAQ, and CTA.
+
+- **R316** (M2-01) Projects. Image, title, summary, link, and category. Agency selected work and portfolio projects use it. Gallery stays images without that card content.
+- **R317** (M2-02) Team. Photo, name, and role. Same block as R051. Register it once. The company template uses it.
+- **R318** (M2-03) Location. Address, hours, and a map link. The local business template uses it. The Map block remains R053.
+
+### M3 — Templates
+
+Restyle every starter in [src/db/seed/starter-content.ts](src/db/seed/starter-content.ts) with `SectionSettings` from [src/builder/style.ts](src/builder/style.ts): split or tall hero, one gradient, one dark band, staggered entrance, light hover on cards, page root `maxWidth: 'xl'`, `theme: 'site'`, `pageTransition: 'fade'`. Copy stays short and specific to each kind. Images stay on the existing Unsplash pattern.
+
+- **R319** (M3-01) Apply that section style to the current six templates: SaaS landing, pricing, about, contact, blog index, and article.
+- **R320** (M3-02) Agency template: services, Projects, testimonials, contact. Depends on R316.
+- **R321** (M3-03) Portfolio template: Projects, about copy, contact. Depends on R316.
+- **R322** (M3-04) Company template: story, values, Team, contact. Depends on R317.
+- **R323** (M3-05) Docs template: a heading, a two-column article, and a short changelog list. Uses Columns, RichText, and Accordion.
+- **R324** (M3-06) Local business template: services, hours and Location, contact. Depends on R318.
+
+### M4 — Publish the demo
+
+Extend [src/db/seed/index.ts](src/db/seed/index.ts). `pages.createdBy` is required, so look up the earliest user. If none exists, log and skip pages and menus. Templates still update. Re-running `pnpm db:seed` refreshes system templates and these pages by slug without duplicating them.
+
+- **R325** (M4-01) When a user exists, idempotently upsert by slug and publish only the multi-page demo. `/` home (`isHome`) from the SaaS landing template. `/pricing`, `/about`, `/contact`. `/blog` (`isBlogIndex`) from the blog listing template. Write both `draft` and `published` rows in `page_contents`, status `published`. Agency, portfolio, company, docs, and local templates stay system templates only. Depends on R315 and R319–R324.
+- **R326** (M4-02) Create a header menu (Home, Pricing, About, Blog, Contact) and a short footer menu. Set `headerMenuId` and `footerMenuId` when those fields are still empty. Depends on R325.
+
+### M5 — Check
+
+- **R327** (M5-01) In the browser: `/`, `/pricing`, `/about`, `/contact`, `/blog`, and the header links. Confirm the hero, dark band, scroll motion, and a stacked mobile layout. Open the home page in the builder. In the template gallery, confirm the agency, portfolio, company, docs, and local templates are present and editable. Admin chrome is unchanged by these refs. Depends on R326.
+
 ## Milestones
 
 - Demoable CMS: through **R031** (end of P2).
@@ -1464,3 +1702,5 @@ Use `node:test`. Add the `test` script only when R130 and R227 have not. No prod
 - Training and certificates: through **R216**.
 - Single-install licensing: through **R261**.
 - Login visibility and default Viewer: through **R291**.
+- Studio light and Obsidian dark admin: through **R310**.
+- Modern starter site: through **R327**.
