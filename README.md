@@ -1,112 +1,43 @@
-# next-cms
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-Visual page builder CMS on Next.js, Puck, Drizzle, and Postgres.
-
-## Requirements
-
-- Node 20+
-- pnpm
-- Postgres 15+
-- Optional: S3-compatible storage (MinIO or AWS), Google OAuth, Gemini API key, cron worker
-
-## Quick start
+## Getting Started
 
 ```bash
-# Optional local network for Docker services
-docker network create nextcms_network 2>/dev/null || true
+# Initial setup (first time only)
+docker network create nextcms_network
+docker-compose up -d
 
-# Copy env and fill values
-cp .env.example .env.local   # or create .env.local from the vars below
+```
 
-pnpm install
-pnpm db:push                 # or pnpm db:migrate
-pnpm db:seed
+First, run the development server:
+
+```bash
+npm run dev
+# or
+yarn dev
+# or
 pnpm dev
+# or
+bun dev
 ```
 
-App: [http://localhost:3000](http://localhost:3000)  
-Admin: [http://localhost:3000/dashboard](http://localhost:3000/dashboard)
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Environment
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-### Postgres
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-```env
-DATABASE_URL=postgresql://user:password@localhost:5432/nextcms
-```
+## Learn More
 
-### Google OAuth (staff login)
+To learn more about Next.js, take a look at the following resources:
 
-```env
-AUTH_SECRET=generate-a-long-random-string
-AUTH_GOOGLE_ID=
-AUTH_GOOGLE_SECRET=
-AUTH_URL=http://localhost:3000
-```
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-Create an OAuth client in Google Cloud Console. Authorized redirect URI:
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-`http://localhost:3000/api/auth/callback/google`
+## Deploy on Vercel
 
-### Storage (media library)
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-S3-compatible endpoint (AWS S3 or MinIO):
-
-```env
-S3_BUCKET=
-S3_REGION=us-east-1
-S3_ACCESS_KEY_ID=
-S3_SECRET_ACCESS_KEY=
-S3_ENDPOINT=                 # optional; set for MinIO e.g. http://localhost:9000
-S3_PUBLIC_URL=               # optional public base URL for objects
-```
-
-### Gemini (AI builder helpers)
-
-```env
-GEMINI_API_KEY=
-```
-
-### Cron / background jobs
-
-If you run scheduled tasks (cleanup, digests, license checks):
-
-```env
-CRON_SECRET=generate-a-long-random-string
-```
-
-Protect cron routes with `Authorization: Bearer $CRON_SECRET`.
-
-### Optional Stripe (products / subscriptions)
-
-```env
-STRIPE_SECRET_KEY=
-STRIPE_WEBHOOK_SECRET=
-STRIPE_PRICE_ID=
-```
-
-The app boots when these are empty.
-
-## Scripts
-
-| Command | Purpose |
-| --- | --- |
-| `pnpm dev` | Next.js dev server on port 3000 |
-| `pnpm build` / `pnpm start` | Production build and server |
-| `pnpm db:generate` | Drizzle migration from schema |
-| `pnpm db:migrate` / `pnpm db:push` | Apply schema |
-| `pnpm db:seed` | Seed roles, templates, demo content |
-| `pnpm db:ui` | Drizzle Studio |
-| `pnpm lint` | ESLint |
-
-## Project layout
-
-- `src/app/(admin)` — dashboard, builder, settings
-- `src/app/(site)` — public site catch-all
-- `src/builder` — Puck config, blocks, theme
-- `src/db` — Drizzle schema, migrations, seed
-- `src/server` — services and server actions
-
-## License
-
-Private / see repository settings.
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
