@@ -3,1306 +3,1306 @@ name: Combined CMS refs
 overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, full-site production optimization, commercial launch readiness, international website-builder market-gap audit, Elementor-style nested container/Flexbox/CSS Grid, dynamic content, global design styles, and conditional display. Numbered implementation steps R001–R434 include builder tasks and approval gates. Name a numbered step to implement only that piece.
 todos:
   - id: R001
-    content: P1-01 Register Slider, Tabs, and Accordion as builderConfig component keys
+    content: "P1-01 Register Slider, Tabs, and Accordion as builderConfig component keys"
     status: completed
   - id: R002
-    content: P1-02 Confirm Slider, Tabs, and Accordion render on the public site
+    content: "P1-02 Confirm Slider, Tabs, and Accordion render on the public site"
     status: completed
   - id: R003
-    content: P1-03 Show the contact-form options editor only for select and radio
+    content: "P1-03 Show the contact-form options editor only for select and radio"
     status: completed
   - id: R004
-    content: P1-04 Nullable page_id plus post_id on page_views; record post views
+    content: "P1-04 Nullable page_id plus post_id on page_views; record post views"
     status: completed
   - id: R005
-    content: P1-05 Mount the view beacon on post routes
+    content: "P1-05 Mount the view beacon on post routes"
     status: completed
   - id: R006
-    content: P1-06 Include posts on the analytics boards
+    content: "P1-06 Include posts on the analytics boards"
     status: completed
   - id: R007
-    content: P1-07 Public language switcher using translationGroupId and hreflang
+    content: "P1-07 Public language switcher using translationGroupId and hreflang"
     status: completed
   - id: R008
-    content: P1-08 Wire UrlField on Hero, CTA, Pricing, and Image
+    content: "P1-08 Wire UrlField on Hero, CTA, Pricing, and Image"
     status: completed
   - id: R009
-    content: P1-09 Wire IconPickerField on Features
+    content: "P1-09 Wire IconPickerField on Features"
     status: completed
   - id: R010
-    content: P1-10 Turn off typescript.ignoreBuildErrors and fix the type errors
+    content: "P1-10 Turn off typescript.ignoreBuildErrors and fix the type errors"
     status: completed
   - id: R011
-    content: P1-11 Replace README.md with real setup
+    content: "P1-11 Replace README.md with real setup"
     status: completed
   - id: R012
-    content: P2-01 form_submissions table with site_id defaulting to default
+    content: "P2-01 form_submissions table with site_id defaulting to default"
     status: completed
   - id: R013
-    content: P2-02 First-party contact-form submit route
+    content: "P2-02 First-party contact-form submit route"
     status: completed
   - id: R014
-    content: "P2-03 Admin form inbox: list, read, archive"
+    content: "\"P2-03 Admin form inbox: list, read, archive\""
     status: completed
   - id: R015
-    content: P2-04 CSV export of form submissions
+    content: "P2-04 CSV export of form submissions"
     status: completed
   - id: R016
-    content: P2-05 Honeypot and optional Turnstile on form submit
+    content: "P2-05 Honeypot and optional Turnstile on form submit"
     status: completed
   - id: R017
-    content: P2-06 Email site owner via SMTP or Resend
+    content: "P2-06 Email site owner via SMTP or Resend"
     status: completed
   - id: R018
-    content: P2-07 redirects table with site_id
+    content: "P2-07 redirects table with site_id"
     status: completed
   - id: R019
-    content: P2-08 Middleware resolves redirects before the catch-all page
+    content: "P2-08 Middleware resolves redirects before the catch-all page"
     status: completed
   - id: R020
-    content: P2-09 Redirect CSV import
+    content: "P2-09 Redirect CSV import"
     status: completed
   - id: R021
-    content: P2-10 Publishing a slug change offers to create a redirect
+    content: "P2-10 Publishing a slug change offers to create a redirect"
     status: completed
   - id: R022
-    content: P2-11 Postgres full-text on published pages and posts
+    content: "P2-11 Postgres full-text on published pages and posts"
     status: completed
   - id: R023
-    content: P2-12 Public /search page
+    content: "P2-12 Public /search page"
     status: completed
   - id: R024
-    content: P2-13 GET /api/v1/search
+    content: "P2-13 GET /api/v1/search"
     status: completed
   - id: R025
-    content: P2-14 Email and password login; add users.password_hash and scrypt helper
+    content: "P2-14 Email and password login; add users.password_hash and scrypt helper"
     status: completed
   - id: R026
-    content: P2-15 Magic-link login
+    content: "P2-15 Magic-link login"
     status: completed
   - id: R027
-    content: P2-16 Invite flow for new users
+    content: "P2-16 Invite flow for new users"
     status: completed
   - id: R028
-    content: P2-17 Optional TOTP for Admins
+    content: "P2-17 Optional TOTP for Admins"
     status: completed
   - id: R029
-    content: P2-18 Review queue for status=review
+    content: "P2-18 Review queue for status=review"
     status: completed
   - id: R030
-    content: P2-19 Email the author on review actions
+    content: "P2-19 Email the author on review actions"
     status: completed
   - id: R031
-    content: P2-20 OpenAPI spec from zod schemas
+    content: "P2-20 OpenAPI spec from zod schemas"
     status: completed
   - id: R032
-    content: P3-01 sites table
+    content: "P3-01 sites table"
     status: completed
   - id: R033
-    content: P3-02 site_memberships
+    content: "P3-02 site_memberships"
     status: completed
   - id: R034
-    content: P3-03 Add site_id to content tables and backfill default
+    content: "P3-03 Add site_id to content tables and backfill default"
     status: completed
   - id: R035
-    content: P3-04 Resolve the public site from the request host
+    content: "P3-04 Resolve the public site from the request host"
     status: completed
   - id: R036
-    content: P3-05 Admin site switcher
+    content: "P3-05 Admin site switcher"
     status: completed
   - id: R037
-    content: P3-06 Per-site locale list
+    content: "P3-06 Per-site locale list"
     status: completed
   - id: R038
-    content: P3-07 Translated menus
+    content: "P3-07 Translated menus"
     status: completed
   - id: R039
-    content: P3-08 Translated site name, description, and default SEO
+    content: "P3-08 Translated site name, description, and default SEO"
     status: completed
   - id: R040
-    content: P4-01 collections and collection_fields tables
+    content: "P4-01 collections and collection_fields tables"
     status: pending
   - id: R041
-    content: P4-02 Validate collection entry JSON
+    content: "P4-02 Validate collection entry JSON"
     status: pending
   - id: R042
-    content: P4-03 Generated admin list and edit screens for collections
+    content: "P4-03 Generated admin list and edit screens for collections"
     status: pending
   - id: R043
-    content: P4-04 CollectionItem block and collection slug route
+    content: "P4-04 CollectionItem block and collection slug route"
     status: pending
   - id: R044
-    content: P4-05 Scoped API keys
+    content: "P4-05 Scoped API keys"
     status: pending
   - id: R045
-    content: P4-06 Draft-first write endpoints
+    content: "P4-06 Draft-first write endpoints"
     status: pending
   - id: R046
-    content: P4-07 Postgres rate limit
+    content: "P4-07 Postgres rate limit"
     status: pending
   - id: R047
-    content: P4-08 Signed webhooks and a delivery log
+    content: "P4-08 Signed webhooks and a delivery log"
     status: pending
   - id: R048
-    content: P5-01 Video block
+    content: "P5-01 Video block"
     status: pending
   - id: R049
-    content: P5-02 Embed block
+    content: "P5-02 Embed block"
     status: pending
   - id: R050
-    content: P5-03 Logo cloud block
+    content: "P5-03 Logo cloud block"
     status: pending
   - id: R051
-    content: P5-04 Team block with photo, name, and role; same block as R317
+    content: "P5-04 Team block with photo, name, and role; same block as R317"
     status: pending
   - id: R052
-    content: P5-05 Timeline block
+    content: "P5-05 Timeline block"
     status: pending
   - id: R053
-    content: P5-06 Map block; Location is R318
+    content: "P5-06 Map block; Location is R318"
     status: pending
   - id: R054
-    content: P5-07 Spacer block
+    content: "P5-07 Spacer block"
     status: pending
   - id: R055
-    content: P5-08 Button block
+    content: "P5-08 Button block"
     status: pending
   - id: R056
-    content: P5-09 Code block
+    content: "P5-09 Code block"
     status: pending
   - id: R057
-    content: P5-10 Newsletter block wired to the form inbox
+    content: "P5-10 Newsletter block wired to the form inbox"
     status: pending
   - id: R058
-    content: P5-11 Image-morph block
+    content: "P5-11 Image-morph block"
     status: pending
   - id: R059
-    content: P5-12 Load Puck components from src/builder/custom/
+    content: "P5-12 Load Puck components from src/builder/custom/"
     status: pending
   - id: R060
-    content: P5-13 Document the local plugin registration type
+    content: "P5-13 Document the local plugin registration type"
     status: pending
   - id: R061
-    content: P5-14 Soft lock and presence on pages and posts
+    content: "P5-14 Soft lock and presence on pages and posts"
     status: pending
   - id: R062
-    content: P5-15 One A/B variant per page
+    content: "P5-15 One A/B variant per page"
     status: pending
   - id: R063
-    content: P5-16 Analytics group by variant and manual pick winner
+    content: "P5-16 Analytics group by variant and manual pick winner"
     status: pending
   - id: R064
-    content: P6-01 Threaded post comments
+    content: "P6-01 Threaded post comments"
     status: pending
   - id: R065
-    content: P6-02 Public comment form
+    content: "P6-02 Public comment form"
     status: pending
   - id: R066
-    content: P6-03 Comment moderation queue
+    content: "P6-03 Comment moderation queue"
     status: pending
   - id: R067
-    content: P6-04 Comments post block
+    content: "P6-04 Comments post block"
     status: pending
   - id: R068
-    content: P6-05 Email the post author when a comment is approved
+    content: "P6-05 Email the post author when a comment is approved"
     status: pending
   - id: R069
-    content: P6-06 products and orders tables
+    content: "P6-06 products and orders tables"
     status: pending
   - id: R070
-    content: P6-07 Product grid block and Buy button
+    content: "P6-07 Product grid block and Buy button"
     status: pending
   - id: R071
-    content: P6-08 Stripe Checkout for one product and shared Stripe client
+    content: "P6-08 Stripe Checkout for one product and shared Stripe client"
     status: pending
   - id: R072
-    content: P6-09 Stripe webhook marks the order paid; orders inbox
+    content: "P6-09 Stripe webhook marks the order paid; orders inbox"
     status: pending
   - id: R073
-    content: P7-01 Per-site baked export
+    content: "P7-01 Per-site baked export"
     status: pending
   - id: R074
-    content: P7-02 Export report for forms and checkout
+    content: "P7-02 Export report for forms and checkout"
     status: pending
   - id: R075
-    content: P7-03 Playwright sign-in, edit, publish, form, redirect
+    content: "P7-03 Playwright sign-in, edit, publish, form, redirect"
     status: pending
   - id: R076
-    content: P7-04 Vitest for routes, redirects, collections, and blocks
+    content: "P7-04 Vitest for routes, redirects, collections, and blocks"
     status: pending
   - id: R077
-    content: P7-05 docker-compose for app, Postgres, and optional MinIO
+    content: "P7-05 docker-compose for app, Postgres, and optional MinIO"
     status: pending
   - id: R078
-    content: P7-06 Lighthouse CI
+    content: "P7-06 Lighthouse CI"
     status: pending
   - id: R079
-    content: P7-07 GitHub Actions
+    content: "P7-07 GitHub Actions"
     status: pending
   - id: R080
-    content: S1-01 subscribers_only on pages and posts
+    content: "S1-01 subscribers_only on pages and posts"
     status: pending
   - id: R081
-    content: S1-02 Confirm users.password_hash from R025
+    content: "S1-02 Confirm users.password_hash from R025"
     status: pending
   - id: R082
-    content: S1-03 subscriptions table
+    content: "S1-03 subscriptions table"
     status: pending
   - id: R083
-    content: S1-04 subscription_enabled and subscription_label on site_settings
+    content: "S1-04 subscription_enabled and subscription_label on site_settings"
     status: pending
   - id: R084
-    content: S1-05 Subscriber role with no dashboard permissions
+    content: "S1-05 Subscriber role with no dashboard permissions"
     status: pending
   - id: R085
-    content: S1-06 Optional Stripe env vars
+    content: "S1-06 Optional Stripe env vars"
     status: pending
   - id: R086
-    content: S2-01 Entitlement check for active or trialing subscriptions
+    content: "S2-01 Entitlement check for active or trialing subscriptions"
     status: pending
   - id: R087
-    content: S2-02 Staff roles entitled; Subscriber role not
+    content: "S2-02 Staff roles entitled; Subscriber role not"
     status: pending
   - id: R088
-    content: S3-01 Reuse scrypt helper from R025
+    content: "S3-01 Reuse scrypt helper from R025"
     status: pending
   - id: R089
-    content: S3-02 Signup assigns the Subscriber role directly
+    content: "S3-02 Signup assigns the Subscriber role directly"
     status: pending
   - id: R090
-    content: S3-03 Public /subscribe page
+    content: "S3-03 Public /subscribe page"
     status: pending
   - id: R091
-    content: S3-04 Email and password login at /account/login
+    content: "S3-04 Email and password login at /account/login"
     status: pending
   - id: R092
-    content: S3-05 Account page showing subscription status
+    content: "S3-05 Account page showing subscription status"
     status: pending
   - id: R093
-    content: S3-06 Subscriber logout
+    content: "S3-06 Subscriber logout"
     status: pending
   - id: R094
-    content: S3-07 Redirect the Subscriber role away from the dashboard
+    content: "S3-07 Redirect the Subscriber role away from the dashboard"
     status: pending
   - id: R095
-    content: S3-08 Header link to Subscribe or Account
+    content: "S3-08 Header link to Subscribe or Account"
     status: pending
   - id: R096
-    content: S4-01 Reuse Stripe client from R071
+    content: "S4-01 Reuse Stripe client from R071"
     status: pending
   - id: R097
-    content: S4-02 Checkout session in subscription mode
+    content: "S4-02 Checkout session in subscription mode"
     status: pending
   - id: R098
-    content: S4-03 Start checkout from /subscribe
+    content: "S4-03 Start checkout from /subscribe"
     status: pending
   - id: R099
-    content: S4-04 Verify the Stripe webhook signature on the R072 route
+    content: "S4-04 Verify the Stripe webhook signature on the R072 route"
     status: pending
   - id: R100
-    content: S4-05 Handle checkout.session.completed
+    content: "S4-05 Handle checkout.session.completed"
     status: pending
   - id: R101
-    content: S4-06 Handle subscription updated and deleted
+    content: "S4-06 Handle subscription updated and deleted"
     status: pending
   - id: R102
-    content: S4-07 Keep past_due, canceled, incomplete, and unpaid locked
+    content: "S4-07 Keep past_due, canceled, incomplete, and unpaid locked"
     status: pending
   - id: R103
-    content: S4-08 Stripe Customer Portal route
+    content: "S4-08 Stripe Customer Portal route"
     status: pending
   - id: R104
-    content: S4-09 Clear message when Stripe env vars are missing
+    content: "S4-09 Clear message when Stripe env vars are missing"
     status: pending
   - id: R105
-    content: S5-01 Expose subscribersOnly on public post and page loads
+    content: "S5-01 Expose subscribersOnly on public post and page loads"
     status: pending
   - id: R106
-    content: S5-02 Strip locked post body and canvas before render
+    content: "S5-02 Strip locked post body and canvas before render"
     status: pending
   - id: R107
-    content: S5-03 Strip locked page content before render
+    content: "S5-03 Strip locked page content before render"
     status: pending
   - id: R108
-    content: S5-04 Paywall with title, excerpt, and subscribe or login links
+    content: "S5-04 Paywall with title, excerpt, and subscribe or login links"
     status: pending
   - id: R109
-    content: S5-05 Keep draft preview showing the full body
+    content: "S5-05 Keep draft preview showing the full body"
     status: pending
   - id: R110
-    content: S5-06 Omit locked post body and layout from /api/v1
+    content: "S5-06 Omit locked post body and layout from /api/v1"
     status: pending
   - id: R111
-    content: S5-07 Omit locked page content from /api/v1
+    content: "S5-07 Omit locked page content from /api/v1"
     status: pending
   - id: R112
-    content: S5-08 Set isAccessibleForFree false on locked JSON-LD
+    content: "S5-08 Set isAccessibleForFree false on locked JSON-LD"
     status: pending
   - id: R113
-    content: S6-01 Post form field and validation for subscribers only
+    content: "S6-01 Post form field and validation for subscribers only"
     status: pending
   - id: R114
-    content: S6-02 Subscribers only switch on the post sidebar
+    content: "S6-02 Subscribers only switch on the post sidebar"
     status: pending
   - id: R115
-    content: S6-03 Persist the post flag on save
+    content: "S6-03 Persist the post flag on save"
     status: pending
   - id: R116
-    content: S6-04 Copy the post flag when duplicating a post
+    content: "S6-04 Copy the post flag when duplicating a post"
     status: pending
   - id: R117
-    content: S6-05 Page form field and validation for subscribers only
+    content: "S6-05 Page form field and validation for subscribers only"
     status: pending
   - id: R118
-    content: S6-06 Subscribers only switch on the page sidebar
+    content: "S6-06 Subscribers only switch on the page sidebar"
     status: pending
   - id: R119
-    content: S6-07 Persist the page flag on save
+    content: "S6-07 Persist the page flag on save"
     status: pending
   - id: R120
-    content: S6-08 Copy the page flag when duplicating a page
+    content: "S6-08 Copy the page flag when duplicating a page"
     status: pending
   - id: R121
-    content: S6-09 Settings switch and price label
+    content: "S6-09 Settings switch and price label"
     status: pending
   - id: R122
-    content: S6-10 Subscribers list for settings.manage
+    content: "S6-10 Subscribers list for settings.manage"
     status: pending
   - id: R123
-    content: V1-01 Journal the existing page_views SQL
+    content: "V1-01 Journal the existing page_views SQL"
     status: pending
   - id: R124
-    content: V1-02 video_playlists, videos, video_progress, and video_settings
+    content: "V1-02 video_playlists, videos, video_progress, and video_settings"
     status: pending
   - id: R125
-    content: V1-03 Generate the video Drizzle migration
+    content: "V1-03 Generate the video Drizzle migration"
     status: pending
   - id: R126
-    content: V2-01 parseVideoUrl for YouTube, Vimeo, and direct MP4/WebM
+    content: "V2-01 parseVideoUrl for YouTube, Vimeo, and direct MP4/WebM"
     status: pending
   - id: R127
-    content: V2-02 buildEmbed allowlisted iframe src
+    content: "V2-02 buildEmbed allowlisted iframe src"
     status: pending
   - id: R128
-    content: V2-03 videoSettingsSchema and defaults
+    content: "V2-03 videoSettingsSchema and defaults"
     status: pending
   - id: R129
-    content: V2-04 clampProgress completion rule
+    content: "V2-04 clampProgress completion rule"
     status: pending
   - id: R130
-    content: V2-05 node:test for video parsers plus a test script
+    content: "V2-05 node:test for video parsers plus a test script"
     status: pending
   - id: R131
-    content: V2-06 Official oEmbed client for YouTube and Vimeo
+    content: "V2-06 Official oEmbed client for YouTube and Vimeo"
     status: pending
   - id: R132
-    content: V3-01 Video permission keys
+    content: "V3-01 Video permission keys"
     status: pending
   - id: R133
-    content: V3-02 Audit target video
+    content: "V3-02 Audit target video"
     status: pending
   - id: R134
-    content: V3-03 Persist videoSettings
+    content: "V3-03 Persist videoSettings"
     status: pending
   - id: R135
-    content: V3-04 Video library section on the settings form
+    content: "V3-04 Video library section on the settings form"
     status: pending
   - id: R136
-    content: V4-01 Dashboard video routes and sidebar item
+    content: "V4-01 Dashboard video routes and sidebar item"
     status: pending
   - id: R137
-    content: V4-02 Playlist service and actions
+    content: "V4-02 Playlist service and actions"
     status: pending
   - id: R138
-    content: V4-03 Playlist panel on the videos page
+    content: "V4-03 Playlist panel on the videos page"
     status: pending
   - id: R139
-    content: V4-04 Video create and update service
+    content: "V4-04 Video create and update service"
     status: pending
   - id: R140
-    content: V4-05 Publish, unpublish, soft-delete, and reorder
+    content: "V4-05 Publish, unpublish, soft-delete, and reorder"
     status: pending
   - id: R141
-    content: V4-06 Video list table
+    content: "V4-06 Video list table"
     status: pending
   - id: R142
-    content: V4-07 Create and edit form with invalid-URL message
+    content: "V4-07 Create and edit form with invalid-URL message"
     status: pending
   - id: R143
-    content: V5-01 Native player controls for direct MP4 and WebM
+    content: "V5-01 Native player controls for direct MP4 and WebM"
     status: pending
   - id: R144
-    content: V5-02 YouTube and Vimeo iframe player
+    content: "V5-02 YouTube and Vimeo iframe player"
     status: pending
   - id: R145
-    content: V5-03 Native-only seek restriction
+    content: "V5-03 Native-only seek restriction"
     status: pending
   - id: R146
-    content: V5-04 Video list with search, playlist filter, and load more
+    content: "V5-04 Video list with search, playlist filter, and load more"
     status: pending
   - id: R147
-    content: V5-05 Sidebar and stacked library layouts
+    content: "V5-05 Sidebar and stacked library layouts"
     status: pending
   - id: R148
-    content: V5-06 Admin preview dialog
+    content: "V5-06 Admin preview dialog"
     status: pending
   - id: R149
-    content: V6-01 Published-video query for the block
+    content: "V6-01 Published-video query for the block"
     status: pending
   - id: R150
-    content: V6-02 Register the VideoLibrary Puck block
+    content: "V6-02 Register the VideoLibrary Puck block"
     status: pending
   - id: R151
-    content: V6-03 saveVideoProgress for signed-in viewers
+    content: "V6-03 saveVideoProgress for signed-in viewers"
     status: pending
   - id: R152
-    content: V6-04 Resume start position
+    content: "V6-04 Resume start position"
     status: pending
   - id: R153
-    content: V6-05 Wire progress into the widget
+    content: "V6-05 Wire progress into the widget"
     status: pending
   - id: R154
-    content: V7-01 Permission matrix test for the four video keys
+    content: "V7-01 Permission matrix test for the four video keys"
     status: pending
   - id: R155
-    content: V7-02 Lint and tsc on the video files
+    content: "V7-02 Lint and tsc on the video files"
     status: pending
   - id: R156
-    content: V7-03 Browser check of the admin form and the public widget
+    content: "V7-03 Browser check of the admin form and the public widget"
     status: pending
   - id: R157
-    content: T1-01 Confirm page_views journal from R123; do not repeat it
+    content: "T1-01 Confirm page_views journal from R123; do not repeat it"
     status: pending
   - id: R158
-    content: T1-02 training_courses, training_course_items, and training_enrollments
+    content: "T1-02 training_courses, training_course_items, and training_enrollments"
     status: pending
   - id: R159
-    content: T1-03 training_video_progress and course_progress
+    content: "T1-03 training_video_progress and course_progress"
     status: pending
   - id: R160
-    content: T1-04 training_questions and training_attempts
+    content: "T1-04 training_questions and training_attempts"
     status: pending
   - id: R161
-    content: T1-05 certificates with one issued row per user and course
+    content: "T1-05 certificates with one issued row per user and course"
     status: pending
   - id: R162
-    content: T1-06 notifications and site_settings.training_settings
+    content: "T1-06 notifications and site_settings.training_settings"
     status: pending
   - id: R163
-    content: T1-07 Drizzle migration for the training tables only
+    content: "T1-07 Drizzle migration for the training tables only"
     status: pending
   - id: R164
-    content: T2-01 Parse a course item via parseVideoUrl from R126
+    content: "T2-01 Parse a course item via parseVideoUrl from R126"
     status: pending
   - id: R165
-    content: T2-02 Merge watched ranges without counting seeks across a gap
+    content: "T2-02 Merge watched ranges without counting seeks across a gap"
     status: pending
   - id: R166
-    content: T2-03 Accept a playback event with stale, duplicate, and wall-clock guards
+    content: "T2-03 Accept a playback event with stale, duplicate, and wall-clock guards"
     status: pending
   - id: R167
-    content: T2-04 Course completion rules
+    content: "T2-04 Course completion rules"
     status: pending
   - id: R168
-    content: T2-05 Score a quiz on the server and enforce attempt limits
+    content: "T2-05 Score a quiz on the server and enforce attempt limits"
     status: pending
   - id: R169
-    content: T2-06 Certificate number, verify token, and eligibility
+    content: "T2-06 Certificate number, verify token, and eligibility"
     status: pending
   - id: R170
-    content: T2-07 Notification dedupe keys
+    content: "T2-07 Notification dedupe keys"
     status: pending
   - id: R171
-    content: T2-08 node:test for training rules; test script already exists
+    content: "T2-08 node:test for training rules; test script already exists"
     status: pending
   - id: R172
-    content: T3-01 training.manage, training.learn, and the Learner role
+    content: "T3-01 training.manage, training.learn, and the Learner role"
     status: pending
   - id: R173
-    content: T3-02 Send a Learner to my-training; keep the Subscriber redirect
+    content: "T3-02 Send a Learner to my-training; keep the Subscriber redirect"
     status: pending
   - id: R174
-    content: T3-03 trainingSettingsSchema and defaults
+    content: "T3-03 trainingSettingsSchema and defaults"
     status: pending
   - id: R175
-    content: T3-04 Persist training settings
+    content: "T3-04 Persist training settings"
     status: pending
   - id: R176
-    content: T3-05 Training section on the settings form
+    content: "T3-05 Training section on the settings form"
     status: pending
   - id: R177
-    content: T3-06 Audit targets for course, enrollment, and certificate
+    content: "T3-06 Audit targets for course, enrollment, and certificate"
     status: pending
   - id: R178
-    content: T4-01 Training routes and sidebar items
+    content: "T4-01 Training routes and sidebar items"
     status: pending
   - id: R179
-    content: T4-02 Course create, update, and publish service
+    content: "T4-02 Course create, update, and publish service"
     status: pending
   - id: R180
-    content: T4-03 Course list
+    content: "T4-03 Course list"
     status: pending
   - id: R181
-    content: T4-04 Course editor
+    content: "T4-04 Course editor"
     status: pending
   - id: R182
-    content: T4-05 Ordered course items from media or a video URL
+    content: "T4-05 Ordered course items from media or a video URL"
     status: pending
   - id: R183
-    content: T4-06 Per-course completion requirement fields
+    content: "T4-06 Per-course completion requirement fields"
     status: pending
   - id: R184
-    content: T4-07 Assign and unassign individual users
+    content: "T4-07 Assign and unassign individual users"
     status: pending
   - id: R185
-    content: T4-08 Quiz question editor
+    content: "T4-08 Quiz question editor"
     status: pending
   - id: R186
-    content: T5-01 HTML5 playback adapter using the native player
+    content: "T5-01 HTML5 playback adapter using the native player"
     status: pending
   - id: R187
-    content: T5-02 YouTube IFrame API adapter
+    content: "T5-02 YouTube IFrame API adapter"
     status: pending
   - id: R188
-    content: T5-03 Vimeo Player.js adapter
+    content: "T5-03 Vimeo Player.js adapter"
     status: pending
   - id: R189
-    content: T5-04 Heartbeat on play, pause, ended, and page leave
+    content: "T5-04 Heartbeat on play, pause, ended, and page leave"
     status: pending
   - id: R190
-    content: T5-05 saveTrainingProgress server action
+    content: "T5-05 saveTrainingProgress server action"
     status: pending
   - id: R191
-    content: T5-06 Resume from last position when the setting is on
+    content: "T5-06 Resume from last position when the setting is on"
     status: pending
   - id: R192
-    content: T5-07 Course player page for an enrolled learner
+    content: "T5-07 Course player page for an enrolled learner"
     status: pending
   - id: R193
-    content: T6-01 Recalculate course_progress in a transaction
+    content: "T6-01 Recalculate course_progress in a transaction"
     status: pending
   - id: R194
-    content: T6-02 Manual completion approval
+    content: "T6-02 Manual completion approval"
     status: pending
   - id: R195
-    content: T6-03 Quiz submit action
+    content: "T6-03 Quiz submit action"
     status: pending
   - id: R196
-    content: T6-04 Certificate PDF layout with pdf-lib and a QR code
+    content: "T6-04 Certificate PDF layout with pdf-lib and a QR code"
     status: pending
   - id: R197
-    content: T6-05 Store the PDF through storage()
+    content: "T6-05 Store the PDF through storage()"
     status: pending
   - id: R198
-    content: T6-06 Auto-issue one certificate when eligibility passes
+    content: "T6-06 Auto-issue one certificate when eligibility passes"
     status: pending
   - id: R199
-    content: T6-07 Revoke a certificate
+    content: "T6-07 Revoke a certificate"
     status: pending
   - id: R200
-    content: T6-08 Reissue a certificate
+    content: "T6-08 Reissue a certificate"
     status: pending
   - id: R201
-    content: T6-09 Public verification page
+    content: "T6-09 Public verification page"
     status: pending
   - id: R202
-    content: T6-10 Learner certificate download
+    content: "T6-10 Learner certificate download"
     status: pending
   - id: R203
-    content: T7-01 Admin overview counts from SQL aggregates
+    content: "T7-01 Admin overview counts from SQL aggregates"
     status: pending
   - id: R204
-    content: T7-02 User progress table
+    content: "T7-02 User progress table"
     status: pending
   - id: R205
-    content: T7-03 Course progress table
+    content: "T7-03 Course progress table"
     status: pending
   - id: R206
-    content: T7-04 CSV export of training progress
+    content: "T7-04 CSV export of training progress"
     status: pending
   - id: R207
-    content: T7-05 Learner training home
+    content: "T7-05 Learner training home"
     status: pending
   - id: R208
-    content: T7-06 Learner course page
+    content: "T7-06 Learner course page"
     status: pending
   - id: R209
-    content: T8-01 Idempotent notification insert
+    content: "T8-01 Idempotent notification insert"
     status: pending
   - id: R210
-    content: T8-02 Notify on assign, complete, issue, and revoke
+    content: "T8-02 Notify on assign, complete, issue, and revoke"
     status: pending
   - id: R211
-    content: T8-03 Cron reminders for due dates and expiring certificates
+    content: "T8-03 Cron reminders for due dates and expiring certificates"
     status: pending
   - id: R212
-    content: T8-04 Unread notification list in the dashboard shell
+    content: "T8-04 Unread notification list in the dashboard shell"
     status: pending
   - id: R213
-    content: T8-05 Audit log on course, assignment, approval, issue, revoke, and reissue
+    content: "T8-05 Audit log on course, assignment, approval, issue, revoke, and reissue"
     status: pending
   - id: R214
-    content: T8-06 docs/training.md with provider limits
+    content: "T8-06 docs/training.md with provider limits"
     status: pending
   - id: R215
-    content: T8-07 Lint, tsc, and the test script
+    content: "T8-07 Lint, tsc, and the test script"
     status: pending
   - id: R216
-    content: T8-08 Browser check of admin, learner, download, and verify
+    content: "T8-08 Browser check of admin, learner, download, and verify"
     status: pending
   - id: R217
-    content: L1-01 licenses table with hashed key, product id, and max installations fixed at 1
+    content: "L1-01 licenses table with hashed key, product id, and max installations fixed at 1"
     status: pending
   - id: R218
-    content: L1-02 license_installations with a public key and one active binding per license
+    content: "L1-02 license_installations with a public key and one active binding per license"
     status: pending
   - id: R219
-    content: L1-03 license_events and license_nonces, with no secrets stored
+    content: "L1-03 license_events and license_nonces, with no secrets stored"
     status: pending
   - id: R220
-    content: L1-04 license_settings on site_settings for policy only
+    content: "L1-04 license_settings on site_settings for policy only"
     status: pending
   - id: R221
-    content: L1-05 Drizzle migration for the license tables and license_settings
+    content: "L1-05 Drizzle migration for the license tables and license_settings"
     status: pending
   - id: R222
-    content: L2-01 Generate a license key, store sha256, return plaintext once
+    content: "L2-01 Generate a license key, store sha256, return plaintext once"
     status: pending
   - id: R223
-    content: L2-02 Ed25519 license token signing with Node crypto
+    content: "L2-02 Ed25519 license token signing with Node crypto"
     status: pending
   - id: R224
-    content: L2-03 Installation key pair kept in server env, public key registered
+    content: "L2-03 Installation key pair kept in server env, public key registered"
     status: pending
   - id: R225
-    content: L2-04 Verify token signature, issuer, audience, expiry, product, and installation
+    content: "L2-04 Verify token signature, issuer, audience, expiry, product, and installation"
     status: pending
   - id: R226
-    content: L2-05 Accept the current and previous signing public keys
+    content: "L2-05 Accept the current and previous signing public keys"
     status: pending
   - id: R227
-    content: L2-06 node:test for hash, forged tokens, expiry, and key rotation
+    content: "L2-06 node:test for hash, forged tokens, expiry, and key rotation"
     status: pending
   - id: R228
-    content: L3-01 Atomic activate with row lock, idempotent for the same installation
+    content: "L3-01 Atomic activate with row lock, idempotent for the same installation"
     status: pending
   - id: R229
-    content: L3-02 Validate and heartbeat refresh a short-lived token
+    content: "L3-02 Validate and heartbeat refresh a short-lived token"
     status: pending
   - id: R230
-    content: L3-03 Deactivate only the bound installation
+    content: "L3-03 Deactivate only the bound installation"
     status: pending
   - id: R231
-    content: L3-04 Admin reassign revokes the old binding in one transaction
+    content: "L3-04 Admin reassign revokes the old binding in one transaction"
     status: pending
   - id: R232
-    content: L3-05 Rate limit, nonce replay window, and generic activation errors
+    content: "L3-05 Rate limit, nonce replay window, and generic activation errors"
     status: pending
   - id: R233
-    content: L3-06 Cron marks expired licenses using CRON_SECRET
+    content: "L3-06 Cron marks expired licenses using CRON_SECRET"
     status: pending
   - id: R234
-    content: L4-01 POST /api/licenses/activate
+    content: "L4-01 POST /api/licenses/activate"
     status: pending
   - id: R235
-    content: L4-02 POST /api/licenses/validate and POST /api/licenses/heartbeat
+    content: "L4-02 POST /api/licenses/validate and POST /api/licenses/heartbeat"
     status: pending
   - id: R236
-    content: L4-03 POST /api/licenses/deactivate
+    content: "L4-03 POST /api/licenses/deactivate"
     status: pending
   - id: R237
-    content: L4-04 GET /api/licenses/status for the signed installation
+    content: "L4-04 GET /api/licenses/status for the signed installation"
     status: pending
   - id: R238
-    content: L5-01 Central requireLicense guard
+    content: "L5-01 Central requireLicense guard"
     status: pending
   - id: R239
-    content: L5-02 Dashboard layout fails closed without a valid installation token
+    content: "L5-02 Dashboard layout fails closed without a valid installation token"
     status: pending
   - id: R240
-    content: L5-03 Server actions call requireLicense
+    content: "L5-03 Server actions call requireLicense"
     status: pending
   - id: R241
-    content: L5-04 Cron and /api/v1 mutations call requireLicense; public published GET stays up
+    content: "L5-04 Cron and /api/v1 mutations call requireLicense; public published GET stays up"
     status: pending
   - id: R242
-    content: L5-05 LICENSE_ENFORCEMENT=off is ignored when NODE_ENV is production
+    content: "L5-05 LICENSE_ENFORCEMENT=off is ignored when NODE_ENV is production"
     status: pending
   - id: R243
-    content: L6-01 licenses.manage for Admin, audit target license
+    content: "L6-01 licenses.manage for Admin, audit target license"
     status: pending
   - id: R244
-    content: L6-02 License routes and sidebar item
+    content: "L6-02 License routes and sidebar item"
     status: pending
   - id: R245
-    content: L6-03 Issue a license for product next-cms and show the key once
+    content: "L6-03 Issue a license for product next-cms and show the key once"
     status: pending
   - id: R246
-    content: L6-04 Assign a license owner
+    content: "L6-04 Assign a license owner"
     status: pending
   - id: R247
-    content: L6-05 License list with search, filter, sort, and pagination
+    content: "L6-05 License list with search, filter, sort, and pagination"
     status: pending
   - id: R248
-    content: L6-06 License detail with bound installation and event history
+    content: "L6-06 License detail with bound installation and event history"
     status: pending
   - id: R249
-    content: L6-07 Suspend, revoke, and renew with confirmation
+    content: "L6-07 Suspend, revoke, and renew with confirmation"
     status: pending
   - id: R250
-    content: L6-08 Reassign and deactivate with confirmation, reason, and actor
+    content: "L6-08 Reassign and deactivate with confirmation, reason, and actor"
     status: pending
   - id: R251
-    content: L6-09 License policy section on the settings form
+    content: "L6-09 License policy section on the settings form"
     status: pending
   - id: R252
-    content: L7-01 Notify on conflict, revocation, and upcoming expiry
+    content: "L7-01 Notify on conflict, revocation, and upcoming expiry"
     status: pending
   - id: R253
-    content: L7-02 Record suspicious attempts without auto-revoke on IP change
+    content: "L7-02 Record suspicious attempts without auto-revoke on IP change"
     status: pending
   - id: R254
-    content: L8-01 Tests for valid, invalid, wrong product, second install, and idempotent activate
+    content: "L8-01 Tests for valid, invalid, wrong product, second install, and idempotent activate"
     status: pending
   - id: R255
-    content: L8-02 Test that two concurrent activations cannot both bind
+    content: "L8-02 Test that two concurrent activations cannot both bind"
     status: pending
   - id: R256
-    content: L8-03 Tests for expired, revoked, suspended, forged, and rotated tokens
+    content: "L8-03 Tests for expired, revoked, suspended, forged, and rotated tokens"
     status: pending
   - id: R257
-    content: L8-04 Tests for reassignment authorization and concurrent reassignment
+    content: "L8-04 Tests for reassignment authorization and concurrent reassignment"
     status: pending
   - id: R258
-    content: L8-05 Tests for grace, rate limit, replay, the guard, and audit
+    content: "L8-05 Tests for grace, rate limit, replay, the guard, and audit"
     status: pending
   - id: R259
-    content: L8-06 docs/licensing.md for keys, environments, and limits
+    content: "L8-06 docs/licensing.md for keys, environments, and limits"
     status: pending
   - id: R260
-    content: L8-07 Lint, tsc, and the license tests
+    content: "L8-07 Lint, tsc, and the license tests"
     status: pending
   - id: R261
-    content: L8-08 Browser check of issue, second install, revoke, and reassign
+    content: "L8-08 Browser check of issue, second install, revoke, and reassign"
     status: pending
   - id: R262
-    content: A1-01 auth_settings on site_settings for login, registration, approval, session, and lockout
+    content: "A1-01 auth_settings on site_settings for login, registration, approval, session, and lockout"
     status: pending
   - id: R263
-    content: A1-02 approved_at, failed_login_count, and locked_until on users, with a migration
+    content: "A1-02 approved_at, failed_login_count, and locked_until on users, with a migration"
     status: pending
   - id: R264
-    content: A2-01 assignDefaultRole always sets Viewer and ignores a client role
+    content: "A2-01 assignDefaultRole always sets Viewer and ignores a client role"
     status: pending
   - id: R265
-    content: A2-02 Google callback and AuthService.create use Viewer for a new user
+    content: "A2-02 Google callback and AuthService.create use Viewer for a new user"
     status: pending
   - id: R266
-    content: A2-03 Role changes stay on settings.manage and are audited
+    content: "A2-03 Role changes stay on settings.manage and are audited"
     status: pending
   - id: R267
-    content: A2-04 Server CLI auth:promote assigns Admin for a bootstrap email
+    content: "A2-04 Server CLI auth:promote assigns Admin for a bootstrap email"
     status: pending
   - id: R268
-    content: A3-01 Server helper that reads auth settings
+    content: "A3-01 Server helper that reads auth settings"
     status: pending
   - id: R269
-    content: A3-02 Hide login links when login is disabled
+    content: "A3-02 Hide login links when login is disabled"
     status: pending
   - id: R270
-    content: A3-03 Login page and Google routes reject when login is disabled
+    content: "A3-03 Login page and Google routes reject when login is disabled"
     status: pending
   - id: R271
-    content: A3-04 Reject new accounts when public registration is disabled
+    content: "A3-04 Reject new accounts when public registration is disabled"
     status: pending
   - id: R272
-    content: A3-05 Admin approval leaves new users without a session until approved
+    content: "A3-05 Admin approval leaves new users without a session until approved"
     status: pending
   - id: R273
-    content: A3-06 Block session creation when email verification is required and missing
+    content: "A3-06 Block session creation when email verification is required and missing"
     status: pending
   - id: R274
-    content: A3-07 Reject inactive, unapproved, and locked users in validateSession
+    content: "A3-07 Reject inactive, unapproved, and locked users in validateSession"
     status: pending
   - id: R275
-    content: A4-01 Session lifetime comes from auth settings
+    content: "A4-01 Session lifetime comes from auth settings"
     status: pending
   - id: R276
-    content: A4-02 Rate limit and lockout on login attempts
+    content: "A4-02 Rate limit and lockout on login attempts"
     status: pending
   - id: R277
-    content: A4-03 Post-login redirect stays on a same-site path
+    content: "A4-03 Post-login redirect stays on a same-site path"
     status: pending
   - id: R278
-    content: A4-04 Keep httpOnly SameSite cookies and check the request origin
+    content: "A4-04 Keep httpOnly SameSite cookies and check the request origin"
     status: pending
   - id: R279
-    content: A5-01 Unauthenticated admin routes redirect to login or the disabled message
+    content: "A5-01 Unauthenticated admin routes redirect to login or the disabled message"
     status: pending
   - id: R280
-    content: A5-02 Server-side permission checks on users, settings, and licenses
+    content: "A5-02 Server-side permission checks on users, settings, and licenses"
     status: pending
   - id: R281
-    content: A5-03 Published public pages stay available without a session
+    content: "A5-03 Published public pages stay available without a session"
     status: pending
   - id: R282
-    content: A6-01 Authentication and Access settings section
+    content: "A6-01 Authentication and Access settings section"
     status: pending
   - id: R283
-    content: A6-02 Approve pending users from the admin user list
+    content: "A6-02 Approve pending users from the admin user list"
     status: pending
   - id: R284
-    content: A7-01 CLI auth:enable-login turns login back on through the database
+    content: "A7-01 CLI auth:enable-login turns login back on through the database"
     status: pending
   - id: R285
-    content: A7-02 docs/auth.md for defaults, Viewer, and recovery
+    content: "A7-02 docs/auth.md for defaults, Viewer, and recovery"
     status: pending
   - id: R286
-    content: A8-01 Tests that new and Google users receive Viewer
+    content: "A8-01 Tests that new and Google users receive Viewer"
     status: pending
   - id: R287
-    content: A8-02 Tests that Viewer and Editor cannot perform admin operations
+    content: "A8-02 Tests that Viewer and Editor cannot perform admin operations"
     status: pending
   - id: R288
-    content: A8-03 Tests for disabled login, disabled registration, and blocked accounts
+    content: "A8-03 Tests for disabled login, disabled registration, and blocked accounts"
     status: pending
   - id: R289
-    content: A8-04 Tests for lockout, audited role changes, public pages, and login recovery
+    content: "A8-04 Tests for lockout, audited role changes, public pages, and login recovery"
     status: pending
   - id: R290
-    content: A8-05 Lint, tsc, and the auth tests
+    content: "A8-05 Lint, tsc, and the auth tests"
     status: pending
   - id: R291
-    content: A8-06 Browser check of the auth settings and a disabled login page
+    content: "A8-06 Browser check of the auth settings and a disabled login page"
     status: pending
   - id: R292
-    content: O1-01 Map Studio Crafted light and Obsidian Studio dark tokens and per-theme radius in globals.css
+    content: "O1-01 Map Studio Crafted light and Obsidian Studio dark tokens and per-theme radius in globals.css"
     status: pending
   - id: R293
-    content: O1-02 Per-theme shadows and status-pill colors
+    content: "O1-02 Per-theme shadows and status-pill colors"
     status: pending
   - id: R294
-    content: O1-03 Inter for body; Hanken Grotesk for light headlines and Inter for dark headlines
+    content: "O1-03 Inter for body; Hanken Grotesk for light headlines and Inter for dark headlines"
     status: pending
   - id: R295
-    content: O2-01 Let admin, builder chrome, and auth follow the active theme; drop the builder light lock
+    content: "O2-01 Let admin, builder chrome, and auth follow the active theme; drop the builder light lock"
     status: pending
   - id: R296
-    content: O2-02 Keep the header theme toggle wired to both token blocks
+    content: "O2-02 Keep the header theme toggle wired to both token blocks"
     status: pending
   - id: R297
-    content: O2-03 Toaster follows the active theme
+    content: "O2-03 Toaster follows the active theme"
     status: pending
   - id: R298
-    content: O3-01 Theme-aware button variants for both specs
+    content: "O3-01 Theme-aware button variants for both specs"
     status: pending
   - id: R299
-    content: O3-02 Theme-aware inputs, checkboxes, and radios
+    content: "O3-02 Theme-aware inputs, checkboxes, and radios"
     status: pending
   - id: R300
-    content: O3-03 Theme-aware badge and status badge
+    content: "O3-03 Theme-aware badge and status badge"
     status: pending
   - id: R301
-    content: O3-04 Theme-aware card, dialog, sheet, popover, and block cards
+    content: "O3-04 Theme-aware card, dialog, sheet, popover, and block cards"
     status: pending
   - id: R302
-    content: O3-05 Sidebar width, divider, and nav items for both themes
+    content: "O3-05 Sidebar width, divider, and nav items for both themes"
     status: pending
   - id: R303
-    content: O3-06 Sticky header and breadcrumbs for both themes
+    content: "O3-06 Sticky header and breadcrumbs for both themes"
     status: pending
   - id: R304
-    content: O4-01 Replace hardcoded steel and light pairs on admin routes
+    content: "O4-01 Replace hardcoded steel and light pairs on admin routes"
     status: pending
   - id: R305
-    content: O4-02 Restyle builder chrome so it follows the active theme
+    content: "O4-02 Restyle builder chrome so it follows the active theme"
     status: pending
   - id: R306
-    content: O4-03 Restyle inspector controls and fields
+    content: "O4-03 Restyle inspector controls and fields"
     status: pending
   - id: R307
-    content: O4-04 Restyle tables, text editor chrome, media browser, and react-select
+    content: "O4-04 Restyle tables, text editor chrome, media browser, and react-select"
     status: pending
   - id: R308
-    content: O4-05 Restyle the login page and auth layout
+    content: "O4-05 Restyle the login page and auth layout"
     status: pending
   - id: R309
-    content: O4-06 Block-drawer category tints that read in both themes
+    content: "O4-06 Block-drawer category tints that read in both themes"
     status: pending
   - id: R310
-    content: O5-01 Browser check of both themes and an unchanged public site theme
+    content: "O5-01 Browser check of both themes and an unchanged public site theme"
     status: pending
   - id: R311
-    content: M1-01 Add background, foreground, and muted to theme tokens
+    content: "M1-01 Add background, foreground, and muted to theme tokens"
     status: pending
   - id: R312
-    content: M1-02 Add Instrument Sans and Newsreader to the font list
+    content: "M1-02 Add Instrument Sans and Newsreader to the font list"
     status: pending
   - id: R313
-    content: M1-03 Consume the new color roles in theme.ts and site.css
+    content: "M1-03 Consume the new color roles in theme.ts and site.css"
     status: pending
   - id: R314
-    content: M1-04 Settings form fields for the new fonts and color roles
+    content: "M1-04 Settings form fields for the new fonts and color roles"
     status: pending
   - id: R315
-    content: M1-05 Seed a modern light theme only when tokens are still the defaults
+    content: "M1-05 Seed a modern light theme only when tokens are still the defaults"
     status: pending
   - id: R316
-    content: M2-01 Projects block with image, title, summary, link, and category
+    content: "M2-01 Projects block with image, title, summary, link, and category"
     status: pending
   - id: R317
-    content: M2-02 Team block with photo, name, and role; same block as R051
+    content: "M2-02 Team block with photo, name, and role; same block as R051"
     status: pending
   - id: R318
-    content: M2-03 Location block with address, hours, and a map link
+    content: "M2-03 Location block with address, hours, and a map link"
     status: pending
   - id: R319
-    content: M3-01 Restyle the six existing starter templates
+    content: "M3-01 Restyle the six existing starter templates"
     status: pending
   - id: R320
-    content: M3-02 Agency starter template
+    content: "M3-02 Agency starter template"
     status: pending
   - id: R321
-    content: M3-03 Portfolio starter template
+    content: "M3-03 Portfolio starter template"
     status: pending
   - id: R322
-    content: M3-04 Company starter template
+    content: "M3-04 Company starter template"
     status: pending
   - id: R323
-    content: M3-05 Docs starter template
+    content: "M3-05 Docs starter template"
     status: pending
   - id: R324
-    content: M3-06 Local business starter template
+    content: "M3-06 Local business starter template"
     status: pending
   - id: R325
-    content: M4-01 Publish the multi-page demo when a user exists
+    content: "M4-01 Publish the multi-page demo when a user exists"
     status: pending
   - id: R326
-    content: M4-02 Seed header and footer menus and wire them when empty
+    content: "M4-02 Seed header and footer menus and wire them when empty"
     status: pending
   - id: R327
-    content: M5-01 Browser check of the public demo, gallery, and unchanged admin chrome
+    content: "M5-01 Browser check of the public demo, gallery, and unchanged admin chrome"
     status: pending
   - id: R328
-    content: OZ-01 Record a reproducible production baseline for public routes and admin workflows
+    content: "OZ-01 Record a reproducible production baseline for public routes and admin workflows"
     status: pending
   - id: R329
-    content: OZ-02 Audit Next.js rendering, hydration, client boundaries, and server data access
+    content: "OZ-02 Audit Next.js rendering, hydration, client boundaries, and server data access"
     status: pending
   - id: R330
-    content: OZ-03 Optimize Core Web Vitals and route-level loading performance
+    content: "OZ-03 Optimize Core Web Vitals and route-level loading performance"
     status: pending
   - id: R331
-    content: OZ-04 Audit images, fonts, video, embeds, and third-party assets
+    content: "OZ-04 Audit images, fonts, video, embeds, and third-party assets"
     status: pending
   - id: R332
-    content: OZ-05 Reduce JavaScript bundles and remove unused or duplicated dependencies
+    content: "OZ-05 Reduce JavaScript bundles and remove unused or duplicated dependencies"
     status: pending
   - id: R333
-    content: OZ-06 Review caching, revalidation, and invalidation for public content
+    content: "OZ-06 Review caching, revalidation, and invalidation for public content"
     status: pending
   - id: R334
-    content: OZ-07 Profile database queries, indexes, pagination, and connection usage
+    content: "OZ-07 Profile database queries, indexes, pagination, and connection usage"
     status: pending
   - id: R335
-    content: OZ-08 Audit public routes for technical SEO and crawlability
+    content: "OZ-08 Audit public routes for technical SEO and crawlability"
     status: pending
   - id: R336
-    content: OZ-09 Add metadata, canonical, sitemap, robots, redirect, and structured-data checks
+    content: "OZ-09 Add metadata, canonical, sitemap, robots, redirect, and structured-data checks"
     status: pending
   - id: R337
-    content: OZ-10 Audit accessibility and keyboard/screen-reader behavior across public and admin UI
+    content: "OZ-10 Audit accessibility and keyboard/screen-reader behavior across public and admin UI"
     status: pending
   - id: R338
-    content: OZ-11 Audit responsive layouts and mobile interaction states
+    content: "OZ-11 Audit responsive layouts and mobile interaction states"
     status: pending
   - id: R339
-    content: OZ-12 Audit authentication, authorization, tenant isolation, and sessions
+    content: "OZ-12 Audit authentication, authorization, tenant isolation, and sessions"
     status: pending
   - id: R340
-    content: OZ-13 Audit input validation, API abuse controls, headers, secrets, and dependencies
+    content: "OZ-13 Audit input validation, API abuse controls, headers, secrets, and dependencies"
     status: pending
   - id: R341
-    content: OZ-14 Audit forms, email, uploads, media URLs, webhooks, and export safety
+    content: "OZ-14 Audit forms, email, uploads, media URLs, webhooks, and export safety"
     status: pending
   - id: R342
-    content: OZ-15 Add unit, integration, end-to-end, and regression coverage for critical flows
+    content: "OZ-15 Add unit, integration, end-to-end, and regression coverage for critical flows"
     status: pending
   - id: R343
-    content: OZ-16 Add CI quality gates, production build checks, and migration safety checks
+    content: "OZ-16 Add CI quality gates, production build checks, and migration safety checks"
     status: pending
   - id: R344
-    content: OZ-17 Add structured logging, error reporting, health checks, and operational runbooks
+    content: "OZ-17 Add structured logging, error reporting, health checks, and operational runbooks"
     status: pending
   - id: R345
-    content: OZ-18 Review deployment configuration, environment validation, backups, and recovery
+    content: "OZ-18 Review deployment configuration, environment validation, backups, and recovery"
     status: pending
   - id: R346
-    content: OZ-19 Audit CMS publishing, preview, cache invalidation, redirects, and content integrity
+    content: "OZ-19 Audit CMS publishing, preview, cache invalidation, redirects, and content integrity"
     status: pending
   - id: R347
-    content: OZ-20 Audit multi-site, locale, subscriber, video, training, licensing, and payment boundaries
+    content: "OZ-20 Audit multi-site, locale, subscriber, video, training, licensing, and payment boundaries"
     status: pending
   - id: R348
-    content: OZ-21 Improve admin dashboard, builder, tables, media library, and editor responsiveness
+    content: "OZ-21 Improve admin dashboard, builder, tables, media library, and editor responsiveness"
     status: pending
   - id: R349
-    content: OZ-22 Audit generated/exported sites for assets, links, SEO, forms, and reproducibility
+    content: "OZ-22 Audit generated/exported sites for assets, links, SEO, forms, and reproducibility"
     status: pending
   - id: R350
-    content: OZ-23 Establish performance budgets and automated regression reporting
+    content: "OZ-23 Establish performance budgets and automated regression reporting"
     status: pending
   - id: R351
-    content: OZ-24 Produce a prioritized audit report with evidence, risks, and remediation scope
+    content: "OZ-24 Produce a prioritized audit report with evidence, risks, and remediation scope"
     status: pending
   - id: R352
-    content: OZ-25 Gate 1 approval: baseline and audit findings reviewed before broad refactoring
+    content: "OZ-25 Gate 1 approval: baseline and audit findings reviewed before broad refactoring"
     status: pending
   - id: R353
-    content: OZ-26 Gate 2 approval: performance, rendering, assets, and caching targets verified
+    content: "OZ-26 Gate 2 approval: performance, rendering, assets, and caching targets verified"
     status: pending
   - id: R354
-    content: OZ-27 Gate 3 approval: SEO, accessibility, responsive behavior, and content integrity verified
+    content: "OZ-27 Gate 3 approval: SEO, accessibility, responsive behavior, and content integrity verified"
     status: pending
   - id: R355
-    content: OZ-28 Gate 4 approval: security, authorization, data integrity, and abuse controls verified
+    content: "OZ-28 Gate 4 approval: security, authorization, data integrity, and abuse controls verified"
     status: pending
   - id: R356
-    content: OZ-29 Gate 5 approval: automated tests, CI, deployment, monitoring, and recovery verified
+    content: "OZ-29 Gate 5 approval: automated tests, CI, deployment, monitoring, and recovery verified"
     status: pending
   - id: R357
-    content: OZ-30 Final production-readiness review and closeout report
+    content: "OZ-30 Final production-readiness review and closeout report"
     status: pending
   - id: R358
-    content: OZ-31 Verify public pages render useful HTML without client-only content dependencies
+    content: "OZ-31 Verify public pages render useful HTML without client-only content dependencies"
     status: pending
   - id: R359
-    content: OZ-32 Verify route loading, error, empty, not-found, and unauthorized states
+    content: "OZ-32 Verify route loading, error, empty, not-found, and unauthorized states"
     status: pending
   - id: R360
-    content: OZ-33 Verify caching never leaks draft, private, subscriber-only, or cross-site content
+    content: "OZ-33 Verify caching never leaks draft, private, subscriber-only, or cross-site content"
     status: pending
   - id: R361
-    content: OZ-34 Verify metadata and structured data reflect published content and access restrictions
+    content: "OZ-34 Verify metadata and structured data reflect published content and access restrictions"
     status: pending
   - id: R362
-    content: OZ-35 Verify reduced-motion, focus visibility, contrast, and touch target requirements
+    content: "OZ-35 Verify reduced-motion, focus visibility, contrast, and touch target requirements"
     status: pending
   - id: R363
-    content: OZ-36 Verify rate limits and idempotency for high-risk write and webhook endpoints
+    content: "OZ-36 Verify rate limits and idempotency for high-risk write and webhook endpoints"
     status: pending
   - id: R364
-    content: OZ-37 Verify migration recovery strategy and production backup restore
+    content: "OZ-37 Verify migration recovery strategy and production backup restore"
     status: pending
   - id: R365
-    content: OZ-38 Document baseline, before/after results, remaining risks, and deferred work
+    content: "OZ-38 Document baseline, before/after results, remaining risks, and deferred work"
     status: pending
   - id: R366
-    content: COM-01 Define commercial offer, target buyer, product catalog, and sales model
+    content: "COM-01 Define commercial offer, target buyer, product catalog, and sales model"
     status: pending
   - id: R367
-    content: COM-02 Create conversion-focused product landing pages with demos, screenshots, FAQs, and clear deliverables
+    content: "COM-02 Create conversion-focused product landing pages with demos, screenshots, FAQs, and clear deliverables"
     status: pending
   - id: R368
-    content: COM-03 Implement product pricing, license tiers, bundles, upgrade paths, and version compatibility
+    content: "COM-03 Implement product pricing, license tiers, bundles, upgrade paths, and version compatibility"
     status: pending
   - id: R369
-    content: COM-04 Implement secure cart or direct checkout and minimize checkout friction
+    content: "COM-04 Implement secure cart or direct checkout and minimize checkout friction"
     status: pending
   - id: R370
-    content: COM-05 Evaluate and select eligible payment provider(s) for Bangladesh and target international markets
+    content: "COM-05 Evaluate and select eligible payment provider(s) for Bangladesh and target international markets"
     status: pending
   - id: R371
-    content: COM-06 Implement verified payment webhooks, idempotency, reconciliation, and payment-failure recovery
+    content: "COM-06 Implement verified payment webhooks, idempotency, reconciliation, and payment-failure recovery"
     status: pending
   - id: R372
-    content: COM-07 Implement order lifecycle, receipts, invoices, refunds, cancellations, and admin order management
+    content: "COM-07 Implement order lifecycle, receipts, invoices, refunds, cancellations, and admin order management"
     status: pending
   - id: R373
-    content: COM-08 Implement secure digital fulfillment and expiring download links for purchased files
+    content: "COM-08 Implement secure digital fulfillment and expiring download links for purchased files"
     status: pending
   - id: R374
-    content: COM-09 Integrate license issuance, activation, domain limits, renewal, revocation, and recovery with paid orders
+    content: "COM-09 Integrate license issuance, activation, domain limits, renewal, revocation, and recovery with paid orders"
     status: pending
   - id: R375
-    content: COM-10 Implement customer account portal for orders, downloads, invoices, licenses, and support
+    content: "COM-10 Implement customer account portal for orders, downloads, invoices, licenses, and support"
     status: pending
   - id: R376
-    content: COM-11 Define subscription lifecycle including trials if offered, renewals, failed payments, cancellation, and grace periods
+    content: "COM-11 Define subscription lifecycle including trials if offered, renewals, failed payments, cancellation, and grace periods"
     status: pending
   - id: R377
-    content: COM-12 Implement coupons, campaign pricing, and abuse-resistant promotion rules
+    content: "COM-12 Implement coupons, campaign pricing, and abuse-resistant promotion rules"
     status: pending
   - id: R378
-    content: COM-13 Add sales funnel analytics, attribution, consent-aware tracking, and revenue reporting
+    content: "COM-13 Add sales funnel analytics, attribution, consent-aware tracking, and revenue reporting"
     status: pending
   - id: R379
-    content: COM-14 Add abandoned-checkout recovery and permission-based lifecycle email sequences
+    content: "COM-14 Add abandoned-checkout recovery and permission-based lifecycle email sequences"
     status: pending
   - id: R380
-    content: COM-15 Add customer reviews and testimonials with authenticity and moderation controls
+    content: "COM-15 Add customer reviews and testimonials with authenticity and moderation controls"
     status: pending
   - id: R381
-    content: COM-16 Create support, documentation, changelog, compatibility, update policy, and support entitlement workflows
+    content: "COM-16 Create support, documentation, changelog, compatibility, update policy, and support entitlement workflows"
     status: pending
   - id: R382
-    content: COM-17 Publish transparent terms of sale, privacy, refund, license, renewal, and support policies
+    content: "COM-17 Publish transparent terms of sale, privacy, refund, license, renewal, and support policies"
     status: pending
   - id: R383
-    content: COM-18 Assess tax, invoicing, consumer-protection, privacy, and cross-border obligations for target markets
+    content: "COM-18 Assess tax, invoicing, consumer-protection, privacy, and cross-border obligations for target markets"
     status: pending
   - id: R384
-    content: COM-19 Threat-model fraud, chargebacks, refund abuse, license sharing, and account takeover
+    content: "COM-19 Threat-model fraud, chargebacks, refund abuse, license sharing, and account takeover"
     status: pending
   - id: R385
-    content: COM-20 Run end-to-end test purchases for success, failure, duplicate webhook, refund, and fulfillment recovery
+    content: "COM-20 Run end-to-end test purchases for success, failure, duplicate webhook, refund, and fulfillment recovery"
     status: pending
   - id: R386
-    content: COM-21 Define product launch checklist, pricing hypotheses, and customer feedback validation
+    content: "COM-21 Define product launch checklist, pricing hypotheses, and customer feedback validation"
     status: pending
   - id: R387
-    content: COM-22 Build a minimal conversion dashboard and establish baseline funnel metrics
+    content: "COM-22 Build a minimal conversion dashboard and establish baseline funnel metrics"
     status: pending
   - id: R388
-    content: COM-23 Add product structured data and search snippets where eligible and truthful
+    content: "COM-23 Add product structured data and search snippets where eligible and truthful"
     status: pending
   - id: R389
-    content: COM-24 Verify checkout and customer portal accessibility, mobile UX, and performance
+    content: "COM-24 Verify checkout and customer portal accessibility, mobile UX, and performance"
     status: pending
   - id: R390
-    content: COM-25 Gate 6 approval: commercial model, payment eligibility, and launch scope approved
+    content: "COM-25 Gate 6 approval: commercial model, payment eligibility, and launch scope approved"
     status: pending
   - id: R391
-    content: COM-26 Gate 7 approval: end-to-end purchase, payment, fulfillment, and license lifecycle verified
+    content: "COM-26 Gate 7 approval: end-to-end purchase, payment, fulfillment, and license lifecycle verified"
     status: pending
   - id: R392
-    content: COM-27 Gate 8 approval: legal policies, customer support, analytics, and launch readiness verified
+    content: "COM-27 Gate 8 approval: legal policies, customer support, analytics, and launch readiness verified"
     status: pending
   - id: R393
-    content: BLD-01 Audit the existing Puck builder, Columns/Section components, stored page data, public renderer, and responsive controls before designing layout changes
+    content: "BLD-01 Audit the existing Puck builder, Columns/Section components, stored page data, public renderer, and responsive controls before designing layout changes"
     status: pending
   - id: R394
-    content: BLD-02 Define a strict typed, backward-compatible layout schema for container, flex, grid, sizing, and breakpoint settings
+    content: "BLD-02 Define a strict typed, backward-compatible layout schema for container, flex, grid, sizing, and breakpoint settings"
     status: pending
   - id: R395
-    content: BLD-03 Implement a nested Container component with a Puck slot/drop zone and safe default props
+    content: "BLD-03 Implement a nested Container component with a Puck slot/drop zone and safe default props"
     status: pending
   - id: R396
-    content: BLD-04 Add Flexbox controls for direction, justify-content, align-items, align-content, gap, wrap, and child alignment
+    content: "BLD-04 Add Flexbox controls for direction, justify-content, align-items, align-content, gap, wrap, and child alignment"
     status: pending
   - id: R397
-    content: BLD-05 Add container sizing controls for width, max/min width, height, min/max height, grow, shrink, basis, and box sizing
+    content: "BLD-05 Add container sizing controls for width, max/min width, height, min/max height, grow, shrink, basis, and box sizing"
     status: pending
   - id: R398
-    content: BLD-06 Add CSS Grid controls for column/row tracks, repeat patterns, gaps, auto-flow, and responsive track definitions
+    content: "BLD-06 Add CSS Grid controls for column/row tracks, repeat patterns, gaps, auto-flow, and responsive track definitions"
     status: pending
   - id: R399
-    content: BLD-07 Add per-child grid placement controls for column/row start, span, and order with validated values
+    content: "BLD-07 Add per-child grid placement controls for column/row start, span, and order with validated values"
     status: pending
   - id: R400
-    content: BLD-08 Implement canvas resize handles for container width and flex/grid column proportions without breaking Puck drag-and-drop selection
+    content: "BLD-08 Implement canvas resize handles for container width and flex/grid column proportions without breaking Puck drag-and-drop selection"
     status: pending
   - id: R401
-    content: BLD-09 Add responsive breakpoint values and desktop/tablet/mobile preview, including inheritance and reset-to-inherited behavior
+    content: "BLD-09 Add responsive breakpoint values and desktop/tablet/mobile preview, including inheritance and reset-to-inherited behavior"
     status: pending
   - id: R402
-    content: BLD-10 Reuse existing section style controls for spacing, padding, margin, background, border, radius, and overflow where compatible
+    content: "BLD-10 Reuse existing section style controls for spacing, padding, margin, background, border, radius, and overflow where compatible"
     status: pending
   - id: R403
-    content: BLD-11 Preserve existing Columns and Section content with a non-destructive compatibility path and normalization for legacy saved pages
+    content: "BLD-11 Preserve existing Columns and Section content with a non-destructive compatibility path and normalization for legacy saved pages"
     status: pending
   - id: R404
-    content: BLD-12 Render layout styles consistently in editor, preview, and published pages without unsafe arbitrary CSS or style injection
+    content: "BLD-12 Render layout styles consistently in editor, preview, and published pages without unsafe arbitrary CSS or style injection"
     status: pending
   - id: R405
-    content: BLD-13 Add unit tests for layout schema validation, defaults, legacy normalization, breakpoint inheritance, and CSS style generation
+    content: "BLD-13 Add unit tests for layout schema validation, defaults, legacy normalization, breakpoint inheritance, and CSS style generation"
     status: pending
   - id: R406
-    content: BLD-14 Add integration/e2e tests for nesting, drag/drop, resize, save/reload, publish, and public-page rendering
+    content: "BLD-14 Add integration/e2e tests for nesting, drag/drop, resize, save/reload, publish, and public-page rendering"
     status: pending
   - id: R407
-    content: BLD-15 Make resize and layout controls accessible with keyboard operation, labels, focus states, and numeric alternatives to dragging
+    content: "BLD-15 Make resize and layout controls accessible with keyboard operation, labels, focus states, and numeric alternatives to dragging"
     status: pending
   - id: R408
-    content: BLD-16 Add starter layouts/templates demonstrating flex rows, responsive card grids, split hero sections, and nested containers
+    content: "BLD-16 Add starter layouts/templates demonstrating flex rows, responsive card grids, split hero sections, and nested containers"
     status: pending
   - id: R409
-    content: BLD-17 Document container, flex, grid, responsive behavior, supported CSS constraints, and migration/rollback behavior
+    content: "BLD-17 Document container, flex, grid, responsive behavior, supported CSS constraints, and migration/rollback behavior"
     status: pending
   - id: R410
-    content: BLD-18 Gate 13 approval: architecture audit, schema compatibility, and container/flex/grid foundations verified
+    content: "BLD-18 Gate 13 approval: architecture audit, schema compatibility, and container/flex/grid foundations verified"
     status: pending
   - id: R411
-    content: BLD-19 Gate 14 approval: visual resizing, responsive preview, accessibility, and legacy content compatibility verified
+    content: "BLD-19 Gate 14 approval: visual resizing, responsive preview, accessibility, and legacy content compatibility verified"
     status: pending
   - id: R412
-    content: BLD-20 Gate 15 approval: tests, save/publish/public rendering, performance, and release regression checks pass
+    content: "BLD-20 Gate 15 approval: tests, save/publish/public rendering, performance, and release regression checks pass"
     status: pending
   - id: R413
-    content: BLD-21 Audit current CMS entities, custom fields, public data access, cache boundaries, and Puck field/rendering APIs for safe dynamic content bindings
+    content: "BLD-21 Audit current CMS entities, custom fields, public data access, cache boundaries, and Puck field/rendering APIs for safe dynamic content bindings"
     status: pending
   - id: R414
-    content: BLD-22 Define a typed dynamic-value schema that distinguishes static values from approved dynamic source references
+    content: "BLD-22 Define a typed dynamic-value schema that distinguishes static values from approved dynamic source references"
     status: pending
   - id: R415
-    content: BLD-23 Implement a dynamic-content picker for supported text, rich text, image, URL, date, author, taxonomy, and custom-field sources where available
+    content: "BLD-23 Implement a dynamic-content picker for supported text, rich text, image, URL, date, author, taxonomy, and custom-field sources where available"
     status: pending
   - id: R416
-    content: BLD-24 Resolve dynamic bindings on the server or through approved data loaders with tenant/site authorization, draft-preview rules, and cache-safe behavior
+    content: "BLD-24 Resolve dynamic bindings on the server or through approved data loaders with tenant/site authorization, draft-preview rules, and cache-safe behavior"
     status: pending
   - id: R417
-    content: BLD-25 Add safe fallback values, missing-data states, escaping, URL validation, and cycle/depth limits for dynamic bindings
+    content: "BLD-25 Add safe fallback values, missing-data states, escaping, URL validation, and cycle/depth limits for dynamic bindings"
     status: pending
   - id: R418
-    content: BLD-26 Support dynamic values consistently in editor preview, preview routes, published pages, and export paths where supported
+    content: "BLD-26 Support dynamic values consistently in editor preview, preview routes, published pages, and export paths where supported"
     status: pending
   - id: R419
-    content: BLD-27 Add site-wide global design tokens for primary, secondary, text, accent, background, border, and custom colors
+    content: "BLD-27 Add site-wide global design tokens for primary, secondary, text, accent, background, border, and custom colors"
     status: pending
   - id: R420
-    content: BLD-28 Add global typography presets with font family, size, weight, line height, letter spacing, and responsive values
+    content: "BLD-28 Add global typography presets with font family, size, weight, line height, letter spacing, and responsive values"
     status: pending
   - id: R421
-    content: BLD-29 Add global style references and per-element custom overrides with predictable inheritance and reset-to-global behavior
+    content: "BLD-29 Add global style references and per-element custom overrides with predictable inheritance and reset-to-global behavior"
     status: pending
   - id: R422
-    content: BLD-30 Build a site settings/design-system interface for creating, editing, renaming, deleting, and previewing global tokens safely
+    content: "BLD-30 Build a site settings/design-system interface for creating, editing, renaming, deleting, and previewing global tokens safely"
     status: pending
   - id: R423
-    content: BLD-31 Resolve global style references consistently in editor and published CSS, including missing/deleted-token fallback behavior
+    content: "BLD-31 Resolve global style references consistently in editor and published CSS, including missing/deleted-token fallback behavior"
     status: pending
   - id: R424
-    content: BLD-32 Define a typed conditional-rule schema supporting equality, inequality, membership, empty checks, and safe AND/OR groups
+    content: "BLD-32 Define a typed conditional-rule schema supporting equality, inequality, membership, empty checks, and safe AND/OR groups"
     status: pending
   - id: R425
-    content: BLD-33 Implement editor-only conditional controls so dependent settings appear only when relevant without deleting hidden field values
+    content: "BLD-33 Implement editor-only conditional controls so dependent settings appear only when relevant without deleting hidden field values"
     status: pending
   - id: R426
-    content: BLD-34 Implement optional frontend visibility rules for approved conditions such as page type, content fields, authentication state, and feature flags
+    content: "BLD-34 Implement optional frontend visibility rules for approved conditions such as page type, content fields, authentication state, and feature flags"
     status: pending
   - id: R427
-    content: BLD-35 Enforce secure conditional rendering server-side for access-sensitive content; never treat a visual hide rule as authorization
+    content: "BLD-35 Enforce secure conditional rendering server-side for access-sensitive content; never treat a visual hide rule as authorization"
     status: pending
   - id: R428
-    content: BLD-36 Add migration/normalization for static legacy values and graceful fallbacks for absent dynamic/global/conditional settings
+    content: "BLD-36 Add migration/normalization for static legacy values and graceful fallbacks for absent dynamic/global/conditional settings"
     status: pending
   - id: R429
-    content: BLD-37 Add tests for dynamic binding resolution, global-token updates, condition logic, missing references, authorization, and cache isolation
+    content: "BLD-37 Add tests for dynamic binding resolution, global-token updates, condition logic, missing references, authorization, and cache isolation"
     status: pending
   - id: R430
-    content: BLD-38 Add editor-to-published end-to-end tests for dynamic fields, global styles, conditional controls, and frontend visibility
+    content: "BLD-38 Add editor-to-published end-to-end tests for dynamic fields, global styles, conditional controls, and frontend visibility"
     status: pending
   - id: R431
-    content: BLD-39 Document supported dynamic sources, global design tokens, condition operators, security boundaries, and unsupported cases
+    content: "BLD-39 Document supported dynamic sources, global design tokens, condition operators, security boundaries, and unsupported cases"
     status: pending
   - id: R432
-    content: BLD-40 Gate 16 approval: dynamic data sources and safe resolution verified
+    content: "BLD-40 Gate 16 approval: dynamic data sources and safe resolution verified"
     status: pending
   - id: R433
-    content: BLD-41 Gate 17 approval: global style inheritance, overrides, and responsive typography verified
+    content: "BLD-41 Gate 17 approval: global style inheritance, overrides, and responsive typography verified"
     status: pending
   - id: R434
-    content: BLD-42 Gate 18 approval: conditional controls and frontend visibility security/tests verified
+    content: "BLD-42 Gate 18 approval: conditional controls and frontend visibility security/tests verified"
     status: pending
 isProject: false
 ---
