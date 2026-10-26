@@ -1,6 +1,6 @@
 ---
 name: Combined CMS refs
-overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, and full-site production optimization across performance, SEO, accessibility, security, data, reliability, testing, and deployment. Each step has a completion number (R001–R365). Name one number to implement only that piece.
+overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, and full-site production optimization across performance, SEO, accessibility, security, data, reliability, testing, and deployment. Each step has a completion number (R001–R390). Name one number to implement only that piece.
 todos:
   - id: R001
     content: P1-01 Register Slider, Tabs, and Accordion as builderConfig component keys
@@ -1097,10 +1097,91 @@ todos:
   - id: R365
     content: OZ-38 Document baseline, before/after results, remaining risks, and deferred work
     status: pending
+  - id: R366
+    content: COM-01 Define commercial offer, target buyer, product catalog, and sales model
+    status: pending
+  - id: R367
+    content: COM-02 Create conversion-focused product landing pages with demos, screenshots, FAQs, and clear deliverables
+    status: pending
+  - id: R368
+    content: COM-03 Implement product pricing, license tiers, bundles, upgrade paths, and version compatibility
+    status: pending
+  - id: R369
+    content: COM-04 Implement secure cart or direct checkout and minimize checkout friction
+    status: pending
+  - id: R370
+    content: COM-05 Evaluate and select eligible payment provider(s) for Bangladesh and target international markets
+    status: pending
+  - id: R371
+    content: COM-06 Implement verified payment webhooks, idempotency, reconciliation, and payment-failure recovery
+    status: pending
+  - id: R372
+    content: COM-07 Implement order lifecycle, receipts, invoices, refunds, cancellations, and admin order management
+    status: pending
+  - id: R373
+    content: COM-08 Implement secure digital fulfillment and expiring download links for purchased files
+    status: pending
+  - id: R374
+    content: COM-09 Integrate license issuance, activation, domain limits, renewal, revocation, and recovery with paid orders
+    status: pending
+  - id: R375
+    content: COM-10 Implement customer account portal for orders, downloads, invoices, licenses, and support
+    status: pending
+  - id: R376
+    content: COM-11 Define subscription lifecycle including trials if offered, renewals, failed payments, cancellation, and grace periods
+    status: pending
+  - id: R377
+    content: COM-12 Implement coupons, campaign pricing, and abuse-resistant promotion rules
+    status: pending
+  - id: R378
+    content: COM-13 Add sales funnel analytics, attribution, consent-aware tracking, and revenue reporting
+    status: pending
+  - id: R379
+    content: COM-14 Add abandoned-checkout recovery and permission-based lifecycle email sequences
+    status: pending
+  - id: R380
+    content: COM-15 Add customer reviews and testimonials with authenticity and moderation controls
+    status: pending
+  - id: R381
+    content: COM-16 Create support, documentation, changelog, compatibility, update policy, and support entitlement workflows
+    status: pending
+  - id: R382
+    content: COM-17 Publish transparent terms of sale, privacy, refund, license, renewal, and support policies
+    status: pending
+  - id: R383
+    content: COM-18 Assess tax, invoicing, consumer-protection, privacy, and cross-border obligations for target markets
+    status: pending
+  - id: R384
+    content: COM-19 Threat-model fraud, chargebacks, refund abuse, license sharing, and account takeover
+    status: pending
+  - id: R385
+    content: COM-20 Run end-to-end test purchases for success, failure, duplicate webhook, refund, and fulfillment recovery
+    status: pending
+  - id: R386
+    content: COM-21 Define product launch checklist, pricing hypotheses, and customer feedback validation
+    status: pending
+  - id: R387
+    content: COM-22 Build a minimal conversion dashboard and establish baseline funnel metrics
+    status: pending
+  - id: R388
+    content: COM-23 Add product structured data and search snippets where eligible and truthful
+    status: pending
+  - id: R389
+    content: COM-24 Verify checkout and customer portal accessibility, mobile UX, and performance
+    status: pending
+  - id: R390
+    content: COM-25 Gate 6 approval: commercial model, payment eligibility, and launch scope approved
+    status: pending
+  - id: R391
+    content: COM-26 Gate 7 approval: end-to-end purchase, payment, fulfillment, and license lifecycle verified
+    status: pending
+  - id: R392
+    content: COM-27 Gate 8 approval: legal policies, customer support, analytics, and launch readiness verified
+    status: pending
 isProject: false
 ---
 
-# Combined refs R001–R327
+# Combined refs R001–R390
 
 Say **implement R042** (or the original id, such as **P2-14**, **L3-01**, **A2-01**, **O1-01**, or **M2-01**). That ref is the whole task. Do not continue to the next ref unless you ask.
 
@@ -1922,3 +2003,69 @@ Optimize the entire existing CMS, not just the landing page. Audit first, priori
 - Security and data boundaries: through **R355**.
 - CI, deployment, monitoring, and recovery: through **R356**.
 - Final production-readiness review: through **R365**.
+
+
+## R366–R392 — Sales, checkout, and digital-product business readiness (COM-01–COM-27)
+
+The site must be capable of converting visitors into customers and fulfilling purchases reliably. Do not assume the product is a physical store: first confirm the intended commercial offer. For the current CMS project, prioritize selling software/CMS licenses, downloads, updates, support, and optional subscriptions if those are part of the actual business model. Do not implement every commerce feature by default.
+
+### Commercial strategy and product pages
+
+- **R366** Define the target buyer, offer, value proposition, product format, primary market, launch channel, pricing hypothesis, and support burden. Validate demand with customer interviews, waitlist, demos, or a small launch before building elaborate commerce features.
+- **R367** Build focused sales pages with clear outcomes, intended buyer, feature list, deliverables, screenshots/video/demo, compatibility requirements, FAQs, pricing, support/update policy, real proof, and one primary CTA. Never invent testimonials, customer logos, ratings, security claims, or performance claims.
+- **R368** Define product and license SKUs, one-time versus recurring price, included updates/support, site/domain/seat limits, commercial usage rights, upgrade/downgrade paths, version compatibility, and bundle rules. Keep the display price and checkout amount consistent.
+- **R388** Add accurate product metadata and structured data where eligible, with visible price/availability matching the offer. Verify search snippets and do not mark up unsupported review/rating information.
+- **R386** Define a launch checklist and pricing hypotheses; collect early customer feedback and support issues. Do not treat competitor prices or unverified conversion benchmarks as guaranteed outcomes.
+
+### Checkout, payments, and order lifecycle
+
+- **R369** Implement a secure cart or direct checkout appropriate to the product range. Minimize fields and steps, support mobile, clearly display currency, total, taxes/fees where known, renewal commitments, and terms before purchase. Do not force account creation unless required for fulfillment, fraud control, or legal reasons.
+- **R370** Evaluate payment providers for the seller's actual legal/business location and intended buyer countries. Verify onboarding eligibility, settlement currency, local methods, chargebacks, recurring billing, refund APIs, webhook support, fees, and contractual restrictions before choosing. Do not hard-code an assumed provider.
+- **R371** Verify payments server-side. Treat signed/verified provider webhooks or authoritative provider API responses as payment evidence; never grant a license based solely on a success redirect. Validate signatures, timestamps/replay controls, event identity, idempotency, transaction amount/currency, and order association. Record payment state transitions for reconciliation.
+- **R372** Implement an auditable order lifecycle covering pending, paid, failed, canceled, partially/refunded where applicable, and disputed/chargeback states. Provide receipts/invoices as appropriate, safe retries, admin search, reconciliation, and clear customer messaging. Do not store raw card details.
+- **R387** Test complete purchase journeys in sandbox/staging: success, decline, abandoned checkout, repeated webhook, delayed webhook, refund, dispute/chargeback where testable, and fulfillment recovery. Confirm no duplicate order, license, email, or entitlement is created.
+
+### Secure digital fulfillment and licensing
+
+- **R373** Deliver purchased files/access automatically only after verified payment and entitlement checks. Store private artifacts outside publicly readable paths or behind authorization. Use short-lived signed download links, sensible download limits, and auditable retries; do not promise impossible piracy prevention or punish legitimate recovery.
+- **R374** Integrate existing licensing with orders: unique issuance, product/SKU binding, allowed activation count, domain/seat rules, activation/deactivation, renewal/expiry, revocation after applicable refunds/chargebacks, update eligibility, and customer recovery. Define grace periods and manual review for suspicious activity. Avoid destructive automatic revocation where payment disputes or provider delays require review.
+- **R375** Build a customer portal for order history, downloadable invoices/receipts, authorized downloads, license keys and activations, renewal/cancellation where applicable, support access, and account recovery. Enforce ownership on every request and test cross-customer access denial.
+- **R376** If subscriptions are part of the chosen model, implement clear renewal terms, billing interval, trial conversion, failed-payment retries, grace periods, cancellation, entitlement changes, and customer notifications. Do not add subscriptions unless customer demand and operational capability justify them.
+- **R380** Define customer support, documentation, changelog, compatibility matrix, update policy, response expectations, and support entitlement rules. A buyer must know what is included before purchase and how to recover from a failed delivery.
+
+### Growth, analytics, and retention
+
+- **R377** Add coupons and campaign pricing with server-side validation, expiry, usage limits, product/plan eligibility, stacking rules, and abuse controls. Never trust client-submitted discounts or price totals.
+- **R378** Track a minimal funnel: landing-page views, product CTA clicks, checkout starts, successful paid orders, refunds, and repeat purchases. Use privacy-conscious, consent-aware analytics appropriate to target markets. Exclude secrets and sensitive payment/customer data from event payloads.
+- **R379** Add abandoned-checkout recovery and lifecycle emails only with a lawful basis and applicable consent/preferences. Use unsubscribe handling for marketing, distinguish transactional receipts from promotional messages, and avoid exposing order or license details in insecure email links.
+- **R381** If reviews/testimonials are added, verify purchaser status where feasible, moderate abuse, provide reporting, disclose incentives, and never fabricate or selectively misrepresent reviews.
+- **R389** Establish a simple sales dashboard for revenue, paid orders, conversion by funnel step, refund/chargeback rate, product mix, acquisition source where measurable, and support burden. Define metric formulas and time windows; use it to decide what to improve rather than adding speculative personalization or AI features.
+
+### Legal, fraud, and release readiness
+
+- **R382** Publish accurate terms of sale, privacy notice, refund/cancellation policy, software license agreement, update/support policy, and subscription terms if relevant. Have qualified counsel/accounting support review obligations for the actual seller location and customer markets; a generic template is not legal advice.
+- **R383** Assess applicable tax registration/collection/remittance, invoice and recordkeeping rules, consumer rights, privacy/data retention, cross-border payments, and digital-product rules for target countries. Determine whether the chosen payment provider is only a processor or a merchant of record; responsibilities differ by contract and jurisdiction. Do not assume a merchant-of-record service accepts every seller country.
+- **R384** Threat-model fraud, chargebacks, refund abuse, account takeover, stolen payment instruments, license sharing, replayed callbacks, and download-link leakage. Use proportional controls and manual review for ambiguous cases; protect legitimate customers from false positives.
+- **R385 — Gate 6.** Approve target buyer, product offer, pricing hypothesis, target countries, provider eligibility, legal review plan, and minimum launch scope before implementing the full commerce layer.
+- **R390 — Gate 7.** Approve only after end-to-end purchase, verified payment, idempotent fulfillment, license lifecycle, customer portal authorization, refund handling, and recovery tests pass.
+- **R391** Verify checkout, sales pages, and customer portal for keyboard/screen-reader use, responsive layouts, clear errors, mobile performance, and trustworthy price/renewal disclosures.
+- **R392 — Gate 8.** Approve launch only after customer-facing policies, support channel, transactional email, analytics, sandbox/test purchases, production environment readiness, and unresolved risks are reviewed.
+
+### Commerce acceptance criteria
+
+- A paid entitlement cannot be created by a client-side redirect or unverified webhook.
+- A duplicate or delayed payment event cannot issue duplicate licenses or duplicate fulfillment.
+- Buyers can identify exactly what they are buying, what license rights they receive, what updates/support are included, and any recurring charges before paying.
+- A verified purchase can be recovered through the customer account/support process without exposing private files or another customer's data.
+- Refund/cancellation/chargeback effects on access follow documented rules and are auditable.
+- Sales analytics distinguish visits, checkout starts, paid orders, refunds, and net revenue; no sales/conversion claims are made before measurement.
+- Launch readiness explicitly records payment-provider eligibility, target markets, policy review, and any unsupported country/payment method.
+
+### Recommended implementation order
+
+1. Validate offer and buyer before building elaborate checkout.
+2. Implement one product/price, one eligible payment path, verified webhook, order record, secure fulfillment, and customer receipt.
+3. Integrate license issuance and customer recovery.
+4. Add portal, refund lifecycle, support docs, and legal policies.
+5. Instrument the funnel and improve conversion from measured drop-offs.
+6. Add subscriptions, affiliates, bundles, advanced promotions, and other growth features only when demand justifies them.
