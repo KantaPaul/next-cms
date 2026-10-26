@@ -1388,7 +1388,6 @@ todos:
   - id: R462
     content: "RFB-28 Gate 21 approval: accessibility, responsive diagnostics, visual regression, and performance checks verified"
     status: pending
-isProject: false
   - id: R463
     content: "P3-09 Audit current multisite behavior and reproduce cross-site failures before fixes"
     status: pending
@@ -1428,6 +1427,7 @@ isProject: false
   - id: R475
     content: "P3-21 Add Site A/Site B fetch-contract tests for admin switching, public domains, cache isolation, and cross-site denial"
     status: pending
+isProject: false
 ---
 
 # Combined refs R001–R462
