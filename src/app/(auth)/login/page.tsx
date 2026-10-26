@@ -23,5 +23,5 @@ export default async function Page(props: {
   //   redirect(PAGES.DASHBOARD.ROOT, RedirectType.replace);
   // }
 
-  return <LoginForm />;
+  return <LoginForm message={searchParams.message} step={searchParams.step} />;
 }

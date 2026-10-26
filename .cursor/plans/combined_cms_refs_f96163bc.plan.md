@@ -37,64 +37,64 @@ todos:
     status: completed
   - id: R012
     content: P2-01 form_submissions table with site_id defaulting to default
-    status: pending
+    status: completed
   - id: R013
     content: P2-02 First-party contact-form submit route
-    status: pending
+    status: completed
   - id: R014
     content: "P2-03 Admin form inbox: list, read, archive"
-    status: pending
+    status: completed
   - id: R015
     content: P2-04 CSV export of form submissions
-    status: pending
+    status: completed
   - id: R016
     content: P2-05 Honeypot and optional Turnstile on form submit
-    status: pending
+    status: completed
   - id: R017
     content: P2-06 Email site owner via SMTP or Resend
-    status: pending
+    status: completed
   - id: R018
     content: P2-07 redirects table with site_id
-    status: pending
+    status: completed
   - id: R019
     content: P2-08 Middleware resolves redirects before the catch-all page
-    status: pending
+    status: completed
   - id: R020
     content: P2-09 Redirect CSV import
-    status: pending
+    status: completed
   - id: R021
     content: P2-10 Publishing a slug change offers to create a redirect
-    status: pending
+    status: completed
   - id: R022
     content: P2-11 Postgres full-text on published pages and posts
-    status: pending
+    status: completed
   - id: R023
     content: P2-12 Public /search page
-    status: pending
+    status: completed
   - id: R024
     content: P2-13 GET /api/v1/search
-    status: pending
+    status: completed
   - id: R025
     content: P2-14 Email and password login; add users.password_hash and scrypt helper
-    status: pending
+    status: completed
   - id: R026
     content: P2-15 Magic-link login
-    status: pending
+    status: completed
   - id: R027
     content: P2-16 Invite flow for new users
-    status: pending
+    status: completed
   - id: R028
     content: P2-17 Optional TOTP for Admins
-    status: pending
+    status: completed
   - id: R029
     content: P2-18 Review queue for status=review
-    status: pending
+    status: completed
   - id: R030
     content: P2-19 Email the author on review actions
-    status: pending
+    status: completed
   - id: R031
     content: P2-20 OpenAPI spec from zod schemas
-    status: pending
+    status: completed
   - id: R032
     content: P3-01 sites table
     status: pending

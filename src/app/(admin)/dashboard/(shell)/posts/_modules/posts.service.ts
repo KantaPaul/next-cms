@@ -15,6 +15,8 @@ import {
 import { postTemplatesService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
 import { isBuilderData } from '@/builder/data';
 import { PERMISSIONS } from '@/config/permissions';
+import { offerForPublishedPath } from '@/server/services/redirects.service';
+import { searchIndex } from '@/server/services/search.service';
 import { db } from '@/db';
 import type { SearchParams } from '@/db/helpers/parse-search-params';
 import { paginate } from '@/db/helpers/with-pagination';
@@ -529,7 +531,12 @@ export const postsService = {
     });
 
     if (wasPublished || updated.status === 'published') revalidatePublicSite();
-    return updated;
+    if (updated.status === 'published') await searchIndex.syncPost(updated.id);
+    else if (wasPublished) await searchIndex.removePost(updated.id);
+    return {
+      ...updated,
+      redirectOffer: offerForPublishedPath('post', existing, updated),
+    };
   },
 
   saveDraft: async (input: SavePostDraftInput, access: UserAccess) => {
@@ -721,7 +728,8 @@ export const postsService = {
       return published;
     });
     revalidatePublicSite();
-    return post;
+    await searchIndex.syncPost(post.id);
+    return { ...post, redirectOffer: null };
   },
 
   unpublish: async ({ id }: { id: string }, access: UserAccess) => {
@@ -735,6 +743,7 @@ export const postsService = {
       .where(and(eq(posts.id, id), notDeleted))
       .returning();
     if (!post) throw new NotFoundException('Post not found');
+    await searchIndex.removePost(id);
     await auditService.log({
       actorId: access.userId,
       action: 'unpublish',
@@ -839,6 +848,7 @@ export const postsService = {
       .where(and(eq(posts.id, id), notDeleted))
       .returning();
     if (!post) throw new NotFoundException('Post not found');
+    await searchIndex.removePost(id);
     await auditService.log({
       actorId: access.userId,
       action: 'delete',

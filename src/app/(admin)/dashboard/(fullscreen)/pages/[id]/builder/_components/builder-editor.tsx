@@ -44,6 +44,7 @@ import { useAiEnabled } from '@/components/ai/use-ai-status';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import type { ThemeTokens } from '@/db/schemas/pages.schema';
+import { maybeOfferRedirect } from '@/components/dashboard/redirect-offer';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import { useCan } from '@/providers/access.provider';
 import { BuilderActionBar } from './builder-chrome';
@@ -352,7 +353,8 @@ export function BuilderEditor({
     publish: () =>
       run('publish', async () => {
         if (!(await save())) return;
-        await handleActionResponse((await adapter.publish()) as never, () => {
+        await handleActionResponse((await adapter.publish()) as never, data => {
+          void maybeOfferRedirect(data);
           setStatus('published');
           toast.success(
             kind === 'page'

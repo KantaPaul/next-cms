@@ -5,6 +5,8 @@ import {
   ImageIcon,
   KeyRound,
   LayoutTemplate,
+  CornerDownRight,
+  ClipboardCheck,
   Mail,
   MenuIcon,
   Newspaper,
@@ -50,6 +52,18 @@ export function getMenuItems(): {
       name: 'Contact forms',
       href: PAGES.DASHBOARD.CONTACT_FORMS,
       icon: <Mail className="w-[18px]" />,
+    },
+    {
+      name: 'Review',
+      href: PAGES.DASHBOARD.REVIEW,
+      icon: <ClipboardCheck className="w-[18px]" />,
+      permission: PERMISSIONS.PAGES_PUBLISH,
+    },
+    {
+      name: 'Redirects',
+      href: PAGES.DASHBOARD.REDIRECTS,
+      icon: <CornerDownRight className="w-[18px]" />,
+      permission: PERMISSIONS.SETTINGS_MANAGE,
     },
     {
       name: 'Taxonomies',

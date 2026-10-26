@@ -26,6 +26,9 @@ export const users = pgTable(
     name: text('name'),
     email: text('email').unique().notNull(),
     googleId: text('google_id').unique(),
+    passwordHash: text('password_hash'),
+    totpSecret: text('totp_secret'),
+    totpEnabled: boolean('totp_enabled').default(false).notNull(),
     emailVerified: boolean('email_verified').default(false).notNull(),
     image: text('image'),
     status: userStatusEnum('user_status')

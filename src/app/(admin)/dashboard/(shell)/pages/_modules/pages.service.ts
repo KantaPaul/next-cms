@@ -15,6 +15,8 @@ import {
 } from 'drizzle-orm';
 import { emptyContentFor, normalizeContent } from '@/builder/data';
 import { PERMISSIONS } from '@/config/permissions';
+import { offerForPublishedPath } from '@/server/services/redirects.service';
+import { searchIndex } from '@/server/services/search.service';
 import { db } from '@/db';
 import type { SearchParams } from '@/db/helpers/parse-search-params';
 import { paginate } from '@/db/helpers/with-pagination';
@@ -549,7 +551,12 @@ export const pagesServices = {
     });
 
     if (wasPublished || updated.status === 'published') revalidatePublicSite();
-    return updated;
+    if (updated.status === 'published') await searchIndex.syncPage(updated.id);
+    else if (wasPublished) await searchIndex.removePage(updated.id);
+    return {
+      ...updated,
+      redirectOffer: offerForPublishedPath('page', existing, updated),
+    };
   },
 
   saveDraft: async (input: SaveDraftInput, access: UserAccess) => {
@@ -676,7 +683,8 @@ export const pagesServices = {
       return published;
     });
     revalidatePublicSite();
-    return page;
+    await searchIndex.syncPage(page.id);
+    return { ...page, redirectOffer: null };
   },
 
   unpublish: async ({ id }: { id: string }, access: UserAccess) => {
@@ -690,6 +698,7 @@ export const pagesServices = {
       .where(and(eq(pages.id, id), notDeleted))
       .returning();
     if (!page) throw new NotFoundException('Page not found');
+    await searchIndex.removePage(id);
     await auditService.log({
       actorId: access.userId,
       action: 'unpublish',
@@ -787,6 +796,7 @@ export const pagesServices = {
       .where(and(eq(pages.id, id), notDeleted))
       .returning();
     if (!page) throw new NotFoundException('Page not found');
+    await searchIndex.removePage(id);
     await auditService.log({
       actorId: access.userId,
       action: 'delete',

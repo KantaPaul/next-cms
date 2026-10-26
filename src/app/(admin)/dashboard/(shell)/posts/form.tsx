@@ -61,6 +61,7 @@ import {
   createPostSchema,
 } from '@/db/validations/posts.validation';
 import { cn } from '@/lib/utils/cn';
+import { maybeOfferRedirect } from '@/components/dashboard/redirect-offer';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import { useCan } from '@/providers/access.provider';
 import { useDataProvider } from '@/providers/data.provider';
@@ -125,6 +126,7 @@ function PostFormInner({ id }: { id: string }) {
         ? await updatePost({ ...inputs, id: initialValues.id })
         : await createPost(inputs);
       await handleActionResponse(response, post => {
+        void maybeOfferRedirect(post);
         toast.success(
           MESSAGES.MODULE_ACTION_SUCCESSFULLY(
             'Post',

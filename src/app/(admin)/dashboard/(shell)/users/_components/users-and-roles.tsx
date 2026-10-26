@@ -3,7 +3,7 @@
 import { format, formatDistanceToNow } from 'date-fns';
 import { Check, Loader2, Minus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -14,7 +14,7 @@ import {
 } from '@/config/permissions';
 import { cn } from '@/lib/utils/cn';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
-import { setUserRole } from '../_modules/users.actions';
+import { setUserRole, inviteUser } from '../_modules/users.actions';
 import type { UserListItem } from '../_modules/users.service';
 
 type ActivityRow = {
@@ -72,6 +72,7 @@ export function UsersAndRoles({
         <TabsTrigger value="activity">Activity log</TabsTrigger>
       </TabsList>
       <TabsContent value="team" className="mt-4">
+        <InviteForm />
         <TeamTable users={users} currentUserId={currentUserId} />
       </TabsContent>
       <TabsContent value="permissions" className="mt-4">
@@ -81,6 +82,68 @@ export function UsersAndRoles({
         <ActivityLog rows={activity} />
       </TabsContent>
     </Tabs>
+  );
+}
+
+function InviteForm() {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+
+  return (
+    <form
+      className="mb-4 flex flex-wrap items-end gap-3"
+      onSubmit={event => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const data = new FormData(form);
+        const role = String(data.get('role') ?? 'Viewer') as RoleName;
+        startTransition(async () => {
+          await handleActionResponse(
+            inviteUser({
+              email: String(data.get('email') ?? ''),
+              name: String(data.get('name') ?? '') || undefined,
+              role,
+            }),
+            result => {
+              const mailed = (result as { mailed?: boolean; mailError?: string | null }).mailed;
+              toast.success(
+                mailed
+                  ? 'Invite sent'
+                  : `User created. ${((result as { mailError?: string | null }).mailError ?? 'Email was not sent.')}`
+              );
+              form.reset();
+              router.refresh();
+            }
+          );
+        });
+      }}
+    >
+      <label className="grid gap-1 text-sm">
+        Email
+        <input name="email" type="email" required className={controlClass} />
+      </label>
+      <label className="grid gap-1 text-sm">
+        Name
+        <input name="name" className={controlClass} />
+      </label>
+      <label className="grid gap-1 text-sm">
+        Role
+        <select name="role" defaultValue="Viewer" className={controlClass}>
+          {ROLE_NAMES.map(role => (
+            <option key={role} value={role}>
+              {role}
+            </option>
+          ))}
+        </select>
+      </label>
+      <button
+        type="submit"
+        disabled={pending}
+        className="h-9 rounded-md bg-primary px-3 text-sm text-primary-foreground disabled:opacity-60"
+      >
+        Invite
+      </button>
+    </form>
   );
 }
 

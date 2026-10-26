@@ -228,6 +228,7 @@ export type ContactFormProps = WithSection & {
   submitText?: string;
   successMessage?: string;
   actionUrl?: string;
+  formId?: string;
 };
 
 export function ContactForm(p: ContactFormProps) {
@@ -239,6 +240,7 @@ export function ContactForm(p: ContactFormProps) {
         submitText={p.submitText || 'Send message'}
         successMessage={p.successMessage || 'Thanks! We will be in touch soon.'}
         actionUrl={p.actionUrl}
+        formId={p.formId}
         editing={p.editing}
       />
     </Section>
@@ -320,6 +322,14 @@ export type GlobalRefProps = {
   editing?: boolean;
 };
 
+function stampFormId(items: BuilderItem[] | undefined, formId: string) {
+  return (items ?? []).map(item =>
+    item.type === 'ContactForm'
+      ? { ...item, props: { ...item.props, formId } }
+      : item
+  );
+}
+
 export function GlobalRef(p: GlobalRefProps) {
   if (!p.globalBlockId || !p.blocks?.length) {
     return p.editing ? (
@@ -342,7 +352,15 @@ export function GlobalRef(p: GlobalRefProps) {
           Global · {p.globalBlockName ?? 'block'}
         </span>
       )}
-      <BlockList items={p.blocks} zones={p.zones} />
+      <BlockList
+        items={stampFormId(p.blocks, p.globalBlockId)}
+        zones={Object.fromEntries(
+          Object.entries(p.zones ?? {}).map(([key, items]) => [
+            key,
+            stampFormId(items, p.globalBlockId!),
+          ])
+        )}
+      />
     </div>
   );
 }

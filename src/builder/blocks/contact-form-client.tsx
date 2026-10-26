@@ -1,6 +1,6 @@
 'use client';
 
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import type { ContactFormField } from './content';
@@ -56,29 +56,44 @@ function PhoneField({
   );
 }
 
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
 export function ContactFormClient({
   fields,
   submitText,
   successMessage,
   actionUrl,
+  formId,
   editing,
 }: {
   fields: ContactFormField[];
   submitText: string;
   successMessage: string;
   actionUrl?: string;
+  formId?: string;
   editing?: boolean;
 }) {
   const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>(
     'idle'
   );
+  const firstParty = !actionUrl;
+
+  useEffect(() => {
+    if (!firstParty || !TURNSTILE_SITE_KEY || editing) return;
+    if (document.querySelector('script[data-turnstile]')) return;
+    const script = document.createElement('script');
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+    script.async = true;
+    script.dataset.turnstile = 'true';
+    document.body.appendChild(script);
+  }, [editing, firstParty]);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (editing || !actionUrl) return;
+    if (editing) return;
     setState('sending');
     try {
-      const response = await fetch(actionUrl, {
+      const response = await fetch(actionUrl || '/api/forms/submit', {
         method: 'POST',
         body: new FormData(event.currentTarget),
         headers: { Accept: 'application/json' },
@@ -222,10 +237,30 @@ export function ContactFormClient({
           </label>
         );
       })}
-      {!actionUrl && editing && (
+      {firstParty && (
+        <>
+          <input type="hidden" name="formId" value={formId ?? ''} />
+          <input
+            type="text"
+            name="company"
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            className="absolute -left-[9999px] h-px w-px overflow-hidden"
+          />
+          {TURNSTILE_SITE_KEY && (
+            <div
+              className="cf-turnstile"
+              data-sitekey={TURNSTILE_SITE_KEY}
+            />
+          )}
+        </>
+      )}
+      {editing && (
         <p className="s-muted text-xs">
-          Set a form endpoint (e.g. Formspree) in the sidebar to receive
-          submissions.
+          {firstParty
+            ? 'Submissions are saved to the form inbox. Set a form action URL to send them somewhere else instead.'
+            : 'This form posts to the action URL in the sidebar.'}
         </p>
       )}
       {state === 'error' && (
@@ -235,7 +270,7 @@ export function ContactFormClient({
       )}
       <button
         type="submit"
-        disabled={state === 'sending' || (!actionUrl && !editing)}
+        disabled={state === 'sending' || editing}
         className="s-btn s-btn-primary justify-self-start disabled:opacity-60"
       >
         {state === 'sending' ? 'Sending…' : submitText}

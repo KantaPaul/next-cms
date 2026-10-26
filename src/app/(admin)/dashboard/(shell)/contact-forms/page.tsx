@@ -43,7 +43,14 @@ export default async function ContactFormsPage() {
 
   return (
     <>
-      <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
+      <PageHeader title={TITLE} breadcrumbs={breadcrumbs}>
+        <a
+          href={PAGES.DASHBOARD.CONTACT_FORMS_INBOX}
+          className="text-sm font-medium text-primary hover:underline"
+        >
+          Inbox
+        </a>
+      </PageHeader>
       <ContactFormsList
         forms={forms}
         can={{

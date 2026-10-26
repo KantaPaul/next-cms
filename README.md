@@ -82,6 +82,24 @@ S3_PUBLIC_URL=
 
 `S3_ENDPOINT` and `S3_PUBLIC_URL` are optional. Set them for MinIO or another non-AWS endpoint.
 
+## Forms, mail, and sign-in
+
+Contact forms post to the site inbox. Optional mail and Turnstile:
+
+```bash
+MAIL_FROM=
+FORM_NOTIFY_TO=
+RESEND_API_KEY=
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+TURNSTILE_SECRET_KEY=
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=
+```
+
+Resend is used when `RESEND_API_KEY` is set. Otherwise SMTP is used when `SMTP_HOST` is set. Submissions are still saved when mail is not configured. Staff can sign in with email and password or a magic link from `/login`, in addition to Google.
+
 ## Gemini
 
 AI writing, rewrite, SEO, and alt text use Gemini. Leave the key empty to hide those actions.

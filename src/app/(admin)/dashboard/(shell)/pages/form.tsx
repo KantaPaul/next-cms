@@ -53,6 +53,7 @@ import {
   createPagesSchema,
 } from '@/db/validations/pages.validation';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
+import { maybeOfferRedirect } from '@/components/dashboard/redirect-offer';
 import { useCan } from '@/providers/access.provider';
 import { useDataProvider } from '@/providers/data.provider';
 
@@ -142,6 +143,7 @@ function PageForm({ id }: { id: string }) {
         : await createPage(payload);
 
       await handleActionResponse(response, page => {
+        void maybeOfferRedirect(page);
         const saved = page as {
           id: string;
           editorType: string;

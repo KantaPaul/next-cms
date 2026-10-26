@@ -40,6 +40,7 @@ import {
   SUPPORTED_LANGUAGES,
 } from '@/db/schemas/shared.schema';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
+import { maybeOfferRedirect } from '@/components/dashboard/redirect-offer';
 import { useAccess } from '@/providers/access.provider';
 
 const buildFilters = (templates: PostTemplateListItem[]): FilterConfig[] => [
@@ -87,8 +88,9 @@ function RowActions({
 
   const run = (fn: () => Promise<unknown>, message: string) =>
     startTransition(async () => {
-      await handleActionResponse(fn() as never, () => {
+      await handleActionResponse(fn() as never, data => {
         toast.success(message);
+        void maybeOfferRedirect(data);
         router.refresh();
       });
     });

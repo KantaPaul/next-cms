@@ -36,11 +36,21 @@ export const env = createEnv({
     GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
 
     CRON_SECRET: z.string().optional(),
+
+    MAIL_FROM: z.string().optional(),
+    FORM_NOTIFY_TO: z.string().optional(),
+    RESEND_API_KEY: z.string().optional(),
+    SMTP_HOST: z.string().optional(),
+    SMTP_PORT: z.coerce.number().positive().default(587),
+    SMTP_USER: z.string().optional(),
+    SMTP_PASS: z.string().optional(),
+    TURNSTILE_SECRET_KEY: z.string().optional(),
   },
   client: {
     NEXT_PUBLIC_APP_NAME: z.string().default('Next CMS'),
     NEXT_PUBLIC_BASE_URL: z.string().default('http://localhost:3000'),
     NEXT_PUBLIC_APP_VERSION: z.string().optional(),
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
   },
   /*
    * Due to how Next.js bundles environment variables on Edge and Client,
@@ -74,6 +84,16 @@ export const env = createEnv({
 
     CRON_SECRET: process.env.CRON_SECRET,
 
+    MAIL_FROM: process.env.MAIL_FROM,
+    FORM_NOTIFY_TO: process.env.FORM_NOTIFY_TO,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    SMTP_HOST: process.env.SMTP_HOST,
+    SMTP_PORT: process.env.SMTP_PORT,
+    SMTP_USER: process.env.SMTP_USER,
+    SMTP_PASS: process.env.SMTP_PASS,
+    TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY,
+
     NEXT_PUBLIC_APP_VERSION: process.env.NEXT_PUBLIC_APP_VERSION,
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
   },
 });
