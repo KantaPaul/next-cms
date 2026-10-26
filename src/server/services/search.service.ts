@@ -3,13 +3,13 @@ import { and, eq, sql } from 'drizzle-orm';
 import { PAGES } from '@/config/pages';
 import { db } from '@/db';
 import {
-  DEFAULT_SITE_ID,
   pageContents,
   pages,
   postContents,
   posts,
   searchDocuments,
 } from '@/db/schema';
+import { siteContext } from '@/server/services/site-context';
 import type { DBTrx } from '@/lib/types';
 import { extractDocumentText, stripHtml } from '@/lib/search-text';
 
@@ -25,6 +25,7 @@ async function replaceDocument(
     path: string;
     language: string;
     body: string;
+    siteId: string;
   }
 ) {
   if (row.pageId) {
@@ -34,7 +35,7 @@ async function replaceDocument(
     await orm.delete(searchDocuments).where(eq(searchDocuments.postId, row.postId));
   }
   await orm.insert(searchDocuments).values({
-    siteId: DEFAULT_SITE_ID,
+    siteId: row.siteId,
     kind: row.kind,
     pageId: row.pageId ?? null,
     postId: row.postId ?? null,
@@ -62,11 +63,18 @@ export const searchIndex = {
       .from(pageContents)
       .where(and(eq(pageContents.pageId, id), eq(pageContents.kind, 'published')))
       .limit(1);
+    const site = await siteContext.getById(page.siteId);
     await replaceDocument(orm, {
       kind: 'page',
       pageId: page.id,
+      siteId: page.siteId,
       title: page.title,
-      path: PAGES.SITE.page(page.slug, page.language, page.isHome),
+      path: PAGES.SITE.page(
+        page.slug,
+        page.language,
+        page.isHome,
+        site?.defaultLocale ?? 'en'
+      ),
       language: page.language,
       body: extractDocumentText(content?.content),
     });
@@ -91,11 +99,13 @@ export const searchIndex = {
     const body = [stripHtml(content?.body ?? ''), extractDocumentText(content?.canvas)]
       .filter(Boolean)
       .join(' ');
+    const site = await siteContext.getById(post.siteId);
     await replaceDocument(orm, {
       kind: 'post',
       postId: post.id,
+      siteId: post.siteId,
       title: post.title,
-      path: PAGES.SITE.post(post.slug, post.language),
+      path: PAGES.SITE.post(post.slug, post.language, site?.defaultLocale ?? 'en'),
       language: post.language,
       body,
     });
@@ -123,7 +133,7 @@ export const searchIndex = {
     const tsQuery = sql`plainto_tsquery('english', ${query})`;
     const filters = [
       sql`${searchDocuments.searchVector} @@ ${tsQuery}`,
-      eq(searchDocuments.siteId, DEFAULT_SITE_ID),
+      eq(searchDocuments.siteId, (await siteContext.publicSite()).id),
       language ? eq(searchDocuments.language, language) : undefined,
     ];
     return db

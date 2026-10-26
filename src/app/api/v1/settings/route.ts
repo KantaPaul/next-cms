@@ -4,7 +4,7 @@ import { siteSettingsService } from '@/server/services/site-settings.service';
 export const dynamic = 'force-dynamic';
 
 export const GET = apiHandler(async (_request, { siteUrl }) => {
-  const settings = await siteSettingsService.get();
+  const settings = await siteSettingsService.getPublic();
   return {
     data: {
       siteName: settings.siteName,

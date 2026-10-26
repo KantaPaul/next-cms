@@ -1,4 +1,3 @@
-import { LANGUAGE_CODES } from '@/db/schemas/shared.schema';
 import {
   absoluteUrl,
   apiHandler,
@@ -7,12 +6,18 @@ import {
   pagination,
 } from '@/server/api/v1';
 import { BLOG_SORTS, blogService } from '@/server/services/blog.service';
+import { siteContext } from '@/server/services/site-context';
 
 export const dynamic = 'force-dynamic';
 
 /** Published posts. Filters: `lang`, `q`, `category` and `tag` (id or slug), `sort` (newest, oldest, title). */
 export const GET = apiHandler(async (_request, { url, siteUrl }) => {
-  const language = enumParam(url, 'lang', LANGUAGE_CODES);
+  const site = await siteContext.publicSite();
+  const language = enumParam(
+    url,
+    'lang',
+    site.locales.map(locale => locale.code)
+  );
   const { page, limit } = pagination(url);
   const result = await blogService.list({
     language,

@@ -34,6 +34,17 @@ type Settings = {
   footerMenuId: string | null;
   robotsTxt: string | null;
   googleAnalyticsId: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  translations: Record<
+    string,
+    {
+      siteName?: string;
+      siteDescription?: string;
+      seoTitle?: string;
+      seoDescription?: string;
+    }
+  > | null;
   themeTokens: ThemeTokens;
 };
 
@@ -104,10 +115,14 @@ export function SettingsForm({
   settings,
   menus,
   fallbackSiteUrl,
+  locales,
+  defaultLocale,
 }: {
   settings: Settings;
-  menus: { id: string; title: string; location: string }[];
+  menus: { id: string; title: string; location: string; language: string }[];
   fallbackSiteUrl: string;
+  locales: { code: string; label: string }[];
+  defaultLocale: string;
 }) {
   const router = useRouter();
   const [values, setValues] = useState<Settings>(settings);
@@ -177,6 +192,23 @@ export function SettingsForm({
             value={values.siteUrl ?? ''}
             onChange={e => set('siteUrl', e.target.value)}
             placeholder={fallbackSiteUrl}
+          />
+        </Field>
+        <Field label="Default SEO title">
+          <input
+            className={inputClass}
+            value={values.seoTitle ?? ''}
+            onChange={e => set('seoTitle', e.target.value)}
+            maxLength={160}
+          />
+        </Field>
+        <Field label="Default SEO description" wide>
+          <textarea
+            className={cn(inputClass, 'h-auto py-2')}
+            rows={2}
+            maxLength={300}
+            value={values.seoDescription ?? ''}
+            onChange={e => set('seoDescription', e.target.value)}
           />
         </Field>
         <Field label="Description" wide>
@@ -345,6 +377,60 @@ export function SettingsForm({
           />
         </Field>
       </Section>
+
+      {locales.filter(locale => locale.code !== defaultLocale).length > 0 && (
+        <Section
+          title="Other languages"
+          description="Name, description, and default SEO for each language besides the default. Blank fields fall back to the main values."
+        >
+          {locales
+            .filter(locale => locale.code !== defaultLocale)
+            .map(locale => {
+              const copy = values.translations?.[locale.code] ?? {};
+              const setCopy = (
+                key: 'siteName' | 'siteDescription' | 'seoTitle' | 'seoDescription',
+                value: string
+              ) =>
+                set('translations', {
+                  ...(values.translations ?? {}),
+                  [locale.code]: { ...copy, [key]: value },
+                });
+              return (
+                <div key={locale.code} className="grid gap-3 sm:col-span-2 sm:grid-cols-2">
+                  <p className="sm:col-span-2 text-sm font-medium">{locale.label}</p>
+                  <Field label="Site name">
+                    <input
+                      className={inputClass}
+                      value={copy.siteName ?? ''}
+                      onChange={e => setCopy('siteName', e.target.value)}
+                    />
+                  </Field>
+                  <Field label="SEO title">
+                    <input
+                      className={inputClass}
+                      value={copy.seoTitle ?? ''}
+                      onChange={e => setCopy('seoTitle', e.target.value)}
+                    />
+                  </Field>
+                  <Field label="Description" wide>
+                    <input
+                      className={inputClass}
+                      value={copy.siteDescription ?? ''}
+                      onChange={e => setCopy('siteDescription', e.target.value)}
+                    />
+                  </Field>
+                  <Field label="SEO description" wide>
+                    <input
+                      className={inputClass}
+                      value={copy.seoDescription ?? ''}
+                      onChange={e => setCopy('seoDescription', e.target.value)}
+                    />
+                  </Field>
+                </div>
+              );
+            })}
+        </Section>
+      )}
 
       <div className="sticky bottom-0 z-10 -mx-5 flex items-center justify-end gap-3 border-t border-steel-100 bg-white/90 px-5 py-3 backdrop-blur xl:-mx-8 xl:px-8 dark:border-dark-300 dark:bg-dark-100/90">
         {dirty && (

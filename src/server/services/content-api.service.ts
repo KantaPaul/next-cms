@@ -1,17 +1,21 @@
 import 'server-only';
-import { and, asc, count, desc, eq, isNull, type SQL } from 'drizzle-orm';
+import { and, asc, count, desc, eq, isNull } from 'drizzle-orm';
 import { db } from '@/db';
 import { menuItems, menus, pages, seoMeta } from '@/db/schema';
 import type { MenuLocationType } from '@/db/schemas/shared.schema';
+import { siteContext } from './site-context';
 import type { MenuWithItems } from './public-site.service';
 
-const published = (language?: string | null): SQL | undefined =>
-  and(
+async function published(language?: string | null) {
+  const site = await siteContext.publicSite();
+  return and(
+    eq(pages.siteId, site.id),
     eq(pages.status, 'published'),
     eq(pages.visibility, 'public'),
     isNull(pages.deletedAt),
     language ? eq(pages.language, language) : undefined
   );
+}
 
 export const contentApiService = {
   listPublishedPages: async ({
@@ -23,7 +27,7 @@ export const contentApiService = {
     limit: number;
     offset: number;
   }) => {
-    const where = published(language);
+    const where = await published(language);
     const [data, [{ total }]] = await Promise.all([
       db
         .select({
@@ -51,10 +55,17 @@ export const contentApiService = {
   },
 
   listMenus: async (location?: MenuLocationType) => {
+    const site = await siteContext.publicSite();
     const menuRows = await db
       .select()
       .from(menus)
-      .where(location ? eq(menus.location, location) : undefined)
+      .where(
+        and(
+          eq(menus.siteId, site.id),
+          isNull(menus.deletedAt),
+          location ? eq(menus.location, location) : undefined
+        )
+      )
       .orderBy(asc(menus.title));
     if (!menuRows.length) return [];
 

@@ -47,6 +47,8 @@ import {
   type UserAccess,
 } from '@/server/services/access.service';
 import { auditService } from '@/server/services/audit.service';
+import { adminSiteId } from '@/server/services/site-context';
+import { assertSiteLocale } from '@/server/services/sites.service';
 
 const PUBLISHING_STATUSES = ['published', 'scheduled'] as const;
 const AUTOSAVE_REVISION_INTERVAL_MS = 5 * 60 * 1000;
@@ -59,13 +61,15 @@ const SORTABLE = {
   createdAt: pages.createdAt,
 } as const;
 
-const notDeleted = isNull(pages.deletedAt);
+async function alive() {
+  return and(isNull(pages.deletedAt), eq(pages.siteId, await adminSiteId()));
+}
 
 async function getPageOrThrow(id: string, orm: DBTrx = db) {
   const [page] = await orm
     .select()
     .from(pages)
-    .where(and(eq(pages.id, id), notDeleted))
+    .where(and(eq(pages.id, id), await alive()))
     .limit(1);
 
   if (!page) throw new NotFoundException('Page not found');
@@ -111,7 +115,7 @@ async function assertSlugAvailable(
       and(
         eq(pages.slug, slug),
         eq(pages.language, language),
-        notDeleted,
+        await alive(),
         excludeId ? ne(pages.id, excludeId) : undefined
       )
     )
@@ -285,7 +289,7 @@ export const pagesServices = {
       size: size as string,
     });
 
-    const conditions: (SQL | undefined)[] = [notDeleted];
+    const conditions: (SQL | undefined)[] = [await alive()];
     if (typeof status === 'string' && status)
       conditions.push(eq(pages.status, status as never));
     if (typeof editorType === 'string' && editorType)
@@ -339,7 +343,7 @@ export const pagesServices = {
     const rows = await db
       .select({ status: pages.status, total: count() })
       .from(pages)
-      .where(notDeleted)
+      .where(await alive())
       .groupBy(pages.status);
     return Object.fromEntries(rows.map(r => [r.status, r.total])) as Record<
       string,
@@ -413,6 +417,8 @@ export const pagesServices = {
     }
 
     const draftContent = normalizeContent(editorType, initialContent);
+    const siteId = await adminSiteId();
+    await assertSiteLocale(pageInput.language, siteId);
     await assertSlugAvailable(pageInput.slug, pageInput.language);
 
     const created = await db.transaction(async tx => {
@@ -420,6 +426,7 @@ export const pagesServices = {
         .insert(pages)
         .values({
           ...pageInput,
+          siteId,
           editorType,
           status: pageInput.status === 'published' ? 'draft' : pageInput.status,
           createdBy: access.userId,
@@ -469,6 +476,7 @@ export const pagesServices = {
       ...pageInput
     } = input;
     const language = pageInput.language ?? existing.language;
+    await assertSiteLocale(language, existing.siteId);
 
     if (pageInput.slug || pageInput.language) {
       await assertSlugAvailable(pageInput.slug ?? existing.slug, language, id);
@@ -695,7 +703,7 @@ export const pagesServices = {
     const [page] = await db
       .update(pages)
       .set({ status: 'draft' })
-      .where(and(eq(pages.id, id), notDeleted))
+      .where(and(eq(pages.id, id), await alive()))
       .returning();
     if (!page) throw new NotFoundException('Page not found');
     await searchIndex.removePage(id);
@@ -728,7 +736,7 @@ export const pagesServices = {
           and(
             eq(pages.slug, slug),
             eq(pages.language, source.language),
-            notDeleted
+            await alive()
           )
         )
         .limit(1);
@@ -740,6 +748,7 @@ export const pagesServices = {
       const [page] = await tx
         .insert(pages)
         .values({
+          siteId: source.siteId,
           title: `${source.title} (Copy)`,
           slug,
           status: 'draft',
@@ -793,7 +802,7 @@ export const pagesServices = {
     const [page] = await db
       .update(pages)
       .set({ deletedAt: new Date(), isHome: false, isBlogIndex: false })
-      .where(and(eq(pages.id, id), notDeleted))
+      .where(and(eq(pages.id, id), await alive()))
       .returning();
     if (!page) throw new NotFoundException('Page not found');
     await searchIndex.removePage(id);
@@ -904,6 +913,7 @@ export const pagesServices = {
     );
     const source = await pagesServices.getById({ id });
     if (!source) throw new NotFoundException('Page not found');
+    await assertSiteLocale(language, source.siteId);
     if (source.language === language)
       throw new ApplicationException(
         'Pick a different language for the translation.'
@@ -917,7 +927,7 @@ export const pagesServices = {
         and(
           eq(pages.translationGroupId, groupId),
           eq(pages.language, language),
-          notDeleted
+          await alive()
         )
       )
       .limit(1);
@@ -939,6 +949,7 @@ export const pagesServices = {
       const [page] = await tx
         .insert(pages)
         .values({
+          siteId: source.siteId,
           title: source.title,
           slug: source.slug,
           status: 'draft',
@@ -999,7 +1010,7 @@ export const pagesServices = {
         and(
           eq(pages.translationGroupId, groupId),
           ne(pages.id, pageId),
-          notDeleted
+          await alive()
         )
       );
   },
@@ -1013,7 +1024,7 @@ export const pagesServices = {
         and(
           eq(pages.status, 'scheduled'),
           lte(pages.scheduledAt, new Date()),
-          notDeleted
+          await alive()
         )
       );
 
@@ -1047,7 +1058,7 @@ export const pagesServices = {
         language: pages.language,
       })
       .from(pages)
-      .where(and(notDeleted, ids?.length ? inArray(pages.id, ids) : undefined))
+      .where(and(await alive(), ids?.length ? inArray(pages.id, ids) : undefined))
       .orderBy(asc(pages.title)),
 };
 

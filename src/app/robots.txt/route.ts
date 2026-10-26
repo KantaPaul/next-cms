@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 /** Serves the robots.txt edited in site settings, falling back to a sensible default. */
 export async function GET() {
-  const settings = await siteSettingsService.get();
+  const settings = await siteSettingsService.getPublic();
   const base = (settings.siteUrl || env.SITE_URL).replace(/\/$/, '');
   const body =
     settings.robotsTxt?.trim() ||

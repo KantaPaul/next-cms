@@ -234,6 +234,9 @@ export async function inviteStaff(input: {
   const role = allRoles.find(r => r.name === roleName) ?? allRoles.find(r => r.name === 'Viewer');
   if (!role) throw new ApplicationException('Roles are not set up yet.');
 
+  const { siteContext } = await import('@/server/services/site-context');
+  const { siteMemberships } = await import('@/db/schema');
+  const siteId = await siteContext.adminSiteId(input.actorId);
   const [created] = await db
     .insert(users)
     .values({
@@ -244,6 +247,12 @@ export async function inviteStaff(input: {
       roleId: role.id,
     })
     .returning();
+
+  await db.insert(siteMemberships).values({
+    userId: created.id,
+    siteId,
+    roleId: role.id,
+  });
 
   const mailed = await staffAuth.requestMagicLink(email);
   await auditService.log({

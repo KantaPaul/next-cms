@@ -36,6 +36,7 @@ export const saveMenu = manage
       id: z.string().optional(),
       title: z.string().trim().min(1, 'Title is required').max(100),
       location: z.enum(MENU_LOCATION),
+      language: z.string().trim().min(2).max(12),
     })
   )
   .action(async ({ input, ctx }) => {
@@ -48,6 +49,18 @@ export const deleteMenu = manage
   .input(z.object({ id: z.string().min(1) }))
   .action(async ({ input, ctx }) => {
     const row = await menusService.deleteMenu(input.id, ctx.user.userId);
+    revalidatePath(PAGES.DASHBOARD.MENUS);
+    return row;
+  });
+
+export const copyMenu = manage
+  .input(z.object({ id: z.string().min(1), language: z.string().trim().min(2).max(12) }))
+  .action(async ({ input, ctx }) => {
+    const row = await menusService.copyToLocale(
+      input.id,
+      input.language,
+      ctx.user.userId
+    );
     revalidatePath(PAGES.DASHBOARD.MENUS);
     return row;
   });

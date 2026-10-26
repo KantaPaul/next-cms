@@ -20,7 +20,11 @@ import {
   publicSiteService,
   resolveRoute,
 } from '@/server/services/public-site.service';
-import { siteSettingsService } from '@/server/services/site-settings.service';
+import { siteContext } from '@/server/services/site-context';
+import {
+  localizedSettings,
+  siteSettingsService,
+} from '@/server/services/site-settings.service';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 type Params = {
@@ -29,7 +33,7 @@ type Params = {
 };
 
 async function loadPage(segments?: string[]) {
-  const route = resolveRoute(segments);
+  const route = resolveRoute(segments, await siteContext.publicSite());
   if (!route) return null;
 
   const previewPageId = await getPreviewPageId();
@@ -47,7 +51,7 @@ async function loadPage(segments?: string[]) {
 }
 
 async function loadPost(segments?: string[]) {
-  const route = resolvePostRoute(segments);
+  const route = resolvePostRoute(segments, await siteContext.publicSite());
   if (!route) return null;
 
   const previewPostId = await getPreviewPostId();
@@ -69,24 +73,32 @@ const absolute = (base: string, path: string) =>
 
 type Settings = Awaited<ReturnType<typeof siteSettingsService.get>>;
 
-function postMetadata(post: PublicPost, settings: Settings): Metadata {
+function postMetadata(
+  post: PublicPost,
+  settings: Settings,
+  defaultLocale: string
+): Metadata {
+  const copy = localizedSettings(settings, post.view.language, defaultLocale);
   const base = settings.siteUrl || env.SITE_URL;
   const { view, seo } = post;
-  const url = absolute(base, PAGES.SITE.post(view.slug, view.language));
+  const url = absolute(
+    base,
+    PAGES.SITE.post(view.slug, view.language, defaultLocale)
+  );
   const title = seo?.title || view.title;
   const description =
-    seo?.description || view.excerpt || settings.siteDescription || undefined;
+    seo?.description || view.excerpt || copy.siteDescription || undefined;
   const image =
     seo?.ogImage || view.featuredImage || settings.defaultOgImage || undefined;
   const languages = Object.fromEntries(
     post.alternates.map(alt => [
       alt.language,
-      absolute(base, PAGES.SITE.post(alt.slug, alt.language)),
+      absolute(base, PAGES.SITE.post(alt.slug, alt.language, defaultLocale)),
     ])
   );
 
   return {
-    title: `${title} | ${settings.siteName}`,
+    title: `${title} | ${copy.siteName}`,
     description,
     keywords: seo?.keywords || undefined,
     alternates: {
@@ -102,7 +114,7 @@ function postMetadata(post: PublicPost, settings: Settings): Metadata {
       description: seo?.ogDescription || description,
       type: 'article',
       url,
-      siteName: settings.siteName,
+      siteName: copy.siteName,
       locale: view.language,
       ...(view.publishedAt && { publishedTime: view.publishedAt }),
       ...(view.authorName && { authors: [view.authorName] }),
@@ -121,33 +133,48 @@ function postMetadata(post: PublicPost, settings: Settings): Metadata {
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
+  const site = await siteContext.publicSite();
   const post = await loadPost(slug);
-  if (post) return postMetadata(post, await siteSettingsService.get());
+  if (post)
+    return postMetadata(
+      post,
+      await siteSettingsService.getPublic(),
+      site.defaultLocale
+    );
 
   const [page, settings] = await Promise.all([
     loadPage(slug),
-    siteSettingsService.get(),
+    siteSettingsService.getPublic(),
   ]);
   if (!page) return { title: 'Not found' };
 
+  const copy = localizedSettings(settings, page.language, site.defaultLocale);
   const base = settings.siteUrl || env.SITE_URL;
-  const path = PAGES.SITE.page(page.slug, page.language, page.isHome);
+  const path = PAGES.SITE.page(
+    page.slug,
+    page.language,
+    page.isHome,
+    site.defaultLocale
+  );
   const seo = page.seo;
   const title = seo?.title || page.title;
-  const description = seo?.description || settings.siteDescription || undefined;
+  const description = seo?.description || copy.seoDescription || undefined;
   const image = seo?.ogImage || settings.defaultOgImage || undefined;
   const languages = Object.fromEntries(
     page.alternates.map(alt => [
       alt.language,
-      absolute(base, PAGES.SITE.page(alt.slug, alt.language, alt.isHome)),
+      absolute(
+        base,
+        PAGES.SITE.page(alt.slug, alt.language, alt.isHome, site.defaultLocale)
+      ),
     ])
   );
 
   return {
     title:
       page.isHome && !seo?.title
-        ? settings.siteName
-        : `${title} | ${settings.siteName}`,
+        ? copy.seoTitle
+        : `${title} | ${copy.siteName}`,
     description,
     keywords: seo?.keywords || undefined,
     alternates: {
@@ -163,7 +190,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       description: seo?.ogDescription || description,
       type: seo?.ogType === 'article' ? 'article' : 'website',
       url: absolute(base, path),
-      siteName: settings.siteName,
+      siteName: copy.siteName,
       locale: page.language,
       ...(image && { images: [{ url: image }] }),
     },
@@ -282,7 +309,7 @@ async function PostRoute({
 
 export default async function SitePage({ params, searchParams }: Params) {
   const { slug } = await params;
-  const settings = await siteSettingsService.get();
+  const settings = await siteSettingsService.getPublic();
 
   const post = await loadPost(slug);
   if (post) return <PostRoute post={post} settings={settings} />;
@@ -290,8 +317,14 @@ export default async function SitePage({ params, searchParams }: Params) {
   const page = await loadPage(slug);
   if (!page) notFound();
 
+  const site = await siteContext.publicSite();
   const base = settings.siteUrl || env.SITE_URL;
-  const path = PAGES.SITE.page(page.slug, page.language, page.isHome);
+  const path = PAGES.SITE.page(
+    page.slug,
+    page.language,
+    page.isHome,
+    site.defaultLocale
+  );
   const beacon = !page.isDraft ? (
     <ViewBeacon pageId={page.id} path={path || '/'} />
   ) : null;

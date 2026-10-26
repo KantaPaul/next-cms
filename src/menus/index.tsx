@@ -2,6 +2,7 @@ import {
   BarChart3,
   FolderTree,
   GalleryVertical,
+  Globe,
   ImageIcon,
   KeyRound,
   LayoutTemplate,
@@ -75,6 +76,12 @@ export function getMenuItems(): {
       name: 'Menus',
       href: PAGES.DASHBOARD.MENUS,
       icon: <MenuIcon className="w-[18px]" />,
+      permission: PERMISSIONS.SETTINGS_MANAGE,
+    },
+    {
+      name: 'Sites',
+      href: PAGES.DASHBOARD.SITES,
+      icon: <Globe className="w-[18px]" />,
       permission: PERMISSIONS.SETTINGS_MANAGE,
     },
     {

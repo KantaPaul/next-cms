@@ -1,5 +1,5 @@
 import 'server-only';
-import { and, eq, isNotNull } from 'drizzle-orm';
+import { and, eq, isNotNull, isNull } from 'drizzle-orm';
 import { cache } from 'react';
 import {
   PERMISSION_MATRIX,
@@ -9,8 +9,9 @@ import {
   type RoleName,
 } from '@/config/permissions';
 import { db } from '@/db';
-import { permissions, roles, users } from '@/db/schema';
+import { permissions, roles, siteMemberships, users } from '@/db/schema';
 import { ApplicationException } from '@/lib/utils/error';
+import { siteContext } from '@/server/services/site-context';
 
 export type UserAccess = {
   userId: string;
@@ -80,8 +81,36 @@ export const accessService = {
 
     if (!user) return { userId, role: null, permissions: [] };
 
-    const roleId =
-      user.roleId ?? (await accessService.assignDefaultRole(userId));
+    const siteId = await siteContext.adminSiteId(userId);
+    const [membership] = await db
+      .select({ roleId: siteMemberships.roleId })
+      .from(siteMemberships)
+      .where(
+        and(
+          eq(siteMemberships.userId, userId),
+          eq(siteMemberships.siteId, siteId),
+          isNull(siteMemberships.deletedAt)
+        )
+      )
+      .limit(1);
+
+    const [anyMembership] = membership
+      ? [membership]
+      : await db
+          .select({ roleId: siteMemberships.roleId })
+          .from(siteMemberships)
+          .where(
+            and(eq(siteMemberships.userId, userId), isNull(siteMemberships.deletedAt))
+          )
+          .limit(1);
+
+    const roleId = membership
+      ? membership.roleId
+      : anyMembership
+        ? null
+        : (user.roleId ?? (await accessService.assignDefaultRole(userId)));
+
+    if (!roleId) return { userId, role: null, permissions: [] };
 
     const role = await db.query.roles.findFirst({
       where: (t, { eq }) => eq(t.id, roleId),

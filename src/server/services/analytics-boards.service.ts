@@ -1,6 +1,6 @@
 import 'server-only';
 import { createId } from '@paralleldrive/cuid2';
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { analyticsDashboards } from '@/db/schema';
 import {
@@ -9,6 +9,7 @@ import {
   EMPTY_LAYOUT,
   parseBoardLayout,
 } from '@/db/schemas/analytics.schema';
+import { adminSiteId } from '@/server/services/site-context';
 
 export type BoardSummary = {
   id: string;
@@ -38,6 +39,7 @@ export const analyticsBoardsService = {
         createdAt: analyticsDashboards.createdAt,
       })
       .from(analyticsDashboards)
+      .where(eq(analyticsDashboards.siteId, await adminSiteId()))
       .orderBy(desc(analyticsDashboards.updatedAt));
 
     return rows.map(r => {
@@ -56,7 +58,7 @@ export const analyticsBoardsService = {
     const [row] = await db
       .select()
       .from(analyticsDashboards)
-      .where(eq(analyticsDashboards.id, id))
+      .where(and(eq(analyticsDashboards.id, id), eq(analyticsDashboards.siteId, await adminSiteId())))
       .limit(1);
 
     if (!row) return null;
@@ -83,6 +85,7 @@ export const analyticsBoardsService = {
 
     await db.insert(analyticsDashboards).values({
       id,
+      siteId: await adminSiteId(),
       name: input.name.slice(0, 120),
       createdBy: input.createdBy,
       layout,
@@ -115,7 +118,7 @@ export const analyticsBoardsService = {
     await db
       .update(analyticsDashboards)
       .set({ name, layout, updatedAt: new Date() })
-      .where(eq(analyticsDashboards.id, id));
+      .where(and(eq(analyticsDashboards.id, id), eq(analyticsDashboards.siteId, await adminSiteId())));
 
     return {
       ...existing,
@@ -128,7 +131,7 @@ export const analyticsBoardsService = {
   delete: async (id: string): Promise<boolean> => {
     const result = await db
       .delete(analyticsDashboards)
-      .where(eq(analyticsDashboards.id, id))
+      .where(and(eq(analyticsDashboards.id, id), eq(analyticsDashboards.siteId, await adminSiteId())))
       .returning({ id: analyticsDashboards.id });
     return result.length > 0;
   },

@@ -9,7 +9,9 @@ import {
   pageTemplates,
   SITE_SETTINGS_ID,
   siteSettings,
+  sites,
 } from '@/db/schema';
+import { DEFAULT_SITE_LOCALES } from '@/db/schemas/sites.schema';
 import { accessService } from '@/server/services/access.service';
 import { STARTER_GLOBAL_BLOCKS, STARTER_TEMPLATES } from './starter-content';
 
@@ -18,8 +20,17 @@ async function main() {
   console.info(`Roles: ${roles.map(r => r.name).join(', ')}`);
 
   await db
+    .insert(sites)
+    .values({
+      id: SITE_SETTINGS_ID,
+      name: 'Next CMS',
+      defaultLocale: 'en',
+      locales: DEFAULT_SITE_LOCALES,
+    })
+    .onConflictDoNothing();
+  await db
     .insert(siteSettings)
-    .values({ id: SITE_SETTINGS_ID })
+    .values({ id: SITE_SETTINGS_ID, siteId: SITE_SETTINGS_ID })
     .onConflictDoNothing();
   console.info('Site settings: ok');
 

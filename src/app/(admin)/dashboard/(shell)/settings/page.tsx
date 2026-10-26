@@ -5,7 +5,9 @@ import { PERMISSIONS } from '@/config/permissions';
 import { env } from '@/env.mjs';
 import { metaObject } from '@/lib/utils/metadata';
 import { requirePermission } from '@/server/services/require-permission';
+import { siteContext } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
+import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { menusService } from '../menus/_modules/menus.service';
 import { SettingsForm } from './_components/settings-form';
 
@@ -31,9 +33,11 @@ export default async function SettingsPage() {
     );
   }
 
-  const [settings, menus] = await Promise.all([
+  const { userId } = await getCurrentUserAndTeamId();
+  const [settings, menus, site] = await Promise.all([
     siteSettingsService.get(),
     menusService.list(),
+    siteContext.adminSite(userId),
   ]);
 
   return (
@@ -51,13 +55,19 @@ export default async function SettingsPage() {
           footerMenuId: settings.footerMenuId,
           robotsTxt: settings.robotsTxt,
           googleAnalyticsId: settings.googleAnalyticsId,
+          seoTitle: settings.seoTitle ?? null,
+          seoDescription: settings.seoDescription ?? null,
+          translations: settings.translations ?? null,
           themeTokens: settings.themeTokens,
         }}
         menus={menus.map(m => ({
           id: m.id,
           title: m.title,
           location: m.location,
+          language: m.language,
         }))}
+        locales={site.locales}
+        defaultLocale={site.defaultLocale}
         fallbackSiteUrl={env.SITE_URL}
       />
     </>

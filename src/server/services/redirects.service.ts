@@ -2,7 +2,8 @@ import 'server-only';
 import { and, asc, eq } from 'drizzle-orm';
 import { PAGES } from '@/config/pages';
 import { db } from '@/db';
-import { DEFAULT_SITE_ID, redirects } from '@/db/schema';
+import { redirects } from '@/db/schema';
+import { adminSiteId, siteContext } from '@/server/services/site-context';
 import { ApplicationException } from '@/lib/utils/error';
 
 export type RedirectOffer = { from: string; to: string };
@@ -42,7 +43,7 @@ export const redirectsService = {
     db
       .select()
       .from(redirects)
-      .where(eq(redirects.siteId, DEFAULT_SITE_ID))
+      .where(eq(redirects.siteId, await adminSiteId()))
       .orderBy(asc(redirects.fromPath)),
 
   find: async (path: string) => {
@@ -50,7 +51,12 @@ export const redirectsService = {
     const [row] = await db
       .select({ toPath: redirects.toPath, statusCode: redirects.statusCode })
       .from(redirects)
-      .where(and(eq(redirects.siteId, DEFAULT_SITE_ID), eq(redirects.fromPath, fromPath)))
+      .where(
+        and(
+          eq(redirects.siteId, (await siteContext.publicSite()).id),
+          eq(redirects.fromPath, fromPath)
+        )
+      )
       .limit(1);
     return row ?? null;
   },
@@ -65,14 +71,14 @@ export const redirectsService = {
     const [existing] = await db
       .select({ id: redirects.id })
       .from(redirects)
-      .where(and(eq(redirects.siteId, DEFAULT_SITE_ID), eq(redirects.fromPath, fromPath)))
+      .where(and(eq(redirects.siteId, await adminSiteId()), eq(redirects.fromPath, fromPath)))
       .limit(1);
     if (existing) {
       throw new ApplicationException(`A redirect from ${fromPath} already exists.`);
     }
     const [row] = await db
       .insert(redirects)
-      .values({ siteId: DEFAULT_SITE_ID, fromPath, toPath, statusCode })
+      .values({ siteId: await adminSiteId(), fromPath, toPath, statusCode })
       .returning();
     return row;
   },

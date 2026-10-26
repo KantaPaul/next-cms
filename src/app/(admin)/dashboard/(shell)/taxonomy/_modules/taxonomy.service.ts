@@ -4,6 +4,7 @@ import { db } from '@/db';
 import { categories, pageCategories, pageTags, tags } from '@/db/schema';
 import { ApplicationException, NotFoundException } from '@/lib/utils/error';
 import { auditService } from '@/server/services/audit.service';
+import { adminSiteId } from '@/server/services/site-context';
 import type { CategoryInput, TagInput } from './taxonomy.validation';
 
 export type CategoryNode = {
@@ -29,7 +30,9 @@ export const taxonomyService = {
       })
       .from(categories)
       .leftJoin(pageCategories, eq(pageCategories.categoryId, categories.id))
-      .where(isNull(categories.deletedAt))
+      .where(
+        and(isNull(categories.deletedAt), eq(categories.siteId, await adminSiteId()))
+      )
       .groupBy(categories.id)
       .orderBy(asc(categories.name));
 
@@ -67,18 +70,20 @@ export const taxonomyService = {
       })
       .from(tags)
       .leftJoin(pageTags, eq(pageTags.tagId, tags.id))
-      .where(isNull(tags.deletedAt))
+      .where(and(isNull(tags.deletedAt), eq(tags.siteId, await adminSiteId())))
       .groupBy(tags.id)
       .orderBy(asc(tags.name)),
 
   saveCategory: async (input: CategoryInput, userId: string) => {
     const { id, ...values } = input;
+    const siteId = await adminSiteId();
 
     const [clash] = await db
       .select({ id: categories.id })
       .from(categories)
       .where(
         and(
+          eq(categories.siteId, siteId),
           eq(categories.slug, values.slug),
           isNull(categories.deletedAt),
           id ? ne(categories.id, id) : undefined
@@ -108,11 +113,11 @@ export const taxonomyService = {
       ? await db
           .update(categories)
           .set(values)
-          .where(eq(categories.id, id))
+          .where(and(eq(categories.id, id), eq(categories.siteId, siteId)))
           .returning()
       : await db
           .insert(categories)
-          .values({ ...values, createdBy: userId })
+          .values({ ...values, siteId, createdBy: userId })
           .returning();
 
     if (!row) throw new NotFoundException('Category not found');
@@ -129,7 +134,7 @@ export const taxonomyService = {
   deleteCategory: async (id: string, userId: string) => {
     const [row] = await db
       .delete(categories)
-      .where(eq(categories.id, id))
+      .where(and(eq(categories.id, id), eq(categories.siteId, await adminSiteId())))
       .returning();
     if (!row) throw new NotFoundException('Category not found');
     await auditService.log({
@@ -144,12 +149,14 @@ export const taxonomyService = {
 
   saveTag: async (input: TagInput, userId: string) => {
     const { id, ...values } = input;
+    const siteId = await adminSiteId();
 
     const [clash] = await db
       .select({ id: tags.id })
       .from(tags)
       .where(
         and(
+          eq(tags.siteId, siteId),
           eq(tags.slug, values.slug),
           isNull(tags.deletedAt),
           id ? ne(tags.id, id) : undefined
@@ -161,10 +168,14 @@ export const taxonomyService = {
       );
 
     const [row] = id
-      ? await db.update(tags).set(values).where(eq(tags.id, id)).returning()
+      ? await db
+          .update(tags)
+          .set(values)
+          .where(and(eq(tags.id, id), eq(tags.siteId, siteId)))
+          .returning()
       : await db
           .insert(tags)
-          .values({ ...values, createdBy: userId })
+          .values({ ...values, siteId, createdBy: userId })
           .returning();
 
     if (!row) throw new NotFoundException('Tag not found');
@@ -179,7 +190,10 @@ export const taxonomyService = {
   },
 
   deleteTag: async (id: string, userId: string) => {
-    const [row] = await db.delete(tags).where(eq(tags.id, id)).returning();
+    const [row] = await db
+      .delete(tags)
+      .where(and(eq(tags.id, id), eq(tags.siteId, await adminSiteId())))
+      .returning();
     if (!row) throw new NotFoundException('Tag not found');
     await auditService.log({
       actorId: userId,

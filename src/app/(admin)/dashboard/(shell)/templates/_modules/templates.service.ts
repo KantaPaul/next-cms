@@ -1,5 +1,5 @@
 import 'server-only';
-import { asc, countDistinct, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, countDistinct, desc, eq, sql } from 'drizzle-orm';
 import {
   type BuilderData,
   type BuilderItem,
@@ -15,6 +15,7 @@ import {
   type UserAccess,
 } from '@/server/services/access.service';
 import { auditService } from '@/server/services/audit.service';
+import { adminSiteId } from '@/server/services/site-context';
 
 const countBlocks = (content: unknown) =>
   content &&
@@ -37,6 +38,7 @@ export const templatesService = {
         content: pageTemplates.content,
       })
       .from(pageTemplates)
+      .where(eq(pageTemplates.siteId, await adminSiteId()))
       .orderBy(desc(pageTemplates.isSystem), asc(pageTemplates.name));
 
     return rows.map(({ content, ...row }) => ({
@@ -65,6 +67,7 @@ export const templatesService = {
     const [row] = await db
       .insert(pageTemplates)
       .values({
+        siteId: await adminSiteId(),
         name: input.name,
         description: input.description ?? null,
         category: input.category ?? 'Custom',
@@ -91,11 +94,11 @@ export const templatesService = {
     const [row] = await db
       .select()
       .from(pageTemplates)
-      .where(eq(pageTemplates.id, id));
+      .where(and(eq(pageTemplates.id, id), eq(pageTemplates.siteId, await adminSiteId())));
     if (!row) throw new NotFoundException('Template not found');
     if (row.isSystem)
       throw new ApplicationException('Starter templates cannot be deleted.');
-    await db.delete(pageTemplates).where(eq(pageTemplates.id, id));
+    await db.delete(pageTemplates).where(and(eq(pageTemplates.id, id), eq(pageTemplates.siteId, await adminSiteId())));
     await auditService.log({
       actorId: access.userId,
       action: 'delete',
@@ -110,7 +113,7 @@ export const templatesService = {
     const [row] = await db
       .select()
       .from(pageTemplates)
-      .where(eq(pageTemplates.id, id));
+      .where(and(eq(pageTemplates.id, id), eq(pageTemplates.siteId, await adminSiteId())));
     return row ?? null;
   },
 
@@ -131,7 +134,7 @@ export const templatesService = {
     const [existing] = await db
       .select()
       .from(pageTemplates)
-      .where(eq(pageTemplates.id, input.id));
+      .where(and(eq(pageTemplates.id, input.id), eq(pageTemplates.siteId, await adminSiteId())));
     if (!existing) throw new NotFoundException('Template not found');
     if (existing.isSystem)
       throw new ApplicationException('Starter templates cannot be edited.');
@@ -145,7 +148,7 @@ export const templatesService = {
           : {}),
         ...(input.category !== undefined ? { category: input.category } : {}),
       })
-      .where(eq(pageTemplates.id, input.id))
+      .where(and(eq(pageTemplates.id, input.id), eq(pageTemplates.siteId, await adminSiteId())))
       .returning();
     if (!row) throw new NotFoundException('Template not found');
     await auditService.log({
@@ -170,6 +173,7 @@ export const templatesService = {
       })
       .from(globalBlocks)
       .leftJoin(users, eq(users.id, globalBlocks.createdBy))
+      .where(eq(globalBlocks.siteId, await adminSiteId()))
       .orderBy(asc(globalBlocks.name)),
 
   /** Number of pages whose draft or published content references each global block. */
@@ -200,7 +204,7 @@ export const templatesService = {
     const [row] = await db
       .update(globalBlocks)
       .set({ name: input.name, category: input.category || 'General' })
-      .where(eq(globalBlocks.id, input.id))
+      .where(and(eq(globalBlocks.id, input.id), eq(globalBlocks.siteId, await adminSiteId())))
       .returning();
     if (!row) throw new NotFoundException('Global block not found');
     await auditService.log({
@@ -217,7 +221,7 @@ export const templatesService = {
     const [row] = await db
       .select()
       .from(globalBlocks)
-      .where(eq(globalBlocks.id, id));
+      .where(and(eq(globalBlocks.id, id), eq(globalBlocks.siteId, await adminSiteId())));
     return row ?? null;
   },
 
@@ -264,11 +268,15 @@ export const templatesService = {
       ? await db
           .update(globalBlocks)
           .set(values)
-          .where(eq(globalBlocks.id, input.id))
+          .where(and(eq(globalBlocks.id, input.id), eq(globalBlocks.siteId, await adminSiteId())))
           .returning()
       : await db
           .insert(globalBlocks)
-          .values({ ...values, createdBy: access.userId })
+          .values({
+            ...values,
+            siteId: await adminSiteId(),
+            createdBy: access.userId,
+          })
           .returning();
     if (!row) throw new NotFoundException('Global block not found');
 
@@ -290,7 +298,7 @@ export const templatesService = {
     );
     const [row] = await db
       .delete(globalBlocks)
-      .where(eq(globalBlocks.id, id))
+      .where(and(eq(globalBlocks.id, id), eq(globalBlocks.siteId, await adminSiteId())))
       .returning();
     if (!row) throw new NotFoundException('Global block not found');
     await auditService.log({

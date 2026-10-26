@@ -28,7 +28,8 @@ export type AuditTarget =
   | 'template'
   | 'global_block'
   | 'api_key'
-  | 'user';
+  | 'user'
+  | 'site';
 
 export const auditService = {
   log: async (

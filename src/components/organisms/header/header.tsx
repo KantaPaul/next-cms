@@ -12,10 +12,20 @@ import { PERMISSIONS } from '@/config/permissions';
 import { cn } from '@/lib/utils/cn';
 import { Can } from '@/providers/access.provider';
 import { me } from '@/server/actions/auth.actions';
+import { SiteSwitcher } from '@/components/dashboard/site-switcher';
+import { getCurrentUserAndTeamId } from '@/lib/auth';
+import { siteContext } from '@/server/services/site-context';
 
 export default async function Header() {
-  const [currentUser] = await Promise.all([me()]);
+  const [currentUser, session] = await Promise.all([
+    me(),
+    getCurrentUserAndTeamId(),
+  ]);
   const { user, profile } = currentUser;
+  const [memberships, currentSite] = await Promise.all([
+    siteContext.memberships(session.userId),
+    siteContext.adminSiteId(session.userId),
+  ]);
 
   return (
     <header
@@ -43,6 +53,7 @@ export default async function Header() {
           justify="end"
           className="order-3 ml-auto flex w-auto items-center gap-0.5 md:gap-4 lg:gap-7"
         >
+          <SiteSwitcher current={currentSite} memberships={memberships} />
           <ThemeToggle />
           {/* <TopBarPanel /> */}
           {/* <Box className="order-2 ml-1 items-center justify-center md:order-0 md:ml-0 lg:flex"> */}

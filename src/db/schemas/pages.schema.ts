@@ -15,6 +15,8 @@ import {
 } from 'drizzle-orm/pg-core';
 import { baseColumns, relationConfig } from '@/db/helpers/base.columns';
 import { users } from '@/db/schemas/auth.schema';
+import { DEFAULT_SITE_ID } from '@/db/schemas/sites.schema';
+import type { SiteCopy } from '@/db/schemas/sites.schema';
 import {
   ContentKind,
   contentKindEnum,
@@ -38,6 +40,7 @@ export const pages = pgTable(
   'pages',
   {
     id,
+    siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
     title: varchar('title', { length: 255 }).notNull(),
     slug: varchar('slug', { length: 255 }).notNull(),
     status: pageStatusEnum().default(PageStatus.draft).notNull(),
@@ -60,9 +63,10 @@ export const pages = pgTable(
     ...timestampColumns,
   },
   t => [
-    uniqueIndex('pages_slug_language_unique')
-      .on(t.slug, t.language)
+    uniqueIndex('pages_site_slug_language_unique')
+      .on(t.siteId, t.slug, t.language)
       .where(sql`${t.deletedAt} is null`),
+    index('pages_site_id_index').on(t.siteId),
     index('pages_status_index').on(t.status),
     index('pages_translation_group_index').on(t.translationGroupId),
     index('pages_deleted_at_index').on(t.deletedAt),
@@ -144,9 +148,12 @@ export const seoMeta = pgTable('seo_meta', {
   ...timestampColumns,
 });
 
-export const categories = pgTable('categories', {
-  id,
-  name: varchar('name', { length: 100 }).notNull(),
+export const categories = pgTable(
+  'categories',
+  {
+    id,
+    siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
+    name: varchar('name', { length: 100 }).notNull(),
   slug: varchar('slug', { length: 150 }).notNull(),
   description: text('description'),
   parentId: text('parent_id').references(
@@ -158,11 +165,16 @@ export const categories = pgTable('categories', {
     .references(() => users.id, cascade)
     .notNull(),
   ...timestampColumns,
-});
+  },
+  t => [index('categories_site_id_index').on(t.siteId)]
+);
 
-export const tags = pgTable('tags', {
-  id,
-  name: varchar('name', { length: 100 }).notNull(),
+export const tags = pgTable(
+  'tags',
+  {
+    id,
+    siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
+    name: varchar('name', { length: 100 }).notNull(),
   slug: varchar('slug', { length: 150 }).notNull(),
   color: varchar('color', { length: 20 }).default('#6366f1').notNull(),
   language: text('language').default('en'),
@@ -170,7 +182,9 @@ export const tags = pgTable('tags', {
     .references(() => users.id, cascade)
     .notNull(),
   ...timestampColumns,
-});
+  },
+  t => [index('tags_site_id_index').on(t.siteId)]
+);
 
 export const pageCategories = pgTable(
   'page_categories',
@@ -202,6 +216,7 @@ export const media = pgTable(
   'media',
   {
     id,
+    siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
     key: text('key').notNull().unique(),
     url: text('url').notNull(),
     filename: varchar('filename', { length: 255 }).notNull(),
@@ -215,15 +230,29 @@ export const media = pgTable(
     createdBy: text('created_by').references(() => users.id, setNull),
     ...timestampColumns,
   },
-  t => [index('media_folder_index').on(t.folder)]
+  t => [
+    index('media_folder_index').on(t.folder),
+    index('media_site_id_index').on(t.siteId),
+  ]
 );
 
-export const menus = pgTable('menus', {
-  id,
-  title: varchar('title', { length: 100 }).notNull(),
-  location: menuLocationEnum('location').default('header').notNull(),
-  ...timestampColumns,
-});
+export const menus = pgTable(
+  'menus',
+  {
+    id,
+    siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
+    title: varchar('title', { length: 100 }).notNull(),
+    location: menuLocationEnum('location').default('header').notNull(),
+    language: text('language').notNull().default('en'),
+    ...timestampColumns,
+  },
+  t => [
+    uniqueIndex('menus_site_location_language_unique')
+      .on(t.siteId, t.location, t.language)
+      .where(sql`${t.deletedAt} is null`),
+    index('menus_site_id_index').on(t.siteId),
+  ]
+);
 
 export const menuItems = pgTable(
   'menu_items',
@@ -266,8 +295,12 @@ export const SITE_SETTINGS_ID = 'default';
 
 export const siteSettings = pgTable('site_settings', {
   id: text('id').primaryKey().default(SITE_SETTINGS_ID),
+  siteId: text('site_id').notNull().default(DEFAULT_SITE_ID).unique(),
   siteName: varchar('site_name', { length: 100 }).default('Next CMS').notNull(),
   siteDescription: text('site_description'),
+  seoTitle: varchar('seo_title', { length: 160 }),
+  seoDescription: text('seo_description'),
+  translations: jsonb('translations').$type<Record<string, SiteCopy>>(),
   siteUrl: varchar('site_url', { length: 255 }),
   logo: text('logo'),
   favicon: text('favicon'),
@@ -283,18 +316,26 @@ export const siteSettings = pgTable('site_settings', {
   updatedAt: baseColumns.updatedAt,
 });
 
-export const globalBlocks = pgTable('global_blocks', {
-  id,
-  name: varchar('name', { length: 150 }).notNull(),
+export const globalBlocks = pgTable(
+  'global_blocks',
+  {
+    id,
+    siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
+    name: varchar('name', { length: 150 }).notNull(),
   category: varchar('category', { length: 50 }).default('General').notNull(),
   content: jsonb('content').notNull(),
   createdBy: text('created_by').references(() => users.id, setNull),
   ...timestampColumns,
-});
+  },
+  t => [index('global_blocks_site_id_index').on(t.siteId)]
+);
 
-export const pageTemplates = pgTable('page_templates', {
-  id,
-  name: varchar('name', { length: 150 }).notNull(),
+export const pageTemplates = pgTable(
+  'page_templates',
+  {
+    id,
+    siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
+    name: varchar('name', { length: 150 }).notNull(),
   description: text('description'),
   category: varchar('category', { length: 50 }).default('Landing').notNull(),
   editorType: editorTypeEnum('editor_type')
@@ -305,7 +346,9 @@ export const pageTemplates = pgTable('page_templates', {
   isSystem: boolean('is_system').default(false).notNull(),
   createdBy: text('created_by').references(() => users.id, setNull),
   ...timestampColumns,
-});
+  },
+  t => [index('page_templates_site_id_index').on(t.siteId)]
+);
 
 export const auditLogs = pgTable(
   'audit_logs',
@@ -322,16 +365,21 @@ export const auditLogs = pgTable(
   t => [index('audit_logs_created_at_index').on(t.createdAt)]
 );
 
-export const apiKeys = pgTable('api_keys', {
-  id,
-  name: varchar('name', { length: 100 }).notNull(),
+export const apiKeys = pgTable(
+  'api_keys',
+  {
+    id,
+    siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
+    name: varchar('name', { length: 100 }).notNull(),
   prefix: varchar('prefix', { length: 20 }).notNull(),
   hashedKey: text('hashed_key').notNull().unique(),
   lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
   revokedAt: timestamp('revoked_at', { withTimezone: true }),
   createdBy: text('created_by').references(() => users.id, setNull),
   createdAt: baseColumns.createdAt,
-});
+  },
+  t => [index('api_keys_site_id_index').on(t.siteId)]
+);
 
 /** First-party page view events recorded by the public beacon. */
 // export const pageViews = pgTable(
@@ -356,6 +404,7 @@ export const pageViews = pgTable(
   'page_views',
   {
     id,
+    siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
     pageId: text('page_id').references(() => pages.id, cascade),
     postId: text('post_id').references(() => posts.id, cascade),
     path: varchar('path', { length: 500 }).notNull(),
@@ -367,6 +416,7 @@ export const pageViews = pgTable(
     index('page_views_created_at_index').on(t.createdAt),
     index('page_views_page_created_at_index').on(t.pageId, t.createdAt),
     index('page_views_post_created_at_index').on(t.postId, t.createdAt),
+    index('page_views_site_id_index').on(t.siteId),
     check(
       'page_views_target_check',
       sql`num_nonnulls(${t.pageId}, ${t.postId}) = 1`
@@ -382,6 +432,7 @@ export const postTemplates = pgTable(
   'post_templates',
   {
     id,
+    siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
     name: varchar('name', { length: 150 }).notNull(),
     description: text('description'),
     content: jsonb('content'),
@@ -392,8 +443,9 @@ export const postTemplates = pgTable(
   },
   t => [
     uniqueIndex('post_templates_default_unique')
-      .on(t.isDefault)
+      .on(t.siteId)
       .where(sql`${t.isDefault} = true`),
+    index('post_templates_site_id_index').on(t.siteId),
   ]
 );
 
@@ -401,6 +453,7 @@ export const posts = pgTable(
   'posts',
   {
     id,
+    siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
     title: varchar('title', { length: 255 }).notNull(),
     slug: varchar('slug', { length: 255 }).notNull(),
     excerpt: text('excerpt'),
@@ -422,9 +475,10 @@ export const posts = pgTable(
     ...timestampColumns,
   },
   t => [
-    uniqueIndex('posts_slug_language_unique')
-      .on(t.slug, t.language)
+    uniqueIndex('posts_site_slug_language_unique')
+      .on(t.siteId, t.slug, t.language)
       .where(sql`${t.deletedAt} is null`),
+    index('posts_site_id_index').on(t.siteId),
     index('posts_status_published_index').on(t.status, t.publishedAt),
     index('posts_deleted_at_index').on(t.deletedAt),
   ]

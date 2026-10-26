@@ -1,8 +1,8 @@
 'use server';
 
 import { PAGES } from '@/config/pages';
-import { SUPPORTED_LANGUAGES } from '@/db/schemas/shared.schema';
 import { blogService, resolvePostRoute } from '@/server/services/blog.service';
+import { siteContext } from '@/server/services/site-context';
 import {
   getPreviewPageId,
   getPreviewPostId,
@@ -19,14 +19,8 @@ export type LocaleLink = {
   current: boolean;
 };
 
-const labels = new Map<string, string>(
-  SUPPORTED_LANGUAGES.map(language => [language.value, language.label])
-);
-
-function order(links: LocaleLink[]) {
-  const rank = new Map<string, number>(
-    SUPPORTED_LANGUAGES.map((language, index) => [language.value, index])
-  );
+function order(links: LocaleLink[], codes: string[]) {
+  const rank = new Map(codes.map((code, index) => [code, index]));
   return links.sort(
     (a, b) => (rank.get(a.code) ?? 99) - (rank.get(b.code) ?? 99)
   );
@@ -36,9 +30,11 @@ function order(links: LocaleLink[]) {
 export async function localeLinksForPath(
   pathname: string
 ): Promise<LocaleLink[]> {
+  const site = await siteContext.publicSite();
+  const labels = new Map(site.locales.map(locale => [locale.code, locale.label]));
   const segments = pathname.split('/').filter(Boolean);
 
-  const postRoute = resolvePostRoute(segments);
+  const postRoute = resolvePostRoute(segments, site);
   if (postRoute) {
     const previewId = await getPreviewPostId();
     const draft = previewId
@@ -60,15 +56,15 @@ export async function localeLinksForPath(
           {
             code: alt.language,
             label,
-            href: PAGES.SITE.post(alt.slug, alt.language),
+            href: PAGES.SITE.post(alt.slug, alt.language, site.defaultLocale),
             current: alt.language === postRoute.language,
           },
         ];
       })
-    );
+    , site.locales.map(locale => locale.code));
   }
 
-  const pageRoute = resolveRoute(segments);
+  const pageRoute = resolveRoute(segments, site);
   if (!pageRoute) return [];
 
   const previewId = await getPreviewPageId();
@@ -92,10 +88,16 @@ export async function localeLinksForPath(
         {
           code: alt.language,
           label,
-          href: PAGES.SITE.page(alt.slug, alt.language, alt.isHome),
+          href: PAGES.SITE.page(
+            alt.slug,
+            alt.language,
+            alt.isHome,
+            site.defaultLocale
+          ),
           current: alt.language === pageRoute.language,
         },
       ];
-    })
+    }),
+    site.locales.map(locale => locale.code)
   );
 }

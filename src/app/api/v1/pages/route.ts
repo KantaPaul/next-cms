@@ -1,5 +1,4 @@
 import { PAGES } from '@/config/pages';
-import { LANGUAGE_CODES } from '@/db/schemas/shared.schema';
 import {
   absoluteUrl,
   apiHandler,
@@ -8,11 +7,17 @@ import {
   pagination,
 } from '@/server/api/v1';
 import { contentApiService } from '@/server/services/content-api.service';
+import { siteContext } from '@/server/services/site-context';
 
 export const dynamic = 'force-dynamic';
 
 export const GET = apiHandler(async (_request, { url, siteUrl }) => {
-  const language = enumParam(url, 'lang', LANGUAGE_CODES);
+  const site = await siteContext.publicSite();
+  const language = enumParam(
+    url,
+    'lang',
+    site.locales.map(locale => locale.code)
+  );
   const { page, limit, offset } = pagination(url);
   const { data, total } = await contentApiService.listPublishedPages({
     language,
@@ -23,7 +28,10 @@ export const GET = apiHandler(async (_request, { url, siteUrl }) => {
   return {
     data: data.map(p => ({
       ...p,
-      url: absoluteUrl(siteUrl, PAGES.SITE.page(p.slug, p.language, p.isHome)),
+      url: absoluteUrl(
+        siteUrl,
+        PAGES.SITE.page(p.slug, p.language, p.isHome, site.defaultLocale)
+      ),
     })),
     meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
   };

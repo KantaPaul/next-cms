@@ -5,22 +5,32 @@ import { normalizeContent } from '@/builder/data';
 import { db } from '@/db';
 import { menuItems, menus, pageContents, pages, seoMeta } from '@/db/schema';
 import { DEFAULT_LANGUAGE, LANGUAGE_CODES } from '@/db/schemas/shared.schema';
+import { siteContext, type ResolvedSite } from '@/server/services/site-context';
 
 export type SiteRoute = { language: string; slug: string | null };
 
+type LocaleSite = {
+  defaultLocale: string;
+  locales: { code: string }[];
+};
+
 /** Maps URL segments to a language and slug (`null` slug means the language's home page). */
-export function resolveRoute(segments: string[] = []): SiteRoute | null {
+export function resolveRoute(
+  segments: string[] = [],
+  site?: LocaleSite
+): SiteRoute | null {
+  const defaultLocale = site?.defaultLocale ?? DEFAULT_LANGUAGE;
+  const codes = site?.locales.map(locale => locale.code) ?? LANGUAGE_CODES;
   const parts = segments.map(decodeURIComponent);
-  if (parts.length === 0) return { language: DEFAULT_LANGUAGE, slug: null };
+  if (parts.length === 0) return { language: defaultLocale, slug: null };
 
   const [first, second] = parts;
-  const isLanguage =
-    first !== DEFAULT_LANGUAGE && LANGUAGE_CODES.includes(first);
+  const isLanguage = first !== defaultLocale && codes.includes(first);
 
   if (parts.length === 1)
     return isLanguage
       ? { language: first, slug: null }
-      : { language: DEFAULT_LANGUAGE, slug: first };
+      : { language: defaultLocale, slug: first };
   if (parts.length === 2 && isLanguage)
     return { language: first, slug: second };
   return null;
@@ -28,6 +38,7 @@ export function resolveRoute(segments: string[] = []): SiteRoute | null {
 
 const pageSelect = {
   id: pages.id,
+  siteId: pages.siteId,
   title: pages.title,
   slug: pages.slug,
   status: pages.status,
@@ -42,7 +53,9 @@ const pageSelect = {
 
 async function findPage(route: SiteRoute, extra?: SQL) {
   try {
+    const site = await siteContext.publicSite();
     const where = and(
+      eq(pages.siteId, site.id),
       eq(pages.language, route.language),
       isNull(pages.deletedAt),
       route.slug === null ? eq(pages.isHome, true) : eq(pages.slug, route.slug),
@@ -86,7 +99,7 @@ async function loadSeo(pageId: string) {
 }
 
 async function loadAlternates(
-  page: { id: string; translationGroupId: string | null },
+  page: { id: string; siteId: string; translationGroupId: string | null },
   publishedOnly: boolean
 ) {
   if (!page.translationGroupId) return [];
@@ -99,6 +112,7 @@ async function loadAlternates(
     .from(pages)
     .where(
       and(
+        eq(pages.siteId, page.siteId),
         eq(pages.translationGroupId, page.translationGroupId),
         isNull(pages.deletedAt),
         publishedOnly
@@ -183,6 +197,7 @@ export const publicSiteService = {
       .leftJoin(seoMeta, eq(seoMeta.pageId, pages.id))
       .where(
         and(
+          eq(pages.siteId, (await siteContext.publicSite()).id),
           eq(pages.status, 'published'),
           eq(pages.visibility, 'public'),
           isNull(pages.deletedAt)
@@ -218,6 +233,34 @@ export const publicSiteService = {
       return {};
     }
   }),
+
+  /** Header or footer menu for this locale, then the site's default locale. */
+  menuFor: cache(
+    async (location: 'header' | 'footer', language: string, site?: ResolvedSite) => {
+      const resolved = site ?? (await siteContext.publicSite());
+      const languages = [language, resolved.defaultLocale].filter(
+        (code, index, all) => all.indexOf(code) === index
+      );
+      for (const code of languages) {
+        const [menu] = await db
+          .select()
+          .from(menus)
+          .where(
+            and(
+              eq(menus.siteId, resolved.id),
+              eq(menus.location, location),
+              eq(menus.language, code),
+              isNull(menus.deletedAt)
+            )
+          )
+          .limit(1);
+        if (!menu) continue;
+        const loaded = await publicSiteService.getMenusById([menu.id]);
+        if (loaded[menu.id]) return loaded[menu.id];
+      }
+      return null;
+    }
+  ),
 };
 
 export type MenuItemNode = typeof menuItems.$inferSelect & {

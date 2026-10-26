@@ -97,28 +97,28 @@ todos:
     status: completed
   - id: R032
     content: P3-01 sites table
-    status: pending
+    status: completed
   - id: R033
     content: P3-02 site_memberships
-    status: pending
+    status: completed
   - id: R034
     content: P3-03 Add site_id to content tables and backfill default
-    status: pending
+    status: completed
   - id: R035
     content: P3-04 Resolve the public site from the request host
-    status: pending
+    status: completed
   - id: R036
     content: P3-05 Admin site switcher
-    status: pending
+    status: completed
   - id: R037
     content: P3-06 Per-site locale list
-    status: pending
+    status: completed
   - id: R038
     content: P3-07 Translated menus
-    status: pending
+    status: completed
   - id: R039
     content: P3-08 Translated site name, description, and default SEO
-    status: pending
+    status: completed
   - id: R040
     content: P4-01 collections and collection_fields tables
     status: pending

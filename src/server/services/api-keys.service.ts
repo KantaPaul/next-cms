@@ -5,6 +5,7 @@ import { db } from '@/db';
 import { apiKeys, users } from '@/db/schema';
 import { NotFoundException } from '@/lib/utils/error';
 import { auditService } from './audit.service';
+import { adminSiteId } from './site-context';
 
 const KEY_PREFIX = 'ncms_';
 const LAST_USED_RESOLUTION_MS = 60_000;
@@ -25,6 +26,7 @@ export const apiKeysService = {
       })
       .from(apiKeys)
       .leftJoin(users, eq(users.id, apiKeys.createdBy))
+      .where(eq(apiKeys.siteId, await adminSiteId()))
       .orderBy(desc(apiKeys.createdAt)),
 
   /** Returns the plaintext key once. Only its hash is stored. */
@@ -33,6 +35,7 @@ export const apiKeysService = {
     const [row] = await db
       .insert(apiKeys)
       .values({
+        siteId: await adminSiteId(),
         name,
         prefix: key.slice(0, 12),
         hashedKey: hashKey(key),
@@ -57,7 +60,13 @@ export const apiKeysService = {
     const [row] = await db
       .update(apiKeys)
       .set({ revokedAt: new Date() })
-      .where(and(eq(apiKeys.id, id), isNull(apiKeys.revokedAt)))
+      .where(
+        and(
+          eq(apiKeys.id, id),
+          eq(apiKeys.siteId, await adminSiteId()),
+          isNull(apiKeys.revokedAt)
+        )
+      )
       .returning({ id: apiKeys.id, name: apiKeys.name });
     if (!row)
       throw new NotFoundException('API key not found or already revoked');
@@ -77,6 +86,7 @@ export const apiKeysService = {
     const [row] = await db
       .select({
         id: apiKeys.id,
+        siteId: apiKeys.siteId,
         name: apiKeys.name,
         lastUsedAt: apiKeys.lastUsedAt,
       })
@@ -99,7 +109,7 @@ export const apiKeysService = {
         .where(eq(apiKeys.id, row.id));
     }
 
-    return { id: row.id, name: row.name };
+    return { id: row.id, name: row.name, siteId: row.siteId };
   },
 };
 

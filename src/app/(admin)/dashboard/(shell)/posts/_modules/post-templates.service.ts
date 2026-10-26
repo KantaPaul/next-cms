@@ -16,6 +16,7 @@ import {
   type UserAccess,
 } from '@/server/services/access.service';
 import { auditService } from '@/server/services/audit.service';
+import { adminSiteId } from '@/server/services/site-context';
 
 type TemplateRow = typeof postTemplates.$inferSelect;
 
@@ -29,17 +30,21 @@ async function getRowOrThrow(id: string) {
   const [row] = await db
     .select()
     .from(postTemplates)
-    .where(eq(postTemplates.id, id))
+    .where(
+      and(eq(postTemplates.id, id), eq(postTemplates.siteId, await adminSiteId()))
+    )
     .limit(1);
   if (!row) throw new NotFoundException('Template not found');
   return row;
 }
 
-async function getDefaultRow() {
+async function getDefaultRow(siteId: string) {
   const [row] = await db
     .select()
     .from(postTemplates)
-    .where(eq(postTemplates.isDefault, true))
+    .where(
+      and(eq(postTemplates.siteId, siteId), eq(postTemplates.isDefault, true))
+    )
     .limit(1);
   return row;
 }
@@ -69,7 +74,7 @@ const audit = (
 
 /** Live layout by template id, falling back to the default template, then the built-in layout. */
 const resolveLive = cache(
-  async (templateId: string | null): Promise<BuilderData> => {
+  async (templateId: string | null, siteId: string): Promise<BuilderData> => {
     const rows = await db
       .select({
         id: postTemplates.id,
@@ -78,12 +83,15 @@ const resolveLive = cache(
       })
       .from(postTemplates)
       .where(
-        templateId
-          ? or(
-              eq(postTemplates.id, templateId),
-              eq(postTemplates.isDefault, true)
-            )
-          : eq(postTemplates.isDefault, true)
+        and(
+          eq(postTemplates.siteId, siteId),
+          templateId
+            ? or(
+                eq(postTemplates.id, templateId),
+                eq(postTemplates.isDefault, true)
+              )
+            : eq(postTemplates.isDefault, true)
+        )
       );
     const assigned = templateId && rows.find(r => r.id === templateId);
     if (assigned && isBuilderData(assigned.content)) return assigned.content;
@@ -98,6 +106,7 @@ export const postTemplatesService = {
       db
         .select()
         .from(postTemplates)
+        .where(eq(postTemplates.siteId, await adminSiteId()))
         .orderBy(desc(postTemplates.isDefault), asc(postTemplates.name)),
       db
         .select({ templateId: posts.templateId, total: count() })
@@ -132,6 +141,7 @@ export const postTemplatesService = {
         isDefault: postTemplates.isDefault,
       })
       .from(postTemplates)
+      .where(eq(postTemplates.siteId, await adminSiteId()))
       .orderBy(desc(postTemplates.isDefault), asc(postTemplates.name)),
 
   /** Draft and live layouts for the template builder. */
@@ -150,8 +160,8 @@ export const postTemplatesService = {
     };
   },
 
-  resolveForPost: ({ templateId }: { templateId: string | null }) =>
-    resolveLive(templateId ?? null),
+  resolveForPost: (post: { templateId: string | null; siteId: string }) =>
+    resolveLive(post.templateId ?? null, post.siteId),
 
   create: async (
     input: {
@@ -164,12 +174,13 @@ export const postTemplatesService = {
     await assertCanManage(access);
     const source = input.fromId
       ? await getRowOrThrow(input.fromId)
-      : await getDefaultRow();
+      : await getDefaultRow(await adminSiteId());
     const content = source ? editableContent(source) : defaultPostTemplate();
 
     const [row] = await db
       .insert(postTemplates)
       .values({
+        siteId: await adminSiteId(),
         name: input.name,
         description: input.description || null,
         draftContent: content,
@@ -260,7 +271,12 @@ export const postTemplatesService = {
       await tx
         .update(postTemplates)
         .set({ isDefault: false })
-        .where(eq(postTemplates.isDefault, true));
+        .where(
+          and(
+            eq(postTemplates.siteId, row.siteId),
+            eq(postTemplates.isDefault, true)
+          )
+        );
       await tx
         .update(postTemplates)
         .set({ isDefault: true, updatedAt: new Date() })

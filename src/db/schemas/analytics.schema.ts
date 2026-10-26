@@ -3,6 +3,7 @@ import { index, jsonb, pgTable, text, varchar } from 'drizzle-orm/pg-core';
 import { z } from 'zod';
 import { baseColumns, relationConfig } from '@/db/helpers/base.columns';
 import { users } from '@/db/schemas/auth.schema';
+import { DEFAULT_SITE_ID } from '@/db/schemas/sites.schema';
 
 const { id, ...timestampColumns } = baseColumns;
 const { setNull } = relationConfig;
@@ -12,12 +13,16 @@ export const analyticsDashboards = pgTable(
   'analytics_dashboards',
   {
     id,
+    siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
     name: varchar('name', { length: 120 }).notNull(),
     createdBy: text('created_by').references(() => users.id, setNull),
     layout: jsonb('layout').notNull(),
     ...timestampColumns,
   },
-  t => [index('analytics_dashboards_updated_at_index').on(t.updatedAt)]
+  t => [
+    index('analytics_dashboards_updated_at_index').on(t.updatedAt),
+    index('analytics_dashboards_site_id_index').on(t.siteId),
+  ]
 );
 
 export const analyticsDashboardsRelations = relations(

@@ -8,6 +8,7 @@ import { ApplicationException } from '@/lib/utils/error';
 import type { UserAccess } from '@/server/services/access.service';
 import { auditService } from '@/server/services/audit.service';
 import { sendMail } from '@/server/services/mail';
+import { adminSiteId } from '@/server/services/site-context';
 
 async function authorEmail(userId: string) {
   const [user] = await db
@@ -46,7 +47,13 @@ export const reviewService = {
         })
         .from(pages)
         .leftJoin(users, eq(users.id, pages.createdBy))
-        .where(and(eq(pages.status, 'review'), isNull(pages.deletedAt)))
+        .where(
+          and(
+            eq(pages.siteId, await adminSiteId()),
+            eq(pages.status, 'review'),
+            isNull(pages.deletedAt)
+          )
+        )
         .orderBy(desc(pages.updatedAt)),
       db
         .select({
@@ -60,7 +67,13 @@ export const reviewService = {
         })
         .from(posts)
         .leftJoin(users, eq(users.id, posts.createdBy))
-        .where(and(eq(posts.status, 'review'), isNull(posts.deletedAt)))
+        .where(
+          and(
+            eq(posts.siteId, await adminSiteId()),
+            eq(posts.status, 'review'),
+            isNull(posts.deletedAt)
+          )
+        )
         .orderBy(desc(posts.updatedAt)),
     ]);
     return {

@@ -6,8 +6,8 @@ import { PERMISSIONS } from '@/config/permissions';
 import {
   pageStatusOptions,
   pageVisibilityStatusOptions,
-  SUPPORTED_LANGUAGES,
 } from '@/db/schema';
+import { useSiteLocales } from '@/providers/site-locales';
 import type { CreatePagesInput } from '@/db/validations/pages.validation';
 import { cn } from '@/lib/utils/cn';
 import { useCan } from '@/providers/access.provider';
@@ -27,6 +27,7 @@ export const SidebarEditor = ({
   taxonomy: TaxonomyOptions;
   currentStatus?: string;
 }) => {
+  const { locales } = useSiteLocales();
   const canPublish = useCan(PERMISSIONS.PAGES_PUBLISH);
   const { register, control, formState } = useFormContext<CreatePagesInput>();
   const status = useWatch({ control, name: 'status' });
@@ -73,10 +74,7 @@ export const SidebarEditor = ({
               name: 'language',
               label: 'Language',
               type: 'select',
-              options: SUPPORTED_LANGUAGES.map(l => ({
-                label: l.label,
-                value: l.value,
-              })),
+              options: locales,
               isClearable: false,
             },
             {

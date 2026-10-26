@@ -54,8 +54,8 @@ import { PERMISSIONS } from '@/config/permissions';
 import {
   pageStatusOptions,
   pageVisibilityStatusOptions,
-  SUPPORTED_LANGUAGES,
 } from '@/db/schema';
+import { useSiteLocales } from '@/providers/site-locales';
 import {
   type CreatePostInput,
   createPostSchema,
@@ -272,6 +272,7 @@ function PostSidebar({
   taxonomy: TaxonomyOptions;
   post: PostDetail | null;
 }) {
+  const { locales } = useSiteLocales();
   const canPublish = useCan(PERMISSIONS.PAGES_PUBLISH);
   const { register, control, formState } = useFormContext<CreatePostInput>();
   const status = useWatch({ control, name: 'status' });
@@ -316,10 +317,7 @@ function PostSidebar({
               name: 'language',
               label: 'Language',
               type: 'select',
-              options: SUPPORTED_LANGUAGES.map(l => ({
-                label: l.label,
-                value: l.value,
-              })),
+              options: locales,
               isClearable: false,
             },
             {

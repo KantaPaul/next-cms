@@ -32,20 +32,29 @@ import {
   users,
 } from '@/db/schema';
 import { DEFAULT_LANGUAGE, LANGUAGE_CODES } from '@/db/schemas/shared.schema';
+import { siteContext } from '@/server/services/site-context';
+
+type LocaleSite = {
+  defaultLocale: string;
+  locales: { code: string }[];
+};
 
 /** Maps `/blog/slug` and `/{lang}/blog/slug` segments to a post route. */
 export function resolvePostRoute(
-  segments: string[] = []
+  segments: string[] = [],
+  site?: LocaleSite
 ): { language: string; slug: string } | null {
+  const defaultLocale = site?.defaultLocale ?? DEFAULT_LANGUAGE;
+  const codes = site?.locales.map(locale => locale.code) ?? LANGUAGE_CODES;
   const parts = segments.map(decodeURIComponent);
   if (parts.length === 2 && parts[0] === 'blog')
-    return { language: DEFAULT_LANGUAGE, slug: parts[1] };
+    return { language: defaultLocale, slug: parts[1] };
 
   if (
     parts.length === 3 &&
     parts[1] === 'blog' &&
-    parts[0] !== DEFAULT_LANGUAGE &&
-    LANGUAGE_CODES.includes(parts[0])
+    parts[0] !== defaultLocale &&
+    codes.includes(parts[0])
   ) {
     return { language: parts[0], slug: parts[2] };
   }
@@ -68,11 +77,16 @@ export type BlogQuery = {
   excludeId?: string | null;
 };
 
-const isPublished = and(
-  eq(posts.status, 'published'),
-  eq(posts.visibility, 'public'),
-  isNull(posts.deletedAt)
-);
+async function published(extra?: SQL) {
+  const site = await siteContext.publicSite();
+  return and(
+    eq(posts.siteId, site.id),
+    eq(posts.status, 'published'),
+    eq(posts.visibility, 'public'),
+    isNull(posts.deletedAt),
+    extra
+  );
+}
 
 const inCategory = (value: string) =>
   exists(
@@ -104,6 +118,7 @@ const hasTag = (value: string) =>
 
 const cardSelect = {
   id: posts.id,
+  siteId: posts.siteId,
   title: posts.title,
   slug: posts.slug,
   language: posts.language,
@@ -174,11 +189,12 @@ type CardRow = {
 } & Omit<PostCard, 'url' | 'publishedAt' | 'categories' | 'tags'>;
 
 async function toCards(rows: CardRow[]): Promise<PostCard[]> {
+  const site = await siteContext.publicSite();
   const { categoriesByPost, tagsByPost } = await loadTerms(rows.map(r => r.id));
   return rows.map(row => ({
     ...row,
     publishedAt: row.publishedAt?.toISOString() ?? null,
-    url: PAGES.SITE.post(row.slug, row.language),
+    url: PAGES.SITE.post(row.slug, row.language, site.defaultLocale),
     categories: categoriesByPost.get(row.id) ?? [],
     tags: tagsByPost.get(row.id) ?? [],
   }));
@@ -200,6 +216,7 @@ const blogIndexUrl = cache(async (language: string) => {
     .from(pages)
     .where(
       and(
+        eq(pages.siteId, (await siteContext.publicSite()).id),
         eq(pages.isBlogIndex, true),
         eq(pages.language, language),
         eq(pages.status, 'published'),
@@ -208,7 +225,14 @@ const blogIndexUrl = cache(async (language: string) => {
       )
     )
     .limit(1);
-  return page ? PAGES.SITE.page(page.slug, page.language, page.isHome) : null;
+  return page
+    ? PAGES.SITE.page(
+        page.slug,
+        page.language,
+        page.isHome,
+        (await siteContext.publicSite()).defaultLocale
+      )
+    : null;
 });
 
 async function loadPost(where: SQL | undefined, kind: 'draft' | 'published') {
@@ -217,6 +241,7 @@ async function loadPost(where: SQL | undefined, kind: 'draft' | 'published') {
       ...cardSelect,
       layout: posts.layout,
       templateId: posts.templateId,
+      siteId: posts.siteId,
       status: posts.status,
       updatedAt: posts.updatedAt,
       translationGroupId: posts.translationGroupId,
@@ -259,6 +284,7 @@ async function loadPost(where: SQL | undefined, kind: 'draft' | 'published') {
 
   return {
     view,
+    siteId: row.siteId,
     layout: row.layout,
     templateId: row.templateId,
     canvas: content?.canvas ?? null,
@@ -283,9 +309,10 @@ async function loadPostAlternates(
     .from(posts)
     .where(
       and(
+        eq(posts.siteId, (await siteContext.publicSite()).id),
         eq(posts.translationGroupId, post.translationGroupId),
         isNull(posts.deletedAt),
-        publishedOnly ? isPublished : undefined
+        publishedOnly ? await published() : undefined
       )
     );
 }
@@ -297,7 +324,7 @@ export const blogService = {
     const page = Math.max(query.page ?? 1, 1);
     const term = query.q?.trim();
     const where = and(
-      isPublished,
+      await published(),
       query.language ? eq(posts.language, query.language) : undefined,
       term
         ? or(ilike(posts.title, `%${term}%`), ilike(posts.excerpt, `%${term}%`))
@@ -341,7 +368,7 @@ export const blogService = {
     limit: number;
   }) => {
     const base = and(
-      isPublished,
+      await published(),
       eq(posts.language, language),
       ne(posts.id, postId)
     );
@@ -387,7 +414,7 @@ export const blogService = {
 
   getPublished: cache(async (language: string, slug: string) =>
     loadPost(
-      and(isPublished, eq(posts.language, language), eq(posts.slug, slug)),
+      and(await published(), eq(posts.language, language), eq(posts.slug, slug)),
       'published'
     )
   ),
@@ -411,6 +438,7 @@ export const blogService = {
     layout: string;
     canvas: unknown;
     templateId: string | null;
+    siteId: string;
   }): Promise<BuilderData> =>
     post.layout === 'custom' && isBuilderData(post.canvas)
       ? post.canvas
@@ -433,7 +461,7 @@ export const blogService = {
   /** Categories and tags used by at least one published post, for filter dropdowns. */
   taxonomy: cache(async (language?: string | null) => {
     const scope = and(
-      isPublished,
+      await published(),
       language ? eq(posts.language, language) : undefined
     );
     const [categoryRows, tagRows] = await Promise.all([
@@ -472,7 +500,7 @@ export const blogService = {
       })
       .from(posts)
       .leftJoin(postSeo, eq(postSeo.postId, posts.id))
-      .where(isPublished),
+      .where(await published()),
 };
 
 export type PublicPost = NonNullable<

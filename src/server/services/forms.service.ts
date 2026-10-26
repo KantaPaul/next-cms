@@ -1,7 +1,8 @@
 import 'server-only';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { db } from '@/db';
-import { DEFAULT_SITE_ID, formSubmissions, globalBlocks } from '@/db/schema';
+import { formSubmissions, globalBlocks } from '@/db/schema';
+import { adminSiteId, siteContext } from '@/server/services/site-context';
 import { env } from '@/env.mjs';
 import { sendMail } from '@/server/services/mail';
 
@@ -65,7 +66,12 @@ export const formsService = {
       const [global] = await db
         .select({ content: globalBlocks.content })
         .from(globalBlocks)
-        .where(eq(globalBlocks.id, formId))
+        .where(
+          and(
+            eq(globalBlocks.id, formId),
+            eq(globalBlocks.siteId, (await siteContext.publicSite()).id)
+          )
+        )
         .limit(1);
       if (!global) {
         return { ok: false as const, status: 400, error: 'Unknown form.' };
@@ -96,7 +102,7 @@ export const formsService = {
     const [row] = await db
       .insert(formSubmissions)
       .values({
-        siteId: DEFAULT_SITE_ID,
+        siteId: (await siteContext.publicSite()).id,
         formGlobalId: formId,
         payload,
         status: 'new',
@@ -118,8 +124,8 @@ export const formsService = {
 
   list: async (status?: string) => {
     const where = status
-      ? and(eq(formSubmissions.siteId, DEFAULT_SITE_ID), eq(formSubmissions.status, status))
-      : eq(formSubmissions.siteId, DEFAULT_SITE_ID);
+      ? and(eq(formSubmissions.siteId, await adminSiteId()), eq(formSubmissions.status, status))
+      : eq(formSubmissions.siteId, await adminSiteId());
     return db
       .select()
       .from(formSubmissions)
@@ -132,7 +138,7 @@ export const formsService = {
     const [row] = await db
       .select()
       .from(formSubmissions)
-      .where(and(eq(formSubmissions.id, id), eq(formSubmissions.siteId, DEFAULT_SITE_ID)))
+      .where(and(eq(formSubmissions.id, id), eq(formSubmissions.siteId, await adminSiteId())))
       .limit(1);
     return row ?? null;
   },
@@ -144,7 +150,7 @@ export const formsService = {
       .where(
         and(
           eq(formSubmissions.id, id),
-          eq(formSubmissions.siteId, DEFAULT_SITE_ID),
+          eq(formSubmissions.siteId, await adminSiteId()),
           eq(formSubmissions.status, 'new')
         )
       );
@@ -154,7 +160,7 @@ export const formsService = {
     const [row] = await db
       .update(formSubmissions)
       .set({ status: 'archived', updatedAt: new Date() })
-      .where(and(eq(formSubmissions.id, id), eq(formSubmissions.siteId, DEFAULT_SITE_ID)))
+      .where(and(eq(formSubmissions.id, id), eq(formSubmissions.siteId, await adminSiteId())))
       .returning();
     return row ?? null;
   },
@@ -185,7 +191,7 @@ export const formsService = {
       .select({ total: sql<number>`count(*)::int` })
       .from(formSubmissions)
       .where(
-        and(eq(formSubmissions.siteId, DEFAULT_SITE_ID), eq(formSubmissions.status, 'new'))
+        and(eq(formSubmissions.siteId, await adminSiteId()), eq(formSubmissions.status, 'new'))
       );
     return row?.total ?? 0;
   },

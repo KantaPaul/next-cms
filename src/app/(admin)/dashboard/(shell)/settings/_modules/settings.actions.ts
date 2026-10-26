@@ -31,6 +31,19 @@ const settingsSchema = z.object({
   headerMenuId: optionalText(50),
   footerMenuId: optionalText(50),
   robotsTxt: optionalText(5000),
+  seoTitle: optionalText(160),
+  seoDescription: optionalText(300),
+  translations: z
+    .record(
+      z.string(),
+      z.object({
+        siteName: z.string().trim().max(100).optional(),
+        siteDescription: z.string().trim().max(500).optional(),
+        seoTitle: z.string().trim().max(160).optional(),
+        seoDescription: z.string().trim().max(300).optional(),
+      })
+    )
+    .nullish(),
   googleAnalyticsId: optionalText(50).refine(
     v => !v || /^G-[A-Z0-9]+$/i.test(v),
     'Use a GA4 measurement ID like G-XXXXXXX'

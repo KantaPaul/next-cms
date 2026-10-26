@@ -15,6 +15,7 @@ import { db } from '@/db';
 import { media, pages, pageViews, posts, users } from '@/db/schema';
 import type { WidgetQuery } from '@/db/schemas/analytics.schema';
 import { PageStatus, VisibilityStatus } from '@/db/schemas/shared.schema';
+import { adminSiteId, siteContext } from '@/server/services/site-context';
 
 const BOT_UA =
   /bot|crawl|spider|slurp|facebookexternalhit|bingpreview|linkedinbot|twitterbot|yandex|baidu|duckduck|semrush|ahrefs|mj12bot|dotbot|petalbot|bytespider/i;
@@ -93,6 +94,7 @@ export const analyticsService = {
       return { recorded: false, reason: 'invalid_target' as const };
     }
 
+    const site = await siteContext.publicSite();
     const since = new Date(Date.now() - DEDUPE_WINDOW_MS);
 
     if (pageId) {
@@ -102,6 +104,7 @@ export const analyticsService = {
         .where(
           and(
             eq(pages.id, pageId),
+            eq(pages.siteId, site.id),
             isNull(pages.deletedAt),
             eq(pages.status, PageStatus.published),
             eq(pages.visibility, VisibilityStatus.public)
@@ -131,6 +134,7 @@ export const analyticsService = {
 
       await db.insert(pageViews).values({
         id: createId(),
+        siteId: site.id,
         pageId,
         postId: null,
         path: input.path.slice(0, 500),
@@ -144,6 +148,7 @@ export const analyticsService = {
         .where(
           and(
             eq(posts.id, postId!),
+            eq(posts.siteId, site.id),
             isNull(posts.deletedAt),
             eq(posts.status, PageStatus.published),
             eq(posts.visibility, VisibilityStatus.public)
@@ -173,6 +178,7 @@ export const analyticsService = {
 
       await db.insert(pageViews).values({
         id: createId(),
+        siteId: site.id,
         pageId: null,
         postId,
         path: input.path.slice(0, 500),
@@ -185,6 +191,7 @@ export const analyticsService = {
   },
 
   summary: async (rangeDays: 7 | 30) => {
+    const siteId = await adminSiteId();
     const since = new Date();
     since.setUTCDate(since.getUTCDate() - rangeDays);
     since.setUTCHours(0, 0, 0, 0);
@@ -195,7 +202,7 @@ export const analyticsService = {
         uniqueVisitors: countDistinct(pageViews.visitorId),
       })
       .from(pageViews)
-      .where(gte(pageViews.createdAt, since));
+      .where(and(eq(pageViews.siteId, siteId), gte(pageViews.createdAt, since)));
 
     const daily = await db
       .select({
@@ -203,7 +210,7 @@ export const analyticsService = {
         views: count(),
       })
       .from(pageViews)
-      .where(gte(pageViews.createdAt, since))
+      .where(and(eq(pageViews.siteId, siteId), gte(pageViews.createdAt, since)))
       .groupBy(sql`date_trunc('day', ${pageViews.createdAt})`)
       .orderBy(sql`date_trunc('day', ${pageViews.createdAt})`);
 
@@ -219,7 +226,7 @@ export const analyticsService = {
       .from(pageViews)
       .leftJoin(pages, eq(pages.id, pageViews.pageId))
       .leftJoin(posts, eq(posts.id, pageViews.postId))
-      .where(gte(pageViews.createdAt, since))
+      .where(and(eq(pageViews.siteId, siteId), gte(pageViews.createdAt, since)))
       .groupBy(
         pageViews.pageId,
         pageViews.postId,
@@ -238,6 +245,7 @@ export const analyticsService = {
       .from(pageViews)
       .where(
         and(
+          eq(pageViews.siteId, siteId),
           gte(pageViews.createdAt, since),
           sql`${pageViews.referrerHost} is not null`
         )
@@ -290,7 +298,11 @@ export const analyticsService = {
       : options?.postId && options.postId.trim().length > 0
         ? options.postId.trim()
         : null;
-    const scope = contentScope(pageId, postId);
+    const siteId = await adminSiteId();
+    const scope = and(
+      contentScope(pageId, postId),
+      eq(pageViews.siteId, siteId)
+    );
 
     const since = new Date();
     since.setUTCDate(since.getUTCDate() - rangeDays);
@@ -505,7 +517,11 @@ export const analyticsService = {
       : query.postId && query.postId.trim().length > 0
         ? query.postId.trim()
         : null;
-    const scope = contentScope(pageId, postId);
+    const siteId = await adminSiteId();
+    const scope = and(
+      contentScope(pageId, postId),
+      eq(pageViews.siteId, siteId)
+    );
     const compare = query.compare;
 
     // ── Stat (dimension: none) ─────────────────────────────────────────────
@@ -717,7 +733,7 @@ export const analyticsService = {
         totalBytes: sum(media.size),
       })
       .from(media)
-      .where(isNull(media.deletedAt));
+      .where(and(eq(media.siteId, await adminSiteId()), isNull(media.deletedAt)));
 
     const [userCount] = await db
       .select({ total: count() })
@@ -732,7 +748,7 @@ export const analyticsService = {
         updatedAt: pages.updatedAt,
       })
       .from(pages)
-      .where(isNull(pages.deletedAt))
+      .where(and(eq(pages.siteId, await adminSiteId()), isNull(pages.deletedAt)))
       .orderBy(desc(pages.updatedAt))
       .limit(8);
 

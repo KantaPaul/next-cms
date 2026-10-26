@@ -11,6 +11,7 @@ import {
   type UserAccess,
 } from '@/server/services/access.service';
 import { auditService } from '@/server/services/audit.service';
+import { adminSiteId } from '@/server/services/site-context';
 import { storage } from '@/server/storage';
 
 export const ALLOWED_MIME = [
@@ -56,7 +57,9 @@ export const mediaService = {
     page = 1,
     size = 40,
   }: MediaListParams) => {
-    const conditions: (SQL | undefined)[] = [];
+    const conditions: (SQL | undefined)[] = [
+      eq(media.siteId, await adminSiteId()),
+    ];
     if (folder) conditions.push(eq(media.folder, folder));
     if (type === 'image') conditions.push(like(media.mime, 'image/%'));
     if (type === 'video') conditions.push(like(media.mime, 'video/%'));
@@ -105,6 +108,7 @@ export const mediaService = {
     const rows = await db
       .select({ folder: media.folder, total: count() })
       .from(media)
+      .where(eq(media.siteId, await adminSiteId()))
       .groupBy(media.folder)
       .orderBy(media.folder);
     return rows;
@@ -144,6 +148,7 @@ export const mediaService = {
     const [row] = await db
       .insert(media)
       .values({
+        siteId: await adminSiteId(),
         key,
         url,
         filename: file.name.slice(0, 255),
@@ -201,7 +206,10 @@ export const mediaService = {
       access.userId,
       PERMISSIONS.MEDIA_UPLOAD
     );
-    const [row] = await db.delete(media).where(eq(media.id, id)).returning();
+    const [row] = await db
+      .delete(media)
+      .where(and(eq(media.id, id), eq(media.siteId, await adminSiteId())))
+      .returning();
     if (!row) throw new NotFoundException('File not found');
     await storage().remove(row.key);
     await auditService.log({
@@ -215,7 +223,10 @@ export const mediaService = {
   },
 
   getById: async (id: string) => {
-    const [row] = await db.select().from(media).where(eq(media.id, id));
+    const [row] = await db
+      .select()
+      .from(media)
+      .where(and(eq(media.id, id), eq(media.siteId, await adminSiteId())));
     return row ?? null;
   },
 };

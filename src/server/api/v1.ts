@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { env } from '@/env.mjs';
 import { apiKeysService } from '@/server/services/api-keys.service';
+import { siteContext } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 
 const RATE_LIMIT = 60;
@@ -92,6 +93,10 @@ export function apiHandler<P = Record<string, never>>(
 
     const apiKey = await apiKeysService.verify(key);
     if (!apiKey) return apiError(401, 'Invalid or revoked API key.');
+    const site = await siteContext.publicSite();
+    if (apiKey.siteId !== site.id) {
+      return apiError(401, 'Invalid or revoked API key.');
+    }
 
     const limit = rateLimit(apiKey.id);
     const limitHeaders = {
@@ -114,7 +119,7 @@ export function apiHandler<P = Record<string, never>>(
     }
 
     try {
-      const settings = await siteSettingsService.get();
+      const settings = await siteSettingsService.getPublic();
       const siteUrl = (settings.siteUrl || env.SITE_URL).replace(/\/$/, '');
       const body = await handler(request, {
         params: await route.params,

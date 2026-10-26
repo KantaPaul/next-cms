@@ -37,13 +37,16 @@ import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import {
   pageStatusOptions,
-  SUPPORTED_LANGUAGES,
 } from '@/db/schemas/shared.schema';
+import { useSiteLocales } from '@/providers/site-locales';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import { maybeOfferRedirect } from '@/components/dashboard/redirect-offer';
 import { useAccess } from '@/providers/access.provider';
 
-const buildFilters = (templates: PostTemplateListItem[]): FilterConfig[] => [
+const buildFilters = (
+  templates: PostTemplateListItem[],
+  locales: { label: string; value: string }[]
+): FilterConfig[] => [
   {
     name: 'status',
     type: 'select',
@@ -66,7 +69,7 @@ const buildFilters = (templates: PostTemplateListItem[]): FilterConfig[] => [
     name: 'language',
     type: 'select',
     placeholder: 'All languages',
-    options: SUPPORTED_LANGUAGES.map(l => ({ label: l.label, value: l.value })),
+    options: locales,
   },
 ];
 
@@ -314,7 +317,11 @@ export function PostsTable({
   templates: PostTemplateListItem[];
 }) {
   const columns = useMemo(() => buildColumns(templates), [templates]);
-  const filters = useMemo(() => buildFilters(templates), [templates]);
+  const { locales } = useSiteLocales();
+  const filters = useMemo(
+    () => buildFilters(templates, locales),
+    [templates, locales]
+  );
 
   return (
     <DataTable

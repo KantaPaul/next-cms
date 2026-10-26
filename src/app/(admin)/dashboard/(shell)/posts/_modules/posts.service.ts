@@ -47,6 +47,8 @@ import {
   type UserAccess,
 } from '@/server/services/access.service';
 import { auditService } from '@/server/services/audit.service';
+import { adminSiteId } from '@/server/services/site-context';
+import { assertSiteLocale } from '@/server/services/sites.service';
 
 const PUBLISHING_STATUSES = ['published', 'scheduled'] as const;
 const AUTOSAVE_REVISION_INTERVAL_MS = 5 * 60 * 1000;
@@ -60,7 +62,9 @@ const SORTABLE = {
   publishedAt: posts.publishedAt,
 } as const;
 
-const notDeleted = isNull(posts.deletedAt);
+async function alive() {
+  return and(isNull(posts.deletedAt), eq(posts.siteId, await adminSiteId()));
+}
 
 type PostRow = typeof posts.$inferSelect;
 type Snapshot = { body: string; canvas: unknown };
@@ -69,7 +73,7 @@ async function getPostOrThrow(id: string, orm: DBTrx = db) {
   const [post] = await orm
     .select()
     .from(posts)
-    .where(and(eq(posts.id, id), notDeleted))
+    .where(and(eq(posts.id, id), await alive()))
     .limit(1);
   if (!post) throw new NotFoundException('Post not found');
   return post;
@@ -113,7 +117,7 @@ async function assertSlugAvailable(
       and(
         eq(posts.slug, slug),
         eq(posts.language, language),
-        notDeleted,
+        await alive(),
         excludeId ? ne(posts.id, excludeId) : undefined
       )
     )
@@ -289,7 +293,7 @@ export const postsService = {
       size: size as string,
     });
 
-    const conditions: (SQL | undefined)[] = [notDeleted];
+    const conditions: (SQL | undefined)[] = [await alive()];
     if (typeof status === 'string' && status)
       conditions.push(eq(posts.status, status as never));
     if (layout === 'custom') conditions.push(eq(posts.layout, 'custom'));
@@ -358,7 +362,7 @@ export const postsService = {
     const rows = await db
       .select({ status: posts.status, total: count() })
       .from(posts)
-      .where(notDeleted)
+      .where(await alive())
       .groupBy(posts.status);
     return Object.fromEntries(rows.map(r => [r.status, r.total])) as Record<
       string,
@@ -413,6 +417,8 @@ export const postsService = {
     }
 
     const { body, categories, tags, seo, ...postInput } = input;
+    const siteId = await adminSiteId();
+    await assertSiteLocale(postInput.language, siteId);
     await assertSlugAvailable(postInput.slug, postInput.language);
 
     const created = await db.transaction(async tx => {
@@ -420,6 +426,7 @@ export const postsService = {
         .insert(posts)
         .values({
           ...postInput,
+          siteId,
           status: postInput.status === 'published' ? 'draft' : postInput.status,
           createdBy: access.userId,
         })
@@ -460,6 +467,10 @@ export const postsService = {
       assertCanSetStatus(input.status, access);
 
     const { id, body, categories, tags, seo, ...postInput } = input;
+    await assertSiteLocale(
+      postInput.language ?? existing.language,
+      existing.siteId
+    );
 
     if (postInput.slug || postInput.language) {
       await assertSlugAvailable(
@@ -740,7 +751,7 @@ export const postsService = {
     const [post] = await db
       .update(posts)
       .set({ status: 'draft' })
-      .where(and(eq(posts.id, id), notDeleted))
+      .where(and(eq(posts.id, id), await alive()))
       .returning();
     if (!post) throw new NotFoundException('Post not found');
     await searchIndex.removePost(id);
@@ -773,7 +784,7 @@ export const postsService = {
           and(
             eq(posts.slug, slug),
             eq(posts.language, source.language),
-            notDeleted
+            await alive()
           )
         )
         .limit(1);
@@ -785,6 +796,7 @@ export const postsService = {
       const [post] = await tx
         .insert(posts)
         .values({
+          siteId: source.siteId,
           title: `${source.title} (Copy)`,
           slug,
           excerpt: source.excerpt,
@@ -845,7 +857,7 @@ export const postsService = {
     const [post] = await db
       .update(posts)
       .set({ deletedAt: new Date() })
-      .where(and(eq(posts.id, id), notDeleted))
+      .where(and(eq(posts.id, id), await alive()))
       .returning();
     if (!post) throw new NotFoundException('Post not found');
     await searchIndex.removePost(id);
@@ -954,7 +966,7 @@ export const postsService = {
         and(
           eq(posts.status, 'scheduled'),
           lte(posts.scheduledAt, new Date()),
-          notDeleted
+          await alive()
         )
       );
 

@@ -24,7 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { SUPPORTED_LANGUAGES } from '@/db/schemas/shared.schema';
+import { useSiteLocales } from '@/providers/site-locales';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import type { BuilderTarget } from './builder-context';
 
@@ -51,6 +51,7 @@ export function AiGenerateDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { locales } = useSiteLocales();
   const getPuck = useGetPuck();
   const [prompt, setPrompt] = useState('');
   const [pageType, setPageType] = useState('landing');
@@ -173,7 +174,7 @@ export function AiGenerateDialog({
                   onChange={e => setLanguage(e.target.value)}
                   className={inputClass}
                 >
-                  {SUPPORTED_LANGUAGES.map(l => (
+                  {locales.map(l => (
                     <option key={l.value} value={l.value}>
                       {l.label}
                     </option>
@@ -257,6 +258,7 @@ export function AiRewriteDialog({
   target: BuilderTarget | null;
   onClose: () => void;
 }) {
+  const { locales } = useSiteLocales();
   const getPuck = useGetPuck();
   const [mode, setMode] = useState<(typeof MODES)[number]['value']>('rewrite');
   const [language, setLanguage] = useState('es');
@@ -374,7 +376,7 @@ export function AiRewriteDialog({
                 onChange={e => setLanguage(e.target.value)}
                 className={`${inputClass} w-40`}
               >
-                {SUPPORTED_LANGUAGES.map(l => (
+                {locales.map(l => (
                   <option key={l.value} value={l.value}>
                     {l.label}
                   </option>

@@ -10,6 +10,12 @@ function skip(pathname: string) {
   );
 }
 
+function continueRequest(request: NextRequest) {
+  const headers = new Headers(request.headers);
+  headers.set('x-pathname', request.nextUrl.pathname);
+  return NextResponse.next({ request: { headers } });
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   if (skip(pathname)) return NextResponse.next();
@@ -17,13 +23,16 @@ export async function proxy(request: NextRequest) {
   try {
     const lookup = new URL('/api/internal/redirect', request.url);
     lookup.searchParams.set('path', pathname);
-    const response = await fetch(lookup, { cache: 'no-store' });
-    if (!response.ok) return NextResponse.next();
+    const response = await fetch(lookup, {
+      cache: 'no-store',
+      headers: { 'x-cms-host': request.headers.get('host') ?? '' },
+    });
+    if (!response.ok) return continueRequest(request);
     const data = (await response.json()) as { to?: string | null; status?: number };
-    if (!data.to) return NextResponse.next();
+    if (!data.to) return continueRequest(request);
     return NextResponse.redirect(new URL(data.to, request.url), data.status ?? 301);
   } catch {
-    return NextResponse.next();
+    return continueRequest(request);
   }
 }
 

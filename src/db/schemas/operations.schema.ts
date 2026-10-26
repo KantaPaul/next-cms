@@ -14,11 +14,12 @@ import {
 } from 'drizzle-orm/pg-core';
 import { baseColumns, relationConfig } from '@/db/helpers/base.columns';
 import { pages, posts } from '@/db/schemas/pages.schema';
+import { DEFAULT_SITE_ID } from '@/db/schemas/sites.schema';
+
+export { DEFAULT_SITE_ID };
 
 const { id, ...timestampColumns } = baseColumns;
 const { cascade } = relationConfig;
-
-export const DEFAULT_SITE_ID = 'default';
 
 const tsvector = customType<{ data: string }>({
   dataType() {

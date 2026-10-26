@@ -41,7 +41,13 @@ import {
 } from '@/db/schemas/shared.schema';
 import { cn } from '@/lib/utils/cn';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
-import { deleteMenu, saveMenu, saveMenuItems } from '../_modules/menus.actions';
+import { useSiteLocales } from '@/providers/site-locales';
+import {
+  copyMenu,
+  deleteMenu,
+  saveMenu,
+  saveMenuItems,
+} from '../_modules/menus.actions';
 import type { MenuDetail } from '../_modules/menus.service';
 
 type LinkablePage = {
@@ -83,8 +89,8 @@ const toEditorItems = (items: MenuDetail['items']): EditorItem[] =>
     })),
   }));
 
-const pageHref = (page: LinkablePage) =>
-  page.language && page.language !== 'en'
+const pageHref = (page: LinkablePage, defaultLocale: string) =>
+  page.language && page.language !== defaultLocale
     ? `/${page.language}/${page.slug}`
     : `/${page.slug}`;
 
@@ -127,6 +133,9 @@ export function MenusManager({
                       )}
                     >
                       <span className="font-medium">{menu.title}</span>
+                      <span className="text-xs uppercase text-steel-500">
+                        {menu.language}
+                      </span>
                       <span className="text-xs text-steel-500">
                         {menu.items.length} items ·{' '}
                         {usage.length
@@ -174,14 +183,16 @@ export function MenusManager({
 
 function NewMenuForm({ onCreated }: { onCreated: (id: string) => void }) {
   const router = useRouter();
+  const { locales, defaultLocale } = useSiteLocales();
   const [title, setTitle] = useState('');
   const [location, setLocation] = useState<MenuLocationType>('header');
+  const [language, setLanguage] = useState(defaultLocale);
   const [isPending, startTransition] = useTransition();
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
     startTransition(async () => {
-      await handleActionResponse(saveMenu({ title, location }), row => {
+      await handleActionResponse(saveMenu({ title, location, language }), row => {
         toast.success('Menu created');
         setTitle('');
         onCreated((row as { id: string }).id);
@@ -221,6 +232,20 @@ function NewMenuForm({ onCreated }: { onCreated: (id: string) => void }) {
           ))}
         </select>
       </label>
+      <label className="flex flex-col gap-1 text-sm font-medium">
+        Language
+        <select
+          className={inputClass}
+          value={language}
+          onChange={e => setLanguage(e.target.value)}
+        >
+          {locales.map(locale => (
+            <option key={locale.value} value={locale.value}>
+              {locale.label}
+            </option>
+          ))}
+        </select>
+      </label>
       <Button type="submit" size="sm" disabled={isPending}>
         {isPending ? <Loader2 className="animate-spin" /> : <Plus />} Create
         menu
@@ -238,7 +263,12 @@ function MenuEditor({
 }) {
   const router = useRouter();
   const dndId = useId();
+  const { locales, defaultLocale } = useSiteLocales();
   const [title, setTitle] = useState(menu.title);
+  const [language, setLanguage] = useState(menu.language);
+  const [copyLanguage, setCopyLanguage] = useState(
+    locales.find(locale => locale.value !== menu.language)?.value ?? menu.language
+  );
   const [location, setLocation] = useState<MenuLocationType>(menu.location);
   const [items, setItems] = useState<EditorItem[]>(() =>
     toEditorItems(menu.items)
@@ -258,8 +288,9 @@ function MenuEditor({
     () =>
       JSON.stringify(items) !== baseline ||
       title !== menu.title ||
-      location !== menu.location,
-    [items, baseline, title, location, menu.title, menu.location]
+      location !== menu.location ||
+      language !== menu.language,
+    [items, baseline, title, location, language, menu.title, menu.location, menu.language]
   );
 
   const update = (key: string, patch: Partial<EditorItem>) =>
@@ -375,9 +406,13 @@ function MenuEditor({
         return;
       }
 
-      if (title !== menu.title || location !== menu.location) {
+      if (
+        title !== menu.title ||
+        location !== menu.location ||
+        language !== menu.language
+      ) {
         const ok = await handleActionResponse(
-          saveMenu({ id: menu.id, title, location }),
+          saveMenu({ id: menu.id, title, location, language }),
           () => {}
         );
         if (!ok) return;
@@ -431,6 +466,20 @@ function MenuEditor({
             ))}
           </select>
         </label>
+        <label className="flex flex-col gap-1 text-sm font-medium">
+          Language
+          <select
+            className={inputClass}
+            value={language}
+            onChange={e => setLanguage(e.target.value)}
+          >
+            {locales.map(locale => (
+              <option key={locale.value} value={locale.value}>
+                {locale.label}
+              </option>
+            ))}
+          </select>
+        </label>
         <Button type="button" onClick={save} disabled={!dirty || isSaving}>
           {isSaving ? <Loader2 className="animate-spin" /> : <Save />} Save menu
         </Button>
@@ -443,6 +492,40 @@ function MenuEditor({
         >
           <Trash2 /> Delete
         </Button>
+        <label className="flex items-center gap-2 text-sm">
+          <span className="sr-only">Copy into</span>
+          <select
+            className={inputClass}
+            value={copyLanguage}
+            onChange={e => setCopyLanguage(e.target.value)}
+          >
+            {locales
+              .filter(locale => locale.value !== language)
+              .map(locale => (
+                <option key={locale.value} value={locale.value}>
+                  Copy to {locale.label}
+                </option>
+              ))}
+          </select>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={isSaving || copyLanguage === language}
+            onClick={() =>
+              startSaving(async () => {
+                await handleActionResponse(
+                  copyMenu({ id: menu.id, language: copyLanguage }),
+                  () => {
+                    toast.success('Menu copied');
+                    router.refresh();
+                  }
+                );
+              })
+            }
+          >
+            Copy
+          </Button>
+        </label>
       </div>
 
       <p className="text-xs text-steel-500">
@@ -552,7 +635,7 @@ function MenuEditor({
           value=""
           onChange={e => {
             const page = linkablePages.find(p => p.id === e.target.value);
-            if (page) addItem({ label: page.title, url: pageHref(page) });
+            if (page) addItem({ label: page.title, url: pageHref(page, defaultLocale) });
           }}
         >
           <option value="">
@@ -562,7 +645,7 @@ function MenuEditor({
           </option>
           {linkablePages.map(page => (
             <option key={page.id} value={page.id}>
-              {page.title} ({pageHref(page)})
+              {page.title} ({pageHref(page, defaultLocale)})
             </option>
           ))}
         </select>

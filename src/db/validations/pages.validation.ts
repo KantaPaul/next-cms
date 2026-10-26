@@ -57,7 +57,7 @@ const dateish = z
 
 const language = z
   .string()
-  .refine(v => LANGUAGE_CODES.includes(v), 'Unsupported language');
+  .regex(/^[a-z]{2,12}$/, 'Unsupported language');
 
 /** Shared fields without defaults; defaults only belong to creation. */
 const pageFields = {
@@ -130,9 +130,7 @@ export const restoreRevisionSchema = z.object({
 
 export const createTranslationSchema = z.object({
   id: z.string().min(1),
-  language: z
-    .string()
-    .refine(v => LANGUAGE_CODES.includes(v), 'Unsupported language'),
+  language: z.string().regex(/^[a-z]{2,12}$/, 'Unsupported language'),
 });
 
 export const createPreviewTokenSchema = z

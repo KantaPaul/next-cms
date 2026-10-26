@@ -39,16 +39,22 @@ export const PAGES = {
     REVIEW: '/dashboard/review',
     ACCOUNT: '/dashboard/account',
     SETTINGS: '/dashboard/settings',
+    SITES: '/dashboard/sites',
     USERS: '/dashboard/users',
     API: '/dashboard/api',
   },
   SITE: {
-    page: (slug: string, language = 'en', isHome = false) => {
-      const prefix = language === 'en' ? '' : `/${language}`;
+    page: (
+      slug: string,
+      language = 'en',
+      isHome = false,
+      defaultLocale = 'en'
+    ) => {
+      const prefix = language === defaultLocale ? '' : `/${language}`;
       return isHome ? prefix || '/' : `${prefix}/${slug}`;
     },
-    post: (slug: string, language = 'en') =>
-      `${language === 'en' ? '' : `/${language}`}/blog/${slug}`,
+    post: (slug: string, language = 'en', defaultLocale = 'en') =>
+      `${language === defaultLocale ? '' : `/${language}`}/blog/${slug}`,
     PREVIEW: (pageId: string) =>
       `/api/preview?pageId=${encodeURIComponent(pageId)}`,
     PREVIEW_POST: (postId: string) =>

@@ -1,3 +1,4 @@
+import { headers } from 'next/headers';
 import Link from 'next/link';
 import Script from 'next/script';
 import { fontStylesheetUrl, themeStyle } from '@/builder/theme';
@@ -7,9 +8,15 @@ import { getPreviewSession } from '@/server/services/preview-session';
 import {
   type MenuWithItems,
   publicSiteService,
+  resolveRoute,
 } from '@/server/services/public-site.service';
+import { resolvePostRoute } from '@/server/services/blog.service';
 import { maybePublishScheduled } from '@/server/services/scheduler';
-import { siteSettingsService } from '@/server/services/site-settings.service';
+import { siteContext } from '@/server/services/site-context';
+import {
+  localizedSettings,
+  siteSettingsService,
+} from '@/server/services/site-settings.service';
 
 function MenuLinks({
   menu,
@@ -63,13 +70,22 @@ export default async function SiteLayout({
   children: React.ReactNode;
 }) {
   maybePublishScheduled();
-  const settings = await siteSettingsService.get();
-  const [menusById, preview] = await Promise.all([
-    publicSiteService.getMenusById([
-      settings.headerMenuId,
-      settings.footerMenuId,
-    ]),
+  const [settings, site, preview, headerStore] = await Promise.all([
+    siteSettingsService.getPublic(),
+    siteContext.publicSite(),
     getPreviewSession(),
+    headers(),
+  ]);
+  const pathname = headerStore.get('x-pathname') ?? '/';
+  const segments = pathname.split('/').filter(Boolean);
+  const language =
+    resolvePostRoute(segments, site)?.language ??
+    resolveRoute(segments, site)?.language ??
+    site.defaultLocale;
+  const copy = localizedSettings(settings, language, site.defaultLocale);
+  const [header, footer] = await Promise.all([
+    publicSiteService.menuFor('header', language, site),
+    publicSiteService.menuFor('footer', language, site),
   ]);
   const exitPreviewHref = preview
     ? `${PAGES.SITE.EXIT_PREVIEW}?redirect=${encodeURIComponent(
@@ -80,12 +96,6 @@ export default async function SiteLayout({
             : PAGES.DASHBOARD.PAGES.EDIT(preview.pageId ?? '')
       )}`
     : null;
-  const header = settings.headerMenuId
-    ? menusById[settings.headerMenuId]
-    : undefined;
-  const footer = settings.footerMenuId
-    ? menusById[settings.footerMenuId]
-    : undefined;
   const fontUrl = fontStylesheetUrl(settings.themeTokens);
   const mode = settings.themeTokens.colorMode === 'dark' ? 'dark' : 'light';
 
@@ -121,11 +131,11 @@ export default async function SiteLayout({
                 className="size-8 rounded object-cover"
               />
             )}
-            {settings.siteName}
+            {copy.siteName}
           </Link>
           <div className="flex flex-wrap items-center gap-5">
             <MenuLinks
-              menu={header}
+              menu={header ?? undefined}
               className="flex flex-wrap items-center gap-5 text-sm font-medium"
             />
             <LanguageSwitcher />
@@ -136,20 +146,20 @@ export default async function SiteLayout({
       <footer className="s-border s-surface border-t">
         <div className="mx-auto flex max-w-6xl flex-col gap-6 px-5 py-10 md:flex-row md:items-start md:justify-between md:px-8">
           <div>
-            <p className="font-semibold">{settings.siteName}</p>
-            {settings.siteDescription && (
+            <p className="font-semibold">{copy.siteName}</p>
+            {copy.siteDescription && (
               <p className="s-muted mt-1 max-w-sm text-sm">
-                {settings.siteDescription}
+                {copy.siteDescription}
               </p>
             )}
           </div>
           <MenuLinks
-            menu={footer}
+            menu={footer ?? undefined}
             className="s-muted flex flex-wrap gap-x-6 gap-y-2 text-sm"
           />
         </div>
         <p className="s-muted pb-8 text-center text-xs">
-          © {new Date().getFullYear()} {settings.siteName}
+          © {new Date().getFullYear()} {copy.siteName}
         </p>
       </footer>
       {settings.googleAnalyticsId &&

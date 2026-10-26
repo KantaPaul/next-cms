@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { MESSAGES } from '@/config/messages';
 import {
-  LANGUAGE_CODES,
   PAGE_STATUS,
   POST_LAYOUT,
   VISIBILITY_STATUS,
@@ -29,7 +28,7 @@ const optionalText = (max: number) =>
 
 const language = z
   .string()
-  .refine(v => LANGUAGE_CODES.includes(v), 'Unsupported language');
+  .regex(/^[a-z]{2,12}$/, 'Unsupported language');
 
 const postFields = {
   title: z.string().trim().min(1, MESSAGES.IS_REQUIRED('Title')).max(255),

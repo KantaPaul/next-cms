@@ -30,10 +30,8 @@ import { StatusBadge } from '@/components/atoms/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
-import {
-  pageStatusOptions,
-  SUPPORTED_LANGUAGES,
-} from '@/db/schemas/shared.schema';
+import { pageStatusOptions } from '@/db/schemas/shared.schema';
+import { useSiteLocales } from '@/providers/site-locales';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import { maybeOfferRedirect } from '@/components/dashboard/redirect-offer';
 import { useAccess } from '@/providers/access.provider';
@@ -46,7 +44,9 @@ export const PAGE_STATUS_COLORS = {
   archived: 'archived',
 } as const;
 
-const filters: FilterConfig[] = [
+const filtersFor = (
+  locales: { label: string; value: string }[]
+): FilterConfig[] => [
   {
     name: 'status',
     type: 'select',
@@ -66,7 +66,7 @@ const filters: FilterConfig[] = [
     name: 'language',
     type: 'select',
     placeholder: 'All languages',
-    options: SUPPORTED_LANGUAGES.map(l => ({ label: l.label, value: l.value })),
+    options: locales,
   },
 ];
 
@@ -289,12 +289,13 @@ export function PagesTable({
   data: PageListItem[];
   totalCount: number;
 }) {
+  const { locales } = useSiteLocales();
   return (
     <DataTable
       columns={columns}
       data={data}
       totalCount={totalCount}
-      filters={filters}
+      filters={filtersFor(locales)}
       inlineSearch
       searchPlaceHolder="Search by title or slug"
       showClearButton

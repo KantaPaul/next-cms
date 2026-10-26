@@ -16,7 +16,7 @@ import {
 import { StatusBadge } from '@/components/atoms/status-badge';
 import { Button } from '@/components/ui/button';
 import { PAGES } from '@/config/pages';
-import { SUPPORTED_LANGUAGES } from '@/db/schemas/shared.schema';
+import { useSiteLocales } from '@/providers/site-locales';
 import { cn } from '@/lib/utils/cn';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import { useDataProvider } from '@/providers/data.provider';
@@ -238,11 +238,12 @@ export function SharePanel({ page }: { page: PageDetail }) {
     page.language,
     ...translations.map(t => t.language),
   ]);
-  const availableLanguages = SUPPORTED_LANGUAGES.filter(
+  const { locales } = useSiteLocales();
+  const availableLanguages = locales.filter(
     l => !usedLanguages.has(l.value)
   );
   const languageLabel = (code: string) =>
-    SUPPORTED_LANGUAGES.find(l => l.value === code)?.label ?? code;
+    locales.find(l => l.value === code)?.label ?? code;
 
   return (
     <div className="flex flex-col gap-6 px-4 pb-6">
