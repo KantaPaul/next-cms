@@ -1389,6 +1389,30 @@ todos:
     content: "RFB-28 Gate 21 approval: accessibility, responsive diagnostics, visual regression, and performance checks verified"
     status: pending
 isProject: false
+  - id: R463
+    content: "P3-09 Audit current multisite behavior and reproduce cross-site failures before fixes"
+    status: pending
+  - id: R464
+    content: "P3-10 Establish canonical typed site context for public, dashboard, preview, and system requests"
+    status: pending
+  - id: R465
+    content: "P3-11 Harden host/domain normalization, ownership, collisions, and unknown-host fallback policy"
+    status: pending
+  - id: R466
+    content: "P3-12 Enforce site isolation across CRUD, relations, joins, aggregates, APIs, and background jobs"
+    status: pending
+  - id: R467
+    content: "P3-13 Verify membership, role permissions, site switching, cookies, and membership revocation"
+    status: pending
+  - id: R468
+    content: "P3-14 Make cache, revalidation, preview, and static/export output site-aware"
+    status: pending
+  - id: R469
+    content: "P3-15 Add cross-site unit, integration, and end-to-end isolation and routing tests"
+    status: pending
+  - id: R470
+    content: "P3-16 Pass multisite security and regression approval gates before marking R032-R039 complete or starting P4"
+    status: pending
 ---
 
 # Combined refs R001–R462
@@ -2622,3 +2646,88 @@ Position the product as a developer-friendly, self-hostable React/Next.js visual
 - Keep existing saved pages and public rendering backward compatible.
 
 <!-- END: react-first-builder-differentiators -->
+
+
+---
+
+# WordPress-Inspired Multisite Reliability and Isolation
+
+<!-- BEGIN: wordpress-multisite-reliability -->
+
+## Goal
+
+Make the existing multisite foundation (R032–R039) behave reliably across the complete CMS. Use WordPress Multisite as a behavioral reference for managing multiple sites from one installation, but do not promise PHP/plugin compatibility or copy WordPress internals. Treat this as a reliability and security pass, not a rebuild.
+
+## Repository-first audit
+
+1. Inspect the current `sites`, `site_memberships`, `site_id` columns, host resolver, site switcher, locale handling, menus, settings, and all callers before editing.
+2. Reproduce and record failures first. Identify routes, queries, forms, server actions, APIs, cache keys, and jobs that omit site context.
+3. Build an inventory of every site-owned table and every query that reads or writes it. Check joins, relation loaders, counts, search, aggregates, analytics, bulk actions, and exports—not only list pages.
+4. Do not treat the existing completed status of R032–R039 as proof that tenant isolation or end-to-end behavior is complete.
+
+## Required behavior
+
+### Canonical site context and host resolution
+
+- Define one typed, validated site context for public requests, dashboard actions, previews, API routes, background jobs, and system operations.
+- Normalize incoming hostnames consistently (case, trailing dots, ports, internationalized domains where supported); validate custom-domain ownership and reject ambiguous collisions.
+- Trust forwarded host headers only when the deployment's proxy configuration explicitly makes them trustworthy.
+- Define deterministic behavior for localhost, development hosts, the configured default site, aliases, unknown hosts, and disabled sites. Unknown hosts must not silently expose another tenant's content.
+- Resolve site context on the server. Never trust a client-provided `site_id` as authorization.
+
+### Tenant data isolation
+
+- Apply mandatory site scope to every site-owned read/write path, including pages, posts, builder data, media, menus, taxonomies, settings, locales, SEO, redirects, forms/submissions, search, analytics, API keys, webhooks, and any existing or future collections.
+- Verify relationships and referenced IDs belong to the same site; prevent cross-site IDs from being attached through forms, imports, bulk actions, or API payloads.
+- For system-level operations that intentionally span sites, require an explicit privileged path and document/audit that exception.
+- Review existing data and migrations safely. Preserve current user data, do not rewrite historical migration files, and follow the repository's normal Drizzle migration/journal workflow.
+
+### Membership and administration
+
+- Enforce membership and role permissions on every dashboard read and mutation, not just navigation visibility.
+- Validate the selected-site cookie against the authenticated user's current memberships and permissions on every request; reject stale or revoked selections.
+- Ensure site creation, membership assignment, default-site initialization, and related setup are transactional and safe to retry.
+- Test switching sites, revoking membership, direct URL access, and API/server-action calls without permission.
+
+### Cache, rendering, and publishing
+
+- Include site identity in cache keys, tags, revalidation paths, preview context, search indexes, analytics grouping, and generated/static output.
+- Confirm that alternating requests for Site A and Site B on the same process cannot reuse the wrong content, metadata, menus, locale, redirects, or settings.
+- Keep drafts and preview tokens private and scoped to both the correct site and authorized user.
+- Ensure domain changes and content updates invalidate only the correct site where practical, without leaving stale cross-site output.
+
+## Implementation sequence
+
+1. **R463 — Audit and reproduce:** record current architecture, site-owned tables, routes/actions, known defects, and reproducible failing cases.
+2. **R464–R465 — Context and domains:** centralize typed site resolution and establish host normalization, collision handling, trusted-proxy rules, and safe unknown-host behavior.
+3. **R466 — Isolation:** fix query and relationship scoping throughout the application, with explicit exceptions only for audited system operations.
+4. **R467 — Permissions:** harden membership checks, site switching, cookie validation, transactional setup, and revocation behavior.
+5. **R468 — Cache and output:** make caches, preview, revalidation, search, analytics, and export/static output site-aware.
+6. **R469 — Regression coverage:** add unit/integration/E2E tests for domain resolution, authorization, and tenant isolation.
+7. **R470 — Approval:** report evidence and remaining gaps; only then revise earlier completion claims or proceed to P4.
+
+## Acceptance criteria
+
+- Requests for two different hosts return the correct site-specific content, metadata, locale, menus, redirects, and settings, including when requests alternate in the same process.
+- A user cannot read, mutate, associate, search, export, or infer another site's private data by changing an ID, URL, form payload, cookie, API request, or server-action input.
+- Invalid/unknown hosts and stale or unauthorized site selections fail safely and predictably.
+- Every site-owned data path is included in the ownership/query inventory and has an appropriate isolation test.
+- Public published output, dashboard preview, API responses, search, analytics, and cache invalidation consistently respect site boundaries.
+- Existing pages and records remain compatible; migrations are additive and follow repository conventions.
+- Strict TypeScript is retained; do not introduce `any`, bypass authorization, or remove existing UI to simplify implementation.
+- Focused tests, lint, typecheck, production build, and relevant browser/E2E checks pass. Record unrelated pre-existing failures separately.
+
+## Approval gates
+
+- **Gate 22 (R463–R465):** approve the site-context and domain model only after the audit, failure reproductions, and host-resolution tests are reviewed.
+- **Gate 23 (R466–R467):** approve isolation and permissions only after cross-site read/write denial, membership revocation, and direct-route/API tests pass.
+- **Gate 24 (R468–R470):** approve release only after cache isolation, preview/publish behavior, regression suites, and production checks pass.
+
+## Scope and migration safety
+
+- Do not rebuild multisite from scratch or introduce a second tenant-context mechanism.
+- Do not mark R032–R039 complete solely because their original implementation tasks were checked off; completion requires evidence against the acceptance criteria above.
+- Do not start P4 collections work until the relevant isolation and authorization gates are passed, because collections will inherit these tenant boundaries.
+- Preserve the unjournaled `src/db/migrations/20261022070000_page_views.sql`; if `page_views` needs `site_id`, use a new migration and the project's normal Drizzle journal workflow.
+
+<!-- END: wordpress-multisite-reliability -->
