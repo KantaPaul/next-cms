@@ -1,6 +1,6 @@
 ---
 name: Combined CMS refs
-overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, full-site production optimization, commercial launch readiness, international website-builder market-gap audit, Elementor-style nested container/Flexbox/CSS Grid, dynamic content, global design styles, and conditional display. Numbered implementation steps R001–R434 include builder tasks and approval gates. Name a numbered step to implement only that piece.
+overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, full-site production optimization, commercial launch readiness, international website-builder market-gap audit, Elementor-style nested container/Flexbox/CSS Grid, dynamic content, global design styles, and conditional display. Numbered implementation steps R001–R462 include builder tasks, React-first differentiators, and approval gates. Name a numbered step to implement only that piece.
 todos:
   - id: R001
     content: "P1-01 Register Slider, Tabs, and Accordion as builderConfig component keys"
@@ -1304,10 +1304,94 @@ todos:
   - id: R434
     content: "BLD-42 Gate 18 approval: conditional controls and frontend visibility security/tests verified"
     status: pending
+  - id: R435
+    content: "RFB-01 Audit the current component registry, Puck custom fields, server/client boundaries, rendering pipeline, export support, and developer extension points"
+    status: pending
+  - id: R436
+    content: "RFB-02 Design a typed React component adapter contract for component props, defaults, editor controls, slots, validation, and documentation"
+    status: pending
+  - id: R437
+    content: "RFB-03 Implement a first-party component registry that can register existing React components without duplicating rendering implementations"
+    status: pending
+  - id: R438
+    content: "RFB-04 Generate editor controls from safe typed component prop schemas, including enums, responsive values, tokens, and dynamic bindings"
+    status: pending
+  - id: R439
+    content: "RFB-05 Support reusable component variants and presets with explicit prop overrides and backward-compatible identifiers"
+    status: pending
+  - id: R440
+    content: "RFB-06 Add a developer workflow for wrapping existing project components with editor metadata and a live preview"
+    status: pending
+  - id: R441
+    content: "RFB-07 Define and enforce Server Component and Client Component boundaries for registered Next.js components"
+    status: pending
+  - id: R442
+    content: "RFB-08 Add clear diagnostics for unsupported imports, browser-only APIs, server-only dependencies, and invalid component registrations"
+    status: pending
+  - id: R443
+    content: "RFB-09 Add reusable synced sections and shared components with an explicit detach/unlink action"
+    status: pending
+  - id: R444
+    content: "RFB-10 Add repeaters and collection-driven lists with typed item schemas, empty states, and safe item limits"
+    status: pending
+  - id: R445
+    content: "RFB-11 Add a visual CMS query builder for approved collections with filters, sorting, pagination, and relationship fields"
+    status: pending
+  - id: R446
+    content: "RFB-12 Add preview fixtures and real-data preview modes that respect draft permissions, roles, and site boundaries"
+    status: pending
+  - id: R447
+    content: "RFB-13 Improve React/Next.js export and portability with a documented output contract, stable component mapping, and no hidden runtime assumptions"
+    status: pending
+  - id: R448
+    content: "RFB-14 Add Git-aware change review for supported project files with diffs and explicit confirmation before writing or committing changes"
+    status: pending
+  - id: R449
+    content: "RFB-15 Add visual regression snapshots for key routes and desktop/tablet/mobile viewports"
+    status: pending
+  - id: R450
+    content: "RFB-16 Add built-in accessibility diagnostics for labels, alt text, heading order, contrast warnings, keyboard reachability, and landmarks"
+    status: pending
+  - id: R451
+    content: "RFB-17 Add responsive layout diagnostics for overflow, clipped content, fixed-width conflicts, and breakpoint regressions"
+    status: pending
+  - id: R452
+    content: "RFB-18 Add design-token import/export for CSS variables and a documented mapping to the global style system"
+    status: pending
+  - id: R453
+    content: "RFB-19 Add localization-ready content fields, locale-specific page variants, and RTL-aware layout validation"
+    status: pending
+  - id: R454
+    content: "RFB-20 Add reusable page templates and route-level layout composition for headers, footers, and shared navigation"
+    status: pending
+  - id: R455
+    content: "RFB-21 Define a safe extension/marketplace contract for optional component packs with explicit dependencies, versioning, and permission boundaries"
+    status: pending
+  - id: R456
+    content: "RFB-22 Add a component authoring starter kit with strict TypeScript examples, schema helpers, tests, and developer documentation"
+    status: pending
+  - id: R457
+    content: "RFB-23 Add performance diagnostics for excessive client components, large images, heavy blocks, and avoidable layout shifts"
+    status: pending
+  - id: R458
+    content: "RFB-24 Add migration-safe import/export tests for pages, components, tokens, templates, and dynamic bindings"
+    status: pending
+  - id: R459
+    content: "RFB-25 Document the React-first positioning, supported extension contract, Next.js compatibility matrix, and product limitations"
+    status: pending
+  - id: R460
+    content: "RFB-26 Gate 19 approval: typed React component integration and Server/Client boundaries verified"
+    status: pending
+  - id: R461
+    content: "RFB-27 Gate 20 approval: CMS collections, reusable components, preview, and export portability verified"
+    status: pending
+  - id: R462
+    content: "RFB-28 Gate 21 approval: accessibility, responsive diagnostics, visual regression, and performance checks verified"
+    status: pending
 isProject: false
 ---
 
-# Combined refs R001–R434
+# Combined refs R001–R462
 
 Say **implement R042** (or the original id, such as **P2-14**, **L3-01**, **A2-01**, **O1-01**, or **M2-01**). That ref is the whole task. Do not continue to the next ref unless you ask.
 
@@ -2449,3 +2533,92 @@ Extend the existing Puck-based CMS builder with three Elementor-inspired capabil
 - **Gate 18 (R434):** approve conditional display only after editor conditions, frontend rules, security boundaries, and end-to-end tests pass.
 
 <!-- END: dynamic-global-conditional-builder-plan -->
+
+---
+
+# React-First Page Builder Differentiators
+
+<!-- BEGIN: react-first-builder-differentiators -->
+
+## Product direction
+
+Position the product as a developer-friendly, self-hostable React/Next.js visual builder with commercial licensing, dependable publishing, and code ownership. The goal is not to reproduce every competitor feature. Prioritize workflows that combine visual editing with real React component reuse, typed contracts, safe rendering, and portable output.
+
+## Differentiating capabilities
+
+### 1. React component bridge
+
+- Let developers register existing React components through a typed adapter contract rather than rewrite them as separate builder blocks.
+- Define component name, typed props, defaults, editor controls, validation, slots, variants, preview behavior, and docs in one explicit registration.
+- Generate safe editor controls from the declared schema; never infer and expose arbitrary internal props automatically.
+- Preserve stable component IDs and support controlled deprecation/migration of old registrations.
+
+### 2. Next.js-aware component boundaries
+
+- Audit and document Server Component versus Client Component constraints for the installed Next.js/Puck versions.
+- Provide actionable registration diagnostics when a component uses browser APIs, server-only modules, unsupported imports, or invalid serializable props.
+- Keep server-only data access in approved loaders/actions and client interactions in explicit client components.
+- Do not promise arbitrary source-code ingestion or automatic conversion of any component without constraints.
+
+### 3. Reusable, data-driven components
+
+- Support named component variants/presets and reusable synced sections.
+- Provide repeaters and collection-driven lists backed by approved CMS collections and relationships.
+- Add a visual query builder for filters, sort order, pagination, and empty states with safe limits.
+- Allow shared components to be detached deliberately; avoid surprising global changes when editing a shared instance.
+
+### 4. Preview, portability, and developer workflow
+
+- Preview pages with realistic content fixtures and authorized draft data.
+- Define export/import contracts and ensure exported React/Next.js output has documented runtime assumptions.
+- Consider Git-aware review only after audit: show diffs and require explicit confirmation before writing or committing files.
+- Test round-trip import/export and ensure pages do not depend on undocumented internal runtime state.
+
+### 5. Quality tools built into the builder
+
+- Add visual regression snapshots for important routes and responsive breakpoints.
+- Surface accessibility issues and actionable fixes while keeping manual review for nuanced issues.
+- Detect common responsive problems such as horizontal overflow, fixed-width conflicts, and clipped content.
+- Provide performance diagnostics for large images, excessive client-side rendering, and layout shifts; measure before adding automatic rewrites.
+
+### 6. Advanced product readiness
+
+- Support CSS-variable design-token import/export through a documented mapping.
+- Plan locale-specific page content and RTL-aware layout behavior for international and Bangladesh users.
+- Provide route-level layout composition and a safe extension contract for optional component packs.
+- Publish a strict TypeScript starter kit and compatibility matrix for component authors.
+
+## Recommended priority
+
+- **First:** typed React component bridge, schema-generated controls, component variants, and clear Next.js Server/Client rules.
+- **Second:** reusable sections, repeaters, CMS query builder, real-data preview, and export portability.
+- **Third:** visual regression, accessibility/responsive/performance diagnostics, token import/export, and localization/RTL.
+- **Later / gated:** Git write-back and third-party component packs. These require explicit security, dependency, permissions, and recovery designs.
+
+## Acceptance criteria
+
+- A developer can register an existing compatible React component once and use it in the visual editor without duplicating its rendering logic.
+- Editor controls are generated only from explicitly declared, validated prop schemas.
+- Invalid component registrations produce actionable diagnostics; server-only dependencies do not leak into client bundles.
+- Reusable components and variants behave predictably after save/reload, copy, detach, migration, and publish.
+- Collection-driven components respect permissions, site boundaries, query limits, and empty states.
+- Exported output has documented requirements and passes round-trip/rendering tests for supported scenarios.
+- Accessibility, responsive, visual-regression, and performance checks produce actionable findings without claiming to prove full compliance automatically.
+- Optional Git/extension features have explicit permissions, dependency validation, audit trails, and recovery behavior.
+- Strict TypeScript, focused tests, lint, typecheck, build, and relevant end-to-end tests pass before a task or gate is marked complete.
+
+## Approval gates
+
+- **Gate 19 (R460):** approve the typed React component bridge only after schema validation, component reuse, and Next.js Server/Client boundaries are verified.
+- **Gate 20 (R461):** approve data-driven composition and portability only after collection queries, reusable sections, preview, and export/import tests pass.
+- **Gate 21 (R462):** approve quality tooling only after accessibility/responsive diagnostics, visual regression, and performance checks have evidence and documented limitations.
+
+## Scope discipline
+
+- Do not replace Puck or introduce a parallel page-builder engine.
+- Do not execute arbitrary user-supplied code in the editor or public renderer.
+- Do not expose all component props automatically; use explicit schemas and allowlists.
+- Do not add Git write-back, component marketplaces, or large third-party dependency systems before validating the core React bridge.
+- Keep existing saved pages and public rendering backward compatible.
+
+<!-- END: react-first-builder-differentiators -->
