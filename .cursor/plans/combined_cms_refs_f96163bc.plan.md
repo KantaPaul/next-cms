@@ -1,6 +1,6 @@
 ---
 name: Combined CMS refs
-overview: One checklist that runs the CMS gap, subscriber unlock, video library, training, licensing, auth visibility and the Viewer default, the Studio Crafted light and Obsidian Studio dark admin restyle, then the modern starter site. Each step has a completion number (R001–R327). Name one number to implement only that piece.
+overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, and full-site production optimization across performance, SEO, accessibility, security, data, reliability, testing, and deployment. Each step has a completion number (R001–R365). Name one number to implement only that piece.
 todos:
   - id: R001
     content: P1-01 Register Slider, Tabs, and Accordion as builderConfig component keys
@@ -983,6 +983,120 @@ todos:
   - id: R327
     content: M5-01 Browser check of the public demo, gallery, and unchanged admin chrome
     status: pending
+  - id: R328
+    content: OZ-01 Record a reproducible production baseline for public routes and admin workflows
+    status: pending
+  - id: R329
+    content: OZ-02 Audit Next.js rendering, hydration, client boundaries, and server data access
+    status: pending
+  - id: R330
+    content: OZ-03 Optimize Core Web Vitals and route-level loading performance
+    status: pending
+  - id: R331
+    content: OZ-04 Audit images, fonts, video, embeds, and third-party assets
+    status: pending
+  - id: R332
+    content: OZ-05 Reduce JavaScript bundles and remove unused or duplicated dependencies
+    status: pending
+  - id: R333
+    content: OZ-06 Review caching, revalidation, and invalidation for public content
+    status: pending
+  - id: R334
+    content: OZ-07 Profile database queries, indexes, pagination, and connection usage
+    status: pending
+  - id: R335
+    content: OZ-08 Audit public routes for technical SEO and crawlability
+    status: pending
+  - id: R336
+    content: OZ-09 Add metadata, canonical, sitemap, robots, redirect, and structured-data checks
+    status: pending
+  - id: R337
+    content: OZ-10 Audit accessibility and keyboard/screen-reader behavior across public and admin UI
+    status: pending
+  - id: R338
+    content: OZ-11 Audit responsive layouts and mobile interaction states
+    status: pending
+  - id: R339
+    content: OZ-12 Audit authentication, authorization, tenant isolation, and sessions
+    status: pending
+  - id: R340
+    content: OZ-13 Audit input validation, API abuse controls, headers, secrets, and dependencies
+    status: pending
+  - id: R341
+    content: OZ-14 Audit forms, email, uploads, media URLs, webhooks, and export safety
+    status: pending
+  - id: R342
+    content: OZ-15 Add unit, integration, end-to-end, and regression coverage for critical flows
+    status: pending
+  - id: R343
+    content: OZ-16 Add CI quality gates, production build checks, and migration safety checks
+    status: pending
+  - id: R344
+    content: OZ-17 Add structured logging, error reporting, health checks, and operational runbooks
+    status: pending
+  - id: R345
+    content: OZ-18 Review deployment configuration, environment validation, backups, and recovery
+    status: pending
+  - id: R346
+    content: OZ-19 Audit CMS publishing, preview, cache invalidation, redirects, and content integrity
+    status: pending
+  - id: R347
+    content: OZ-20 Audit multi-site, locale, subscriber, video, training, licensing, and payment boundaries
+    status: pending
+  - id: R348
+    content: OZ-21 Improve admin dashboard, builder, tables, media library, and editor responsiveness
+    status: pending
+  - id: R349
+    content: OZ-22 Audit generated/exported sites for assets, links, SEO, forms, and reproducibility
+    status: pending
+  - id: R350
+    content: OZ-23 Establish performance budgets and automated regression reporting
+    status: pending
+  - id: R351
+    content: OZ-24 Produce a prioritized audit report with evidence, risks, and remediation scope
+    status: pending
+  - id: R352
+    content: OZ-25 Gate 1 approval: baseline and audit findings reviewed before broad refactoring
+    status: pending
+  - id: R353
+    content: OZ-26 Gate 2 approval: performance, rendering, assets, and caching targets verified
+    status: pending
+  - id: R354
+    content: OZ-27 Gate 3 approval: SEO, accessibility, responsive behavior, and content integrity verified
+    status: pending
+  - id: R355
+    content: OZ-28 Gate 4 approval: security, authorization, data integrity, and abuse controls verified
+    status: pending
+  - id: R356
+    content: OZ-29 Gate 5 approval: automated tests, CI, deployment, monitoring, and recovery verified
+    status: pending
+  - id: R357
+    content: OZ-30 Final production-readiness review and closeout report
+    status: pending
+  - id: R358
+    content: OZ-31 Verify public pages render useful HTML without client-only content dependencies
+    status: pending
+  - id: R359
+    content: OZ-32 Verify route loading, error, empty, not-found, and unauthorized states
+    status: pending
+  - id: R360
+    content: OZ-33 Verify caching never leaks draft, private, subscriber-only, or cross-site content
+    status: pending
+  - id: R361
+    content: OZ-34 Verify metadata and structured data reflect published content and access restrictions
+    status: pending
+  - id: R362
+    content: OZ-35 Verify reduced-motion, focus visibility, contrast, and touch target requirements
+    status: pending
+  - id: R363
+    content: OZ-36 Verify rate limits and idempotency for high-risk write and webhook endpoints
+    status: pending
+  - id: R364
+    content: OZ-37 Verify migration recovery strategy and production backup restore
+    status: pending
+  - id: R365
+    content: OZ-38 Document baseline, before/after results, remaining risks, and deferred work
+    status: pending
 isProject: false
 ---
 
@@ -1704,3 +1818,107 @@ Extend [src/db/seed/index.ts](src/db/seed/index.ts). `pages.createdBy` is requir
 - Login visibility and default Viewer: through **R291**.
 - Studio light and Obsidian dark admin: through **R310**.
 - Modern starter site: through **R327**.
+
+## R328–R365 — Full-site production optimization (OZ-01–OZ-38)
+
+Optimize the entire existing CMS, not just the landing page. Audit first, prioritize with evidence, preserve current behavior, and make small reviewable changes. Do not replace the stack, rewrite working modules, remove features, or add dependencies without demonstrated need. Keep TypeScript strict; do not introduce any, weaken validation, disable checks, or hide errors.
+
+### Operating rules
+
+- Read repository instructions, package scripts, app routes, database schema/migrations, auth/permission helpers, storage abstraction, and deployment configuration. Confirm actual tooling and versions before proposing commands.
+- Inspect the current branch and working tree before editing. Never discard user changes, reset unrelated files, or commit secrets. Verify routes, schemas, providers, and environment variables before relying on them.
+- Inventory public routes, admin routes, API endpoints, server actions, scheduled jobs, integrations, and content modules. Classify each by public/authenticated/permission-gated/site-scoped/subscriber-gated access.
+- Capture results before optimization. Separate measured problems from hypotheses. Rank by user impact, security/privacy risk, search impact, frequency, and implementation risk.
+- Prefer the smallest safe change. Preserve visual design, builder data compatibility, published URLs, permissions, stored content, and existing behavior. Use migrations for schema changes.
+- Never cache authenticated/private responses publicly. Cache keys and invalidation must account for site, locale, content version, publication state, and entitlement where relevant.
+- Never claim a test, browser check, benchmark, accessibility audit, deployment, or restore succeeded unless actually run and recorded.
+
+### OZ-01 — Baseline and audit
+
+- **R328** Create a reproducible baseline for representative public pages (home, content page, post, search, blog index, translated page, paywall), admin login/dashboard, builder, media library, and key API flows. Record environment, commands, route list, build output, and date.
+- **R351** Produce a prioritized audit report with severity, affected files/routes, reproduction steps, evidence, proposed fix, regression risk, test plan, and deferral reason. Do not begin broad refactoring before Gate 1.
+- **R352 — Gate 1.** Confirm baseline and route/data-boundary inventories are complete and findings prioritized. Mark checks blocked by unavailable services or credentials.
+
+### OZ-02 — Rendering, Core Web Vitals, assets, bundles, and caching
+
+- **R329** Review App Router server/client boundaries, client-wide providers, hydration errors, duplicate fetching, waterfalls, unnecessary state/effects, and oversized client trees. Keep public content server-rendered or statically rendered where appropriate; retain client components only for necessary interaction.
+- **R330** Measure field data where available and lab data on representative routes. Target good Core Web Vitals at the 75th percentile when field data exists: LCP ≤ 2.5 s, INP ≤ 200 ms, CLS ≤ 0.1. Lighthouse is diagnostic, not a substitute for field data; never claim unmeasured scores.
+- **R331** Audit image dimensions, responsive sizes, modern formats, loading priority, lazy loading, layout reservations, fonts, video posters, embeds, and third-party scripts. Prioritize only the actual LCP asset; do not lazy-load it. Avoid eagerly loading every video/iframe.
+- **R332** Inspect production bundle/analyzer output and dependency usage. Remove only confirmed unused code; split heavy editor, chart, dialog, and media tooling when measured route performance improves. Keep admin-only code out of public bundles where possible.
+- **R333** Map fetches, route handlers, server actions, and data reads to explicit cache policies. Use static rendering/revalidation for safe public content and private/no-store behavior for user-specific data. Ensure publish, unpublish, delete, slug change, translation, settings, theme, and menu updates invalidate correct paths/tags. Test stale-cache isolation.
+- **R353 — Gate 2.** Compare before/after metrics in the same environment and route set. Explain regressions and exceptions; accept changes with measured benefit or a documented correctness/security reason.
+
+### OZ-03 — Database and backend efficiency
+
+- **R334** Profile slow queries and query counts. Check N+1 patterns, unbounded lists, unnecessary columns, duplicate reads, count queries, full-text search, sort/filter combinations, connection-pool limits, and transaction boundaries. Add indexes based on query plans and real access patterns; check migration cost and redundancy.
+- Apply bounded pagination and validated sort/filter parameters to list APIs. Preserve stable ordering and avoid loading huge exports into memory; stream or batch where appropriate. Enforce site/tenant filters in database queries.
+- Keep writes atomic where invariants require it. Use unique constraints/idempotency keys for duplicate webhook, notification, progress, and certificate processing. Avoid speculative Redis, queues, denormalization, or schema rewrites without profiling evidence.
+- Test search, analytics, video/training progress, and large content/media lists under realistic data volumes.
+
+### OZ-04 — SEO, metadata, indexing, and content integrity
+
+- **R335** Crawl public routes and check status codes, internal links, orphaned pages, duplicate content, pagination, query variants, broken images, redirects, and accidentally indexable admin/API routes.
+- **R336** Audit Next.js Metadata API, unique titles/descriptions, social cards, canonical URLs, sitemap generation, robots rules, noindex rules, hreflang/translation groups, JSON-LD, 404/410 behavior, and redirect chains. Use the configured production origin; never emit preview/localhost URLs in production metadata.
+- Sitemap entries must be canonical, published, and indexable. Exclude drafts, admin/login/account pages, APIs, disabled modules, private pages, and restricted content where inappropriate. Canonicals, redirects, internal links, sitemap, and hreflang must agree. Structured data must match visible content and access conditions.
+- Verify metadata after publish/unpublish, slug edits, redirects, and translation changes. Never invent ratings, reviews, prices, or organization facts.
+
+### OZ-05 — Accessibility, responsive UX, and visual stability
+
+- **R337** Audit WCAG 2.2 AA-relevant requirements on public and admin screens: landmarks/headings, labels/errors, keyboard navigation, focus order/visibility, dialogs/menus, accessible names, contrast, status announcements, tables, rich-text editor, builder controls, and chart alternatives. Prefer semantic HTML over unnecessary ARIA.
+- **R338** Test representative pages at mobile, tablet, laptop, and wide desktop sizes. Check overflow, navigation, menus, forms, cards, tables, dialogs, builder controls, media controls, translated content, touch/keyboard interactions, loading/empty/error states, reduced motion, zoom, and text resizing.
+- **R362** Verify visible focus, contrast, reduced-motion behavior, non-color status indicators, usable touch targets, and no essential hover-only interactions. Reserve media space to prevent layout shift.
+- **R348** Profile dashboard, builder, inspector, large tables, media browser, and editor with realistic content. Optimize rerenders and expensive filtering only when profiling shows a problem. Preserve keyboard workflows, unsaved-change warnings, drag/drop, and existing functionality.
+
+### OZ-06 — Security, authorization, and abuse prevention
+
+- **R339** Trace authentication and authorization on every sensitive route, server action, API, export, and background job. Enforce server-side permissions on every request; hidden UI is not authorization. Verify Viewer defaults, role-escalation prevention, session expiry/revocation, login settings, CSRF/origin protections where applicable, and safe errors.
+- Audit site/tenant isolation across content, media, redirects, search, analytics, form inbox, users, subscribers, orders, video progress, training, certificates, licensing, API keys, and webhooks. Add negative tests for cross-site and cross-user access.
+- **R340** Validate untrusted inputs with existing schema conventions. Check SQL/ORM safety, rich-text sanitization, open redirects, SSRF in URL/oEmbed/import features, path traversal, file types, request sizes, brute force, rate limits, security headers, dependency advisories, secret exposure, and production error leakage. Never log passwords, tokens, payment secrets, or unnecessary personal data.
+- **R341** Verify spam controls, form limits, CSV formula-injection protection, upload ownership/type/size checks, private media access, email abuse controls, webhook signatures/replay handling, and external URL allowlists. Payment state must come from verified provider events, not a client redirect.
+- **R347** Specifically test boundaries for multi-site content, locale variants, subscriber-only content, training enrollment/progress, certificates, API keys, licensing, orders, and payment webhooks.
+- **R360** Prove with tests that drafts, preview tokens, private submissions, user-specific dashboards, subscriber-only bodies, license state, and cross-site content cannot leak through shared caches.
+- **R363** Verify server-side rate limiting and idempotency for login, registration, forms, exports, progress heartbeats, certificate issuance, license operations, payment/webhook processing, and other high-risk writes.
+
+### OZ-07 — Tests and CI
+
+- **R342** Add unit tests for validators, permission matrices, access rules, URL parsers, cache invalidation, metadata, redirects, progress/completion, license checks, and webhook idempotency. Add database integration tests and Playwright coverage for critical journeys.
+- **R343** CI should run formatting/lint, strict TypeScript, unit/integration tests, production build, migration validation, and relevant end-to-end checks using existing scripts and package manager. Never weaken checks just to pass. Add Lighthouse CI only with documented budgets and stable routes.
+- **R358** Confirm public pages return useful content and metadata in initial HTML without essential post-hydration fetches. Check hydration/console errors and constrained-network behavior where practical.
+- **R359** Verify loading, empty, error, not-found, forbidden, unauthenticated, and disabled-module states. Errors must not expose stack traces or sensitive records.
+- **R361** Test metadata and structured data against published content, locale, canonical URL, and entitlement rules. Confirm locked content body/layout is omitted from HTML/API responses rather than merely hidden with CSS.
+- **R354 — Gate 3.** Review SEO crawl, accessibility findings, responsive checks, and content-integrity regressions. Critical accessibility, indexing, or private-content exposure issues block sign-off.
+
+### OZ-08 — Observability, deployment, and recovery
+
+- **R344** Add privacy-conscious structured logs and error reporting using existing infrastructure or a justified minimal integration. Include correlation IDs and useful context; redact credentials and personal content. Add health/readiness checks without leaking internals.
+- **R345** Validate production environment variables with actionable errors. Document supported Node/package-manager versions, build/start commands, migrations, storage/email/payment configuration, proxy/host assumptions, and deployment caching. Never commit secrets or use production credentials in fixtures.
+- Review backup schedule/retention, database restore drills, media recovery, migration sequencing, rollback/forward-fix, and incident procedures. A backup is not verified until restore is tested.
+- **R364** Exercise a safe migration/recovery path on staging or a disposable database. Verify backup and media recovery without risking production data. Never run destructive migrations or production restore tests without explicit authorization.
+- **R357** Produce a closeout report with verified changes, commands/test outputs, before/after metrics, migration notes, deployment steps, recovery instructions, unresolved risks, and deferred work.
+- **R356 — Gate 5.** Require green CI, successful production build, tested critical flows, reviewed migration plan, validated environment, observability, and recovery procedure before declaring production readiness.
+
+### OZ-09 — CMS lifecycle and export
+
+- **R346** Test create draft, preview, publish, edit, unpublish, delete/restore if supported, slug change/redirect, menu/theme update, locale update, and media replacement. Confirm permissions, cache invalidation, analytics, metadata, and revision behavior.
+- **R349** For baked/static export, verify selected-site HTML/assets/CSS/fonts, route mapping, canonical/robots metadata, sitemap, links, and export report. Document unsupported dynamic behavior (authenticated dashboards, live forms, analytics, checkout) rather than exporting broken functionality. Test repeatability and site isolation.
+- **R355 — Gate 4.** Review authorization, tenant isolation, sensitive-response caching, webhook/payment correctness, data integrity, and abuse controls. Unresolved critical/high security findings block release unless explicitly accepted by the release owner.
+- **R350** Set route-specific performance budgets from measured baselines, not arbitrary universal bundle limits. Track public-route JavaScript, image weight, LCP/INP/CLS where measurable, build warnings, and tests. Start with warnings if baseline is unknown; ratchet thresholds after CI measurements stabilize.
+- **R365** Record before/after data, exact test commands/results, routes/devices tested, accepted exceptions, remaining issues, and deferred work. Mark tasks complete only when criteria are verified; otherwise leave pending and explain blockers.
+
+### Acceptance targets and sign-off
+
+- Core Web Vitals: use good thresholds above when real-user field data is available; document sample size/window and track lab scores separately.
+- Correctness: no known regressions in R001–R327, no broken published URLs, no unauthorized access, and no draft/subscriber/cross-site leakage.
+- Quality: formatting/lint, strict type-check, tests, and production build pass using repository-supported commands. Document pre-existing failures separately.
+- SEO/accessibility: intended public routes have correct indexability/metadata; no critical keyboard/screen-reader blockers remain in audited flows; sitemap and canonical behavior are validated.
+- Operations: setup, migrations, logging, backup/restore, and rollback/recovery are documented and tested where environment allows.
+- Final report separates completed, not completed, blocked, and deferred items. Code changes alone do not justify marking tasks complete.
+
+### Milestones
+
+- Audit and baseline: through **R352**.
+- Rendering, assets, caching, and performance: through **R353**.
+- SEO, accessibility, responsive UX, and content integrity: through **R354**.
+- Security and data boundaries: through **R355**.
+- CI, deployment, monitoring, and recovery: through **R356**.
+- Final production-readiness review: through **R365**.
