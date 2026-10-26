@@ -1,6 +1,6 @@
 ---
 name: Combined CMS refs
-overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, full-site production optimization, commercial launch readiness, international website-builder market-gap audit, and an Elementor-style nested container/Flexbox/CSS Grid builder extension. Numbered implementation steps R001–R412 include the new builder tasks and approval gates. Name a numbered step to implement only that piece.
+overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, full-site production optimization, commercial launch readiness, international website-builder market-gap audit, Elementor-style nested container/Flexbox/CSS Grid, dynamic content, global design styles, and conditional display. Numbered implementation steps R001–R434 include builder tasks and approval gates. Name a numbered step to implement only that piece.
 todos:
   - id: R001
     content: P1-01 Register Slider, Tabs, and Accordion as builderConfig component keys
@@ -1238,10 +1238,76 @@ todos:
   - id: R412
     content: BLD-20 Gate 15 approval: tests, save/publish/public rendering, performance, and release regression checks pass
     status: pending
+  - id: R413
+    content: BLD-21 Audit current CMS entities, custom fields, public data access, cache boundaries, and Puck field/rendering APIs for safe dynamic content bindings
+    status: pending
+  - id: R414
+    content: BLD-22 Define a typed dynamic-value schema that distinguishes static values from approved dynamic source references
+    status: pending
+  - id: R415
+    content: BLD-23 Implement a dynamic-content picker for supported text, rich text, image, URL, date, author, taxonomy, and custom-field sources where available
+    status: pending
+  - id: R416
+    content: BLD-24 Resolve dynamic bindings on the server or through approved data loaders with tenant/site authorization, draft-preview rules, and cache-safe behavior
+    status: pending
+  - id: R417
+    content: BLD-25 Add safe fallback values, missing-data states, escaping, URL validation, and cycle/depth limits for dynamic bindings
+    status: pending
+  - id: R418
+    content: BLD-26 Support dynamic values consistently in editor preview, preview routes, published pages, and export paths where supported
+    status: pending
+  - id: R419
+    content: BLD-27 Add site-wide global design tokens for primary, secondary, text, accent, background, border, and custom colors
+    status: pending
+  - id: R420
+    content: BLD-28 Add global typography presets with font family, size, weight, line height, letter spacing, and responsive values
+    status: pending
+  - id: R421
+    content: BLD-29 Add global style references and per-element custom overrides with predictable inheritance and reset-to-global behavior
+    status: pending
+  - id: R422
+    content: BLD-30 Build a site settings/design-system interface for creating, editing, renaming, deleting, and previewing global tokens safely
+    status: pending
+  - id: R423
+    content: BLD-31 Resolve global style references consistently in editor and published CSS, including missing/deleted-token fallback behavior
+    status: pending
+  - id: R424
+    content: BLD-32 Define a typed conditional-rule schema supporting equality, inequality, membership, empty checks, and safe AND/OR groups
+    status: pending
+  - id: R425
+    content: BLD-33 Implement editor-only conditional controls so dependent settings appear only when relevant without deleting hidden field values
+    status: pending
+  - id: R426
+    content: BLD-34 Implement optional frontend visibility rules for approved conditions such as page type, content fields, authentication state, and feature flags
+    status: pending
+  - id: R427
+    content: BLD-35 Enforce secure conditional rendering server-side for access-sensitive content; never treat a visual hide rule as authorization
+    status: pending
+  - id: R428
+    content: BLD-36 Add migration/normalization for static legacy values and graceful fallbacks for absent dynamic/global/conditional settings
+    status: pending
+  - id: R429
+    content: BLD-37 Add tests for dynamic binding resolution, global-token updates, condition logic, missing references, authorization, and cache isolation
+    status: pending
+  - id: R430
+    content: BLD-38 Add editor-to-published end-to-end tests for dynamic fields, global styles, conditional controls, and frontend visibility
+    status: pending
+  - id: R431
+    content: BLD-39 Document supported dynamic sources, global design tokens, condition operators, security boundaries, and unsupported cases
+    status: pending
+  - id: R432
+    content: BLD-40 Gate 16 approval: dynamic data sources and safe resolution verified
+    status: pending
+  - id: R433
+    content: BLD-41 Gate 17 approval: global style inheritance, overrides, and responsive typography verified
+    status: pending
+  - id: R434
+    content: BLD-42 Gate 18 approval: conditional controls and frontend visibility security/tests verified
+    status: pending
 isProject: false
 ---
 
-# Combined refs R001–R412
+# Combined refs R001–R434
 
 Say **implement R042** (or the original id, such as **P2-14**, **L3-01**, **A2-01**, **O1-01**, or **M2-01**). That ref is the whole task. Do not continue to the next ref unless you ask.
 
@@ -2319,3 +2385,67 @@ Extend the existing Puck-based builder in place. Do not replace Puck or rebuild 
 - Do not promise pixel-perfect parity with Elementor; prioritize reliable responsive output and compatibility with the existing CMS.
 
 <!-- END: container_flex_grid_builder_plan -->
+
+---
+
+# Dynamic Content, Global Styles, and Conditional Display
+
+<!-- BEGIN: dynamic-global-conditional-builder-plan -->
+
+## Goal
+
+Extend the existing Puck-based CMS builder with three Elementor-inspired capabilities: dynamic content bindings, site-wide global design tokens, and conditional display. Implement them as native, typed features in the current architecture; do not copy Elementor's PHP APIs or replace Puck.
+
+## Dynamic content
+
+- Make eligible fields opt into a dynamic-value mode, with a clear static/dynamic switch and a source picker.
+- Begin with safe, useful sources that exist in the current CMS: current page/post fields, title, excerpt, featured image, permalink, publication date, author, taxonomy/category, and supported custom fields. Add user/site-specific sources only when the existing data model and permission boundaries support them.
+- Store references to sources, not snapshots of resolved content. Use a versioned discriminated union for static values and dynamic references.
+- Resolve bindings through an explicit allowlisted resolver. Validate source and field names, escape text in the rendering context, validate URLs, and provide deterministic fallbacks when content is absent.
+- Use server-side loaders for private or authorization-sensitive data. Respect site/tenant boundaries, draft/published status, preview permissions, and cache isolation. Never allow user-authored bindings to execute arbitrary code, SQL, or unrestricted queries.
+- Support the same resolution semantics in editor preview and public rendering. Add export behavior only if export already has a defined data/runtime contract.
+
+## Global styles
+
+- Add a site-level design system with editable color and typography tokens, including primary, secondary, text, accent, background, and border colors plus custom tokens.
+- Add typography presets with family, size, weight, line height, letter spacing, and responsive overrides where supported.
+- Store references to global tokens separately from custom per-element overrides. Resolve tokens through a central typed theme resolver and CSS variables so one token update updates every referencing element.
+- Provide a settings UI for creating, editing, previewing, renaming, and deleting tokens. Before deleting a referenced token, warn and provide a safe replacement or fallback strategy.
+- Ensure editor preview and published rendering use the same resolved tokens. Keep token updates cache-safe and avoid duplicating full style values across every block.
+
+## Conditional display
+
+- Separate **editor-control conditions** (show a setting only when another setting makes it relevant) from **frontend visibility conditions** (show/hide a rendered element based on approved context).
+- Use a typed rule schema with a deliberately limited operator set and explicit AND/OR grouping. Validate every condition before saving and rendering.
+- Editor-only conditions must not silently delete values from hidden settings. When a layout mode changes, retain compatible values and ignore irrelevant settings during rendering.
+- Frontend rules may use only explicitly supported context such as content fields, page/post type, dates, or approved feature flags. User authentication and role conditions must be resolved server-side.
+- A visual visibility rule is not an authorization mechanism. Private content must remain protected by route/data authorization even if a user edits the page JSON or bypasses the editor.
+- Avoid arbitrary JavaScript expressions, eval, unrestricted template expressions, and unsafe dynamic code.
+
+## Implementation order
+
+1. **Audit (R413):** verify current content schema, public renderer, preview behavior, field APIs, cache behavior, and authorization boundaries.
+2. **Dynamic content (R414–R418):** implement the typed schema, source picker, safe resolver, fallbacks, and preview/public parity.
+3. **Global design system (R419–R423):** implement tokens, typography presets, reference/inheritance behavior, settings UI, and consistent rendering.
+4. **Conditions (R424–R427):** implement typed editor conditions and separately validated frontend visibility rules.
+5. **Compatibility and quality (R428–R431):** preserve legacy static values, add security/integration tests, and document supported behavior.
+6. **Approval gates (R432–R434):** stop for review after each capability family; do not mark a gate complete without test evidence.
+
+## Acceptance criteria
+
+- A supported field can switch between static and dynamic content, select an approved source, preview the result, and render correctly after publish/save/reload.
+- Dynamic resolution uses validated references and permission-aware loaders; missing values fall back safely and do not leak private or cross-site data.
+- Global colors and typography can be reused across blocks; changing a token updates every reference without overwriting explicit local overrides.
+- Deleting or renaming a global token has a defined, tested effect on references.
+- Editor-control conditions only change control visibility; they do not unexpectedly delete data.
+- Frontend visibility conditions behave consistently in preview and published output and cannot bypass authorization.
+- Legacy pages continue to render with static values; absent new fields use safe defaults.
+- Strict TypeScript, focused tests, lint, typecheck, production build, and relevant end-to-end checks pass. Any pre-existing failures are recorded separately.
+
+## Approval gates
+
+- **Gate 16 (R432):** approve dynamic content only after source coverage, resolution, fallback, authorization, and cache-isolation tests pass.
+- **Gate 17 (R433):** approve global styles only after token editing, inheritance, overrides, deletion/fallback behavior, and editor/public parity are verified.
+- **Gate 18 (R434):** approve conditional display only after editor conditions, frontend rules, security boundaries, and end-to-end tests pass.
+
+<!-- END: dynamic-global-conditional-builder-plan -->
