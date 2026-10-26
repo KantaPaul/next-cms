@@ -23,9 +23,13 @@ export async function proxy(request: NextRequest) {
   try {
     const lookup = new URL('/api/internal/redirect', request.url);
     lookup.searchParams.set('path', pathname);
+    const cookie = request.headers.get('cookie');
     const response = await fetch(lookup, {
       cache: 'no-store',
-      headers: { 'x-cms-host': request.headers.get('host') ?? '' },
+      headers: {
+        'x-cms-host': request.headers.get('host') ?? '',
+        ...(cookie ? { cookie } : {}),
+      },
     });
     if (!response.ok) return continueRequest(request);
     const data = (await response.json()) as { to?: string | null; status?: number };

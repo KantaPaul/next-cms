@@ -3,7 +3,7 @@ import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import { cookies, headers } from 'next/headers';
 import { cache } from 'react';
 import { db } from '@/db';
-import { siteMemberships, sites } from '@/db/schema';
+import { pages, posts, siteMemberships, sites } from '@/db/schema';
 import {
   DEFAULT_SITE_ID,
   DEFAULT_SITE_LOCALES,
@@ -63,6 +63,60 @@ async function fallback() {
   return row ?? fallbackSite();
 }
 
+/**
+ * Host with no configured site. A signed-in member sees the same site the
+ * dashboard is editing (the site cookie, or their first membership).
+ */
+async function siteSelectedInAdmin(): Promise<ResolvedSite | null> {
+  try {
+    const { getSessionId, validateSession } = await import('@/lib/auth/session');
+    const sessionId = await getSessionId();
+    if (!sessionId) return null;
+    const session = await validateSession(sessionId);
+    const userId = session?.user?.id;
+    if (!userId) return null;
+
+    const siteId = await siteContext.adminSiteId(userId);
+    if (!siteId || siteId === DEFAULT_SITE_ID) return null;
+    return siteContext.getById(siteId);
+  } catch {
+    return null;
+  }
+}
+
+/** Draft preview follows the page or post, so a link opened on localhost still resolves. */
+async function siteFromPreview(): Promise<ResolvedSite | null> {
+  try {
+    const { getPreviewSession } = await import(
+      '@/server/services/preview-session'
+    );
+    const preview = await getPreviewSession();
+    if (!preview) return null;
+
+    if (preview.pageId) {
+      const [row] = await db
+        .select({ siteId: pages.siteId })
+        .from(pages)
+        .where(eq(pages.id, preview.pageId))
+        .limit(1);
+      if (row) return siteContext.getById(row.siteId);
+    }
+
+    if (preview.postId) {
+      const [row] = await db
+        .select({ siteId: posts.siteId })
+        .from(posts)
+        .where(eq(posts.id, preview.postId))
+        .limit(1);
+      if (row) return siteContext.getById(row.siteId);
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export const siteContext = {
   getById: cache(async (id: string): Promise<ResolvedSite | null> => {
     const [row] = await db
@@ -73,37 +127,49 @@ export const siteContext = {
     return row ? toSite(row) : null;
   }),
 
-  /** Host without a port matches `primary_host` or an extra domain. Otherwise site `default`. */
-  siteForHost: cache(async (rawHost: string | null | undefined) => {
+  /** Host without a port matches `primary_host` or an extra domain. No match returns null. */
+  matchHost: cache(async (rawHost: string | null | undefined) => {
     const host = normalizeHost(rawHost);
-    if (host) {
-      const [match] = await db
-        .select()
-        .from(sites)
-        .where(
-          and(
-            isNull(sites.deletedAt),
-            sql`(
-              lower(${sites.primaryHost}) = ${host}
-              OR ${host} = ANY (
-                SELECT lower(domain) FROM unnest(${sites.extraDomains}) AS domain
-              )
-            )`
-          )
+    if (!host) return null;
+    const [match] = await db
+      .select()
+      .from(sites)
+      .where(
+        and(
+          isNull(sites.deletedAt),
+          sql`(
+            lower(${sites.primaryHost}) = ${host}
+            OR ${host} = ANY (
+              SELECT lower(domain) FROM unnest(${sites.extraDomains}) AS domain
+            )
+          )`
         )
-        .limit(1);
-      if (match) return toSite(match);
-    }
-    return fallback();
+      )
+      .limit(1);
+    return match ? toSite(match) : null;
   }),
 
+  /** Host match, or site `default` when the host is not assigned to a site. */
+  siteForHost: cache(async (rawHost: string | null | undefined) => {
+    return (await siteContext.matchHost(rawHost)) ?? fallback();
+  }),
+
+  /**
+   * Public pages. A configured host always wins.
+   * On an unassigned host such as localhost, a draft preview uses that page's site,
+   * and a signed-in member sees the site chosen in the dashboard.
+   */
   publicSite: cache(async () => {
     const headerStore = await headers();
     const host =
       headerStore.get('x-cms-host') ??
       headerStore.get('x-forwarded-host') ??
       headerStore.get('host');
-    return siteContext.siteForHost(host);
+    const matched = await siteContext.matchHost(host);
+    if (matched) return matched;
+    return (
+      (await siteFromPreview()) ?? (await siteSelectedInAdmin()) ?? fallback()
+    );
   }),
 
   memberships: cache(async (userId: string): Promise<SiteMembership[]> => {
