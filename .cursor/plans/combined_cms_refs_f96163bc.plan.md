@@ -1,6 +1,6 @@
 ---
 name: Combined CMS refs
-overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, and full-site production optimization across performance, SEO, accessibility, security, data, reliability, testing, and deployment. Each step has a completion number (R001–R390). Name one number to implement only that piece.
+overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, and full-site production optimization across performance, SEO, accessibility, security, data, reliability, testing, and deployment. Each step has a completion number (R001–R392). Name one number to implement only that piece.
 todos:
   - id: R001
     content: P1-01 Register Slider, Tabs, and Accordion as builderConfig component keys
@@ -1181,7 +1181,7 @@ todos:
 isProject: false
 ---
 
-# Combined refs R001–R390
+# Combined refs R001–R392
 
 Say **implement R042** (or the original id, such as **P2-14**, **L3-01**, **A2-01**, **O1-01**, or **M2-01**). That ref is the whole task. Do not continue to the next ref unless you ask.
 
