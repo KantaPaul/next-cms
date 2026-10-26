@@ -1,6 +1,9 @@
 import { Title } from '@/components/atoms/content';
 import { Flex } from '@/components/atoms/layout';
-import { type Breadcrumb, Breadcrumbs } from '@/components/organisms/breadcrumbs';
+import {
+  type Breadcrumb,
+  Breadcrumbs,
+} from '@/components/organisms/breadcrumbs';
 import { isArraySafe } from '@/lib/utils/bool-check';
 import { cn } from '@/lib/utils/cn';
 
@@ -24,7 +27,10 @@ export function PageHeader({
   return (
     <>
       {isArraySafe(breadcrumbs) && (
-        <Breadcrumbs breadcrumbs={breadcrumbs} className={cn('mb-5', breadcrumbsClassName)} />
+        <Breadcrumbs
+          breadcrumbs={breadcrumbs}
+          className={cn('mb-5', breadcrumbsClassName)}
+        />
       )}
       <Flex
         align="center"
@@ -34,7 +40,12 @@ export function PageHeader({
           className
         )}
       >
-        <Title className={cn('w-full text-lg md:text-xl lg:text-2xl', titleClassName)}>
+        <Title
+          className={cn(
+            'w-full text-lg md:text-xl lg:text-2xl',
+            titleClassName
+          )}
+        >
           {title}
         </Title>
 

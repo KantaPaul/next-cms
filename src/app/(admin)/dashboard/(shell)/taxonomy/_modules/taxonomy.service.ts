@@ -36,7 +36,10 @@ export const taxonomyService = {
     const byParent = new Map<string | null, typeof rows>();
 
     for (const row of rows) {
-      const key = row.parentId && rows.some(r => r.id === row.parentId) ? row.parentId : null;
+      const key =
+        row.parentId && rows.some(r => r.id === row.parentId)
+          ? row.parentId
+          : null;
       byParent.set(key, [...(byParent.get(key) ?? []), row]);
     }
 
@@ -74,32 +77,68 @@ export const taxonomyService = {
     const [clash] = await db
       .select({ id: categories.id })
       .from(categories)
-      .where(and(eq(categories.slug, values.slug), isNull(categories.deletedAt), id ? ne(categories.id, id) : undefined));
-    if (clash) throw new ApplicationException(`A category with slug "${values.slug}" already exists.`);
+      .where(
+        and(
+          eq(categories.slug, values.slug),
+          isNull(categories.deletedAt),
+          id ? ne(categories.id, id) : undefined
+        )
+      );
+    if (clash)
+      throw new ApplicationException(
+        `A category with slug "${values.slug}" already exists.`
+      );
 
     if (id && values.parentId) {
-      const all = await db.select({ id: categories.id, parentId: categories.parentId }).from(categories);
+      const all = await db
+        .select({ id: categories.id, parentId: categories.parentId })
+        .from(categories);
       let cursor: string | null | undefined = values.parentId;
 
       while (cursor) {
-        if (cursor === id) throw new ApplicationException('A category cannot be nested inside itself.');
+        if (cursor === id)
+          throw new ApplicationException(
+            'A category cannot be nested inside itself.'
+          );
         cursor = all.find(c => c.id === cursor)?.parentId;
       }
     }
 
     const [row] = id
-      ? await db.update(categories).set(values).where(eq(categories.id, id)).returning()
-      : await db.insert(categories).values({ ...values, createdBy: userId }).returning();
+      ? await db
+          .update(categories)
+          .set(values)
+          .where(eq(categories.id, id))
+          .returning()
+      : await db
+          .insert(categories)
+          .values({ ...values, createdBy: userId })
+          .returning();
 
     if (!row) throw new NotFoundException('Category not found');
-    await auditService.log({ actorId: userId, action: id ? 'update' : 'create', targetType: 'taxonomy', targetId: row.id, targetName: `Category: ${row.name}` });
+    await auditService.log({
+      actorId: userId,
+      action: id ? 'update' : 'create',
+      targetType: 'taxonomy',
+      targetId: row.id,
+      targetName: `Category: ${row.name}`,
+    });
     return row;
   },
 
   deleteCategory: async (id: string, userId: string) => {
-    const [row] = await db.delete(categories).where(eq(categories.id, id)).returning();
+    const [row] = await db
+      .delete(categories)
+      .where(eq(categories.id, id))
+      .returning();
     if (!row) throw new NotFoundException('Category not found');
-    await auditService.log({ actorId: userId, action: 'delete', targetType: 'taxonomy', targetId: id, targetName: `Category: ${row.name}` });
+    await auditService.log({
+      actorId: userId,
+      action: 'delete',
+      targetType: 'taxonomy',
+      targetId: id,
+      targetName: `Category: ${row.name}`,
+    });
     return row;
   },
 
@@ -109,22 +148,46 @@ export const taxonomyService = {
     const [clash] = await db
       .select({ id: tags.id })
       .from(tags)
-      .where(and(eq(tags.slug, values.slug), isNull(tags.deletedAt), id ? ne(tags.id, id) : undefined));
-    if (clash) throw new ApplicationException(`A tag with slug "${values.slug}" already exists.`);
+      .where(
+        and(
+          eq(tags.slug, values.slug),
+          isNull(tags.deletedAt),
+          id ? ne(tags.id, id) : undefined
+        )
+      );
+    if (clash)
+      throw new ApplicationException(
+        `A tag with slug "${values.slug}" already exists.`
+      );
 
     const [row] = id
       ? await db.update(tags).set(values).where(eq(tags.id, id)).returning()
-      : await db.insert(tags).values({ ...values, createdBy: userId }).returning();
+      : await db
+          .insert(tags)
+          .values({ ...values, createdBy: userId })
+          .returning();
 
     if (!row) throw new NotFoundException('Tag not found');
-    await auditService.log({ actorId: userId, action: id ? 'update' : 'create', targetType: 'taxonomy', targetId: row.id, targetName: `Tag: ${row.name}` });
+    await auditService.log({
+      actorId: userId,
+      action: id ? 'update' : 'create',
+      targetType: 'taxonomy',
+      targetId: row.id,
+      targetName: `Tag: ${row.name}`,
+    });
     return row;
   },
 
   deleteTag: async (id: string, userId: string) => {
     const [row] = await db.delete(tags).where(eq(tags.id, id)).returning();
     if (!row) throw new NotFoundException('Tag not found');
-    await auditService.log({ actorId: userId, action: 'delete', targetType: 'taxonomy', targetId: id, targetName: `Tag: ${row.name}` });
+    await auditService.log({
+      actorId: userId,
+      action: 'delete',
+      targetType: 'taxonomy',
+      targetId: id,
+      targetName: `Tag: ${row.name}`,
+    });
     return row;
   },
 };

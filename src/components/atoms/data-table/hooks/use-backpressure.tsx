@@ -41,7 +41,7 @@ export function useBackpressure(delay = 300) {
         scroll: false,
       });
 
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         setTimeout(() => {
           isUpdatingRef.current = false;
 

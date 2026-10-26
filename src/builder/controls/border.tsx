@@ -1,7 +1,13 @@
 'use client';
 
 import { Minus, MoreHorizontal, X } from 'lucide-react';
-import { BORDER_STYLES, LENGTH_LIMITS, PROP_UNITS, type BorderSettings, type LengthUnit } from '../style';
+import {
+  BORDER_STYLES,
+  type BorderSettings,
+  LENGTH_LIMITS,
+  type LengthUnit,
+  PROP_UNITS,
+} from '../style';
 import { ColorPicker } from './color-picker';
 import { Dimensions } from './dimensions';
 import { Choose, UnitSlider } from './primitives';
@@ -50,7 +56,9 @@ export function BorderControl({
               : {
                   ...border,
                   style: next,
-                  width: border.width ?? { desktop: { top: 1, right: 1, bottom: 1, left: 1 } },
+                  width: border.width ?? {
+                    desktop: { top: 1, right: 1, bottom: 1, left: 1 },
+                  },
                 }
           )
         }
@@ -77,7 +85,9 @@ export function BorderControl({
         unit={border.radiusUnit}
         units={RADIUS_UNITS}
         limits={radiusLimits}
-        onChange={(radius, radiusUnit) => onChange({ ...border, radius, radiusUnit })}
+        onChange={(radius, radiusUnit) =>
+          onChange({ ...border, radius, radiusUnit })
+        }
       />
     </div>
   );

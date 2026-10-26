@@ -28,13 +28,17 @@ export function isArraySafe<T>(items: any): items is T[] {
  * parseBoolean(null); // false
  * parseBoolean(undefined); // false
  */
-export function parseBoolean<T extends boolean | null | undefined>(value: T): boolean {
+export function parseBoolean<T extends boolean | null | undefined>(
+  value: T
+): boolean {
   if (value === true || value === false) {
     return value; // If it's already a boolean, return as is
   } else if (value === null || value === undefined) {
     return false; // Treat null or undefined as false (or you can decide another default)
   } else {
-    throw new Error('Invalid input: value is neither boolean, null, nor undefined');
+    throw new Error(
+      'Invalid input: value is neither boolean, null, nor undefined'
+    );
   }
 }
 
@@ -147,7 +151,9 @@ export function isFalsy<T>(value: T): boolean {
  * @param value - The value to check.
  * @returns `true` if the value is null or undefined, `false` otherwise.
  */
-export function isNullOrUndefined<T>(value: T | null | undefined): value is null | undefined {
+export function isNullOrUndefined<T>(
+  value: T | null | undefined
+): value is null | undefined {
   return value === null || value === undefined;
 }
 
@@ -157,6 +163,8 @@ export function isNullOrUndefined<T>(value: T | null | undefined): value is null
  * @param value - The value to check.
  * @returns `true` if the value is not null or undefined, `false` otherwise.
  */
-export function isNotNullOrUndefined<T>(value: T | null | undefined): value is T {
+export function isNotNullOrUndefined<T>(
+  value: T | null | undefined
+): value is T {
   return !isNullOrUndefined(value);
 }

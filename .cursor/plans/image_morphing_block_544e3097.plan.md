@@ -1,26 +1,28 @@
 ---
+
 name: Image morphing block
 overview: "Add an Image Morphing block that matches the ElementsKit widget: a shape that morphs between SVG paths, filled with an image, a solid color, or a gradient, with allowlisted timing and style controls."
 todos:
-  - id: model
-    content: Add morph settings, allowlists, default blob paths, and resolveMorph
-    status: pending
-  - id: svg-extract
-    content: Add a media action that returns sanitized path data from an uploaded SVG
-    status: pending
-  - id: inspector
-    content: Add the Image Morphing inspector field with content and style groups
-    status: pending
-  - id: player
-    content: Render the SVG morph with flubber, allowlisted easing, and reduced motion
-    status: pending
-  - id: wire
-    content: Register the block in the Puck config and the block registry
-    status: pending
-  - id: verify
-    content: Typecheck and verify effects, timing, custom SVGs, and the public page in the browser
-    status: pending
-isProject: false
+- id: model
+  content: Add morph settings, allowlists, default blob paths, and resolveMorph
+  status: pending
+- id: svg-extract
+  content: Add a media action that returns sanitized path data from an uploaded SVG
+  status: pending
+- id: inspector
+  content: Add the Image Morphing inspector field with content and style groups
+  status: pending
+- id: player
+  content: Render the SVG morph with flubber, allowlisted easing, and reduced motion
+  status: pending
+- id: wire
+  content: Register the block in the Puck config and the block registry
+  status: pending
+- id: verify
+  content: Typecheck and verify effects, timing, custom SVGs, and the public page in the browser
+  status: pending
+  isProject: false
+
 ---
 
 # Image morphing block

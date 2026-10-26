@@ -1,23 +1,25 @@
 ---
+
 name: Blog posts builder
 overview: Add blog posts as their own content type, a filterable posts widget for the blog listing page, and a single-post layout that uses one shared template unless a post switches to its own canvas.
 todos:
-  - id: schema
-    content: Add posts, contents, revisions, SEO, taxonomy joins, template columns, and preview postId; generate the migration
-    status: completed
-  - id: admin
-    content: Posts list, edit form (body, media, taxonomy, SEO), layout switch, and nav entry using page permissions
-    status: completed
-  - id: widget
-    content: BlogPosts block with inspector filters and public search-param filtering; wire isBlogIndex and a starter blog template
-    status: completed
-  - id: single-builder
-    content: Shared single-post template and per-post canvas, with post-bound blocks reusing the page builder shell
-    status: completed
-  - id: public
-    content: Public /blog/[slug] routes, preview, sitemap, cron publish, and /api/v1/posts
-    status: completed
-isProject: false
+- id: schema
+  content: Add posts, contents, revisions, SEO, taxonomy joins, template columns, and preview postId; generate the migration
+  status: completed
+- id: admin
+  content: Posts list, edit form (body, media, taxonomy, SEO), layout switch, and nav entry using page permissions
+  status: completed
+- id: widget
+  content: BlogPosts block with inspector filters and public search-param filtering; wire isBlogIndex and a starter blog template
+  status: completed
+- id: single-builder
+  content: Shared single-post template and per-post canvas, with post-bound blocks reusing the page builder shell
+  status: completed
+- id: public
+  content: Public /blog/[slug] routes, preview, sitemap, cron publish, and /api/v1/posts
+  status: completed
+  isProject: false
+
 ---
 
 # Blog posts, listing widget, and single-post builder

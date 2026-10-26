@@ -1,20 +1,22 @@
 ---
+
 name: Builder rail redesign
 overview: "Restyle the page builder’s Blocks and Layers panels so they match the existing steel chrome: icon cards for blocks, and a custom layer tree instead of Puck’s default outline. Drag-to-insert and click-to-select stay as they are."
 todos:
-  - id: rail-chrome
-    content: Restyle LeftRail tabs, width, and search in builder-shell.tsx
-    status: pending
-  - id: block-cards
-    content: Render Drawer.Item rows as tinted icon cards with collapsible categories
-    status: pending
-  - id: layers-tree
-    content: Replace Puck.Outline with a custom tree that selects, nests slots, and scrolls the canvas
-    status: pending
-  - id: verify
-    content: Typecheck and verify blocks drag plus layers selection in the browser
-    status: pending
-isProject: false
+- id: rail-chrome
+  content: Restyle LeftRail tabs, width, and search in builder-shell.tsx
+  status: pending
+- id: block-cards
+  content: Render Drawer.Item rows as tinted icon cards with collapsible categories
+  status: pending
+- id: layers-tree
+  content: Replace Puck.Outline with a custom tree that selects, nests slots, and scrolls the canvas
+  status: pending
+- id: verify
+  content: Typecheck and verify blocks drag plus layers selection in the browser
+  status: pending
+  isProject: false
+
 ---
 
 # Builder blocks and layers redesign

@@ -11,7 +11,11 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>((props, ref) => {
   const { columns = '1', className, ...rest } = props;
 
   return (
-    <div ref={ref} className={cn('grid gap-7', columnClassNames[columns], className)} {...rest} />
+    <div
+      ref={ref}
+      className={cn('grid gap-7', columnClassNames[columns], className)}
+      {...rest}
+    />
   );
 });
 

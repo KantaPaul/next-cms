@@ -1,8 +1,12 @@
 import { BanIcon } from 'lucide-react';
 import type { Dispatch, SetStateAction } from 'react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Toggle } from '@/components/ui/toggle';
 import { Flex } from '@/components/atoms/layout';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Toggle } from '@/components/ui/toggle';
 
 const BACKGROUND_COLORS = [
   {
@@ -66,7 +70,9 @@ export function AddColor({ editor, setIsOpen, isOpen }: ColorSelectorProps) {
     <Popover open={isOpen}>
       <PopoverTrigger asChild>
         <Toggle
-          pressed={editor.isActive('textStyle', { color: activeBackgroundItem?.color })}
+          pressed={editor.isActive('textStyle', {
+            color: activeBackgroundItem?.color,
+          })}
           onClick={() => {
             setIsOpen(!isOpen);
           }}
@@ -93,7 +99,8 @@ export function AddColor({ editor, setIsOpen, isOpen }: ColorSelectorProps) {
               key={index}
               onClick={() => {
                 editor.commands.unsetHighlight();
-                item.name !== 'Default' && editor.commands.setHighlight({ color: item.color });
+                item.name !== 'Default' &&
+                  editor.commands.setHighlight({ color: item.color });
                 setIsOpen(false);
               }}
               className="flex items-center justify-between rounded p-2 hover:bg-steel-100/70 dark:hover:bg-steel-600"

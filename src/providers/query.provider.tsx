@@ -9,11 +9,13 @@ interface QueryProviderProps<T> {
   promises: PromisesObject<T>;
 }
 
-export type AwaitedPromisesType<T extends (...args: any[]) => any> = ResolvedPromises<
-  ReturnType<T>
->;
+export type AwaitedPromisesType<T extends (...args: any[]) => any> =
+  ResolvedPromises<ReturnType<T>>;
 
-export async function QueryProvider<T>({ children, promises }: QueryProviderProps<T>) {
+export async function QueryProvider<T>({
+  children,
+  promises,
+}: QueryProviderProps<T>) {
   const entries = await Promise.all(
     Object.entries(promises).map(async ([key, promise]) => [key, await promise])
   );

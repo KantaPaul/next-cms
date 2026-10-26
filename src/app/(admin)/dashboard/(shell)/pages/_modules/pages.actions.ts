@@ -1,7 +1,7 @@
 'use server';
 import { revalidatePath } from 'next/cache';
-import { PAGES } from '@/config/pages';
 import { pagesServices } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
+import { PAGES } from '@/config/pages';
 import {
   createPagesSchema,
   createRevisionSchema,
@@ -89,7 +89,9 @@ export const getRevision = accessProcedure
 
 export const createRevision = accessProcedure
   .input(createRevisionSchema)
-  .action(async ({ input, ctx }) => pagesServices.createRevision(input, ctx.access));
+  .action(async ({ input, ctx }) =>
+    pagesServices.createRevision(input, ctx.access)
+  );
 
 export const restoreRevision = accessProcedure
   .input(restoreRevisionSchema)

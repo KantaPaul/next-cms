@@ -13,7 +13,10 @@ import type { BaseFilterProps } from '../types';
 
 interface MultiSelectFilterProps
   extends BaseFilterProps,
-    Omit<SelectProps<Option, true>, keyof BaseFilterProps | 'onChange' | 'onClear'> {}
+    Omit<
+      SelectProps<Option, true>,
+      keyof BaseFilterProps | 'onChange' | 'onClear'
+    > {}
 
 export function MultiSelectFilter({
   value,
@@ -27,7 +30,10 @@ export function MultiSelectFilter({
   handlers,
   config,
 }: MultiSelectFilterProps) {
-  const paramsArray = useMemo(() => value?.split(ARRAY_SEPARATOR) ?? [], [value]);
+  const paramsArray = useMemo(
+    () => value?.split(ARRAY_SEPARATOR) ?? [],
+    [value]
+  );
 
   const optionsArray = useMemo(
     () => (Array.isArray(options) ? (options as Option[]) : []),
@@ -47,7 +53,7 @@ export function MultiSelectFilter({
       isClearable
       isLoading={isPending}
       isMulti
-      onChange={(newValue) => {
+      onChange={newValue => {
         const processedValue = handleOnChange(newValue) as string[];
         handlers.setValue(processedValue.join(ARRAY_SEPARATOR));
       }}

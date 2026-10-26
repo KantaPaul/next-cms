@@ -1,4 +1,4 @@
-import * as React from 'react';
+import type * as React from 'react';
 
 function Spinner(props: React.SVGAttributes<{}>) {
   return (
@@ -49,4 +49,4 @@ function Spinner(props: React.SVGAttributes<{}>) {
   );
 }
 
-export {Spinner};
+export { Spinner };

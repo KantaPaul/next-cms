@@ -3,13 +3,17 @@
 import type { Table } from '@tanstack/react-table';
 import { TableProperties } from 'lucide-react';
 import { useMemo } from 'react';
-import { Box, Flex } from '@/components/atoms/layout';
-import { cn } from '@/lib/utils/cn';
 import { Text, Title } from '@/components/atoms/content';
 import { Checkbox } from '@/components/atoms/forms';
+import { Box, Flex } from '@/components/atoms/layout';
 import { Button } from '@/components/ui/button';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils/cn';
 
 interface TableToolbarProps<TData> {
   total?: number;
@@ -33,7 +37,9 @@ export function TableToolbar<TData>({
   const sortedColumns = useMemo(() => {
     const newTableColumns = table?.getAllLeafColumns() ?? [];
     return [...newTableColumns].sort(
-      (a, b) => Number(a.columnDef.enableHiding ?? 1) - Number(b.columnDef.enableHiding ?? 1)
+      (a, b) =>
+        Number(a.columnDef.enableHiding ?? 1) -
+        Number(b.columnDef.enableHiding ?? 1)
     );
   }, [table]);
 
@@ -70,7 +76,7 @@ export function TableToolbar<TData>({
             <PopoverContent>
               <ScrollArea className="max-h-96">
                 <Box className="grid grid-cols-1 gap-3">
-                  {sortedColumns?.map((column) => {
+                  {sortedColumns?.map(column => {
                     return (
                       typeof column.columnDef.header === 'string' &&
                       column.columnDef.header.length > 0 && (

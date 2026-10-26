@@ -18,7 +18,10 @@ function setPath(obj: Record<string, unknown>, path: string, value: unknown) {
   }
 }
 
-function rehydrateItem(item: BuilderItem, zones?: Record<string, BuilderItem[]>): BuilderItem {
+function rehydrateItem(
+  item: BuilderItem,
+  zones?: Record<string, BuilderItem[]>
+): BuilderItem {
   if (!zones || !item.props?.id) return item;
   const nextProps = structuredClone(item.props);
   const prefix = `${item.props.id}:`;
@@ -26,7 +29,9 @@ function rehydrateItem(item: BuilderItem, zones?: Record<string, BuilderItem[]>)
   for (const [key, rawZoneItems] of Object.entries(zones)) {
     if (key.startsWith(prefix)) {
       const slotPath = key.slice(prefix.length);
-      const rehydratedZoneItems = (rawZoneItems ?? []).map(child => rehydrateItem(child, zones));
+      const rehydratedZoneItems = (rawZoneItems ?? []).map(child =>
+        rehydrateItem(child, zones)
+      );
       setPath(nextProps, slotPath, rehydratedZoneItems);
     }
   }
@@ -55,7 +60,9 @@ export function BlockList({
     ComponentType<Record<string, unknown>>
   >;
 
-  const rehydratedItems = zones ? items.map(item => rehydrateItem(item, zones)) : items;
+  const rehydratedItems = zones
+    ? items.map(item => rehydrateItem(item, zones))
+    : items;
 
   return (
     <>

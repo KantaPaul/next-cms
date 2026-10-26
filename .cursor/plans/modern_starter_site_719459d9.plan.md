@@ -1,23 +1,25 @@
 ---
+
 name: Modern starter site
 overview: "Cover every selected site kind as a modern starter, expand the public theme and add the few blocks those layouts need, then publish one multi-page demo with navigation. This file is the plan; code starts when you ask to build it."
 todos:
-  - id: richer-theme
-    content: Add more fonts and color roles to theme tokens, and seed a modern light theme when settings are still the defaults
-    status: pending
-  - id: new-blocks
-    content: Add Projects, Team, and Location blocks for agency, portfolio, company, and local layouts
-    status: pending
-  - id: restyle-templates
-    content: Restyle every starter template with gradients, a split hero, dark bands, and scroll motion
-    status: pending
-  - id: publish-pages
-    content: Seed the published multi-page demo (home, pricing, about, contact, blog) and header and footer menus when a user exists
-    status: pending
-  - id: verify-site
-    content: Verify the public demo, navigation, extra templates in the builder, and that the admin chrome is unchanged
-    status: pending
-isProject: false
+- id: richer-theme
+  content: Add more fonts and color roles to theme tokens, and seed a modern light theme when settings are still the defaults
+  status: pending
+- id: new-blocks
+  content: Add Projects, Team, and Location blocks for agency, portfolio, company, and local layouts
+  status: pending
+- id: restyle-templates
+  content: Restyle every starter template with gradients, a split hero, dark bands, and scroll motion
+  status: pending
+- id: publish-pages
+  content: Seed the published multi-page demo (home, pricing, about, contact, blog) and header and footer menus when a user exists
+  status: pending
+- id: verify-site
+  content: Verify the public demo, navigation, extra templates in the builder, and that the admin chrome is unchanged
+  status: pending
+  isProject: false
+
 ---
 
 # Modern starter site

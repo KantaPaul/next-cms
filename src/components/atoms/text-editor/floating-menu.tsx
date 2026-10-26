@@ -1,4 +1,6 @@
 // import { FloatingMenu, type FloatingMenuProps } from '@tiptap/react';
+
+import { FloatingMenu, type FloatingMenuProps } from '@tiptap/react/menus';
 import {
   CodeIcon,
   Heading1Icon,
@@ -8,7 +10,6 @@ import {
   ListOrderedIcon,
   TextIcon,
 } from 'lucide-react';
-import { FloatingMenu, type FloatingMenuProps } from '@tiptap/react/menus';
 import { cn } from '@/lib/utils/cn';
 
 type EditorFloatingMenuProps = Omit<FloatingMenuProps, 'children'>;
@@ -21,7 +22,8 @@ export function EditorFloatingMenu(props: EditorFloatingMenuProps) {
       title: 'Text',
       description: 'Start writing with plain text',
       icon: <TextIcon strokeWidth={1.5} />,
-      command: () => editor?.chain().focus().toggleNode('paragraph', 'paragraph').run(),
+      command: () =>
+        editor?.chain().focus().toggleNode('paragraph', 'paragraph').run(),
       isActive: () => editor?.isActive('paragraph'),
     },
     {

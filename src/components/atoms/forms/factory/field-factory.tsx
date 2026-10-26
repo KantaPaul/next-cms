@@ -1,14 +1,14 @@
 import { Fragment } from 'react';
 import type { FieldValues } from 'react-hook-form';
 import { Title } from '@/components/atoms/content';
-import { Box, Flex } from '@/components/atoms/layout';
-import { cn } from '@/lib/utils/cn';
-import type { FormFieldDef } from '@/components/atoms/forms/factory/types';
-import { Card } from '@/components/ui/card';
 import { FieldError } from '@/components/atoms/forms/error';
 import { FieldArray } from '@/components/atoms/forms/factory/field-array';
 import { FieldArrayInput } from '@/components/atoms/forms/factory/field-array-input';
 import { FormFieldWrapper } from '@/components/atoms/forms/factory/methods';
+import type { FormFieldDef } from '@/components/atoms/forms/factory/types';
+import { Box, Flex } from '@/components/atoms/layout';
+import { Card } from '@/components/ui/card';
+import { cn } from '@/lib/utils/cn';
 
 export type FieldFactoryProps<TFields> = {
   title?: string;
@@ -36,7 +36,11 @@ export function FieldFactory<TFieldValues extends FieldValues>({
   // console.log('rest', rest);
   const headerContent = (
     <>
-      {title && <Title className={cn('text-base 2xl:text-lg', titleClassName)}>{title}</Title>}
+      {title && (
+        <Title className={cn('text-base 2xl:text-lg', titleClassName)}>
+          {title}
+        </Title>
+      )}
       {action}
     </>
   );
@@ -48,10 +52,14 @@ export function FieldFactory<TFieldValues extends FieldValues>({
         rest.className
       )}
     >
-      {(title || action) && <Flex className="col-span-full">{headerContent}</Flex>}
+      {(title || action) && (
+        <Flex className="col-span-full">{headerContent}</Flex>
+      )}
 
       <FieldRenderer {...rest} />
-      {error && <FieldError error={error} className={cn('mt-0', errorClassName)} />}
+      {error && (
+        <FieldError error={error} className={cn('mt-0', errorClassName)} />
+      )}
     </Card>
   ) : (
     <Box
@@ -60,7 +68,9 @@ export function FieldFactory<TFieldValues extends FieldValues>({
         rest.className
       )}
     >
-      {(title || action) && <Flex className="col-span-full">{headerContent}</Flex>}
+      {(title || action) && (
+        <Flex className="col-span-full">{headerContent}</Flex>
+      )}
       <FieldRenderer {...rest} />
     </Box>
   );

@@ -6,22 +6,22 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { StatusBadge } from '@/components/atoms/status-badge';
-import { PAGES } from '@/config/pages';
-import { SUPPORTED_LANGUAGES } from '@/db/schemas/shared.schema';
-import { handleActionResponse } from '@/lib/utils/handle-action-response';
-import { cn } from '@/lib/utils/cn';
-import { useDataProvider } from '@/providers/data.provider';
-import type { PageDetail } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
 import { createTranslation } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.actions';
+import type { PageDetail } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
 import {
   createPreviewToken,
   regeneratePreviewToken,
   revokePreviewToken,
 } from '@/app/(admin)/dashboard/(shell)/pages/_modules/preview.actions';
-import { PAGE_STATUS_COLORS } from './pages-table';
+import { StatusBadge } from '@/components/atoms/status-badge';
+import { Button } from '@/components/ui/button';
+import { PAGES } from '@/config/pages';
+import { SUPPORTED_LANGUAGES } from '@/db/schemas/shared.schema';
+import { cn } from '@/lib/utils/cn';
+import { handleActionResponse } from '@/lib/utils/handle-action-response';
+import { useDataProvider } from '@/providers/data.provider';
 import { inputClass } from './field-shell';
+import { PAGE_STATUS_COLORS } from './pages-table';
 
 export type PreviewTokenRow = {
   id: string;

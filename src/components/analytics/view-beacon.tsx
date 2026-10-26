@@ -3,21 +3,26 @@
 import { useEffect, useRef } from 'react';
 
 type Props = {
-  pageId: string;
   path: string;
+  pageId?: string;
+  postId?: string;
 };
 
-export function ViewBeacon({ pageId, path }: Props) {
+export function ViewBeacon({ pageId, postId, path }: Props) {
   const sent = useRef(false);
 
   useEffect(() => {
-    if (sent.current || !pageId || !path) return;
+    if (sent.current || !path || (!pageId && !postId) || (pageId && postId)) {
+      return;
+    }
     sent.current = true;
 
     const payload = JSON.stringify({
-      pageId,
+      pageId: pageId || undefined,
+      postId: postId || undefined,
       path,
-      referrer: typeof document !== 'undefined' ? document.referrer || null : null,
+      referrer:
+        typeof document !== 'undefined' ? document.referrer || null : null,
     });
 
     // Prefer sendBeacon so the request survives navigation; fall back to fetch.
@@ -35,7 +40,7 @@ export function ViewBeacon({ pageId, path }: Props) {
     }).catch(() => {
       // Ignore network errors — analytics must never break the page.
     });
-  }, [pageId, path]);
+  }, [pageId, postId, path]);
 
   return null;
 }

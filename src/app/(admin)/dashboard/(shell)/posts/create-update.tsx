@@ -1,9 +1,9 @@
 import { notFound } from 'next/navigation';
-import { QueryProvider } from '@/providers/query.provider';
-import PostForm from '@/app/(admin)/dashboard/(shell)/posts/form';
-import { postsService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.service';
 import { postTemplatesService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
+import { postsService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.service';
+import PostForm from '@/app/(admin)/dashboard/(shell)/posts/form';
 import { taxonomyService } from '@/app/(admin)/dashboard/(shell)/taxonomy/_modules/taxonomy.service';
+import { QueryProvider } from '@/providers/query.provider';
 import { previewService } from '@/server/services/preview.service';
 
 export async function CreateOrUpdatePost({

@@ -1,12 +1,17 @@
-import { isBuilderData, type BuilderItem } from './data';
+import { type BuilderItem, isBuilderData } from './data';
 
-const NON_COPY_KEY = /(^id$|url|href|src|image|icon|color|variant|align|layout|theme|padding|columns|hide|style|width|target|globalblockid|avatar|logo|type$)/i;
+const NON_COPY_KEY =
+  /(^id$|url|href|src|image|icon|color|variant|align|layout|theme|padding|columns|hide|style|width|target|globalblockid|avatar|logo|type$)/i;
 
 const looksLikeCopy = (value: string) =>
-  value.trim().length > 0 && !/^(https?:\/\/|\/|#|mailto:|tel:)/i.test(value.trim());
+  value.trim().length > 0 &&
+  !/^(https?:\/\/|\/|#|mailto:|tel:)/i.test(value.trim());
 
 /** Flattens every user-facing string inside a block's props into `path -> text`. */
-export function collectCopy(props: Record<string, unknown>, prefix = ''): Record<string, string> {
+export function collectCopy(
+  props: Record<string, unknown>,
+  prefix = ''
+): Record<string, string> {
   const out: Record<string, string> = {};
 
   for (const [key, value] of Object.entries(props)) {
@@ -17,8 +22,15 @@ export function collectCopy(props: Record<string, unknown>, prefix = ''): Record
       if (looksLikeCopy(value)) out[path] = value;
     } else if (Array.isArray(value)) {
       value.forEach((item, index) => {
-        if (item && typeof item === 'object' && !('type' in item && 'props' in item)) {
-          Object.assign(out, collectCopy(item as Record<string, unknown>, `${path}.${index}`));
+        if (
+          item &&
+          typeof item === 'object' &&
+          !('type' in item && 'props' in item)
+        ) {
+          Object.assign(
+            out,
+            collectCopy(item as Record<string, unknown>, `${path}.${index}`)
+          );
         } else if (typeof item === 'string' && looksLikeCopy(item)) {
           out[`${path}.${index}`] = item;
         }
@@ -32,7 +44,10 @@ export function collectCopy(props: Record<string, unknown>, prefix = ''): Record
 }
 
 /** Writes `path -> text` back into a deep copy of props, ignoring unknown paths. */
-export function applyCopy<T extends Record<string, unknown>>(props: T, copy: Record<string, string>): T {
+export function applyCopy<T extends Record<string, unknown>>(
+  props: T,
+  copy: Record<string, string>
+): T {
   const next = structuredClone(props);
   const known = collectCopy(props);
 
@@ -41,7 +56,10 @@ export function applyCopy<T extends Record<string, unknown>>(props: T, copy: Rec
     const keys = path.split('.');
     let cursor: Record<string, unknown> | unknown[] = next;
     for (const key of keys.slice(0, -1)) {
-      cursor = (cursor as Record<string, unknown>)[key] as Record<string, unknown>;
+      cursor = (cursor as Record<string, unknown>)[key] as Record<
+        string,
+        unknown
+      >;
       if (!cursor || typeof cursor !== 'object') break;
     }
     if (cursor && typeof cursor === 'object') {
@@ -64,17 +82,26 @@ const stripHtml = (html: string) =>
 function walk(items: BuilderItem[], out: string[]) {
   for (const item of items) {
     for (const value of Object.values(item.props)) {
-      if (Array.isArray(value) && value.length && value.every(v => v && typeof v === 'object' && 'type' in v && 'props' in v)) {
+      if (
+        Array.isArray(value) &&
+        value.length &&
+        value.every(
+          v => v && typeof v === 'object' && 'type' in v && 'props' in v
+        )
+      ) {
         walk(value as BuilderItem[], out);
       }
     }
-    Object.values(collectCopy(item.props)).forEach(text => out.push(stripHtml(text)));
+    Object.values(collectCopy(item.props)).forEach(text =>
+      out.push(stripHtml(text))
+    );
   }
 }
 
 /** Plain text for a page body, used for AI prompts and search snippets. */
 export function extractPlainText(content: unknown, maxLength = 6000) {
-  if (typeof content === 'string') return stripHtml(content).slice(0, maxLength);
+  if (typeof content === 'string')
+    return stripHtml(content).slice(0, maxLength);
   if (!isBuilderData(content)) return '';
 
   const out: string[] = [];

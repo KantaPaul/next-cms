@@ -1,11 +1,16 @@
-import DatePicker, { type DatePickerProps } from '@/components/atoms/datepicker/datepicker';
+import DatePicker, {
+  type DatePickerProps,
+} from '@/components/atoms/datepicker/datepicker';
 import { cn } from '@/lib/utils/cn';
-import type { BaseFilterProps } from '../types';
 import { Spinner } from '../../icons/loader/spinner';
+import type { BaseFilterProps } from '../types';
 
 interface DatePickerFilterProps
   extends BaseFilterProps,
-    Omit<DatePickerProps<false>, keyof BaseFilterProps | 'onChange' | 'selected'> {}
+    Omit<
+      DatePickerProps<false>,
+      keyof BaseFilterProps | 'onChange' | 'selected'
+    > {}
 
 export function DatePickerFilter({
   value,

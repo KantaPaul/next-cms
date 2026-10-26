@@ -1,4 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
+import { BuilderLoader } from '@/app/(admin)/dashboard/(fullscreen)/pages/[id]/builder/_components/builder-loader';
+import { postsService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.service';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import { getCurrentUserAndTeamId } from '@/lib/auth';
@@ -6,8 +8,6 @@ import { metaObject } from '@/lib/utils/metadata';
 import { accessService } from '@/server/services/access.service';
 import { blogService } from '@/server/services/blog.service';
 import { siteSettingsService } from '@/server/services/site-settings.service';
-import { postsService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.service';
-import { BuilderLoader } from '@/app/(admin)/dashboard/(fullscreen)/pages/[id]/builder/_components/builder-loader';
 
 export const metadata = metaObject('Post layout builder');
 

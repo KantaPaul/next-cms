@@ -1,20 +1,22 @@
 ---
+
 name: Export baked website
 overview: Add an export that snapshots published pages, posts, menus, theme, and media into a standalone Next.js app. The generated app renders the public site with no CMS, auth, or database.
 todos:
-  - id: render-split
-    content: Split a database-free Puck render map from builder config so the export can render blocks without admin or DB imports.
-    status: pending
-  - id: snapshot
-    content: "Write the export script: published pages, posts, menus, settings, resolved globals, post catalog, and copied media."
-    status: pending
-  - id: template
-    content: Add the standalone Next.js export template (routes, local blog filter, sitemap, robots, Dockerfile, README).
-    status: pending
-  - id: ui
-    content: Add pnpm export:site and a settings download for users who can manage settings.
-    status: pending
-isProject: false
+- id: render-split
+  content: Split a database-free Puck render map from builder config so the export can render blocks without admin or DB imports.
+  status: pending
+- id: snapshot
+  content: "Write the export script: published pages, posts, menus, settings, resolved globals, post catalog, and copied media."
+  status: pending
+- id: template
+  content: Add the standalone Next.js export template (routes, local blog filter, sitemap, robots, Dockerfile, README).
+  status: pending
+- id: ui
+  content: Add pnpm export:site and a settings download for users who can manage settings.
+  status: pending
+  isProject: false
+
 ---
 
 # Export a deploy-ready public site

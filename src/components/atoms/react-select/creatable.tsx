@@ -1,7 +1,7 @@
 'use client';
 
-import * as React from 'react';
 import { Check, ChevronsUpDown, Loader2, Plus, X } from 'lucide-react';
+import * as React from 'react';
 import { FieldError, Label } from '@/components/atoms/forms';
 import FieldHelperText from '@/components/atoms/forms/helpers/field-helper-text';
 import { Box } from '@/components/atoms/layout';
@@ -69,7 +69,7 @@ export function CreatableSelect<IsMulti extends boolean = false>(
     const base = Array.isArray(options) ? options : [];
     const map = new Map<string, Option>();
     base.forEach((o: Option) => map.set(String(o.value), o));
-    createdOptions.forEach((o) => map.set(String(o.value), o));
+    createdOptions.forEach(o => map.set(String(o.value), o));
     return Array.from(map.values());
   }, [options, createdOptions]);
 
@@ -77,7 +77,9 @@ export function CreatableSelect<IsMulti extends boolean = false>(
   const selectedValues: string[] = React.useMemo(() => {
     if (value === undefined || value === null || value === '') return [];
     if (Array.isArray(value)) {
-      return value.map((v) => (typeof v === 'object' && v !== null ? v.value : String(v)));
+      return value.map(v =>
+        typeof v === 'object' && v !== null ? v.value : String(v)
+      );
     }
     if (typeof value === 'object' && value !== null) {
       return value.value !== undefined ? [String(value.value)] : [];
@@ -86,8 +88,8 @@ export function CreatableSelect<IsMulti extends boolean = false>(
   }, [value]);
 
   const selectedOptions: Option[] = React.useMemo(() => {
-    return selectedValues.map((val) => {
-      const found = allOptions.find((opt) => String(opt.value) === val);
+    return selectedValues.map(val => {
+      const found = allOptions.find(opt => String(opt.value) === val);
       return found ?? { label: val, value: val };
     });
   }, [selectedValues, allOptions]);
@@ -95,7 +97,7 @@ export function CreatableSelect<IsMulti extends boolean = false>(
   const canCreate =
     searchValue.trim().length > 0 &&
     !allOptions.some(
-      (opt) => opt.label.toLowerCase() === searchValue.trim().toLowerCase()
+      opt => opt.label.toLowerCase() === searchValue.trim().toLowerCase()
     );
 
   const handleSelectOption = (opt: Option) => {
@@ -104,7 +106,7 @@ export function CreatableSelect<IsMulti extends boolean = false>(
       let updated: Option[];
       const exists = selectedValues.includes(optVal);
       if (exists) {
-        updated = selectedOptions.filter((o) => String(o.value) !== optVal);
+        updated = selectedOptions.filter(o => String(o.value) !== optVal);
         onChange?.(updated, { action: 'deselect-option', option: opt });
       } else {
         updated = [...selectedOptions, opt];
@@ -120,7 +122,7 @@ export function CreatableSelect<IsMulti extends boolean = false>(
     const trimmed = text.trim();
     if (!trimmed) return;
     const newOpt: Option = { label: trimmed, value: trimmed };
-    setCreatedOptions((prev) => [...prev, newOpt]);
+    setCreatedOptions(prev => [...prev, newOpt]);
     onCreateOption?.(trimmed);
 
     if (isMulti) {
@@ -144,7 +146,9 @@ export function CreatableSelect<IsMulti extends boolean = false>(
 
   const handleRemoveOption = (e: React.MouseEvent, opt: Option) => {
     e.stopPropagation();
-    const updated = selectedOptions.filter((o) => String(o.value) !== String(opt.value));
+    const updated = selectedOptions.filter(
+      o => String(o.value) !== String(opt.value)
+    );
     onChange?.(updated, { action: 'remove-value', removedValue: opt });
   };
 
@@ -162,7 +166,10 @@ export function CreatableSelect<IsMulti extends boolean = false>(
         </Label>
       )}
 
-      <Popover open={open} onOpenChange={isDisabled || isReadOnly ? undefined : setOpen}>
+      <Popover
+        open={open}
+        onOpenChange={isDisabled || isReadOnly ? undefined : setOpen}
+      >
         <PopoverTrigger asChild>
           <button
             type="button"
@@ -176,34 +183,42 @@ export function CreatableSelect<IsMulti extends boolean = false>(
               sizes[size],
               error && 'border-destructive focus-visible:ring-destructive/20',
               variant === 'shadow' && 'shadow-xs',
-              variant === 'text' && 'border-transparent bg-transparent shadow-none hover:bg-accent/40'
+              variant === 'text' &&
+                'border-transparent bg-transparent shadow-none hover:bg-accent/40'
             )}
           >
             <div className="flex flex-1 items-center gap-1.5 overflow-hidden">
               {prefix && <span className="shrink-0">{prefix}</span>}
 
               {selectedValues.length === 0 ? (
-                <span className="truncate text-muted-foreground">{placeholder}</span>
+                <span className="truncate text-muted-foreground">
+                  {placeholder}
+                </span>
               ) : isMulti ? (
                 <div className="flex flex-wrap items-center gap-1 overflow-hidden py-0.5">
-                  {selectedOptions.slice(0, selectedItemCount).map((opt) => (
+                  {selectedOptions.slice(0, selectedItemCount).map(opt => (
                     <Badge
                       key={String(opt.value)}
                       variant="secondary"
                       className="flex items-center gap-1 px-1.5 py-0 text-xs font-normal"
                     >
                       {opt.icon && <span className="shrink-0">{opt.icon}</span>}
-                      <span className="truncate max-w-[120px]">{opt.label}</span>
+                      <span className="truncate max-w-[120px]">
+                        {opt.label}
+                      </span>
                       {!isDisabled && !isReadOnly && (
                         <X
                           className="size-3 cursor-pointer opacity-70 hover:opacity-100"
-                          onClick={(e) => handleRemoveOption(e, opt)}
+                          onClick={e => handleRemoveOption(e, opt)}
                         />
                       )}
                     </Badge>
                   ))}
                   {selectedOptions.length > selectedItemCount && (
-                    <Badge variant="secondary" className="px-1.5 py-0 text-xs font-normal">
+                    <Badge
+                      variant="secondary"
+                      className="px-1.5 py-0 text-xs font-normal"
+                    >
                       +{selectedOptions.length - selectedItemCount}
                     </Badge>
                   )}
@@ -217,7 +232,9 @@ export function CreatableSelect<IsMulti extends boolean = false>(
             </div>
 
             <div className="flex items-center gap-1 pl-1">
-              {isLoading && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
+              {isLoading && (
+                <Loader2 className="size-4 animate-spin text-muted-foreground" />
+              )}
               {showClearButton && (
                 <span
                   role="button"
@@ -263,7 +280,7 @@ export function CreatableSelect<IsMulti extends boolean = false>(
               )}
 
               <CommandGroup>
-                {allOptions.map((opt) => {
+                {allOptions.map(opt => {
                   const isSelected = selectedValues.includes(String(opt.value));
                   return (
                     <CommandItem
@@ -274,7 +291,10 @@ export function CreatableSelect<IsMulti extends boolean = false>(
                     >
                       <div className="flex items-center gap-2 truncate">
                         {isMulti && (
-                          <Checkbox checked={isSelected} className="pointer-events-none" />
+                          <Checkbox
+                            checked={isSelected}
+                            className="pointer-events-none"
+                          />
                         )}
                         {opt.icon}
                         <span className="truncate">{opt.label}</span>

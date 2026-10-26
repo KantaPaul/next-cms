@@ -1,7 +1,7 @@
 import type { DropzoneOptions } from 'react-dropzone';
 import type { DefaultValues, FieldValues, Path } from 'react-hook-form';
-import type { Option } from '@/components/atoms/react-select';
 import type { methods } from '@/components/atoms/forms/factory/methods';
+import type { Option } from '@/components/atoms/react-select';
 
 // Footer cell interface for field arrays
 export interface FooterCell {
@@ -14,7 +14,12 @@ type ExtraNames = 'empty' | 'divider' | `divider${number}` | `empty${number}`;
 
 // Update the main FormFieldDef type to include conditional fields
 export type FormFieldDef<TFieldValues extends FieldValues> = {
-  type: keyof typeof methods | 'fieldArray' | 'fieldArrayInput' | 'conditional' | 'calculation'; // Added 'conditional'
+  type:
+    | keyof typeof methods
+    | 'fieldArray'
+    | 'fieldArrayInput'
+    | 'conditional'
+    | 'calculation'; // Added 'conditional'
   name: Path<TFieldValues> | ExtraNames;
   label?: React.ReactNode;
   header?: React.ReactNode;
@@ -46,7 +51,12 @@ export type FormFieldDef<TFieldValues extends FieldValues> = {
   // NEW: Simple boolean flags for automatic filtering
   unique?: boolean; // Ensure field value is unique across all rows
   // For calculation type - no name needed since it doesn't render
-  calculations?: (row: any, index: number, setValue: any, fieldArrayName: string) => void;
+  calculations?: (
+    row: any,
+    index: number,
+    setValue: any,
+    fieldArrayName: string
+  ) => void;
   prefix?: string;
   // Footer support for field arrays
   footer?: (data: TFieldValues[]) => FooterCell[];

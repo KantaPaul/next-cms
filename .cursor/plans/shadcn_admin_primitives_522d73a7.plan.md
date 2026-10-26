@@ -1,26 +1,28 @@
 ---
+
 name: shadcn admin primitives
 overview: Replace the admin and builder-chrome controls with official shadcn/ui components, while keeping the form factory and data-table logic. The public site and builder inspector stay as they are.
 todos:
-  - id: add-primitives
-    content: Add shadcn select, command, calendar, checkbox, pagination, table, and sonner
-    status: completed
-  - id: select-date
-    content: Rewrite ReactSelect/Creatable and DatePicker on Combobox and Calendar, keeping factory and filter APIs
-    status: completed
-  - id: table-pagination
-    content: Restyle table markup and both paginations onto shadcn Table and Pagination
-    status: completed
-  - id: checkbox-switch-toast-menu
-    content: Swap checkbox, restyle switch, move toasts to Sonner, and rebuild the account menu with DropdownMenu
-    status: completed
-  - id: chrome-tokens
-    content: Retoken header, sidebar, dropdown, admin shell, and builder publish button
-    status: completed
-  - id: cleanup-verify
-    content: Remove unused libraries and verify admin plus builder chrome in the browser
-    status: completed
-isProject: false
+- id: add-primitives
+  content: Add shadcn select, command, calendar, checkbox, pagination, table, and sonner
+  status: completed
+- id: select-date
+  content: Rewrite ReactSelect/Creatable and DatePicker on Combobox and Calendar, keeping factory and filter APIs
+  status: completed
+- id: table-pagination
+  content: Restyle table markup and both paginations onto shadcn Table and Pagination
+  status: completed
+- id: checkbox-switch-toast-menu
+  content: Swap checkbox, restyle switch, move toasts to Sonner, and rebuild the account menu with DropdownMenu
+  status: completed
+- id: chrome-tokens
+  content: Retoken header, sidebar, dropdown, admin shell, and builder publish button
+  status: completed
+- id: cleanup-verify
+  content: Remove unused libraries and verify admin plus builder chrome in the browser
+  status: completed
+  isProject: false
+
 ---
 
 # Admin and builder chrome on shadcn/ui

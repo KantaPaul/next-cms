@@ -27,13 +27,28 @@
   --site-border: #1f2a44;
 }
 
-.site-root .s-surface { background: var(--site-surface); }
-.site-root .s-muted { color: var(--site-muted); }
-.site-root .s-border { border-color: var(--site-border); }
-.site-root .s-primary-text { color: var(--site-primary); }
-.site-root .s-accent-text { color: var(--site-accent); }
-.site-root .s-primary-bg { background: var(--site-primary); color: var(--site-on-primary); }
-.site-root .s-radius { border-radius: var(--site-radius); }
+.site-root .s-surface {
+  background: var(--site-surface);
+}
+.site-root .s-muted {
+  color: var(--site-muted);
+}
+.site-root .s-border {
+  border-color: var(--site-border);
+}
+.site-root .s-primary-text {
+  color: var(--site-primary);
+}
+.site-root .s-accent-text {
+  color: var(--site-accent);
+}
+.site-root .s-primary-bg {
+  background: var(--site-primary);
+  color: var(--site-on-primary);
+}
+.site-root .s-radius {
+  border-radius: var(--site-radius);
+}
 .site-root .s-gradient {
   background: linear-gradient(135deg, var(--site-primary), var(--site-accent));
   color: var(--site-on-primary);
@@ -52,17 +67,30 @@
   padding: 0.7rem 1.25rem;
   font-size: 0.95rem;
   font-weight: 600;
-  transition: opacity 150ms, background 150ms;
+  transition:
+    opacity 150ms,
+    background 150ms;
 }
-.site-root .s-btn:hover { opacity: 0.9; }
-.site-root .s-btn-primary { background: var(--site-primary); color: var(--site-on-primary); }
+.site-root .s-btn:hover {
+  opacity: 0.9;
+}
+.site-root .s-btn-primary {
+  background: var(--site-primary);
+  color: var(--site-on-primary);
+}
 .site-root .s-btn-secondary {
   border: 1px solid var(--site-border);
   background: var(--site-bg);
   color: var(--site-fg);
 }
-.site-root .s-btn-light { background: #ffffff; color: #0f172a; }
-.site-root .s-btn-ghost-light { border: 1px solid rgb(255 255 255 / 0.45); color: #ffffff; }
+.site-root .s-btn-light {
+  background: #ffffff;
+  color: #0f172a;
+}
+.site-root .s-btn-ghost-light {
+  border: 1px solid rgb(255 255 255 / 0.45);
+  color: #ffffff;
+}
 
 .site-root .s-input {
   width: 100%;
@@ -122,122 +150,327 @@
 }
 
 /* Section backgrounds */
-.site-root .s-section-muted { background: var(--site-surface); }
-.site-root .s-section-primary { background: var(--site-primary); color: var(--site-on-primary); }
-.site-root .s-section-primary .s-muted { color: rgb(255 255 255 / 0.8); }
-.site-root .s-section-dark { background: #0b1020; color: #e2e8f0; }
-.site-root .s-section-dark .s-muted { color: #94a3b8; }
+.site-root .s-section-muted {
+  background: var(--site-surface);
+}
+.site-root .s-section-primary {
+  background: var(--site-primary);
+  color: var(--site-on-primary);
+}
+.site-root .s-section-primary .s-muted {
+  color: rgb(255 255 255 / 0.8);
+}
+.site-root .s-section-dark {
+  background: #0b1020;
+  color: #e2e8f0;
+}
+.site-root .s-section-dark .s-muted {
+  color: #94a3b8;
+}
 
 /* Section style controls. Values arrive as validated CSS variables set by `resolveSectionStyle`. */
-.site-root .s-fill { background: var(--s-fill); }
-.site-root[data-site-theme='dark'] .s-fill { background: var(--s-fill-dark, var(--s-fill)); }
+.site-root .s-fill {
+  background: var(--s-fill);
+}
+.site-root[data-site-theme='dark'] .s-fill {
+  background: var(--s-fill-dark, var(--s-fill));
+}
 
-.site-root .s-pt { padding-top: var(--s-pt-m); }
-.site-root .s-pr { padding-right: var(--s-pr-m); }
-.site-root .s-pb { padding-bottom: var(--s-pb-m); }
-.site-root .s-pl { padding-left: var(--s-pl-m); }
-.site-root .s-bt { border-top-width: var(--s-bt-m); }
-.site-root .s-br { border-right-width: var(--s-br-m); }
-.site-root .s-bb { border-bottom-width: var(--s-bb-m); }
-.site-root .s-bl { border-left-width: var(--s-bl-m); }
+.site-root .s-pt {
+  padding-top: var(--s-pt-m);
+}
+.site-root .s-pr {
+  padding-right: var(--s-pr-m);
+}
+.site-root .s-pb {
+  padding-bottom: var(--s-pb-m);
+}
+.site-root .s-pl {
+  padding-left: var(--s-pl-m);
+}
+.site-root .s-bt {
+  border-top-width: var(--s-bt-m);
+}
+.site-root .s-br {
+  border-right-width: var(--s-br-m);
+}
+.site-root .s-bb {
+  border-bottom-width: var(--s-bb-m);
+}
+.site-root .s-bl {
+  border-left-width: var(--s-bl-m);
+}
 
-.site-root .s-fs { font-size: var(--s-fs-m); }
-.site-root .s-fw { font-weight: var(--s-fw-m); }
-.site-root .s-ta { text-align: var(--s-ta-m); }
-.site-root .s-mh { min-height: var(--s-mh-m); }
-.site-root .s-jc { justify-content: var(--s-jc-m); }
-.site-root .s-shadow { box-shadow: var(--s-shadow); }
-.site-root .s-mt { margin-top: var(--s-mt-m); }
-.site-root .s-mr { margin-right: var(--s-mr-m); }
-.site-root .s-mb { margin-bottom: var(--s-mb-m); }
-.site-root .s-ml { margin-left: var(--s-ml-m); }
-.site-root .s-lh { line-height: var(--s-lh-m); }
-.site-root .s-ls { letter-spacing: var(--s-ls-m); }
-.site-root .s-ws { word-spacing: var(--s-ws-m); }
-.site-root .s-w { width: var(--s-w-m); }
-.site-root .s-rad { border-radius: var(--s-rad-m); }
+.site-root .s-fs {
+  font-size: var(--s-fs-m);
+}
+.site-root .s-fw {
+  font-weight: var(--s-fw-m);
+}
+.site-root .s-ta {
+  text-align: var(--s-ta-m);
+}
+.site-root .s-mh {
+  min-height: var(--s-mh-m);
+}
+.site-root .s-jc {
+  justify-content: var(--s-jc-m);
+}
+.site-root .s-shadow {
+  box-shadow: var(--s-shadow);
+}
+.site-root .s-mt {
+  margin-top: var(--s-mt-m);
+}
+.site-root .s-mr {
+  margin-right: var(--s-mr-m);
+}
+.site-root .s-mb {
+  margin-bottom: var(--s-mb-m);
+}
+.site-root .s-ml {
+  margin-left: var(--s-ml-m);
+}
+.site-root .s-lh {
+  line-height: var(--s-lh-m);
+}
+.site-root .s-ls {
+  letter-spacing: var(--s-ls-m);
+}
+.site-root .s-ws {
+  word-spacing: var(--s-ws-m);
+}
+.site-root .s-w {
+  width: var(--s-w-m);
+}
+.site-root .s-rad {
+  border-radius: var(--s-rad-m);
+}
 
-.site-root .s-ff { font-family: var(--s-ff); }
-.site-root .s-tt-uppercase { text-transform: uppercase; }
-.site-root .s-tt-lowercase { text-transform: lowercase; }
-.site-root .s-tt-capitalize { text-transform: capitalize; }
-.site-root .s-fst-italic { font-style: italic; }
-.site-root .s-fst-oblique { font-style: oblique; }
-.site-root .s-td-underline { text-decoration-line: underline; }
-.site-root .s-td-overline { text-decoration-line: overline; }
-.site-root .s-td-line-through { text-decoration-line: line-through; }
-.site-root .s-tsh { text-shadow: var(--s-tsh); }
-.site-root .s-tst { -webkit-text-stroke: var(--s-tst); }
-.site-root .s-filter { filter: var(--s-filter); }
-.site-root .s-z { position: relative; z-index: var(--s-z); }
+.site-root .s-ff {
+  font-family: var(--s-ff);
+}
+.site-root .s-tt-uppercase {
+  text-transform: uppercase;
+}
+.site-root .s-tt-lowercase {
+  text-transform: lowercase;
+}
+.site-root .s-tt-capitalize {
+  text-transform: capitalize;
+}
+.site-root .s-fst-italic {
+  font-style: italic;
+}
+.site-root .s-fst-oblique {
+  font-style: oblique;
+}
+.site-root .s-td-underline {
+  text-decoration-line: underline;
+}
+.site-root .s-td-overline {
+  text-decoration-line: overline;
+}
+.site-root .s-td-line-through {
+  text-decoration-line: line-through;
+}
+.site-root .s-tsh {
+  text-shadow: var(--s-tsh);
+}
+.site-root .s-tst {
+  -webkit-text-stroke: var(--s-tst);
+}
+.site-root .s-filter {
+  filter: var(--s-filter);
+}
+.site-root .s-z {
+  position: relative;
+  z-index: var(--s-z);
+}
 
 @media (min-width: 768px) {
-  .site-root .s-pt { padding-top: var(--s-pt-t); }
-  .site-root .s-pr { padding-right: var(--s-pr-t); }
-  .site-root .s-pb { padding-bottom: var(--s-pb-t); }
-  .site-root .s-pl { padding-left: var(--s-pl-t); }
-  .site-root .s-bt { border-top-width: var(--s-bt-t); }
-  .site-root .s-br { border-right-width: var(--s-br-t); }
-  .site-root .s-bb { border-bottom-width: var(--s-bb-t); }
-  .site-root .s-bl { border-left-width: var(--s-bl-t); }
+  .site-root .s-pt {
+    padding-top: var(--s-pt-t);
+  }
+  .site-root .s-pr {
+    padding-right: var(--s-pr-t);
+  }
+  .site-root .s-pb {
+    padding-bottom: var(--s-pb-t);
+  }
+  .site-root .s-pl {
+    padding-left: var(--s-pl-t);
+  }
+  .site-root .s-bt {
+    border-top-width: var(--s-bt-t);
+  }
+  .site-root .s-br {
+    border-right-width: var(--s-br-t);
+  }
+  .site-root .s-bb {
+    border-bottom-width: var(--s-bb-t);
+  }
+  .site-root .s-bl {
+    border-left-width: var(--s-bl-t);
+  }
 
-  .site-root .s-fs { font-size: var(--s-fs-t); }
-  .site-root .s-fw { font-weight: var(--s-fw-t); }
-  .site-root .s-ta { text-align: var(--s-ta-t); }
-  .site-root .s-mh { min-height: var(--s-mh-t); }
-  .site-root .s-jc { justify-content: var(--s-jc-t); }
-  .site-root .s-mt { margin-top: var(--s-mt-t); }
-  .site-root .s-mr { margin-right: var(--s-mr-t); }
-  .site-root .s-mb { margin-bottom: var(--s-mb-t); }
-  .site-root .s-ml { margin-left: var(--s-ml-t); }
-  .site-root .s-lh { line-height: var(--s-lh-t); }
-  .site-root .s-ls { letter-spacing: var(--s-ls-t); }
-  .site-root .s-ws { word-spacing: var(--s-ws-t); }
-  .site-root .s-w { width: var(--s-w-t); }
-  .site-root .s-rad { border-radius: var(--s-rad-t); }
+  .site-root .s-fs {
+    font-size: var(--s-fs-t);
+  }
+  .site-root .s-fw {
+    font-weight: var(--s-fw-t);
+  }
+  .site-root .s-ta {
+    text-align: var(--s-ta-t);
+  }
+  .site-root .s-mh {
+    min-height: var(--s-mh-t);
+  }
+  .site-root .s-jc {
+    justify-content: var(--s-jc-t);
+  }
+  .site-root .s-mt {
+    margin-top: var(--s-mt-t);
+  }
+  .site-root .s-mr {
+    margin-right: var(--s-mr-t);
+  }
+  .site-root .s-mb {
+    margin-bottom: var(--s-mb-t);
+  }
+  .site-root .s-ml {
+    margin-left: var(--s-ml-t);
+  }
+  .site-root .s-lh {
+    line-height: var(--s-lh-t);
+  }
+  .site-root .s-ls {
+    letter-spacing: var(--s-ls-t);
+  }
+  .site-root .s-ws {
+    word-spacing: var(--s-ws-t);
+  }
+  .site-root .s-w {
+    width: var(--s-w-t);
+  }
+  .site-root .s-rad {
+    border-radius: var(--s-rad-t);
+  }
 }
 @media (min-width: 1024px) {
-  .site-root .s-pt { padding-top: var(--s-pt-d); }
-  .site-root .s-pr { padding-right: var(--s-pr-d); }
-  .site-root .s-pb { padding-bottom: var(--s-pb-d); }
-  .site-root .s-pl { padding-left: var(--s-pl-d); }
-  .site-root .s-bt { border-top-width: var(--s-bt-d); }
-  .site-root .s-br { border-right-width: var(--s-bl-d); }
-  .site-root .s-bb { border-bottom-width: var(--s-bb-d); }
-  .site-root .s-bl { border-left-width: var(--s-bl-d); }
+  .site-root .s-pt {
+    padding-top: var(--s-pt-d);
+  }
+  .site-root .s-pr {
+    padding-right: var(--s-pr-d);
+  }
+  .site-root .s-pb {
+    padding-bottom: var(--s-pb-d);
+  }
+  .site-root .s-pl {
+    padding-left: var(--s-pl-d);
+  }
+  .site-root .s-bt {
+    border-top-width: var(--s-bt-d);
+  }
+  .site-root .s-br {
+    border-right-width: var(--s-bl-d);
+  }
+  .site-root .s-bb {
+    border-bottom-width: var(--s-bb-d);
+  }
+  .site-root .s-bl {
+    border-left-width: var(--s-bl-d);
+  }
 
-  .site-root .s-fs { font-size: var(--s-fs-d); }
-  .site-root .s-fw { font-weight: var(--s-fw-d); }
-  .site-root .s-ta { text-align: var(--s-ta-d); }
-  .site-root .s-mh { min-height: var(--s-mh-d); }
-  .site-root .s-jc { justify-content: var(--s-jc-d); }
-  .site-root .s-mt { margin-top: var(--s-mt-d); }
-  .site-root .s-mr { margin-right: var(--s-mr-d); }
-  .site-root .s-mb { margin-bottom: var(--s-mb-d); }
-  .site-root .s-ml { margin-left: var(--s-ml-d); }
-  .site-root .s-lh { line-height: var(--s-lh-d); }
-  .site-root .s-ls { letter-spacing: var(--s-ls-d); }
-  .site-root .s-ws { word-spacing: var(--s-ws-d); }
-  .site-root .s-w { width: var(--s-w-d); }
-  .site-root .s-rad { border-radius: var(--s-rad-d); }
+  .site-root .s-fs {
+    font-size: var(--s-fs-d);
+  }
+  .site-root .s-fw {
+    font-weight: var(--s-fw-d);
+  }
+  .site-root .s-ta {
+    text-align: var(--s-ta-d);
+  }
+  .site-root .s-mh {
+    min-height: var(--s-mh-d);
+  }
+  .site-root .s-jc {
+    justify-content: var(--s-jc-d);
+  }
+  .site-root .s-mt {
+    margin-top: var(--s-mt-d);
+  }
+  .site-root .s-mr {
+    margin-right: var(--s-mr-d);
+  }
+  .site-root .s-mb {
+    margin-bottom: var(--s-mb-d);
+  }
+  .site-root .s-ml {
+    margin-left: var(--s-ml-d);
+  }
+  .site-root .s-lh {
+    line-height: var(--s-lh-d);
+  }
+  .site-root .s-ls {
+    letter-spacing: var(--s-ls-d);
+  }
+  .site-root .s-ws {
+    word-spacing: var(--s-ws-d);
+  }
+  .site-root .s-w {
+    width: var(--s-w-d);
+  }
+  .site-root .s-rad {
+    border-radius: var(--s-rad-d);
+  }
 }
-.site-root :where(.s-bd-solid, .s-bd-dashed, .s-bd-double, .s-bd-dotted, .s-bd-groove) {
+.site-root
+  :where(.s-bd-solid, .s-bd-dashed, .s-bd-double, .s-bd-dotted, .s-bd-groove) {
   border-width: 0;
   border-color: var(--s-bd-color, var(--site-border));
 }
-.site-root .s-bd-solid { border-style: solid; }
-.site-root .s-bd-dashed { border-style: dashed; }
-.site-root .s-bd-double { border-style: double; }
-.site-root .s-bd-dotted { border-style: dotted; }
-.site-root .s-bd-groove { border-style: groove; }
+.site-root .s-bd-solid {
+  border-style: solid;
+}
+.site-root .s-bd-dashed {
+  border-style: dashed;
+}
+.site-root .s-bd-double {
+  border-style: double;
+}
+.site-root .s-bd-dotted {
+  border-style: dotted;
+}
+.site-root .s-bd-groove {
+  border-style: groove;
+}
 
 /* Hover overrides: only the variables a block sets are defined, so each rule falls back to the normal value. */
-.site-root :where(.s-hc, .s-hf, .s-hb, .s-hs, .s-hfl) { transition: color 150ms, background 150ms, border-color 150ms, box-shadow 150ms, filter 150ms; }
-.site-root .s-hc:hover { color: var(--s-h-color); }
-.site-root .s-hf:hover { background: var(--s-h-fill); }
-.site-root .s-hb:hover { border-color: var(--s-h-bd); }
-.site-root .s-hs:hover { box-shadow: var(--s-h-shadow); }
-.site-root .s-hfl:hover { filter: var(--s-h-filter); }
+.site-root :where(.s-hc, .s-hf, .s-hb, .s-hs, .s-hfl) {
+  transition:
+    color 150ms,
+    background 150ms,
+    border-color 150ms,
+    box-shadow 150ms,
+    filter 150ms;
+}
+.site-root .s-hc:hover {
+  color: var(--s-h-color);
+}
+.site-root .s-hf:hover {
+  background: var(--s-h-fill);
+}
+.site-root .s-hb:hover {
+  border-color: var(--s-h-bd);
+}
+.site-root .s-hs:hover {
+  box-shadow: var(--s-h-shadow);
+}
+.site-root .s-hfl:hover {
+  filter: var(--s-h-filter);
+}
 
 /* Reduced-motion backstop for animated blocks only; the motion hooks already skip animation. */
 @media (prefers-reduced-motion: reduce) {
@@ -249,8 +482,18 @@
 }
 
 /* Rich text inherits site colors */
-.site-root .s-prose { color: var(--site-fg); }
-.site-root .s-prose :where(a) { color: var(--site-primary); }
-.site-root .s-prose :where(h1, h2, h3, h4, strong, blockquote) { color: inherit; }
-.site-root .s-prose :where(code) { color: inherit; }
-.site-root .s-prose :where(blockquote) { border-left-color: var(--site-primary); }
+.site-root .s-prose {
+  color: var(--site-fg);
+}
+.site-root .s-prose :where(a) {
+  color: var(--site-primary);
+}
+.site-root .s-prose :where(h1, h2, h3, h4, strong, blockquote) {
+  color: inherit;
+}
+.site-root .s-prose :where(code) {
+  color: inherit;
+}
+.site-root .s-prose :where(blockquote) {
+  border-left-color: var(--site-primary);
+}

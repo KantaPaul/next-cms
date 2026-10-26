@@ -11,7 +11,11 @@ interface DataProviderProps<T> {
 }
 
 export function DataProvider<T>({ children, data }: DataProviderProps<T>) {
-  return <DataProviderContext.Provider value={data}>{children}</DataProviderContext.Provider>;
+  return (
+    <DataProviderContext.Provider value={data}>
+      {children}
+    </DataProviderContext.Provider>
+  );
 }
 
 export function useDataProvider<T>(): T {
@@ -23,7 +27,9 @@ export function useDataProvider<T>(): T {
 
   // Additional check for null (during team switching)
   if (context === null) {
-    throw new Error('Data is temporarily unavailable during team switching. Please wait...');
+    throw new Error(
+      'Data is temporarily unavailable during team switching. Please wait...'
+    );
   }
 
   return context as T;

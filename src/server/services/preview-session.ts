@@ -4,8 +4,8 @@ import { PERMISSIONS } from '@/config/permissions';
 import { validateSession } from '@/lib/auth';
 import { accessService } from '@/server/services/access.service';
 import {
-  previewService,
   type PreviewTarget,
+  previewService,
 } from '@/server/services/preview.service';
 
 export const PREVIEW_PAGE_COOKIE = 'cms_preview_page';

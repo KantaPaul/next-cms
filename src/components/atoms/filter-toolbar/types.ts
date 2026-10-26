@@ -1,4 +1,4 @@
-import type { Option } from "@/components/atoms/react-select/types";
+import type { Option } from '@/components/atoms/react-select/types';
 
 export type FilterType =
   | 'select'

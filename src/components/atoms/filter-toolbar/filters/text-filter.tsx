@@ -1,10 +1,12 @@
 // import { Input, type InputProps } from '@/components/ui/input';
 import { cn } from '@/lib/utils/cn';
-import type { BaseFilterProps } from '../types';
 import type { InputProps } from '../../forms';
 import { Input } from '../../forms';
+import type { BaseFilterProps } from '../types';
 
-interface TextFilterProps extends BaseFilterProps, Omit<InputProps, keyof BaseFilterProps> {}
+interface TextFilterProps
+  extends BaseFilterProps,
+    Omit<InputProps, keyof BaseFilterProps> {}
 
 export function TextFilter({
   value,

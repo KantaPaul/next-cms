@@ -12,27 +12,15 @@ import {
 } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
-import { BackButton } from '@/components/atoms/buttons/back-button';
-import { FormFactory } from '@/components/atoms/forms/factory';
-import { StatusBadge } from '@/components/atoms/status-badge';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MESSAGES } from '@/config/messages';
-import { PAGES } from '@/config/pages';
-import { PERMISSIONS } from '@/config/permissions';
-import {
-  createPagesSchema,
-  type CreatePagesInput,
-} from '@/db/validations/pages.validation';
-import { handleActionResponse } from '@/lib/utils/handle-action-response';
-import { useCan } from '@/providers/access.provider';
-import { useDataProvider } from '@/providers/data.provider';
-import {
-  createPage,
-  updatePage,
-} from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.actions';
-import type { PageDetail } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
 import { MainEditor } from '@/app/(admin)/dashboard/(shell)/pages/_components/main-editor';
+import { PAGE_STATUS_COLORS } from '@/app/(admin)/dashboard/(shell)/pages/_components/pages-table';
+import { RevisionsDrawer } from '@/app/(admin)/dashboard/(shell)/pages/_components/revisions-drawer';
+import { SeoPanel } from '@/app/(admin)/dashboard/(shell)/pages/_components/seo-panel';
+import {
+  type PreviewTokenRow,
+  SharePanel,
+  type TranslationRow,
+} from '@/app/(admin)/dashboard/(shell)/pages/_components/share-panel';
 import {
   SidebarEditor,
   type TaxonomyOptions,
@@ -42,19 +30,31 @@ import {
   START_WITH_AI_PARAM,
   type TemplateOption,
 } from '@/app/(admin)/dashboard/(shell)/pages/_components/template-picker';
-import { PAGE_STATUS_COLORS } from '@/app/(admin)/dashboard/(shell)/pages/_components/pages-table';
 import {
   AutosaveIndicator,
   useAutosave,
   useUnsavedChangesGuard,
 } from '@/app/(admin)/dashboard/(shell)/pages/_components/use-autosave';
-import { SeoPanel } from '@/app/(admin)/dashboard/(shell)/pages/_components/seo-panel';
-import { RevisionsDrawer } from '@/app/(admin)/dashboard/(shell)/pages/_components/revisions-drawer';
 import {
-  SharePanel,
-  type PreviewTokenRow,
-  type TranslationRow,
-} from '@/app/(admin)/dashboard/(shell)/pages/_components/share-panel';
+  createPage,
+  updatePage,
+} from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.actions';
+import type { PageDetail } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
+import { BackButton } from '@/components/atoms/buttons/back-button';
+import { FormFactory } from '@/components/atoms/forms/factory';
+import { StatusBadge } from '@/components/atoms/status-badge';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MESSAGES } from '@/config/messages';
+import { PAGES } from '@/config/pages';
+import { PERMISSIONS } from '@/config/permissions';
+import {
+  type CreatePagesInput,
+  createPagesSchema,
+} from '@/db/validations/pages.validation';
+import { handleActionResponse } from '@/lib/utils/handle-action-response';
+import { useCan } from '@/providers/access.provider';
+import { useDataProvider } from '@/providers/data.provider';
 
 type PageFormData = {
   initialValues?: PageDetail | null;

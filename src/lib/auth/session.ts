@@ -1,11 +1,10 @@
 'use server';
 
+import { randomBytes } from 'crypto';
+import { and, desc, eq, getTableColumns, gt, lt } from 'drizzle-orm';
+import { cookies, headers } from 'next/headers';
 import { db } from '@/db';
 import { sessions, users } from '@/db/schema';
-import { eq, getTableColumns, lt, and, gt, desc } from 'drizzle-orm';
-import { cookies } from 'next/headers';
-import { randomBytes } from 'crypto';
-import { headers } from 'next/headers';
 
 export interface Session {
   id: string;
@@ -26,7 +25,7 @@ function generateSessionId(): string {
 
   // Convert to base64 and make URL-safe in one operation
   // This is more performant than multiple string replacements
-  return bytes.toString('base64').replace(base64ToBase64UrlRegex, (match) => {
+  return bytes.toString('base64').replace(base64ToBase64UrlRegex, match => {
     switch (match) {
       case '+':
         return '-';
@@ -157,7 +156,10 @@ export async function invalidateAllSessions(userId: string): Promise<void> {
   await db.delete(sessions).where(eq(sessions.userId, userId));
 }
 
-export async function invalidateSessionById(sessionId: string, userId: string): Promise<boolean> {
+export async function invalidateSessionById(
+  sessionId: string,
+  userId: string
+): Promise<boolean> {
   const result = await db
     .delete(sessions)
     .where(and(eq(sessions.id, sessionId), eq(sessions.userId, userId)))
@@ -191,7 +193,10 @@ export async function getUserSessions(userId: string) {
 }
 
 // Cookie management
-export async function setSessionCookie(sessionId: string, expiresAt: Date): Promise<void> {
+export async function setSessionCookie(
+  sessionId: string,
+  expiresAt: Date
+): Promise<void> {
   const cookieStore = await cookies();
 
   cookieStore.set('session', sessionId, {

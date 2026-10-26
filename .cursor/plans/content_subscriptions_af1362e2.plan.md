@@ -1,137 +1,139 @@
 ---
+
 name: Content subscriptions
 overview: Add a single Stripe subscription that unlocks every post or page marked “Subscribers only.” Each ref is one piece. Name one ref to implement only that piece.
 todos:
-  - id: S1-01
-    content: Add subscribers_only on pages and posts, default false, with a migration
-    status: pending
-  - id: S1-02
-    content: Add nullable users.password_hash
-    status: pending
-  - id: S1-03
-    content: Add the subscriptions table
-    status: pending
-  - id: S1-04
-    content: Add subscription_enabled and subscription_label on site_settings
-    status: pending
-  - id: S1-05
-    content: Add the Subscriber role with no dashboard permissions and seed it
-    status: pending
-  - id: S1-06
-    content: Add optional Stripe env vars
-    status: pending
-  - id: S2-01
-    content: Entitlement check for active or trialing subscriptions
-    status: pending
-  - id: S2-02
-    content: Treat staff roles as entitled and the Subscriber role as not
-    status: pending
-  - id: S3-01
-    content: Password hash and verify helper
-    status: pending
-  - id: S3-02
-    content: Signup action that assigns the Subscriber role directly
-    status: pending
-  - id: S3-03
-    content: Public /subscribe page
-    status: pending
-  - id: S3-04
-    content: Email and password login at /account/login
-    status: pending
-  - id: S3-05
-    content: Account page showing subscription status
-    status: pending
-  - id: S3-06
-    content: Subscriber logout
-    status: pending
-  - id: S3-07
-    content: Redirect the Subscriber role away from the dashboard
-    status: pending
-  - id: S3-08
-    content: Header link to Subscribe or Account
-    status: pending
-  - id: S4-01
-    content: Stripe client helper
-    status: pending
-  - id: S4-02
-    content: Checkout session in subscription mode
-    status: pending
-  - id: S4-03
-    content: Start checkout from /subscribe
-    status: pending
-  - id: S4-04
-    content: Verify the Stripe webhook signature
-    status: pending
-  - id: S4-05
-    content: Handle checkout.session.completed
-    status: pending
-  - id: S4-06
-    content: Handle subscription updated and deleted
-    status: pending
-  - id: S4-07
-    content: Keep past_due, canceled, incomplete, and unpaid locked
-    status: pending
-  - id: S4-08
-    content: Stripe Customer Portal route
-    status: pending
-  - id: S4-09
-    content: Clear message when Stripe env vars are missing
-    status: pending
-  - id: S5-01
-    content: Expose subscribersOnly on public post and page loads
-    status: pending
-  - id: S5-02
-    content: Strip locked post body and canvas before render
-    status: pending
-  - id: S5-03
-    content: Strip locked page content before render
-    status: pending
-  - id: S5-04
-    content: Paywall with title, excerpt, and subscribe or login links
-    status: pending
-  - id: S5-05
-    content: Keep draft preview showing the full body
-    status: pending
-  - id: S5-06
-    content: Omit locked post body and layout from /api/v1
-    status: pending
-  - id: S5-07
-    content: Omit locked page content from /api/v1
-    status: pending
-  - id: S5-08
-    content: Set isAccessibleForFree false on locked JSON-LD
-    status: pending
-  - id: S6-01
-    content: Post form field and validation for subscribers only
-    status: pending
-  - id: S6-02
-    content: Subscribers only switch on the post sidebar
-    status: pending
-  - id: S6-03
-    content: Persist the post flag on save
-    status: pending
-  - id: S6-04
-    content: Copy the post flag when duplicating
-    status: pending
-  - id: S6-05
-    content: Page form field and validation for subscribers only
-    status: pending
-  - id: S6-06
-    content: Subscribers only switch on the page sidebar
-    status: pending
-  - id: S6-07
-    content: Persist the page flag on save
-    status: pending
-  - id: S6-08
-    content: Copy the page flag when duplicating
-    status: pending
-  - id: S6-09
-    content: Settings switch and price label
-    status: pending
-  - id: S6-10
-    content: Subscribers list for settings.manage
-    status: pending
-isProject: false
+- id: S1-01
+  content: Add subscribers_only on pages and posts, default false, with a migration
+  status: pending
+- id: S1-02
+  content: Add nullable users.password_hash
+  status: pending
+- id: S1-03
+  content: Add the subscriptions table
+  status: pending
+- id: S1-04
+  content: Add subscription_enabled and subscription_label on site_settings
+  status: pending
+- id: S1-05
+  content: Add the Subscriber role with no dashboard permissions and seed it
+  status: pending
+- id: S1-06
+  content: Add optional Stripe env vars
+  status: pending
+- id: S2-01
+  content: Entitlement check for active or trialing subscriptions
+  status: pending
+- id: S2-02
+  content: Treat staff roles as entitled and the Subscriber role as not
+  status: pending
+- id: S3-01
+  content: Password hash and verify helper
+  status: pending
+- id: S3-02
+  content: Signup action that assigns the Subscriber role directly
+  status: pending
+- id: S3-03
+  content: Public /subscribe page
+  status: pending
+- id: S3-04
+  content: Email and password login at /account/login
+  status: pending
+- id: S3-05
+  content: Account page showing subscription status
+  status: pending
+- id: S3-06
+  content: Subscriber logout
+  status: pending
+- id: S3-07
+  content: Redirect the Subscriber role away from the dashboard
+  status: pending
+- id: S3-08
+  content: Header link to Subscribe or Account
+  status: pending
+- id: S4-01
+  content: Stripe client helper
+  status: pending
+- id: S4-02
+  content: Checkout session in subscription mode
+  status: pending
+- id: S4-03
+  content: Start checkout from /subscribe
+  status: pending
+- id: S4-04
+  content: Verify the Stripe webhook signature
+  status: pending
+- id: S4-05
+  content: Handle checkout.session.completed
+  status: pending
+- id: S4-06
+  content: Handle subscription updated and deleted
+  status: pending
+- id: S4-07
+  content: Keep past_due, canceled, incomplete, and unpaid locked
+  status: pending
+- id: S4-08
+  content: Stripe Customer Portal route
+  status: pending
+- id: S4-09
+  content: Clear message when Stripe env vars are missing
+  status: pending
+- id: S5-01
+  content: Expose subscribersOnly on public post and page loads
+  status: pending
+- id: S5-02
+  content: Strip locked post body and canvas before render
+  status: pending
+- id: S5-03
+  content: Strip locked page content before render
+  status: pending
+- id: S5-04
+  content: Paywall with title, excerpt, and subscribe or login links
+  status: pending
+- id: S5-05
+  content: Keep draft preview showing the full body
+  status: pending
+- id: S5-06
+  content: Omit locked post body and layout from /api/v1
+  status: pending
+- id: S5-07
+  content: Omit locked page content from /api/v1
+  status: pending
+- id: S5-08
+  content: Set isAccessibleForFree false on locked JSON-LD
+  status: pending
+- id: S6-01
+  content: Post form field and validation for subscribers only
+  status: pending
+- id: S6-02
+  content: Subscribers only switch on the post sidebar
+  status: pending
+- id: S6-03
+  content: Persist the post flag on save
+  status: pending
+- id: S6-04
+  content: Copy the post flag when duplicating
+  status: pending
+- id: S6-05
+  content: Page form field and validation for subscribers only
+  status: pending
+- id: S6-06
+  content: Subscribers only switch on the page sidebar
+  status: pending
+- id: S6-07
+  content: Persist the page flag on save
+  status: pending
+- id: S6-08
+  content: Copy the page flag when duplicating
+  status: pending
+- id: S6-09
+  content: Settings switch and price label
+  status: pending
+- id: S6-10
+  content: Subscribers list for settings.manage
+  status: pending
+  isProject: false
+
 ---
 
 # Subscriber-only posts and pages

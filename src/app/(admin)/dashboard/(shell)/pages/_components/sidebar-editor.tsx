@@ -2,15 +2,15 @@
 
 import { useFormContext, useWatch } from 'react-hook-form';
 import { FieldFactory } from '@/components/atoms/forms/factory/field-factory';
-import type { CreatePagesInput } from '@/db/validations/pages.validation';
+import { PERMISSIONS } from '@/config/permissions';
 import {
   pageStatusOptions,
   pageVisibilityStatusOptions,
   SUPPORTED_LANGUAGES,
 } from '@/db/schema';
-import { PERMISSIONS } from '@/config/permissions';
-import { useCan } from '@/providers/access.provider';
+import type { CreatePagesInput } from '@/db/validations/pages.validation';
 import { cn } from '@/lib/utils/cn';
+import { useCan } from '@/providers/access.provider';
 import { FieldShell, inputClass } from './field-shell';
 
 export type TaxonomyOptions = {

@@ -1,35 +1,37 @@
 ---
+
 name: Builder motion presets
 overview: Replace the default Puck columns with a canvas-and-popover editor, then fill that popover with gear-trader-style controls and preset motion. Styles stay on an allowlist so stored JSON cannot inject CSS.
 todos:
-  - id: editor-shell
-    content: Compose Puck with a custom header, a Blocks/Layers rail, and a full canvas instead of the default columns
-    status: completed
-  - id: selection-popover
-    content: Float a content and Style/Layout card beside the selected block, outside the iframe, with Describe a change wired to the existing rewrite action
-    status: completed
-  - id: controls
-    content: Add custom Puck controls (device row, choose, slider, dimensions, color, background, border, shadow) modeled on the gear-trader inspector
-    status: completed
-  - id: section-style
-    content: Replace the section padding and background selects with those controls, and apply allowlisted styles in Section
-    status: completed
-  - id: motion-model
-    content: Add motion, preset maps, and Section animation settings with reduced-motion and edit-mode guards
-    status: completed
-  - id: sidebar-fields
-    content: Build the Animation group from Choose and Slider, add root pageTransition, and thread motionPreview from the builder header
-    status: completed
-  - id: stagger-items
-    content: Wrap repeated children in Features, Stats, Pricing, Testimonials, FAQ, and Columns with MotionItem
-    status: completed
-  - id: page-transition
-    content: Play the root page transition on the public builder page
-    status: completed
-  - id: verify-browser
-    content: Verify inspector controls, viewport switching, builder preview, public motion, and reduced motion
-    status: completed
-isProject: false
+- id: editor-shell
+  content: Compose Puck with a custom header, a Blocks/Layers rail, and a full canvas instead of the default columns
+  status: completed
+- id: selection-popover
+  content: Float a content and Style/Layout card beside the selected block, outside the iframe, with Describe a change wired to the existing rewrite action
+  status: completed
+- id: controls
+  content: Add custom Puck controls (device row, choose, slider, dimensions, color, background, border, shadow) modeled on the gear-trader inspector
+  status: completed
+- id: section-style
+  content: Replace the section padding and background selects with those controls, and apply allowlisted styles in Section
+  status: completed
+- id: motion-model
+  content: Add motion, preset maps, and Section animation settings with reduced-motion and edit-mode guards
+  status: completed
+- id: sidebar-fields
+  content: Build the Animation group from Choose and Slider, add root pageTransition, and thread motionPreview from the builder header
+  status: completed
+- id: stagger-items
+  content: Wrap repeated children in Features, Stats, Pricing, Testimonials, FAQ, and Columns with MotionItem
+  status: completed
+- id: page-transition
+  content: Play the root page transition on the public builder page
+  status: completed
+- id: verify-browser
+  content: Verify inspector controls, viewport switching, builder preview, public motion, and reduced motion
+  status: completed
+  isProject: false
+
 ---
 
 # Canvas editor, style controls, and motion

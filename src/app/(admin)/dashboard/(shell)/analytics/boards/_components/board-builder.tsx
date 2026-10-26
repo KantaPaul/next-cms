@@ -1,21 +1,21 @@
 'use client';
 
 import {
+  closestCenter,
   DndContext,
+  type DragEndEvent,
   DragOverlay,
+  type DragStartEvent,
   KeyboardSensor,
   PointerSensor,
-  closestCenter,
   useDraggable,
   useSensor,
   useSensors,
-  type DragEndEvent,
-  type DragStartEvent,
 } from '@dnd-kit/core';
 import {
-  SortableContext,
   arrayMove,
   rectSortingStrategy,
+  SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
 } from '@dnd-kit/sortable';
@@ -32,14 +32,21 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useId, useMemo, useState, useTransition } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+  useTransition,
+} from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { PAGES } from '@/config/pages';
 import {
-  defaultWidgetTitle,
   type BoardLayout,
   type DashboardWidget,
+  defaultWidgetTitle,
   type WidgetDimension,
   type WidgetMetric,
   type WidgetQuery,
@@ -48,13 +55,10 @@ import {
 } from '@/db/schemas/analytics.schema';
 import { cn } from '@/lib/utils/cn';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
-import {
-  previewWidget,
-  updateBoard,
-} from '../_modules/boards.actions';
 import type { WidgetResult } from '@/server/services/analytics.service';
 import { DualBars } from '../../_components/dual-bars';
 import { TrendCard } from '../../_components/trend-card';
+import { previewWidget, updateBoard } from '../_modules/boards.actions';
 
 const inputClass =
   'h-9 w-full rounded-md border border-steel-200 bg-white px-3 text-sm dark:border-dark-300 dark:bg-dark-100';
@@ -170,11 +174,13 @@ export function BoardBuilder({
   initialName,
   initialLayout,
   publishedPages,
+  publishedPosts,
 }: {
   boardId: string;
   initialName: string;
   initialLayout: BoardLayout;
   publishedPages: { id: string; title: string }[];
+  publishedPosts: { id: string; title: string }[];
 }) {
   const router = useRouter();
   const dndId = useId();
@@ -376,7 +382,12 @@ export function BoardBuilder({
           ))}
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <Button type="button" size="sm" disabled={!dirty || saving} onClick={save}>
+          <Button
+            type="button"
+            size="sm"
+            disabled={!dirty || saving}
+            onClick={save}
+          >
             {saving ? <Loader2 className="animate-spin" /> : <Save />}
             Save
           </Button>
@@ -432,9 +443,15 @@ export function BoardBuilder({
             {layout.widgets.length === 0 ? (
               <div className="flex h-full flex-col items-center justify-center gap-3 py-16 text-center">
                 <p className="text-sm text-steel-500">
-                  Drag widgets here or click the palette. Or start from a preset.
+                  Drag widgets here or click the palette. Or start from a
+                  preset.
                 </p>
-                <Button type="button" size="sm" variant="outline" onClick={insertTrafficOverview}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={insertTrafficOverview}
+                >
                   <LayoutDashboard /> Traffic overview
                 </Button>
               </div>
@@ -465,12 +482,14 @@ export function BoardBuilder({
               <Inspector
                 widget={selected}
                 pages={publishedPages}
+                posts={publishedPosts}
                 onChange={patch => updateWidget(selected.id, patch)}
                 onRemove={() => removeWidget(selected.id)}
               />
             ) : (
               <p className="text-sm text-steel-500">
-                Select a widget to configure metric, dimension, range, and width.
+                Select a widget to configure metric, dimension, range, and
+                width.
               </p>
             )}
           </aside>
@@ -492,7 +511,13 @@ export function BoardBuilder({
   );
 }
 
-function PaletteItem({ type, onClick }: { type: WidgetType; onClick: () => void }) {
+function PaletteItem({
+  type,
+  onClick,
+}: {
+  type: WidgetType;
+  onClick: () => void;
+}) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `palette:${type}`,
   });
@@ -528,8 +553,14 @@ function SortableWidgetCard({
   onSelect: () => void;
   onRemove: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: widget.id });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: widget.id });
   const spanClass =
     widget.span === 4
       ? 'col-span-12 md:col-span-4'
@@ -620,11 +651,13 @@ function SortableWidgetCard({
 function Inspector({
   widget,
   pages,
+  posts,
   onChange,
   onRemove,
 }: {
   widget: DashboardWidget;
   pages: { id: string; title: string }[];
+  posts: { id: string; title: string }[];
   onChange: (patch: Partial<DashboardWidget>) => void;
   onRemove: () => void;
 }) {
@@ -652,9 +685,7 @@ function Inspector({
           value={widget.title ?? ''}
           maxLength={80}
           placeholder={defaultWidgetTitle(widget)}
-          onChange={e =>
-            onChange({ title: e.target.value || undefined })
-          }
+          onChange={e => onChange({ title: e.target.value || undefined })}
         />
       </label>
       <label className="flex flex-col gap-1 text-xs font-medium">
@@ -734,25 +765,58 @@ function Inspector({
       {(widget.query.dimension === 'page' ||
         widget.query.dimension === 'none') && (
         <label className="flex flex-col gap-1 text-xs font-medium">
-          Page
+          Content
           <select
             className={inputClass}
-            value={widget.query.pageId ?? ''}
-            onChange={e =>
-              onChange({
-                query: {
-                  ...widget.query,
-                  pageId: e.target.value || null,
-                },
-              })
+            value={
+              widget.query.postId
+                ? `post:${widget.query.postId}`
+                : widget.query.pageId
+                  ? `page:${widget.query.pageId}`
+                  : ''
             }
+            onChange={e => {
+              const value = e.target.value;
+              if (value.startsWith('post:')) {
+                onChange({
+                  query: {
+                    ...widget.query,
+                    pageId: null,
+                    postId: value.slice(5),
+                  },
+                });
+                return;
+              }
+              if (value.startsWith('page:')) {
+                onChange({
+                  query: {
+                    ...widget.query,
+                    pageId: value.slice(5),
+                    postId: null,
+                  },
+                });
+                return;
+              }
+              onChange({
+                query: { ...widget.query, pageId: null, postId: null },
+              });
+            }}
           >
-            <option value="">All pages</option>
-            {pages.map(p => (
-              <option key={p.id} value={p.id}>
-                {p.title}
-              </option>
-            ))}
+            <option value="">All content</option>
+            <optgroup label="Pages">
+              {pages.map(p => (
+                <option key={p.id} value={`page:${p.id}`}>
+                  {p.title}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="Posts">
+              {posts.map(p => (
+                <option key={p.id} value={`post:${p.id}`}>
+                  {p.title}
+                </option>
+              ))}
+            </optgroup>
           </select>
         </label>
       )}

@@ -1,4 +1,6 @@
-export const RenderComponentWithProps = <T extends React.ElementType<any> = 'div'>(
+export const RenderComponentWithProps = <
+  T extends React.ElementType<any> = 'div',
+>(
   props: {
     as?: T;
   } & React.ComponentPropsWithoutRef<T>

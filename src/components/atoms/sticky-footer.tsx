@@ -10,7 +10,11 @@ interface StickyFooterProps {
   children?: React.ReactNode;
 }
 
-export function StickyFooter({ className, children, childrenClassName }: StickyFooterProps) {
+export function StickyFooter({
+  className,
+  children,
+  childrenClassName,
+}: StickyFooterProps) {
   const { state } = useSidebar();
   return (
     <Box
@@ -26,7 +30,10 @@ export function StickyFooter({ className, children, childrenClassName }: StickyF
       <Flex
         align="center"
         justify="end"
-        className={cn('innerWrapper 5xl:custom-container mx-auto w-full', childrenClassName)}
+        className={cn(
+          'innerWrapper 5xl:custom-container mx-auto w-full',
+          childrenClassName
+        )}
       >
         {children}
       </Flex>

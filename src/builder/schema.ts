@@ -25,11 +25,25 @@ export const GENERATABLE_BLOCKS = {
     title: optStr(140),
     subtitle: optStr(300),
     columns: z.union([z.literal(2), z.literal(3), z.literal(4)]).optional(),
-    items: z.array(z.object({ icon, title: str(80).min(1), description: optStr(300) })).min(1).max(12),
+    items: z
+      .array(
+        z.object({ icon, title: str(80).min(1), description: optStr(300) })
+      )
+      .min(1)
+      .max(12),
   }),
   Stats: z.object({
     headline: optStr(140),
-    items: z.array(z.object({ value: str(20).min(1), label: str(60).min(1), change: optStr(60) })).min(1).max(6),
+    items: z
+      .array(
+        z.object({
+          value: str(20).min(1),
+          label: str(60).min(1),
+          change: optStr(60),
+        })
+      )
+      .min(1)
+      .max(6),
   }),
   Pricing: z.object({
     eyebrow: optStr(60),
@@ -55,14 +69,24 @@ export const GENERATABLE_BLOCKS = {
     eyebrow: optStr(60),
     title: optStr(140),
     items: z
-      .array(z.object({ quote: str(500).min(1), author: str(80).min(1), role: optStr(80), company: optStr(80) }))
+      .array(
+        z.object({
+          quote: str(500).min(1),
+          author: str(80).min(1),
+          role: optStr(80),
+          company: optStr(80),
+        })
+      )
       .min(1)
       .max(6),
   }),
   FAQ: z.object({
     eyebrow: optStr(60),
     title: optStr(140),
-    items: z.array(z.object({ question: str(200).min(1), answer: str(800).min(1) })).min(1).max(12),
+    items: z
+      .array(z.object({ question: str(200).min(1), answer: str(800).min(1) }))
+      .min(1)
+      .max(12),
   }),
   CTA: z.object({
     badge: optStr(60),
@@ -91,17 +115,26 @@ export const generatedBlockSchema = z
   .transform((block, ctx) => {
     const schema = GENERATABLE_BLOCKS[block.type as GeneratableBlockType];
     if (!schema) {
-      ctx.addIssue({ code: 'custom', message: `Unknown block type "${block.type}"` });
+      ctx.addIssue({
+        code: 'custom',
+        message: `Unknown block type "${block.type}"`,
+      });
       return z.NEVER;
     }
     const parsed = schema.safeParse(block.props);
     if (!parsed.success) {
       parsed.error.issues.forEach(issue =>
-        ctx.addIssue({ code: 'custom', message: `${block.type}.${issue.path.join('.')}: ${issue.message}` })
+        ctx.addIssue({
+          code: 'custom',
+          message: `${block.type}.${issue.path.join('.')}: ${issue.message}`,
+        })
       );
       return z.NEVER;
     }
-    return { type: block.type as GeneratableBlockType, props: parsed.data as Record<string, unknown> };
+    return {
+      type: block.type as GeneratableBlockType,
+      props: parsed.data as Record<string, unknown>,
+    };
   });
 
 export const generatedPageSchema = z.object({
@@ -109,8 +142,16 @@ export const generatedPageSchema = z.object({
   slug: z
     .string()
     .max(120)
-    .transform(s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')),
-  seo: z.object({ title: z.string().max(80), description: z.string().max(200) }),
+    .transform(s =>
+      s
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+    ),
+  seo: z.object({
+    title: z.string().max(80),
+    description: z.string().max(200),
+  }),
   blocks: z.array(generatedBlockSchema).min(1).max(14),
 });
 

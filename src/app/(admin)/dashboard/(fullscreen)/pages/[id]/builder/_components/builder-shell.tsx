@@ -28,11 +28,11 @@ import {
   Type,
   Undo2,
 } from 'lucide-react';
-import { useRef, useState, type ReactNode } from 'react';
-import { cn } from '@/lib/utils/cn';
+import { type ReactNode, useRef, useState } from 'react';
 import { DeviceRow } from '@/builder/controls';
-import { useBuilder } from './builder-context';
+import { cn } from '@/lib/utils/cn';
 import { BuilderHeaderActions } from './builder-chrome';
+import { useBuilder } from './builder-context';
 import { LayersPanel } from './layers-panel';
 import { SelectionCard } from './selection-card';
 

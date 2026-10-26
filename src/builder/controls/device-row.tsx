@@ -4,12 +4,16 @@ import { createUsePuck } from '@measured/puck';
 import { Monitor, Smartphone, Tablet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils/cn';
-import { DEVICE_WIDTH, deviceForWidth, type Device } from '../style';
+import { DEVICE_WIDTH, type Device, deviceForWidth } from '../style';
 
 const usePuck = createUsePuck();
 
 const ICONS = { desktop: Monitor, tablet: Tablet, mobile: Smartphone };
-const LABELS: Record<Device, string> = { desktop: 'Desktop', tablet: 'Tablet', mobile: 'Mobile' };
+const LABELS: Record<Device, string> = {
+  desktop: 'Desktop',
+  tablet: 'Tablet',
+  mobile: 'Mobile',
+};
 
 /** The device the canvas is showing. Changing it resizes the Puck viewport, so every device row stays in sync. */
 export function useCanvasDevice() {
@@ -20,7 +24,12 @@ export function useCanvasDevice() {
   const setDevice = (next: Device) =>
     dispatch({
       type: 'setUi',
-      ui: ui => ({ viewports: { ...ui.viewports, current: { width: DEVICE_WIDTH[next], height: 'auto' } } }),
+      ui: ui => ({
+        viewports: {
+          ...ui.viewports,
+          current: { width: DEVICE_WIDTH[next], height: 'auto' },
+        },
+      }),
     });
 
   return [device, setDevice] as const;
@@ -30,7 +39,13 @@ export function useCanvasDevice() {
 export function DeviceRow({ className }: { className?: string }) {
   const [device, setDevice] = useCanvasDevice();
   return (
-    <fieldset className={cn('flex min-w-0 items-center gap-0.5 border-0 p-0', className)} aria-label="Edit for device">
+    <fieldset
+      className={cn(
+        'flex min-w-0 items-center gap-0.5 border-0 p-0',
+        className
+      )}
+      aria-label="Edit for device"
+    >
       {(Object.keys(ICONS) as Device[]).map(d => {
         const Icon = ICONS[d];
         return (
@@ -45,7 +60,8 @@ export function DeviceRow({ className }: { className?: string }) {
             onClick={() => setDevice(d)}
             className={cn(
               'size-6 text-muted-foreground hover:text-primary',
-              device === d && 'bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary'
+              device === d &&
+                'bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary'
             )}
           >
             <Icon className="size-3.5" />

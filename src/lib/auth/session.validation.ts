@@ -4,7 +4,7 @@ import { cache } from 'react';
 import {
   getSessionId,
   validateSession as validateSessionFromSession,
-} from "@/lib/auth/session";
+} from '@/lib/auth/session';
 
 const cachedRequest = cache(async () => {
   const sessionId = await getSessionId();

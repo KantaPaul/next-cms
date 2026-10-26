@@ -9,7 +9,6 @@ export const dateFormats = {
   ISO_DATE_2: 'dd-MM-yyyy', // 17-10-2024
 } as const;
 
-
 /**
  * A generic type representing an asynchronous server action function.
  * @summary`We can use this generic type to define props types when a component takes server  actions as props.`

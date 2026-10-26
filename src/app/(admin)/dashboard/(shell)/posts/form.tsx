@@ -14,29 +14,6 @@ import {
 import { Controller, useFormContext, useWatch } from 'react-hook-form';
 import slugify from 'react-slugify';
 import { toast } from 'sonner';
-import { BackButton } from '@/components/atoms/buttons/back-button';
-import { FormFactory } from '@/components/atoms/forms/factory';
-import { FieldFactory } from '@/components/atoms/forms/factory/field-factory';
-import { StatusBadge } from '@/components/atoms/status-badge';
-import { MediaField } from '@/components/media/media-picker';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MESSAGES } from '@/config/messages';
-import { PAGES } from '@/config/pages';
-import { PERMISSIONS } from '@/config/permissions';
-import {
-  pageStatusOptions,
-  pageVisibilityStatusOptions,
-  SUPPORTED_LANGUAGES,
-} from '@/db/schema';
-import {
-  createPostSchema,
-  type CreatePostInput,
-} from '@/db/validations/posts.validation';
-import { cn } from '@/lib/utils/cn';
-import { handleActionResponse } from '@/lib/utils/handle-action-response';
-import { useCan } from '@/providers/access.provider';
-import { useDataProvider } from '@/providers/data.provider';
 import {
   FieldShell,
   inputClass,
@@ -53,17 +30,40 @@ import {
   useUnsavedChangesGuard,
 } from '@/app/(admin)/dashboard/(shell)/pages/_components/use-autosave';
 import {
+  layoutLabel,
+  SetTemplateDialog,
+} from '@/app/(admin)/dashboard/(shell)/posts/_components/set-template-dialog';
+import { POST_REVISION_ACTIONS } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-revision-actions';
+import type { PostTemplateListItem } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
+import {
   createPost,
   savePostDraft,
   updatePost,
 } from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.actions';
-import { POST_REVISION_ACTIONS } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-revision-actions';
 import type { PostDetail } from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.service';
-import type { PostTemplateListItem } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
+import { BackButton } from '@/components/atoms/buttons/back-button';
+import { FormFactory } from '@/components/atoms/forms/factory';
+import { FieldFactory } from '@/components/atoms/forms/factory/field-factory';
+import { StatusBadge } from '@/components/atoms/status-badge';
+import { MediaField } from '@/components/media/media-picker';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MESSAGES } from '@/config/messages';
+import { PAGES } from '@/config/pages';
+import { PERMISSIONS } from '@/config/permissions';
 import {
-  layoutLabel,
-  SetTemplateDialog,
-} from '@/app/(admin)/dashboard/(shell)/posts/_components/set-template-dialog';
+  pageStatusOptions,
+  pageVisibilityStatusOptions,
+  SUPPORTED_LANGUAGES,
+} from '@/db/schema';
+import {
+  type CreatePostInput,
+  createPostSchema,
+} from '@/db/validations/posts.validation';
+import { cn } from '@/lib/utils/cn';
+import { handleActionResponse } from '@/lib/utils/handle-action-response';
+import { useCan } from '@/providers/access.provider';
+import { useDataProvider } from '@/providers/data.provider';
 
 type PostFormData = {
   initialValues?: PostDetail | null;

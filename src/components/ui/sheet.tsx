@@ -5,9 +5,8 @@ import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { X } from 'lucide-react';
 import * as React from 'react';
-
-import { cn } from '@/lib/utils/cn';
 import { getSafeDocumentBody } from '@/lib/utils/browser-only';
+import { cn } from '@/lib/utils/cn';
 
 const Sheet = SheetPrimitive.Root;
 
@@ -17,13 +16,10 @@ const SheetClose = SheetPrimitive.Close;
 
 // const SheetPortal = SheetPrimitive.Portal;
 
-const SheetPortal = (props: React.ComponentPropsWithoutRef<typeof SheetPrimitive.Portal>) => {
-  return (
-    <SheetPrimitive.Portal
-      container={getSafeDocumentBody()}
-      {...props}
-    />
-  );
+const SheetPortal = (
+  props: React.ComponentPropsWithoutRef<typeof SheetPrimitive.Portal>
+) => {
+  return <SheetPrimitive.Portal container={getSafeDocumentBody()} {...props} />;
 };
 
 SheetPortal.displayName = SheetPrimitive.Portal.displayName;
@@ -81,7 +77,11 @@ const SheetContent = React.forwardRef<
         backgroundColor: 'rgba(0, 0, 0, 0.2)',
       }}
     /> */}
-    <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
+    <SheetPrimitive.Content
+      ref={ref}
+      className={cn(sheetVariants({ side }), className)}
+      {...props}
+    >
       <VisuallyHidden asChild>
         <SheetPrimitive.Title />
       </VisuallyHidden>
@@ -99,14 +99,29 @@ const SheetContent = React.forwardRef<
 ));
 SheetContent.displayName = SheetPrimitive.Content.displayName;
 
-const SheetHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('flex flex-col space-y-2 text-center sm:text-left', className)} {...props} />
+const SheetHeader = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn(
+      'flex flex-col space-y-2 text-center sm:text-left',
+      className
+    )}
+    {...props}
+  />
 );
 SheetHeader.displayName = 'SheetHeader';
 
-const SheetFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+const SheetFooter = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn('flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2', className)}
+    className={cn(
+      'flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2',
+      className
+    )}
     {...props}
   />
 );

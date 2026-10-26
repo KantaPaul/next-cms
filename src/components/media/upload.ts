@@ -13,7 +13,9 @@ export type UploadedMedia = {
   folder: string;
 };
 
-function measureImage(file: File): Promise<{ width: number; height: number } | null> {
+function measureImage(
+  file: File
+): Promise<{ width: number; height: number } | null> {
   if (!file.type.startsWith('image/')) return Promise.resolve(null);
   return new Promise(resolve => {
     const url = URL.createObjectURL(file);
@@ -30,7 +32,10 @@ function measureImage(file: File): Promise<{ width: number; height: number } | n
   });
 }
 
-export async function uploadMediaFile(file: File, folder?: string): Promise<UploadedMedia> {
+export async function uploadMediaFile(
+  file: File,
+  folder?: string
+): Promise<UploadedMedia> {
   const size = await measureImage(file);
   const form = new FormData();
   form.append('file', file);

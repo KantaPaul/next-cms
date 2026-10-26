@@ -1,138 +1,139 @@
 ---
+
 name: Studio Crafted CMS
 colors:
-  surface: '#faf8ff'
-  surface-dim: '#d2d9f4'
-  surface-bright: '#faf8ff'
-  surface-container-lowest: '#ffffff'
-  surface-container-low: '#f2f3ff'
-  surface-container: '#eaedff'
-  surface-container-high: '#e2e7ff'
-  surface-container-highest: '#dae2fd'
-  on-surface: '#131b2e'
-  on-surface-variant: '#464554'
-  inverse-surface: '#283044'
-  inverse-on-surface: '#eef0ff'
-  outline: '#777586'
-  outline-variant: '#c7c4d7'
-  surface-tint: '#5148d7'
-  primary: '#2a14b4'
-  on-primary: '#ffffff'
-  primary-container: '#4338ca'
-  on-primary-container: '#c1beff'
-  inverse-primary: '#c3c0ff'
-  secondary: '#4648d4'
-  on-secondary: '#ffffff'
-  secondary-container: '#6063ee'
-  on-secondary-container: '#fffbff'
-  tertiary: '#692400'
-  on-tertiary: '#ffffff'
-  tertiary-container: '#8f3400'
-  on-tertiary-container: '#ffb393'
-  error: '#ba1a1a'
-  on-error: '#ffffff'
-  error-container: '#ffdad6'
-  on-error-container: '#93000a'
-  primary-fixed: '#e3dfff'
-  primary-fixed-dim: '#c3c0ff'
-  on-primary-fixed: '#100069'
-  on-primary-fixed-variant: '#372abf'
-  secondary-fixed: '#e1e0ff'
-  secondary-fixed-dim: '#c0c1ff'
-  on-secondary-fixed: '#07006c'
-  on-secondary-fixed-variant: '#2f2ebe'
-  tertiary-fixed: '#ffdbcd'
-  tertiary-fixed-dim: '#ffb597'
-  on-tertiary-fixed: '#360f00'
-  on-tertiary-fixed-variant: '#7d2d00'
-  background: '#faf8ff'
-  on-background: '#131b2e'
-  surface-variant: '#dae2fd'
+surface: '#faf8ff'
+surface-dim: '#d2d9f4'
+surface-bright: '#faf8ff'
+surface-container-lowest: '#ffffff'
+surface-container-low: '#f2f3ff'
+surface-container: '#eaedff'
+surface-container-high: '#e2e7ff'
+surface-container-highest: '#dae2fd'
+on-surface: '#131b2e'
+on-surface-variant: '#464554'
+inverse-surface: '#283044'
+inverse-on-surface: '#eef0ff'
+outline: '#777586'
+outline-variant: '#c7c4d7'
+surface-tint: '#5148d7'
+primary: '#2a14b4'
+on-primary: '#ffffff'
+primary-container: '#4338ca'
+on-primary-container: '#c1beff'
+inverse-primary: '#c3c0ff'
+secondary: '#4648d4'
+on-secondary: '#ffffff'
+secondary-container: '#6063ee'
+on-secondary-container: '#fffbff'
+tertiary: '#692400'
+on-tertiary: '#ffffff'
+tertiary-container: '#8f3400'
+on-tertiary-container: '#ffb393'
+error: '#ba1a1a'
+on-error: '#ffffff'
+error-container: '#ffdad6'
+on-error-container: '#93000a'
+primary-fixed: '#e3dfff'
+primary-fixed-dim: '#c3c0ff'
+on-primary-fixed: '#100069'
+on-primary-fixed-variant: '#372abf'
+secondary-fixed: '#e1e0ff'
+secondary-fixed-dim: '#c0c1ff'
+on-secondary-fixed: '#07006c'
+on-secondary-fixed-variant: '#2f2ebe'
+tertiary-fixed: '#ffdbcd'
+tertiary-fixed-dim: '#ffb597'
+on-tertiary-fixed: '#360f00'
+on-tertiary-fixed-variant: '#7d2d00'
+background: '#faf8ff'
+on-background: '#131b2e'
+surface-variant: '#dae2fd'
 typography:
-  display-hero:
-    fontFamily: Hanken Grotesk
-    fontSize: 3rem
-    fontWeight: '700'
-    lineHeight: 3.5rem
-    letterSpacing: -0.03em
-  headline-lg:
-    fontFamily: Hanken Grotesk
-    fontSize: 2rem
-    fontWeight: '600'
-    lineHeight: 2.5rem
-    letterSpacing: -0.025em
-  headline-lg-mobile:
-    fontFamily: Hanken Grotesk
-    fontSize: 1.5rem
-    fontWeight: '600'
-    lineHeight: 2rem
-    letterSpacing: -0.02em
-  headline-md:
-    fontFamily: Hanken Grotesk
-    fontSize: 1.375rem
-    fontWeight: '600'
-    lineHeight: 1.75rem
-    letterSpacing: -0.02em
-  headline-sm:
-    fontFamily: Hanken Grotesk
-    fontSize: 1.125rem
-    fontWeight: '600'
-    lineHeight: 1.5rem
-    letterSpacing: -0.015em
-  body-lg:
-    fontFamily: Inter
-    fontSize: 1rem
-    fontWeight: '400'
-    lineHeight: 1.625rem
-    letterSpacing: -0.011em
-  body-md:
-    fontFamily: Inter
-    fontSize: 0.875rem
-    fontWeight: '400'
-    lineHeight: 1.375rem
-    letterSpacing: -0.006em
-  body-sm:
-    fontFamily: Inter
-    fontSize: 0.75rem
-    fontWeight: '400'
-    lineHeight: 1.125rem
-    letterSpacing: '0'
-  label-md:
-    fontFamily: Inter
-    fontSize: 0.8125rem
-    fontWeight: '500'
-    lineHeight: 1.125rem
-    letterSpacing: -0.005em
-  label-sm:
-    fontFamily: Inter
-    fontSize: 0.6875rem
-    fontWeight: '600'
-    lineHeight: 0.875rem
-    letterSpacing: 0.04em
-  code-sm:
-    fontFamily: monospace
-    fontSize: 0.75rem
-    fontWeight: '500'
-    lineHeight: 1rem
-    letterSpacing: -0.01em
+display-hero:
+fontFamily: Hanken Grotesk
+fontSize: 3rem
+fontWeight: '700'
+lineHeight: 3.5rem
+letterSpacing: -0.03em
+headline-lg:
+fontFamily: Hanken Grotesk
+fontSize: 2rem
+fontWeight: '600'
+lineHeight: 2.5rem
+letterSpacing: -0.025em
+headline-lg-mobile:
+fontFamily: Hanken Grotesk
+fontSize: 1.5rem
+fontWeight: '600'
+lineHeight: 2rem
+letterSpacing: -0.02em
+headline-md:
+fontFamily: Hanken Grotesk
+fontSize: 1.375rem
+fontWeight: '600'
+lineHeight: 1.75rem
+letterSpacing: -0.02em
+headline-sm:
+fontFamily: Hanken Grotesk
+fontSize: 1.125rem
+fontWeight: '600'
+lineHeight: 1.5rem
+letterSpacing: -0.015em
+body-lg:
+fontFamily: Inter
+fontSize: 1rem
+fontWeight: '400'
+lineHeight: 1.625rem
+letterSpacing: -0.011em
+body-md:
+fontFamily: Inter
+fontSize: 0.875rem
+fontWeight: '400'
+lineHeight: 1.375rem
+letterSpacing: -0.006em
+body-sm:
+fontFamily: Inter
+fontSize: 0.75rem
+fontWeight: '400'
+lineHeight: 1.125rem
+letterSpacing: '0'
+label-md:
+fontFamily: Inter
+fontSize: 0.8125rem
+fontWeight: '500'
+lineHeight: 1.125rem
+letterSpacing: -0.005em
+label-sm:
+fontFamily: Inter
+fontSize: 0.6875rem
+fontWeight: '600'
+lineHeight: 0.875rem
+letterSpacing: 0.04em
+code-sm:
+fontFamily: monospace
+fontSize: 0.75rem
+fontWeight: '500'
+lineHeight: 1rem
+letterSpacing: -0.01em
 rounded:
-  sm: 0.25rem
-  DEFAULT: 0.5rem
-  md: 0.75rem
-  lg: 1rem
-  xl: 1.5rem
-  full: 9999px
+sm: 0.25rem
+DEFAULT: 0.5rem
+md: 0.75rem
+lg: 1rem
+xl: 1.5rem
+full: 9999px
 spacing:
-  gutter: 1rem
-  gutter-desktop: 1.5rem
-  margin: 1rem
-  margin-tablet: 1.5rem
-  margin-desktop: 2.5rem
-  space-xs: 0.25rem
-  space-sm: 0.5rem
-  space-md: 0.75rem
-  space-lg: 1.25rem
-  space-xl: 2rem
+gutter: 1rem
+gutter-desktop: 1.5rem
+margin: 1rem
+margin-tablet: 1.5rem
+margin-desktop: 2.5rem
+space-xs: 0.25rem
+space-sm: 0.5rem
+space-md: 0.75rem
+space-lg: 1.25rem
+space-xl: 2rem
 ---
 
 ## Brand & Style
@@ -143,7 +144,7 @@ The visual direction combines modern minimalism with subtle studio-grade tactili
 
 ## Colors
 
-The palette is engineered around pure neutral clarity with focused chromatic energy. 
+The palette is engineered around pure neutral clarity with focused chromatic energy.
 
 - **Primary (`#4338ca`)**: A focused, authoritative indigo used exclusively for primary commitments, active navigational markers, and focused interactions.
 - **Secondary (`#6366f1`)**: An electric indigo-violet bridge utilized for interactive hover feedback, active indicator badges, and inline status states.
@@ -157,7 +158,7 @@ Functional accents remain subtle and desaturated to preserve editorial neutralit
 
 ## Typography
 
-Typography establishes systematic hierarchy through geometric precision and mechanical rhythm. 
+Typography establishes systematic hierarchy through geometric precision and mechanical rhythm.
 
 - **Headlines (`Hanken Grotesk`)**: Provides contemporary structure with subtle personality. Tighter letter spacing on display elements mimics precision publication design.
 - **Body & Controls (`Inter`)**: Carries dense tables, article copy, context menus, and metadata with high legibility at micro scales.
@@ -197,25 +198,31 @@ The design system employs a roundedness index of `2`, utilizing a base radius of
 ## Components
 
 ### Buttons
+
 - **Primary**: Solid `#4338ca` background, `#ffffff` text, subtle 1px border (`#3730a3`), and a micro box shadow (`0 1px 2px rgba(67, 56, 202, 0.2)`). Hover transitions to `#3730a3`.
 - **Secondary / Ghost**: White `#ffffff` surface, 1px `#e2e8f0` border, `#0f172a` text. On hover, background shifts to `#f8fafc` and border shifts to `#cbd5e1`.
 - **Command / Ghost Icon**: Zero-border button, `#475569` icon color, transitioning to `#f1f5f9` background and `#0f172a` on hover.
 
 ### Inputs & Form Controls
+
 - **Text & Area Fields**: `#ffffff` background with 1px `#e2e8f0` border, `0.5rem` radius, and `0.875rem` text. In active focus, borders transition to `#4338ca` accompanied by a 2px outer ambient ring (`rgba(67, 56, 202, 0.15)`).
 - **Monospace Code Inputs**: `#f8fafc` background with syntax-friendly styling and keyboard helper hints right-aligned.
 
 ### Chips & Badges
+
 - **Status Pills**: Height of 22px, pill-shaped (`9999px`), uppercase `label-sm` font, with a soft tinted background (e.g., `#e0e7ff` for Published, `#f1f5f9` for Draft) and high-contrast slate text.
 - **Filter Tags**: Subtle 1px `#e2e8f0` borders with removable close triggers on hover.
 
 ### Cards & Content Lists
+
 - **Cards**: Pure white background, `1rem` radius, subtle hairline border `#e2e8f0`, with hover effects featuring a border transition to `#cbd5e1` and a micro-elevation lift.
 - **Lists & Data Tables**: Borderless item dividers using `#f1f5f9` borders, compact row heights (40px default, 48px comfortable), with zebra-free hovered rows tinted `#f8fafc`.
 
 ### Checkboxes & Radios
+
 - 16px square (checkbox) or circle (radio), `#cbd5e1` outline on white. Selected state fills with `#4338ca` showing a crisp white glyph checkmark.
 
 ### Studio-Specific Extensions
+
 - **Command Palette (`Cmd+K`)**: Floating modal container at `rounded-lg`, frosted surface backdrop blur, high-contrast input with keyboard shortcut indicators styled as crisp, raised micro-keys.
 - **Breadcrumb Navigation**: Hairline breadcrumbs separated by forward slashes (`/`), highlighting document hierarchy with the active terminal path rendered in bold slate.

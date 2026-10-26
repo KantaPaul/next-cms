@@ -1,4 +1,4 @@
-import { resolveAllData, type Data } from '@measured/puck';
+import { type Data, resolveAllData } from '@measured/puck';
 import { postBuilderConfig } from '@/builder/config';
 import { sanitizeRichText } from '@/builder/sanitize';
 import { PAGES } from '@/config/pages';

@@ -6,21 +6,35 @@ import plugin from 'tailwindcss/plugin';
 import animate from 'tailwindcss-animate';
 
 // shadcn/ui tokens live in globals.css as oklch() variables; color-mix keeps `/opacity` modifiers working.
-const token = (name: string) => ({ opacityValue }: { opacityValue?: string }) =>
-  opacityValue === undefined
-    ? `var(--${name})`
-    : `color-mix(in oklch, var(--${name}) calc(${opacityValue} * 100%), transparent)`;
+const token =
+  (name: string) =>
+  ({ opacityValue }: { opacityValue?: string }) =>
+    opacityValue === undefined
+      ? `var(--${name})`
+      : `color-mix(in oklch, var(--${name}) calc(${opacityValue} * 100%), transparent)`;
 
 const shadcnColors = {
   background: token('background'),
   foreground: token('foreground'),
   card: { DEFAULT: token('card'), foreground: token('card-foreground') },
-  popover: { DEFAULT: token('popover'), foreground: token('popover-foreground') },
-  primary: { DEFAULT: token('primary'), foreground: token('primary-foreground') },
-  secondary: { DEFAULT: token('secondary'), foreground: token('secondary-foreground') },
+  popover: {
+    DEFAULT: token('popover'),
+    foreground: token('popover-foreground'),
+  },
+  primary: {
+    DEFAULT: token('primary'),
+    foreground: token('primary-foreground'),
+  },
+  secondary: {
+    DEFAULT: token('secondary'),
+    foreground: token('secondary-foreground'),
+  },
   muted: { DEFAULT: token('muted'), foreground: token('muted-foreground') },
   accent: { DEFAULT: token('accent'), foreground: token('accent-foreground') },
-  destructive: { DEFAULT: token('destructive'), foreground: token('primary-foreground') },
+  destructive: {
+    DEFAULT: token('destructive'),
+    foreground: token('primary-foreground'),
+  },
   border: token('border'),
   input: token('input'),
   ring: token('ring'),

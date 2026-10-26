@@ -1,13 +1,16 @@
-import { type ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies';
-import { cookies } from 'next/headers';
 import { generateCodeVerifier, generateState } from 'arctic';
+import type { ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies';
+import { cookies } from 'next/headers';
 
 import { google } from '@/auth';
 
 export async function GET(): Promise<Response> {
   const state = generateState();
   const codeVerifier = generateCodeVerifier();
-  const url = google.createAuthorizationURL(state, codeVerifier, ['email', 'profile']);
+  const url = google.createAuthorizationURL(state, codeVerifier, [
+    'email',
+    'profile',
+  ]);
   url.searchParams.set('access_type', 'offline');
 
   const cookieConfig: Partial<ResponseCookie> = {

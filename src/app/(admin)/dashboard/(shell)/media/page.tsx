@@ -1,7 +1,7 @@
+import { MediaLibrary } from '@/app/(admin)/dashboard/(shell)/media/_components/media-library';
 import { PageHeader } from '@/components/organisms/page-header';
 import { PAGES } from '@/config/pages';
 import { metaObject } from '@/lib/utils/metadata';
-import { MediaLibrary } from '@/app/(admin)/dashboard/(shell)/media/_components/media-library';
 
 const TITLE = 'Media Library';
 

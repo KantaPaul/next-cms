@@ -1,11 +1,11 @@
 'use client';
 
+import { ChevronsUpDown, Loader2 } from 'lucide-react';
 import * as React from 'react';
 import Avatar from '@/components/atoms/avatar';
 import { Flex } from '@/components/atoms/layout';
 import type { User } from '@/db/schema';
 import { cn } from '@/lib/utils/cn';
-import { ChevronsUpDown, Loader2 } from 'lucide-react';
 
 export const MenuTrigger = React.forwardRef<
   HTMLButtonElement,
@@ -38,7 +38,9 @@ export const MenuTrigger = React.forwardRef<
             name={user?.name}
             className="[&>div]:size-6 [&>span]:size-6 [&>span]:text-xs"
           />
-          <span className="hidden shrink-0 font-medium md:flex">{user?.name}</span>
+          <span className="hidden shrink-0 font-medium md:flex">
+            {user?.name}
+          </span>
           <ChevronsUpDown className="ml-auto hidden size-4 opacity-50 md:flex" />
         </Flex>
       )}

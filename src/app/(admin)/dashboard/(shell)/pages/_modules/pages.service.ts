@@ -13,21 +13,23 @@ import {
   or,
   type SQL,
 } from 'drizzle-orm';
+import { emptyContentFor, normalizeContent } from '@/builder/data';
+import { PERMISSIONS } from '@/config/permissions';
 import { db } from '@/db';
 import type { SearchParams } from '@/db/helpers/parse-search-params';
 import { paginate } from '@/db/helpers/with-pagination';
 import {
+  type ContentKindType,
+  type EditorTypeType,
   pageCategories,
   pageContents,
   pageRevisions,
   pages,
   pageTags,
   pageTemplates,
+  type RevisionKindType,
   seoMeta,
   users,
-  type ContentKindType,
-  type EditorTypeType,
-  type RevisionKindType,
 } from '@/db/schema';
 import type {
   CreatePagesOutput,
@@ -35,8 +37,6 @@ import type {
   SeoInput,
   UpdatePagesInput,
 } from '@/db/validations/pages.validation';
-import { emptyContentFor, normalizeContent } from '@/builder/data';
-import { PERMISSIONS } from '@/config/permissions';
 import type { DBTrx } from '@/lib/types';
 import { ApplicationException, NotFoundException } from '@/lib/utils/error';
 import { revalidatePublicSite } from '@/lib/utils/revalidate-site';

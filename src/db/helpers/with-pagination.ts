@@ -38,7 +38,10 @@ export function getPageSizeParams(
   defaultPage = 1,
   defaultSize = 10
 ): { page: number; size: number } {
-  const parseParam = (value: string | number | undefined, defaultValue: number): number => {
+  const parseParam = (
+    value: string | number | undefined,
+    defaultValue: number
+  ): number => {
     if (value === undefined) return defaultValue;
     const parsed = Number(value);
     return !isNaN(parsed) && parsed > 0 ? parsed : defaultValue;

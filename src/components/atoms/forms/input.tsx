@@ -26,9 +26,7 @@ export const Input = ({
       {label ? (
         <Label htmlFor={id} className={cn(labelClassName)}>
           {label}
-          {isRequired && (
-            <span className="text-destructive">*</span>
-          )}
+          {isRequired && <span className="text-destructive">*</span>}
         </Label>
       ) : (
         ''

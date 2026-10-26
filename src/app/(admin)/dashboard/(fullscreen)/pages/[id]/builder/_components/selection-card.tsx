@@ -2,9 +2,21 @@
 
 import { createUsePuck, Puck } from '@measured/puck';
 import { ArrowUp, Copy, Sparkles, Trash2, X } from 'lucide-react';
-import { Children, isValidElement, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import {
+  Children,
+  isValidElement,
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import {
+  type InspectorTab,
+  InspectorTabContext,
+  useInspectorTab,
+} from '@/builder/controls/inspector-tab';
 import { cn } from '@/lib/utils/cn';
-import { InspectorTabContext, useInspectorTab, type InspectorTab } from '@/builder/controls/inspector-tab';
 import { useBuilder } from './builder-context';
 
 const usePuck = createUsePuck();
@@ -19,14 +31,27 @@ export function InspectorFields({ children }: { children: ReactNode }) {
   const tab = useInspectorTab();
   if (!tab) return <>{children}</>;
   const items = Children.toArray(children).filter(isValidElement);
-  const isSection = (key: unknown) => String(key).replace(/^\.\$/, '') === 'section';
-  const visible = items.filter(el => (tab === 'content' ? !isSection(el.key) : isSection(el.key)));
-  if (!visible.length) return <p className="py-6 text-center text-xs text-steel-400">This block has no {tab} settings.</p>;
+  const isSection = (key: unknown) =>
+    String(key).replace(/^\.\$/, '') === 'section';
+  const visible = items.filter(el =>
+    tab === 'content' ? !isSection(el.key) : isSection(el.key)
+  );
+  if (!visible.length)
+    return (
+      <p className="py-6 text-center text-xs text-steel-400">
+        This block has no {tab} settings.
+      </p>
+    );
   return <>{visible}</>;
 }
 
 /** Positions the card beside the selected node, which lives inside the canvas iframe. */
-function useCardPosition(canvasRef: RefObject<HTMLElement | null>, cardRef: RefObject<HTMLElement | null>, id: string | undefined, deps: unknown[]) {
+function useCardPosition(
+  canvasRef: RefObject<HTMLElement | null>,
+  cardRef: RefObject<HTMLElement | null>,
+  id: string | undefined,
+  deps: unknown[]
+) {
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
 
   useEffect(() => {
@@ -41,7 +66,10 @@ function useCardPosition(canvasRef: RefObject<HTMLElement | null>, cardRef: RefO
     const win = iframe?.contentWindow;
     if (!canvas || !iframe || !doc) return;
 
-    const find = () => doc.querySelector<HTMLElement>(`[data-puck-component="${CSS.escape(id)}"]`);
+    const find = () =>
+      doc.querySelector<HTMLElement>(
+        `[data-puck-component="${CSS.escape(id)}"]`
+      );
     let frame = 0;
 
     const update = () => {
@@ -61,7 +89,10 @@ function useCardPosition(canvasRef: RefObject<HTMLElement | null>, cardRef: RefO
         let left = elRight + GAP;
         if (left + width > c.width - GAP) left = elLeft - width - GAP;
         if (left < GAP) left = c.width - width - GAP;
-        const top = Math.min(Math.max(elTop, GAP), Math.max(GAP, c.height - height - GAP));
+        const top = Math.min(
+          Math.max(elTop, GAP),
+          Math.max(GAP, c.height - height - GAP)
+        );
         setPos({ left: Math.max(GAP, left), top });
       });
     };
@@ -81,7 +112,6 @@ function useCardPosition(canvasRef: RefObject<HTMLElement | null>, cardRef: RefO
       win?.removeEventListener('scroll', update);
       window.removeEventListener('resize', update);
     };
-     
   }, [id, ...deps]);
 
   return pos;
@@ -141,7 +171,11 @@ const TABS: { value: InspectorTab; label: string }[] = [
 ];
 
 /** Floating inspector for the selected block. It sits in the parent page, so the canvas iframe never clips it. */
-export function SelectionCard({ canvasRef }: { canvasRef: RefObject<HTMLElement | null> }) {
+export function SelectionCard({
+  canvasRef,
+}: {
+  canvasRef: RefObject<HTMLElement | null>;
+}) {
   const selected = usePuck(s => s.selectedItem);
   const config = usePuck(s => s.config);
   const dispatch = usePuck(s => s.dispatch);
@@ -155,7 +189,11 @@ export function SelectionCard({ canvasRef }: { canvasRef: RefObject<HTMLElement 
   const component = selected ? config.components[selected.type] : undefined;
   const hasSection = !!component?.fields && 'section' in component.fields;
   const activeTab = hasSection ? tab : 'content';
-  const pos = useCardPosition(canvasRef, cardRef, id, [data, viewportWidth, activeTab]);
+  const pos = useCardPosition(canvasRef, cardRef, id, [
+    data,
+    viewportWidth,
+    activeTab,
+  ]);
 
   if (!selected || !id) return null;
 
@@ -183,15 +221,25 @@ export function SelectionCard({ canvasRef }: { canvasRef: RefObject<HTMLElement 
     >
       <div className="flex items-start justify-between gap-2 border-b border-steel-100 px-3 pb-2 pt-2.5">
         <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-indigo-500">Selected block</p>
-          <p className="truncate text-sm font-semibold">{component?.label ?? selected.type}</p>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-indigo-500">
+            Selected block
+          </p>
+          <p className="truncate text-sm font-semibold">
+            {component?.label ?? selected.type}
+          </p>
         </div>
         <div className="flex shrink-0 items-center gap-0.5">
           {itemSelector?.zone && (
             <>
               <button
                 type="button"
-                onClick={() => dispatch({ type: 'duplicate', sourceIndex: itemSelector.index, sourceZone: itemSelector.zone! })}
+                onClick={() =>
+                  dispatch({
+                    type: 'duplicate',
+                    sourceIndex: itemSelector.index,
+                    sourceZone: itemSelector.zone!,
+                  })
+                }
                 aria-label="Duplicate block"
                 title="Duplicate"
                 className="rounded p-1 text-steel-400 hover:bg-steel-100 hover:text-steel-700"
@@ -200,7 +248,13 @@ export function SelectionCard({ canvasRef }: { canvasRef: RefObject<HTMLElement 
               </button>
               <button
                 type="button"
-                onClick={() => dispatch({ type: 'remove', index: itemSelector.index, zone: itemSelector.zone! })}
+                onClick={() =>
+                  dispatch({
+                    type: 'remove',
+                    index: itemSelector.index,
+                    zone: itemSelector.zone!,
+                  })
+                }
                 aria-label="Delete block"
                 title="Delete"
                 className="rounded p-1 text-steel-400 hover:bg-red-50 hover:text-red-600"
@@ -209,7 +263,12 @@ export function SelectionCard({ canvasRef }: { canvasRef: RefObject<HTMLElement 
               </button>
             </>
           )}
-          <button type="button" onClick={close} aria-label="Close inspector" className="rounded p-1 text-steel-400 hover:bg-steel-100 hover:text-steel-700">
+          <button
+            type="button"
+            onClick={close}
+            aria-label="Close inspector"
+            className="rounded p-1 text-steel-400 hover:bg-steel-100 hover:text-steel-700"
+          >
             <X className="size-4" />
           </button>
         </div>
@@ -218,7 +277,11 @@ export function SelectionCard({ canvasRef }: { canvasRef: RefObject<HTMLElement 
       <DescribeChange />
 
       {hasSection && (
-        <div role="tablist" aria-label="Inspector sections" className="flex gap-4 border-b border-steel-100 px-3">
+        <div
+          role="tablist"
+          aria-label="Inspector sections"
+          className="flex gap-4 border-b border-steel-100 px-3"
+        >
           {TABS.map(t => (
             <button
               key={t.value}
@@ -228,7 +291,9 @@ export function SelectionCard({ canvasRef }: { canvasRef: RefObject<HTMLElement 
               onClick={() => setTab(t.value)}
               className={cn(
                 '-mb-px border-b-2 py-2 text-sm transition-colors',
-                activeTab === t.value ? 'border-steel-800 font-medium text-steel-900' : 'border-transparent text-steel-500 hover:text-steel-800'
+                activeTab === t.value
+                  ? 'border-steel-800 font-medium text-steel-900'
+                  : 'border-transparent text-steel-500 hover:text-steel-800'
               )}
             >
               {t.label}

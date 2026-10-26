@@ -13,7 +13,7 @@ export const APP_ENV = {
   isProd: APP_VERSION.endsWith('prod'),
   current: (APP_VERSION.split('-').pop() ?? 'local') as ENV,
   filter: <T extends Record<string, any>>(items: Array<T | null | undefined>) =>
-    items.filter((item) => item !== null && item !== undefined),
+    items.filter(item => item !== null && item !== undefined),
   disableFor: <T>(env: ENV | ENV[], item: T) => {
     const envs = Array.isArray(env) ? env : [env];
     return envs.includes(APP_ENV.current) ? null : item;

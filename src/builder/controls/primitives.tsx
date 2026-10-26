@@ -1,9 +1,13 @@
 'use client';
 
 import { ChevronDown, RotateCcw, X } from 'lucide-react';
-import { useEffect, useId, useState, type ReactNode } from 'react';
+import { type ReactNode, useEffect, useId, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { FormInput } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -19,7 +23,12 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils/cn';
-import { resolveResponsive, type Device, type MaybeResponsive, type Responsive } from '../style';
+import {
+  type Device,
+  type MaybeResponsive,
+  type Responsive,
+  resolveResponsive,
+} from '../style';
 import { DeviceRow, useCanvasDevice } from './device-row';
 
 export function ControlLabel({
@@ -49,12 +58,24 @@ export function ControlLabel({
 }
 
 /** Collapsible inspector group, e.g. Colors, Typography, Border. */
-export function Group({ title, defaultOpen = false, children }: { title: string; defaultOpen?: boolean; children: ReactNode }) {
+export function Group({
+  title,
+  defaultOpen = false,
+  children,
+}: {
+  title: string;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
   const [open, setOpen] = useState(defaultOpen);
   const id = useId();
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen} className="border-t border-steel-100 first:border-t-0">
+    <Collapsible
+      open={open}
+      onOpenChange={setOpen}
+      className="border-t border-steel-100 first:border-t-0"
+    >
       <CollapsibleTrigger asChild>
         <Button
           type="button"
@@ -63,7 +84,12 @@ export function Group({ title, defaultOpen = false, children }: { title: string;
           className="flex h-auto w-full items-center justify-between rounded-none px-0 py-2.5 text-left text-sm font-medium text-steel-800 hover:bg-transparent"
         >
           {title}
-          <ChevronDown className={cn('size-4 text-steel-400 transition-transform', open && 'rotate-180')} />
+          <ChevronDown
+            className={cn(
+              'size-4 text-steel-400 transition-transform',
+              open && 'rotate-180'
+            )}
+          />
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent id={id} className="space-y-4 pb-4">
@@ -73,7 +99,11 @@ export function Group({ title, defaultOpen = false, children }: { title: string;
   );
 }
 
-export type ChooseOption<T extends string> = { value: T; label: string; icon?: ReactNode };
+export type ChooseOption<T extends string> = {
+  value: T;
+  label: string;
+  icon?: ReactNode;
+};
 
 /** Segmented button row for mutually exclusive options. */
 export function Choose<T extends string>({
@@ -111,7 +141,11 @@ export function Choose<T extends string>({
           !columns && 'auto-cols-fr grid-flow-col',
           isInherited && 'opacity-65'
         )}
-        style={columns ? { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` } : undefined}
+        style={
+          columns
+            ? { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }
+            : undefined
+        }
       >
         {options.map(option => {
           const selected = option.value === value;
@@ -191,7 +225,10 @@ export function Slider({
         <div className="flex items-center gap-1.5">
           {units && (
             <Select value={units.value} onValueChange={units.onChange}>
-              <SelectTrigger size="sm" className="h-5 w-auto min-w-12 gap-0.5 border-steel-200 px-1 text-[10px] font-medium">
+              <SelectTrigger
+                size="sm"
+                className="h-5 w-auto min-w-12 gap-0.5 border-steel-200 px-1 text-[10px] font-medium"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -207,7 +244,9 @@ export function Slider({
         </div>
       </ControlLabel>
 
-      <div className={cn('flex items-center gap-2', isInherited && 'opacity-65')}>
+      <div
+        className={cn('flex items-center gap-2', isInherited && 'opacity-65')}
+      >
         <input
           type="range"
           aria-label={label}
@@ -216,7 +255,10 @@ export function Slider({
           step={step}
           value={value ?? min}
           onChange={e => onChange(Number(e.target.value))}
-          className={cn('h-1.5 w-3/4 cursor-pointer accent-primary', value === undefined && 'opacity-40')}
+          className={cn(
+            'h-1.5 w-3/4 cursor-pointer accent-primary',
+            value === undefined && 'opacity-40'
+          )}
         />
 
         <div className="flex h-8 w-1/4 min-w-16 items-center rounded-md border border-input bg-background pr-2 focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
@@ -230,7 +272,9 @@ export function Slider({
             onKeyDown={e => e.key === 'Enter' && commit(e.currentTarget.value)}
             className="h-full border-0 bg-transparent px-2 text-xs shadow-none focus-visible:ring-0"
           />
-          {unit && <span className="text-[11px] text-muted-foreground">{unit}</span>}
+          {unit && (
+            <span className="text-[11px] text-muted-foreground">{unit}</span>
+          )}
         </div>
       </div>
     </div>
@@ -266,7 +310,10 @@ export function SelectInput<T extends string>({
         <SelectTrigger
           id={id}
           size="sm"
-          className={cn('h-8 w-full text-xs', isInherited && 'opacity-65 text-muted-foreground')}
+          className={cn(
+            'h-8 w-full text-xs',
+            isInherited && 'opacity-65 text-muted-foreground'
+          )}
         >
           <SelectValue />
         </SelectTrigger>
@@ -299,9 +346,12 @@ export function ResponsiveChoose<T extends string>({
   valid?: (x: unknown) => T | undefined;
 }) {
   const [device] = useCanvasDevice();
-  const validator = valid ?? ((x: unknown) => (options.some(o => o.value === x) ? (x as T) : undefined));
+  const validator =
+    valid ??
+    ((x: unknown) => (options.some(o => o.value === x) ? (x as T) : undefined));
 
-  const isObject = typeof value === 'object' && value !== null && !Array.isArray(value);
+  const isObject =
+    typeof value === 'object' && value !== null && !Array.isArray(value);
   const currentDeviceVal = isObject
     ? (value as Partial<Record<Device, T>>)[device]
     : device === 'desktop'
@@ -309,7 +359,8 @@ export function ResponsiveChoose<T extends string>({
       : undefined;
   const resolvedVal = resolveResponsive(value, device, validator);
   const hasOverride = currentDeviceVal !== undefined;
-  const isInherited = !hasOverride && resolvedVal !== undefined && device !== 'desktop';
+  const isInherited =
+    !hasOverride && resolvedVal !== undefined && device !== 'desktop';
 
   const resetOverride = () => {
     if (!isObject) {
@@ -376,17 +427,22 @@ export function ResponsiveSelect<T extends string>({
   valid?: (x: unknown) => T | undefined;
 }) {
   const [device] = useCanvasDevice();
-  const validator = valid ?? ((x: unknown) => (options.some(o => o.value === x) ? (x as T) : undefined));
+  const validator =
+    valid ??
+    ((x: unknown) => (options.some(o => o.value === x) ? (x as T) : undefined));
 
-  const isObject = typeof value === 'object' && value !== null && !Array.isArray(value);
+  const isObject =
+    typeof value === 'object' && value !== null && !Array.isArray(value);
   const currentDeviceVal = isObject
     ? (value as Partial<Record<Device, T>>)[device]
     : device === 'desktop'
       ? (value as T | undefined)
       : undefined;
-  const resolvedVal = resolveResponsive(value, device, validator) ?? options[0]?.value;
+  const resolvedVal =
+    resolveResponsive(value, device, validator) ?? options[0]?.value;
   const hasOverride = currentDeviceVal !== undefined;
-  const isInherited = !hasOverride && resolvedVal !== undefined && device !== 'desktop';
+  const isInherited =
+    !hasOverride && resolvedVal !== undefined && device !== 'desktop';
 
   const resetOverride = () => {
     if (!isObject) {
@@ -464,9 +520,11 @@ export function ResponsiveSlider({
   onChange: (value: MaybeResponsive<number> | undefined) => void;
 }) {
   const [device] = useCanvasDevice();
-  const validator = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) ? x : undefined);
+  const validator = (x: unknown) =>
+    typeof x === 'number' && Number.isFinite(x) ? x : undefined;
 
-  const isObject = typeof value === 'object' && value !== null && !Array.isArray(value);
+  const isObject =
+    typeof value === 'object' && value !== null && !Array.isArray(value);
   const currentDeviceVal = isObject
     ? (value as Partial<Record<Device, number>>)[device]
     : device === 'desktop'
@@ -474,7 +532,8 @@ export function ResponsiveSlider({
       : undefined;
   const resolvedVal = resolveResponsive(value, device, validator);
   const hasOverride = currentDeviceVal !== undefined;
-  const isInherited = !hasOverride && resolvedVal !== undefined && device !== 'desktop';
+  const isInherited =
+    !hasOverride && resolvedVal !== undefined && device !== 'desktop';
 
   const resetOverride = () => {
     if (!isObject) {
@@ -556,7 +615,11 @@ export function ColorInput({
   useEffect(() => setDraft(value ?? ''), [value]);
 
   const commit = (raw: string) => {
-    const next = raw.trim() ? (raw.trim().startsWith('#') ? raw.trim() : `#${raw.trim()}`) : '';
+    const next = raw.trim()
+      ? raw.trim().startsWith('#')
+        ? raw.trim()
+        : `#${raw.trim()}`
+      : '';
     if (!next) return onChange(undefined);
     if (HEX.test(next)) onChange(next.toLowerCase());
     else setDraft(value ?? '');
@@ -570,7 +633,8 @@ export function ColorInput({
           <span
             className={cn(
               'absolute inset-0',
-              !value && 'bg-[repeating-conic-gradient(#e2e8f0_0_25%,#fff_0_50%)] bg-[length:8px_8px]'
+              !value &&
+                'bg-[repeating-conic-gradient(#e2e8f0_0_25%,#fff_0_50%)] bg-[length:8px_8px]'
             )}
             style={value ? { background: value } : undefined}
           />
@@ -609,12 +673,18 @@ export function ColorInput({
 }
 
 export function Description({ children }: { children: ReactNode }) {
-  return <p className="-mt-1 text-[11px] leading-snug text-muted-foreground">{children}</p>;
+  return (
+    <p className="-mt-1 text-[11px] leading-snug text-muted-foreground">
+      {children}
+    </p>
+  );
 }
 
 export function PanelHeading({ children }: { children: ReactNode }) {
   return (
-    <p className="pt-1 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">{children}</p>
+    <p className="pt-1 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+      {children}
+    </p>
   );
 }
 
@@ -630,7 +700,13 @@ export function Notice({ children }: { children: ReactNode }) {
   );
 }
 
-export function ShowWhen({ when, children }: { when: boolean; children: ReactNode }) {
+export function ShowWhen({
+  when,
+  children,
+}: {
+  when: boolean;
+  children: ReactNode;
+}) {
   return when ? <>{children}</> : null;
 }
 
@@ -650,7 +726,11 @@ export function Switcher({
       <Label htmlFor={id} className="text-xs font-medium text-steel-600">
         {label}
       </Label>
-      <Switch id={id} checked={!!value} onChange={checked => onChange(!!checked)} />
+      <Switch
+        id={id}
+        checked={!!value}
+        onChange={checked => onChange(!!checked)}
+      />
     </div>
   );
 }
@@ -679,7 +759,9 @@ export function GroupedSelect<T extends string>({
         <SelectContent>
           {groups.map(g => (
             <SelectGroup key={g.label}>
-              <SelectLabel className="text-[10px] text-muted-foreground">{g.label}</SelectLabel>
+              <SelectLabel className="text-[10px] text-muted-foreground">
+                {g.label}
+              </SelectLabel>
               {g.options.map(o => (
                 <SelectItem key={o.value} value={o.value} className="text-xs">
                   {o.label}
@@ -693,7 +775,11 @@ export function GroupedSelect<T extends string>({
   );
 }
 
-export type VisualOption<T extends string> = { value: T; label: string; thumb: ReactNode };
+export type VisualOption<T extends string> = {
+  value: T;
+  label: string;
+  thumb: ReactNode;
+};
 
 /** Grid of visual choices (thumbnails). */
 export function VisualChoose<T extends string>({
@@ -734,14 +820,26 @@ export function VisualChoose<T extends string>({
 }
 
 /** Normal / Hover tab pair; the hover pane is for optional overrides. */
-export function StateTabs({ normal, hover }: { normal: ReactNode; hover: ReactNode }) {
+export function StateTabs({
+  normal,
+  hover,
+}: {
+  normal: ReactNode;
+  hover: ReactNode;
+}) {
   return (
     <Tabs defaultValue="normal" className="space-y-3">
       <TabsList className="grid h-8 w-full grid-cols-2 rounded-md p-0">
-        <TabsTrigger value="normal" className="h-full rounded-none text-xs capitalize data-[state=active]:bg-muted">
+        <TabsTrigger
+          value="normal"
+          className="h-full rounded-none text-xs capitalize data-[state=active]:bg-muted"
+        >
           Normal
         </TabsTrigger>
-        <TabsTrigger value="hover" className="h-full rounded-none text-xs capitalize data-[state=active]:bg-muted">
+        <TabsTrigger
+          value="hover"
+          className="h-full rounded-none text-xs capitalize data-[state=active]:bg-muted"
+        >
           Hover
         </TabsTrigger>
       </TabsList>
@@ -782,14 +880,23 @@ export function UnitSlider<U extends string>({
       max={lim.max}
       step={lim.step}
       unit={current}
-      units={{ value: current, options: units, onChange: u => onChange(clampAll(value, limits[u as U]), u as U) }}
+      units={{
+        value: current,
+        options: units,
+        onChange: u => onChange(clampAll(value, limits[u as U]), u as U),
+      }}
       onChange={v => onChange(v as Responsive<number> | undefined, current)}
     />
   );
 }
 
-function clampAll(value: Responsive<number> | undefined, lim: { min: number; max: number }) {
+function clampAll(
+  value: Responsive<number> | undefined,
+  lim: { min: number; max: number }
+) {
   if (value === undefined) return undefined;
   const fit = (n: number) => Math.min(lim.max, Math.max(lim.min, n));
-  return Object.fromEntries(Object.entries(value).map(([d, n]) => [d, fit(n as number)])) as Responsive<number>;
+  return Object.fromEntries(
+    Object.entries(value).map(([d, n]) => [d, fit(n as number)])
+  ) as Responsive<number>;
 }

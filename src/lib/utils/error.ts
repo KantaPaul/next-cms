@@ -1,10 +1,9 @@
+import { consola } from 'consola';
 import { toast } from 'sonner';
 import { z } from 'zod';
-
-import { consola } from 'consola';
 import { MESSAGES } from '@/config/messages';
-import PostgresErrorHandler from '@/lib/utils/postgres-error-handler';
 import { APP_ENV } from '@/lib/utils/app-version';
+import PostgresErrorHandler from '@/lib/utils/postgres-error-handler';
 
 export type ServerError = {
   hasError: boolean;
@@ -42,7 +41,7 @@ export const handleServerError = (error: unknown): ServerError => {
 
   switch (true) {
     case error instanceof z.ZodError: {
-      const errors = error.issues.map((err) => {
+      const errors = error.issues.map(err => {
         return err.message;
       });
       message = errors.join('\n');
@@ -78,7 +77,7 @@ export const handleError = (error: unknown) => {
   if (APP_ENV.isUat) console.error(error);
 
   if (error instanceof z.ZodError) {
-    const errors = error.issues.map((err) => {
+    const errors = error.issues.map(err => {
       return err.message;
     });
     return toast.error(errors.join('\n'));

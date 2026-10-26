@@ -1,11 +1,11 @@
 import { z } from 'zod';
+import { MESSAGES } from '@/config/messages';
 import {
   EDITOR_TYPE,
   LANGUAGE_CODES,
   PAGE_STATUS,
   VISIBILITY_STATUS,
 } from '@/db/schemas/shared.schema';
-import { MESSAGES } from '@/config/messages';
 
 const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 

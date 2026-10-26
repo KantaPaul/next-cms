@@ -4,7 +4,14 @@ import { contentApiService } from '@/server/services/content-api.service';
 
 export const dynamic = 'force-dynamic';
 
-const toItem = (item: { id: string; label: string; url: string; target: string; badge: string | null; order: number }) => ({
+const toItem = (item: {
+  id: string;
+  label: string;
+  url: string;
+  target: string;
+  badge: string | null;
+  order: number;
+}) => ({
   id: item.id,
   label: item.label,
   url: item.url,
@@ -21,7 +28,10 @@ export const GET = apiHandler(async (_request, { url }) => {
       id: menu.id,
       title: menu.title,
       location: menu.location,
-      items: menu.items.map(item => ({ ...toItem(item), children: item.children.map(toItem) })),
+      items: menu.items.map(item => ({
+        ...toItem(item),
+        children: item.children.map(toItem),
+      })),
     })),
   };
 });

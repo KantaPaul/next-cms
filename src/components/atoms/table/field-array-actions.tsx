@@ -1,13 +1,14 @@
 'use client';
 
 import { Minus, Plus } from 'lucide-react';
+
 // import { Loader } from 'rizzui';
 
+import { Spinner } from '@/components/atoms/icons/loader/spinner';
 import { Flex } from '@/components/atoms/layout';
 import { statusColors } from '@/components/atoms/status-badge';
 import { focusOutline } from '@/components/atoms/utils';
 import { cn } from '@/lib/utils/cn';
-import { Spinner } from '@/components/atoms/icons/loader/spinner';
 
 export interface FieldArrayActionsProps {
   onAdd?: () => void;

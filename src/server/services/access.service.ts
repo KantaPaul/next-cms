@@ -1,15 +1,15 @@
 import 'server-only';
 import { and, eq, isNotNull } from 'drizzle-orm';
 import { cache } from 'react';
-import { db } from '@/db';
-import { permissions, roles, users } from '@/db/schema';
 import {
   PERMISSION_MATRIX,
+  type PermissionKey,
   ROLE_DESCRIPTIONS,
   ROLE_NAMES,
-  type PermissionKey,
   type RoleName,
 } from '@/config/permissions';
+import { db } from '@/db';
+import { permissions, roles, users } from '@/db/schema';
 import { ApplicationException } from '@/lib/utils/error';
 
 export type UserAccess = {
@@ -18,7 +18,8 @@ export type UserAccess = {
   permissions: PermissionKey[];
 };
 
-const toKey = (resource: string, action: string) => `${resource}.${action}` as PermissionKey;
+const toKey = (resource: string, action: string) =>
+  `${resource}.${action}` as PermissionKey;
 
 export const accessService = {
   /** Creates the four default roles and their permission rows if they are missing. */
@@ -79,7 +80,8 @@ export const accessService = {
 
     if (!user) return { userId, role: null, permissions: [] };
 
-    const roleId = user.roleId ?? (await accessService.assignDefaultRole(userId));
+    const roleId =
+      user.roleId ?? (await accessService.assignDefaultRole(userId));
 
     const role = await db.query.roles.findFirst({
       where: (t, { eq }) => eq(t.id, roleId),
@@ -95,13 +97,16 @@ export const accessService = {
     };
   }),
 
-  can: (access: UserAccess, key: PermissionKey) => access.permissions.includes(key),
+  can: (access: UserAccess, key: PermissionKey) =>
+    access.permissions.includes(key),
 
   assertPermission: async (userId: string, key: PermissionKey) => {
     const access = await accessService.getUserAccess(userId);
 
     if (!accessService.can(access, key)) {
-      throw new ApplicationException(`You do not have permission to do this (${key}).`);
+      throw new ApplicationException(
+        `You do not have permission to do this (${key}).`
+      );
     }
 
     return access;

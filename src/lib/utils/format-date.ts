@@ -1,6 +1,3 @@
-import { RANGE_SEPARATOR } from '@/config/constant';
-import { isRangeParams } from '@/db/helpers/parse-search-params';
-import { type IntervalDatesParams } from '@/lib/types';
 import type { Dayjs } from 'dayjs';
 import dayjs, { type ConfigType, type QUnitType } from 'dayjs';
 import minMax from 'dayjs/plugin/minMax';
@@ -8,6 +5,9 @@ import quarterOfYear from 'dayjs/plugin/quarterOfYear';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
+import { RANGE_SEPARATOR } from '@/config/constant';
+import { isRangeParams } from '@/db/helpers/parse-search-params';
+import type { IntervalDatesParams } from '@/lib/types';
 
 dayjs.extend(utc);
 dayjs.extend(relativeTime);
@@ -84,7 +84,9 @@ export function formatMillisecondsToDuration(milliseconds: number): string {
 
   // Convert to days, hours, minutes
   const days = Math.floor(milliseconds / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((milliseconds % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const hours = Math.floor(
+    (milliseconds % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+  );
   const minutes = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60));
 
   // Build the string based on what values exist
@@ -153,7 +155,9 @@ export const isValidDate = (date: unknown): boolean => {
 
   if (isDateRange) {
     const [start, end] =
-      typeof date === 'string' ? date.split(RANGE_SEPARATOR) : [date.start, date.end];
+      typeof date === 'string'
+        ? date.split(RANGE_SEPARATOR)
+        : [date.start, date.end];
     return dayjs(start).isValid() && dayjs(end).isValid();
   }
 
@@ -280,7 +284,10 @@ export function getIntervalDates(params: IntervalDatesParams): {
  * @param range how many years you want to go back
  * @returns date
  */
-export function getPreviousFiscalYear(startingDate: ConfigType, range: number = 1) {
+export function getPreviousFiscalYear(
+  startingDate: ConfigType,
+  range: number = 1
+) {
   return dayjs(startingDate).subtract(range, 'year').toDate();
 }
 
@@ -351,7 +358,9 @@ export function timeFrom(
   return dayjs(date).from(compared, withoutSuffix);
 }
 
-export const getBudgetPeriodDate = <T extends 'string' | 'dayjs' | 'date' = 'string'>({
+export const getBudgetPeriodDate = <
+  T extends 'string' | 'dayjs' | 'date' = 'string',
+>({
   endPeriod,
   startPeriod,
   fyStart,
@@ -372,17 +381,13 @@ export const getBudgetPeriodDate = <T extends 'string' | 'dayjs' | 'date' = 'str
         : date.format('YYYY-MM-DD');
   };
 
-  const startFY = ConstructDate(dayjs(fyStart).year(startPeriod)) as T extends 'string'
-    ? string
-    : T extends 'date'
-      ? Date
-      : Dayjs;
+  const startFY = ConstructDate(
+    dayjs(fyStart).year(startPeriod)
+  ) as T extends 'string' ? string : T extends 'date' ? Date : Dayjs;
 
-  const endFY = ConstructDate(dayjs(fyEnd).year(endPeriod)) as T extends 'string'
-    ? string
-    : T extends 'date'
-      ? Date
-      : Dayjs;
+  const endFY = ConstructDate(
+    dayjs(fyEnd).year(endPeriod)
+  ) as T extends 'string' ? string : T extends 'date' ? Date : Dayjs;
 
   return { startFY, endFY };
 };
@@ -454,7 +459,9 @@ export function localToUtc({
 export function getDateRange(dateRange: string) {
   if (!isValidDate(dateRange) && !isRangeParams(dateRange)) {
     return {
-      startDate: formatUTC(new Date(new Date().setFullYear(new Date().getFullYear() - 1))),
+      startDate: formatUTC(
+        new Date(new Date().setFullYear(new Date().getFullYear() - 1))
+      ),
       endDate: formatUTC(new Date()),
     };
   }

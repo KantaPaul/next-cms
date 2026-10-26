@@ -1,5 +1,5 @@
 import { DEFAULT_SECTION } from './blocks/section';
-import { isBuilderData, type BuilderData } from './data';
+import { type BuilderData, isBuilderData } from './data';
 
 export type PostTerm = {
   id: string;

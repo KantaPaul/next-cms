@@ -1,29 +1,31 @@
 ---
+
 name: Full CMS gap plan
 overview: "Close the gap between this single-site Puck CMS and a full self-hosted competitor to WordPress, Webflow, and Payload: finish what is half-built, then add tenancy, headless APIs, a larger builder, collaboration, comments, and Stripe checkout in an order that avoids rebuilding each feature."
 todos:
-  - id: phase-1-finish
-    content: Register interactive blocks, fix form options UI, record post views, add locale switcher, finish URL/icon controls, make the typecheck build fail on errors, rewrite README.
-    status: pending
-  - id: phase-2-table-stakes
-    content: Add form inbox and email, redirects, Postgres site search, password and magic-link auth, review queue, and an OpenAPI spec. New tables include site_id defaulting to default.
-    status: pending
-  - id: phase-3-multisite
-    content: Add sites, memberships, host routing, site switcher, per-site locales, and translated menus and settings. Backfill site_id on existing tables.
-    status: pending
-  - id: phase-4-headless
-    content: Add custom collections with template routes, scoped read/write API keys, shared rate limiting, and signed webhooks.
-    status: pending
-  - id: phase-5-builder
-    content: Expand the block library, add a local plugin folder, page locks and presence, and single-variant A/B tests.
-    status: pending
-  - id: phase-6-engage
-    content: Add moderated post comments and Stripe Checkout for single-product orders.
-    status: pending
-  - id: phase-7-ship
-    content: Per-site baked export, Playwright and Vitest, full Docker Compose, Lighthouse CI, and GitHub Actions.
-    status: pending
-isProject: false
+- id: phase-1-finish
+  content: Register interactive blocks, fix form options UI, record post views, add locale switcher, finish URL/icon controls, make the typecheck build fail on errors, rewrite README.
+  status: pending
+- id: phase-2-table-stakes
+  content: Add form inbox and email, redirects, Postgres site search, password and magic-link auth, review queue, and an OpenAPI spec. New tables include site_id defaulting to default.
+  status: pending
+- id: phase-3-multisite
+  content: Add sites, memberships, host routing, site switcher, per-site locales, and translated menus and settings. Backfill site_id on existing tables.
+  status: pending
+- id: phase-4-headless
+  content: Add custom collections with template routes, scoped read/write API keys, shared rate limiting, and signed webhooks.
+  status: pending
+- id: phase-5-builder
+  content: Expand the block library, add a local plugin folder, page locks and presence, and single-variant A/B tests.
+  status: pending
+- id: phase-6-engage
+  content: Add moderated post comments and Stripe Checkout for single-product orders.
+  status: pending
+- id: phase-7-ship
+  content: Per-site baked export, Playwright and Vitest, full Docker Compose, Lighthouse CI, and GitHub Actions.
+  status: pending
+  isProject: false
+
 ---
 
 # Full-market implementation plan

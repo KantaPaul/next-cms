@@ -1,8 +1,11 @@
 'use server';
 
-import { protectedProcedure } from '@/server/procedures/protected.procedure';
 import { personalizationService } from '@/db/common/personalizations/personalization.service';
-import { createPersonalizedSectionSchema, updatePersonalizedSectionSchema } from '@/db/validation';
+import {
+  createPersonalizedSectionSchema,
+  updatePersonalizedSectionSchema,
+} from '@/db/validation';
+import { protectedProcedure } from '@/server/procedures/protected.procedure';
 
 export const createPersonalizedSection = protectedProcedure
   .input(createPersonalizedSectionSchema)

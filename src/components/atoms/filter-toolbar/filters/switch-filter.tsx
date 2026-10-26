@@ -5,7 +5,13 @@ interface SwitchFilterProps
   extends BaseFilterProps,
     Omit<SwitchProps, keyof BaseFilterProps | 'onChange' | 'checked'> {}
 
-export function SwitchFilter({ value, label, isLoading, handlers, config }: SwitchFilterProps) {
+export function SwitchFilter({
+  value,
+  label,
+  isLoading,
+  handlers,
+  config,
+}: SwitchFilterProps) {
   return (
     <Switch
       checked={value === 'yes'}

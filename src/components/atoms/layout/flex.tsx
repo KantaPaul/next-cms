@@ -3,7 +3,14 @@ import { forwardRef, type Ref } from 'react';
 import { cn } from '@/lib/utils/cn';
 
 type FlexDirection = 'row' | 'col' | 'row-reverse' | 'col-reverse';
-type JustifyContent = 'start' | 'end' | 'center' | 'between' | 'around' | 'evenly' | 'normal';
+type JustifyContent =
+  | 'start'
+  | 'end'
+  | 'center'
+  | 'between'
+  | 'around'
+  | 'evenly'
+  | 'normal';
 type AlignItems = 'start' | 'end' | 'center' | 'baseline' | 'stretch';
 
 const flexDirectionClassName: { [key in FlexDirection]: string } = {
@@ -36,7 +43,13 @@ interface FlexProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export const Flex = forwardRef((props: FlexProps, ref: Ref<HTMLDivElement>) => {
-  const { direction = 'row', justify = 'between', align = 'center', className, ...rest } = props;
+  const {
+    direction = 'row',
+    justify = 'between',
+    align = 'center',
+    className,
+    ...rest
+  } = props;
 
   return (
     <div

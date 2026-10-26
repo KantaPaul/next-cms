@@ -1,12 +1,7 @@
 'use client';
 
 import { createUsePuck } from '@measured/puck';
-import {
-  ChevronDown,
-  ChevronRight,
-  Layers,
-  Search,
-} from 'lucide-react';
+import { ChevronDown, ChevronRight, Layers, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { cn } from '@/lib/utils/cn';
 import { getBlockIcon } from './builder-shell';
@@ -20,14 +15,22 @@ type SlotGroup = {
 };
 
 function getItemSubtitle(props: Record<string, any>): string | null {
-  if (typeof props.title === 'string' && props.title.trim()) return props.title.trim();
-  if (typeof props.headline === 'string' && props.headline.trim()) return props.headline.trim();
-  if (typeof props.eyebrow === 'string' && props.eyebrow.trim()) return props.eyebrow.trim();
-  if (typeof props.badge === 'string' && props.badge.trim()) return props.badge.trim();
+  if (typeof props.title === 'string' && props.title.trim())
+    return props.title.trim();
+  if (typeof props.headline === 'string' && props.headline.trim())
+    return props.headline.trim();
+  if (typeof props.eyebrow === 'string' && props.eyebrow.trim())
+    return props.eyebrow.trim();
+  if (typeof props.badge === 'string' && props.badge.trim())
+    return props.badge.trim();
   return null;
 }
 
-function getSlotGroupsForItem(item: any, config: any, zones: Record<string, any[]> = {}): SlotGroup[] {
+function getSlotGroupsForItem(
+  item: any,
+  config: any,
+  zones: Record<string, any[]> = {}
+): SlotGroup[] {
   const comp = config.components[item.type];
   if (!comp?.fields) return [];
 
@@ -36,20 +39,28 @@ function getSlotGroupsForItem(item: any, config: any, zones: Record<string, any[
   for (const [fieldName, field] of Object.entries<any>(comp.fields)) {
     if (field?.type === 'slot') {
       const zoneKey = `${item.props.id}:${fieldName}`;
-      const slotItems = zones[zoneKey] || (Array.isArray(item.props[fieldName]) ? item.props[fieldName] : []);
+      const slotItems =
+        zones[zoneKey] ||
+        (Array.isArray(item.props[fieldName]) ? item.props[fieldName] : []);
       groups.push({
         key: zoneKey,
         label: field.label || fieldName,
         items: slotItems,
       });
     } else if (field?.type === 'array' && field.arrayFields) {
-      const slotEntry = Object.entries<any>(field.arrayFields).find(([, f]) => f?.type === 'slot');
+      const slotEntry = Object.entries<any>(field.arrayFields).find(
+        ([, f]) => f?.type === 'slot'
+      );
       if (slotEntry) {
         const [slotKey] = slotEntry;
-        const arrayItems = Array.isArray(item.props[fieldName]) ? item.props[fieldName] : [];
+        const arrayItems = Array.isArray(item.props[fieldName])
+          ? item.props[fieldName]
+          : [];
         arrayItems.forEach((arrayItem: any, idx: number) => {
           const zoneKey = `${item.props.id}:${fieldName}[${idx}].${slotKey}`;
-          const slotItems = zones[zoneKey] || (Array.isArray(arrayItem[slotKey]) ? arrayItem[slotKey] : []);
+          const slotItems =
+            zones[zoneKey] ||
+            (Array.isArray(arrayItem[slotKey]) ? arrayItem[slotKey] : []);
           groups.push({
             key: zoneKey,
             label: arrayItem.label || `${field.label || 'Panel'} ${idx + 1}`,
@@ -128,7 +139,12 @@ export function LayersPanel() {
   // Keep ancestors of selection automatically expanded
   useEffect(() => {
     if (!selectedItem?.props?.id) return;
-    const ancestors = findAncestors(content, selectedItem.props.id, config, zones);
+    const ancestors = findAncestors(
+      content,
+      selectedItem.props.id,
+      config,
+      zones
+    );
     if (ancestors.length) {
       setExpanded(prev => {
         const next = { ...prev };
@@ -163,7 +179,9 @@ export function LayersPanel() {
     if (!q) return () => true;
 
     const check = (item: any): boolean => {
-      const label = (config.components[item.type]?.label || item.type).toLowerCase();
+      const label = (
+        config.components[item.type]?.label || item.type
+      ).toLowerCase();
       const subtitle = getItemSubtitle(item.props)?.toLowerCase() || '';
       if (label.includes(q) || subtitle.includes(q)) return true;
 
@@ -220,7 +238,9 @@ export function LayersPanel() {
             </div>
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-medium leading-tight">{label}</p>
+              <p className="truncate text-xs font-medium leading-tight">
+                {label}
+              </p>
               {subtitle && (
                 <p className="truncate text-[10px] text-muted-foreground leading-tight">
                   {subtitle}
@@ -235,7 +255,8 @@ export function LayersPanel() {
           <div className="space-y-1 pl-3 border-l border-border/40 ml-2.5">
             {slotGroups.map(group => {
               if (!group.items.length) return null;
-              const isGroupExpanded = q.length > 0 || expanded[group.key] !== false;
+              const isGroupExpanded =
+                q.length > 0 || expanded[group.key] !== false;
 
               return (
                 <div key={group.key} className="space-y-1">
@@ -274,7 +295,9 @@ export function LayersPanel() {
       <div className="py-12 text-center text-xs text-muted-foreground">
         <Layers className="mx-auto mb-2 size-8 text-muted-foreground/40" />
         <p className="font-medium text-foreground">No layers yet</p>
-        <p className="mt-1">Add blocks from the Blocks tab to build your page.</p>
+        <p className="mt-1">
+          Add blocks from the Blocks tab to build your page.
+        </p>
       </div>
     );
   }

@@ -58,7 +58,10 @@ export function buildQueryString(params: Record<string, string>): string {
  * @param updates - New params to merge
  * @returns Merged params object
  */
-export function mergeParams(current: QueryParams, updates: Partial<QueryParams>): QueryParams {
+export function mergeParams(
+  current: QueryParams,
+  updates: Partial<QueryParams>
+): QueryParams {
   const result: QueryParams = {};
 
   // Copy non-empty values from current
@@ -87,7 +90,10 @@ export function mergeParams(current: QueryParams, updates: Partial<QueryParams>)
  * @param keys - Keys to remove (string or array of strings)
  * @returns Params with specified keys removed
  */
-export function removeParamKeys(params: QueryParams, keys: string | string[]): QueryParams {
+export function removeParamKeys(
+  params: QueryParams,
+  keys: string | string[]
+): QueryParams {
   const keysArray = Array.isArray(keys) ? keys : [keys];
   const result = { ...params };
 
@@ -104,7 +110,10 @@ export function removeParamKeys(params: QueryParams, keys: string | string[]): Q
  * @param defaultValue - Default value if param is empty (default: '')
  * @returns String value
  */
-export function getParamAsString(value: QueryParamValue, defaultValue = ''): string {
+export function getParamAsString(
+  value: QueryParamValue,
+  defaultValue = ''
+): string {
   if (!value) return defaultValue;
   return Array.isArray(value) ? value[0] || defaultValue : value;
 }
@@ -115,7 +124,10 @@ export function getParamAsString(value: QueryParamValue, defaultValue = ''): str
  * @param defaultValue - Default value if param is empty (default: [])
  * @returns Array of strings
  */
-export function getParamAsArray(value: QueryParamValue, defaultValue: string[] = []): string[] {
+export function getParamAsArray(
+  value: QueryParamValue,
+  defaultValue: string[] = []
+): string[] {
   if (!value) return defaultValue;
   return Array.isArray(value) ? value : [value];
 }

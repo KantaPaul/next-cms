@@ -4,7 +4,12 @@
  */
 import { and, eq } from 'drizzle-orm';
 import { db } from '@/db';
-import { globalBlocks, pageTemplates, siteSettings, SITE_SETTINGS_ID } from '@/db/schema';
+import {
+  globalBlocks,
+  pageTemplates,
+  SITE_SETTINGS_ID,
+  siteSettings,
+} from '@/db/schema';
 import { accessService } from '@/server/services/access.service';
 import { STARTER_GLOBAL_BLOCKS, STARTER_TEMPLATES } from './starter-content';
 
@@ -12,7 +17,10 @@ async function main() {
   const roles = await accessService.ensureRolesSeeded();
   console.info(`Roles: ${roles.map(r => r.name).join(', ')}`);
 
-  await db.insert(siteSettings).values({ id: SITE_SETTINGS_ID }).onConflictDoNothing();
+  await db
+    .insert(siteSettings)
+    .values({ id: SITE_SETTINGS_ID })
+    .onConflictDoNothing();
   console.info('Site settings: ok');
 
   for (const template of STARTER_TEMPLATES) {
@@ -20,19 +28,39 @@ async function main() {
     const [existing] = await db
       .select({ id: pageTemplates.id })
       .from(pageTemplates)
-      .where(and(eq(pageTemplates.name, values.name), eq(pageTemplates.isSystem, true)));
+      .where(
+        and(
+          eq(pageTemplates.name, values.name),
+          eq(pageTemplates.isSystem, true)
+        )
+      );
 
     if (existing) {
-      await db.update(pageTemplates).set({ ...values, content: values.content as object }).where(eq(pageTemplates.id, existing.id));
+      await db
+        .update(pageTemplates)
+        .set({ ...values, content: values.content as object })
+        .where(eq(pageTemplates.id, existing.id));
     } else {
-      await db.insert(pageTemplates).values({ ...values, content: values.content as object, isSystem: true });
+      await db
+        .insert(pageTemplates)
+        .values({
+          ...values,
+          content: values.content as object,
+          isSystem: true,
+        });
     }
   }
   console.info(`Templates: ${STARTER_TEMPLATES.length}`);
 
   for (const block of STARTER_GLOBAL_BLOCKS) {
-    const [existing] = await db.select({ id: globalBlocks.id }).from(globalBlocks).where(eq(globalBlocks.name, block.name));
-    if (!existing) await db.insert(globalBlocks).values({ ...block, content: block.content as object });
+    const [existing] = await db
+      .select({ id: globalBlocks.id })
+      .from(globalBlocks)
+      .where(eq(globalBlocks.name, block.name));
+    if (!existing)
+      await db
+        .insert(globalBlocks)
+        .values({ ...block, content: block.content as object });
   }
   console.info(`Global blocks: ${STARTER_GLOBAL_BLOCKS.length}`);
 }

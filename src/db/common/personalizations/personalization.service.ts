@@ -1,12 +1,15 @@
 import 'server-only';
 
-
 import { eq } from 'drizzle-orm';
 import db from '@/db';
-import { personalizations, personalizedSections } from '@/db/schema';
 import type { MutationSchemaInput } from '@/db/helpers/parse-search-params';
+import { personalizations, personalizedSections } from '@/db/schema';
+import type {
+  CreatePersonalizationInput,
+  CreatePersonalizedSectionInput,
+  UpdatePersonalizedSectionInput,
+} from '@/db/validation';
 import { ApplicationException } from '@/lib/utils/error';
-import type { CreatePersonalizationInput, CreatePersonalizedSectionInput, UpdatePersonalizedSectionInput } from '@/db/validation';
 
 export const personalizationService = {
   get: async () => await db.query.personalizations.findMany(),

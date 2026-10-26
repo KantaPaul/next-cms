@@ -33,7 +33,10 @@ type NumberValidationOptions = {
  * // Optional integer field
  * quantity: numberValidation('Quantity', { min: 0 }).nullish()
  */
-export function numberValidation(fieldName: string, options: NumberValidationOptions = {}) {
+export function numberValidation(
+  fieldName: string,
+  options: NumberValidationOptions = {}
+) {
   let baseSchema: z.ZodType<number>;
 
   const numberSchema = options.isRequired
@@ -42,29 +45,29 @@ export function numberValidation(fieldName: string, options: NumberValidationOpt
 
   if (options.isCurrency) {
     baseSchema = z.preprocess(
-      (val) => (typeof val === 'string' ? Number(val) : val),
+      val => (typeof val === 'string' ? Number(val) : val),
       numberSchema
-        .refine((val) => options.min === undefined || val >= options.min, {
+        .refine(val => options.min === undefined || val >= options.min, {
           message: `${fieldName} must be at least ${options.min}`,
         })
-        .refine((val) => options.max === undefined || val <= options.max, {
+        .refine(val => options.max === undefined || val <= options.max, {
           message: `${fieldName} Cannot Exceed ${options.max}`,
         })
     );
   } else {
     baseSchema = z.preprocess(
-      (val) => (typeof val === 'string' ? Number(val) : val),
+      val => (typeof val === 'string' ? Number(val) : val),
       numberSchema
-        .refine((val) => options.allowNegative || val >= 0, {
+        .refine(val => options.allowNegative || val >= 0, {
           message: `${fieldName} Cannot be Negative`,
         })
-        .refine((val) => options.isDecimal || Number.isInteger(val), {
+        .refine(val => options.isDecimal || Number.isInteger(val), {
           error: MESSAGES.INTEGER_ONLY,
         })
-        .refine((val) => options.min === undefined || val >= options.min, {
+        .refine(val => options.min === undefined || val >= options.min, {
           message: `${fieldName} must be at least ${options.min}`,
         })
-        .refine((val) => options.max === undefined || val <= options.max, {
+        .refine(val => options.max === undefined || val <= options.max, {
           message: `${fieldName} Cannot Exceed ${options.max}`,
         })
     );
@@ -75,12 +78,16 @@ export function numberValidation(fieldName: string, options: NumberValidationOpt
 
 export function dateValidation(fieldName: string) {
   return z
-    .union([z.string().min(1, { error: MESSAGES.IS_REQUIRED(fieldName) }), z.date(), z.null()])
-    .refine((val) => val !== null, {
+    .union([
+      z.string().min(1, { error: MESSAGES.IS_REQUIRED(fieldName) }),
+      z.date(),
+      z.null(),
+    ])
+    .refine(val => val !== null, {
       error: MESSAGES.IS_REQUIRED(fieldName),
     })
     .refine(
-      (val) => {
+      val => {
         if (typeof val === 'string') {
           return !isNaN(Date.parse(val));
         }
@@ -91,7 +98,7 @@ export function dateValidation(fieldName: string) {
         error: MESSAGES.IS_INVALID(fieldName),
       }
     )
-    .transform((val) => (typeof val === 'string' ? new Date(val) : val));
+    .transform(val => (typeof val === 'string' ? new Date(val) : val));
 }
 
 export const stringRequired = (name: string, min = 1) =>
@@ -104,13 +111,13 @@ export const stringRequired = (name: string, min = 1) =>
 export const dateRequired = (name: string) =>
   z
     .any()
-    .refine((val) => val !== null && val !== undefined, {
+    .refine(val => val !== null && val !== undefined, {
       error: MESSAGES.IS_REQUIRED(name),
     })
-    .refine((val) => val instanceof Date && !isNaN(val.getTime()), {
+    .refine(val => val instanceof Date && !isNaN(val.getTime()), {
       error: MESSAGES.IS_INVALID(name),
     })
-    .transform((val) => new Date(val));
+    .transform(val => new Date(val));
 
 export function numberRequired(message: string) {
   return z.number({
@@ -158,7 +165,8 @@ export const zipCodeSchema = z
   .string()
   .min(1, { message: 'ZIP code is required.' }) // Check for non-empty input
   .regex(/^\d{5}(-\d{4})?$/, {
-    message: 'Invalid ZIP code format. Please enter a 5-digit or 9-digit ZIP code.',
+    message:
+      'Invalid ZIP code format. Please enter a 5-digit or 9-digit ZIP code.',
   });
 
 export function enumValidation<T extends readonly [string, ...string[]]>(

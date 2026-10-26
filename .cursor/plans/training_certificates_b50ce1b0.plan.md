@@ -1,188 +1,190 @@
 ---
+
 name: Training certificates
 overview: "Training module in small refs (T1-01 through T8-08). Name one ref to implement only that piece. Courses, playback tracking, quizzes, PDF certificates, both dashboards, and in-app notifications."
 todos:
-  - id: T1-01
-    content: Journal the existing page_views SQL if it is still missing from the Drizzle journal
-    status: pending
-  - id: T1-02
-    content: Add training_courses, training_course_items, and training_enrollments
-    status: pending
-  - id: T1-03
-    content: Add training_video_progress and course_progress
-    status: pending
-  - id: T1-04
-    content: Add training_questions and training_attempts
-    status: pending
-  - id: T1-05
-    content: Add certificates with one issued row per user and course
-    status: pending
-  - id: T1-06
-    content: Add notifications and site_settings.training_settings
-    status: pending
-  - id: T1-07
-    content: Generate the Drizzle migration for the training tables only
-    status: pending
-  - id: T2-01
-    content: Parse a course item as media, YouTube, Vimeo, or direct MP4/WebM
-    status: pending
-  - id: T2-02
-    content: Merge watched ranges without counting seeks across a gap
-    status: pending
-  - id: T2-03
-    content: Accept a playback event with stale, duplicate, and wall-clock guards
-    status: pending
-  - id: T2-04
-    content: Course completion rules from progress, quiz, and approval
-    status: pending
-  - id: T2-05
-    content: Score a quiz on the server and enforce attempt limits
-    status: pending
-  - id: T2-06
-    content: Certificate number, verify token, and eligibility
-    status: pending
-  - id: T2-07
-    content: Notification dedupe keys
-    status: pending
-  - id: T2-08
-    content: node:test for T2-01 through T2-07 and a test script
-    status: pending
-  - id: T3-01
-    content: training.manage, training.learn, and the Learner role
-    status: pending
-  - id: T3-02
-    content: Send a Learner away from non-training dashboard routes
-    status: pending
-  - id: T3-03
-    content: trainingSettingsSchema and defaults
-    status: pending
-  - id: T3-04
-    content: Persist training settings in the site settings service and action
-    status: pending
-  - id: T3-05
-    content: Training section on the settings form
-    status: pending
-  - id: T3-06
-    content: Audit targets for course, enrollment, and certificate
-    status: pending
-  - id: T4-01
-    content: Training routes and sidebar items
-    status: pending
-  - id: T4-02
-    content: Course create, update, and publish service
-    status: pending
-  - id: T4-03
-    content: Course list
-    status: pending
-  - id: T4-04
-    content: Course editor for title, description, cover, dates, and enrollment
-    status: pending
-  - id: T4-05
-    content: Ordered course items from the media picker or a video URL
-    status: pending
-  - id: T4-06
-    content: Per-course completion requirement fields
-    status: pending
-  - id: T4-07
-    content: Assign and unassign individual users
-    status: pending
-  - id: T4-08
-    content: Quiz question editor
-    status: pending
-  - id: T5-01
-    content: HTML5 playback adapter for mp4 and webm
-    status: pending
-  - id: T5-02
-    content: YouTube IFrame API adapter
-    status: pending
-  - id: T5-03
-    content: Vimeo Player.js adapter
-    status: pending
-  - id: T5-04
-    content: Heartbeat on play, pause, ended, and page leave
-    status: pending
-  - id: T5-05
-    content: saveTrainingProgress server action
-    status: pending
-  - id: T5-06
-    content: Resume from last position when the setting is on
-    status: pending
-  - id: T5-07
-    content: Course player page for an enrolled learner
-    status: pending
-  - id: T6-01
-    content: Recalculate course_progress in a transaction
-    status: pending
-  - id: T6-02
-    content: Manual completion approval
-    status: pending
-  - id: T6-03
-    content: Quiz submit action
-    status: pending
-  - id: T6-04
-    content: Certificate PDF layout with pdf-lib and a QR code
-    status: pending
-  - id: T6-05
-    content: Store the PDF through storage()
-    status: pending
-  - id: T6-06
-    content: Auto-issue one certificate when eligibility passes
-    status: pending
-  - id: T6-07
-    content: Revoke a certificate
-    status: pending
-  - id: T6-08
-    content: Reissue a certificate
-    status: pending
-  - id: T6-09
-    content: Public verification page
-    status: pending
-  - id: T6-10
-    content: Learner certificate download
-    status: pending
-  - id: T7-01
-    content: Admin overview counts from SQL aggregates
-    status: pending
-  - id: T7-02
-    content: User progress table
-    status: pending
-  - id: T7-03
-    content: Course progress table
-    status: pending
-  - id: T7-04
-    content: CSV export of training progress
-    status: pending
-  - id: T7-05
-    content: Learner training home
-    status: pending
-  - id: T7-06
-    content: Learner course page with resume, quiz, and certificate status
-    status: pending
-  - id: T8-01
-    content: Idempotent notification insert
-    status: pending
-  - id: T8-02
-    content: Notify on assign, complete, issue, and revoke
-    status: pending
-  - id: T8-03
-    content: Cron reminders for due dates and expiring certificates
-    status: pending
-  - id: T8-04
-    content: Unread notification list in the dashboard shell
-    status: pending
-  - id: T8-05
-    content: Audit log on course, assignment, approval, issue, revoke, and reissue
-    status: pending
-  - id: T8-06
-    content: docs/training.md with provider limits
-    status: pending
-  - id: T8-07
-    content: Lint, tsc, and the test script
-    status: pending
-  - id: T8-08
-    content: Browser check of admin, learner, download, and verify
-    status: pending
-isProject: false
+- id: T1-01
+  content: Journal the existing page_views SQL if it is still missing from the Drizzle journal
+  status: pending
+- id: T1-02
+  content: Add training_courses, training_course_items, and training_enrollments
+  status: pending
+- id: T1-03
+  content: Add training_video_progress and course_progress
+  status: pending
+- id: T1-04
+  content: Add training_questions and training_attempts
+  status: pending
+- id: T1-05
+  content: Add certificates with one issued row per user and course
+  status: pending
+- id: T1-06
+  content: Add notifications and site_settings.training_settings
+  status: pending
+- id: T1-07
+  content: Generate the Drizzle migration for the training tables only
+  status: pending
+- id: T2-01
+  content: Parse a course item as media, YouTube, Vimeo, or direct MP4/WebM
+  status: pending
+- id: T2-02
+  content: Merge watched ranges without counting seeks across a gap
+  status: pending
+- id: T2-03
+  content: Accept a playback event with stale, duplicate, and wall-clock guards
+  status: pending
+- id: T2-04
+  content: Course completion rules from progress, quiz, and approval
+  status: pending
+- id: T2-05
+  content: Score a quiz on the server and enforce attempt limits
+  status: pending
+- id: T2-06
+  content: Certificate number, verify token, and eligibility
+  status: pending
+- id: T2-07
+  content: Notification dedupe keys
+  status: pending
+- id: T2-08
+  content: node:test for T2-01 through T2-07 and a test script
+  status: pending
+- id: T3-01
+  content: training.manage, training.learn, and the Learner role
+  status: pending
+- id: T3-02
+  content: Send a Learner away from non-training dashboard routes
+  status: pending
+- id: T3-03
+  content: trainingSettingsSchema and defaults
+  status: pending
+- id: T3-04
+  content: Persist training settings in the site settings service and action
+  status: pending
+- id: T3-05
+  content: Training section on the settings form
+  status: pending
+- id: T3-06
+  content: Audit targets for course, enrollment, and certificate
+  status: pending
+- id: T4-01
+  content: Training routes and sidebar items
+  status: pending
+- id: T4-02
+  content: Course create, update, and publish service
+  status: pending
+- id: T4-03
+  content: Course list
+  status: pending
+- id: T4-04
+  content: Course editor for title, description, cover, dates, and enrollment
+  status: pending
+- id: T4-05
+  content: Ordered course items from the media picker or a video URL
+  status: pending
+- id: T4-06
+  content: Per-course completion requirement fields
+  status: pending
+- id: T4-07
+  content: Assign and unassign individual users
+  status: pending
+- id: T4-08
+  content: Quiz question editor
+  status: pending
+- id: T5-01
+  content: HTML5 playback adapter for mp4 and webm
+  status: pending
+- id: T5-02
+  content: YouTube IFrame API adapter
+  status: pending
+- id: T5-03
+  content: Vimeo Player.js adapter
+  status: pending
+- id: T5-04
+  content: Heartbeat on play, pause, ended, and page leave
+  status: pending
+- id: T5-05
+  content: saveTrainingProgress server action
+  status: pending
+- id: T5-06
+  content: Resume from last position when the setting is on
+  status: pending
+- id: T5-07
+  content: Course player page for an enrolled learner
+  status: pending
+- id: T6-01
+  content: Recalculate course_progress in a transaction
+  status: pending
+- id: T6-02
+  content: Manual completion approval
+  status: pending
+- id: T6-03
+  content: Quiz submit action
+  status: pending
+- id: T6-04
+  content: Certificate PDF layout with pdf-lib and a QR code
+  status: pending
+- id: T6-05
+  content: Store the PDF through storage()
+  status: pending
+- id: T6-06
+  content: Auto-issue one certificate when eligibility passes
+  status: pending
+- id: T6-07
+  content: Revoke a certificate
+  status: pending
+- id: T6-08
+  content: Reissue a certificate
+  status: pending
+- id: T6-09
+  content: Public verification page
+  status: pending
+- id: T6-10
+  content: Learner certificate download
+  status: pending
+- id: T7-01
+  content: Admin overview counts from SQL aggregates
+  status: pending
+- id: T7-02
+  content: User progress table
+  status: pending
+- id: T7-03
+  content: Course progress table
+  status: pending
+- id: T7-04
+  content: CSV export of training progress
+  status: pending
+- id: T7-05
+  content: Learner training home
+  status: pending
+- id: T7-06
+  content: Learner course page with resume, quiz, and certificate status
+  status: pending
+- id: T8-01
+  content: Idempotent notification insert
+  status: pending
+- id: T8-02
+  content: Notify on assign, complete, issue, and revoke
+  status: pending
+- id: T8-03
+  content: Cron reminders for due dates and expiring certificates
+  status: pending
+- id: T8-04
+  content: Unread notification list in the dashboard shell
+  status: pending
+- id: T8-05
+  content: Audit log on course, assignment, approval, issue, revoke, and reissue
+  status: pending
+- id: T8-06
+  content: docs/training.md with provider limits
+  status: pending
+- id: T8-07
+  content: Lint, tsc, and the test script
+  status: pending
+- id: T8-08
+  content: Browser check of admin, learner, download, and verify
+  status: pending
+  isProject: false
+
 ---
 
 # Training — small refs

@@ -8,8 +8,8 @@ import {
   widgetQuerySchema,
 } from '@/db/schemas/analytics.schema';
 import { accessProcedure } from '@/server/procedures/permission.procedure';
-import { analyticsBoardsService } from '@/server/services/analytics-boards.service';
 import { analyticsService } from '@/server/services/analytics.service';
+import { analyticsBoardsService } from '@/server/services/analytics-boards.service';
 
 const boardsBase = PAGES.DASHBOARD.ANALYTICS_BOARDS;
 
@@ -50,7 +50,11 @@ export const updateBoard = accessProcedure
       layout: input.layout,
     });
     if (!board) {
-      return { hasError: true as const, message: 'Board not found', errorType: 'ApplicationException' as const };
+      return {
+        hasError: true as const,
+        message: 'Board not found',
+        errorType: 'ApplicationException' as const,
+      };
     }
     revalidateBoardPaths(board.id);
     return board;
@@ -61,7 +65,11 @@ export const deleteBoard = accessProcedure
   .action(async ({ input }) => {
     const ok = await analyticsBoardsService.delete(input.id);
     if (!ok) {
-      return { hasError: true as const, message: 'Board not found', errorType: 'ApplicationException' as const };
+      return {
+        hasError: true as const,
+        message: 'Board not found',
+        errorType: 'ApplicationException' as const,
+      };
     }
     revalidateBoardPaths();
     return { ok: true };

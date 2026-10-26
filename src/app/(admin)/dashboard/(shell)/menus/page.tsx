@@ -35,7 +35,9 @@ export default async function MenusPage() {
     menusService.linkablePages(),
     siteSettingsService.get(),
   ]);
-  const menus = (await Promise.all(list.map(menu => menusService.getWithItems(menu.id)))).filter(m => m !== null);
+  const menus = (
+    await Promise.all(list.map(menu => menusService.getWithItems(menu.id)))
+  ).filter(m => m !== null);
 
   return (
     <>
@@ -43,7 +45,10 @@ export default async function MenusPage() {
       <MenusManager
         menus={menus}
         linkablePages={linkablePages}
-        assigned={{ header: settings.headerMenuId, footer: settings.footerMenuId }}
+        assigned={{
+          header: settings.headerMenuId,
+          footer: settings.footerMenuId,
+        }}
       />
     </>
   );

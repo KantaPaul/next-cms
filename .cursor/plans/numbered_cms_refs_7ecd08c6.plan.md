@@ -1,245 +1,247 @@
 ---
+
 name: Numbered CMS refs
 overview: Split the seven phase todos in the full CMS gap plan into small refs (P1-01 through P7-07). Name one ref to implement only that piece.
 todos:
-  - id: P1-01
-    content: Register Slider, Tabs, and Accordion as builderConfig component keys in src/builder/config.tsx
-    status: pending
-  - id: P1-02
-    content: Confirm Slider, Tabs, and Accordion render on the public site
-    status: pending
-  - id: P1-03
-    content: Show the contact-form options editor only for select and radio
-    status: pending
-  - id: P1-04
-    content: Nullable page_id plus post_id on page_views; record post views in the analytics service and beacon route
-    status: pending
-  - id: P1-05
-    content: Mount the view beacon on post routes in the public catch-all page
-    status: pending
-  - id: P1-06
-    content: Include posts on the analytics boards
-    status: pending
-  - id: P1-07
-    content: Public language switcher using translationGroupId and hreflang
-    status: pending
-  - id: P1-08
-    content: Wire UrlField on Hero, CTA, Pricing, and Image
-    status: pending
-  - id: P1-09
-    content: Wire IconPickerField on Features
-    status: pending
-  - id: P1-10
-    content: Turn off typescript.ignoreBuildErrors and fix the type errors
-    status: pending
-  - id: P1-11
-    content: Replace README.md with real Postgres, Google OAuth, storage, Gemini, and cron setup
-    status: pending
-  - id: P2-01
-    content: form_submissions table with site_id defaulting to default
-    status: pending
-  - id: P2-02
-    content: First-party contact-form submit route
-    status: pending
-  - id: P2-03
-    content: "Admin form inbox: list, read, archive"
-    status: pending
-  - id: P2-04
-    content: CSV export of form submissions
-    status: pending
-  - id: P2-05
-    content: Honeypot and optional Turnstile on form submit
-    status: pending
-  - id: P2-06
-    content: Email site owner via SMTP or Resend from env
-    status: pending
-  - id: P2-07
-    content: redirects table with site_id
-    status: pending
-  - id: P2-08
-    content: Middleware resolves redirects before the catch-all page
-    status: pending
-  - id: P2-09
-    content: Redirect CSV import
-    status: pending
-  - id: P2-10
-    content: Publishing a slug change offers to create a redirect
-    status: pending
-  - id: P2-11
-    content: Postgres full-text on published pages and posts
-    status: pending
-  - id: P2-12
-    content: Public /search page
-    status: pending
-  - id: P2-13
-    content: GET /api/v1/search
-    status: pending
-  - id: P2-14
-    content: Email and password login; keep Google
-    status: pending
-  - id: P2-15
-    content: Magic-link login
-    status: pending
-  - id: P2-16
-    content: Invite flow for new users
-    status: pending
-  - id: P2-17
-    content: Optional TOTP for Admins
-    status: pending
-  - id: P2-18
-    content: "Review queue for status=review: approve and request changes"
-    status: pending
-  - id: P2-19
-    content: Email the author on review actions
-    status: pending
-  - id: P2-20
-    content: OpenAPI spec from zod schemas in src/server/api/v1.ts
-    status: pending
-  - id: P3-01
-    content: "sites table: name, primary host, extra domains, locale list"
-    status: pending
-  - id: P3-02
-    content: "site_memberships: user, site, role"
-    status: pending
-  - id: P3-03
-    content: Add site_id to content tables and backfill default
-    status: pending
-  - id: P3-04
-    content: Resolve the public site from the request host
-    status: pending
-  - id: P3-05
-    content: Admin site switcher; permissions against the active site
-    status: pending
-  - id: P3-06
-    content: Per-site locale list; English unprefixed
-    status: pending
-  - id: P3-07
-    content: Translated menus
-    status: pending
-  - id: P3-08
-    content: Translated site name, description, and default SEO
-    status: pending
-  - id: P4-01
-    content: collections and collection_fields tables
-    status: pending
-  - id: P4-02
-    content: Validate collection entry JSON against the field list
-    status: pending
-  - id: P4-03
-    content: Generated admin list and edit screens for collections
-    status: pending
-  - id: P4-04
-    content: CollectionItem block and /{collection}/{slug} route
-    status: pending
-  - id: P4-05
-    content: "Scoped API keys: content:read, content:write, media:write"
-    status: pending
-  - id: P4-06
-    content: Draft-first write endpoints for pages, posts, entries, and media
-    status: pending
-  - id: P4-07
-    content: Postgres rate limit shared across instances
-    status: pending
-  - id: P4-08
-    content: Signed webhooks and a delivery log
-    status: pending
-  - id: P5-01
-    content: Video block
-    status: pending
-  - id: P5-02
-    content: Embed block
-    status: pending
-  - id: P5-03
-    content: Logo cloud block
-    status: pending
-  - id: P5-04
-    content: Team block
-    status: pending
-  - id: P5-05
-    content: Timeline block
-    status: pending
-  - id: P5-06
-    content: Map block
-    status: pending
-  - id: P5-07
-    content: Spacer block
-    status: pending
-  - id: P5-08
-    content: Button block
-    status: pending
-  - id: P5-09
-    content: Code block
-    status: pending
-  - id: P5-10
-    content: Newsletter block wired to the form inbox
-    status: pending
-  - id: P5-11
-    content: Image-morph block
-    status: pending
-  - id: P5-12
-    content: Load Puck components from src/builder/custom/
-    status: pending
-  - id: P5-13
-    content: Document the local plugin registration type
-    status: pending
-  - id: P5-14
-    content: Soft lock and presence on pages and posts
-    status: pending
-  - id: P5-15
-    content: One A/B variant per page with cookie split and beacon
-    status: pending
-  - id: P5-16
-    content: Analytics group by variant and manual pick winner
-    status: pending
-  - id: P6-01
-    content: Threaded post comments with pending, approved, and spam
-    status: pending
-  - id: P6-02
-    content: Public comment form for guests or signed-in users
-    status: pending
-  - id: P6-03
-    content: Comment moderation queue
-    status: pending
-  - id: P6-04
-    content: Comments post block
-    status: pending
-  - id: P6-05
-    content: Email the post author when a comment is approved
-    status: pending
-  - id: P6-06
-    content: products and orders tables
-    status: pending
-  - id: P6-07
-    content: Product grid block and Buy button
-    status: pending
-  - id: P6-08
-    content: Stripe Checkout for one product
-    status: pending
-  - id: P6-09
-    content: Stripe webhook marks the order paid; orders inbox
-    status: pending
-  - id: P7-01
-    content: Per-site baked export of published content, menus, theme, and media
-    status: pending
-  - id: P7-02
-    content: "Export report: forms and checkout need external URLs"
-    status: pending
-  - id: P7-03
-    content: "Playwright: sign in, edit, publish, view, submit a form, follow a redirect"
-    status: pending
-  - id: P7-04
-    content: Vitest for routes, redirects, collection validation, and the block registry
-    status: pending
-  - id: P7-05
-    content: docker-compose for app, Postgres, and optional MinIO
-    status: pending
-  - id: P7-06
-    content: Lighthouse CI on the home page and a blog post
-    status: pending
-  - id: P7-07
-    content: GitHub Actions for lint, typecheck, unit tests, and Playwright
-    status: pending
-isProject: false
+- id: P1-01
+  content: Register Slider, Tabs, and Accordion as builderConfig component keys in src/builder/config.tsx
+  status: pending
+- id: P1-02
+  content: Confirm Slider, Tabs, and Accordion render on the public site
+  status: pending
+- id: P1-03
+  content: Show the contact-form options editor only for select and radio
+  status: pending
+- id: P1-04
+  content: Nullable page_id plus post_id on page_views; record post views in the analytics service and beacon route
+  status: pending
+- id: P1-05
+  content: Mount the view beacon on post routes in the public catch-all page
+  status: pending
+- id: P1-06
+  content: Include posts on the analytics boards
+  status: pending
+- id: P1-07
+  content: Public language switcher using translationGroupId and hreflang
+  status: pending
+- id: P1-08
+  content: Wire UrlField on Hero, CTA, Pricing, and Image
+  status: pending
+- id: P1-09
+  content: Wire IconPickerField on Features
+  status: pending
+- id: P1-10
+  content: Turn off typescript.ignoreBuildErrors and fix the type errors
+  status: pending
+- id: P1-11
+  content: Replace README.md with real Postgres, Google OAuth, storage, Gemini, and cron setup
+  status: pending
+- id: P2-01
+  content: form_submissions table with site_id defaulting to default
+  status: pending
+- id: P2-02
+  content: First-party contact-form submit route
+  status: pending
+- id: P2-03
+  content: "Admin form inbox: list, read, archive"
+  status: pending
+- id: P2-04
+  content: CSV export of form submissions
+  status: pending
+- id: P2-05
+  content: Honeypot and optional Turnstile on form submit
+  status: pending
+- id: P2-06
+  content: Email site owner via SMTP or Resend from env
+  status: pending
+- id: P2-07
+  content: redirects table with site_id
+  status: pending
+- id: P2-08
+  content: Middleware resolves redirects before the catch-all page
+  status: pending
+- id: P2-09
+  content: Redirect CSV import
+  status: pending
+- id: P2-10
+  content: Publishing a slug change offers to create a redirect
+  status: pending
+- id: P2-11
+  content: Postgres full-text on published pages and posts
+  status: pending
+- id: P2-12
+  content: Public /search page
+  status: pending
+- id: P2-13
+  content: GET /api/v1/search
+  status: pending
+- id: P2-14
+  content: Email and password login; keep Google
+  status: pending
+- id: P2-15
+  content: Magic-link login
+  status: pending
+- id: P2-16
+  content: Invite flow for new users
+  status: pending
+- id: P2-17
+  content: Optional TOTP for Admins
+  status: pending
+- id: P2-18
+  content: "Review queue for status=review: approve and request changes"
+  status: pending
+- id: P2-19
+  content: Email the author on review actions
+  status: pending
+- id: P2-20
+  content: OpenAPI spec from zod schemas in src/server/api/v1.ts
+  status: pending
+- id: P3-01
+  content: "sites table: name, primary host, extra domains, locale list"
+  status: pending
+- id: P3-02
+  content: "site_memberships: user, site, role"
+  status: pending
+- id: P3-03
+  content: Add site_id to content tables and backfill default
+  status: pending
+- id: P3-04
+  content: Resolve the public site from the request host
+  status: pending
+- id: P3-05
+  content: Admin site switcher; permissions against the active site
+  status: pending
+- id: P3-06
+  content: Per-site locale list; English unprefixed
+  status: pending
+- id: P3-07
+  content: Translated menus
+  status: pending
+- id: P3-08
+  content: Translated site name, description, and default SEO
+  status: pending
+- id: P4-01
+  content: collections and collection_fields tables
+  status: pending
+- id: P4-02
+  content: Validate collection entry JSON against the field list
+  status: pending
+- id: P4-03
+  content: Generated admin list and edit screens for collections
+  status: pending
+- id: P4-04
+  content: CollectionItem block and /{collection}/{slug} route
+  status: pending
+- id: P4-05
+  content: "Scoped API keys: content:read, content:write, media:write"
+  status: pending
+- id: P4-06
+  content: Draft-first write endpoints for pages, posts, entries, and media
+  status: pending
+- id: P4-07
+  content: Postgres rate limit shared across instances
+  status: pending
+- id: P4-08
+  content: Signed webhooks and a delivery log
+  status: pending
+- id: P5-01
+  content: Video block
+  status: pending
+- id: P5-02
+  content: Embed block
+  status: pending
+- id: P5-03
+  content: Logo cloud block
+  status: pending
+- id: P5-04
+  content: Team block
+  status: pending
+- id: P5-05
+  content: Timeline block
+  status: pending
+- id: P5-06
+  content: Map block
+  status: pending
+- id: P5-07
+  content: Spacer block
+  status: pending
+- id: P5-08
+  content: Button block
+  status: pending
+- id: P5-09
+  content: Code block
+  status: pending
+- id: P5-10
+  content: Newsletter block wired to the form inbox
+  status: pending
+- id: P5-11
+  content: Image-morph block
+  status: pending
+- id: P5-12
+  content: Load Puck components from src/builder/custom/
+  status: pending
+- id: P5-13
+  content: Document the local plugin registration type
+  status: pending
+- id: P5-14
+  content: Soft lock and presence on pages and posts
+  status: pending
+- id: P5-15
+  content: One A/B variant per page with cookie split and beacon
+  status: pending
+- id: P5-16
+  content: Analytics group by variant and manual pick winner
+  status: pending
+- id: P6-01
+  content: Threaded post comments with pending, approved, and spam
+  status: pending
+- id: P6-02
+  content: Public comment form for guests or signed-in users
+  status: pending
+- id: P6-03
+  content: Comment moderation queue
+  status: pending
+- id: P6-04
+  content: Comments post block
+  status: pending
+- id: P6-05
+  content: Email the post author when a comment is approved
+  status: pending
+- id: P6-06
+  content: products and orders tables
+  status: pending
+- id: P6-07
+  content: Product grid block and Buy button
+  status: pending
+- id: P6-08
+  content: Stripe Checkout for one product
+  status: pending
+- id: P6-09
+  content: Stripe webhook marks the order paid; orders inbox
+  status: pending
+- id: P7-01
+  content: Per-site baked export of published content, menus, theme, and media
+  status: pending
+- id: P7-02
+  content: "Export report: forms and checkout need external URLs"
+  status: pending
+- id: P7-03
+  content: "Playwright: sign in, edit, publish, view, submit a form, follow a redirect"
+  status: pending
+- id: P7-04
+  content: Vitest for routes, redirects, collection validation, and the block registry
+  status: pending
+- id: P7-05
+  content: docker-compose for app, Postgres, and optional MinIO
+  status: pending
+- id: P7-06
+  content: Lighthouse CI on the home page and a blog post
+  status: pending
+- id: P7-07
+  content: GitHub Actions for lint, typecheck, unit tests, and Playwright
+  status: pending
+  isProject: false
+
 ---
 
 # Numbered refs for the CMS gap plan

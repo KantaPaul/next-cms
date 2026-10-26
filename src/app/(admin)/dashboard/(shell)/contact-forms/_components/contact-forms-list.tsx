@@ -4,8 +4,13 @@ import { format } from 'date-fns';
 import { Loader2, Mail, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useTransition, type FormEvent } from 'react';
+import { type FormEvent, useEffect, useState, useTransition } from 'react';
 import { toast } from 'sonner';
+import {
+  deleteGlobalBlock,
+  renameGlobalBlock,
+  saveGlobalBlock,
+} from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
 import {
   ActionDropdown,
   ActionDropdownItem,
@@ -31,11 +36,6 @@ import {
 import { FormInput } from '@/components/ui/input';
 import { PAGES } from '@/config/pages';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
-import {
-  deleteGlobalBlock,
-  renameGlobalBlock,
-  saveGlobalBlock,
-} from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
 
 type FormRow = {
   id: string;
@@ -58,9 +58,27 @@ const DEFAULT_CONTACT_FORM_CONTENT = {
         successMessage: 'Thanks! We will be in touch soon.',
         actionUrl: '',
         fields: [
-          { id: 'field-name', label: 'Name', name: 'name', type: 'text', required: true },
-          { id: 'field-email', label: 'Email', name: 'email', type: 'email', required: true },
-          { id: 'field-message', label: 'Message', name: 'message', type: 'textarea', required: true },
+          {
+            id: 'field-name',
+            label: 'Name',
+            name: 'name',
+            type: 'text',
+            required: true,
+          },
+          {
+            id: 'field-email',
+            label: 'Email',
+            name: 'email',
+            type: 'email',
+            required: true,
+          },
+          {
+            id: 'field-message',
+            label: 'Message',
+            name: 'message',
+            type: 'textarea',
+            required: true,
+          },
         ],
         section: {},
       },
@@ -98,7 +116,8 @@ export function ContactFormsList({
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <p className="text-sm text-steel-500">
-          Shared contact forms stored as global blocks. Embed them on any page with the Global block picker.
+          Shared contact forms stored as global blocks. Embed them on any page
+          with the Global block picker.
         </p>
         {can.create && (
           <Button type="button" size="sm" onClick={() => setCreateOpen(true)}>
@@ -125,7 +144,9 @@ export function ContactFormsList({
                   <TableHeaderCell>Used on</TableHeaderCell>
                   <TableHeaderCell>Updated</TableHeaderCell>
                   <TableHeaderCell>Author</TableHeaderCell>
-                  <TableHeaderCell className="w-12 text-right">Actions</TableHeaderCell>
+                  <TableHeaderCell className="w-12 text-right">
+                    Actions
+                  </TableHeaderCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -209,7 +230,11 @@ function RenameDialog({
     if (!form || !name.trim()) return;
     startTransition(async () => {
       await handleActionResponse(
-        renameGlobalBlock({ id: form.id, name: name.trim(), category: 'contact-form' }),
+        renameGlobalBlock({
+          id: form.id,
+          name: name.trim(),
+          category: 'contact-form',
+        }),
         () => {
           toast.success('Renamed');
           onClose();
@@ -258,7 +283,13 @@ function RenameDialog({
   );
 }
 
-function CreateDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+function CreateDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
   const router = useRouter();
   const [name, setName] = useState('');
   const [isPending, startTransition] = useTransition();
@@ -298,7 +329,8 @@ function CreateDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v:
               <Mail className="size-5 text-muted-foreground" /> New contact form
             </DialogTitle>
             <DialogDescription>
-              Name the form, then configure its fields in the visual builder. Embed it on pages with the Global block.
+              Name the form, then configure its fields in the visual builder.
+              Embed it on pages with the Global block.
             </DialogDescription>
           </DialogHeader>
           <label className="flex flex-col gap-1 text-xs font-medium">
@@ -312,7 +344,11 @@ function CreateDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v:
             />
           </label>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isPending || !name.trim()}>

@@ -2,20 +2,27 @@ import { useSize } from 'ahooks';
 import isEmpty from 'lodash/isEmpty';
 import omit from 'lodash/omit';
 import { Fragment, type JSX, useRef } from 'react';
-import { type FieldValues, type Path, useFieldArray, useWatch } from 'react-hook-form';
-
-// import { Button } from '@/components/atoms/button/button';
-import { Box } from '@/components/atoms/layout';
-import { FieldArrayActions } from '@/components/atoms/table/field-array-actions';
-import { baseStyles, borderColor, headerClassNames } from '@/components/atoms/table-grid';
-import { cn } from '@/lib/utils/cn';
-
+import {
+  type FieldValues,
+  type Path,
+  useFieldArray,
+  useWatch,
+} from 'react-hook-form';
 import { FormFieldWrapper } from '@/components/atoms/forms/factory/methods';
 import type {
   FooterCell,
   FormFieldDef,
 } from '@/components/atoms/forms/factory/types';
+// import { Button } from '@/components/atoms/button/button';
+import { Box } from '@/components/atoms/layout';
+import { FieldArrayActions } from '@/components/atoms/table/field-array-actions';
+import {
+  baseStyles,
+  borderColor,
+  headerClassNames,
+} from '@/components/atoms/table-grid';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils/cn';
 
 const stickyClassName = cn('sticky right-0 bg-white dark:bg-dark-100');
 
@@ -43,28 +50,36 @@ export function FieldArray<TFieldValues extends FieldValues>({
   }
 
   // Helper function to determine active field for conditional rendering
-  const getActiveField = (cell: FormFieldDef<TFieldValues>, rowValue: unknown, index: number) => {
+  const getActiveField = (
+    cell: FormFieldDef<TFieldValues>,
+    rowValue: unknown,
+    index: number
+  ) => {
     if (cell.type !== 'conditional') return cell;
 
-    const matchedCondition = cell.conditions?.find((condition) => condition.when(rowValue, index));
+    const matchedCondition = cell.conditions?.find(condition =>
+      condition.when(rowValue, index)
+    );
 
     return matchedCondition?.field || cell.defaultField || null;
   };
 
-  function calculateTemplateColumns(columns: FormFieldDef<TFieldValues>[] | undefined) {
+  function calculateTemplateColumns(
+    columns: FormFieldDef<TFieldValues>[] | undefined
+  ) {
     const columnsArray = columns || [];
 
     // Calculate total columns including expanded conditional fields
     const expandedColumns: FormFieldDef<TFieldValues>[] = [];
 
-    columnsArray.forEach((column) => {
+    columnsArray.forEach(column => {
       if (column.type === 'conditional') {
         const firstRowValue = watchedValues?.[0];
         const activeFields = getActiveField(column, firstRowValue, 0);
 
         if (activeFields && Array.isArray(activeFields)) {
           // Add each field in the array as a separate column
-          activeFields.forEach((field) => {
+          activeFields.forEach(field => {
             expandedColumns.push({ ...field, size: field.size || 100 });
           });
         }
@@ -117,7 +132,7 @@ export function FieldArray<TFieldValues extends FieldValues>({
   const expandedColumns: FormFieldDef<TFieldValues>[] = [];
 
   if (column.fields) {
-    column.fields.forEach((field) => {
+    column.fields.forEach(field => {
       if (field.type === 'conditional') {
         const firstRowValue = watchedValues?.[0];
         const activeFields = getActiveField(field, firstRowValue, 0);
@@ -132,7 +147,7 @@ export function FieldArray<TFieldValues extends FieldValues>({
   }
 
   // Simple footer calculation like table-grid
-  expandedColumns.forEach((col) => {
+  expandedColumns.forEach(col => {
     const footers = col.footer?.(watchedValues || []) ?? [];
 
     footers.forEach((footerCell, i) => {
@@ -145,8 +160,10 @@ export function FieldArray<TFieldValues extends FieldValues>({
     });
   });
 
-  const containerWidth = containerSize?.width && Math.trunc(containerSize?.width);
-  const innerContainerWidth = innerContainerSize?.width && Math.trunc(innerContainerSize?.width);
+  const containerWidth =
+    containerSize?.width && Math.trunc(containerSize?.width);
+  const innerContainerWidth =
+    innerContainerSize?.width && Math.trunc(innerContainerSize?.width);
   const isScrollable = containerWidth !== innerContainerWidth;
 
   return (
@@ -179,11 +196,14 @@ export function FieldArray<TFieldValues extends FieldValues>({
                 borderColor,
                 headerClassNames,
                 // Remove border-r on the last header of the last conditional field
-                subIndex === activeFields.length - 1 && index === array.length - 1 && 'border-r-0',
+                subIndex === activeFields.length - 1 &&
+                  index === array.length - 1 &&
+                  'border-r-0',
                 cell.headerClassName
               )}
             >
-              {field.header} {field.isRequired && <span className="text-red-500">*</span>}
+              {field.header}{' '}
+              {field.isRequired && <span className="text-red-500">*</span>}
             </Box>
           ));
         }
@@ -201,7 +221,8 @@ export function FieldArray<TFieldValues extends FieldValues>({
               // column.className
             )}
           >
-            {cell.header} {cell.isRequired && <span className="text-red-500">*</span>}
+            {cell.header}{' '}
+            {cell.isRequired && <span className="text-red-500">*</span>}
           </Box>
         );
       })}
@@ -227,9 +248,7 @@ export function FieldArray<TFieldValues extends FieldValues>({
             'col-span-full border-y text-center text-steel-500'
           )}
         >
-          <Button onClick={addField}>
-            Add Record
-          </Button>
+          <Button onClick={addField}>Add Record</Button>
         </Box>
       )}
 
@@ -251,7 +270,11 @@ export function FieldArray<TFieldValues extends FieldValues>({
               // Handle conditional field rendering
               if (cell.type === 'conditional') {
                 const currentRowValue = watchedValues?.[fieldIndex];
-                const activeFields = getActiveField(cell, currentRowValue, fieldIndex);
+                const activeFields = getActiveField(
+                  cell,
+                  currentRowValue,
+                  fieldIndex
+                );
 
                 if (!(activeFields && Array.isArray(activeFields))) return null;
 
@@ -283,7 +306,11 @@ export function FieldArray<TFieldValues extends FieldValues>({
                             'border-r-0',
                           cell.className
                         )}
-                        name={[column.name, fieldIndex, field.name].join('.') as Path<TFieldValues>}
+                        name={
+                          [column.name, fieldIndex, field.name].join(
+                            '.'
+                          ) as Path<TFieldValues>
+                        }
                       />
                     </Fragment>
                   );
@@ -302,7 +329,8 @@ export function FieldArray<TFieldValues extends FieldValues>({
                   }),
               };
 
-              const isFieldArraySwitch = column.type === 'fieldArray' && cell.type === 'switch';
+              const isFieldArraySwitch =
+                column.type === 'fieldArray' && cell.type === 'switch';
 
               // console.log('cellConfig', cellConfig);
 
@@ -319,7 +347,11 @@ export function FieldArray<TFieldValues extends FieldValues>({
                       isFieldArraySwitch && 'justify-center px-3.5',
                       cell.className
                     )}
-                    name={[column.name, fieldIndex, cell.name].join('.') as Path<TFieldValues>}
+                    name={
+                      [column.name, fieldIndex, cell.name].join(
+                        '.'
+                      ) as Path<TFieldValues>
+                    }
                   />
                 </Fragment>
               );
@@ -360,7 +392,9 @@ export function FieldArray<TFieldValues extends FieldValues>({
               key={`footer-cell-${rowIndex}-${colIndex}`}
               className={cn(
                 baseStyles,
-                cell && colIndex < footerRow.length - 1 && `border-r ${borderColor}`,
+                cell &&
+                  colIndex < footerRow.length - 1 &&
+                  `border-r ${borderColor}`,
                 cell?.className
               )}
             >

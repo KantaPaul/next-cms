@@ -6,16 +6,14 @@
 //   return params;
 // }
 
-import isEmpty from 'lodash/isEmpty';
-import { z } from 'zod';
-
-import { SortOrder } from '@/config/sorting';
-
-import { ARRAY_SEPARATOR, RANGE_SEPARATOR } from '@/config/constant';
-import type { ValueOf } from 'type-fest';
-import { isArraySafe } from '@/lib/utils/bool-check';
 import type { AnyColumn, SQLWrapper } from 'drizzle-orm';
 import { gte, lte } from 'drizzle-orm';
+import isEmpty from 'lodash/isEmpty';
+import type { ValueOf } from 'type-fest';
+import { z } from 'zod';
+import { ARRAY_SEPARATOR, RANGE_SEPARATOR } from '@/config/constant';
+import { SortOrder } from '@/config/sorting';
+import { isArraySafe } from '@/lib/utils/bool-check';
 import { getDateRange, toFilterDateUTC } from '@/lib/utils/format-date';
 
 export interface SearchParamsInput {
@@ -146,7 +144,9 @@ export type TBaseSearchParams = z.infer<typeof baseSearchParamsSchema>;
 /**
  * Creates search params with default values
  */
-export function createSearchParams(params: Partial<SearchParams> = {}): SearchParams {
+export function createSearchParams(
+  params: Partial<SearchParams> = {}
+): SearchParams {
   return {
     deletedAt: false,
     doPagination: true,
@@ -169,9 +169,15 @@ export function createDateRangeConditions<T extends TableWithCreatedAt>(
     const prepareToDate = toFilterDateUTC(new Date(endDate));
 
     if (!isNaN(prepareFormDate.getTime()) && !isNaN(prepareToDate.getTime())) {
-      conditions.push(gte(table.createdAt, prepareFormDate), lte(table.createdAt, prepareToDate));
+      conditions.push(
+        gte(table.createdAt, prepareFormDate),
+        lte(table.createdAt, prepareToDate)
+      );
     } else {
-      console.warn('Invalid date format for startDate or endDate:', { startDate, endDate });
+      console.warn('Invalid date format for startDate or endDate:', {
+        startDate,
+        endDate,
+      });
     }
   } else {
     console.warn('Missing startDate or endDate:', { startDate, endDate });

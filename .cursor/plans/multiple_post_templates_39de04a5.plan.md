@@ -1,26 +1,28 @@
 ---
+
 name: Multiple post templates
 overview: Replace the single shared post template with a list of named post templates. One template is the default and applies to every post that hasn't picked another. Each post can pick a template from the posts table's three-dot menu ("Set post template"). Templates get their own listing page.
 todos:
-  - id: tpl-schema
-    content: Add post_templates table and posts.templateId; migrate the existing site_settings template into a Default row and drop the old columns
-    status: completed
-  - id: tpl-service
-    content: postTemplatesService (list, create, duplicate, rename, draft/publish, setDefault, delete, resolveForPost), postsService.setTemplate, and actions
-    status: completed
-  - id: tpl-list
-    content: Templates listing page with row actions and New template dialog; repoint posts page button and old route
-    status: completed
-  - id: tpl-builder
-    content: Per-template builder route and post-template adapter keyed by template id
-    status: completed
-  - id: tpl-assign
-    content: Set post template dialog in posts table row actions, layout column/filter, and template select in the post edit form
-    status: completed
-  - id: tpl-render
-    content: Resolve the post's template (assigned, then default, then built-in) in the public route, API, and switchLayout; verify end to end in the browser
-    status: completed
-isProject: false
+- id: tpl-schema
+  content: Add post_templates table and posts.templateId; migrate the existing site_settings template into a Default row and drop the old columns
+  status: completed
+- id: tpl-service
+  content: postTemplatesService (list, create, duplicate, rename, draft/publish, setDefault, delete, resolveForPost), postsService.setTemplate, and actions
+  status: completed
+- id: tpl-list
+  content: Templates listing page with row actions and New template dialog; repoint posts page button and old route
+  status: completed
+- id: tpl-builder
+  content: Per-template builder route and post-template adapter keyed by template id
+  status: completed
+- id: tpl-assign
+  content: Set post template dialog in posts table row actions, layout column/filter, and template select in the post edit form
+  status: completed
+- id: tpl-render
+  content: Resolve the post's template (assigned, then default, then built-in) in the public route, API, and switchLayout; verify end to end in the browser
+  status: completed
+  isProject: false
+
 ---
 
 # Multiple single-post templates

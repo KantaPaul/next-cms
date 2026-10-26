@@ -1,13 +1,13 @@
-import { notFound, redirect } from 'next/navigation';
 import type { Data } from '@measured/puck';
+import { notFound, redirect } from 'next/navigation';
+import { BuilderLoader } from '@/app/(admin)/dashboard/(fullscreen)/pages/[id]/builder/_components/builder-loader';
+import { templatesService } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.service';
+import { normalizeContent } from '@/builder/data';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import { metaObject } from '@/lib/utils/metadata';
 import { requirePermission } from '@/server/services/require-permission';
 import { siteSettingsService } from '@/server/services/site-settings.service';
-import { templatesService } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.service';
-import { normalizeContent } from '@/builder/data';
-import { BuilderLoader } from '@/app/(admin)/dashboard/(fullscreen)/pages/[id]/builder/_components/builder-loader';
 
 export const metadata = metaObject('Edit page template');
 

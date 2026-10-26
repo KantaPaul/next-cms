@@ -18,18 +18,25 @@ function buildHref(opts: {
   range: 7 | 30;
   list: TrendsList;
   pageId?: string | null;
+  postId?: string | null;
 }) {
   const params = new URLSearchParams();
   params.set('range', String(opts.range));
   params.set('list', opts.list);
   if (opts.pageId) params.set('pageId', opts.pageId);
+  else if (opts.postId) params.set('postId', opts.postId);
   return `${PAGES.DASHBOARD.ANALYTICS}?${params.toString()}`;
 }
 
 export default async function AnalyticsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ range?: string; list?: string; pageId?: string }>;
+  searchParams: Promise<{
+    range?: string;
+    list?: string;
+    pageId?: string;
+    postId?: string;
+  }>;
 }) {
   const params = await searchParams;
   const rangeDays = params.range === '7' ? 7 : 30;
@@ -38,8 +45,13 @@ export default async function AnalyticsPage({
       ? params.list
       : 'pages';
   const pageId = params.pageId?.trim() || null;
+  const postId = pageId ? null : params.postId?.trim() || null;
 
-  const trends = await analyticsService.trends(rangeDays, { pageId, list });
+  const trends = await analyticsService.trends(rangeDays, {
+    pageId,
+    postId,
+    list,
+  });
 
   const hasTraffic = trends.views > 0 || trends.previousViews > 0;
   const viewsPerVisitor =
@@ -71,14 +83,14 @@ export default async function AnalyticsPage({
           >
             Dashboards
           </Link>
-          {trends.pageId && (
+          {trends.pageId || trends.postId ? (
             <Link
               href={buildHref({ range: rangeDays, list })}
               className="rounded-md border border-steel-200 px-3 py-1.5 text-sm text-steel-600 hover:bg-steel-50 dark:border-dark-300 dark:hover:bg-dark-200"
             >
               Clear filter
             </Link>
-          )}
+          ) : null}
           <div className="flex gap-1 rounded-lg border border-steel-200 p-0.5 dark:border-dark-300">
             {([7, 30] as const).map(days => (
               <Link
@@ -87,6 +99,7 @@ export default async function AnalyticsPage({
                   range: days,
                   list,
                   pageId: trends.pageId,
+                  postId: trends.postId,
                 })}
                 className={`rounded-md px-3 py-1.5 text-sm ${
                   rangeDays === days
@@ -128,8 +141,8 @@ export default async function AnalyticsPage({
 
       {!hasTraffic ? (
         <div className="rounded-lg border border-dashed border-steel-200 px-6 py-10 text-center text-sm text-steel-500 dark:border-dark-300">
-          No page views recorded yet. Publish a public page and visit it — the
-          beacon will start counting here.
+          No views recorded yet. Publish a public page or post and visit it —
+          the beacon will start counting here.
         </div>
       ) : (
         <>
@@ -173,6 +186,7 @@ export default async function AnalyticsPage({
                       range: rangeDays,
                       list: id,
                       pageId: trends.pageId,
+                      postId: trends.postId,
                     })}
                     className={`rounded-md px-3 py-1.5 text-sm ${
                       list === id
@@ -198,7 +212,7 @@ export default async function AnalyticsPage({
                       const ch = changeLabel(row.views, row.previousViews);
                       return (
                         <li
-                          key={`${row.pageId}-${row.path}`}
+                          key={`${row.pageId ?? ''}-${row.postId ?? ''}-${row.path}`}
                           className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm"
                         >
                           <div className="min-w-0 flex-1">
@@ -207,6 +221,7 @@ export default async function AnalyticsPage({
                                 range: rangeDays,
                                 list,
                                 pageId: row.pageId,
+                                postId: row.postId,
                               })}
                               className="font-medium hover:underline"
                             >
@@ -220,6 +235,19 @@ export default async function AnalyticsPage({
                                   <Link
                                     href={PAGES.DASHBOARD.PAGES.EDIT(
                                       row.pageId
+                                    )}
+                                    className="hover:underline"
+                                  >
+                                    Edit
+                                  </Link>
+                                </>
+                              )}
+                              {row.postId && (
+                                <>
+                                  {' · '}
+                                  <Link
+                                    href={PAGES.DASHBOARD.POSTS.EDIT(
+                                      row.postId
                                     )}
                                     className="hover:underline"
                                   >

@@ -1,4 +1,4 @@
-import { Render, resolveAllData, type Data } from '@measured/puck';
+import { type Data, Render, resolveAllData } from '@measured/puck';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { builderConfig, postBuilderConfig } from '@/builder/config';
@@ -8,17 +8,17 @@ import { PAGES } from '@/config/pages';
 import { env } from '@/env.mjs';
 import {
   blogService,
-  resolvePostRoute,
   type PublicPost,
+  resolvePostRoute,
 } from '@/server/services/blog.service';
 import {
   getPreviewPageId,
   getPreviewPostId,
 } from '@/server/services/preview-session';
 import {
+  type PublicPage,
   publicSiteService,
   resolveRoute,
-  type PublicPage,
 } from '@/server/services/public-site.service';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 
@@ -78,12 +78,21 @@ function postMetadata(post: PublicPost, settings: Settings): Metadata {
     seo?.description || view.excerpt || settings.siteDescription || undefined;
   const image =
     seo?.ogImage || view.featuredImage || settings.defaultOgImage || undefined;
+  const languages = Object.fromEntries(
+    post.alternates.map(alt => [
+      alt.language,
+      absolute(base, PAGES.SITE.post(alt.slug, alt.language)),
+    ])
+  );
 
   return {
     title: `${title} | ${settings.siteName}`,
     description,
     keywords: seo?.keywords || undefined,
-    alternates: { canonical: seo?.canonicalUrl || url },
+    alternates: {
+      canonical: seo?.canonicalUrl || url,
+      ...(Object.keys(languages).length > 1 && { languages }),
+    },
     robots:
       seo?.noIndex || post.isDraft
         ? { index: false, follow: false }
@@ -222,6 +231,10 @@ async function PostRoute({
 }) {
   const { view, seo } = post;
   const base = settings.siteUrl || env.SITE_URL;
+  const path = PAGES.SITE.post(view.slug, view.language);
+  const beacon = !post.isDraft ? (
+    <ViewBeacon postId={view.id} path={path} />
+  ) : null;
   const layout = await blogService.layoutFor(post);
   const metadata = {
     themeTokens: settings.themeTokens,
@@ -261,6 +274,7 @@ async function PostRoute({
           }),
         }}
       />
+      {beacon}
       <Render config={postBuilderConfig} data={data} metadata={metadata} />
     </>
   );
@@ -278,10 +292,9 @@ export default async function SitePage({ params, searchParams }: Params) {
 
   const base = settings.siteUrl || env.SITE_URL;
   const path = PAGES.SITE.page(page.slug, page.language, page.isHome);
-  const beacon =
-    !page.isDraft ? (
-      <ViewBeacon pageId={page.id} path={path || '/'} />
-    ) : null;
+  const beacon = !page.isDraft ? (
+    <ViewBeacon pageId={page.id} path={path || '/'} />
+  ) : null;
 
   if (page.editorType === 'builder') {
     const metadata = {

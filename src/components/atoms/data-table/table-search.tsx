@@ -8,12 +8,12 @@ import { useFormStatus } from 'react-dom';
 // import { Loader } from 'rizzui';
 import type { InputProps } from '@/components/atoms/forms';
 import { Input } from '@/components/atoms/forms';
+import { Spinner } from '@/components/atoms/icons/loader/spinner';
 import { focusRing } from '@/components/atoms/utils';
 import { Button } from '@/components/ui/button';
 import useQueryParams from '@/hooks/useQueryParam';
 import { cn } from '@/lib/utils/cn';
 import { useBackpressure } from './hooks/use-backpressure';
-import { Spinner } from '@/components/atoms/icons/loader/spinner';
 
 interface SearchBaseProps extends InputProps {
   initialQuery: string;
@@ -115,5 +115,12 @@ export function TableSearch({
   ...rest
 }: Omit<SearchBaseProps, 'initialQuery'>) {
   const query = useSearchParams().get('search') ?? '';
-  return <SearchBase initialQuery={query} formClassName={formClassName} page={page} {...rest} />;
+  return (
+    <SearchBase
+      initialQuery={query}
+      formClassName={formClassName}
+      page={page}
+      {...rest}
+    />
+  );
 }

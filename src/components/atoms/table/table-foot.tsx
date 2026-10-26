@@ -1,6 +1,9 @@
 import { cn } from '@/lib/utils/cn';
 
-export function TableFoot({ children, ...props }: React.TableHTMLAttributes<HTMLTableElement>) {
+export function TableFoot({
+  children,
+  ...props
+}: React.TableHTMLAttributes<HTMLTableElement>) {
   return (
     <tfoot
       className={cn(

@@ -10,6 +10,7 @@ import {
   History,
   Layers,
   Lock,
+  type LucideIcon,
   Rocket,
   Shield,
   ShieldCheck,
@@ -17,7 +18,6 @@ import {
   Star,
   Users,
   Zap,
-  type LucideIcon,
 } from 'lucide-react';
 
 export const BLOCK_ICONS: Record<string, LucideIcon> = {
@@ -46,7 +46,13 @@ export const ICON_OPTIONS = [
   ...Object.keys(BLOCK_ICONS).map(name => ({ label: name, value: name })),
 ];
 
-export function BlockIcon({ name, className }: { name?: string; className?: string }) {
+export function BlockIcon({
+  name,
+  className,
+}: {
+  name?: string;
+  className?: string;
+}) {
   const Icon = name ? BLOCK_ICONS[name] : undefined;
   return Icon ? <Icon className={className} aria-hidden /> : null;
 }

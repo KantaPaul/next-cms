@@ -14,7 +14,8 @@ export const metadata = {
 export default async function CreatePage() {
   const { userId } = await getCurrentUserAndTeamId();
   const access = await accessService.getUserAccess(userId);
-  if (!access.permissions.includes(PERMISSIONS.PAGES_CREATE)) redirect(PAGES.DASHBOARD.PAGES.INDEX);
+  if (!access.permissions.includes(PERMISSIONS.PAGES_CREATE))
+    redirect(PAGES.DASHBOARD.PAGES.INDEX);
 
   return <CreateOrUpdate id="add-page-form" />;
 }

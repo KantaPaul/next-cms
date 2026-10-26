@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import { Plus } from 'lucide-react';
+import Link from 'next/link';
 import { PAGES } from '@/config/pages';
 import { analyticsBoardsService } from '@/server/services/analytics-boards.service';
 import { CreateBoardButton } from './_components/create-board-button';

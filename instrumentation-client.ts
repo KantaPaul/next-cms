@@ -5,7 +5,7 @@ performance.mark('app-init');
 console.log('Analytics initialized');
 
 // Set up error tracking
-window.addEventListener('error', (event) => {
+window.addEventListener('error', event => {
   // Send to your error tracking service
   reportError(event.error);
 });

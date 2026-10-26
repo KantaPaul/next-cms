@@ -2,17 +2,21 @@ import isEmpty from 'lodash/isEmpty';
 import { ChevronDown, Plus } from 'lucide-react';
 import Link from 'next/link';
 
-import { ActionDropdown, ActionDropdownItem } from '@/components/atoms/action-dropdown';
+import {
+  ActionDropdown,
+  ActionDropdownItem,
+} from '@/components/atoms/action-dropdown';
 import type { Option } from '@/components/atoms/react-select';
 import { focusRing } from '@/components/atoms/utils';
+import type { ButtonProps } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils/cn';
-import type { ButtonProps } from '@/components/ui/button';
-import { Button } from '@/components/ui/button';
+
 // import { Button, type ButtonProps } from './button';
 
 interface BaseProps extends ButtonProps {
@@ -67,8 +71,12 @@ export default function CreateButton({
           'ml-5 min-w-48 border-steel-100 p-0 shadow-md dark:border-dark-300 dark:bg-dark-200'
         )}
       >
-        {options?.map((option) => (
-          <ActionDropdownItem key={option.value} href={option.value} label={option.label} />
+        {options?.map(option => (
+          <ActionDropdownItem
+            key={option.value}
+            href={option.value}
+            label={option.label}
+          />
         ))}
       </DropdownMenuContent>
     </DropdownMenu>

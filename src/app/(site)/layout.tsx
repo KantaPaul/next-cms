@@ -1,14 +1,15 @@
 import Link from 'next/link';
 import Script from 'next/script';
 import { fontStylesheetUrl, themeStyle } from '@/builder/theme';
+import { LanguageSwitcher } from '@/components/site/language-switcher';
 import { PAGES } from '@/config/pages';
 import { getPreviewSession } from '@/server/services/preview-session';
 import {
-  publicSiteService,
   type MenuWithItems,
+  publicSiteService,
 } from '@/server/services/public-site.service';
-import { siteSettingsService } from '@/server/services/site-settings.service';
 import { maybePublishScheduled } from '@/server/services/scheduler';
+import { siteSettingsService } from '@/server/services/site-settings.service';
 
 function MenuLinks({
   menu,
@@ -122,10 +123,13 @@ export default async function SiteLayout({
             )}
             {settings.siteName}
           </Link>
-          <MenuLinks
-            menu={header}
-            className="flex flex-wrap items-center gap-5 text-sm font-medium"
-          />
+          <div className="flex flex-wrap items-center gap-5">
+            <MenuLinks
+              menu={header}
+              className="flex flex-wrap items-center gap-5 text-sm font-medium"
+            />
+            <LanguageSwitcher />
+          </div>
         </nav>
       </header>
       <main className="flex-1">{children}</main>

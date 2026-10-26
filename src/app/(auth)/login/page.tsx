@@ -1,5 +1,5 @@
+import { RedirectType, redirect } from 'next/navigation';
 import { LoginForm } from '@/components/templates/auth/login-form';
-import { redirect, RedirectType } from 'next/navigation';
 
 // import LoginView from "@/components/templates/auth/login";
 import { metaObject } from '@/lib/utils/metadata';
@@ -11,7 +11,10 @@ export const metadata = {
 };
 
 export default async function Page(props: {
-  searchParams: Promise<{ message?: string; [key: string]: string | undefined }>;
+  searchParams: Promise<{
+    message?: string;
+    [key: string]: string | undefined;
+  }>;
 }) {
   const searchParams = await props.searchParams;
   // const sessions = await validateRequest();

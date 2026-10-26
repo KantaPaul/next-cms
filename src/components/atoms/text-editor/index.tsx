@@ -5,6 +5,7 @@ import TiptapLink from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
 import { Color, TextStyle } from '@tiptap/extension-text-style';
 import TiptapUnderline from '@tiptap/extension-underline';
+import { Placeholder } from '@tiptap/extensions';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { FieldError, Label } from '@/components/atoms/forms';
@@ -13,7 +14,6 @@ import { borderColor } from '@/components/atoms/table-grid';
 import { EditorBubbleMenu } from '@/components/atoms/text-editor/bubble-menu';
 import { cn } from '@/lib/utils/cn';
 import { Toolbar } from './toolbar';
-import { Placeholder } from '@tiptap/extensions';
 
 export interface TextEditorProps {
   value?: string;

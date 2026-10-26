@@ -1,7 +1,7 @@
+import isEmpty from 'lodash/isEmpty';
 import { DEFAULT_PAGE_SIZE } from '@/config/constant';
 import type { PersonalizationDataset } from '@/db/schema';
 import type { Personalization, PersonalizedSection } from '@/db/validation';
-import isEmpty from 'lodash/isEmpty';
 
 interface GetPersonalizedTableSection extends Personalization {
   sections: PersonalizedSection[];

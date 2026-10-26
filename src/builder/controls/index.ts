@@ -4,7 +4,12 @@ export { BorderControl } from './border';
 export { ColorPicker, type ColorPickerProps } from './color-picker';
 export { DeviceRow, DeviceToggles, useCanvasDevice } from './device-row';
 export { Dimensions } from './dimensions';
-export { InspectorTabContext, useInspectorTab, type InspectorTab } from './inspector-tab';
+export { FilterControl } from './filter';
+export {
+  type InspectorTab,
+  InspectorTabContext,
+  useInspectorTab,
+} from './inspector-tab';
 export { PageTransitionField } from './page-transition';
 export {
   Choose,
@@ -12,22 +17,21 @@ export {
   ControlLabel,
   Description,
   Divider,
+  Group,
   GroupedSelect,
   Notice,
   PanelHeading,
-  ShowWhen,
-  StateTabs,
-  Switcher,
-  UnitSlider,
-  VisualChoose,
-  Group,
   ResponsiveChoose,
   ResponsiveSelect,
   ResponsiveSlider,
   SelectInput,
+  ShowWhen,
   Slider,
+  StateTabs,
+  Switcher,
+  UnitSlider,
+  VisualChoose,
 } from './primitives';
 export { SectionField, STAGGER_BLOCKS } from './section-inspector';
-export { FilterControl } from './filter';
-export { TypographyControl } from './typography';
 export { ShadowControl } from './shadow';
+export { TypographyControl } from './typography';

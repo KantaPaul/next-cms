@@ -15,23 +15,23 @@ import {
   type SQL,
 } from 'drizzle-orm';
 import { cache } from 'react';
+import { postTemplatesService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
+import { type BuilderData, isBuilderData } from '@/builder/data';
+import type { PostCard, PostTerm, PostView } from '@/builder/post-template';
+import { PAGES } from '@/config/pages';
 import { db } from '@/db';
 import {
   categories,
   pages,
   postCategories,
   postContents,
-  posts,
   postSeo,
+  posts,
   postTags,
   tags,
   users,
 } from '@/db/schema';
 import { DEFAULT_LANGUAGE, LANGUAGE_CODES } from '@/db/schemas/shared.schema';
-import { PAGES } from '@/config/pages';
-import type { PostCard, PostTerm, PostView } from '@/builder/post-template';
-import { isBuilderData, type BuilderData } from '@/builder/data';
-import { postTemplatesService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
 
 /** Maps `/blog/slug` and `/{lang}/blog/slug` segments to a post route. */
 export function resolvePostRoute(
@@ -255,6 +255,8 @@ async function loadPost(where: SQL | undefined, kind: 'draft' | 'published') {
     blogUrl,
   };
 
+  const alternates = await loadPostAlternates(row, kind === 'published');
+
   return {
     view,
     layout: row.layout,
@@ -263,8 +265,29 @@ async function loadPost(where: SQL | undefined, kind: 'draft' | 'published') {
     seo: seo ?? null,
     updatedAt: row.updatedAt,
     translationGroupId: row.translationGroupId,
+    alternates,
     isDraft: kind === 'draft',
   };
+}
+
+async function loadPostAlternates(
+  post: { translationGroupId: string | null },
+  publishedOnly: boolean
+) {
+  if (!post.translationGroupId) return [];
+  return db
+    .select({
+      language: posts.language,
+      slug: posts.slug,
+    })
+    .from(posts)
+    .where(
+      and(
+        eq(posts.translationGroupId, post.translationGroupId),
+        isNull(posts.deletedAt),
+        publishedOnly ? isPublished : undefined
+      )
+    );
 }
 
 export const blogService = {

@@ -4,9 +4,9 @@ import { type ForwardedRef, forwardRef } from 'react';
 import PhoneInput, { type PhoneInputProps } from 'react-phone-input-2';
 import './style.css';
 import { FieldError, Label } from '@/components/atoms/forms';
+import FieldHelperText from '@/components/atoms/forms/helpers/field-helper-text';
 import { Box } from '@/components/atoms/layout';
 import { cn } from '@/lib/utils/cn';
-import FieldHelperText from '@/components/atoms/forms/helpers/field-helper-text';
 
 interface PhoneNumberInputProps extends PhoneInputProps {
   label?: string;
@@ -20,7 +20,10 @@ interface PhoneNumberInputProps extends PhoneInputProps {
   helperClassName?: string;
   className?: string;
 }
-export const PhoneNumberInput = forwardRef<HTMLInputElement, PhoneNumberInputProps>(
+export const PhoneNumberInput = forwardRef<
+  HTMLInputElement,
+  PhoneNumberInputProps
+>(
   (
     {
       label,
@@ -42,7 +45,10 @@ export const PhoneNumberInput = forwardRef<HTMLInputElement, PhoneNumberInputPro
       <Box className={cn(className)}>
         {label && (
           <Label className={cn(labelClassName)}>
-            {label} {isRequired && <span className="text-red-500 dark:text-red-dark">*</span>}
+            {label}{' '}
+            {isRequired && (
+              <span className="text-red-500 dark:text-red-dark">*</span>
+            )}
           </Label>
         )}
         <PhoneInput
@@ -52,7 +58,8 @@ export const PhoneNumberInput = forwardRef<HTMLInputElement, PhoneNumberInputPro
             // base styles
             'flex 5xl:h-12 h-11 w-full flex-row-reverse items-center rounded-lg transition duration-300 dark:bg-dark-50',
             // variant styles
-            variant === 'outline' && 'border-2 border-steel-100 dark:border-dark-400',
+            variant === 'outline' &&
+              'border-2 border-steel-100 dark:border-dark-400',
             // hover state
             'hover:border-steel-200 hover:dark:border-dark-500',
 
@@ -78,12 +85,18 @@ export const PhoneNumberInput = forwardRef<HTMLInputElement, PhoneNumberInputPro
           {...props}
         />
 
-        {error && <FieldError error={error} className={cn('mt-2', errorClassName)} />}
+        {error && (
+          <FieldError error={error} className={cn('mt-2', errorClassName)} />
+        )}
 
         {helperText && (
           <FieldHelperText
             size="md"
-            className={cn('mt-2', helperClassName, disabled && 'text-muted-foreground')}
+            className={cn(
+              'mt-2',
+              helperClassName,
+              disabled && 'text-muted-foreground'
+            )}
           >
             {helperText}
           </FieldHelperText>

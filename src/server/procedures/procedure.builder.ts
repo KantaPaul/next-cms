@@ -1,14 +1,10 @@
 'server only';
 
+import { z } from 'zod';
+import log from '@/lib/logger/utils';
+import type { Procedure, ServerError, ValidationError } from '@/lib/types';
 import { ApplicationException } from '@/lib/utils/error';
 import PostgresErrorHandler from '@/lib/utils/postgres-error-handler';
-import { z } from 'zod';
-import {
-  type ValidationError,
-  type ServerError,
-  type Procedure,
-} from '@/lib/types';
-import log from '@/lib/logger/utils';
 
 type Context<T> = { ctx: T };
 type MiddlewareFunction<T, R> = (params: Context<T>) => R | Promise<R>;
@@ -16,7 +12,9 @@ type MiddlewareFunction<T, R> = (params: Context<T>) => R | Promise<R>;
 // Type for a procedure with middlewares and methods
 
 // Helper functions
-const parseFormData = (formData: FormData | Record<string, unknown>): Record<string, unknown> => {
+const parseFormData = (
+  formData: FormData | Record<string, unknown>
+): Record<string, unknown> => {
   return formData instanceof FormData ? Object.fromEntries(formData) : formData;
 };
 
@@ -25,13 +23,13 @@ const formatFieldName = (path: string): string => {
 
   return path
     .split('.')
-    .map((segment) =>
+    .map(segment =>
       segment
         .replace(/([A-Z])/g, ' $1')
         .replace(/_/g, ' ')
         .toLowerCase()
         .split(' ')
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ')
     )
     .join(' → ');
@@ -107,7 +105,7 @@ const handleValidationError = (error: z.ZodError): ValidationError => {
 
   const errors: Record<string, string[]> = {};
 
-  error.issues.forEach((issue) => {
+  error.issues.forEach(issue => {
     const path = issue.path.join('.');
     const fieldName = formatFieldName(path);
     const userFriendlyMessage = formatZodMessage(issue.message, fieldName);
@@ -121,7 +119,7 @@ const handleValidationError = (error: z.ZodError): ValidationError => {
 
 const formatZodErrorsForServerError = (error: z.ZodError): string => {
   return error.issues
-    .map((issue) => {
+    .map(issue => {
       const fieldName = formatFieldName(issue.path.join('.'));
       return formatZodMessage(issue.message, fieldName);
     })
@@ -189,7 +187,7 @@ const createProcedureWithMiddlewares = <Ctx, Result>(
         ): ((
           formData: FormData | Record<string, unknown>
         ) => Promise<Output | ValidationError | ServerError>) => {
-          return async (formData) => {
+          return async formData => {
             try {
               const ctx = await executeMiddlewares();
               const data = parseFormData(formData);
@@ -204,7 +202,9 @@ const createProcedureWithMiddlewares = <Ctx, Result>(
       };
     },
 
-    action: <Output>(fn: (params: { ctx: Result; formData: FormData }) => Promise<Output>) => {
+    action: <Output>(
+      fn: (params: { ctx: Result; formData: FormData }) => Promise<Output>
+    ) => {
       return async (formData: FormData): Promise<Output | ServerError> => {
         try {
           const ctx = await executeMiddlewares();

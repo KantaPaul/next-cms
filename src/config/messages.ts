@@ -1,4 +1,3 @@
-
 const TOOLTIP = {
   CLICK_TO_SHOW_GENERAL_LEGER: 'Click to show general ledger',
 };
@@ -46,7 +45,8 @@ const JOURNAL = {
   NO_SELECTED_ENTRIES: 'No entries is selected',
   NO_SELECTED_JOURNAL: 'No journal is selected',
   NO_SELECTED_JOURNAL_TO_POST: 'No unposted journal is selected',
-  POSTING_DATE_INVALID: (date: string) => `Posting date cannot be past allowed date ${date}`,
+  POSTING_DATE_INVALID: (date: string) =>
+    `Posting date cannot be past allowed date ${date}`,
   REFERENCE_NUMBER_ALREADY_EXISTS: 'Reference number already exists',
 };
 
@@ -54,7 +54,8 @@ const RECURRING = {
   CREATED_SUCCESSFULLY: 'Recurring transaction created successfully',
   UPDATED_SUCCESSFULLY: 'Recurring transaction updated successfully',
   DELETED_SUCCESSFULLY: 'Recurring transaction deleted successfully',
-  SELECTED_DELETED_SUCCESSFULLY: 'Selected recurring transactions deleted successfully',
+  SELECTED_DELETED_SUCCESSFULLY:
+    'Selected recurring transactions deleted successfully',
   APPLY_SUCCESSFULLY: 'Recurring transaction applied successfully',
   ERROR: (action: string) => `Error ${action} recurring transaction`,
   NO_SELECTED_TRANSACTION: 'No Recurring transaction is selected',
@@ -72,7 +73,8 @@ export const MESSAGES = {
   COA,
   IS_REQUIRED: (name: string) => `${name} is Required`,
   IS_GRATER_THEN_ZERO: (name: string) => `${name} must be greater than 0`,
-  MARKED_AS: (module: string, status: string) => `${module} successfully marked as ${status}!`,
+  MARKED_AS: (module: string, status: string) =>
+    `${module} successfully marked as ${status}!`,
   INTEGER_ONLY: 'Only Integer Values are Allowed.',
   INTERNAL_ERROR: 'Internal Error',
   INVALID_ARGUMENT: 'Invalid Argument',
@@ -91,7 +93,8 @@ export const MESSAGES = {
   ERROR_CREATING_TEAM: 'Error creating ',
   TEAM_DOES_NOT_EXIST: 'Organization does not exist',
   YOU_DONT_HAVE_PERMISSION_TO_INVITE: "You don't have permission to invite",
-  YOU_ARE_NOT_THE_OWNER_OF_THIS_TEAM: 'You are not the owner of this Organization',
+  YOU_ARE_NOT_THE_OWNER_OF_THIS_TEAM:
+    'You are not the owner of this Organization',
   INVITATION_NOT_FOUND: 'Invitation not found',
   INVITATION_EXPIRED: 'Invitation expired',
   ERROR_CREATING_TEAM_MEMBER: 'Error creating  member',
@@ -99,15 +102,18 @@ export const MESSAGES = {
   SLUG_IS_ALREADY_TAKEN: 'Slug is already taken',
   ERROR_CREATING_INVITATION: 'Error creating invitation',
   MISSING_FILETYPE_OR_FILENAME: 'Missing fileType or fileName',
-  TRANSACTION_HAS_BEEN_SUCCESSFULLY_USED: 'Transaction has been successfully used',
+  TRANSACTION_HAS_BEEN_SUCCESSFULLY_USED:
+    'Transaction has been successfully used',
   TRANSACTION_ID_NOT_FOUND: 'Transaction id not found',
   YOUR_MESSAGE_HAS_BEEN_TRANSMITTED: 'Your message has been transmitted.',
-  RECEIVER_EMAIL_NOT_SPECIFIED_ON_SITE_SETTINGS: 'Receiver email not specified on site settings!',
+  RECEIVER_EMAIL_NOT_SPECIFIED_ON_SITE_SETTINGS:
+    'Receiver email not specified on site settings!',
   YOU_CANNOT_REMOVE_YOURSELF_PLEASE_DELETE_THE_TEAM_INSTEAD:
     'You cannot remove yourself, please delete the  instead',
   RULE_CREATED_SUCCESSFULLY: 'Rule created successfully',
   IMPORT_SUCCESS: 'Imported successfully',
-  TEAM_MUST_HAVE_AT_LEAST_ONE_OWNER: 'Organization must have at least one owner',
+  TEAM_MUST_HAVE_AT_LEAST_ONE_OWNER:
+    'Organization must have at least one owner',
   USER_IS_NOT_A_MEMBER_OF_THIS_TEAM: 'User is not a member of this !',
   USER_DOES_NOT_HAVE_A_CURRENT_TEAM: 'User does not have a current ',
   INVITATION_MAIL_SUBJECT: 'You are invited to join',
@@ -118,12 +124,14 @@ export const MESSAGES = {
   SIGN_IN: 'Sign In',
   ERROR_SENDING_EMAIL: 'Error sending email',
   ERROR_SENDING_MESSAGE: 'Error sending message',
-  SOMETHING_WENT_WRONG_PLEASE_TRY_AGAIN_LATER: 'Something went wrong, please try again later.',
+  SOMETHING_WENT_WRONG_PLEASE_TRY_AGAIN_LATER:
+    'Something went wrong, please try again later.',
   FAILED_TO_COPY_PLEASE_TRY_AGAIN: 'Failed to copy. Please try again.',
 
   ADDED_TEAM_MEMBER: 'Added Organization Member!',
   SENT_INVITATION_SUCCESSFULLY: 'Sent invitation successfully',
-  TEAM_SETTINGS_UPDATED_SUCCESSFULLY: 'Organization settings updated successfully!',
+  TEAM_SETTINGS_UPDATED_SUCCESSFULLY:
+    'Organization settings updated successfully!',
   ADDED_NEW_USER: 'Added New User!',
   SETTINGS_UPDATED_SUCCESSFULLY: 'Settings updated successfully!',
   PROFILE_UPDATED_SUCCESSFULLY: 'Profile updated successfully!',
@@ -183,14 +191,18 @@ export const MESSAGES = {
   ERROR_COULD_NOT_DELETE_ALREADY_ASSOCIATED_WITH_ACCOUNT_JOURNAL:
     'Could not delete! This already associated with the accounting journal.',
   TRANSACTION_REVERSED_SUCCESSFULLY: 'Transaction reverse successfully!',
-  SELECTED_JOURNAL_DELETED_SUCCESSFULLY: 'Selected journal deleted successfully!',
-  SELECTED_ENTRIES_DELETED_SUCCESSFULLY: 'Selected entries deleted successfully!',
+  SELECTED_JOURNAL_DELETED_SUCCESSFULLY:
+    'Selected journal deleted successfully!',
+  SELECTED_ENTRIES_DELETED_SUCCESSFULLY:
+    'Selected entries deleted successfully!',
   ERROR_NO_JOURNAL_IS_SELECTED: 'Error!! No journal is selected',
   ERROR_NO_ENTRIES_IS_SELECTED: 'Error!! No entries is selected',
   ERROR_NO_JOURNAL_ENTRIES_FOUND: 'Error!! No journal entries found',
   TEAM_ROLE_ALREADY_EXIST: 'Organization role already exist!',
-  CHART_OF_ACCOUNT_CREATED_SUCCESSFULLY: 'Chart of Account Created Successfully',
-  CHART_OF_ACCOUNT_UPDATED_SUCCESSFULLY: 'Chart of Account Updated Successfully',
+  CHART_OF_ACCOUNT_CREATED_SUCCESSFULLY:
+    'Chart of Account Created Successfully',
+  CHART_OF_ACCOUNT_UPDATED_SUCCESSFULLY:
+    'Chart of Account Updated Successfully',
   TEAM_NAME_ALREADY_EXISTS: 'Organization with same name already exists',
   ACCOUNT_NAME_IS_REQUIRED: 'Account name is required',
   ACCOUNT_TYPE_IS_REQUIRED: 'Account type is required',
@@ -210,9 +222,12 @@ export const MESSAGES = {
   WARNS,
   TEAM_ADMIN_ROLE_NOT_FOUND: 'Organization admin role not found',
   TRANSACTION_IS_REQUIRED: 'At least one transaction entry is required',
-  RECURRING_TRANSACTION_CREATED_SUCCESSFULLY: 'Recurring transaction created successfully!',
-  RECURRING_TRANSACTION_UPDATE_SUCCESSFULLY: 'Recurring transaction update successfully!',
-  ERROR_NO_RECURRING_TRANSACTION_IS_SELECTED: 'Error!! No Recurring transaction is selected!',
+  RECURRING_TRANSACTION_CREATED_SUCCESSFULLY:
+    'Recurring transaction created successfully!',
+  RECURRING_TRANSACTION_UPDATE_SUCCESSFULLY:
+    'Recurring transaction update successfully!',
+  ERROR_NO_RECURRING_TRANSACTION_IS_SELECTED:
+    'Error!! No Recurring transaction is selected!',
   SELECTED_RECURRING_TRANSACTION_DELETED_SUCCESSFULLY:
     'Selected recurring transactions deleted successfully!',
   BANK_NAME_IS_REQUIRED: 'Bank Name is Required',
@@ -222,13 +237,18 @@ export const MESSAGES = {
   STATEMENT_DATE_IS_REQUIRED: 'Statement Date is Required',
   BANK_ACCOUNT_ADDED_SUCCESSFULLY: 'Bank account added successfully!',
   BANK_CONFIG_IS_NOT_AVAILABLE: 'Bank configuration is not available.',
-  BANK_TRANSFER_TRANSACTION_CREATED_SUCCESSFULLY: 'Bank transfer transaction created successfully!',
-  BANK_TRANSFER_TRANSACTION_UPDATED_SUCCESSFULLY: 'Bank transfer transaction updated successfully!',
+  BANK_TRANSFER_TRANSACTION_CREATED_SUCCESSFULLY:
+    'Bank transfer transaction created successfully!',
+  BANK_TRANSFER_TRANSACTION_UPDATED_SUCCESSFULLY:
+    'Bank transfer transaction updated successfully!',
   ERROR_NO_ACCOUNT_IS_SELECTED: 'Error!! No Account is selected!',
   BANK_CONFIG_SAVED_SUCCESSFULLY: 'Bank config saved successfully',
-  ASSET_CONFIGURATION_UPDATED_SUCCESSFULLY: 'Asset configuration updated successfully.',
-  SELECTED_ACCOUNT_DELETED_SUCCESSFULLY: 'Selected account deleted successfully!',
-  SELECTED_ACCOUNT_INACTIVE_SUCCESSFULLY: 'Selected account inactive successfully!',
+  ASSET_CONFIGURATION_UPDATED_SUCCESSFULLY:
+    'Asset configuration updated successfully.',
+  SELECTED_ACCOUNT_DELETED_SUCCESSFULLY:
+    'Selected account deleted successfully!',
+  SELECTED_ACCOUNT_INACTIVE_SUCCESSFULLY:
+    'Selected account inactive successfully!',
   SELECTED_ACCOUNTS_USED_IN_TRANSACTION: 'Selected account used in transaction',
   All_SEGMENT_MUST_BE_UNIQUE: 'Account number must be unique',
   TABLE_UPDATED_SUCCESSFULLY: 'Table Updated Successfully',
@@ -243,14 +263,18 @@ export const MESSAGES = {
   TAX_CODE_STATUS_UPDATED_SUCCESSFULLY: (taxCode: string, status: string) => {
     return `Tax Code: ${taxCode} status updated successfully to: ${status}`;
   },
-  SELECTED_TAX_CODE_STATUS_ACTIVE_SUCCESSFULLY: 'Selected tax code status Active successfully',
-  SELECTED_TAX_CODE_STATUS_INACTIVE_SUCCESSFULLY: 'Selected tax code status Inactive successfully',
+  SELECTED_TAX_CODE_STATUS_ACTIVE_SUCCESSFULLY:
+    'Selected tax code status Active successfully',
+  SELECTED_TAX_CODE_STATUS_INACTIVE_SUCCESSFULLY:
+    'Selected tax code status Inactive successfully',
   TAX_CODE_DELETED_SUCCESSFULLY: 'Tax code deleted successfully',
   ERROR_NO_TAX_CODE_IS_SELECTED: 'Error!! No Tax code is selected!',
-  ENSURE_ALLOCATION_RATES_TOTAL_100: 'Ensure all allocation rates add up to 100%',
+  ENSURE_ALLOCATION_RATES_TOTAL_100:
+    'Ensure all allocation rates add up to 100%',
   PAYMENT_TRANSACTION_ADDED_SUCCESSFULLY: (message: string = 'Payment') =>
     `${message} transaction added successfully`,
-  SELECTED_TAX_CODE_DELETED_SUCCESSFULLY: 'Selected tax code deleted successfully!',
+  SELECTED_TAX_CODE_DELETED_SUCCESSFULLY:
+    'Selected tax code deleted successfully!',
   FAILED_TO_CREATE: 'Failed to create resources',
   DELETE_FAILED: 'Failed to delete',
   DELETE_SUCCESS: 'Deleted successfully',
@@ -270,11 +294,14 @@ export const MESSAGES = {
   VENDOR_STATUS_CHANGED: 'Vendor status changed',
   NO_TRANSACTIONS_FOUND: 'No transaction found',
   NO_BANK_ACCOUNT_FOUND: 'No bank account found',
-  ERROR_COULD_NOT_APPLY_RULE: 'No Rule has been matched for selected transactions',
-  BANK_TRANSACTION_HAS_BEEN_MATCHED_SUCCESSFULLY: 'Bank transaction has been matched successfully',
+  ERROR_COULD_NOT_APPLY_RULE:
+    'No Rule has been matched for selected transactions',
+  BANK_TRANSACTION_HAS_BEEN_MATCHED_SUCCESSFULLY:
+    'Bank transaction has been matched successfully',
   RULE_APPLIED_TO_BANK_TRANSACTION_SUCCESSFULLY:
     'Rule has been Applied to transactions successfully',
-  RULE_MATCHED_BUT_NOT_RULE_APPLICATION_FOUND: 'Rule matched! But not rule application found',
+  RULE_MATCHED_BUT_NOT_RULE_APPLICATION_FOUND:
+    'Rule matched! But not rule application found',
   BANK_TRANSACTION: 'Bank Transaction',
   BANK_RULE: 'Bank Rule',
   RULE_CRITERIA_NOT_FULFILLED: 'Rule criteria not full filled',
@@ -288,7 +315,8 @@ export const MESSAGES = {
   DISABLE_ACCOUNT_CAN_NOT_BE_MERGED: 'Disabled accounts cannot be merged.',
   NO_TRANSACTION_IS_SELECTED: 'No transaction is selected',
   INVALID_BANK_TRANSACTION_TYPE: 'Invalid bank transaction type',
-  NO_MATCHED_TRANSACTION_IS_FOUND_TO_RECONCILE: 'No matched transaction is found to reconcile',
+  NO_MATCHED_TRANSACTION_IS_FOUND_TO_RECONCILE:
+    'No matched transaction is found to reconcile',
   SELECTED_ACCOUNTS_HAS_CONNECTED_BANK: 'Selected account has a connected bank',
   SELECT_AT_LEAST_ONE_SUBTYPE: 'Select at least one subtype',
   INVALID_SUBTYPE_NAME: 'Invalid subtype name',
@@ -302,8 +330,10 @@ export const MESSAGES = {
   SOMETHING_WENT_WRONG: 'Something went wrong',
   CASH_DISBURSEMENT_HAS_CROSSED_ITS_DAILY_LIMIT: `Cash Disbursement has crossed it's daily limit.`,
   LARGE_BALANCE_THRESHOLD_EXCEEDED_REQUEST_DENIED: `The request could not be processed as the large balance threshold has been exceeded!`,
-  BANK_TRANSACTION_SUCCESSFULLY_DELETED: 'Bank transaction deleted successfully',
-  COMPLETED_RECONCILIATION_CAN_NOT_BE_UPDATED: 'Completed reconciliation can not be updated',
+  BANK_TRANSACTION_SUCCESSFULLY_DELETED:
+    'Bank transaction deleted successfully',
+  COMPLETED_RECONCILIATION_CAN_NOT_BE_UPDATED:
+    'Completed reconciliation can not be updated',
   BUDGET_EXISTS: 'Budget already exists for this fiscal year and segments',
   PREVIOUS_YEAR_BUDGET_NOT_FOUND: 'Previous year budget not found',
   ATTACHMENT_ADDED_SUCCESSFULLY: 'Attachment added successfully',
@@ -317,10 +347,12 @@ export const MESSAGES = {
   PLEASE_SELECT_AT_LEAST_ONE_VENDOR: 'Please select at least one vendor',
   PLEASE_SELECT_AT_LEAST_ONE_SUBTYPE:
     'Please either enable Apply to Vendor or Apply to Customer or Create a Miscellaneous Transaction.',
-  PLEASE_SELECT_EITHER_INCOME_OR_EXPENSE_ACCOUNT: 'Please select either income or expense account',
+  PLEASE_SELECT_EITHER_INCOME_OR_EXPENSE_ACCOUNT:
+    'Please select either income or expense account',
   TEMPLATE_SUCCESS: 'Template created successfully',
   EMAIL_SENT_SUCCESSFULLY: 'Email sent successfully',
-  IMBALANCED_JOURNAL_ENTRIES: 'Imbalanced Journal Entries. Debit and Credit must be equal',
+  IMBALANCED_JOURNAL_ENTRIES:
+    'Imbalanced Journal Entries. Debit and Credit must be equal',
   BUDGET: {
     CREATED_SUCCESSFULLY: 'Budget created successfully',
     UPDATED_SUCCESSFULLY: 'Budget updated successfully',
@@ -332,7 +364,8 @@ export const MESSAGES = {
   INVENTORY: {
     BASE_PRICE_MUST_BE_GREATER_THAN_ZERO: 'Base price must be greater than 0',
     SALE_PRICE_MUST_BE_GREATER_THAN_ZERO: 'Sale price must be greater than 0',
-    INVENTORY_MOVEMENT_SUCCESSFULLY_CREATED: 'Inventory Movement Successfully Created',
+    INVENTORY_MOVEMENT_SUCCESSFULLY_CREATED:
+      'Inventory Movement Successfully Created',
   },
   RECEIVABLES: {
     CREATED_SUCCESSFULLY: 'Receivable created successfully',
@@ -356,7 +389,8 @@ export const MESSAGES = {
       FAILED_TO_CREATE_RECEIVABLE: 'Failed to create receivable',
       FAILED_TO_UPDATE_RECEIVABLE: 'Failed to update receivable',
       FAILED_TO_DELETE_RECEIVABLE: 'Failed to delete receivable',
-      FAILED_TO_DELETE_RECEIVABLE_EXPENSE: 'Failed to delete receivable expense',
+      FAILED_TO_DELETE_RECEIVABLE_EXPENSE:
+        'Failed to delete receivable expense',
       EXPENSE_AMOUNT_EXCEEDS_BALANCE: 'Expense amount exceeds balance',
       RECEIVABLE_NOT_FOUND: 'Receivable not found',
       INSTALLMENT_RECORD_NOT_FOUND: 'Installment record not found',
@@ -386,7 +420,8 @@ export const MESSAGES = {
     DELETED_SUCCESSFULLY: 'Liability deleted successfully',
     REFERENCE_NUMBER_NOT_UNIQUE: 'Reference number must be unique',
     PAYMENT_CREATED_SUCCESSFULLY: 'Payment created successfully',
-    PURCHASE_INVOICE_APPLIED_SUCCESSFULLY: 'Purchase invoice applied successfully',
+    PURCHASE_INVOICE_APPLIED_SUCCESSFULLY:
+      'Purchase invoice applied successfully',
     ERRORS: {
       INVALID_REFERENCE_NUMBER:
         'Must start with LIB followed by one or more digits, with optional leading zeros',
@@ -440,9 +475,12 @@ export const MESSAGES = {
     },
     HRM: {
       APPROVER: {
-        CONFIGURATION_UPDATED: 'HRM Approver configuration updated successfully',
+        CONFIGURATION_UPDATED:
+          'HRM Approver configuration updated successfully',
       },
-      JOURNAL_CONFIG: { JOURNAL_CONFIG_SAVED_SUCCESSFULLY: 'Journal config saved successfully' },
+      JOURNAL_CONFIG: {
+        JOURNAL_CONFIG_SAVED_SUCCESSFULLY: 'Journal config saved successfully',
+      },
     },
     SALES: {
       CONFIGURATION_UPDATED: 'Sales configuration updated successfully',
@@ -483,9 +521,12 @@ export const MESSAGES = {
       EMPLOYEE_DELETED_SUCCESSFULLY: 'Employee deleted successfully',
     },
     EMPLOYEE_GRADE: {
-      EMPLOYEE_GRADE_CREATED_SUCCESSFULLY: 'Employee grade created successfully',
-      EMPLOYEE_GRADE_UPDATED_SUCCESSFULLY: 'Employee grade updated successfully',
-      EMPLOYEE_GRADE_DELETED_SUCCESSFULLY: 'Employee grade deleted successfully',
+      EMPLOYEE_GRADE_CREATED_SUCCESSFULLY:
+        'Employee grade created successfully',
+      EMPLOYEE_GRADE_UPDATED_SUCCESSFULLY:
+        'Employee grade updated successfully',
+      EMPLOYEE_GRADE_DELETED_SUCCESSFULLY:
+        'Employee grade deleted successfully',
     },
     EMPLOYEE_TYPE: {
       EMPLOYEE_TYPE_CREATED_SUCCESSFULLY: 'Employee type created successfully',
@@ -503,12 +544,16 @@ export const MESSAGES = {
       LEAVE_POLICY_DELETED_SUCCESSFULLY: 'Leave Policy deleted successfully',
     },
     INDUCTION_PLAN: {
-      INDUCTION_PLAN_DELETED_SUCCESSFULLY: 'Induction plan deleted successfully',
+      INDUCTION_PLAN_DELETED_SUCCESSFULLY:
+        'Induction plan deleted successfully',
     },
     INDUCTION_BATCHES: {
-      INDUCTION_BATCH_CREATED_SUCCESSFULLY: 'Induction batch created successfully',
-      INDUCTION_BATCH_UPDATED_SUCCESSFULLY: 'Induction batch updated successfully',
-      INDUCTION_BATCH_DELETED_SUCCESSFULLY: 'Induction batch deleted successfully',
+      INDUCTION_BATCH_CREATED_SUCCESSFULLY:
+        'Induction batch created successfully',
+      INDUCTION_BATCH_UPDATED_SUCCESSFULLY:
+        'Induction batch updated successfully',
+      INDUCTION_BATCH_DELETED_SUCCESSFULLY:
+        'Induction batch deleted successfully',
     },
   },
 
@@ -524,9 +569,12 @@ export const MESSAGES = {
   },
   CUSTOMERS: {
     CUSTOMER_GRADE: {
-      CUSTOMER_GRADE_CREATED_SUCCESSFULLY: 'Customer grade created successfully',
-      CUSTOMER_GRADE_UPDATED_SUCCESSFULLY: 'Customer grade updated successfully',
-      CUSTOMER_GRADE_DELETED_SUCCESSFULLY: 'Customer grade deleted successfully',
+      CUSTOMER_GRADE_CREATED_SUCCESSFULLY:
+        'Customer grade created successfully',
+      CUSTOMER_GRADE_UPDATED_SUCCESSFULLY:
+        'Customer grade updated successfully',
+      CUSTOMER_GRADE_DELETED_SUCCESSFULLY:
+        'Customer grade deleted successfully',
     },
     PAYMENT_TYPES: {
       PAYMENT_TYPES_CREATED_SUCCESSFULLY: 'Payment types created successfully',
@@ -536,10 +584,12 @@ export const MESSAGES = {
   },
   SALES: {
     SALES_QUOTATION: {
-      CUSTOMER_EMAIL_SUBJECT: (id: string) => `Sales Quotation for Your Review - ${id}`,
+      CUSTOMER_EMAIL_SUBJECT: (id: string) =>
+        `Sales Quotation for Your Review - ${id}`,
     },
     SALES_ORDER: {
-      CUSTOMER_EMAIL_SUBJECT: (id: string) => `Sales Order for Your Review - ${id}`,
+      CUSTOMER_EMAIL_SUBJECT: (id: string) =>
+        `Sales Order for Your Review - ${id}`,
     },
     SALES_INVOICE: {
       CUSTOMER_EMAIL_SUBJECT: (id: string) => `Sales Invoice - ${id}`,

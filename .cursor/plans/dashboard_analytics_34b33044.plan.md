@@ -1,17 +1,19 @@
 ---
+
 name: Dashboard analytics
 overview: Replace the blank /dashboard Welcome page with a CMS content overview and first-party traffic charts, recorded by a small beacon on published public pages.
 todos:
-  - id: schema
-    content: Add page_views table and Drizzle migration
-    status: completed
-  - id: beacon
-    content: Record published-page views from a client beacon and POST route
-    status: completed
-  - id: dashboard
-    content: Replace the Welcome page with traffic charts and CMS overview
-    status: completed
-isProject: false
+- id: schema
+  content: Add page_views table and Drizzle migration
+  status: completed
+- id: beacon
+  content: Record published-page views from a client beacon and POST route
+  status: completed
+- id: dashboard
+  content: Replace the Welcome page with traffic charts and CMS overview
+  status: completed
+  isProject: false
+
 ---
 
 # Dashboard analytics

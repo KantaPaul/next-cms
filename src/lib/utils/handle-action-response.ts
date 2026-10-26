@@ -54,8 +54,8 @@ export const handleActionResponse = async <T>(
         }
 
         if ('errors' in res) {
-          Object.values(res.errors).forEach((errorMessages) => {
-            errorMessages?.forEach((message) => {
+          Object.values(res.errors).forEach(errorMessages => {
+            errorMessages?.forEach(message => {
               showErrorToast(message);
             });
           });
@@ -82,8 +82,8 @@ export const handleActionResponse = async <T>(
       }
 
       if ('errors' in response) {
-        Object.values(response.errors).forEach((errorMessages) => {
-          errorMessages?.forEach((message) => {
+        Object.values(response.errors).forEach(errorMessages => {
+          errorMessages?.forEach(message => {
             showErrorToast(message);
           });
         });
@@ -96,7 +96,9 @@ export const handleActionResponse = async <T>(
 
     return false;
   } catch (error) {
-    showErrorToast(error instanceof Error ? error.message : 'An unexpected error occurred');
+    showErrorToast(
+      error instanceof Error ? error.message : 'An unexpected error occurred'
+    );
     return false;
   }
 };

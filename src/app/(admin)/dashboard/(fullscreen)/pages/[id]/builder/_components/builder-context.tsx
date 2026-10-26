@@ -12,7 +12,13 @@ export type BuilderTarget = {
 };
 
 /** What the builder edits: a page, one post's custom layout, the shared single-post template, a page template, or a global block. */
-export type BuilderKind = 'page' | 'post' | 'post-template' | 'page-template' | 'global' | 'contact-form';
+export type BuilderKind =
+  | 'page'
+  | 'post'
+  | 'post-template'
+  | 'page-template'
+  | 'global'
+  | 'contact-form';
 
 export type BuilderContextValue = {
   kind: BuilderKind;

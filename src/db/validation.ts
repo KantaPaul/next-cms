@@ -1,1 +1,1 @@
-export * from '@/db/validations/personalization.validation'
+export * from '@/db/validations/personalization.validation';

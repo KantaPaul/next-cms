@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils/cn';
 
-interface TableHeaderCellProps extends React.TableHTMLAttributes<HTMLTableCellElement> {
+interface TableHeaderCellProps
+  extends React.TableHTMLAttributes<HTMLTableCellElement> {
   colSpan?: number;
   rowSpan?: number;
 }

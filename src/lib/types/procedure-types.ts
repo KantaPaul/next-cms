@@ -25,7 +25,9 @@ export interface Context {
 
 // Type for a procedure with middlewares and methods
 export type Procedure<Ctx, Result> = {
-  use: <T>(middleware: (params: { ctx: Result }) => T | Promise<T>) => Procedure<Ctx, T>;
+  use: <T>(
+    middleware: (params: { ctx: Result }) => T | Promise<T>
+  ) => Procedure<Ctx, T>;
   input: <S extends z.ZodType>(
     schema: S
   ) => {

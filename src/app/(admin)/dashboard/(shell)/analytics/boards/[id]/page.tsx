@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PAGES } from '@/config/pages';
 import { defaultWidgetTitle } from '@/db/schemas/analytics.schema';
-import { analyticsBoardsService } from '@/server/services/analytics-boards.service';
 import { analyticsService } from '@/server/services/analytics.service';
+import { analyticsBoardsService } from '@/server/services/analytics-boards.service';
 import { DualBars } from '../../_components/dual-bars';
 import { TrendCard } from '../../_components/trend-card';
 import { DeleteBoardButton } from '../_components/delete-board-button';
@@ -45,7 +45,9 @@ export default async function BoardViewPage({
     <div className="flex w-full flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{board.name}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {board.name}
+          </h1>
           <p className="mt-1 text-sm text-steel-500 dark:text-steel-400">
             {board.layout.widgets.length} widget
             {board.layout.widgets.length === 1 ? '' : 's'} · vs previous{' '}
@@ -86,7 +88,9 @@ export default async function BoardViewPage({
 
       {board.layout.widgets.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-steel-200 px-6 py-16 text-center dark:border-dark-300">
-          <p className="text-sm text-steel-500">This board has no widgets yet.</p>
+          <p className="text-sm text-steel-500">
+            This board has no widgets yet.
+          </p>
           <Link
             href={PAGES.DASHBOARD.ANALYTICS_BOARD_EDIT(id)}
             className="text-sm font-medium text-indigo-600 hover:underline"
@@ -165,7 +169,9 @@ export default async function BoardViewPage({
                           className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 text-sm"
                         >
                           <div className="min-w-0 flex-1">
-                            <div className="truncate font-medium">{row.label}</div>
+                            <div className="truncate font-medium">
+                              {row.label}
+                            </div>
                             {row.detail && (
                               <div className="truncate text-xs text-steel-500">
                                 {row.detail}

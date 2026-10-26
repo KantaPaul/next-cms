@@ -1,7 +1,7 @@
 'use client';
 
-import * as React from 'react';
 import * as SwitchPrimitives from '@radix-ui/react-switch';
+import * as React from 'react';
 import { FieldError, Label } from '@/components/atoms/forms';
 import { Flex } from '@/components/atoms/layout';
 import { cn } from '@/lib/utils/cn';
@@ -31,7 +31,9 @@ const SwitchBase = React.forwardRef<
       {...props}
     >
       {isLoading && (
-        <Spinner className={cn('absolute z-10 size-3', props.checked && 'left-3')} />
+        <Spinner
+          className={cn('absolute z-10 size-3', props.checked && 'left-3')}
+        />
       )}
       <SwitchPrimitives.Thumb
         data-slot="switch-thumb"
@@ -90,7 +92,10 @@ export const Switch = React.forwardRef<
           {labelPlacement === 'right' && renderLabel}
         </Flex>
         {error && (
-          <FieldError className={cn('mt-2 text-xs', errorClassName)} error={error} />
+          <FieldError
+            className={cn('mt-2 text-xs', errorClassName)}
+            error={error}
+          />
         )}
       </div>
     );

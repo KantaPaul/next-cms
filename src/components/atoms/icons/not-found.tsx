@@ -1,4 +1,6 @@
-export function NotFoundIllustration({ ...props }: React.SVGProps<SVGSVGElement>) {
+export function NotFoundIllustration({
+  ...props
+}: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       width="284"

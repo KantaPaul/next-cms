@@ -15,7 +15,9 @@ export const metadata = {
 };
 
 export default async function UsersPage() {
-  const { allowed, userId } = await requirePermission(PERMISSIONS.SETTINGS_MANAGE);
+  const { allowed, userId } = await requirePermission(
+    PERMISSIONS.SETTINGS_MANAGE
+  );
   const breadcrumbs = [
     { title: 'Dashboard', href: PAGES.DASHBOARD.ROOT },
     { title: TITLE, href: PAGES.DASHBOARD.USERS },
@@ -30,7 +32,10 @@ export default async function UsersPage() {
     );
   }
 
-  const [users, activity] = await Promise.all([usersService.list(), auditService.list(200)]);
+  const [users, activity] = await Promise.all([
+    usersService.list(),
+    auditService.list(200),
+  ]);
 
   return (
     <>
@@ -45,7 +50,9 @@ export default async function UsersPage() {
           targetName: a.targetName,
           details: a.details,
           createdAt: a.createdAt,
-          actor: a.actor ? { name: a.actor.name, email: a.actor.email, image: a.actor.image } : null,
+          actor: a.actor
+            ? { name: a.actor.name, email: a.actor.email, image: a.actor.image }
+            : null,
         }))}
       />
     </>

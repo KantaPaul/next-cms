@@ -29,7 +29,17 @@ export function titleCase(str: string | null | undefined): string {
   ];
 
   // List of acronyms or words that should be all caps
-  const uppercaseWords = ['id', 'tv', 'r&d', 'q&a', 'ssn', 'irs', 'coa', '(coa)', 'hrm'];
+  const uppercaseWords = [
+    'id',
+    'tv',
+    'r&d',
+    'q&a',
+    'ssn',
+    'irs',
+    'coa',
+    '(coa)',
+    'hrm',
+  ];
 
   // Function to detect if a string is all uppercase (potential acronym)
   const isAcronym = (word: string): boolean => {
@@ -39,17 +49,14 @@ export function titleCase(str: string | null | undefined): string {
   // Function to split camelCase
   const splitCamelCase = (word: string): string[] => {
     if (isAcronym(word)) return [word.toLowerCase()];
-    return word.split(/(?=[A-Z])/).map((part) => part.toLowerCase());
+    return word.split(/(?=[A-Z])/).map(part => part.toLowerCase());
   };
 
   // Split the string into words, handling camelCase and underscores
-  const words = str.split(/[\s_]+/).flatMap((word) =>
+  const words = str.split(/[\s_]+/).flatMap(word =>
     // First split by hyphens, but only if not a blood group
     !bloodGroupPattern.test(word)
-      ? word
-          .split('-')
-          .map((part) => splitCamelCase(part))
-          .flat()
+      ? word.split('-').flatMap(part => splitCamelCase(part))
       : [word]
   );
 
@@ -61,7 +68,11 @@ export function titleCase(str: string | null | undefined): string {
     }
 
     // Check if it should remain lowercase
-    if (lowercaseWords.includes(word) && index !== 0 && index !== array.length - 1) {
+    if (
+      lowercaseWords.includes(word) &&
+      index !== 0 &&
+      index !== array.length - 1
+    ) {
       return word.toLowerCase();
     }
 

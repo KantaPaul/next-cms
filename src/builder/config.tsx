@@ -7,16 +7,16 @@ import {
   getRelatedPosts,
   queryBlogPosts,
 } from '@/server/actions/blog.actions';
-import type { BuilderItem } from './data';
+// import type { BuilderItem } from './data';
 import {
+  type BlogActiveFilters,
   BlogPosts,
+  type BlogPostsProps,
   PostContent,
   PostFeaturedImage,
   PostMeta,
   PostTitle,
   RelatedPosts,
-  type BlogActiveFilters,
-  type BlogPostsProps,
 } from './blocks/blog';
 import {
   Columns,
@@ -24,8 +24,8 @@ import {
   Gallery,
   GlobalRef,
   ImageBlock,
-  renderSlot,
   RichText,
+  renderSlot,
   type SlotValue,
 } from './blocks/content';
 import { Accordion, Slider, Tabs } from './blocks/interactive';
@@ -44,13 +44,15 @@ import { SectionField } from './controls/section-inspector';
 import {
   CategoryLockField,
   GlobalBlockSelectField,
+  IconPickerField,
   MediaUrlField,
   RichTextField,
   TagLockField,
+  UrlField,
 } from './fields/client-fields';
-import { ICON_OPTIONS } from './icons';
+import { ContactFormOptionsField } from './fields/contact-form-options-field';
 import { MotionScope } from './motion';
-import { POST_BLOCK_TYPES, SAMPLE_POST, type PostView } from './post-template';
+import { POST_BLOCK_TYPES, type PostView, SAMPLE_POST } from './post-template';
 import { fontStylesheetUrl, resolveThemeTokens, themeStyle } from './theme';
 
 /* ---------- field helpers ---------- */
@@ -77,6 +79,16 @@ const media = (label: string): Field => ({
   type: 'custom',
   label,
   render: MediaUrlField as never,
+});
+const url = (label: string): Field => ({
+  type: 'custom',
+  label,
+  render: UrlField as never,
+});
+const icon = (label: string): Field => ({
+  type: 'custom',
+  label,
+  render: IconPickerField as never,
 });
 
 /** Style, layout, and motion for every block. The floating inspector shows it as the Style and Layout tabs. */
@@ -133,10 +145,12 @@ const renderPanels = (Component: ComponentType<any>) => {
     <Component
       {...props}
       editing={!!puck?.isEditing}
-      panels={(items ?? []).map((item: { label?: string; content?: SlotValue }) => ({
-        label: item?.label,
-        node: renderSlot(item?.content),
-      }))}
+      panels={(items ?? []).map(
+        (item: { label?: string; title?: string; content?: SlotValue }) => ({
+          label: item?.label ?? item?.title,
+          node: renderSlot(item?.content),
+        })
+      )}
     />
   );
   Render.displayName = `Panels(${Component.displayName || Component.name || 'Component'})`;
@@ -147,17 +161,17 @@ const renderPanels = (Component: ComponentType<any>) => {
  * Puck only turns an array-item slot into a drop zone when the item has that key.
  * Default panels and blocks saved before this fix omit `content`, so backfill it.
  */
-const ensurePanelSlots = (data: { props?: AnyProps }) => {
-  const items = data.props?.items;
-  if (!Array.isArray(items) || items.every(item => Array.isArray(item?.content))) return data;
-  return {
-    ...data,
-    props: {
-      ...data.props,
-      items: items.map(item => (Array.isArray(item?.content) ? item : { ...item, content: [] })),
-    },
-  };
-};
+// const ensurePanelSlots = (data: { props?: AnyProps }) => {
+//   const items = data.props?.items;
+//   if (!Array.isArray(items) || items.every(item => Array.isArray(item?.content))) return data;
+//   return {
+//     ...data,
+//     props: {
+//       ...data.props,
+//       items: items.map(item => (Array.isArray(item?.content) ? item : { ...item, content: [] })),
+//     },
+//   };
+// };
 
 export const builderConfig: Config = {
   categories: {
@@ -172,7 +186,10 @@ export const builderConfig: Config = {
     },
     contact: { title: 'Contact form', components: ['ContactForm'] },
     blog: { title: 'Blog', components: ['BlogPosts'] },
-    layout: { title: 'Layout', components: ['Columns', 'Slider', 'Tabs', 'Accordion'] },
+    layout: {
+      title: 'Layout',
+      components: ['Columns', 'Slider', 'Tabs', 'Accordion'],
+    },
     global: { title: 'Global blocks', components: ['GlobalRef'] },
   },
   root: {
@@ -267,9 +284,9 @@ export const builderConfig: Config = {
         title: textarea('Headline'),
         subtitle: textarea('Subheadline'),
         primaryButtonText: text('Primary button text'),
-        primaryButtonLink: text('Primary button link'),
+        primaryButtonLink: url('Primary button link'),
         secondaryButtonText: text('Secondary button text'),
-        secondaryButtonLink: text('Secondary button link'),
+        secondaryButtonLink: url('Secondary button link'),
         imageUrl: media('Image'),
         imageAlt: text('Image alt text'),
         alignment: {
@@ -315,7 +332,7 @@ export const builderConfig: Config = {
             description: 'Describe the benefit.',
           },
           arrayFields: {
-            icon: select('Icon', ICON_OPTIONS),
+            icon: icon('Icon'),
             title: text('Title'),
             description: textarea('Description'),
           },
@@ -412,7 +429,7 @@ export const builderConfig: Config = {
               arrayFields: { text: text('Feature') },
             },
             buttonText: text('Button text'),
-            buttonLink: text('Button link'),
+            buttonLink: url('Button link'),
             popular: yesNo('Highlight as popular'),
           },
         },
@@ -551,9 +568,9 @@ export const builderConfig: Config = {
         title: textarea('Title'),
         description: textarea('Description'),
         primaryButtonText: text('Primary button text'),
-        primaryButtonLink: text('Primary button link'),
+        primaryButtonLink: url('Primary button link'),
         secondaryButtonText: text('Secondary button text'),
-        secondaryButtonLink: text('Secondary button link'),
+        secondaryButtonLink: url('Secondary button link'),
         variant: select('Style', [
           { label: 'Gradient', value: 'gradient' },
           { label: 'Primary color', value: 'primary' },
@@ -648,14 +665,24 @@ export const builderConfig: Config = {
           { label: 'Wide', value: 'wide' },
           { label: 'Full', value: 'full' },
         ]),
-        imageWidth: { type: 'number', label: 'Image width (px)', min: 0, max: 4000 },
-        imageHeight: { type: 'number', label: 'Image height (px)', min: 0, max: 4000 },
+        imageWidth: {
+          type: 'number',
+          label: 'Image width (px)',
+          min: 0,
+          max: 4000,
+        },
+        imageHeight: {
+          type: 'number',
+          label: 'Image height (px)',
+          min: 0,
+          max: 4000,
+        },
         objectFit: select('Object fit', [
           { label: 'Cover', value: 'cover' },
           { label: 'Contain', value: 'contain' },
           { label: 'Fill', value: 'fill' },
         ]),
-        link: text('Link (optional)'),
+        link: url('Link (optional)'),
       }),
       defaultProps: {
         url: '',
@@ -688,8 +715,11 @@ export const builderConfig: Config = {
         items: {
           type: 'array',
           label: 'Images',
-          getItemSummary: (item: { alt?: string; caption?: string; url?: string }) =>
-            item.alt || item.caption || (item.url ? 'Image' : 'Empty'),
+          getItemSummary: (item: {
+            alt?: string;
+            caption?: string;
+            url?: string;
+          }) => item.alt || item.caption || (item.url ? 'Image' : 'Empty'),
           defaultItemProps: { url: '', alt: '', caption: '' },
           arrayFields: {
             url: media('Image'),
@@ -749,7 +779,11 @@ export const builderConfig: Config = {
               { label: 'Checkbox', value: 'checkbox' },
             ]),
             placeholder: text('Placeholder'),
-            options: textarea('Options, one per line (dropdown and radio)'),
+            options: {
+              type: 'custom',
+              label: 'Options, one per line',
+              render: ContactFormOptionsField as never,
+            },
             required: yesNo('Required'),
           },
         },
@@ -763,7 +797,12 @@ export const builderConfig: Config = {
         fields: [
           { label: 'Name', name: 'name', type: 'text', required: true },
           { label: 'Email', name: 'email', type: 'email', required: true },
-          { label: 'Message', name: 'message', type: 'textarea', required: true },
+          {
+            label: 'Message',
+            name: 'message',
+            type: 'textarea',
+            required: true,
+          },
         ],
         section: DEFAULT_SECTION,
       },
@@ -779,9 +818,13 @@ export const builderConfig: Config = {
         },
       },
       defaultProps: { globalBlockId: '' },
-      resolveData: async (data) => {
+      resolveData: async data => {
         const id = (data.props as { globalBlockId?: string }).globalBlockId;
-        if (!id) return { ...data, props: { ...data.props, blocks: [], globalBlockName: '' } };
+        if (!id)
+          return {
+            ...data,
+            props: { ...data.props, blocks: [], globalBlockName: '' },
+          };
         const result = await getGlobalBlockContent(id);
         return {
           ...data,
@@ -872,7 +915,9 @@ export const builderConfig: Config = {
           page,
         };
         const language =
-          typeof metadata?.language === 'string' ? metadata.language : undefined;
+          typeof metadata?.language === 'string'
+            ? metadata.language
+            : undefined;
         const result = await queryBlogPosts({
           language,
           q: active.q,
@@ -896,6 +941,66 @@ export const builderConfig: Config = {
         };
       },
       render: renderBlock(BlogPosts),
+    },
+    Slider: {
+      label: 'Slider',
+      fields: withSection({
+        items: {
+          type: 'array',
+          label: 'Slides',
+          getItemSummary: (item: { title?: string }) => item.title || 'Slide',
+          defaultItemProps: { title: 'Slide', content: [] },
+          arrayFields: {
+            title: text('Title'),
+            content: { type: 'slot', label: 'Slide Content' },
+          },
+        },
+      }),
+      defaultProps: {
+        items: [{ title: 'Slide 1', content: [] }],
+        section: DEFAULT_SECTION,
+      },
+      render: renderPanels(Slider),
+    },
+    Tabs: {
+      label: 'Tabs',
+      fields: withSection({
+        items: {
+          type: 'array',
+          label: 'Tabs',
+          getItemSummary: (item: { label?: string }) => item.label || 'Tab',
+          defaultItemProps: { label: 'Tab 1', content: [] },
+          arrayFields: {
+            label: text('Label'),
+            content: { type: 'slot', label: 'Tab Content' },
+          },
+        },
+      }),
+      defaultProps: {
+        items: [{ label: 'Tab 1', content: [] }],
+        section: DEFAULT_SECTION,
+      },
+      render: renderPanels(Tabs),
+    },
+    Accordion: {
+      label: 'Accordion',
+      fields: withSection({
+        items: {
+          type: 'array',
+          label: 'Items',
+          getItemSummary: (item: { title?: string }) => item.title || 'Item',
+          defaultItemProps: { title: 'Question?', content: [] },
+          arrayFields: {
+            title: text('Title'),
+            content: { type: 'slot', label: 'Accordion Content' },
+          },
+        },
+      }),
+      defaultProps: {
+        items: [{ title: 'Item 1', content: [] }],
+        section: DEFAULT_SECTION,
+      },
+      render: renderPanels(Accordion),
     },
   },
 };

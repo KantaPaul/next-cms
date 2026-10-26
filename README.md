@@ -1,43 +1,115 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Next CMS
 
-## Getting Started
+A Next.js CMS with a visual page builder, blog, media library, and first-party analytics.
+
+## Requirements
+
+- Node.js 20+
+- pnpm
+- Docker, for local Postgres
+
+## Setup
+
+Install dependencies and start Postgres:
 
 ```bash
-# Initial setup (first time only)
-docker network create nextcms_network
-docker-compose up -d
-
+pnpm install
+docker compose up -d
 ```
 
-First, run the development server:
+Postgres listens on port 5432. The Compose file creates database `nextcms` with user `nextcms` and password `nextcms_pass`.
+
+Copy the variables below into `.env`. `DATABASE_URL` must match that database:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+DATABASE_URL=postgres://nextcms:nextcms_pass@localhost:5432/nextcms
+SITE_URL=http://localhost:3000
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+NEXT_PUBLIC_APP_NAME=Next CMS
+```
+
+Apply the schema and seed content:
+
+```bash
+pnpm db:migrate
+pnpm db:push
+pnpm db:seed
+```
+
+`pnpm db:migrate` applies the journaled migrations. `page_views` is not in that journal yet. `pnpm db:push` creates it and adds nullable `page_id` plus `post_id` from the Drizzle schema. A later step will journal `src/db/migrations/20261022070000_page_views.sql` unchanged. Do not edit that file.
+
+Start the app:
+
+```bash
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The public site is [http://localhost:3000](http://localhost:3000). The admin is [http://localhost:3000/dashboard](http://localhost:3000/dashboard). Sign in at [http://localhost:3000/login](http://localhost:3000/login).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Google OAuth
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create an OAuth client in Google Cloud and set the authorized redirect URI to `http://localhost:3000/login/google/callback`.
 
-## Learn More
+```bash
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=http://localhost:3000/login/google/callback
+```
 
-To learn more about Next.js, take a look at the following resources:
+The login page sends the browser to `/login/google`, which starts the Google flow. Placeholders in code let the app boot without real credentials, but sign-in fails until these are set.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Storage
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Uploads stay on disk by default.
 
-## Deploy on Vercel
+```bash
+STORAGE_DRIVER=local
+MEDIA_LOCAL_DIR=uploads
+MEDIA_MAX_UPLOAD_MB=10
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+For S3-compatible storage:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+STORAGE_DRIVER=s3
+S3_BUCKET=
+S3_REGION=
+S3_ENDPOINT=
+S3_ACCESS_KEY_ID=
+S3_SECRET_ACCESS_KEY=
+S3_PUBLIC_URL=
+```
+
+`S3_ENDPOINT` and `S3_PUBLIC_URL` are optional. Set them for MinIO or another non-AWS endpoint.
+
+## Gemini
+
+AI writing, rewrite, SEO, and alt text use Gemini. Leave the key empty to hide those actions.
+
+```bash
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+## Cron
+
+Scheduled pages and posts publish when something calls:
+
+```bash
+curl -X POST http://localhost:3000/api/cron/publish \
+  -H "Authorization: Bearer $CRON_SECRET"
+```
+
+`GET` accepts the same header. Set `CRON_SECRET` in the environment. Without it the route returns 503. The public site layout also calls a best-effort publisher at most once a minute, which is not a substitute for the cron route.
+
+## Scripts
+
+| Command                     | What it does                                    |
+| --------------------------- | ----------------------------------------------- |
+| `pnpm dev`                  | Dev server on port 3000                         |
+| `pnpm build` / `pnpm start` | Production build and server                     |
+| `pnpm lint`                 | ESLint                                          |
+| `pnpm db:migrate`           | Apply journaled SQL migrations                  |
+| `pnpm db:push`              | Push the Drizzle schema, including `page_views` |
+| `pnpm db:seed`              | Seed starter content                            |
+| `pnpm exec tsc --noEmit`    | Typecheck                                       |

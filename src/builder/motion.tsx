@@ -2,26 +2,26 @@
 
 import { motion } from 'motion/react';
 import {
+  type CSSProperties,
   createContext,
+  type HTMLAttributes,
+  type KeyboardEvent,
+  type ReactNode,
   useContext,
   useEffect,
   useRef,
   useState,
-  type CSSProperties,
-  type HTMLAttributes,
-  type KeyboardEvent,
-  type ReactNode,
 } from 'react';
 import { cn } from '@/lib/utils/cn';
 import {
   ATTENTION_SEEKERS,
+  type Device,
   deviceForWidth,
   ENTRANCE_CLASS,
   EXIT_CLASS,
   HOVER_CLASS,
-  pick,
   PAGE_TRANSITIONS,
-  type Device,
+  pick,
   type ResolvedAnimation,
 } from './style';
 
@@ -65,7 +65,9 @@ export function MotionScope({
     <ScopeContext.Provider value={{ editing, preview: !!preview }}>
       <motion.div
         className="contents"
-        initial={play ? (t === 'fade' ? { opacity: 0 } : { opacity: 0, y: 16 }) : false}
+        initial={
+          play ? (t === 'fade' ? { opacity: 0 } : { opacity: 0, y: 16 }) : false
+        }
         animate={play ? { opacity: 1, y: 0 } : undefined}
         transition={play ? { duration: 0.4, ease: 'easeOut' } : undefined}
       >
@@ -81,6 +83,8 @@ type MotionSectionProps = HTMLAttributes<HTMLElement> & {
   as?: 'section' | 'div' | 'header' | 'footer' | 'article' | 'aside' | 'nav';
   animation?: ResolvedAnimation | null;
   children?: ReactNode;
+  innerClassName?: string;
+  hasItems?: boolean;
 };
 
 function useDevice(): Device {
@@ -94,7 +98,10 @@ function useDevice(): Device {
   return device;
 }
 
-function allowedOnDevice(a: ResolvedAnimation | null | undefined, device: Device) {
+function allowedOnDevice(
+  a: ResolvedAnimation | null | undefined,
+  device: Device
+) {
   if (!a?.devices) return true;
   const d = a.devices;
   if (d[device] === false) return false;
@@ -105,24 +112,46 @@ function allowedOnDevice(a: ResolvedAnimation | null | undefined, device: Device
 }
 
 export function MotionSection(props: MotionSectionProps) {
-  const { as: Tag = 'section', animation, className, style, children, ...rest } = props;
+  const {
+    as: Tag = 'section',
+    animation,
+    className,
+    style,
+    children,
+    innerClassName,
+    hasItems,
+    ...rest
+  } = props;
   const scope = useContext(ScopeContext);
   const device = useDevice();
   const { reduced, mounted } = useReducedMotionAfterMount();
   const a = animation;
+  const body = (
+    <div className={innerClassName}>
+      {hasItems ? <MotionBoundary>{children}</MotionBoundary> : children}
+    </div>
+  );
 
   if (!a || reduced || !mounted || !allowedOnDevice(a, device)) {
     return (
       <Tag className={className} style={style} {...rest}>
-        {children}
+        {body}
       </Tag>
     );
   }
 
-  const entranceName = a.entranceClass ? ENTRANCE_CLASS[a.entranceClass as keyof typeof ENTRANCE_CLASS] : undefined;
-  const exitName = a.exitClass ? EXIT_CLASS[a.exitClass as keyof typeof EXIT_CLASS] : undefined;
-  const hoverName = a.hoverClass ? HOVER_CLASS[a.hoverClass as keyof typeof HOVER_CLASS] : undefined;
-  const attention = a.entranceClass ? ATTENTION_SEEKERS.has(a.entranceClass) : false;
+  const entranceName = a.entranceClass
+    ? ENTRANCE_CLASS[a.entranceClass as keyof typeof ENTRANCE_CLASS]
+    : undefined;
+  const exitName = a.exitClass
+    ? EXIT_CLASS[a.exitClass as keyof typeof EXIT_CLASS]
+    : undefined;
+  const hoverName = a.hoverClass
+    ? HOVER_CLASS[a.hoverClass as keyof typeof HOVER_CLASS]
+    : undefined;
+  const attention = a.entranceClass
+    ? ATTENTION_SEEKERS.has(a.entranceClass)
+    : false;
 
   const durationMs = a.duration ?? 600;
   const delayMs = a.delay ?? 0;
@@ -136,7 +165,7 @@ export function MotionSection(props: MotionSectionProps) {
   if (scope.editing && !scope.preview) {
     return (
       <Tag className={className} style={style} {...rest}>
-        {children}
+        {body}
       </Tag>
     );
   }
@@ -157,14 +186,17 @@ export function MotionSection(props: MotionSectionProps) {
       data-exit={exitName || undefined}
       {...rest}
     >
-      {children}
+      {body}
     </Tag>
   );
 }
 
 /* ---------- stagger boundary + item ---------- */
 
-const StaggerContext = createContext<{ index: number; take: () => number } | null>(null);
+const StaggerContext = createContext<{
+  index: number;
+  take: () => number;
+} | null>(null);
 
 export function MotionBoundary({ children }: { children: ReactNode }) {
   const indexRef = useRef(0);
@@ -176,16 +208,23 @@ export function MotionBoundary({ children }: { children: ReactNode }) {
       return i;
     },
   };
-  return <StaggerContext.Provider value={api}>{children}</StaggerContext.Provider>;
+  return (
+    <StaggerContext.Provider value={api}>{children}</StaggerContext.Provider>
+  );
 }
 
 export function MotionItem({
+  as: Tag = 'div',
   className,
   style,
   children,
   animation,
   ...rest
-}: HTMLAttributes<HTMLDivElement> & { animation?: ResolvedAnimation | null }) {
+}: HTMLAttributes<HTMLElement> & {
+  as?: 'div' | 'details' | 'figure';
+  animation?: ResolvedAnimation | null;
+  open?: boolean;
+}) {
   const stagger = useContext(StaggerContext);
   const scope = useContext(ScopeContext);
   const { reduced, mounted } = useReducedMotionAfterMount();
@@ -197,11 +236,16 @@ export function MotionItem({
     ? ENTRANCE_CLASS[a.entranceClass as keyof typeof ENTRANCE_CLASS]
     : undefined;
 
-  if (!entranceName || reduced || !mounted || (scope.editing && !scope.preview)) {
+  if (
+    !entranceName ||
+    reduced ||
+    !mounted ||
+    (scope.editing && !scope.preview)
+  ) {
     return (
-      <div className={className} style={style} {...rest}>
+      <Tag className={className} style={style} {...rest}>
         {children}
-      </div>
+      </Tag>
     );
   }
 
@@ -211,7 +255,7 @@ export function MotionItem({
   const durationMs = a?.duration ?? 600;
 
   return (
-    <div
+    <Tag
       className={cn(className, 'animate__animated', entranceName)}
       style={
         {
@@ -224,6 +268,6 @@ export function MotionItem({
       {...rest}
     >
       {children}
-    </div>
+    </Tag>
   );
 }

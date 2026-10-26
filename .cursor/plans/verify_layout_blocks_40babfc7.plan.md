@@ -1,20 +1,22 @@
 ---
+
 name: Verify layout blocks
 overview: The Slider, Tabs, and Accordion blocks and global-block zone persistence from the patch are already in the working tree. This plan checks that implementation against the spec, fixes only what verification finds, and closes the remaining todos.
 todos:
-  - id: verify-builder
-    content: Verify Slider, Tabs, and Accordion drops, interaction, Style, and Layout in the page builder, preview, and public page
-    status: completed
-  - id: verify-globals
-    content: Verify save-as-global zone persistence, the global-block editor, Global ref, and legacy array content
-    status: completed
-  - id: fix-gaps
-    content: Fix only behavior that fails those checks, starting with zone-key rehydration if nested panels are empty
-    status: completed
-  - id: close-plan
-    content: Mark the blocks, zones, and verify todos completed in the existing interactive layout blocks plan
-    status: completed
-isProject: false
+- id: verify-builder
+  content: Verify Slider, Tabs, and Accordion drops, interaction, Style, and Layout in the page builder, preview, and public page
+  status: completed
+- id: verify-globals
+  content: Verify save-as-global zone persistence, the global-block editor, Global ref, and legacy array content
+  status: completed
+- id: fix-gaps
+  content: Fix only behavior that fails those checks, starting with zone-key rehydration if nested panels are empty
+  status: completed
+- id: close-plan
+  content: Mark the blocks, zones, and verify todos completed in the existing interactive layout blocks plan
+  status: completed
+  isProject: false
+
 ---
 
 # Finish interactive layout blocks

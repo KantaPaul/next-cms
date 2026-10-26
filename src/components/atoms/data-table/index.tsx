@@ -20,6 +20,16 @@ import {
   ArrowUpWideNarrow,
 } from 'lucide-react';
 import { Fragment, Suspense } from 'react';
+import { useTableControls } from '@/components/atoms/data-table/hooks/use-table-controls';
+import { usePinningStyles } from '@/components/atoms/data-table/lib/get-common-pinning-styles';
+import type { DrawerFiltersProps } from '@/components/atoms/data-table/table-drawer-filters';
+import { TablePagination } from '@/components/atoms/data-table/table-pagination';
+import {
+  SearchFallback,
+  TableSearch,
+} from '@/components/atoms/data-table/table-search';
+import { TableToolbar } from '@/components/atoms/data-table/table-toolbar';
+import type { PersonalizedProps } from '@/components/atoms/data-table/types';
 import type { FilterConfig } from '@/components/atoms/filter-toolbar/types';
 import { Box } from '@/components/atoms/layout';
 import { NotFound } from '@/components/atoms/not-found';
@@ -35,16 +45,6 @@ import {
 import { focusOutline } from '@/components/atoms/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils/cn';
-import { useTableControls } from '@/components/atoms/data-table/hooks/use-table-controls';
-import { usePinningStyles } from '@/components/atoms/data-table/lib/get-common-pinning-styles';
-import type { DrawerFiltersProps } from '@/components/atoms/data-table/table-drawer-filters';
-import { TablePagination } from '@/components/atoms/data-table/table-pagination';
-import {
-  SearchFallback,
-  TableSearch,
-} from '@/components/atoms/data-table/table-search';
-import { TableToolbar } from '@/components/atoms/data-table/table-toolbar';
-import type { PersonalizedProps } from '@/components/atoms/data-table/types';
 
 export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -248,11 +248,7 @@ export function DataTable<TData, TValue>({
             </TableBody>
 
             {showFooter && (
-              <TableFoot
-                className={cn(
-                  'border-border border-t'
-                )}
-              >
+              <TableFoot className={cn('border-border border-t')}>
                 {table.getFooterGroups().map(footerGroup => (
                   <TableRow
                     key={footerGroup.id}

@@ -2,11 +2,15 @@
 
 import { createUsePuck } from '@measured/puck';
 import { Paintbrush, X } from 'lucide-react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
-import { useEffect, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { cn } from '@/lib/utils/cn';
 import { safeColor } from '../style';
 import { ControlLabel } from './primitives';
@@ -107,7 +111,10 @@ export function ColorPicker({
               className="relative h-6 w-14 shrink-0 overflow-hidden rounded border border-border bg-[repeating-conic-gradient(#e2e8f0_0_25%,#fff_0_50%)] bg-[length:8px_8px] p-0 shadow-xs hover:border-muted-foreground"
             >
               {value ? (
-                <span className="absolute inset-0" style={{ backgroundColor: value }} />
+                <span
+                  className="absolute inset-0"
+                  style={{ backgroundColor: value }}
+                />
               ) : (
                 <Paintbrush className="size-3 text-muted-foreground" />
               )}
@@ -115,7 +122,11 @@ export function ColorPicker({
           </PopoverTrigger>
 
           <span className="truncate font-mono text-xs text-foreground">
-            {value ? value.toUpperCase() : <span className="text-muted-foreground">{placeholder}</span>}
+            {value ? (
+              value.toUpperCase()
+            ) : (
+              <span className="text-muted-foreground">{placeholder}</span>
+            )}
           </span>
 
           {value && (
@@ -132,20 +143,32 @@ export function ColorPicker({
           )}
         </div>
 
-        <PopoverContent align="start" side="left" sideOffset={8} className="w-64 space-y-3 p-3">
+        <PopoverContent
+          align="start"
+          side="left"
+          sideOffset={8}
+          className="w-64 space-y-3 p-3"
+        >
           <div className="overflow-hidden rounded-md [&_.react-colorful]:h-36 [&_.react-colorful]:w-full">
-            <HexColorPicker color={safeColor(value) ?? '#6366f1'} onChange={handleColorChange} />
+            <HexColorPicker
+              color={safeColor(value) ?? '#6366f1'}
+              onChange={handleColorChange}
+            />
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-semibold text-muted-foreground">HEX</span>
+            <span className="text-[11px] font-semibold text-muted-foreground">
+              HEX
+            </span>
             <FormInput
               type="text"
               value={draft}
               placeholder="#000000"
               onChange={e => setDraft(e.target.value)}
               onBlur={e => commitHex(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && commitHex(e.currentTarget.value)}
+              onKeyDown={e =>
+                e.key === 'Enter' && commitHex(e.currentTarget.value)
+              }
               className="h-7 flex-1 bg-muted/40 px-2 font-mono text-xs uppercase"
             />
             {value && (
@@ -162,7 +185,9 @@ export function ColorPicker({
           </div>
 
           <div>
-            <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">Theme Swatches</p>
+            <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">
+              Theme Swatches
+            </p>
             <div className="flex flex-wrap gap-1.5">
               {swatches.map(swatch => (
                 <Button
@@ -174,7 +199,8 @@ export function ColorPicker({
                   style={{ backgroundColor: swatch }}
                   className={cn(
                     'size-5 rounded-full border-black/10 p-0 hover:scale-110',
-                    value?.toLowerCase() === swatch.toLowerCase() && 'ring-2 ring-primary ring-offset-1'
+                    value?.toLowerCase() === swatch.toLowerCase() &&
+                      'ring-2 ring-primary ring-offset-1'
                   )}
                 />
               ))}

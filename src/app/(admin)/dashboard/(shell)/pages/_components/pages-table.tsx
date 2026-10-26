@@ -14,13 +14,20 @@ import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 import { toast } from 'sonner';
 import {
+  deletePage,
+  duplicatePage,
+  publishPage,
+  unpublishPage,
+} from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.actions';
+import type { PageListItem } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
+import {
   ActionDropdown,
   ActionDropdownItem,
 } from '@/components/atoms/action-dropdown';
 import { DataTable } from '@/components/atoms/data-table';
+import type { FilterConfig } from '@/components/atoms/filter-toolbar/types';
 import { StatusBadge } from '@/components/atoms/status-badge';
 import { Badge } from '@/components/ui/badge';
-import type { FilterConfig } from '@/components/atoms/filter-toolbar/types';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import {
@@ -29,13 +36,6 @@ import {
 } from '@/db/schemas/shared.schema';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import { useAccess } from '@/providers/access.provider';
-import {
-  deletePage,
-  duplicatePage,
-  publishPage,
-  unpublishPage,
-} from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.actions';
-import type { PageListItem } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
 
 export const PAGE_STATUS_COLORS = {
   draft: 'draft',

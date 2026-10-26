@@ -1,3 +1,4 @@
+import { createId } from '@paralleldrive/cuid2';
 import {
   date,
   doublePrecision,
@@ -6,7 +7,6 @@ import {
   time,
   timestamp,
 } from 'drizzle-orm/pg-core';
-import { createId } from '@paralleldrive/cuid2';
 
 export const baseColumns = {
   id: text()

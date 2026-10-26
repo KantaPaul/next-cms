@@ -22,10 +22,13 @@ export function FilterToolbar({
   const isDesktop = useMediaQuery('(min-width: 1600px)');
   const { queryParams, isPending, removeParams } = useQueryParams();
 
-  const filterNames = useMemo(() => filters.map((filter) => filter.name), [filters]);
+  const filterNames = useMemo(
+    () => filters.map(filter => filter.name),
+    [filters]
+  );
 
   const hasFilters = useMemo(
-    () => Object.keys(queryParams).some((param) => filterNames.includes(param)),
+    () => Object.keys(queryParams).some(param => filterNames.includes(param)),
     [queryParams, filterNames]
   );
 

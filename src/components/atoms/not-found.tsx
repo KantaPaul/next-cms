@@ -8,7 +8,10 @@ interface NotFoundProps {
   className?: string;
 }
 
-export function NotFound({ className, message = 'No Records Found!' }: NotFoundProps) {
+export function NotFound({
+  className,
+  message = 'No Records Found!',
+}: NotFoundProps) {
   return (
     <Flex justify="center" className={cn('flex-col gap-12 p-10', className)}>
       <NotFoundIllustration className="flex h-[230px] w-[240px] items-center justify-center" />

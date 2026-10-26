@@ -1,8 +1,8 @@
 'use server';
 import { revalidatePath } from 'next/cache';
-import { PAGES } from '@/config/pages';
-import { postsService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.service';
 import { postTemplatesService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
+import { postsService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.service';
+import { PAGES } from '@/config/pages';
 import {
   createRevisionSchema,
   idSchema,

@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils/cn';
 
-import { spanClassNames, type NumberOfGrids } from './styles';
+import { type NumberOfGrids, spanClassNames } from './styles';
 
 interface ColProps extends React.HTMLAttributes<HTMLDivElement> {
   span?: NumberOfGrids;

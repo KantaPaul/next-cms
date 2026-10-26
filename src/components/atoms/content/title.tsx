@@ -1,7 +1,7 @@
-import { cn } from '@/lib/utils/cn';
-import type { HTMLAttributes, forwardRef } from 'react';
 import { Slot } from '@radix-ui/react-slot';
+import type { forwardRef, HTMLAttributes } from 'react';
 import React from 'react';
+import { cn } from '@/lib/utils/cn';
 
 declare const titleStyles: {
   as: {
@@ -26,10 +26,7 @@ const Title = React.forwardRef<
   return (
     <Comp
       ref={ref}
-      className={cn(
-        'text-steel-700 font-medium dark:text-white',
-        className
-      )}
+      className={cn('text-steel-700 font-medium dark:text-white', className)}
       {...props}
     >
       {children}

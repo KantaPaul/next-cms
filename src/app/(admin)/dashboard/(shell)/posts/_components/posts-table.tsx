@@ -12,14 +12,27 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
+import { PAGE_STATUS_COLORS } from '@/app/(admin)/dashboard/(shell)/pages/_components/pages-table';
+import {
+  layoutLabel,
+  SetTemplateDialog,
+} from '@/app/(admin)/dashboard/(shell)/posts/_components/set-template-dialog';
+import type { PostTemplateListItem } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
+import {
+  deletePost,
+  duplicatePost,
+  publishPost,
+  unpublishPost,
+} from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.actions';
+import type { PostListItem } from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.service';
 import {
   ActionDropdown,
   ActionDropdownItem,
 } from '@/components/atoms/action-dropdown';
 import { DataTable } from '@/components/atoms/data-table';
+import type { FilterConfig } from '@/components/atoms/filter-toolbar/types';
 import { StatusBadge } from '@/components/atoms/status-badge';
 import { Badge } from '@/components/ui/badge';
-import type { FilterConfig } from '@/components/atoms/filter-toolbar/types';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import {
@@ -28,19 +41,6 @@ import {
 } from '@/db/schemas/shared.schema';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import { useAccess } from '@/providers/access.provider';
-import { PAGE_STATUS_COLORS } from '@/app/(admin)/dashboard/(shell)/pages/_components/pages-table';
-import {
-  deletePost,
-  duplicatePost,
-  publishPost,
-  unpublishPost,
-} from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.actions';
-import type { PostListItem } from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.service';
-import type { PostTemplateListItem } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
-import {
-  layoutLabel,
-  SetTemplateDialog,
-} from '@/app/(admin)/dashboard/(shell)/posts/_components/set-template-dialog';
 
 const buildFilters = (templates: PostTemplateListItem[]): FilterConfig[] => [
   {

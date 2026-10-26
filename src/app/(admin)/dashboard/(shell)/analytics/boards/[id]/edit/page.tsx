@@ -1,7 +1,7 @@
-import { notFound } from 'next/navigation';
 import { and, eq, isNull } from 'drizzle-orm';
+import { notFound } from 'next/navigation';
 import { db } from '@/db';
-import { pages } from '@/db/schema';
+import { pages, posts } from '@/db/schema';
 import { PageStatus } from '@/db/schemas/shared.schema';
 import { analyticsBoardsService } from '@/server/services/analytics-boards.service';
 import { BoardBuilder } from '../../_components/board-builder';
@@ -15,14 +15,24 @@ export default async function BoardEditPage({
   const board = await analyticsBoardsService.get(id);
   if (!board) notFound();
 
-  const publishedPages = await db
-    .select({ id: pages.id, title: pages.title })
-    .from(pages)
-    .where(
-      and(isNull(pages.deletedAt), eq(pages.status, PageStatus.published))
-    )
-    .orderBy(pages.title)
-    .limit(200);
+  const [publishedPages, publishedPosts] = await Promise.all([
+    db
+      .select({ id: pages.id, title: pages.title })
+      .from(pages)
+      .where(
+        and(isNull(pages.deletedAt), eq(pages.status, PageStatus.published))
+      )
+      .orderBy(pages.title)
+      .limit(200),
+    db
+      .select({ id: posts.id, title: posts.title })
+      .from(posts)
+      .where(
+        and(isNull(posts.deletedAt), eq(posts.status, PageStatus.published))
+      )
+      .orderBy(posts.title)
+      .limit(200),
+  ]);
 
   return (
     <BoardBuilder
@@ -30,6 +40,7 @@ export default async function BoardEditPage({
       initialName={board.name}
       initialLayout={board.layout}
       publishedPages={publishedPages}
+      publishedPosts={publishedPosts}
     />
   );
 }

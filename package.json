@@ -13,6 +13,8 @@
     "lint:fix": "next lint --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
     "db:ui": "drizzle-kit studio",
     "db:up": "drizzle-kit up",
     "db:push": "drizzle-kit push",
@@ -62,6 +64,7 @@
     "animate.css": "^4.1.1",
     "arctic": "^3.7.0",
     "autoprefixer": "^10.4.22",
+    "biome": "^0.3.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -101,7 +104,8 @@
     "zod": "^4.1.12",
     "zustand": "^5.0.8"
   },
-   "devDependencies": {
+  "devDependencies": {
+    "@biomejs/biome": "^2.6.3",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.17.0",
     "@tailwindcss/postcss": "^4",

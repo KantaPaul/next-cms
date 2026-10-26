@@ -10,7 +10,7 @@
 .react-tel-input .flag {
   width: 16px;
   height: 11px;
-  background-image: url("/flags.png");
+  background-image: url('/flags.png');
 }
 .react-tel-input .ad {
   background-position: -16px 0;

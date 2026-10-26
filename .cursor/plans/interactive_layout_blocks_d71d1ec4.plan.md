@@ -1,17 +1,19 @@
 ---
+
 name: Interactive layout blocks
 overview: Add Slider, Tabs, and Accordion as layout blocks whose panels are drop zones for any other block, and persist Puck zones so the same blocks keep their nested content when saved as global blocks.
 todos:
-  - id: blocks
-    content: Add Slider, Tabs, and Accordion slot blocks and register them in the Layout category
-    status: completed
-  - id: zones
-    content: Persist and rehydrate Puck zones for global blocks, including save-as-global and BlockList
-    status: completed
-  - id: verify
-    content: Verify nested drops in the page builder, public page, and global-block editor
-    status: completed
-isProject: false
+- id: blocks
+  content: Add Slider, Tabs, and Accordion slot blocks and register them in the Layout category
+  status: completed
+- id: zones
+  content: Persist and rehydrate Puck zones for global blocks, including save-as-global and BlockList
+  status: completed
+- id: verify
+  content: Verify nested drops in the page builder, public page, and global-block editor
+  status: completed
+  isProject: false
+
 ---
 
 # Slider, Tabs, and Accordion blocks

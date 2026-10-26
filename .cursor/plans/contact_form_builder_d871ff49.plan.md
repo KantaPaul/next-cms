@@ -1,17 +1,19 @@
 ---
+
 name: Contact form builder
 overview: Use a country-aware phone input on the Contact form block, show the options list only for dropdown and radio, and add a contact-forms list whose builder saves each form as a global block pages can embed.
 todos:
-  - id: phone
-    content: Render tel fields with react-phone-number-input and post E.164 via a hidden input
-    status: pending
-  - id: options
-    content: Show the options textarea only when the field type is dropdown or radio
-    status: pending
-  - id: routes
-    content: Add the contact forms list and builder, stored as contact-form global blocks pages can embed
-    status: pending
-isProject: false
+- id: phone
+  content: Render tel fields with react-phone-number-input and post E.164 via a hidden input
+  status: pending
+- id: options
+  content: Show the options textarea only when the field type is dropdown or radio
+  status: pending
+- id: routes
+  content: Add the contact forms list and builder, stored as contact-form global blocks pages can embed
+  status: pending
+  isProject: false
+
 ---
 
 # Contact form phone, options, and global builder

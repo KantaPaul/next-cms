@@ -1,9 +1,9 @@
 'use server';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import { mediaService } from '@/app/(admin)/dashboard/(shell)/media/_modules/media.service';
 import { PAGES } from '@/config/pages';
 import { accessProcedure } from '@/server/procedures/permission.procedure';
-import { mediaService } from '@/app/(admin)/dashboard/(shell)/media/_modules/media.service';
 
 const listSchema = z.object({
   search: z.string().optional(),
@@ -23,7 +23,10 @@ const updateSchema = z.object({
 export const listMedia = accessProcedure
   .input(listSchema)
   .action(async ({ input }) => {
-    const [result, folders] = await Promise.all([mediaService.list(input), mediaService.folders()]);
+    const [result, folders] = await Promise.all([
+      mediaService.list(input),
+      mediaService.folders(),
+    ]);
     return { ...result, folders };
   });
 

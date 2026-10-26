@@ -1,14 +1,17 @@
 'use server';
+import { asc, eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import { templatesService } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.service';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
-import { EDITOR_TYPE } from '@/db/schemas/shared.schema';
 import { db } from '@/db';
 import { globalBlocks } from '@/db/schema';
-import { asc, eq } from 'drizzle-orm';
-import { accessProcedure, permissionProcedure } from '@/server/procedures/permission.procedure';
-import { templatesService } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.service';
+import { EDITOR_TYPE } from '@/db/schemas/shared.schema';
+import {
+  accessProcedure,
+  permissionProcedure,
+} from '@/server/procedures/permission.procedure';
 
 const blockItemSchema = z.object({
   type: z.string().min(1),
@@ -24,9 +27,15 @@ const globalBlockContentSchema = z.union([
   }),
 ]);
 
-export const listGlobalBlockOptions = permissionProcedure(PERMISSIONS.PAGES_EDIT).query(async () => {
+export const listGlobalBlockOptions = permissionProcedure(
+  PERMISSIONS.PAGES_EDIT
+).query(async () => {
   const rows = await db
-    .select({ id: globalBlocks.id, name: globalBlocks.name, category: globalBlocks.category })
+    .select({
+      id: globalBlocks.id,
+      name: globalBlocks.name,
+      category: globalBlocks.category,
+    })
     .from(globalBlocks)
     .orderBy(asc(globalBlocks.name));
   return rows.map(r =>
@@ -43,7 +52,11 @@ export const listGlobalBlockOptions = permissionProcedure(PERMISSIONS.PAGES_EDIT
 export async function getGlobalBlockContent(id: string) {
   if (typeof id !== 'string' || !id) return null;
   const [row] = await db
-    .select({ id: globalBlocks.id, name: globalBlocks.name, content: globalBlocks.content })
+    .select({
+      id: globalBlocks.id,
+      name: globalBlocks.name,
+      content: globalBlocks.content,
+    })
     .from(globalBlocks)
     .where(eq(globalBlocks.id, id))
     .limit(1);
@@ -55,7 +68,10 @@ export async function getGlobalBlockContent(id: string) {
   if (Array.isArray(row.content)) {
     blocks = row.content;
   } else if (row.content && typeof row.content === 'object') {
-    const obj = row.content as { content?: unknown[]; zones?: Record<string, unknown[]> };
+    const obj = row.content as {
+      content?: unknown[];
+      zones?: Record<string, unknown[]>;
+    };
     blocks = Array.isArray(obj.content) ? obj.content : [];
     zones = obj.zones && typeof obj.zones === 'object' ? obj.zones : {};
   }
@@ -79,14 +95,23 @@ export const saveGlobalBlock = accessProcedure
     })
   )
   .action(async ({ input, ctx }) => {
-    const row = await templatesService.saveGlobalBlock(input as never, ctx.access);
+    const row = await templatesService.saveGlobalBlock(
+      input as never,
+      ctx.access
+    );
     revalidatePath(PAGES.DASHBOARD.TEMPLATES);
     revalidatePath(PAGES.DASHBOARD.CONTACT_FORMS);
     return row;
   });
 
 export const renameGlobalBlock = accessProcedure
-  .input(z.object({ id: z.string().min(1), name: z.string().trim().min(1).max(150), category: z.string().trim().max(50) }))
+  .input(
+    z.object({
+      id: z.string().min(1),
+      name: z.string().trim().min(1).max(150),
+      category: z.string().trim().max(50),
+    })
+  )
   .action(async ({ input, ctx }) => {
     const row = await templatesService.renameGlobalBlock(input, ctx.access);
     revalidatePath(PAGES.DASHBOARD.TEMPLATES);

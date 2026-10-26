@@ -91,7 +91,11 @@ export function splitSeparateNumbers(value: string) {
  */
 export function noCase(input: string, options?: Options) {
   const [prefix, words, suffix] = splitPrefixSuffix(input, options);
-  return prefix + words.map(lowerFactory(options?.locale)).join(options?.delimiter ?? ' ') + suffix;
+  return (
+    prefix +
+    words.map(lowerFactory(options?.locale)).join(options?.delimiter ?? ' ') +
+    suffix
+  );
 }
 
 /**
@@ -145,7 +149,9 @@ export function capitalCase(input: string, options?: Options) {
   const upper = upperFactory(options?.locale);
   return (
     prefix +
-    words.map(capitalCaseTransformFactory(lower, upper)).join(options?.delimiter ?? ' ') +
+    words
+      .map(capitalCaseTransformFactory(lower, upper))
+      .join(options?.delimiter ?? ' ') +
     suffix
   );
 }
@@ -155,7 +161,11 @@ export function capitalCase(input: string, options?: Options) {
  */
 export function constantCase(input: string, options?: Options) {
   const [prefix, words, suffix] = splitPrefixSuffix(input, options);
-  return prefix + words.map(upperFactory(options?.locale)).join(options?.delimiter ?? '_') + suffix;
+  return (
+    prefix +
+    words.map(upperFactory(options?.locale)).join(options?.delimiter ?? '_') +
+    suffix
+  );
 }
 
 /**
@@ -204,7 +214,10 @@ export function sentenceCase<T extends string>(
 /**
  * Convert a string to snake case (`foo_bar`).
  */
-export function snakeCase<T extends string>(input: T, options?: Options): SnakeCase<T> {
+export function snakeCase<T extends string>(
+  input: T,
+  options?: Options
+): SnakeCase<T> {
   return noCase(input, { delimiter: '_', ...options }) as SnakeCase<T>;
 }
 
@@ -240,15 +253,22 @@ function pascalCaseTransformFactory(
 ) {
   return (word: string, index: number) => {
     const char0 = word[0];
-    const initial = index > 0 && char0 >= '0' && char0 <= '9' ? '_' + char0 : upper(char0);
+    const initial =
+      index > 0 && char0 >= '0' && char0 <= '9' ? '_' + char0 : upper(char0);
     return initial + lower(word.slice(1));
   };
 }
 
-function splitPrefixSuffix(input: string, options: Options = {}): [string, string[], string] {
-  const splitFn = options.split ?? (options.separateNumbers ? splitSeparateNumbers : split);
-  const prefixCharacters = options.prefixCharacters ?? DEFAULT_PREFIX_SUFFIX_CHARACTERS;
-  const suffixCharacters = options.suffixCharacters ?? DEFAULT_PREFIX_SUFFIX_CHARACTERS;
+function splitPrefixSuffix(
+  input: string,
+  options: Options = {}
+): [string, string[], string] {
+  const splitFn =
+    options.split ?? (options.separateNumbers ? splitSeparateNumbers : split);
+  const prefixCharacters =
+    options.prefixCharacters ?? DEFAULT_PREFIX_SUFFIX_CHARACTERS;
+  const suffixCharacters =
+    options.suffixCharacters ?? DEFAULT_PREFIX_SUFFIX_CHARACTERS;
   let prefixIndex = 0;
   let suffixIndex = input.length;
 
@@ -279,7 +299,7 @@ export const removeSpecialChar = (action: string) =>
   action
     ?.split('_')
     ?.join(' ')
-    ?.replace(/^./, (char) => char?.toUpperCase());
+    ?.replace(/^./, char => char?.toUpperCase());
 
 export const capitalizeSentenceCase = (input: string) => {
   if (!input) return '';

@@ -1,17 +1,19 @@
 ---
+
 name: Contact form UI
 overview: Fix the contact-form editor so its fields use the same site input styles as the page builder, show the contact-forms list as a table with a dropdown of actions, and move the Contact form block out of Content into its own left-panel category.
 todos:
-  - id: site-root
-    content: Restore the site-root canvas wrapper on the contact-form editor so inputs use site.css
-    status: completed
-  - id: table
-    content: Render the contact-forms list as a table with Edit, Rename, and Delete in an action dropdown
-    status: completed
-  - id: category
-    content: Move ContactForm out of Content into its own left-panel category and tint
-    status: completed
-isProject: false
+- id: site-root
+  content: Restore the site-root canvas wrapper on the contact-form editor so inputs use site.css
+  status: completed
+- id: table
+  content: Render the contact-forms list as a table with Edit, Rename, and Delete in an action dropdown
+  status: completed
+- id: category
+  content: Move ContactForm out of Content into its own left-panel category and tint
+  status: completed
+  isProject: false
+
 ---
 
 # Contact form list, inputs, and palette

@@ -5,14 +5,16 @@ import { Eye, History, Loader2, RotateCcw, Save } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+  createRevision,
+  getRevision,
+  listRevisions,
+  restoreRevision,
+} from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.actions';
+import { isBuilderData } from '@/builder/data';
+import { sanitizeRichText } from '@/builder/sanitize';
+import { extractPlainText } from '@/builder/text';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -20,17 +22,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { isBuilderData } from '@/builder/data';
-import { extractPlainText } from '@/builder/text';
-import { sanitizeRichText } from '@/builder/sanitize';
-import { handleActionResponse } from '@/lib/utils/handle-action-response';
-import { cn } from '@/lib/utils/cn';
 import {
-  createRevision,
-  getRevision,
-  listRevisions,
-  restoreRevision,
-} from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.actions';
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { cn } from '@/lib/utils/cn';
+import { handleActionResponse } from '@/lib/utils/handle-action-response';
 
 type RevisionRow = {
   id: string;
@@ -142,7 +142,10 @@ export function RevisionsDrawer({
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent data-theme={themeScope} className="flex w-full flex-col gap-0 p-0 text-foreground sm:max-w-md">
+        <SheetContent
+          data-theme={themeScope}
+          className="flex w-full flex-col gap-0 p-0 text-foreground sm:max-w-md"
+        >
           <SheetHeader className="border-b border-border p-5">
             <SheetTitle className="flex items-center gap-2">
               <History className="size-5" /> Revision history
@@ -229,7 +232,10 @@ export function RevisionsDrawer({
         open={!!preview}
         onOpenChange={value => !value && setPreview(null)}
       >
-        <DialogContent data-theme={themeScope} className="flex max-h-[85vh] flex-col text-foreground sm:max-w-3xl">
+        <DialogContent
+          data-theme={themeScope}
+          className="flex max-h-[85vh] flex-col text-foreground sm:max-w-3xl"
+        >
           <DialogHeader>
             <DialogTitle>
               {preview?.label ?? 'Revision'} ·{' '}
@@ -238,7 +244,9 @@ export function RevisionsDrawer({
           </DialogHeader>
           <div className="flex-1 overflow-y-auto rounded-md border border-border p-5">
             <h2 className="mb-4 text-2xl font-bold">{preview?.title}</h2>
-            {preview && <RevisionBody content={preview.content} themeScope={themeScope} />}
+            {preview && (
+              <RevisionBody content={preview.content} themeScope={themeScope} />
+            )}
           </div>
           <DialogFooter>
             <Button
@@ -262,11 +270,20 @@ export function RevisionsDrawer({
   );
 }
 
-function RevisionBody({ content, themeScope }: { content: unknown; themeScope?: 'light' | 'dark' }) {
+function RevisionBody({
+  content,
+  themeScope,
+}: {
+  content: unknown;
+  themeScope?: 'light' | 'dark';
+}) {
   if (typeof content === 'string') {
     return (
       <div
-        className={cn('prose max-w-none', themeScope !== 'light' && 'dark:prose-invert')}
+        className={cn(
+          'prose max-w-none',
+          themeScope !== 'light' && 'dark:prose-invert'
+        )}
         dangerouslySetInnerHTML={{ __html: sanitizeRichText(content) }}
       />
     );

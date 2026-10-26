@@ -1,13 +1,16 @@
 import 'dotenv/config';
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool, type PoolConfig } from 'pg';
 import * as schema from '@/db/schema';
 
 type TEnv = 'development' | 'production' | 'test';
+type Database = NodePgDatabase<typeof schema>;
 
 /** Get environment configuration */
 const getEnvConfig = () => {
-  const DATABASE_URL = process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/postgres';
+  const DATABASE_URL =
+    process.env.DATABASE_URL ||
+    'postgres://postgres:postgres@localhost:5432/postgres';
   const NODE_ENV = (process.env.NODE_ENV || 'development') as TEnv;
 
   return { DATABASE_URL, NODE_ENV };
@@ -23,11 +26,13 @@ const createPoolConfig = (env: TEnv, url: string): PoolConfig => ({
 });
 
 /** Create Drizzle connection */
-const createDrizzleConnection = () => {
+const createDrizzleConnection = (): Database => {
   try {
     const { NODE_ENV, DATABASE_URL } = getEnvConfig();
     const pool = new Pool(createPoolConfig(NODE_ENV, DATABASE_URL));
-    pool.on('error', (err) => console.warn('[AI Studio] Database pool notice:', err?.message || err));
+    pool.on('error', (err: Error) =>
+      console.warn('[AI Studio] Database pool notice:', err?.message || err)
+    );
     return drizzle(pool, { schema, logger: false, casing: 'snake_case' });
   } catch {
     console.warn('[AI Studio] Database not connected — fallback active');
@@ -39,15 +44,17 @@ const createDrizzleConnection = () => {
       update: async (d: any) => d?.data ?? {},
       delete: async () => ({}),
     };
-    return new Proxy({} as any, {
-      get: (_, prop) => (prop === 'query' ? new Proxy({}, { get: () => noOp }) : async () => []),
+    return new Proxy({} as Database, {
+      get: (_, prop) =>
+        prop === 'query' ? new Proxy({}, { get: () => noOp }) : async () => [],
     });
   }
 };
 
 /** Singleton Database Manager */
 class DatabaseManager {
-  private static instance: ReturnType<typeof createDrizzleConnection> | null = null;
+  private static instance: ReturnType<typeof createDrizzleConnection> | null =
+    null;
 
   private constructor() {}
 
@@ -57,10 +64,13 @@ class DatabaseManager {
   }
 
   static async shutdown() {
-    if (this.instance?.$client instanceof Pool) {
-      await this.instance.$client
+    const client = (this.instance as { $client?: Pool } | null)?.$client;
+    if (client instanceof Pool) {
+      await client
         .end()
-        .catch((err) => console.error('Error closing database pool:', err));
+        .catch((err: Error) =>
+          console.error('Error closing database pool:', err)
+        );
       this.instance = null;
     }
   }
@@ -68,7 +78,7 @@ class DatabaseManager {
 
 /** Setup graceful shutdown handlers */
 const setupShutdownHandlers = () => {
-  ['SIGTERM', 'SIGINT', 'SIGUSR2', 'SIGQUIT'].forEach((signal) =>
+  ['SIGTERM', 'SIGINT', 'SIGUSR2', 'SIGQUIT'].forEach(signal =>
     process.once(signal, async () => {
       await DatabaseManager.shutdown();
       console.info('Database connections closed');

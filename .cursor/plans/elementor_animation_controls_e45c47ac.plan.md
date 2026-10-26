@@ -1,32 +1,34 @@
 ---
+
 name: Elementor animation controls
 overview: Add Elementor-style entrance, exit, and hover animation selects to the shared Style tab on every block, played through allowlisted Animate.css and hover classes so stored JSON still cannot inject arbitrary CSS.
 todos:
-  - id: catalogs
-    content: Add Elementor entrance, exit, and hover allowlists plus legacy aliases in style.ts
-    status: completed
-  - id: selects
-    content: Add grouped SelectInput and wire entrance, exit, and hover selects in the Animation group
-    status: completed
-  - id: playback
-    content: Play entrance and exit with animate.css, hover with a local allowlisted stylesheet, including stagger, reduced motion, and builder preview
-    status: completed
-  - id: verify
-    content: Typecheck and verify entrance, exit, and hover in the builder Motion preview and on a public page
-    status: pending
-isProject: false
+- id: catalogs
+  content: Add Elementor entrance, exit, and hover allowlists plus legacy aliases in style.ts
+  status: completed
+- id: selects
+  content: Add grouped SelectInput and wire entrance, exit, and hover selects in the Animation group
+  status: completed
+- id: playback
+  content: Play entrance and exit with animate.css, hover with a local allowlisted stylesheet, including stagger, reduced motion, and builder preview
+  status: completed
+- id: verify
+  content: Typecheck and verify entrance, exit, and hover in the builder Motion preview and on a public page
+  status: pending
+  isProject: false
+
 ---
 
 # Entrance, exit, and hover controls
 
 ## Implementation audit (2026-10-16)
 
-| Todo | Status | Notes |
-|------|--------|-------|
-| **catalogs** | ✅ completed | `src/builder/animation-catalog.ts` — `ENTRANCE_GROUPS` / `EXIT_GROUPS` / `HOVER_GROUPS`, flat allowlists, aliases (`fade`→`fadeIn`, `lift`→`float`, …), `ENTRANCE_CLASS` / `EXIT_CLASS` / `HOVER_CLASS`, `ATTENTION_SEEKERS`. Re-exported from `style.ts`. `AnimationSettings.exit` + `resolveAnimation` returns null only when entrance, exit, and hover are all `none`. |
-| **selects** | ✅ completed | `GroupedSelect` in `primitives.tsx`. `animation.tsx` uses grouped Entrance / Exit / Hover selects; trigger, duration, delay, easing, repeat, stagger, device toggles kept; timing shown when entrance or exit set. |
-| **playback** | ✅ completed | `motion.tsx` applies allowlisted Animate.css / local blur / hover.css classes; `--animate-duration` / delay; reduced motion + device gates; `data-motion-hold`; exit on leave viewport; stagger delay on `MotionItem`. `layout.tsx` imports `animate.css` + `hover.css`. `package.json` has `animate.css`. |
-| **verify** | ⏳ pending | Needs local `pnpm tsc --noEmit` and manual builder / public-page checks. |
+| Todo         | Status       | Notes                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------ | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **catalogs** | ✅ completed | `src/builder/animation-catalog.ts` — `ENTRANCE_GROUPS` / `EXIT_GROUPS` / `HOVER_GROUPS`, flat allowlists, aliases (`fade`→`fadeIn`, `lift`→`float`, …), `ENTRANCE_CLASS` / `EXIT_CLASS` / `HOVER_CLASS`, `ATTENTION_SEEKERS`. Re-exported from `style.ts`. `AnimationSettings.exit` + `resolveAnimation` returns null only when entrance, exit, and hover are all `none`.  |
+| **selects**  | ✅ completed | `GroupedSelect` in `primitives.tsx`. `animation.tsx` uses grouped Entrance / Exit / Hover selects; trigger, duration, delay, easing, repeat, stagger, device toggles kept; timing shown when entrance or exit set.                                                                                                                                                         |
+| **playback** | ✅ completed | `motion.tsx` applies allowlisted Animate.css / local blur / hover.css classes; `--animate-duration` / delay; reduced motion + device gates; `data-motion-hold`; exit on leave viewport; stagger delay on `MotionItem`. `layout.tsx` imports `animate.css` + `hover.css`. `package.json` has `animate.css`.                                                                 |
+| **verify**   | ⏳ pending   | Needs local `pnpm tsc --noEmit` and manual builder / public-page checks.                                                                                                                                                                                                                                                                                                   |
 
 These three controls go on the existing **Animation** group in [src/builder/controls/section-inspector.tsx](src/builder/controls/section-inspector.tsx). That group is already on every block through `section` in [src/builder/config.tsx](src/builder/config.tsx), so they are global inspector controls, not new per-block fields. Page transition stays a separate root setting.
 

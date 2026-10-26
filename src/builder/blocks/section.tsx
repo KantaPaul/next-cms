@@ -9,8 +9,8 @@ import {
   type UrlValue,
 } from '../style';
 
-export type { SectionSettings } from '../style';
 export { MotionItem } from '../motion';
+export type { SectionSettings } from '../style';
 
 export const DEFAULT_SECTION: SectionSettings = {
   paddingY: 'md',
@@ -68,7 +68,11 @@ export function Section({
     hidden,
     className
   );
-  const inner = cn('mx-auto w-full max-w-[var(--site-max-width,72rem)] px-5 md:px-8', styles.innerClasses, innerClassName);
+  const inner = cn(
+    'mx-auto w-full max-w-[var(--site-max-width,72rem)] px-5 md:px-8',
+    styles.innerClasses,
+    innerClassName
+  );
   const animation = resolveAnimation(s.animation);
 
   if (animation) {
@@ -88,7 +92,9 @@ export function Section({
 
   return (
     <section id={s.anchor || undefined} className={outer} style={styles.style}>
-      <div className={inner}>{hasItems ? <MotionBoundary>{children}</MotionBoundary> : children}</div>
+      <div className={inner}>
+        {hasItems ? <MotionBoundary>{children}</MotionBoundary> : children}
+      </div>
     </section>
   );
 }
@@ -106,10 +112,25 @@ export function SectionHeading({
 }) {
   if (!eyebrow && !title && !subtitle) return null;
   return (
-    <div className={cn('mb-10 max-w-3xl md:mb-14', align === 'center' && 'mx-auto text-center')}>
-      {eyebrow && <p className="s-primary-text mb-3 text-sm font-semibold uppercase tracking-wider">{eyebrow}</p>}
-      {title && <h2 className="text-3xl font-bold tracking-tight md:text-4xl">{title}</h2>}
-      {subtitle && <p className="s-muted mt-4 text-lg leading-relaxed">{subtitle}</p>}
+    <div
+      className={cn(
+        'mb-10 max-w-3xl md:mb-14',
+        align === 'center' && 'mx-auto text-center'
+      )}
+    >
+      {eyebrow && (
+        <p className="s-primary-text mb-3 text-sm font-semibold uppercase tracking-wider">
+          {eyebrow}
+        </p>
+      )}
+      {title && (
+        <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+          {title}
+        </h2>
+      )}
+      {subtitle && (
+        <p className="s-muted mt-4 text-lg leading-relaxed">{subtitle}</p>
+      )}
     </div>
   );
 }

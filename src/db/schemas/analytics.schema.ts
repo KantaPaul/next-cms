@@ -1,11 +1,5 @@
-import {
-  index,
-  jsonb,
-  pgTable,
-  text,
-  varchar,
-} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+import { index, jsonb, pgTable, text, varchar } from 'drizzle-orm/pg-core';
 import { z } from 'zod';
 import { baseColumns, relationConfig } from '@/db/helpers/base.columns';
 import { users } from '@/db/schemas/auth.schema';
@@ -83,6 +77,8 @@ export const widgetQuerySchema = z.object({
   compare: z.boolean(),
   range: widgetRangeSchema,
   pageId: z.string().nullable(),
+  /** Set instead of pageId to scope a widget to one post. Omitted on older boards. */
+  postId: z.string().nullable().optional(),
   limit: widgetLimitSchema.optional(),
 });
 export type WidgetQuery = z.infer<typeof widgetQuerySchema>;

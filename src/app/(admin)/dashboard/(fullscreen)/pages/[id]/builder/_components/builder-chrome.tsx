@@ -12,16 +12,16 @@ import {
   Wand2,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState, type ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
+import { type ReactNode, useState } from 'react';
+import { PAGE_STATUS_COLORS } from '@/app/(admin)/dashboard/(shell)/pages/_components/pages-table';
+import { AutosaveIndicator } from '@/app/(admin)/dashboard/(shell)/pages/_components/use-autosave';
 import { StatusBadge } from '@/components/atoms/status-badge';
+import { Button } from '@/components/ui/button';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import { useCan } from '@/providers/access.provider';
-import { AutosaveIndicator } from '@/app/(admin)/dashboard/(shell)/pages/_components/use-autosave';
-import { PAGE_STATUS_COLORS } from '@/app/(admin)/dashboard/(shell)/pages/_components/pages-table';
-import { useBuilder, type BuilderTarget } from './builder-context';
 import { AiGenerateDialog, AiRewriteDialog } from './ai-dialogs';
+import { type BuilderTarget, useBuilder } from './builder-context';
 import { SaveGlobalDialog } from './save-global-dialog';
 import { SaveTemplateDialog } from './save-template-dialog';
 
@@ -32,14 +32,18 @@ export function BuilderHeaderActions() {
   const canCreate = useCan(PERMISSIONS.PAGES_CREATE);
   const [templateOpen, setTemplateOpen] = useState(false);
   const status = b.status as keyof typeof PAGE_STATUS_COLORS;
-  const isGlobal = b.kind === 'global' || b.kind === 'page-template' || b.kind === 'contact-form';
+  const isGlobal =
+    b.kind === 'global' ||
+    b.kind === 'page-template' ||
+    b.kind === 'contact-form';
 
   if (isGlobal) {
     return (
       <div className="flex items-center gap-2 whitespace-nowrap">
         <Button type="button" variant="ghost" size="sm" asChild>
           <Link href={b.backHref} aria-label={b.backLabel}>
-            <ArrowLeft /> <span className="hidden xl:inline">{b.backLabel}</span>
+            <ArrowLeft />{' '}
+            <span className="hidden xl:inline">{b.backLabel}</span>
           </Link>
         </Button>
         <Button

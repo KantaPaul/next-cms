@@ -3,11 +3,15 @@
 import { Check, ChevronsUpDown, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { DayPicker } from 'react-day-picker';
+import { listGlobalBlockOptions } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
 import { TextEditor } from '@/components/atoms/text-editor';
 import { MediaField } from '@/components/media/media-picker';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { cn } from '@/lib/utils/cn';
-import { listGlobalBlockOptions } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
 import { getAllTaxonomyOptions } from '@/server/actions/blog.actions';
 import { Switcher } from '../controls/primitives';
 import { BLOCK_ICONS, ICON_OPTIONS } from '../icons';
@@ -95,8 +99,16 @@ export function UrlField({
         onChange={e => commit({ url: e.target.value })}
         className="h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm"
       />
-      <Switcher label="Open in new tab" value={v.newTab} onChange={newTab => commit({ newTab })} />
-      <Switcher label="Add nofollow" value={v.nofollow} onChange={nofollow => commit({ nofollow })} />
+      <Switcher
+        label="Open in new tab"
+        value={v.newTab}
+        onChange={newTab => commit({ newTab })}
+      />
+      <Switcher
+        label="Add nofollow"
+        value={v.nofollow}
+        onChange={nofollow => commit({ nofollow })}
+      />
     </div>
   );
 }
@@ -113,7 +125,9 @@ export function IconPickerField({
   const icons = useMemo(
     () =>
       ICON_OPTIONS.filter(
-        o => o.value && (!query || o.label.toLowerCase().includes(query.toLowerCase()))
+        o =>
+          o.value &&
+          (!query || o.label.toLowerCase().includes(query.toLowerCase()))
       ),
     [query]
   );
@@ -155,7 +169,9 @@ export function IconPickerField({
               }}
               className={cn(
                 'flex size-10 items-center justify-center rounded border text-[10px] text-steel-500',
-                !value ? 'border-indigo-400 bg-indigo-50' : 'border-steel-100 hover:bg-steel-50'
+                !value
+                  ? 'border-indigo-400 bg-indigo-50'
+                  : 'border-steel-100 hover:bg-steel-50'
               )}
             >
               —
@@ -197,7 +213,8 @@ export function DateTimeField({
   field,
 }: CustomFieldProps<string | undefined>) {
   const selected = value ? new Date(value) : undefined;
-  const valid = selected && !Number.isNaN(selected.getTime()) ? selected : undefined;
+  const valid =
+    selected && !Number.isNaN(selected.getTime()) ? selected : undefined;
 
   return (
     <div>
@@ -209,7 +226,11 @@ export function DateTimeField({
         className="rounded-md border border-steel-200 p-2"
       />
       {valid && (
-        <button type="button" onClick={() => onChange(undefined)} className="mt-1 text-[11px] text-indigo-600">
+        <button
+          type="button"
+          onClick={() => onChange(undefined)}
+          className="mt-1 text-[11px] text-indigo-600"
+        >
           Clear date
         </button>
       )}
@@ -232,7 +253,10 @@ export function SearchableSelectField({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const filtered = useMemo(
-    () => options.filter(o => !query || o.label.toLowerCase().includes(query.toLowerCase())),
+    () =>
+      options.filter(
+        o => !query || o.label.toLowerCase().includes(query.toLowerCase())
+      ),
     [options, query]
   );
   const current = options.find(o => o.value === value);
@@ -250,7 +274,10 @@ export function SearchableSelectField({
             <ChevronsUpDown className="size-3.5 shrink-0 text-steel-400" />
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-2" align="start">
+        <PopoverContent
+          className="w-[var(--radix-popover-trigger-width)] p-2"
+          align="start"
+        >
           <div className="mb-2 flex items-center gap-1.5 rounded-md border border-steel-200 px-2">
             <Search className="size-3.5 text-steel-400" />
             <input
@@ -287,11 +314,15 @@ export function SearchableSelectField({
                   }}
                   className={cn(
                     'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm',
-                    value === o.value ? 'bg-indigo-50 text-indigo-800' : 'hover:bg-steel-50'
+                    value === o.value
+                      ? 'bg-indigo-50 text-indigo-800'
+                      : 'hover:bg-steel-50'
                   )}
                 >
                   {value === o.value && <Check className="size-3.5" />}
-                  <span className={value === o.value ? '' : 'pl-5'}>{o.label}</span>
+                  <span className={value === o.value ? '' : 'pl-5'}>
+                    {o.label}
+                  </span>
                 </button>
               </li>
             ))}
@@ -334,7 +365,10 @@ const termSelectField = (kind: 'categories' | 'tags', emptyLabel: string) =>
     field,
   }: CustomFieldProps<string | undefined>) {
     const options = useTermOptions();
-    const list = (options?.[kind] ?? []).map(o => ({ value: o.id, label: o.name }));
+    const list = (options?.[kind] ?? []).map(o => ({
+      value: o.id,
+      label: o.name,
+    }));
     return (
       <SearchableSelectField
         name=""

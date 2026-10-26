@@ -1,9 +1,9 @@
+import { AccessDenied } from '@/components/organisms/access-denied';
 import { PageHeader } from '@/components/organisms/page-header';
 import { PAGES } from '@/config/pages';
+import { PERMISSIONS } from '@/config/permissions';
 import { metaObject } from '@/lib/utils/metadata';
 import { requirePermission } from '@/server/services/require-permission';
-import { PERMISSIONS } from '@/config/permissions';
-import { AccessDenied } from '@/components/organisms/access-denied';
 import { TemplatesAndGlobals } from './_components/templates-and-globals';
 import { templatesService } from './_modules/templates.service';
 
@@ -43,10 +43,12 @@ export default async function TemplatesPage() {
         globals={globals
           .filter(g => g.category !== 'contact-form')
           .map(({ content, ...g }) => ({
-          ...g,
-          sectionTypes: templatesService.getGlobalBlockItems(content).map(b => b.type),
-          pages: usage[g.id] ?? 0,
-        }))}
+            ...g,
+            sectionTypes: templatesService
+              .getGlobalBlockItems(content)
+              .map(b => b.type),
+            pages: usage[g.id] ?? 0,
+          }))}
         can={{
           create: access.permissions.includes(PERMISSIONS.PAGES_CREATE),
           manage: access.permissions.includes(PERMISSIONS.SETTINGS_MANAGE),

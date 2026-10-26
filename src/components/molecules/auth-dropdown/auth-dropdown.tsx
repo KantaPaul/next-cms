@@ -1,8 +1,7 @@
 'use client';
 
-import * as React from 'react';
 import { LogOut } from 'lucide-react';
-import type { User } from '@/db/schema';
+import * as React from 'react';
 import { MenuTrigger } from '@/components/molecules/auth-dropdown/menu-trigger';
 import {
   DropdownMenu,
@@ -12,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import type { User } from '@/db/schema';
 import { signOut } from '@/server/actions/auth.actions';
 
 export default function AuthDropdown({ user }: { user: User }) {
@@ -29,13 +29,19 @@ export default function AuthDropdown({ user }: { user: User }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <MenuTrigger user={user} isLoading={isPending} className="cursor-pointer" />
+        <MenuTrigger
+          user={user}
+          isLoading={isPending}
+          className="cursor-pointer"
+        />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{user.name}</p>
-            <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+            <p className="text-xs leading-none text-muted-foreground">
+              {user.email}
+            </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

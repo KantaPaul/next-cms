@@ -20,7 +20,11 @@ interface DateRangePickerProps extends React.HTMLAttributes<HTMLDivElement> {
   onDayClick: any;
 }
 
-export function DateRangePicker({ className, date, onDayClick }: DateRangePickerProps) {
+export function DateRangePicker({
+  className,
+  date,
+  onDayClick,
+}: DateRangePickerProps) {
   return (
     <div className={cn('grid gap-2', className)}>
       <Popover>
@@ -37,7 +41,8 @@ export function DateRangePicker({ className, date, onDayClick }: DateRangePicker
             {date?.from ? (
               date.to ? (
                 <>
-                  {format(date.from, 'LLL dd, y')} - {format(date.to, 'LLL dd, y')}
+                  {format(date.from, 'LLL dd, y')} -{' '}
+                  {format(date.to, 'LLL dd, y')}
                 </>
               ) : (
                 format(date.from, 'LLL dd, y')

@@ -2,6 +2,7 @@
 
 import { ImageIcon, X } from 'lucide-react';
 import { useState } from 'react';
+import type { MediaItem } from '@/app/(admin)/dashboard/(shell)/media/_modules/media.service';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -11,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import type { MediaItem } from '@/app/(admin)/dashboard/(shell)/media/_modules/media.service';
 import { MediaBrowser } from './media-browser';
 
 export function MediaPickerDialog({
@@ -32,7 +32,9 @@ export function MediaPickerDialog({
       <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>Media library</DialogTitle>
-          <DialogDescription>Pick a file or upload a new one.</DialogDescription>
+          <DialogDescription>
+            Pick a file or upload a new one.
+          </DialogDescription>
         </DialogHeader>
         {open && (
           <MediaBrowser
@@ -44,9 +46,15 @@ export function MediaPickerDialog({
           />
         )}
         <DialogFooter className="items-center gap-2 sm:justify-between">
-          <p className="truncate text-xs text-steel-500">{selected ? selected.filename : 'Nothing selected'}</p>
+          <p className="truncate text-xs text-steel-500">
+            {selected ? selected.filename : 'Nothing selected'}
+          </p>
           <div className="flex gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               Cancel
             </Button>
             <Button
@@ -114,7 +122,12 @@ export function MediaField({
           aria-label="Image URL"
           className="h-8 min-w-0 flex-1 rounded-md border border-steel-200 bg-white px-2 text-xs dark:border-dark-300 dark:bg-dark-100"
         />
-        <Button type="button" size="sm" variant="outline" onClick={() => setOpen(true)}>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => setOpen(true)}
+        >
           Browse
         </Button>
       </div>

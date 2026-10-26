@@ -57,7 +57,7 @@ function DummyUserImg(props: React.SVGAttributes<{}>) {
 
 function backgroundColor(signature: string) {
   if (!signature) return undefined;
-  const currObj = letterWithColors.filter((obj) =>
+  const currObj = letterWithColors.filter(obj =>
     obj.string.includes(signature?.charAt(0).toLowerCase())
   );
   return currObj[0]?.color ?? defaultBG;
@@ -112,7 +112,9 @@ const Avatar: React.FC<AvatarProps> = ({
           'font-inter img relative flex shrink-0 items-center justify-center overflow-hidden font-semibold uppercase text-white',
           sizes[size],
           // fontSizes[size],
-          maxInitials === 2 ? initialsFontSizes[size][0] : initialsFontSizes[size][1],
+          maxInitials === 2
+            ? initialsFontSizes[size][0]
+            : initialsFontSizes[size][1],
           {
             'rounded-full': rounded,
             // 'text-[13px]': size === 'sm',
@@ -155,7 +157,9 @@ const Avatar: React.FC<AvatarProps> = ({
             'font-inter flex shrink-0 items-center justify-center font-semibold uppercase text-white',
             sizes[size],
             // fontSizes[size],
-            maxInitials === 2 ? initialsFontSizes[size][0] : initialsFontSizes[size][1],
+            maxInitials === 2
+              ? initialsFontSizes[size][0]
+              : initialsFontSizes[size][1],
             {
               'rounded-full': rounded,
               // 'text-lg': size === 'sm',
@@ -163,7 +167,9 @@ const Avatar: React.FC<AvatarProps> = ({
             avatarClassName
           )}
           style={{
-            backgroundColor: name ? backgroundColor(signature as string) : defaultBG,
+            backgroundColor: name
+              ? backgroundColor(signature as string)
+              : defaultBG,
           }}
         >
           {signature}

@@ -26,7 +26,9 @@ export function CreateBoardButton() {
         toast.success('Dashboard created');
         setOpen(false);
         setName('');
-        router.push(PAGES.DASHBOARD.ANALYTICS_BOARD_EDIT((board as { id: string }).id));
+        router.push(
+          PAGES.DASHBOARD.ANALYTICS_BOARD_EDIT((board as { id: string }).id)
+        );
         router.refresh();
       });
     });

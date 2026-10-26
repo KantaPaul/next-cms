@@ -150,9 +150,6 @@ export {
   EXIT_CLASS,
   HOVER_CLASS,
   ATTENTION_SEEKERS,
-  aliasEntrance,
-  aliasExit,
-  aliasHover,
 } from './animation-catalog';
 import { ENTRANCES, EXITS, HOVERS } from './animation-catalog';
 
@@ -635,9 +632,9 @@ export type ResolvedAnimation = {
 
 export function resolveAnimation(a: AnimationSettings | undefined): ResolvedAnimation | null {
   if (!a) return null;
-  const entrance = a.entrance && a.entrance !== 'none' && a.entrance !== '' ? a.entrance : undefined;
-  const exit = a.exit && a.exit !== 'none' && a.exit !== '' ? a.exit : undefined;
-  const hover = a.hover && a.hover !== 'none' && a.hover !== '' ? a.hover : undefined;
+  const entrance = a.entrance && a.entrance !== 'none' ? a.entrance : undefined;
+  const exit = a.exit && a.exit !== 'none' ? a.exit : undefined;
+  const hover = a.hover && a.hover !== 'none' ? a.hover : undefined;
   if (!entrance && !exit && !hover) return null;
   return {
     entranceClass: entrance,

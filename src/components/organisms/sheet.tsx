@@ -70,7 +70,10 @@ export function SheetProvider(): JSX.Element {
     <Sheet open={isOpen} onOpenChange={open => !open && closeSheet()}>
       <SheetContent
         side={content?.side ?? SHEET_DEFAULTS.side}
-        className={cn('flex w-full flex-col gap-0 p-0 sm:max-w-lg', content?.className)}
+        className={cn(
+          'flex w-full flex-col gap-0 p-0 sm:max-w-lg',
+          content?.className
+        )}
       >
         {(content?.title || content?.description) && (
           <SheetHeader className="border-b border-border px-6 py-5 pr-12">
@@ -82,7 +85,12 @@ export function SheetProvider(): JSX.Element {
         )}
 
         {Component && (
-          <div className={cn('min-h-0 flex-1 overflow-y-auto p-6', content?.scrollAreaClassName)}>
+          <div
+            className={cn(
+              'min-h-0 flex-1 overflow-y-auto p-6',
+              content?.scrollAreaClassName
+            )}
+          >
             <Component {...content?.props} closeSheet={closeSheet} />
           </div>
         )}

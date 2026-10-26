@@ -12,21 +12,24 @@ import {
   or,
   type SQL,
 } from 'drizzle-orm';
+import { postTemplatesService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
+import { isBuilderData } from '@/builder/data';
+import { PERMISSIONS } from '@/config/permissions';
 import { db } from '@/db';
 import type { SearchParams } from '@/db/helpers/parse-search-params';
 import { paginate } from '@/db/helpers/with-pagination';
 import {
+  type ContentKindType,
+  type PostLayoutType,
   postCategories,
   postContents,
   postRevisions,
-  posts,
   postSeo,
+  posts,
   postTags,
   postTemplates,
-  users,
-  type ContentKindType,
-  type PostLayoutType,
   type RevisionKindType,
+  users,
 } from '@/db/schema';
 import type { SeoInput } from '@/db/validations/pages.validation';
 import type {
@@ -34,9 +37,6 @@ import type {
   SavePostDraftInput,
   UpdatePostInput,
 } from '@/db/validations/posts.validation';
-import { isBuilderData } from '@/builder/data';
-import { postTemplatesService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
-import { PERMISSIONS } from '@/config/permissions';
 import type { DBTrx } from '@/lib/types';
 import { ApplicationException, NotFoundException } from '@/lib/utils/error';
 import { revalidatePublicSite } from '@/lib/utils/revalidate-site';

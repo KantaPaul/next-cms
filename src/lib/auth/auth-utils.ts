@@ -1,11 +1,14 @@
 'use server';
 
-import { redirect, RedirectType } from 'next/navigation';
+import { RedirectType, redirect } from 'next/navigation';
 import { cache } from 'react';
 
 import { PAGES } from '@/config/pages';
-import { getSessionId, validateSession as validateSessionFromSession } from '@/lib/auth/session';
 import type { User } from '@/db/schema';
+import {
+  getSessionId,
+  validateSession as validateSessionFromSession,
+} from '@/lib/auth/session';
 
 const cachedRequest = cache(async () => {
   try {

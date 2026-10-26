@@ -1,13 +1,17 @@
 'use client';
 
-import { ENTRANCE_GROUPS, EXIT_GROUPS, HOVER_GROUPS } from '../animation-catalog';
 import {
-  resolveAnimation,
+  ENTRANCE_GROUPS,
+  EXIT_GROUPS,
+  HOVER_GROUPS,
+} from '../animation-catalog';
+import {
   type AnimationSettings,
   type Device,
   type Entrance,
   type Exit,
   type HoverEffect,
+  resolveAnimation,
 } from '../style';
 import { DeviceToggles } from './device-row';
 import { Choose, ControlLabel, GroupedSelect, Slider } from './primitives';
@@ -25,14 +29,25 @@ const labelize = (key: string) =>
     .replace(/^\w/, c => c.toUpperCase())
     .trim();
 
-type SelectGroups<T extends string> = { label: string; options: { value: T; label: string }[] }[];
+type SelectGroups<T extends string> = {
+  label: string;
+  options: { value: T; label: string }[];
+}[];
 
 function toGroups<T extends string>(groups: object): SelectGroups<T> {
-  const named = Object.entries(groups as Record<string, readonly string[]>).map(([label, keys]) => ({
-    label,
-    options: keys.map(value => ({ value: value as T, label: labelize(value) })),
-  }));
-  return [{ label: 'None', options: [{ value: 'none' as T, label: 'None' }] }, ...named];
+  const named = Object.entries(groups as Record<string, readonly string[]>).map(
+    ([label, keys]) => ({
+      label,
+      options: keys.map(value => ({
+        value: value as T,
+        label: labelize(value),
+      })),
+    })
+  );
+  return [
+    { label: 'None', options: [{ value: 'none' as T, label: 'None' }] },
+    ...named,
+  ];
 }
 
 const ENTRANCE_SELECT = toGroups<Entrance>(ENTRANCE_GROUPS);
@@ -45,7 +60,8 @@ function effect<T extends string>(value: T | '' | undefined): T | 'none' {
 }
 
 const toMs = (seconds: number) => Math.round(seconds * 1000);
-const toSeconds = (ms: number | undefined, fallback: number) => (ms === undefined ? fallback : ms / 1000);
+const toSeconds = (ms: number | undefined, fallback: number) =>
+  ms === undefined ? fallback : ms / 1000;
 
 /** Preset motion for a block. Editors pick named effects; durations and delays stay inside fixed ranges. */
 export function AnimationControl({
@@ -109,7 +125,9 @@ export function AnimationControl({
             max={DURATION_RANGE.max}
             step={DURATION_RANGE.step}
             unit="s"
-            onChange={duration => set({ duration: toMs(duration ?? DURATION_RANGE.fallback) })}
+            onChange={duration =>
+              set({ duration: toMs(duration ?? DURATION_RANGE.fallback) })
+            }
           />
           <Slider
             label="Delay"
@@ -118,7 +136,9 @@ export function AnimationControl({
             max={DELAY_RANGE.max}
             step={DELAY_RANGE.step}
             unit="s"
-            onChange={delay => set({ delay: toMs(delay ?? DELAY_RANGE.fallback) })}
+            onChange={delay =>
+              set({ delay: toMs(delay ?? DELAY_RANGE.fallback) })
+            }
           />
           <Choose
             label="Easing"
@@ -137,7 +157,9 @@ export function AnimationControl({
                 { value: 'none', label: 'Whole block' },
                 { value: 'children', label: 'One by one' },
               ]}
-              onChange={stagger => set({ stagger: stagger === 'children' ? STAGGER_MS : 0 })}
+              onChange={stagger =>
+                set({ stagger: stagger === 'children' ? STAGGER_MS : 0 })
+              }
             />
           )}
         </>
@@ -153,7 +175,10 @@ export function AnimationControl({
       {hasAny && (
         <div>
           <ControlLabel label="Play on" />
-          <DeviceToggles value={devices} onChange={next => set({ devices: next })} />
+          <DeviceToggles
+            value={devices}
+            onChange={next => set({ devices: next })}
+          />
         </div>
       )}
     </div>

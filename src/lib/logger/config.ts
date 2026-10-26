@@ -1,5 +1,5 @@
-import type { LoggerOptions } from 'pino';
 import { hostname } from 'os';
+import type { LoggerOptions } from 'pino';
 
 // Get log level based on environment
 export const getLogLevel = (): string => {
@@ -51,26 +51,26 @@ export const getPinoConfig = (): LoggerOptions => {
       version: process.env.APP_VERSION || '1.0.0',
     },
     formatters: {
-      level: (label) => {
+      level: label => {
         return { level: label };
       },
     },
     serializers: {
-      err: (err) => ({
+      err: err => ({
         type: err.constructor.name,
         message: err.message,
         stack: err.stack,
         code: err.code,
         statusCode: err.statusCode,
       }),
-      req: (req) => ({
+      req: req => ({
         method: req.method,
         url: req.url,
         headers: req.headers,
         query: req.query,
         params: req.params,
       }),
-      res: (res) => ({
+      res: res => ({
         statusCode: res.statusCode,
         headers: res.headers,
       }),

@@ -10,7 +10,9 @@ export function useSearchable(searchKey = 'search') {
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
-    const { [searchKey]: _, ...includes } = Object.fromEntries(searchParams.entries());
+    const { [searchKey]: _, ...includes } = Object.fromEntries(
+      searchParams.entries()
+    );
     const urlSearchParams = new URLSearchParams({
       ...includes,
       ...(value && { [searchKey]: value, page: '0' }),
@@ -22,7 +24,9 @@ export function useSearchable(searchKey = 'search') {
 
   function action(formData: FormData) {
     const value = formData.get(searchKey) as string;
-    const { [searchKey]: _, ...includes } = Object.fromEntries(searchParams.entries());
+    const { [searchKey]: _, ...includes } = Object.fromEntries(
+      searchParams.entries()
+    );
     const urlSearchParams = new URLSearchParams({
       ...includes,
       ...(value && { [searchKey]: value, page: '0' }),

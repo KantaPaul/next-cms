@@ -86,10 +86,9 @@ function StyleControls({
           hover={
             <div className="space-y-3">
               <Description>Optional overrides applied on hover.</Description>
-              <ColorPicker
-                label="Background color"
-                value={hover.fillColor}
-                onChange={fillColor => set({ hover: { ...hover, fillColor } })}
+              <BackgroundControl
+                value={hover.fill}
+                onChange={fill => set({ hover: { ...hover, fill } })}
               />
               <ColorPicker
                 label="Text color"
@@ -134,18 +133,7 @@ function StyleControls({
       </Group>
 
       <Group title="Filters">
-        <StateTabs
-          normal={<FilterControl value={s.filter} onChange={filter => set({ filter })} />}
-          hover={
-            <div className="space-y-3">
-              <Description>Optional filter overrides on hover.</Description>
-              <FilterControl
-                value={hover.filter}
-                onChange={filter => set({ hover: { ...hover, filter } })}
-              />
-            </div>
-          }
-        />
+        <FilterControl value={s.filter} onChange={filter => set({ filter })} />
       </Group>
 
       <Group title="Display">

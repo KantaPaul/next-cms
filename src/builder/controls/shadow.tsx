@@ -3,11 +3,15 @@
 import { Pencil, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils/cn';
-import { clamp, safeColor, type ShadowSettings } from '../style';
+import { clamp, type ShadowSettings, safeColor } from '../style';
 import { ColorPicker } from './color-picker';
 import { Slider } from './primitives';
 
@@ -50,12 +54,37 @@ const DEFAULT_SHADOW: Required<ShadowSettings> = {
   inset: false,
 };
 
-const PRESETS: Record<'none' | 'sm' | 'md' | 'lg', ShadowSettings | undefined> = {
-  none: undefined,
-  sm: { x: 0, y: 1, blur: 3, spread: 0, opacity: 0.1, color: '#000000', inset: false },
-  md: { x: 0, y: 4, blur: 6, spread: -1, opacity: 0.15, color: '#000000', inset: false },
-  lg: { x: 0, y: 10, blur: 15, spread: -3, opacity: 0.2, color: '#000000', inset: false },
-};
+const PRESETS: Record<'none' | 'sm' | 'md' | 'lg', ShadowSettings | undefined> =
+  {
+    none: undefined,
+    sm: {
+      x: 0,
+      y: 1,
+      blur: 3,
+      spread: 0,
+      opacity: 0.1,
+      color: '#000000',
+      inset: false,
+    },
+    md: {
+      x: 0,
+      y: 4,
+      blur: 6,
+      spread: -1,
+      opacity: 0.15,
+      color: '#000000',
+      inset: false,
+    },
+    lg: {
+      x: 0,
+      y: 10,
+      blur: 15,
+      spread: -3,
+      opacity: 0.2,
+      color: '#000000',
+      inset: false,
+    },
+  };
 
 function normalizeShadow(
   value: 'none' | 'sm' | 'md' | 'lg' | ShadowSettings | undefined
@@ -112,10 +141,17 @@ export function ShadowControl({
               </Button>
             </PopoverTrigger>
 
-            <PopoverContent align="start" side="left" sideOffset={8} className="w-72 space-y-3.5 p-3.5">
+            <PopoverContent
+              align="start"
+              side="left"
+              sideOffset={8}
+              className="w-72 space-y-3.5 p-3.5"
+            >
               <div>
                 <div className="mb-1.5 flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-muted-foreground">Presets</span>
+                  <span className="text-[11px] font-semibold text-muted-foreground">
+                    Presets
+                  </span>
                   {current && (
                     <Button
                       type="button"
@@ -134,7 +170,8 @@ export function ShadowControl({
                     const isSelected =
                       key === 'none'
                         ? !current
-                        : current?.blur === preset?.blur && current?.y === preset?.y;
+                        : current?.blur === preset?.blur &&
+                          current?.y === preset?.y;
 
                     return (
                       <Button
@@ -145,7 +182,8 @@ export function ShadowControl({
                         onClick={() => onChange(preset)}
                         className={cn(
                           'h-7 text-xs font-medium',
-                          isSelected && 'border-primary bg-primary/5 text-primary'
+                          isSelected &&
+                            'border-primary bg-primary/5 text-primary'
                         )}
                       >
                         {key === 'none' ? 'None' : key.toUpperCase()}
@@ -215,8 +253,13 @@ export function ShadowControl({
                 />
 
                 <div className="flex items-center justify-between gap-2">
-                  <Label className="text-xs font-medium text-steel-600">Inset shadow</Label>
-                  <Switch checked={!!s.inset} onChange={checked => set({ inset: !!checked })} />
+                  <Label className="text-xs font-medium text-steel-600">
+                    Inset shadow
+                  </Label>
+                  <Switch
+                    checked={!!s.inset}
+                    onChange={checked => set({ inset: !!checked })}
+                  />
                 </div>
               </div>
             </PopoverContent>

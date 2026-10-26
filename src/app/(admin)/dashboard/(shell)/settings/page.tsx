@@ -31,7 +31,10 @@ export default async function SettingsPage() {
     );
   }
 
-  const [settings, menus] = await Promise.all([siteSettingsService.get(), menusService.list()]);
+  const [settings, menus] = await Promise.all([
+    siteSettingsService.get(),
+    menusService.list(),
+  ]);
 
   return (
     <>
@@ -50,7 +53,11 @@ export default async function SettingsPage() {
           googleAnalyticsId: settings.googleAnalyticsId,
           themeTokens: settings.themeTokens,
         }}
-        menus={menus.map(m => ({ id: m.id, title: m.title, location: m.location }))}
+        menus={menus.map(m => ({
+          id: m.id,
+          title: m.title,
+          location: m.location,
+        }))}
         fallbackSiteUrl={env.SITE_URL}
       />
     </>

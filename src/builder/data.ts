@@ -27,8 +27,12 @@ export const emptyContentFor = (editorType: EditorTypeType) =>
   editorType === 'builder' ? emptyBuilderData() : '';
 
 /** Normalises stored jsonb into what each editor expects. */
-export const normalizeContent = (editorType: EditorTypeType, content: unknown) => {
-  if (editorType === 'builder') return isBuilderData(content) ? content : emptyBuilderData();
+export const normalizeContent = (
+  editorType: EditorTypeType,
+  content: unknown
+) => {
+  if (editorType === 'builder')
+    return isBuilderData(content) ? content : emptyBuilderData();
   return typeof content === 'string' ? content : '';
 };
 

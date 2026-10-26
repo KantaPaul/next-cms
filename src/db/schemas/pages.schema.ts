@@ -1,3 +1,4 @@
+import { relations, sql } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import {
   boolean,
@@ -12,8 +13,8 @@ import {
   uniqueIndex,
   varchar,
 } from 'drizzle-orm/pg-core';
-import { relations, sql } from 'drizzle-orm';
 import { baseColumns, relationConfig } from '@/db/helpers/base.columns';
+import { users } from '@/db/schemas/auth.schema';
 import {
   ContentKind,
   contentKindEnum,
@@ -21,15 +22,14 @@ import {
   editorTypeEnum,
   menuLocationEnum,
   PageStatus,
-  pageStatusEnum,
   PostLayout,
+  pageStatusEnum,
   postLayoutEnum,
   previewTokenStatusEnum,
   revisionKindEnum,
   VisibilityStatus,
   visibilityStatusEnum,
 } from '@/db/schemas/shared.schema';
-import { users } from '@/db/schemas/auth.schema';
 
 const { id, ...timestampColumns } = baseColumns;
 const { cascade, setNull } = relationConfig;
@@ -334,13 +334,30 @@ export const apiKeys = pgTable('api_keys', {
 });
 
 /** First-party page view events recorded by the public beacon. */
+// export const pageViews = pgTable(
+//   'page_views',
+//   {
+//     id,
+//     pageId: text('page_id')
+//       .references(() => pages.id, cascade)
+//       .notNull(),
+//     path: varchar('path', { length: 500 }).notNull(),
+//     referrerHost: varchar('referrer_host', { length: 255 }),
+//     visitorId: text('visitor_id').notNull(),
+//     createdAt: baseColumns.createdAt,
+//   },
+//   t => [
+//     index('page_views_created_at_index').on(t.createdAt),
+//     index('page_views_page_created_at_index').on(t.pageId, t.createdAt),
+//   ]
+// );
+
 export const pageViews = pgTable(
   'page_views',
   {
     id,
-    pageId: text('page_id')
-      .references(() => pages.id, cascade)
-      .notNull(),
+    pageId: text('page_id').references(() => pages.id, cascade),
+    postId: text('post_id').references(() => posts.id, cascade),
     path: varchar('path', { length: 500 }).notNull(),
     referrerHost: varchar('referrer_host', { length: 255 }),
     visitorId: text('visitor_id').notNull(),
@@ -349,6 +366,11 @@ export const pageViews = pgTable(
   t => [
     index('page_views_created_at_index').on(t.createdAt),
     index('page_views_page_created_at_index').on(t.pageId, t.createdAt),
+    index('page_views_post_created_at_index').on(t.postId, t.createdAt),
+    check(
+      'page_views_target_check',
+      sql`num_nonnulls(${t.pageId}, ${t.postId}) = 1`
+    ),
   ]
 );
 
@@ -506,6 +528,7 @@ export const postsRelations = relations(posts, ({ one, many }) => ({
   categories: many(postCategories),
   tags: many(postTags),
   revisions: many(postRevisions),
+  views: many(pageViews),
 }));
 
 export const postContentsRelations = relations(postContents, ({ one }) => ({
@@ -546,6 +569,7 @@ export const pagesRelations = relations(pages, ({ one, many }) => ({
 
 export const pageViewsRelations = relations(pageViews, ({ one }) => ({
   page: one(pages, { fields: [pageViews.pageId], references: [pages.id] }),
+  post: one(posts, { fields: [pageViews.postId], references: [posts.id] }),
 }));
 
 export const pageContentsRelations = relations(pageContents, ({ one }) => ({

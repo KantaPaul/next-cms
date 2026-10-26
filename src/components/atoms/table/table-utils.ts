@@ -7,7 +7,11 @@ interface UseTableSelectionOptions<T> {
   onSelectionChange?: (selectedItems: T[]) => void;
 }
 
-function useTableSelection<T>({ data, getRowId, onSelectionChange }: UseTableSelectionOptions<T>) {
+function useTableSelection<T>({
+  data,
+  getRowId,
+  onSelectionChange,
+}: UseTableSelectionOptions<T>) {
   const [selectedItems, setSelectedItems] = useState<T[]>([]);
 
   const selectedItemsMap = useMemo(() => {
@@ -18,19 +22,28 @@ function useTableSelection<T>({ data, getRowId, onSelectionChange }: UseTableSel
   }, [selectedItems, getRowId]);
 
   const handleRowSelectionChange = useCallback(
-    (updaterOrValue: RowSelectionState | ((prev: RowSelectionState) => RowSelectionState)) => {
-      setSelectedItems((prev) => {
-        const prevSelectionState = prev.reduce<RowSelectionState>((acc, item) => {
-          acc[getRowId(item)] = true;
-          return acc;
-        }, {});
+    (
+      updaterOrValue:
+        | RowSelectionState
+        | ((prev: RowSelectionState) => RowSelectionState)
+    ) => {
+      setSelectedItems(prev => {
+        const prevSelectionState = prev.reduce<RowSelectionState>(
+          (acc, item) => {
+            acc[getRowId(item)] = true;
+            return acc;
+          },
+          {}
+        );
 
         const newSelectionState =
           typeof updaterOrValue === 'function'
             ? updaterOrValue(prevSelectionState)
             : updaterOrValue;
 
-        const newSelection = data.filter((item) => newSelectionState[getRowId(item)]);
+        const newSelection = data.filter(
+          item => newSelectionState[getRowId(item)]
+        );
 
         // Schedule the onSelectionChange callback to run after the state update
         queueMicrotask(() => {

@@ -1,6 +1,10 @@
 import { BanIcon } from 'lucide-react';
 import type { Dispatch, SetStateAction } from 'react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Toggle } from '@/components/ui/toggle';
 import { cn } from '@/lib/utils/cn';
 import { Flex } from '../layout';
@@ -62,14 +66,22 @@ interface ColorSelectorProps {
   setIsOpen: Dispatch<SetStateAction<boolean>>;
 }
 
-export function AddTextColor({ editor, setIsOpen, isOpen }: ColorSelectorProps) {
-  const activeColorItem = TEXT_COLORS.find(({ color }) => editor.isActive('textStyle', { color }));
+export function AddTextColor({
+  editor,
+  setIsOpen,
+  isOpen,
+}: ColorSelectorProps) {
+  const activeColorItem = TEXT_COLORS.find(({ color }) =>
+    editor.isActive('textStyle', { color })
+  );
 
   return (
     <Popover open={isOpen}>
       <PopoverTrigger asChild>
         <Toggle
-          pressed={editor.isActive('textStyle', { color: activeColorItem?.color })}
+          pressed={editor.isActive('textStyle', {
+            color: activeColorItem?.color,
+          })}
           className={cn(
             'relative flex h-9 cursor-pointer items-center justify-center rounded-lg p-2 transition-colors hover:bg-steel-50/80 hover:dark:bg-steel-700',
             editor.isActive('textStyle', { color: '#FFFFFF' }) &&
@@ -82,7 +94,8 @@ export function AddTextColor({ editor, setIsOpen, isOpen }: ColorSelectorProps) 
           <span
             className={cn(
               'rounded px-1.5 font-bold text-lg',
-              editor.isActive('textStyle', { color: '#FFFFFF' }) && 'bg-steel-700'
+              editor.isActive('textStyle', { color: '#FFFFFF' }) &&
+                'bg-steel-700'
             )}
             style={{
               color: activeColorItem?.color,

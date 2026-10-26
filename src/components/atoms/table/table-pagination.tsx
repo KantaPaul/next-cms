@@ -1,10 +1,14 @@
 import { Flex } from '@/components/atoms/layout';
-import { handleOnChange, handleSelected, ReactSelect } from '@/components/atoms/react-select';
+import {
+  handleOnChange,
+  handleSelected,
+  ReactSelect,
+} from '@/components/atoms/react-select';
 import useQueryParams from '@/hooks/useQueryParam';
 import { cn } from '@/lib/utils/cn';
 import Pagination, { type PaginationProps } from './pagination';
 
-export const paginationLimitOptions = [10, 15, 20, 25, 50, 100].map((v) => ({
+export const paginationLimitOptions = [10, 15, 20, 25, 50, 100].map(v => ({
   label: String(v),
   value: String(v),
 }));
@@ -42,8 +46,11 @@ export default function TablePagination({
           isClearable={false}
           options={paginationLimitOptions}
           value={handleSelected(paginationLimitOptions, pageSize.toString())}
-          onChange={(newValue) =>
-            setQueryParams({ size: String(handleOnChange(newValue)), page: '1' })
+          onChange={newValue =>
+            setQueryParams({
+              size: String(handleOnChange(newValue)),
+              page: '1',
+            })
           }
         />
       </Flex>
@@ -53,7 +60,9 @@ export default function TablePagination({
         pageSize={pageSize}
         defaultCurrent={1}
         showLessItems={true}
-        onChange={(page) => setQueryParams({ page: String(page) }, { scroll: false })}
+        onChange={page =>
+          setQueryParams({ page: String(page) }, { scroll: false })
+        }
         prevIconClassName="py-0 text-gray-500 !leading-[26px]"
         nextIconClassName="py-0 text-gray-500 !leading-[26px]"
         {...props}

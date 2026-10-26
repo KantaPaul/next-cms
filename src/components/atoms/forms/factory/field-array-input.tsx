@@ -3,13 +3,13 @@ import { Fragment } from 'react';
 import { type FieldValues, type Path, useFieldArray } from 'react-hook-form';
 // import { Button } from '@/components/atoms/button/button';
 import { Box, Grid } from '@/components/atoms/layout';
+import { FieldArrayActions } from '@/components/atoms/table/field-array-actions';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils/cn';
 // import { FieldArrayActions } from '@/components/atoms/table/field-array-actions';
 // import { cn } from '@/lib/utils';
 import { FormFieldWrapper } from './methods';
 import type { FormFieldDef } from './types';
-import { cn } from '@/lib/utils/cn';
-import { Button } from '@/components/ui/button';
-import { FieldArrayActions } from '@/components/atoms/table/field-array-actions';
 
 export function FieldArrayInput<TFieldValues extends FieldValues>({
   // variant = 'text',
@@ -29,9 +29,7 @@ export function FieldArrayInput<TFieldValues extends FieldValues>({
   if (isEmpty(fields)) {
     return (
       <Box className={cn(column.className)}>
-        <Button onClick={addField}>
-          {column.label ?? 'Add Record'}
-        </Button>
+        <Button onClick={addField}>{column.label ?? 'Add Record'}</Button>
       </Box>
     );
   }
@@ -66,7 +64,11 @@ export function FieldArrayInput<TFieldValues extends FieldValues>({
                   <FormFieldWrapper
                     {...cellConfig}
                     index={fieldIndex}
-                    name={[column.name, fieldIndex, cell.name].join('.') as Path<TFieldValues>}
+                    name={
+                      [column.name, fieldIndex, cell.name].join(
+                        '.'
+                      ) as Path<TFieldValues>
+                    }
                   />
 
                   <FieldArrayActions

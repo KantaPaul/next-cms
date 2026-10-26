@@ -1,12 +1,11 @@
 'use server';
 
+import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
-import { AuthService } from "@/server/services/auth.services";
-import { validateSession } from '@/lib/auth/session.validation';
-import { db } from "@/db";
-import { users } from "@/db/schema";
-import { type User } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { cache } from 'react';
+import { db } from '@/db';
+import { type User, users } from '@/db/schema';
+import { getCurrentUser } from '@/lib/auth';
 import {
   createSession,
   deleteSessionCookie,
@@ -15,12 +14,12 @@ import {
   invalidateAllSessions,
   invalidateSession,
   invalidateSessionById,
+  type Session,
   setSessionCookie,
   validateSession as validateSessionFromSession,
-  type Session,
-} from "@/lib/auth/session";
-import { cache } from 'react';
-import { getCurrentUser } from '@/lib/auth';
+} from '@/lib/auth/session';
+import { validateSession } from '@/lib/auth/session.validation';
+import { AuthService } from '@/server/services/auth.services';
 
 export async function validateRequest() {
   return validateSession();

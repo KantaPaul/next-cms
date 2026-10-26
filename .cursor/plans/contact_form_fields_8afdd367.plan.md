@@ -1,17 +1,19 @@
 ---
+
 name: Contact form fields
 overview: Add number, date, URL, dropdown, radio, and checkbox fields to the page builder Contact form, including an options list for choice fields and a placeholder for text-like fields.
 todos:
-  - id: model
-    content: Widen ContactFormField and the Puck Fields array with the six types, placeholder, and options
-    status: completed
-  - id: render
-    content: Render select, radio, checkbox, number, date, and url in ContactFormClient, with site.css for choice controls
-    status: completed
-  - id: verify
-    content: Verify each field in the builder canvas and that a public submit still posts FormData
-    status: completed
-isProject: false
+- id: model
+  content: Widen ContactFormField and the Puck Fields array with the six types, placeholder, and options
+  status: completed
+- id: render
+  content: Render select, radio, checkbox, number, date, and url in ContactFormClient, with site.css for choice controls
+  status: completed
+- id: verify
+  content: Verify each field in the builder canvas and that a public submit still posts FormData
+  status: completed
+  isProject: false
+
 ---
 
 # More Contact form fields

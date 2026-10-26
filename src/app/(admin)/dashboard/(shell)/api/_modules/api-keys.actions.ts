@@ -8,7 +8,9 @@ import { permissionProcedure } from '@/server/procedures/permission.procedure';
 import { apiKeysService } from '@/server/services/api-keys.service';
 
 export const createApiKey = permissionProcedure(PERMISSIONS.API_MANAGE)
-  .input(z.object({ name: z.string().trim().min(1, 'Name is required').max(100) }))
+  .input(
+    z.object({ name: z.string().trim().min(1, 'Name is required').max(100) })
+  )
   .action(async ({ input, ctx }) => {
     const created = await apiKeysService.create(input.name, ctx.user.userId);
     revalidatePath(PAGES.DASHBOARD.API);

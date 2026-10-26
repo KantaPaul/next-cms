@@ -1,17 +1,17 @@
 import { LayoutTemplate } from 'lucide-react';
 import Link from 'next/link';
+import { PostsTable } from '@/app/(admin)/dashboard/(shell)/posts/_components/posts-table';
+import { postTemplatesService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
+import { postsService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.service';
+import {
+  breadcrumbs,
+  TITLE,
+} from '@/app/(admin)/dashboard/(shell)/posts/breadcrumbs';
 import CreateButton from '@/components/atoms/buttons/create-button';
 import { PageHeader } from '@/components/organisms/page-header';
 import { Button } from '@/components/ui/button';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
-import {
-  breadcrumbs,
-  TITLE,
-} from '@/app/(admin)/dashboard/(shell)/posts/breadcrumbs';
-import { PostsTable } from '@/app/(admin)/dashboard/(shell)/posts/_components/posts-table';
-import { postsService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.service';
-import { postTemplatesService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
 import {
   parseSearchParams,
   type SearchParams,

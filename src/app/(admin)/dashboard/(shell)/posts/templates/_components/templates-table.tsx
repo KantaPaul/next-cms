@@ -7,6 +7,19 @@ import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import {
+  FieldShell,
+  inputClass,
+  textareaClass,
+} from '@/app/(admin)/dashboard/(shell)/pages/_components/field-shell';
+import type { PostTemplateListItem } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
+import {
+  createPostTemplate,
+  deletePostTemplate,
+  duplicatePostTemplate,
+  setDefaultPostTemplate,
+  updatePostTemplate,
+} from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.actions';
+import {
   ActionDropdown,
   ActionDropdownItem,
 } from '@/components/atoms/action-dropdown';
@@ -22,19 +35,6 @@ import {
 } from '@/components/ui/dialog';
 import { PAGES } from '@/config/pages';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
-import {
-  FieldShell,
-  inputClass,
-  textareaClass,
-} from '@/app/(admin)/dashboard/(shell)/pages/_components/field-shell';
-import {
-  createPostTemplate,
-  deletePostTemplate,
-  duplicatePostTemplate,
-  setDefaultPostTemplate,
-  updatePostTemplate,
-} from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.actions';
-import type { PostTemplateListItem } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
 
 type DetailsTarget =
   | { mode: 'create' }

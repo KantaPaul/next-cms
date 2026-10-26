@@ -1,4 +1,5 @@
 import 'server-only';
+import { createId } from '@paralleldrive/cuid2';
 import {
   and,
   count,
@@ -10,14 +11,8 @@ import {
   sql,
   sum,
 } from 'drizzle-orm';
-import { createId } from '@paralleldrive/cuid2';
 import { db } from '@/db';
-import {
-  media,
-  pageViews,
-  pages,
-  users,
-} from '@/db/schema';
+import { media, pages, pageViews, posts, users } from '@/db/schema';
 import type { WidgetQuery } from '@/db/schemas/analytics.schema';
 import { PageStatus, VisibilityStatus } from '@/db/schemas/shared.schema';
 
@@ -61,9 +56,7 @@ export type WidgetRowsResult = {
 };
 
 export type WidgetResult =
-  | WidgetStatResult
-  | WidgetSeriesResult
-  | WidgetRowsResult;
+  WidgetStatResult | WidgetSeriesResult | WidgetRowsResult;
 
 function windows(rangeDays: 7 | 30) {
   const since = new Date();
@@ -74,63 +67,119 @@ function windows(rangeDays: 7 | 30) {
   return { since, previousSince, rangeDays };
 }
 
+/** Page and post filters are mutually exclusive. A page id wins when both are set. */
+function contentScope(pageId: string | null, postId: string | null) {
+  if (pageId) return eq(pageViews.pageId, pageId);
+  if (postId) return eq(pageViews.postId, postId);
+  return undefined;
+}
+
 export const analyticsService = {
   recordView: async (input: {
-    pageId: string;
     path: string;
     referrer?: string | null;
     visitorId: string;
     userAgent?: string | null;
+    pageId?: string | null;
+    postId?: string | null;
   }) => {
     if (input.userAgent && BOT_UA.test(input.userAgent)) {
       return { recorded: false, reason: 'bot' as const };
     }
 
-    const [page] = await db
-      .select({
-        id: pages.id,
-        status: pages.status,
-        visibility: pages.visibility,
-      })
-      .from(pages)
-      .where(
-        and(
-          eq(pages.id, input.pageId),
-          isNull(pages.deletedAt),
-          eq(pages.status, PageStatus.published),
-          eq(pages.visibility, VisibilityStatus.public)
-        )
-      )
-      .limit(1);
-
-    if (!page) {
-      return { recorded: false, reason: 'unpublished' as const };
+    const pageId = input.pageId?.trim() || null;
+    const postId = input.postId?.trim() || null;
+    if ((pageId && postId) || (!pageId && !postId)) {
+      return { recorded: false, reason: 'invalid_target' as const };
     }
 
     const since = new Date(Date.now() - DEDUPE_WINDOW_MS);
-    const [recent] = await db
-      .select({ id: pageViews.id })
-      .from(pageViews)
-      .where(
-        and(
-          eq(pageViews.pageId, input.pageId),
-          eq(pageViews.visitorId, input.visitorId),
-          gte(pageViews.createdAt, since)
+
+    if (pageId) {
+      const [page] = await db
+        .select({ id: pages.id })
+        .from(pages)
+        .where(
+          and(
+            eq(pages.id, pageId),
+            isNull(pages.deletedAt),
+            eq(pages.status, PageStatus.published),
+            eq(pages.visibility, VisibilityStatus.public)
+          )
         )
-      )
-      .limit(1);
+        .limit(1);
 
-    if (recent) {
-      return { recorded: false, reason: 'deduped' as const };
+      if (!page) {
+        return { recorded: false, reason: 'unpublished' as const };
+      }
+
+      const [recent] = await db
+        .select({ id: pageViews.id })
+        .from(pageViews)
+        .where(
+          and(
+            eq(pageViews.pageId, pageId),
+            eq(pageViews.visitorId, input.visitorId),
+            gte(pageViews.createdAt, since)
+          )
+        )
+        .limit(1);
+
+      if (recent) {
+        return { recorded: false, reason: 'deduped' as const };
+      }
+
+      await db.insert(pageViews).values({
+        id: createId(),
+        pageId,
+        postId: null,
+        path: input.path.slice(0, 500),
+        referrerHost: parseReferrerHost(input.referrer),
+        visitorId: input.visitorId,
+      });
+    } else {
+      const [post] = await db
+        .select({ id: posts.id })
+        .from(posts)
+        .where(
+          and(
+            eq(posts.id, postId!),
+            isNull(posts.deletedAt),
+            eq(posts.status, PageStatus.published),
+            eq(posts.visibility, VisibilityStatus.public)
+          )
+        )
+        .limit(1);
+
+      if (!post) {
+        return { recorded: false, reason: 'unpublished' as const };
+      }
+
+      const [recent] = await db
+        .select({ id: pageViews.id })
+        .from(pageViews)
+        .where(
+          and(
+            eq(pageViews.postId, postId!),
+            eq(pageViews.visitorId, input.visitorId),
+            gte(pageViews.createdAt, since)
+          )
+        )
+        .limit(1);
+
+      if (recent) {
+        return { recorded: false, reason: 'deduped' as const };
+      }
+
+      await db.insert(pageViews).values({
+        id: createId(),
+        pageId: null,
+        postId,
+        path: input.path.slice(0, 500),
+        referrerHost: parseReferrerHost(input.referrer),
+        visitorId: input.visitorId,
+      });
     }
-
-    await db.insert(pageViews).values({
-      id: createId(),
-      pageId: input.pageId,
-      path: input.path.slice(0, 500),
-      referrerHost: parseReferrerHost(input.referrer),
-      visitorId: input.visitorId,
-    });
 
     return { recorded: true as const };
   },
@@ -161,14 +210,23 @@ export const analyticsService = {
     const topPages = await db
       .select({
         pageId: pageViews.pageId,
+        postId: pageViews.postId,
         path: pageViews.path,
-        title: pages.title,
+        pageTitle: pages.title,
+        postTitle: posts.title,
         views: count(),
       })
       .from(pageViews)
-      .innerJoin(pages, eq(pages.id, pageViews.pageId))
+      .leftJoin(pages, eq(pages.id, pageViews.pageId))
+      .leftJoin(posts, eq(posts.id, pageViews.postId))
       .where(gte(pageViews.createdAt, since))
-      .groupBy(pageViews.pageId, pageViews.path, pages.title)
+      .groupBy(
+        pageViews.pageId,
+        pageViews.postId,
+        pageViews.path,
+        pages.title,
+        posts.title
+      )
       .orderBy(desc(count()))
       .limit(10);
 
@@ -179,7 +237,10 @@ export const analyticsService = {
       })
       .from(pageViews)
       .where(
-        and(gte(pageViews.createdAt, since), sql`${pageViews.referrerHost} is not null`)
+        and(
+          gte(pageViews.createdAt, since),
+          sql`${pageViews.referrerHost} is not null`
+        )
       )
       .groupBy(pageViews.referrerHost)
       .orderBy(desc(count()))
@@ -192,8 +253,9 @@ export const analyticsService = {
       daily: daily.map(d => ({ day: d.day, views: Number(d.views) })),
       topPages: topPages.map(p => ({
         pageId: p.pageId,
+        postId: p.postId,
         path: p.path,
-        title: p.title,
+        title: p.pageTitle ?? p.postTitle ?? p.path,
         views: Number(p.views),
       })),
       topReferrers: topReferrers.map(r => ({
@@ -205,12 +267,13 @@ export const analyticsService = {
 
   /**
    * Current window vs the immediately previous window of the same length.
-   * Optionally scoped to a single pageId. Only the requested list is queried.
+   * Optionally scoped to a single page or a single post. Only the requested list is queried.
    */
   trends: async (
     rangeDays: 7 | 30,
     options?: {
       pageId?: string | null;
+      postId?: string | null;
       list?: TrendsList;
     }
   ) => {
@@ -222,6 +285,12 @@ export const analyticsService = {
       options?.pageId && options.pageId.trim().length > 0
         ? options.pageId.trim()
         : null;
+    const postId = pageId
+      ? null
+      : options?.postId && options.postId.trim().length > 0
+        ? options.postId.trim()
+        : null;
+    const scope = contentScope(pageId, postId);
 
     const since = new Date();
     since.setUTCDate(since.getUTCDate() - rangeDays);
@@ -229,8 +298,6 @@ export const analyticsService = {
 
     const previousSince = new Date(since);
     previousSince.setUTCDate(previousSince.getUTCDate() - rangeDays);
-
-    const pageFilter = pageId ? eq(pageViews.pageId, pageId) : undefined;
 
     // Totals for both windows in one scan
     const [totals] = await db
@@ -241,12 +308,7 @@ export const analyticsService = {
         previousUnique: sql<number>`count(distinct ${pageViews.visitorId}) filter (where ${pageViews.createdAt} >= ${previousSince} and ${pageViews.createdAt} < ${since})`,
       })
       .from(pageViews)
-      .where(
-        and(
-          gte(pageViews.createdAt, previousSince),
-          pageFilter
-        )
-      );
+      .where(and(gte(pageViews.createdAt, previousSince), scope));
 
     const currentViews = Number(totals?.currentViews ?? 0);
     const previousViews = Number(totals?.previousViews ?? 0);
@@ -260,20 +322,18 @@ export const analyticsService = {
         views: count(),
       })
       .from(pageViews)
-      .where(
-        and(
-          gte(pageViews.createdAt, previousSince),
-          pageFilter
-        )
-      )
+      .where(and(gte(pageViews.createdAt, previousSince), scope))
       .groupBy(sql`date_trunc('day', ${pageViews.createdAt})`)
       .orderBy(sql`date_trunc('day', ${pageViews.createdAt})`);
 
     const byDay = new Map(dailyRows.map(d => [d.day, Number(d.views)]));
 
     // Align current window days; previous is the same day-offset in the prior window
-    const currentDaily: { day: string; views: number; previousViews: number }[] =
-      [];
+    const currentDaily: {
+      day: string;
+      views: number;
+      previousViews: number;
+    }[] = [];
     // Match DualBars: start = today - rangeDays + 1
     const chartStart = new Date();
     chartStart.setUTCDate(chartStart.getUTCDate() - rangeDays + 1);
@@ -295,7 +355,7 @@ export const analyticsService = {
       });
     }
 
-    // Resolve page title when filtered
+    // Resolve the filtered content title
     let pageTitle: string | null = null;
     if (pageId) {
       const [p] = await db
@@ -304,13 +364,21 @@ export const analyticsService = {
         .where(and(eq(pages.id, pageId), isNull(pages.deletedAt)))
         .limit(1);
       pageTitle = p?.title ?? null;
+    } else if (postId) {
+      const [p] = await db
+        .select({ title: posts.title })
+        .from(posts)
+        .where(and(eq(posts.id, postId), isNull(posts.deletedAt)))
+        .limit(1);
+      pageTitle = p?.title ?? null;
     }
 
     // Only the active list
     type ListRow = {
-      pageId?: string;
+      pageId?: string | null;
+      postId?: string | null;
       path?: string;
-      title?: string;
+      title?: string | null;
       host?: string;
       views: number;
       previousViews: number;
@@ -322,31 +390,34 @@ export const analyticsService = {
       const rows = await db
         .select({
           pageId: pageViews.pageId,
+          postId: pageViews.postId,
           path: pageViews.path,
-          title: pages.title,
+          pageTitle: pages.title,
+          postTitle: posts.title,
           currentViews: sql<number>`count(*) filter (where ${pageViews.createdAt} >= ${since})`,
           previousViews: sql<number>`count(*) filter (where ${pageViews.createdAt} >= ${previousSince} and ${pageViews.createdAt} < ${since})`,
         })
         .from(pageViews)
-        .innerJoin(pages, eq(pages.id, pageViews.pageId))
-        .where(
-          and(
-            gte(pageViews.createdAt, previousSince),
-            pageFilter
-          )
+        .leftJoin(pages, eq(pages.id, pageViews.pageId))
+        .leftJoin(posts, eq(posts.id, pageViews.postId))
+        .where(and(gte(pageViews.createdAt, previousSince), scope))
+        .groupBy(
+          pageViews.pageId,
+          pageViews.postId,
+          pageViews.path,
+          pages.title,
+          posts.title
         )
-        .groupBy(pageViews.pageId, pageViews.path, pages.title)
         .orderBy(
-          desc(
-            sql`count(*) filter (where ${pageViews.createdAt} >= ${since})`
-          )
+          desc(sql`count(*) filter (where ${pageViews.createdAt} >= ${since})`)
         )
         .limit(10);
 
       listRows = rows.map(r => ({
         pageId: r.pageId,
+        postId: r.postId,
         path: r.path,
-        title: r.title,
+        title: r.pageTitle ?? r.postTitle ?? r.path,
         views: Number(r.currentViews),
         previousViews: Number(r.previousViews),
       }));
@@ -358,17 +429,10 @@ export const analyticsService = {
           previousViews: sql<number>`count(*) filter (where ${pageViews.createdAt} >= ${previousSince} and ${pageViews.createdAt} < ${since})`,
         })
         .from(pageViews)
-        .where(
-          and(
-            gte(pageViews.createdAt, previousSince),
-            pageFilter
-          )
-        )
+        .where(and(gte(pageViews.createdAt, previousSince), scope))
         .groupBy(pageViews.path)
         .orderBy(
-          desc(
-            sql`count(*) filter (where ${pageViews.createdAt} >= ${since})`
-          )
+          desc(sql`count(*) filter (where ${pageViews.createdAt} >= ${since})`)
         )
         .limit(10);
 
@@ -390,14 +454,12 @@ export const analyticsService = {
           and(
             gte(pageViews.createdAt, previousSince),
             sql`${pageViews.referrerHost} is not null`,
-            pageFilter
+            scope
           )
         )
         .groupBy(pageViews.referrerHost)
         .orderBy(
-          desc(
-            sql`count(*) filter (where ${pageViews.createdAt} >= ${since})`
-          )
+          desc(sql`count(*) filter (where ${pageViews.createdAt} >= ${since})`)
         )
         .limit(10);
 
@@ -411,6 +473,7 @@ export const analyticsService = {
     return {
       rangeDays,
       pageId,
+      postId,
       pageTitle,
       list,
       views: currentViews,
@@ -437,7 +500,12 @@ export const analyticsService = {
       query.pageId && query.pageId.trim().length > 0
         ? query.pageId.trim()
         : null;
-    const pageFilter = pageId ? eq(pageViews.pageId, pageId) : undefined;
+    const postId = pageId
+      ? null
+      : query.postId && query.postId.trim().length > 0
+        ? query.postId.trim()
+        : null;
+    const scope = contentScope(pageId, postId);
     const compare = query.compare;
 
     // ── Stat (dimension: none) ─────────────────────────────────────────────
@@ -450,7 +518,7 @@ export const analyticsService = {
           previousUnique: sql<number>`count(distinct ${pageViews.visitorId}) filter (where ${pageViews.createdAt} >= ${previousSince} and ${pageViews.createdAt} < ${since})`,
         })
         .from(pageViews)
-        .where(and(gte(pageViews.createdAt, previousSince), pageFilter));
+        .where(and(gte(pageViews.createdAt, previousSince), scope));
 
       const currentViews = Number(totals?.currentViews ?? 0);
       const previousViews = Number(totals?.previousViews ?? 0);
@@ -496,7 +564,7 @@ export const analyticsService = {
           value: metricExpr,
         })
         .from(pageViews)
-        .where(and(gte(pageViews.createdAt, previousSince), pageFilter))
+        .where(and(gte(pageViews.createdAt, previousSince), scope))
         .groupBy(sql`date_trunc('day', ${pageViews.createdAt})`)
         .orderBy(sql`date_trunc('day', ${pageViews.createdAt})`);
 
@@ -506,8 +574,11 @@ export const analyticsService = {
       chartStart.setUTCDate(chartStart.getUTCDate() - rangeDays + 1);
       chartStart.setUTCHours(0, 0, 0, 0);
 
-      const points: { label: string; value: number; previous: number | null }[] =
-        [];
+      const points: {
+        label: string;
+        value: number;
+        previous: number | null;
+      }[] = [];
       for (let i = 0; i < rangeDays; i++) {
         const d = new Date(chartStart);
         d.setUTCDate(chartStart.getUTCDate() + i);
@@ -538,8 +609,10 @@ export const analyticsService = {
       const rows = await db
         .select({
           pageId: pageViews.pageId,
+          postId: pageViews.postId,
           path: pageViews.path,
-          title: pages.title,
+          pageTitle: pages.title,
+          postTitle: posts.title,
           currentValue: sql<number>`${metricFilter}`,
           previousValue: sql<number>`${
             query.metric === 'uniqueVisitors'
@@ -548,17 +621,24 @@ export const analyticsService = {
           }`,
         })
         .from(pageViews)
-        .innerJoin(pages, eq(pages.id, pageViews.pageId))
-        .where(and(gte(pageViews.createdAt, previousSince), pageFilter))
-        .groupBy(pageViews.pageId, pageViews.path, pages.title)
+        .leftJoin(pages, eq(pages.id, pageViews.pageId))
+        .leftJoin(posts, eq(posts.id, pageViews.postId))
+        .where(and(gte(pageViews.createdAt, previousSince), scope))
+        .groupBy(
+          pageViews.pageId,
+          pageViews.postId,
+          pageViews.path,
+          pages.title,
+          posts.title
+        )
         .orderBy(desc(sql`${metricFilter}`))
         .limit(limit);
 
       return {
         kind: 'rows',
         rows: rows.map(r => ({
-          key: r.pageId,
-          label: r.title,
+          key: r.pageId ?? r.postId ?? r.path,
+          label: r.pageTitle ?? r.postTitle ?? r.path,
           detail: r.path,
           value: Number(r.currentValue),
           previous: compare ? Number(r.previousValue) : null,
@@ -578,7 +658,7 @@ export const analyticsService = {
           }`,
         })
         .from(pageViews)
-        .where(and(gte(pageViews.createdAt, previousSince), pageFilter))
+        .where(and(gte(pageViews.createdAt, previousSince), scope))
         .groupBy(pageViews.path)
         .orderBy(desc(sql`${metricFilter}`))
         .limit(limit);
@@ -611,7 +691,7 @@ export const analyticsService = {
         and(
           gte(pageViews.createdAt, previousSince),
           sql`${pageViews.referrerHost} is not null`,
-          pageFilter
+          scope
         )
       )
       .groupBy(pageViews.referrerHost)

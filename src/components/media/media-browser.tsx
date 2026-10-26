@@ -3,22 +3,44 @@
 import { FileText, Film, Folder, Loader2, Search, Upload } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
 import { listMedia } from '@/app/(admin)/dashboard/(shell)/media/_modules/media.actions';
 import type { MediaItem } from '@/app/(admin)/dashboard/(shell)/media/_modules/media.service';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils/cn';
 import { uploadMediaFile } from './upload';
 
-export type MediaFilter = { search: string; folder: string; type: '' | 'image' | 'video' | 'document' };
+export type MediaFilter = {
+  search: string;
+  folder: string;
+  type: '' | 'image' | 'video' | 'document';
+};
 
-export function MediaThumb({ item, className }: { item: Pick<MediaItem, 'url' | 'mime' | 'alt' | 'filename'>; className?: string }) {
+export function MediaThumb({
+  item,
+  className,
+}: {
+  item: Pick<MediaItem, 'url' | 'mime' | 'alt' | 'filename'>;
+  className?: string;
+}) {
   if (item.mime.startsWith('image/')) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={item.url} alt={item.alt ?? ''} loading="lazy" className={cn('size-full object-cover', className)} />;
+    return (
+      <img
+        src={item.url}
+        alt={item.alt ?? ''}
+        loading="lazy"
+        className={cn('size-full object-cover', className)}
+      />
+    );
   }
   const Icon = item.mime.startsWith('video/') ? Film : FileText;
   return (
-    <div className={cn('flex size-full flex-col items-center justify-center gap-1 bg-steel-50 p-2 text-steel-500 dark:bg-dark-100', className)}>
+    <div
+      className={cn(
+        'flex size-full flex-col items-center justify-center gap-1 bg-steel-50 p-2 text-steel-500 dark:bg-dark-100',
+        className
+      )}
+    >
       <Icon className="size-8" />
       <span className="line-clamp-1 text-[11px]">{item.filename}</span>
     </div>
@@ -43,9 +65,15 @@ export function MediaBrowser({
   refreshKey?: number;
   className?: string;
 }) {
-  const [filter, setFilter] = useState<MediaFilter>({ search: '', folder: '', type: initialType });
+  const [filter, setFilter] = useState<MediaFilter>({
+    search: '',
+    folder: '',
+    type: initialType,
+  });
   const [items, setItems] = useState<MediaItem[]>([]);
-  const [folders, setFolders] = useState<{ folder: string; total: number }[]>([]);
+  const [folders, setFolders] = useState<{ folder: string; total: number }[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(0);
   const [dragOver, setDragOver] = useState(false);
@@ -71,17 +99,31 @@ export function MediaBrowser({
     if (!list.length) return;
     setUploading(n => n + list.length);
 
-    const results = await Promise.allSettled(list.map(file => uploadMediaFile(file, filter.folder || undefined)));
+    const results = await Promise.allSettled(
+      list.map(file => uploadMediaFile(file, filter.folder || undefined))
+    );
     setUploading(n => n - list.length);
 
-    const failed = results.filter(r => r.status === 'rejected') as PromiseRejectedResult[];
+    const failed = results.filter(
+      r => r.status === 'rejected'
+    ) as PromiseRejectedResult[];
     failed.forEach(r => toast.error((r.reason as Error).message));
     const uploaded = results.filter(r => r.status === 'fulfilled');
-    if (uploaded.length) toast.success(`${uploaded.length} file${uploaded.length > 1 ? 's' : ''} uploaded`);
+    if (uploaded.length)
+      toast.success(
+        `${uploaded.length} file${uploaded.length > 1 ? 's' : ''} uploaded`
+      );
 
     await load();
-    const first = results.find(r => r.status === 'fulfilled') as PromiseFulfilledResult<MediaItem> | undefined;
-    if (first && list.length === 1) onSelect({ ...first.value, uploadedBy: null, createdAt: new Date() } as MediaItem);
+    const first = results.find(r => r.status === 'fulfilled') as
+      | PromiseFulfilledResult<MediaItem>
+      | undefined;
+    if (first && list.length === 1)
+      onSelect({
+        ...first.value,
+        uploadedBy: null,
+        createdAt: new Date(),
+      } as MediaItem);
   };
 
   return (
@@ -126,7 +168,12 @@ export function MediaBrowser({
         <select
           aria-label="File type"
           value={filter.type}
-          onChange={e => setFilter(f => ({ ...f, type: e.target.value as MediaFilter['type'] }))}
+          onChange={e =>
+            setFilter(f => ({
+              ...f,
+              type: e.target.value as MediaFilter['type'],
+            }))
+          }
           className="h-9 rounded-md border border-steel-200 bg-white px-2 text-sm dark:border-dark-300 dark:bg-dark-100"
         >
           <option value="">All types</option>
@@ -134,7 +181,12 @@ export function MediaBrowser({
           <option value="video">Videos</option>
           <option value="document">Documents</option>
         </select>
-        <Button type="button" size="sm" onClick={() => inputRef.current?.click()} disabled={uploading > 0}>
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading > 0}
+        >
           {uploading ? <Loader2 className="animate-spin" /> : <Upload />} Upload
         </Button>
         <input
@@ -153,7 +205,9 @@ export function MediaBrowser({
       <div
         className={cn(
           'relative min-h-48 flex-1 overflow-auto rounded-lg border border-dashed p-2 transition',
-          dragOver ? 'border-indigo-500 bg-indigo-50/60 dark:bg-indigo-950/30' : 'border-steel-200 dark:border-dark-300'
+          dragOver
+            ? 'border-indigo-500 bg-indigo-50/60 dark:bg-indigo-950/30'
+            : 'border-steel-200 dark:border-dark-300'
         )}
       >
         {loading && !items.length ? (
@@ -178,12 +232,16 @@ export function MediaBrowser({
                   title={item.filename}
                   className={cn(
                     'group relative block aspect-square w-full overflow-hidden rounded-md border bg-steel-50 transition hover:border-steel-400 dark:bg-dark-100',
-                    selectedId === item.id ? 'border-indigo-500 ring-2 ring-indigo-300' : 'border-steel-200 dark:border-dark-300'
+                    selectedId === item.id
+                      ? 'border-indigo-500 ring-2 ring-indigo-300'
+                      : 'border-steel-200 dark:border-dark-300'
                   )}
                 >
                   <MediaThumb item={item} />
                   {!item.alt && item.mime.startsWith('image/') && (
-                    <span className="absolute left-1 top-1 rounded bg-amber-500/90 px-1.5 py-0.5 text-[10px] font-medium text-white">No alt</span>
+                    <span className="absolute left-1 top-1 rounded bg-amber-500/90 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                      No alt
+                    </span>
                   )}
                 </button>
               </li>

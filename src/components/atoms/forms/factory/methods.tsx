@@ -5,6 +5,7 @@ import { type FieldValues, type Path, useWatch } from 'react-hook-form';
 // import { TextEditor } from '@/components/atoms/text-editor';
 import { Text } from '@/components/atoms/content';
 import DatePicker from '@/components/atoms/datepicker/datepicker';
+import type { FormFieldDef } from '@/components/atoms/forms/factory/types';
 // import { Divider } from '@/components/atoms/divider';
 // import { Input, Textarea } from '@/components/atoms/forms';
 // import { CurrencyInput } from '@/components/atoms/forms/currency-input';
@@ -28,21 +29,26 @@ import { Switch } from '@/components/ui/switch';
 import { dayFormat } from '@/lib/utils/format-date';
 // import { parseToFloat } from '@/lib/utils/math-utils';
 import { DataProviderContext } from '@/providers/data.provider';
-import type { FormFieldDef } from '@/components/atoms/forms/factory/types';
 
 // import { CustomDatePicker } from '@/components/ui/datepicker';
 
 import dynamic from 'next/dynamic';
-import { RenderComponentWithProps } from '@/components/atoms/render-component-with-props';
-import { cn } from '@/lib/utils/cn';
 // import { Divider } from '@/components/atoms/divider';
 import {
-  Input,
-  Textarea,
-  PhoneNumberInput,
   Divider,
+  Input,
+  PhoneNumberInput,
+  Textarea,
 } from '@/components/atoms/forms';
-import { FormControl, FormField, FormItem, useFormField } from '@/components/ui/form';
+import { RenderComponentWithProps } from '@/components/atoms/render-component-with-props';
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  useFormField,
+} from '@/components/ui/form';
+import { cn } from '@/lib/utils/cn';
+
 // import { PhoneNumberInput } from '../../phone-input';
 // import { Textarea } from '@/components/ui/textarea';
 // import { TimePicker } from '@/components/ui/date-time';
@@ -51,7 +57,7 @@ import { FormControl, FormField, FormItem, useFormField } from '@/components/ui/
 // import type { TAttachedFile } from '@/lib/validations/files.schema';
 
 const TextEditor = dynamic(
-  () => import('@/components/atoms/text-editor').then((mod) => mod.TextEditor),
+  () => import('@/components/atoms/text-editor').then(mod => mod.TextEditor),
   {
     ssr: false,
   }
@@ -76,7 +82,7 @@ function filterUniqueOptions(
     .filter(Boolean);
 
   // Filter out already selected values
-  return options.filter((option) => !selectedValues.includes(option.value));
+  return options.filter(option => !selectedValues.includes(option.value));
 }
 
 export const methods = {
@@ -110,7 +116,14 @@ export const methods = {
       </div>
     );
   },
-  text: ({ fetchedProps, callback, index, rowData, name, ...field }: FieldPropsType) => {
+  text: ({
+    fetchedProps,
+    callback,
+    index,
+    rowData,
+    name,
+    ...field
+  }: FieldPropsType) => {
     return (
       <Input
         {...field}
@@ -130,7 +143,14 @@ export const methods = {
       />
     );
   },
-  password: ({ fetchedProps, callback, index, rowData, name, ...field }: FieldPropsType) => {
+  password: ({
+    fetchedProps,
+    callback,
+    index,
+    rowData,
+    name,
+    ...field
+  }: FieldPropsType) => {
     return (
       <Input
         {...field}
@@ -149,7 +169,14 @@ export const methods = {
       />
     );
   },
-  number: ({ fetchedProps, index, callback, rowData, name, ...field }: FieldPropsType) => {
+  number: ({
+    fetchedProps,
+    index,
+    callback,
+    rowData,
+    name,
+    ...field
+  }: FieldPropsType) => {
     return (
       <Input
         {...field}
@@ -170,14 +197,21 @@ export const methods = {
       />
     );
   },
-  phoneNumber: ({ fetchedProps, callback, index, rowData, name, ...field }: FieldPropsType) => {
+  phoneNumber: ({
+    fetchedProps,
+    callback,
+    index,
+    rowData,
+    name,
+    ...field
+  }: FieldPropsType) => {
     return (
       <FormControl>
         <PhoneNumberInput
           {...field}
           placeholder={field.placeholder}
           isRequired={field.isRequired}
-          onChange={(value) => {
+          onChange={value => {
             field.onChange(value);
 
             if (callback) {
@@ -190,7 +224,14 @@ export const methods = {
       </FormControl>
     );
   },
-  textarea: ({ fetchedProps, callback, index, rowData, name, ...field }: FieldPropsType) => {
+  textarea: ({
+    fetchedProps,
+    callback,
+    index,
+    rowData,
+    name,
+    ...field
+  }: FieldPropsType) => {
     return (
       <FormControl>
         <Textarea
@@ -225,7 +266,14 @@ export const methods = {
   //     />
   //   );
   // },
-  date: ({ index, fetchedProps, callback, rowData, name, ...field }: FieldPropsType) => {
+  date: ({
+    index,
+    fetchedProps,
+    callback,
+    rowData,
+    name,
+    ...field
+  }: FieldPropsType) => {
     const {
       ref,
       error,
@@ -281,7 +329,14 @@ export const methods = {
       />
     );
   },
-  dateRange: ({ index, fetchedProps, callback, rowData, name, ...field }: FieldPropsType) => {
+  dateRange: ({
+    index,
+    fetchedProps,
+    callback,
+    rowData,
+    name,
+    ...field
+  }: FieldPropsType) => {
     const { error, label, value, showTimeSelect, dateFormat, onChange } = field;
 
     return (
@@ -343,7 +398,9 @@ export const methods = {
       mapOptionKeys = { label: 'label', value: 'value' },
     } = field;
 
-    let options = Array.isArray(field.options) ? field.options : fetchedProps?.[field.options];
+    let options = Array.isArray(field.options)
+      ? field.options
+      : fetchedProps?.[field.options];
 
     // Automatically apply unique filtering if enabled
     if (unique && allRowValues && fieldName && typeof index === 'number') {
@@ -372,8 +429,10 @@ export const methods = {
         isDisabled={disabled}
         isLoading={isLoading}
         value={valueOnly ? handleSelected(newOptions, value ?? '') : value}
-        onChange={(newValue) => {
-          const processedValue = valueOnly ? handleOnChange(newValue) : newValue;
+        onChange={newValue => {
+          const processedValue = valueOnly
+            ? handleOnChange(newValue)
+            : newValue;
           onChange(processedValue);
 
           if (callback) {
@@ -430,7 +489,13 @@ export const methods = {
   //     />
   //   );
   // },
-  creatableSelect: ({ index, callback, rowData, name, ...field }: FieldPropsType) => {
+  creatableSelect: ({
+    index,
+    callback,
+    rowData,
+    name,
+    ...field
+  }: FieldPropsType) => {
     const {
       value,
       onChange,
@@ -443,7 +508,9 @@ export const methods = {
       mapOptionKeys = { label: 'label', value: 'value' },
     } = field;
 
-    const options = Array.isArray(field.options) ? field.options : fetchedProps?.[field.options];
+    const options = Array.isArray(field.options)
+      ? field.options
+      : fetchedProps?.[field.options];
 
     const newOptions = options?.map((option: Option) => ({
       ...option,
@@ -465,7 +532,7 @@ export const methods = {
         isMulti
         isDisabled={disabled}
         isLoading={isLoading}
-        onChange={(newValue) => {
+        onChange={newValue => {
           onChange(newValue);
 
           if (callback) {
@@ -492,14 +559,19 @@ export const methods = {
       name,
     } = field;
 
-    const fieldOptions = Array.isArray(field.options) ? field.options : fetchedProps[field.options];
+    const fieldOptions = Array.isArray(field.options)
+      ? field.options
+      : fetchedProps[field.options];
 
     const newOptions = fieldOptions.map((option: Option) => ({
       value: option[mapOptionKeys.value as keyof typeof option] as string,
       label: option[mapOptionKeys.label as keyof typeof option] as string,
     }));
 
-    const [groupOptions, options] = groupSelectedOptions(newOptions, value ?? []);
+    const [groupOptions, options] = groupSelectedOptions(
+      newOptions,
+      value ?? []
+    );
 
     return (
       <ReactSelect
@@ -538,11 +610,14 @@ export const methods = {
         <Switch
           label={
             <>
-              {label} {isRequired && <span className="text-red-500 dark:text-red-dark">*</span>}
+              {label}{' '}
+              {isRequired && (
+                <span className="text-red-500 dark:text-red-dark">*</span>
+              )}
             </>
           }
           checked={value}
-          onChange={(value) => {
+          onChange={value => {
             onChange(value);
 
             if (callback) {
@@ -683,7 +758,7 @@ export const methods = {
     return (
       <TextEditor
         {...rest}
-        onChange={(value) => {
+        onChange={value => {
           onChange(value);
 
           if (callback) {
@@ -743,7 +818,9 @@ export const methods = {
     ...props
   }: FieldPropsType): React.ReactElement | null => {
     // Find the first condition that matches
-    const matchedCondition = conditions?.find((condition: any) => condition.when(rowValue, index));
+    const matchedCondition = conditions?.find((condition: any) =>
+      condition.when(rowValue, index)
+    );
     const fieldsToRender = matchedCondition?.field || defaultField;
 
     if (fieldsToRender && Array.isArray(fieldsToRender)) {
@@ -797,7 +874,11 @@ export function FormFieldWrapper<TFieldValues extends FieldValues>(
     rowData?: any;
   }
 ) {
-  if (['empty', 'header', 'submit', 'autofill', 'description'].includes(props.type)) {
+  if (
+    ['empty', 'header', 'submit', 'autofill', 'description'].includes(
+      props.type
+    )
+  ) {
     return methods[props.type as keyof typeof methods](props);
   }
 

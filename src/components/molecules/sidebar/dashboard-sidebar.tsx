@@ -1,11 +1,11 @@
-import { AppSidebar } from "@/components/molecules/sidebar/app-sidebar";
+import { redirect } from 'next/navigation';
+import { AppSidebar } from '@/components/molecules/sidebar/app-sidebar';
+import Header from '@/components/organisms/header/header';
 import {
-  SidebarInset,
   SidebarProvider as AppSidebarProvider,
-} from "@/components/ui/sidebar";
-import Header from "@/components/organisms/header/header";
-import { redirect } from "next/navigation";
-import { getSession } from "@/server/actions/auth.actions";
+  SidebarInset,
+} from '@/components/ui/sidebar';
+import { getSession } from '@/server/actions/auth.actions';
 
 export default async function SidebarProvider({
   children,
@@ -13,7 +13,7 @@ export default async function SidebarProvider({
   children: React.ReactNode;
 }) {
   const session = await getSession();
-  if (!session?.user?.id) redirect("/login");
+  if (!session?.user?.id) redirect('/login');
 
   return (
     <AppSidebarProvider>

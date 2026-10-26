@@ -23,7 +23,15 @@ const OPTIONS: sanitizeHtml.IOptions = {
     img: ['src', 'alt', 'title', 'width', 'height', 'loading'],
     video: ['src', 'controls', 'width', 'height', 'poster'],
     source: ['src', 'type'],
-    iframe: ['src', 'width', 'height', 'allow', 'allowfullscreen', 'frameborder', 'title'],
+    iframe: [
+      'src',
+      'width',
+      'height',
+      'allow',
+      'allowfullscreen',
+      'frameborder',
+      'title',
+    ],
     td: ['colspan', 'rowspan', 'style'],
     th: ['colspan', 'rowspan', 'style'],
     input: ['type', 'checked', 'disabled'],
@@ -37,13 +45,21 @@ const OPTIONS: sanitizeHtml.IOptions = {
   },
   allowedSchemes: ['http', 'https', 'mailto', 'tel'],
   allowedSchemesByTag: { img: ['http', 'https', 'data'] },
-  allowedIframeHostnames: ['www.youtube.com', 'www.youtube-nocookie.com', 'player.vimeo.com'],
+  allowedIframeHostnames: [
+    'www.youtube.com',
+    'www.youtube-nocookie.com',
+    'player.vimeo.com',
+  ],
   transformTags: {
     a: (tagName, attribs) => ({
       tagName,
-      attribs: attribs.target === '_blank' ? { ...attribs, rel: 'noopener noreferrer' } : attribs,
+      attribs:
+        attribs.target === '_blank'
+          ? { ...attribs, rel: 'noopener noreferrer' }
+          : attribs,
     }),
   },
 };
 
-export const sanitizeRichText = (html: unknown) => (typeof html === 'string' ? sanitizeHtml(html, OPTIONS) : '');
+export const sanitizeRichText = (html: unknown) =>
+  typeof html === 'string' ? sanitizeHtml(html, OPTIONS) : '';

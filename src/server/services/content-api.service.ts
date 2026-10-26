@@ -14,7 +14,15 @@ const published = (language?: string | null): SQL | undefined =>
   );
 
 export const contentApiService = {
-  listPublishedPages: async ({ language, limit, offset }: { language?: string | null; limit: number; offset: number }) => {
+  listPublishedPages: async ({
+    language,
+    limit,
+    offset,
+  }: {
+    language?: string | null;
+    limit: number;
+    offset: number;
+  }) => {
     const where = published(language);
     const [data, [{ total }]] = await Promise.all([
       db
@@ -50,14 +58,20 @@ export const contentApiService = {
       .orderBy(asc(menus.title));
     if (!menuRows.length) return [];
 
-    const itemRows = await db.select().from(menuItems).orderBy(asc(menuItems.order));
+    const itemRows = await db
+      .select()
+      .from(menuItems)
+      .orderBy(asc(menuItems.order));
     return menuRows.map((menu): MenuWithItems => {
       const items = itemRows.filter(i => i.menuId === menu.id);
       return {
         ...menu,
         items: items
           .filter(i => !i.parentId)
-          .map(item => ({ ...item, children: items.filter(child => child.parentId === item.id) })),
+          .map(item => ({
+            ...item,
+            children: items.filter(child => child.parentId === item.id),
+          })),
       };
     });
   },

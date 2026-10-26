@@ -4,13 +4,31 @@ import { useGetPuck } from '@measured/puck';
 import { LayoutTemplate, Loader2 } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { handleActionResponse } from '@/lib/utils/handle-action-response';
+import {
+  FieldShell,
+  inputClass,
+} from '@/app/(admin)/dashboard/(shell)/pages/_components/field-shell';
 import { saveTemplate } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
-import { FieldShell, inputClass } from '@/app/(admin)/dashboard/(shell)/pages/_components/field-shell';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { handleActionResponse } from '@/lib/utils/handle-action-response';
 
-export function SaveTemplateDialog({ open, onOpenChange, pageTitle }: { open: boolean; onOpenChange: (open: boolean) => void; pageTitle: string }) {
+export function SaveTemplateDialog({
+  open,
+  onOpenChange,
+  pageTitle,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  pageTitle: string;
+}) {
   const getPuck = useGetPuck();
   const [name, setName] = useState(pageTitle);
   const [description, setDescription] = useState('');
@@ -21,9 +39,17 @@ export function SaveTemplateDialog({ open, onOpenChange, pageTitle }: { open: bo
     startTransition(async () => {
       const { appState } = getPuck();
       await handleActionResponse(
-        await saveTemplate({ name, description, category, editorType: 'builder', content: appState.data }),
+        await saveTemplate({
+          name,
+          description,
+          category,
+          editorType: 'builder',
+          content: appState.data,
+        }),
         row => {
-          toast.success(`Saved "${(row as { name: string }).name}" as a template`);
+          toast.success(
+            `Saved "${(row as { name: string }).name}" as a template`
+          );
           onOpenChange(false);
         }
       );
@@ -34,16 +60,32 @@ export function SaveTemplateDialog({ open, onOpenChange, pageTitle }: { open: bo
       <DialogContent data-theme="light" className="text-foreground sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <LayoutTemplate className="size-5 text-muted-foreground" /> Save as template
+            <LayoutTemplate className="size-5 text-muted-foreground" /> Save as
+            template
           </DialogTitle>
-          <DialogDescription>New pages can start from this layout. The template is a copy, so later edits to this page do not change it.</DialogDescription>
+          <DialogDescription>
+            New pages can start from this layout. The template is a copy, so
+            later edits to this page do not change it.
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4">
           <FieldShell label="Name" htmlFor="template-name">
-            <input id="template-name" value={name} onChange={e => setName(e.target.value)} className={inputClass} maxLength={150} />
+            <input
+              id="template-name"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              className={inputClass}
+              maxLength={150}
+            />
           </FieldShell>
           <FieldShell label="Category" htmlFor="template-category">
-            <input id="template-category" value={category} onChange={e => setCategory(e.target.value)} className={inputClass} maxLength={50} />
+            <input
+              id="template-category"
+              value={category}
+              onChange={e => setCategory(e.target.value)}
+              className={inputClass}
+              maxLength={50}
+            />
           </FieldShell>
           <FieldShell label="Description" htmlFor="template-description">
             <textarea
@@ -57,10 +99,18 @@ export function SaveTemplateDialog({ open, onOpenChange, pageTitle }: { open: bo
           </FieldShell>
         </div>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
             Cancel
           </Button>
-          <Button type="button" onClick={save} disabled={isPending || !name.trim()}>
+          <Button
+            type="button"
+            onClick={save}
+            disabled={isPending || !name.trim()}
+          >
             {isPending && <Loader2 className="animate-spin" />} Save template
           </Button>
         </DialogFooter>

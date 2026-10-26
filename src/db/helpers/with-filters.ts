@@ -81,7 +81,9 @@ export const andWhere = (filters: (SQL | undefined)[]) => {
  */
 export const equalFilters = <
   S extends PgTable,
-  P extends Partial<Record<keyof S['_']['columns'], unknown>> | Record<string, unknown>,
+  P extends
+    | Partial<Record<keyof S['_']['columns'], unknown>>
+    | Record<string, unknown>,
 >(
   schema: S,
   searchParams: P
@@ -136,7 +138,9 @@ export const equalFilters = <
         return eq(column, value);
 
       case 'string':
-        return column.dataType === 'date' ? eqDate(column, value) : eq(column, value);
+        return column.dataType === 'date'
+          ? eqDate(column, value)
+          : eq(column, value);
 
       case 'object':
         if (isRangeParams(value)) return rangeFilter(column, value);
@@ -149,7 +153,10 @@ export const equalFilters = <
   });
 };
 
-export const deletedAtFilter = <T extends PgColumn>(column: T, includeDeleted = false) => {
+export const deletedAtFilter = <T extends PgColumn>(
+  column: T,
+  includeDeleted = false
+) => {
   if (includeDeleted) return;
   return isNull(column);
 };
@@ -173,7 +180,10 @@ export const deletedAtFilter = <T extends PgColumn>(column: T, includeDeleted = 
  * const filter = rangeFilter(users.createdAt, { start: '2024-01-01', end: '2024-12-31' });
  * ```
  */
-export const rangeFilter = <T extends PgColumn>(column: T, value: RangeParams) => {
+export const rangeFilter = <T extends PgColumn>(
+  column: T,
+  value: RangeParams
+) => {
   const { start, end } = value;
 
   if (!(start && end)) return;
@@ -247,7 +257,10 @@ export const rangeFilter = <T extends PgColumn>(column: T, value: RangeParams) =
  * // Returns SQL conditions for matching 'john' across specified columns
  * ```
  */
-export const searchFilters = <T extends Table, C extends keyof T['_']['columns']>(
+export const searchFilters = <
+  T extends Table,
+  C extends keyof T['_']['columns'],
+>(
   table: T,
   columns: (C | SQLWrapper)[],
   search: string | undefined | null
@@ -256,7 +269,7 @@ export const searchFilters = <T extends Table, C extends keyof T['_']['columns']
 
   // if (columns.length === 0) columns = extractColumnNames(table);
 
-  return columns.map((columnOrQuery) => {
+  return columns.map(columnOrQuery => {
     if (typeof columnOrQuery === 'object' && isSQLWrapper(columnOrQuery)) {
       return ilikeSql(columnOrQuery, search);
     }

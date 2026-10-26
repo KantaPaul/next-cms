@@ -31,12 +31,18 @@ export default async function ApiKeysPage() {
     );
   }
 
-  const [keys, settings] = await Promise.all([apiKeysService.list(), siteSettingsService.get()]);
+  const [keys, settings] = await Promise.all([
+    apiKeysService.list(),
+    siteSettingsService.get(),
+  ]);
 
   return (
     <>
       <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-      <ApiKeys keys={keys} baseUrl={`${(settings.siteUrl || env.SITE_URL).replace(/\/$/, '')}/api/v1`} />
+      <ApiKeys
+        keys={keys}
+        baseUrl={`${(settings.siteUrl || env.SITE_URL).replace(/\/$/, '')}/api/v1`}
+      />
     </>
   );
 }

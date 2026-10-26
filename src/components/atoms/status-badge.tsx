@@ -9,11 +9,16 @@ import { titleCase } from '@/lib/utils/title-case';
  */
 
 export const statusColors = {
-  success: 'bg-[#C7EFD5] text-[#2C573F] dark:bg-green-custom/30 dark:text-green-custom',
-  warning: 'bg-[#bb800926] text-[#d29922] dark:bg-orange-custom/30 dark:text-orange-custom',
-  danger: 'bg-[rgba(208,82,84,0.15)] text-red-custom dark:bg-[rgba(242,27,105,0.30)]',
-  neutral: 'bg-steel-300/30 text-steel-600 dark:bg-yellow-custom/30 dark:text-yellow-custom',
-  indigo: 'bg-indigo-300/30 text-steel-600 dark:bg-yellow-custom/30 dark:text-yellow-custom',
+  success:
+    'bg-[#C7EFD5] text-[#2C573F] dark:bg-green-custom/30 dark:text-green-custom',
+  warning:
+    'bg-[#bb800926] text-[#d29922] dark:bg-orange-custom/30 dark:text-orange-custom',
+  danger:
+    'bg-[rgba(208,82,84,0.15)] text-red-custom dark:bg-[rgba(242,27,105,0.30)]',
+  neutral:
+    'bg-steel-300/30 text-steel-600 dark:bg-yellow-custom/30 dark:text-yellow-custom',
+  indigo:
+    'bg-indigo-300/30 text-steel-600 dark:bg-yellow-custom/30 dark:text-yellow-custom',
 };
 
 export const statusColorMaps = {
@@ -87,10 +92,14 @@ export const statusColorMaps = {
 
   // Custom colors
   draft: 'bg-[#EEDFC9]/60 text-[#462D15]',
-  partially_delivered: 'bg-[#FFF3CD] text-[#856404] dark:bg-[#664D03]/30 dark:text-[#FFDF7E]',
-  out_for_delivery: 'bg-[#CCE5FF] text-[#004085] dark:bg-blue-custom/20 dark:text-blue-custom',
-  in_progress: 'bg-[#CCE5FF] text-[#004085] dark:bg-blue-custom/20 dark:text-blue-custom',
-  refunded: 'bg-[#E2D9F3] text-[#6F42C1] dark:bg-purple-custom/50 dark:text-purple-custom',
+  partially_delivered:
+    'bg-[#FFF3CD] text-[#856404] dark:bg-[#664D03]/30 dark:text-[#FFDF7E]',
+  out_for_delivery:
+    'bg-[#CCE5FF] text-[#004085] dark:bg-blue-custom/20 dark:text-blue-custom',
+  in_progress:
+    'bg-[#CCE5FF] text-[#004085] dark:bg-blue-custom/20 dark:text-blue-custom',
+  refunded:
+    'bg-[#E2D9F3] text-[#6F42C1] dark:bg-purple-custom/50 dark:text-purple-custom',
 };
 
 export type StatusType = keyof typeof statusColorMaps;
@@ -101,17 +110,26 @@ interface StatusBadgeProps {
   statusColor?: keyof typeof statusColorMaps;
 }
 
-export function StatusBadge({ status, className, statusColor }: StatusBadgeProps): JSX.Element {
+export function StatusBadge({
+  status,
+  className,
+  statusColor,
+}: StatusBadgeProps): JSX.Element {
   if (!status) return <></>;
 
   const color = statusColor
     ? statusColorMaps[statusColor]
-    : statusColorMaps[status?.toLowerCase() as keyof typeof statusColorMaps] || '';
+    : statusColorMaps[status?.toLowerCase() as keyof typeof statusColorMaps] ||
+      '';
 
   return (
     <Badge
       // variant="flat"
-      className={cn('h-6 rounded px-3 py-px text-[13px] leading-none', color, className)}
+      className={cn(
+        'h-6 rounded px-3 py-px text-[13px] leading-none',
+        color,
+        className
+      )}
     >
       {titleCase(status)}
     </Badge>

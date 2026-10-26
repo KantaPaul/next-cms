@@ -1,5 +1,5 @@
 import { MESSAGES } from '@/config/messages';
-import { type ServerError } from '@/lib/utils/error';
+import type { ServerError } from '@/lib/utils/error';
 
 interface UniqueConstraintErrorDetails {
   constraintName: string;
@@ -70,7 +70,8 @@ class PostgresErrorHandler {
       'The number provided is out of the acceptable range. Please adjust it.',
     INVALID_INPUT_FORMAT_ERROR_MESSAGE:
       'The input format is invalid. Please use the correct format.',
-    TABLE_NOT_FOUND_ERROR_MESSAGE: 'The table does not exist. Please check the table name.',
+    TABLE_NOT_FOUND_ERROR_MESSAGE:
+      'The table does not exist. Please check the table name.',
   };
 
   /**
@@ -88,7 +89,9 @@ class PostgresErrorHandler {
    * @param error - The error object from PostgreSQL
    * @returns Detailed information about the unique constraint violation
    */
-  static parseUniqueConstraintError(error: any): UniqueConstraintErrorDetails | null {
+  static parseUniqueConstraintError(
+    error: any
+  ): UniqueConstraintErrorDetails | null {
     if (!this.isUniqueConstraintError(error)) {
       return null;
     }
@@ -109,7 +112,8 @@ class PostgresErrorHandler {
         const values = matchValues[2].split(', ');
 
         keys.forEach((key: string, index: number) => {
-          if (key !== 'team_id') duplicateValues[key.trim()] = values[index]?.trim();
+          if (key !== 'team_id')
+            duplicateValues[key.trim()] = values[index]?.trim();
         });
       }
     }
@@ -126,7 +130,9 @@ class PostgresErrorHandler {
    * @param errorDetails - The parsed unique constraint error details
    * @returns A human-readable error message
    */
-  static formatErrorMessage(errorDetails: UniqueConstraintErrorDetails | null): string {
+  static formatErrorMessage(
+    errorDetails: UniqueConstraintErrorDetails | null
+  ): string {
     if (!errorDetails) {
       return '';
     }

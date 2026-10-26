@@ -1,10 +1,10 @@
+import { templatesService } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.service';
+import { AccessDenied } from '@/components/organisms/access-denied';
 import { PageHeader } from '@/components/organisms/page-header';
 import { PAGES } from '@/config/pages';
+import { PERMISSIONS } from '@/config/permissions';
 import { metaObject } from '@/lib/utils/metadata';
 import { requirePermission } from '@/server/services/require-permission';
-import { PERMISSIONS } from '@/config/permissions';
-import { AccessDenied } from '@/components/organisms/access-denied';
-import { templatesService } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.service';
 import { ContactFormsList } from './_components/contact-forms-list';
 
 const TITLE = 'Contact forms';

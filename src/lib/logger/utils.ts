@@ -40,7 +40,7 @@ function filterSensitiveData(data: any): any {
     const lowerKey = key.toLowerCase();
 
     // Skip sensitive fields entirely
-    if (sensitiveFields.some((field) => lowerKey.includes(field))) {
+    if (sensitiveFields.some(field => lowerKey.includes(field))) {
       continue;
     }
 
@@ -79,23 +79,32 @@ export const log = {
   // Direct replacements for console methods with smart filtering
   log: (message: string, ...args: any[]) => {
     const data = args[0];
-    const flattened = data?.input ? filterSensitiveData(data.input) : filterSensitiveData(data);
+    const flattened = data?.input
+      ? filterSensitiveData(data.input)
+      : filterSensitiveData(data);
     simpleLog.info(message, flattened);
   },
   info: (message: string, ...args: any[]) => {
     const data = args[0];
-    const flattened = data?.input ? filterSensitiveData(data.input) : filterSensitiveData(data);
+    const flattened = data?.input
+      ? filterSensitiveData(data.input)
+      : filterSensitiveData(data);
     simpleLog.info(message, flattened);
   },
   warn: (message: string, ...args: any[]) => {
     const data = args[0];
-    const flattened = data?.input ? filterSensitiveData(data.input) : filterSensitiveData(data);
+    const flattened = data?.input
+      ? filterSensitiveData(data.input)
+      : filterSensitiveData(data);
     simpleLog.warn(message, flattened);
   },
-  error: (message: string | Error, ...args: any[]) => simpleLog.error(message, args[0]),
+  error: (message: string | Error, ...args: any[]) =>
+    simpleLog.error(message, args[0]),
   debug: (message: string, ...args: any[]) => {
     const data = args[0];
-    const flattened = data?.input ? filterSensitiveData(data.input) : filterSensitiveData(data);
+    const flattened = data?.input
+      ? filterSensitiveData(data.input)
+      : filterSensitiveData(data);
     simpleLog.debug(message, flattened);
   },
 

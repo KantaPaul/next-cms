@@ -6,13 +6,15 @@ export const classNames = {
     'border [&]:!border-steel-100 dark:[&]:!border-dark-400 ring-[0.6px] ring-transparent hover:!border-steel-700',
   controlText: '!border-0 !bg-transparent !shadow-none ring-transparent',
   controlTextError: '!bg-red/10',
-  controlIsFocused: '[&]:!border-steel-700 !ring-steel-700 ring-[0.6px] dark:[&]:!border-dark-500',
+  controlIsFocused:
+    '[&]:!border-steel-700 !ring-steel-700 ring-[0.6px] dark:[&]:!border-dark-500',
   controlIsDisabled: 'dark:!bg-white/10 dark:!border-white/20',
   controlError: '[&]:!border-red !shadow-none !ring-transparent',
   controlIsFocusedError: '!ring-red',
   input:
     'text-steel-700 dark:text-white focus:[&>input]:outline-none focus:[&>input]:shadow-none focus:[&>input]:ring-0 !text-sm',
-  indicatorsContainer: 'hover:!text-steel-200 dark:hover:!text-dark-300 custom-indicator-container',
+  indicatorsContainer:
+    'hover:!text-steel-200 dark:hover:!text-dark-300 custom-indicator-container',
   dropdownIndicator:
     'text-steel-200 hover:!text-steel-400 dark:text-dark-600 dark:hover:!text-dark-800 !p-1 !mr-2',
   clearIndicator:

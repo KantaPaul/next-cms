@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { env } from '@/env.mjs';
 import { pagesServices } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
 import { postsService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.service';
+import { env } from '@/env.mjs';
 
 export const dynamic = 'force-dynamic';
 

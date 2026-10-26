@@ -1,18 +1,17 @@
-import { Box, Flex } from "@/components/atoms/layout";
-import AuthDropdown from "@/components/molecules/auth-dropdown/auth-dropdown";
-import { Logo } from "@/components/molecules/logo";
-// import { TopBarPanel } from "@/components/molecules/topbar-panel";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { ThemeToggle } from '@/components/atoms/theme-toggle';
-
-import { cn } from '@/lib/utils/cn';
-import { me } from '@/server/actions/auth.actions';
-import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 import Link from 'next/link';
+import { Box, Flex } from '@/components/atoms/layout';
+import { ThemeToggle } from '@/components/atoms/theme-toggle';
+import AuthDropdown from '@/components/molecules/auth-dropdown/auth-dropdown';
+import { Logo } from '@/components/molecules/logo';
+import { Button } from '@/components/ui/button';
+// import { TopBarPanel } from "@/components/molecules/topbar-panel";
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
+import { cn } from '@/lib/utils/cn';
 import { Can } from '@/providers/access.provider';
-import { Plus } from 'lucide-react';
+import { me } from '@/server/actions/auth.actions';
 
 export default async function Header() {
   const [currentUser] = await Promise.all([me()]);

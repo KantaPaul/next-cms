@@ -1,7 +1,8 @@
 'use client';
 
 import { ChevronRight } from 'lucide-react';
-
+import { usePathname } from 'next/navigation';
+import Link from '@/components/atoms/next/link';
 import { Collapsible, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   SidebarGroup,
@@ -10,8 +11,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { usePathname } from 'next/navigation';
-import Link from '@/components/atoms/next/link';
 import { getMenuItems } from '@/menus';
 import { useAccess } from '@/providers/access.provider';
 
@@ -27,8 +26,9 @@ export function NavMain() {
     <SidebarGroup>
       <SidebarGroupLabel>MENU ITEMS</SidebarGroupLabel>
       <SidebarMenu>
-        {menuItems.map((item) => {
-          const isActive = item.href === pathname || pathname.startsWith(`${item.href}/`);
+        {menuItems.map(item => {
+          const isActive =
+            item.href === pathname || pathname.startsWith(`${item.href}/`);
           const { name, icon, href } = item;
           return (
             <Collapsible

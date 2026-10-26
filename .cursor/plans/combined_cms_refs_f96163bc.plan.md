@@ -4,37 +4,37 @@ overview: One checklist that runs the CMS gap, subscriber unlock, video library,
 todos:
   - id: R001
     content: P1-01 Register Slider, Tabs, and Accordion as builderConfig component keys
-    status: pending
+    status: completed
   - id: R002
     content: P1-02 Confirm Slider, Tabs, and Accordion render on the public site
-    status: pending
+    status: completed
   - id: R003
     content: P1-03 Show the contact-form options editor only for select and radio
-    status: pending
+    status: completed
   - id: R004
     content: P1-04 Nullable page_id plus post_id on page_views; record post views
-    status: pending
+    status: completed
   - id: R005
     content: P1-05 Mount the view beacon on post routes
-    status: pending
+    status: completed
   - id: R006
     content: P1-06 Include posts on the analytics boards
-    status: pending
+    status: completed
   - id: R007
     content: P1-07 Public language switcher using translationGroupId and hreflang
-    status: pending
+    status: completed
   - id: R008
     content: P1-08 Wire UrlField on Hero, CTA, Pricing, and Image
-    status: pending
+    status: completed
   - id: R009
     content: P1-09 Wire IconPickerField on Features
-    status: pending
+    status: completed
   - id: R010
     content: P1-10 Turn off typescript.ignoreBuildErrors and fix the type errors
-    status: pending
+    status: completed
   - id: R011
     content: P1-11 Replace README.md with real setup
-    status: pending
+    status: completed
   - id: R012
     content: P2-01 form_submissions table with site_id defaulting to default
     status: pending

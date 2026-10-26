@@ -1,27 +1,27 @@
 'use client';
 
 import '@measured/puck/puck.css';
-import { Puck, type Config, type Data } from '@measured/puck';
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { toast } from 'sonner';
+import { type Config, type Data, Puck } from '@measured/puck';
 import {
-  builderConfig,
-  postBuilderConfig,
-  BUILDER_VIEWPORTS,
-} from '@/builder/config';
-import { SAMPLE_POST, type PostView } from '@/builder/post-template';
-import type { BuilderItem } from '@/builder/data';
-import { PAGES } from '@/config/pages';
-import { PERMISSIONS } from '@/config/permissions';
-import type { ThemeTokens } from '@/db/schemas/pages.schema';
-import { handleActionResponse } from '@/lib/utils/handle-action-response';
-import { useCan } from '@/providers/access.provider';
-import { useAiEnabled } from '@/components/ai/use-ai-status';
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { toast } from 'sonner';
+import { RevisionsDrawer } from '@/app/(admin)/dashboard/(shell)/pages/_components/revisions-drawer';
+import {
+  useAutosave,
+  useUnsavedChangesGuard,
+} from '@/app/(admin)/dashboard/(shell)/pages/_components/use-autosave';
 import {
   publishPage,
   saveDraft,
   updatePage,
 } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.actions';
+import { POST_REVISION_ACTIONS } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-revision-actions';
 import {
   publishPost,
   publishPostTemplate,
@@ -33,19 +33,26 @@ import {
   saveGlobalBlock,
   updateTemplate,
 } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
-import { POST_REVISION_ACTIONS } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-revision-actions';
 import {
-  useAutosave,
-  useUnsavedChangesGuard,
-} from '@/app/(admin)/dashboard/(shell)/pages/_components/use-autosave';
-import { RevisionsDrawer } from '@/app/(admin)/dashboard/(shell)/pages/_components/revisions-drawer';
+  BUILDER_VIEWPORTS,
+  builderConfig,
+  postBuilderConfig,
+} from '@/builder/config';
+import type { BuilderItem } from '@/builder/data';
+import { type PostView, SAMPLE_POST } from '@/builder/post-template';
+import { useAiEnabled } from '@/components/ai/use-ai-status';
+import { PAGES } from '@/config/pages';
+import { PERMISSIONS } from '@/config/permissions';
+import type { ThemeTokens } from '@/db/schemas/pages.schema';
+import { handleActionResponse } from '@/lib/utils/handle-action-response';
+import { useCan } from '@/providers/access.provider';
+import { BuilderActionBar } from './builder-chrome';
 import {
   BuilderContext,
   type BuilderContextValue,
   type BuilderKind,
   type BuilderTarget,
 } from './builder-context';
-import { BuilderActionBar } from './builder-chrome';
 import { BuilderShell } from './builder-shell';
 import { InspectorFields } from './selection-card';
 
@@ -123,7 +130,9 @@ function adapterFor(
     return {
       config: globalBuilderConfig(),
       label: isContactForm ? 'Contact form' : 'Global block',
-      backHref: isContactForm ? PAGES.DASHBOARD.CONTACT_FORMS : PAGES.DASHBOARD.TEMPLATES,
+      backHref: isContactForm
+        ? PAGES.DASHBOARD.CONTACT_FORMS
+        : PAGES.DASHBOARD.TEMPLATES,
       backLabel: isContactForm ? 'Contact forms' : 'Templates & Globals',
       headerPath: '',
       previewHref: null,
@@ -246,7 +255,9 @@ export function BuilderEditor({
       themeTokens,
       motionPreview,
       language: page.language,
-      ...(kind !== 'page' && !isGlobalLike && kind !== 'page-template' && { post: post ?? SAMPLE_POST }),
+      ...(kind !== 'page' &&
+        !isGlobalLike &&
+        kind !== 'page-template' && { post: post ?? SAMPLE_POST }),
     }),
     [themeTokens, motionPreview, page.language, kind, post, isGlobalLike]
   );
@@ -309,7 +320,8 @@ export function BuilderEditor({
     backLabel: adapter.backLabel,
     previewHref: adapter.previewHref,
     liveLabel: adapter.liveLabel,
-    hasRevisions: kind !== 'post-template' && !isGlobalLike && kind !== 'page-template',
+    hasRevisions:
+      kind !== 'post-template' && !isGlobalLike && kind !== 'page-template',
     pageId: page.id,
     pageTitle: page.title,
     status,

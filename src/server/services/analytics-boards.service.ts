@@ -1,13 +1,13 @@
 import 'server-only';
-import { desc, eq } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
+import { desc, eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { analyticsDashboards } from '@/db/schema';
 import {
+  type BoardLayout,
   boardLayoutSchema,
   EMPTY_LAYOUT,
   parseBoardLayout,
-  type BoardLayout,
 } from '@/db/schemas/analytics.schema';
 
 export type BoardSummary = {

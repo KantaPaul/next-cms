@@ -12,12 +12,12 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils/cn';
 import {
-  SIDES,
-  SPACING_LIMITS,
-  SPACING_UNITS,
   type Responsive,
+  SIDES,
   type Side,
   type Sides,
+  SPACING_LIMITS,
+  SPACING_UNITS,
   type SpacingUnit,
 } from '../style';
 import { DeviceRow, useCanvasDevice } from './device-row';
@@ -64,7 +64,10 @@ export function Dimensions({
     const cleaned = Object.fromEntries(
       Object.entries(nextSides).filter(([, v]) => v !== undefined)
     ) as Sides;
-    const next = { ...value, [device]: Object.keys(cleaned).length ? cleaned : undefined };
+    const next = {
+      ...value,
+      [device]: Object.keys(cleaned).length ? cleaned : undefined,
+    };
     const hasAny = Object.values(next).some(Boolean);
     onChange(hasAny ? next : undefined);
   };
@@ -84,14 +87,22 @@ export function Dimensions({
             onClick={() => setLinked(l => !l)}
             className={cn(
               'size-6 text-muted-foreground hover:text-primary',
-              linked && 'bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary'
+              linked &&
+                'bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary'
             )}
           >
-            {linked ? <Link2 className="size-3.5" /> : <Link2Off className="size-3.5" />}
+            {linked ? (
+              <Link2 className="size-3.5" />
+            ) : (
+              <Link2Off className="size-3.5" />
+            )}
           </Button>
 
           {onUnitChange && (
-            <Select value={unit} onValueChange={v => onUnitChange(v as SpacingUnit)}>
+            <Select
+              value={unit}
+              onValueChange={v => onUnitChange(v as SpacingUnit)}
+            >
               <SelectTrigger
                 size="sm"
                 aria-label="Unit"

@@ -1,23 +1,25 @@
 ---
+
 name: Obsidian Studio restyle
 overview: Restyle the admin, page-builder chrome, and login to the Studio Crafted light spec and the Obsidian Studio dark spec, switched by the existing theme toggle. Published pages keep their own site theme.
 todos:
-  - id: tokens
-    content: Map both light and dark CSS variables, per-theme radius and shadows, and Inter plus Hanken Grotesk in globals.css and the root layout
-    status: pending
-  - id: theme-toggle
-    content: Keep the theme toggle, follow the active theme on admin, builder chrome, and auth, and stop locking the builder shell to light
-    status: pending
-  - id: primitives
-    content: Restyle button, input, badge, status badge, card, dialog, sheet, sidebar, and header with theme-aware tokens
-    status: pending
-  - id: sweep
-    content: Replace hardcoded steel and light/dark color pairs across admin pages, builder chrome, inspector controls, and login
-    status: pending
-  - id: verify
-    content: Verify login, dashboard, a list page, and builder chrome in both themes, and confirm the public site theme is unchanged
-    status: pending
-isProject: false
+- id: tokens
+  content: Map both light and dark CSS variables, per-theme radius and shadows, and Inter plus Hanken Grotesk in globals.css and the root layout
+  status: pending
+- id: theme-toggle
+  content: Keep the theme toggle, follow the active theme on admin, builder chrome, and auth, and stop locking the builder shell to light
+  status: pending
+- id: primitives
+  content: Restyle button, input, badge, status badge, card, dialog, sheet, sidebar, and header with theme-aware tokens
+  status: pending
+- id: sweep
+  content: Replace hardcoded steel and light/dark color pairs across admin pages, builder chrome, inspector controls, and login
+  status: pending
+- id: verify
+  content: Verify login, dashboard, a list page, and builder chrome in both themes, and confirm the public site theme is unchanged
+  status: pending
+  isProject: false
+
 ---
 
 # Studio light and Obsidian dark restyle

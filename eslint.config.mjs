@@ -1,8 +1,7 @@
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
-
 import { FlatCompat } from '@eslint/eslintrc';
 import js from '@eslint/js';
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -70,7 +69,10 @@ const eslintConfig = [
 
       ...(isDevEnv && {
         // ✅ Circular Dependency Detection
-        'import/no-cycle': ['warn', { maxDepth: Infinity, ignoreExternal: true }],
+        'import/no-cycle': [
+          'warn',
+          { maxDepth: Infinity, ignoreExternal: true },
+        ],
 
         // ✅ Optional: Spacing after imports
         'import/newline-after-import': ['warn', { count: 1 }],

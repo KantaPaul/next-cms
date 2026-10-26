@@ -1,10 +1,10 @@
 import { redirect } from 'next/navigation';
+import { postTemplatesService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
+import { breadcrumbs as postsBreadcrumbs } from '@/app/(admin)/dashboard/(shell)/posts/breadcrumbs';
+import { PostTemplatesTable } from '@/app/(admin)/dashboard/(shell)/posts/templates/_components/templates-table';
 import { PageHeader } from '@/components/organisms/page-header';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
-import { breadcrumbs as postsBreadcrumbs } from '@/app/(admin)/dashboard/(shell)/posts/breadcrumbs';
-import { PostTemplatesTable } from '@/app/(admin)/dashboard/(shell)/posts/templates/_components/templates-table';
-import { postTemplatesService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
 import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { metaObject } from '@/lib/utils/metadata';
 import { accessService } from '@/server/services/access.service';

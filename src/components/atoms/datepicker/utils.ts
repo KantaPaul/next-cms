@@ -50,8 +50,14 @@ type FormattedDateRange = [string | null, string | null];
 /**
  * Formats a date range array into string format
  */
-export function formatDateRange(dates: DateRange, dateFormat = 'yyyy-MM-dd'): FormattedDateRange {
+export function formatDateRange(
+  dates: DateRange,
+  dateFormat = 'yyyy-MM-dd'
+): FormattedDateRange {
   const [start, end] = dates;
 
-  return [start ? formatDate(start, dateFormat) : null, end ? formatDate(end, dateFormat) : null];
+  return [
+    start ? formatDate(start, dateFormat) : null,
+    end ? formatDate(end, dateFormat) : null,
+  ];
 }

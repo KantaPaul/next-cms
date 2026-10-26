@@ -1,14 +1,14 @@
 'use client';
 
-import * as React from 'react';
+import type * as React from 'react';
 import {
-  Pagination as UiPagination,
   PaginationContent,
   PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
+  Pagination as UiPagination,
 } from '@/components/ui/pagination';
 import { cn } from '@/lib/utils/cn';
 
@@ -67,7 +67,7 @@ export default function Pagination({
             <PaginationLink
               href="#"
               isActive={current === i}
-              onClick={(e) => {
+              onClick={e => {
                 e.preventDefault();
                 onChange?.(i);
               }}
@@ -86,7 +86,7 @@ export default function Pagination({
         <PaginationLink
           href="#"
           isActive={current === 1}
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             onChange?.(1);
           }}
@@ -103,7 +103,7 @@ export default function Pagination({
             <PaginationLink
               href="#"
               isActive={current === i}
-              onClick={(e) => {
+              onClick={e => {
                 e.preventDefault();
                 onChange?.(i);
               }}
@@ -123,7 +123,7 @@ export default function Pagination({
           <PaginationLink
             href="#"
             isActive={current === totalPages}
-            onClick={(e) => {
+            onClick={e => {
               e.preventDefault();
               onChange?.(totalPages);
             }}
@@ -144,7 +144,7 @@ export default function Pagination({
             <PaginationLink
               href="#"
               isActive={current === i}
-              onClick={(e) => {
+              onClick={e => {
                 e.preventDefault();
                 onChange?.(i);
               }}
@@ -166,7 +166,7 @@ export default function Pagination({
             <PaginationLink
               href="#"
               isActive={current === i}
-              onClick={(e) => {
+              onClick={e => {
                 e.preventDefault();
                 onChange?.(i);
               }}
@@ -186,7 +186,7 @@ export default function Pagination({
           <PaginationLink
             href="#"
             isActive={current === totalPages}
-            onClick={(e) => {
+            onClick={e => {
               e.preventDefault();
               onChange?.(totalPages);
             }}
@@ -206,7 +206,7 @@ export default function Pagination({
         <PaginationItem>
           <PaginationPrevious
             href="#"
-            onClick={(e) => {
+            onClick={e => {
               e.preventDefault();
               if (current > 1) onChange?.(current - 1);
             }}
@@ -220,12 +220,14 @@ export default function Pagination({
         <PaginationItem>
           <PaginationNext
             href="#"
-            onClick={(e) => {
+            onClick={e => {
               e.preventDefault();
               if (current < totalPages) onChange?.(current + 1);
             }}
             aria-disabled={current >= totalPages}
-            className={cn(current >= totalPages && 'pointer-events-none opacity-50')}
+            className={cn(
+              current >= totalPages && 'pointer-events-none opacity-50'
+            )}
           />
         </PaginationItem>
       </PaginationContent>

@@ -22,7 +22,9 @@ export function AccessProvider({
   value: AccessContextValue;
   children: React.ReactNode;
 }) {
-  return <AccessContext.Provider value={value}>{children}</AccessContext.Provider>;
+  return (
+    <AccessContext.Provider value={value}>{children}</AccessContext.Provider>
+  );
 }
 
 export function useAccess() {

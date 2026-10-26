@@ -18,10 +18,21 @@ import {
 import { toSnakeCase } from 'drizzle-orm/casing';
 import type { PgColumn, PgTable } from 'drizzle-orm/pg-core';
 import { isNumber } from '@/lib/utils/bool-check';
-import type { DateInput } from '@/lib/utils/format-date';
-import { Day, toPostgresUTCTimestamptz } from '@/lib/utils/format-date';
+import {
+  type DateInput,
+  isValidDate,
+  toPostgresUTCTimestamptz,
+} from '@/lib/utils/format-date';
 
 const eqBufferRegex = /^[0-9a-fA-F]+$/;
+
+function asDate(value: DateInput): Date | null {
+  if (value == null || value === '') return null;
+  if (typeof value === 'object' && !(value instanceof Date)) return null;
+  if (!isValidDate(value)) return null;
+  const date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
 
 export const buildCaseWhen = (cb: (arr: SQL[], ids: string[]) => void) => {
   const buildSql: SQL[] = [];
@@ -133,9 +144,8 @@ export const ilikeSql = <T extends SQLWrapper, S extends string | null | undefin
  * @returns SQL condition or undefined if the search term is invalid or invalid Date
  */
 export const ilikeDate = (pgColumn: PgColumn, searchTerm: string) => {
-  const date = Day.parseDate(searchTerm);
-
-  if (!(searchTerm && date && Day.isValid(date))) return;
+  const date = asDate(searchTerm);
+  if (!date) return;
 
   const formattedDate = toPostgresUTCTimestamptz(date);
   return sql`CAST(${pgColumn} as timestamptz) ILIKE '%${sql.raw(formattedDate)}%'`;
@@ -429,9 +439,8 @@ export const eqCustom = (pgColumn: PgColumn, value: any) => {
  * @returns SQL condition or undefined if the query is invalid or not a valid date
  */
 export const eqDate = (pgColumn: PgColumn, query: DateInput) => {
-  const date = Day.parseDate(query);
-
-  if (!(query && date && Day.isValid(date))) return;
+  const date = asDate(query);
+  if (!date) return;
 
   const start = startOfDay(date);
   const end = endOfDay(date);
@@ -443,18 +452,16 @@ export const eqDate = (pgColumn: PgColumn, query: DateInput) => {
 };
 
 export const gteDate = (pgColumn: PgColumn, query: DateInput) => {
-  const date = Day.parseDate(query);
-
-  if (!(query && date && Day.isValid(date))) return;
+  const date = asDate(query);
+  if (!date) return;
 
   const formattedDate = toPostgresUTCTimestamptz(date);
   return sql`CAST(${pgColumn} as timestamptz) >= '${sql.raw(formattedDate)}'`;
 };
 
 export const lteDate = (pgColumn: PgColumn, query: DateInput) => {
-  const date = Day.parseDate(query);
-
-  if (!(query && date && Day.isValid(date))) return;
+  const date = asDate(query);
+  if (!date) return;
 
   const formattedDate = toPostgresUTCTimestamptz(date);
   return sql`CAST(${pgColumn} as timestamptz) <= '${sql.raw(formattedDate)}'`;
@@ -469,10 +476,10 @@ export const lteDate = (pgColumn: PgColumn, query: DateInput) => {
  */
 
 export const betweenDate = <T extends PgColumn>(column: T, start: DateInput, end: DateInput) => {
-  const startDate = Day.parseDate(start);
-  const endDate = Day.parseDate(end);
+  const startDate = asDate(start);
+  const endDate = asDate(end);
 
-  if (!(startDate && endDate && Day.isValid(startDate) && Day.isValid(endDate))) return;
+  if (!startDate || !endDate) return;
 
   // For start date, use beginning of day (00:00:00)
   const prepareFormDate = new Date(startDate);

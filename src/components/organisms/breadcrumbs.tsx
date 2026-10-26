@@ -48,7 +48,9 @@ export function Breadcrumbs({ className, breadcrumbs }: BreadcrumbProps) {
                     </Link>
                   </BreadcrumbLink>
                 ) : (
-                  <BreadcrumbPage className="px-1.5 py-0.5">{option.title}</BreadcrumbPage>
+                  <BreadcrumbPage className="px-1.5 py-0.5">
+                    {option.title}
+                  </BreadcrumbPage>
                 )}
               </BreadcrumbItem>
               {index !== array.length - 1 && <BreadcrumbSeparator />}

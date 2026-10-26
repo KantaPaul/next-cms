@@ -1,14 +1,20 @@
 import 'server-only';
 import { z } from 'zod';
-import { SUPPORTED_LANGUAGES } from '@/db/schemas/shared.schema';
 import { builderConfig } from '@/builder/config';
-import { createBlockId, type BuilderData } from '@/builder/data';
+import { type BuilderData, createBlockId } from '@/builder/data';
 import { BLOCK_PROMPT_GUIDE, generatedPageSchema } from '@/builder/schema';
+import { SUPPORTED_LANGUAGES } from '@/db/schemas/shared.schema';
 import { generateJson } from './gemini';
 
 export const generatePageSchema = z.object({
-  prompt: z.string().trim().min(10, 'Describe the page in at least a few words').max(2000),
-  pageType: z.enum(['landing', 'pricing', 'about', 'product', 'event', 'other']).default('landing'),
+  prompt: z
+    .string()
+    .trim()
+    .min(10, 'Describe the page in at least a few words')
+    .max(2000),
+  pageType: z
+    .enum(['landing', 'pricing', 'about', 'product', 'event', 'other'])
+    .default('landing'),
   tone: z.string().trim().max(60).optional(),
   language: z.string().default('en'),
 });
@@ -16,8 +22,12 @@ export const generatePageSchema = z.object({
 export type GeneratePageInput = z.input<typeof generatePageSchema>;
 
 /** Generates a full builder page and converts it to Puck data with defaults and ids filled in. */
-export async function generatePageFromPrompt(input: z.output<typeof generatePageSchema>) {
-  const language = SUPPORTED_LANGUAGES.find(l => l.value === input.language)?.label ?? 'English';
+export async function generatePageFromPrompt(
+  input: z.output<typeof generatePageSchema>
+) {
+  const language =
+    SUPPORTED_LANGUAGES.find(l => l.value === input.language)?.label ??
+    'English';
 
   const page = await generateJson(
     `You are a senior conversion copywriter and web designer. Build a ${input.pageType} web page from the brief below.
@@ -40,7 +50,8 @@ ${input.prompt}`,
   const data: BuilderData = {
     root: { props: { maxWidth: 'xl', theme: 'site', paddingY: 'none' } },
     content: page.blocks.map(block => {
-      const defaults = (builderConfig.components[block.type]?.defaultProps ?? {}) as Record<string, unknown>;
+      const defaults = (builderConfig.components[block.type]?.defaultProps ??
+        {}) as Record<string, unknown>;
       return {
         type: block.type,
         props: { ...defaults, ...block.props, id: createBlockId(block.type) },

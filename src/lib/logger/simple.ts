@@ -72,14 +72,20 @@ const createSimpleLogger = () => {
       service: process.env.LOG_SERVICE_NAME || 'proa-erp',
     },
     formatters: {
-      level: (label) => ({ level: label }),
+      level: label => ({ level: label }),
     },
     serializers: {
       err: pino.stdSerializers.err,
       error: pino.stdSerializers.err,
     },
     redact: {
-      paths: ['*.password', '*.token', '*.apiKey', '*.secret', '*.authorization'],
+      paths: [
+        '*.password',
+        '*.token',
+        '*.apiKey',
+        '*.secret',
+        '*.authorization',
+      ],
       remove: true,
     },
   });

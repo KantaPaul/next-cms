@@ -80,13 +80,12 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 
-
-    /*
+  /*
     * danger colors
     */
-    --red-lighter: 247 212 214; /* #f7d4d6 */
-    --red-default: 238 0 0; /* #e00 */
-    --red-dark: 250 106 131; /* #FA6A83 */
+  --red-lighter: 247 212 214; /* #f7d4d6 */
+  --red-default: 238 0 0; /* #e00 */
+  --red-dark: 250 106 131; /* #FA6A83 */
 }
 
 [data-theme='light'] {
@@ -145,4 +144,3 @@ p.is-editor-empty:first-child::before {
   height: 0;
   pointer-events: none;
 }
-

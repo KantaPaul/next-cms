@@ -1,17 +1,19 @@
 ---
+
 name: Dynamic site locales
 overview: Replace the hardcoded English, Spanish, French, German, and Japanese list with a locales table. The page edit translation dropdown, other admin language selects, public routing, and validation all read that table.
 todos:
-  - id: store-locales
-    content: Add a locales table, seed the five languages, enforce one default, and edit rows from Settings.
-    status: pending
-  - id: admin-dropdowns
-    content: Drive the edit-page translation dropdown, page and post language fields, table filters, and AI selects from enabled locale rows. Reject unknown, disabled, or duplicate codes on save.
-    status: pending
-  - id: public-routing
-    content: Use the default and enabled locale rows in route resolution, URL builders, sitemap, hreflang, the v1 lang param, and a public header switcher.
-    status: pending
-isProject: false
+- id: store-locales
+  content: Add a locales table, seed the five languages, enforce one default, and edit rows from Settings.
+  status: pending
+- id: admin-dropdowns
+  content: Drive the edit-page translation dropdown, page and post language fields, table filters, and AI selects from enabled locale rows. Reject unknown, disabled, or duplicate codes on save.
+  status: pending
+- id: public-routing
+  content: Use the default and enabled locale rows in route resolution, URL builders, sitemap, hreflang, the v1 lang param, and a public header switcher.
+  status: pending
+  isProject: false
+
 ---
 
 # Dynamic language list

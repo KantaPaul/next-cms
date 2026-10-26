@@ -1,14 +1,16 @@
 ---
+
 name: Add templates and globals
 overview: The templates page can list and delete page templates and global blocks, but it has no way to create them. Add a New template and New global block flow on that page, then open an editor so the new item can be designed.
 todos:
-  - id: template-create-edit
-    content: Add New template dialog, updateTemplate action, and a page-template Puck editor with an Edit layout link for custom templates
-    status: completed
-  - id: global-create
-    content: Add New global block dialog, allow empty content on create, and open the existing global block editor
-    status: completed
-isProject: false
+- id: template-create-edit
+  content: Add New template dialog, updateTemplate action, and a page-template Puck editor with an Edit layout link for custom templates
+  status: completed
+- id: global-create
+  content: Add New global block dialog, allow empty content on create, and open the existing global block editor
+  status: completed
+  isProject: false
+
 ---
 
 # Add page templates and global blocks

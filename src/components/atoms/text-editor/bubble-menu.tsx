@@ -1,7 +1,13 @@
 'use client';
 
 import { BubbleMenu, type BubbleMenuProps } from '@tiptap/react/menus';
-import { BoldIcon, CodeIcon, ItalicIcon, StrikethroughIcon, UnderlineIcon } from 'lucide-react';
+import {
+  BoldIcon,
+  CodeIcon,
+  ItalicIcon,
+  StrikethroughIcon,
+  UnderlineIcon,
+} from 'lucide-react';
 import { useState } from 'react';
 import { AddTextColor } from '@/components/atoms/text-editor/add-text-color';
 import { cn } from '@/lib/utils/cn';
@@ -19,31 +25,50 @@ export function EditorBubbleMenu(props: EditorBubbleMenuProps) {
   const bubbleMenuItems = [
     {
       title: 'Bold',
-      icon: <BoldIcon size={16} strokeWidth={editor?.isActive('bold') ? 2.5 : 2} />,
+      icon: (
+        <BoldIcon size={16} strokeWidth={editor?.isActive('bold') ? 2.5 : 2} />
+      ),
       command: () => editor?.chain().focus().toggleBold().run(),
       isActive: () => editor?.isActive('bold'),
     },
     {
       title: 'Italic',
-      icon: <ItalicIcon size={16} strokeWidth={editor?.isActive('italic') ? 2.5 : 2} />,
+      icon: (
+        <ItalicIcon
+          size={16}
+          strokeWidth={editor?.isActive('italic') ? 2.5 : 2}
+        />
+      ),
       command: () => editor?.chain().focus().toggleItalic().run(),
       isActive: () => editor?.isActive('italic'),
     },
     {
       title: 'Underline',
-      icon: <UnderlineIcon size={18} strokeWidth={editor?.isActive('underline') ? 2.5 : 2} />,
+      icon: (
+        <UnderlineIcon
+          size={18}
+          strokeWidth={editor?.isActive('underline') ? 2.5 : 2}
+        />
+      ),
       command: () => editor?.chain().focus().toggleUnderline().run(),
       isActive: () => editor?.isActive('underline'),
     },
     {
       title: 'Strikethrough',
-      icon: <StrikethroughIcon size={16} strokeWidth={editor?.isActive('strike') ? 2.5 : 2} />,
+      icon: (
+        <StrikethroughIcon
+          size={16}
+          strokeWidth={editor?.isActive('strike') ? 2.5 : 2}
+        />
+      ),
       command: () => editor?.chain().focus().toggleStrike().run(),
       isActive: () => editor?.isActive('strike'),
     },
     {
       title: 'Code',
-      icon: <CodeIcon size={18} strokeWidth={editor?.isActive('code') ? 2.5 : 2} />,
+      icon: (
+        <CodeIcon size={18} strokeWidth={editor?.isActive('code') ? 2.5 : 2} />
+      ),
       command: () => editor?.chain().focus().toggleCode().run(),
       isActive: () => editor?.isActive('code'),
     },

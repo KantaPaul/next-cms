@@ -1,16 +1,22 @@
 import type { Option } from './select';
 
-export function handleSelected(selectOptions: Option[], value: string): Option | string {
-  return selectOptions?.find((opt) => opt.value === value) ?? '';
+export function handleSelected(
+  selectOptions: Option[],
+  value: string
+): Option | string {
+  return selectOptions?.find(opt => opt.value === value) ?? '';
 }
 
-export function handleMultiSelect(selectOptions: Option[], values: string[]): Option[] {
-  return selectOptions.filter((option) => values?.includes(option.value));
+export function handleMultiSelect(
+  selectOptions: Option[],
+  values: string[]
+): Option[] {
+  return selectOptions.filter(option => values?.includes(option.value));
 }
 
 export function handleOnChange(newValue: unknown): string | string[] | {} {
   if (Array.isArray(newValue)) {
-    return newValue ? (newValue as Option[]).map((opt) => opt.value) : [];
+    return newValue ? (newValue as Option[]).map(opt => opt.value) : [];
   }
 
   return newValue ? (newValue as Option).value : {};

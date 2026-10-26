@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { type FormEvent, useState } from 'react';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import type { ContactFormField } from './content';
@@ -69,7 +69,9 @@ export function ContactFormClient({
   actionUrl?: string;
   editing?: boolean;
 }) {
-  const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>(
+    'idle'
+  );
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -89,7 +91,10 @@ export function ContactFormClient({
 
   if (state === 'sent') {
     return (
-      <p role="status" className="s-soft-primary s-radius p-6 text-center font-medium">
+      <p
+        role="status"
+        className="s-soft-primary s-radius p-6 text-center font-medium"
+      >
         {successMessage}
       </p>
     );
@@ -103,7 +108,11 @@ export function ContactFormClient({
 
         if (field.type === 'checkbox') {
           return (
-            <label key={id} htmlFor={id} className="s-choice-row text-sm font-medium">
+            <label
+              key={id}
+              htmlFor={id}
+              className="s-choice-row text-sm font-medium"
+            >
               <input
                 id={id}
                 name={field.name}
@@ -128,12 +137,18 @@ export function ContactFormClient({
                 {field.required && <span className="s-accent-text"> *</span>}
               </legend>
               {opts.length === 0 ? (
-                <p className="s-muted text-xs">Add options in the sidebar (one per line).</p>
+                <p className="s-muted text-xs">
+                  Add options in the sidebar (one per line).
+                </p>
               ) : (
                 opts.map((opt, j) => {
                   const optId = `${id}-${j}`;
                   return (
-                    <label key={optId} htmlFor={optId} className="s-choice-row text-sm font-medium">
+                    <label
+                      key={optId}
+                      htmlFor={optId}
+                      className="s-choice-row text-sm font-medium"
+                    >
                       <input
                         id={optId}
                         name={field.name}
@@ -152,7 +167,11 @@ export function ContactFormClient({
         }
 
         return (
-          <label key={id} htmlFor={id} className="grid gap-1.5 text-sm font-medium">
+          <label
+            key={id}
+            htmlFor={id}
+            className="grid gap-1.5 text-sm font-medium"
+          >
             <span>
               {field.label}
               {field.required && <span className="s-accent-text"> *</span>}
@@ -204,10 +223,21 @@ export function ContactFormClient({
         );
       })}
       {!actionUrl && editing && (
-        <p className="s-muted text-xs">Set a form endpoint (e.g. Formspree) in the sidebar to receive submissions.</p>
+        <p className="s-muted text-xs">
+          Set a form endpoint (e.g. Formspree) in the sidebar to receive
+          submissions.
+        </p>
       )}
-      {state === 'error' && <p role="alert" className="text-sm text-red-600">Something went wrong. Please try again.</p>}
-      <button type="submit" disabled={state === 'sending' || (!actionUrl && !editing)} className="s-btn s-btn-primary justify-self-start disabled:opacity-60">
+      {state === 'error' && (
+        <p role="alert" className="text-sm text-red-600">
+          Something went wrong. Please try again.
+        </p>
+      )}
+      <button
+        type="submit"
+        disabled={state === 'sending' || (!actionUrl && !editing)}
+        className="s-btn s-btn-primary justify-self-start disabled:opacity-60"
+      >
         {state === 'sending' ? 'Sending…' : submitText}
       </button>
     </form>

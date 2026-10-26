@@ -1,12 +1,12 @@
 'use client';
 
 import { Controller, useFormContext, useWatch } from 'react-hook-form';
+import { MediaField } from '@/components/media/media-picker';
 import { Switch } from '@/components/ui/switch';
-import { env } from '@/env.mjs';
 import type { CreatePagesInput } from '@/db/validations/pages.validation';
+import { env } from '@/env.mjs';
 import { cn } from '@/lib/utils/cn';
 import { FieldShell, inputClass, textareaClass } from './field-shell';
-import { MediaField } from '@/components/media/media-picker';
 import { SeoAiButton } from './seo-ai-button';
 
 const TITLE_LIMIT = 60;

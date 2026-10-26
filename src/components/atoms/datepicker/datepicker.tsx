@@ -1,8 +1,8 @@
 'use client';
 
-import * as React from 'react';
 import { format, isValid } from 'date-fns';
 import { Calendar as CalendarIcon, X } from 'lucide-react';
+import * as React from 'react';
 import type { DateRange } from 'react-day-picker';
 import { FieldError, Label } from '@/components/atoms/forms';
 import FieldHelperText from '@/components/atoms/forms/helpers/field-helper-text';
@@ -38,7 +38,9 @@ export interface DatePickerProps<IsRange extends boolean | undefined = false> {
   endDate?: Date | null;
   selectsRange?: IsRange;
   onChange?(
-    date: IsRange extends false | undefined ? Date | null : [Date | null, Date | null],
+    date: IsRange extends false | undefined
+      ? Date | null
+      : [Date | null, Date | null],
     event?: React.SyntheticEvent<any> | undefined
   ): void;
   minDate?: Date;
@@ -166,7 +168,15 @@ function DatePickerInner<IsRange extends boolean | undefined = false>(
     }
 
     return placeholderText;
-  }, [selectsRange, rangeDate, singleDate, dateFormat, showTimeSelect, timeValue, placeholderText]);
+  }, [
+    selectsRange,
+    rangeDate,
+    singleDate,
+    dateFormat,
+    showTimeSelect,
+    timeValue,
+    placeholderText,
+  ]);
 
   const hasValue = selectsRange
     ? Boolean(rangeDate?.from || rangeDate?.to)
@@ -305,7 +315,9 @@ function DatePickerInner<IsRange extends boolean | undefined = false>(
 
             {showTimeSelect && (
               <div className="flex items-center justify-between border-t border-border p-3">
-                <span className="text-xs font-medium text-muted-foreground">Time</span>
+                <span className="text-xs font-medium text-muted-foreground">
+                  Time
+                </span>
                 <input
                   type="time"
                   value={timeValue}
@@ -339,9 +351,11 @@ const DatePicker = React.forwardRef(DatePickerInner) as <
 
 export default DatePicker;
 
-export const CustomInput = React.forwardRef<HTMLInputElement, any>((props, ref) => {
-  return <input ref={ref} {...props} />;
-});
+export const CustomInput = React.forwardRef<HTMLInputElement, any>(
+  (props, ref) => {
+    return <input ref={ref} {...props} />;
+  }
+);
 CustomInput.displayName = 'CustomInput';
 
 export const headerClassNames = {};

@@ -1,3 +1,4 @@
+import { relations } from 'drizzle-orm';
 import {
   AnyPgColumn,
   boolean,
@@ -10,11 +11,10 @@ import {
   uniqueIndex,
   varchar,
 } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import type { z } from 'zod';
 import { baseColumns, relationConfig } from '@/db/helpers/base.columns';
 import { UserStatus, userStatusEnum } from '@/db/schemas/shared.schema';
-import type { z } from 'zod';
-import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 const { id, ...timestampColumns } = baseColumns;
 const { cascade, setNull } = relationConfig;
@@ -31,8 +31,7 @@ export const users = pgTable(
     status: userStatusEnum('user_status')
       .notNull()
       .default(UserStatus.Inactive),
-    roleId: text('role_id')
-      .references(() => roles.id, setNull),
+    roleId: text('role_id').references(() => roles.id, setNull),
     ...timestampColumns,
   },
   t => [
@@ -63,7 +62,13 @@ export const permissions = pgTable(
     allowed: boolean('allowed').default(true).notNull(),
     ...timestampColumns,
   },
-  t => [uniqueIndex('permissions_role_resource_action_unique').on(t.roleId, t.resource, t.action)]
+  t => [
+    uniqueIndex('permissions_role_resource_action_unique').on(
+      t.roleId,
+      t.resource,
+      t.action
+    ),
+  ]
 );
 
 export const usersRelations = relations(users, ({ one }) => ({

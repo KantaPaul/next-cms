@@ -45,7 +45,11 @@ export function DeleteBoardButton({
       onClick={onDelete}
       aria-label={`Delete ${name}`}
     >
-      {pending ? <Loader2 className="animate-spin" /> : <Trash2 className="size-4" />}
+      {pending ? (
+        <Loader2 className="animate-spin" />
+      ) : (
+        <Trash2 className="size-4" />
+      )}
     </Button>
   );
 }

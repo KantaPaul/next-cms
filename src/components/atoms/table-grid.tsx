@@ -8,8 +8,8 @@ import type { Paths } from 'type-fest';
 // import { Card } from '@/components/atoms/card';
 import { Title } from '@/components/atoms/content';
 import { Box, Flex } from '@/components/atoms/layout';
-import { cn } from '@/lib/utils/cn';
 import { Card } from '@/components/ui/card';
+import { cn } from '@/lib/utils/cn';
 
 interface FooterCell {
   render: React.ReactNode;
@@ -46,13 +46,17 @@ export interface EnhancedColumn<T> extends Column<T> {
 
 export const baseStyles = 'px-4 py-3 whitespace-nowrap text-left text-sm';
 export const centerCell = 'flex items-center';
-export const headerStyles = 'px-4 py-3 whitespace-nowrap text-left text-sm font-medium';
+export const headerStyles =
+  'px-4 py-3 whitespace-nowrap text-left text-sm font-medium';
 export const borderColor = 'border-steel-100 dark:border-dark-300';
 export const headerClassNames = 'font-medium text-steel-400 dark:text-dark-600';
 export const cellClassNames = 'align-middle text-steel-700 dark:text-dark-800';
 const stickyBorder =
   'before:w-[1px] before:absolute before:h-full before:content-[""] before:bg-steel-100 dark:before:bg-dark-300 before:top-0';
-const stickyClassNames = cn('right-0 bg-white md:sticky dark:bg-dark-100', stickyBorder);
+const stickyClassNames = cn(
+  'right-0 bg-white md:sticky dark:bg-dark-100',
+  stickyBorder
+);
 const stickyLeftClassNames = 'before:-right-px';
 const stickyRightClassNames = 'before:-left-px';
 const defaultColumnSize = 200;
@@ -93,7 +97,9 @@ function calculateTemplateColumns<T>(columns: Column<T>[]) {
     }
 
     // Add to template
-    template.push(count > 1 ? `repeat(${count}, ${currentTemplate})` : currentTemplate);
+    template.push(
+      count > 1 ? `repeat(${count}, ${currentTemplate})` : currentTemplate
+    );
 
     // Skip the grouped columns
     i += count - 1;
@@ -105,7 +111,9 @@ function calculateTemplateColumns<T>(columns: Column<T>[]) {
 }
 
 // Function to enhance columns with position methods
-function enhanceColumnsWithMethods<T>(columns: Column<T>[]): EnhancedColumn<T>[] {
+function enhanceColumnsWithMethods<T>(
+  columns: Column<T>[]
+): EnhancedColumn<T>[] {
   return columns.map((column, currentIndex) => ({
     ...column,
 
@@ -143,7 +151,8 @@ function enhanceColumnsWithMethods<T>(columns: Column<T>[]): EnhancedColumn<T>[]
 function getStickyStyles<T>(column: EnhancedColumn<T>) {
   return {
     left: column.sticky === 'left' ? `${column.getStart('left')}px` : undefined,
-    right: column.sticky === 'right' ? `${column.getAfter('right')}px` : undefined,
+    right:
+      column.sticky === 'right' ? `${column.getAfter('right')}px` : undefined,
     opacity: column.sticky ? 0.95 : 1,
     zIndex: column.sticky ? 1 : 0,
   };
@@ -196,7 +205,9 @@ export function TableGrid<TData>({
   const innerContainerSize = useSize(innerContainerRef);
 
   // Internal state for expanded rows (used when not controlled)
-  const [internalExpandedRows, setInternalExpandedRows] = useState<Set<string | number>>(new Set());
+  const [internalExpandedRows, setInternalExpandedRows] = useState<
+    Set<string | number>
+  >(new Set());
 
   // Use controlled or internal expanded rows
   const expandedRows = controlledExpandedRows ?? internalExpandedRows;
@@ -211,10 +222,16 @@ export function TableGrid<TData>({
     return null;
   }
 
-  const renderCell = (row: TData, column: Column<TData>, rowIndex: number): React.ReactNode => {
+  const renderCell = (
+    row: TData,
+    column: Column<TData>,
+    rowIndex: number
+  ): React.ReactNode => {
     const rowKey = rowKeyExtractor ? rowKeyExtractor(row, rowIndex) : rowIndex;
     const isExpanded = expandedRows.has(rowKey);
-    const canExpand = getRowCanExpand ? getRowCanExpand(row) : !!renderSubComponent;
+    const canExpand = getRowCanExpand
+      ? getRowCanExpand(row)
+      : !!renderSubComponent;
 
     const toggleExpansion = () => {
       if (!canExpand) return;
@@ -248,12 +265,14 @@ export function TableGrid<TData>({
     return String(value);
   };
 
-  const containerWidth = containerSize?.width && Math.trunc(containerSize?.width);
-  const innerContainerWidth = innerContainerSize?.width && Math.trunc(innerContainerSize?.width);
+  const containerWidth =
+    containerSize?.width && Math.trunc(containerSize?.width);
+  const innerContainerWidth =
+    innerContainerSize?.width && Math.trunc(innerContainerSize?.width);
   const isScrollable = containerWidth !== innerContainerWidth;
 
   const footerRows: Array<Array<FooterCell | null>> = [];
-  enhancedColumns.forEach((col) => {
+  enhancedColumns.forEach(col => {
     const footers = col.footer?.({ row: {} as TData }) ?? [];
 
     footers.forEach((footerCell, i) => {
@@ -268,7 +287,11 @@ export function TableGrid<TData>({
 
   const headerContent = (
     <>
-      {title && <Title className={cn('mb-4 text-base md:mb-0', titleClassName)}>{title}</Title>}
+      {title && (
+        <Title className={cn('mb-4 text-base md:mb-0', titleClassName)}>
+          {title}
+        </Title>
+      )}
       {action}
     </>
   );
@@ -276,7 +299,9 @@ export function TableGrid<TData>({
   return (
     <Card className={cn('grid grid-cols-1 4xl:p-0 md:p-0', className)}>
       {(title || action) && (
-        <Flex className={cn('col-span-full px-0 md:px-5 md:py-4', headerClassName)}>
+        <Flex
+          className={cn('col-span-full px-0 md:px-5 md:py-4', headerClassName)}
+        >
           {headerContent}
         </Flex>
       )}
@@ -343,9 +368,13 @@ export function TableGrid<TData>({
 
         {/* Data Rows */}
         {data.map((item, rowIndex, itemArray) => {
-          const rowKey = rowKeyExtractor ? rowKeyExtractor(item, rowIndex) : rowIndex;
+          const rowKey = rowKeyExtractor
+            ? rowKeyExtractor(item, rowIndex)
+            : rowIndex;
           const isExpanded = expandedRows.has(rowKey);
-          const canExpand = getRowCanExpand ? getRowCanExpand(item) : !!renderSubComponent;
+          const canExpand = getRowCanExpand
+            ? getRowCanExpand(item)
+            : !!renderSubComponent;
 
           return (
             <div key={`row-group-${rowKey}`} className="contents">
@@ -377,7 +406,8 @@ export function TableGrid<TData>({
                       className={cn(
                         baseStyles,
                         cellClassNames,
-                        colIndex < columnsLength - 1 && `border-r ${borderColor}`,
+                        colIndex < columnsLength - 1 &&
+                          `border-r ${borderColor}`,
                         column.sticky && stickyClassNames,
                         column.sticky === 'left' && stickyLeftClassNames,
                         column.sticky === 'right' && stickyRightClassNames,
@@ -401,11 +431,16 @@ export function TableGrid<TData>({
                   aria-rowindex={rowIndex + 2.5} // Between main row and next row
                   className={cn(
                     'col-span-full grid border-t bg-steel-50 dark:bg-dark-50',
-                    isScrollable && rowIndex === itemArray.length - 1 && 'border-b',
+                    isScrollable &&
+                      rowIndex === itemArray.length - 1 &&
+                      'border-b',
                     borderColor
                   )}
                 >
-                  <div role="gridcell" className={cn('col-span-full', borderColor)}>
+                  <div
+                    role="gridcell"
+                    className={cn('col-span-full', borderColor)}
+                  >
                     <RenderSubComponent row={item} />
                   </div>
                 </div>
@@ -438,7 +473,9 @@ export function TableGrid<TData>({
                   style={getStickyStyles(column)}
                   className={cn(
                     baseStyles,
-                    cell && colIndex < enhancedColumns.length - 1 && `border-r ${borderColor}`,
+                    cell &&
+                      colIndex < enhancedColumns.length - 1 &&
+                      `border-r ${borderColor}`,
                     column.sticky && stickyClassNames,
                     column.sticky === 'left' && stickyLeftClassNames,
                     column.sticky === 'right' && stickyRightClassNames,

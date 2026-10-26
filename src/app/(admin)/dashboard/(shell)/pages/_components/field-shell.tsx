@@ -23,12 +23,17 @@ export function FieldShell({
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>
       {label && (
-        <label htmlFor={htmlFor} className="flex items-center justify-between text-sm font-medium text-foreground">
+        <label
+          htmlFor={htmlFor}
+          className="flex items-center justify-between text-sm font-medium text-foreground"
+        >
           {label}
         </label>
       )}
       {children}
-      {hint && !error && <p className="text-xs text-muted-foreground">{hint}</p>}
+      {hint && !error && (
+        <p className="text-xs text-muted-foreground">{hint}</p>
+      )}
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );

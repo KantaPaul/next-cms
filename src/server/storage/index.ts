@@ -1,11 +1,19 @@
 import 'server-only';
 import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { DeleteObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  DeleteObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { env } from '@/env.mjs';
 
 export type StorageDriver = {
-  put: (key: string, body: Buffer, contentType: string) => Promise<{ url: string }>;
+  put: (
+    key: string,
+    body: Buffer,
+    contentType: string
+  ) => Promise<{ url: string }>;
   remove: (key: string) => Promise<void>;
   /** Only the local driver serves files itself; S3 objects are served by the bucket/CDN. */
   read?: (key: string) => Promise<Buffer | null>;
@@ -53,22 +61,33 @@ function s3Driver(): StorageDriver {
     forcePathStyle: !!env.S3_ENDPOINT,
     credentials:
       env.S3_ACCESS_KEY_ID && env.S3_SECRET_ACCESS_KEY
-        ? { accessKeyId: env.S3_ACCESS_KEY_ID, secretAccessKey: env.S3_SECRET_ACCESS_KEY }
+        ? {
+            accessKeyId: env.S3_ACCESS_KEY_ID,
+            secretAccessKey: env.S3_SECRET_ACCESS_KEY,
+          }
         : undefined,
   });
 
   const publicBase =
-    env.S3_PUBLIC_URL?.replace(/\/$/, '') ?? `https://${env.S3_BUCKET}.s3.${env.S3_REGION}.amazonaws.com`;
+    env.S3_PUBLIC_URL?.replace(/\/$/, '') ??
+    `https://${env.S3_BUCKET}.s3.${env.S3_REGION}.amazonaws.com`;
 
   return {
     put: async (key, body, contentType) => {
       await client.send(
-        new PutObjectCommand({ Bucket: env.S3_BUCKET, Key: key, Body: body, ContentType: contentType })
+        new PutObjectCommand({
+          Bucket: env.S3_BUCKET,
+          Key: key,
+          Body: body,
+          ContentType: contentType,
+        })
       );
       return { url: `${publicBase}/${key}` };
     },
     remove: async key => {
-      await client.send(new DeleteObjectCommand({ Bucket: env.S3_BUCKET, Key: key }));
+      await client.send(
+        new DeleteObjectCommand({ Bucket: env.S3_BUCKET, Key: key })
+      );
     },
   };
 }

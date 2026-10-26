@@ -1,10 +1,16 @@
-import { CONFIG } from '@/config';
 import Link from '@/components/atoms/next/link';
-import { cn } from '@/lib/utils/cn';
-import { PAGES } from '@/config/pages';
 import { Preview } from '@/components/molecules/logo/preview';
+import { CONFIG } from '@/config';
+import { PAGES } from '@/config/pages';
+import { cn } from '@/lib/utils/cn';
 
-export function Logo({ href, className }: { href?: string; className?: string }) {
+export function Logo({
+  href,
+  className,
+}: {
+  href?: string;
+  className?: string;
+}) {
   return (
     <Link
       href={href ?? PAGES.DASHBOARD.ROOT}

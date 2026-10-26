@@ -18,6 +18,8 @@ type WithSection = { section?: SectionSettings; editing?: boolean };
 
 export type InteractivePanelItem = {
   label?: string;
+  /** Slider and Accordion store the heading on `title`. */
+  title?: string;
   content?: SlotValue;
 };
 
@@ -29,7 +31,10 @@ export type InteractivePanel = {
 
 function panelsFrom(p: { items?: InteractivePanelItem[]; panels?: InteractivePanel[] }): InteractivePanel[] {
   if (p.panels) return p.panels;
-  return (p.items ?? []).map(item => ({ label: item.label, node: renderSlot(item.content) }));
+  return (p.items ?? []).map(item => ({
+    label: item.label ?? item.title,
+    node: renderSlot(item.content),
+  }));
 }
 
 /* =========================================================================

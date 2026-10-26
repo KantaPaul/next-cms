@@ -41,7 +41,10 @@ class Logger {
 
   public error(message: string | Error, ...args: any[]): void {
     if (message instanceof Error) {
-      this.logger.error({ err: message, ...this.formatArgs(args) }, message.message);
+      this.logger.error(
+        { err: message, ...this.formatArgs(args) },
+        message.message
+      );
     } else {
       this.logger.error(this.formatArgs(args), message);
     }
@@ -77,7 +80,8 @@ class Logger {
   }
 
   public logRequest(req: any, res: any, responseTime: number): void {
-    const level = res.statusCode >= 400 ? 'error' : res.statusCode >= 300 ? 'warn' : 'info';
+    const level =
+      res.statusCode >= 400 ? 'error' : res.statusCode >= 300 ? 'warn' : 'info';
 
     this.logger[level](
       {
@@ -100,7 +104,11 @@ class Logger {
     );
   }
 
-  public logDatabaseQuery(query: string, params?: any[], duration?: number): void {
+  public logDatabaseQuery(
+    query: string,
+    params?: any[],
+    duration?: number
+  ): void {
     this.logger.debug(
       {
         query: query.substring(0, 1000), // Limit query length

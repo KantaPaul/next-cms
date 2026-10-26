@@ -18,8 +18,14 @@ export function usePinningStyles() {
       //   : isFirstRightPinnedColumn
       //     ? '4px 0 4px -4px gray inset'
       //     : undefined,
-      left: isPinned === 'left' && !isMobile ? `${column.getStart('left')}px` : undefined,
-      right: isPinned === 'right' && !isMobile ? `${column.getAfter('right')}px` : undefined,
+      left:
+        isPinned === 'left' && !isMobile
+          ? `${column.getStart('left')}px`
+          : undefined,
+      right:
+        isPinned === 'right' && !isMobile
+          ? `${column.getAfter('right')}px`
+          : undefined,
       opacity: isPinned ? 0.95 : 1,
       width: column.getSize(),
       zIndex: isPinned ? 1 : 0,

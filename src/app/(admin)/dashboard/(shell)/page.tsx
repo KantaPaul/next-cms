@@ -60,7 +60,7 @@ export default async function DashboardPage() {
         </div>
         {traffic.views === 0 && (
           <div className="mt-4 rounded-lg border border-dashed border-steel-200 px-6 py-8 text-center text-sm text-steel-500 dark:border-dark-300">
-            No page views recorded yet. Publish a public page and visit it — the
+            No views recorded yet. Publish a public page or post and visit it — the
             beacon will start counting here.
           </div>
         )}

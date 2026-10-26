@@ -62,7 +62,7 @@ export function SimplifiedPagination({
               href="#"
               isActive={currentPage === i}
               aria-disabled={isPending}
-              onClick={(e) => {
+              onClick={e => {
                 e.preventDefault();
                 handlePageChange(i);
               }}
@@ -82,7 +82,7 @@ export function SimplifiedPagination({
           href="#"
           isActive={currentPage === 1}
           aria-disabled={isPending}
-          onClick={(e) => {
+          onClick={e => {
             e.preventDefault();
             handlePageChange(1);
           }}
@@ -100,7 +100,7 @@ export function SimplifiedPagination({
               href="#"
               isActive={currentPage === i}
               aria-disabled={isPending}
-              onClick={(e) => {
+              onClick={e => {
                 e.preventDefault();
                 handlePageChange(i);
               }}
@@ -121,7 +121,7 @@ export function SimplifiedPagination({
             href="#"
             isActive={currentPage === totalPages}
             aria-disabled={isPending}
-            onClick={(e) => {
+            onClick={e => {
               e.preventDefault();
               handlePageChange(totalPages);
             }}
@@ -143,7 +143,7 @@ export function SimplifiedPagination({
               href="#"
               isActive={currentPage === i}
               aria-disabled={isPending}
-              onClick={(e) => {
+              onClick={e => {
                 e.preventDefault();
                 handlePageChange(i);
               }}
@@ -166,7 +166,7 @@ export function SimplifiedPagination({
               href="#"
               isActive={currentPage === i}
               aria-disabled={isPending}
-              onClick={(e) => {
+              onClick={e => {
                 e.preventDefault();
                 handlePageChange(i);
               }}
@@ -187,7 +187,7 @@ export function SimplifiedPagination({
             href="#"
             isActive={currentPage === totalPages}
             aria-disabled={isPending}
-            onClick={(e) => {
+            onClick={e => {
               e.preventDefault();
               handlePageChange(totalPages);
             }}
@@ -207,12 +207,15 @@ export function SimplifiedPagination({
         <PaginationItem>
           <PaginationPrevious
             href="#"
-            onClick={(e) => {
+            onClick={e => {
               e.preventDefault();
               if (currentPage > 1) handlePageChange(currentPage - 1);
             }}
             aria-disabled={currentPage === 1 || isPending}
-            className={cn((currentPage === 1 || isPending) && 'pointer-events-none opacity-50')}
+            className={cn(
+              (currentPage === 1 || isPending) &&
+                'pointer-events-none opacity-50'
+            )}
           />
         </PaginationItem>
 
@@ -221,12 +224,15 @@ export function SimplifiedPagination({
         <PaginationItem>
           <PaginationNext
             href="#"
-            onClick={(e) => {
+            onClick={e => {
               e.preventDefault();
               if (currentPage < totalPages) handlePageChange(currentPage + 1);
             }}
             aria-disabled={currentPage === totalPages || isPending}
-            className={cn((currentPage === totalPages || isPending) && 'pointer-events-none opacity-50')}
+            className={cn(
+              (currentPage === totalPages || isPending) &&
+                'pointer-events-none opacity-50'
+            )}
           />
         </PaginationItem>
       </PaginationContent>

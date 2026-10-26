@@ -4,6 +4,11 @@ import { LayoutTemplate, Loader2, PanelsTopLeft, Star } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
+import type { PostTemplateListItem } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
+import {
+  setPostTemplate,
+  switchPostLayout,
+} from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.actions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,11 +21,6 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils/cn';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
-import {
-  setPostTemplate,
-  switchPostLayout,
-} from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.actions';
-import type { PostTemplateListItem } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
 
 const DEFAULT = 'default';
 const CUSTOM = 'custom';

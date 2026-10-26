@@ -1,13 +1,18 @@
 'use client';
 
-import { Image as ImageIcon, PaintBucket, Palette, RotateCcw } from 'lucide-react';
+import {
+  Image as ImageIcon,
+  PaintBucket,
+  Palette,
+  RotateCcw,
+} from 'lucide-react';
 import { MediaField } from '@/components/media/media-picker';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils/cn';
 import type { Fill } from '../style';
 import { ColorPicker } from './color-picker';
 import { ControlLabel, SelectInput, ShowWhen, Slider } from './primitives';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 
 const TYPES = [
   { value: 'color' as const, label: 'Color', icon: PaintBucket },
@@ -74,7 +79,11 @@ export function BackgroundControl({
 
       {hasCustom && type === 'color' && (
         <div className="grid grid-cols-2 gap-2">
-          <ColorPicker label="Light" value={fill.color} onChange={color => set({ color })} />
+          <ColorPicker
+            label="Light"
+            value={fill.color}
+            onChange={color => set({ color })}
+          />
           <ColorPicker
             label="Dark"
             value={fill.colorDark}
@@ -96,8 +105,18 @@ export function BackgroundControl({
             onChange={gradientType => set({ gradientType })}
           />
           <div className="grid grid-cols-2 gap-2">
-            <ColorPicker label="Start" value={fill.from} onChange={from => set({ from })} placeholder="#6366f1" />
-            <ColorPicker label="Stop" value={fill.to} onChange={to => set({ to })} placeholder="#ec4899" />
+            <ColorPicker
+              label="Start"
+              value={fill.from}
+              onChange={from => set({ from })}
+              placeholder="#6366f1"
+            />
+            <ColorPicker
+              label="Stop"
+              value={fill.to}
+              onChange={to => set({ to })}
+              placeholder="#ec4899"
+            />
           </div>
           <ShowWhen when={(fill.gradientType ?? 'linear') === 'linear'}>
             <Slider
@@ -135,7 +154,10 @@ export function BackgroundControl({
         <div className="space-y-3">
           <div>
             <ControlLabel label="Image" />
-            <MediaField value={fill.image ?? ''} onChange={image => set({ image: image || undefined })} />
+            <MediaField
+              value={fill.image ?? ''}
+              onChange={image => set({ image: image || undefined })}
+            />
           </div>
           <SelectInput
             label="Size"
@@ -157,7 +179,9 @@ export function BackgroundControl({
               { value: 'left', label: 'Left' },
               { value: 'right', label: 'Right' },
             ]}
-            onChange={position => set({ position, posX: undefined, posY: undefined })}
+            onChange={position =>
+              set({ position, posX: undefined, posY: undefined })
+            }
           />
           <Slider
             label="Custom X"

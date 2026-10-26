@@ -9,7 +9,16 @@ export async function GET() {
   const base = (settings.siteUrl || env.SITE_URL).replace(/\/$/, '');
   const body =
     settings.robotsTxt?.trim() ||
-    ['User-agent: *', 'Allow: /', 'Disallow: /dashboard', 'Disallow: /api', '', `Sitemap: ${base}/sitemap.xml`].join('\n');
+    [
+      'User-agent: *',
+      'Allow: /',
+      'Disallow: /dashboard',
+      'Disallow: /api',
+      '',
+      `Sitemap: ${base}/sitemap.xml`,
+    ].join('\n');
 
-  return new Response(`${body}\n`, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+  return new Response(`${body}\n`, {
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+  });
 }

@@ -1,7 +1,7 @@
-"use client";
-import { useTheme } from "next-themes";
-import Image from "@/components/atoms/next/image";
-import { cn } from "@/lib/utils/cn";
+'use client';
+import { useTheme } from 'next-themes';
+import Image from '@/components/atoms/next/image';
+import { cn } from '@/lib/utils/cn';
 
 export function Preview({
   logo,
@@ -14,9 +14,9 @@ export function Preview({
 }) {
   const { theme, systemTheme } = useTheme();
 
-  const currentTheme = theme === "system" ? systemTheme : theme;
+  const currentTheme = theme === 'system' ? systemTheme : theme;
 
-  if (currentTheme === "dark" && darkModeLogo) {
+  if (currentTheme === 'dark' && darkModeLogo) {
     return (
       <Image
         src={darkModeLogo}
@@ -45,7 +45,7 @@ export function Preview({
   return (
     <span
       className={cn(
-        "font-bold leading-none text-steel-700 dark:text-steel-100"
+        'font-bold leading-none text-steel-700 dark:text-steel-100'
       )}
     >
       {appName}

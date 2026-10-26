@@ -1,12 +1,15 @@
 import 'server-only';
 import { randomBytes } from 'node:crypto';
 import { and, count, desc, eq, ilike, like, or, type SQL } from 'drizzle-orm';
+import { PERMISSIONS } from '@/config/permissions';
 import { db } from '@/db';
 import { media, users } from '@/db/schema';
 import { env } from '@/env.mjs';
-import { PERMISSIONS } from '@/config/permissions';
 import { ApplicationException, NotFoundException } from '@/lib/utils/error';
-import { accessService, type UserAccess } from '@/server/services/access.service';
+import {
+  accessService,
+  type UserAccess,
+} from '@/server/services/access.service';
 import { auditService } from '@/server/services/audit.service';
 import { storage } from '@/server/storage';
 
@@ -46,7 +49,13 @@ export type MediaListParams = {
 };
 
 export const mediaService = {
-  list: async ({ search, folder, type, page = 1, size = 40 }: MediaListParams) => {
+  list: async ({
+    search,
+    folder,
+    type,
+    page = 1,
+    size = 40,
+  }: MediaListParams) => {
     const conditions: (SQL | undefined)[] = [];
     if (folder) conditions.push(eq(media.folder, folder));
     if (type === 'image') conditions.push(like(media.mime, 'image/%'));
@@ -54,7 +63,13 @@ export const mediaService = {
     if (type === 'document') conditions.push(eq(media.mime, 'application/pdf'));
     if (search?.trim()) {
       const term = `%${search.trim()}%`;
-      conditions.push(or(ilike(media.filename, term), ilike(media.title, term), ilike(media.alt, term)));
+      conditions.push(
+        or(
+          ilike(media.filename, term),
+          ilike(media.title, term),
+          ilike(media.alt, term)
+        )
+      );
     }
     const where = conditions.length ? and(...conditions) : undefined;
 
@@ -97,16 +112,28 @@ export const mediaService = {
 
   upload: async (
     file: File,
-    meta: { folder?: string | null; alt?: string | null; width?: number | null; height?: number | null },
+    meta: {
+      folder?: string | null;
+      alt?: string | null;
+      width?: number | null;
+      height?: number | null;
+    },
     access: UserAccess
   ) => {
-    await accessService.assertPermission(access.userId, PERMISSIONS.MEDIA_UPLOAD);
+    await accessService.assertPermission(
+      access.userId,
+      PERMISSIONS.MEDIA_UPLOAD
+    );
 
     if (!ALLOWED_MIME.includes(file.type)) {
-      throw new ApplicationException(`Files of type ${file.type || 'unknown'} are not allowed.`);
+      throw new ApplicationException(
+        `Files of type ${file.type || 'unknown'} are not allowed.`
+      );
     }
     if (file.size > env.MEDIA_MAX_UPLOAD_MB * 1024 * 1024) {
-      throw new ApplicationException(`Files must be smaller than ${env.MEDIA_MAX_UPLOAD_MB} MB.`);
+      throw new ApplicationException(
+        `Files must be smaller than ${env.MEDIA_MAX_UPLOAD_MB} MB.`
+      );
     }
 
     const folder = sanitizeFolder(meta.folder);
@@ -131,21 +158,37 @@ export const mediaService = {
       })
       .returning();
 
-    await auditService.log({ actorId: access.userId, action: 'create', targetType: 'media', targetId: row.id, targetName: row.filename });
+    await auditService.log({
+      actorId: access.userId,
+      action: 'create',
+      targetType: 'media',
+      targetId: row.id,
+      targetName: row.filename,
+    });
     return row;
   },
 
   update: async (
-    input: { id: string; title?: string | null; alt?: string | null; folder?: string | null },
+    input: {
+      id: string;
+      title?: string | null;
+      alt?: string | null;
+      folder?: string | null;
+    },
     access: UserAccess
   ) => {
-    await accessService.assertPermission(access.userId, PERMISSIONS.MEDIA_UPLOAD);
+    await accessService.assertPermission(
+      access.userId,
+      PERMISSIONS.MEDIA_UPLOAD
+    );
     const [row] = await db
       .update(media)
       .set({
         ...(input.title !== undefined && { title: input.title }),
         ...(input.alt !== undefined && { alt: input.alt }),
-        ...(input.folder !== undefined && { folder: sanitizeFolder(input.folder) }),
+        ...(input.folder !== undefined && {
+          folder: sanitizeFolder(input.folder),
+        }),
       })
       .where(eq(media.id, input.id))
       .returning();
@@ -154,11 +197,20 @@ export const mediaService = {
   },
 
   remove: async ({ id }: { id: string }, access: UserAccess) => {
-    await accessService.assertPermission(access.userId, PERMISSIONS.MEDIA_UPLOAD);
+    await accessService.assertPermission(
+      access.userId,
+      PERMISSIONS.MEDIA_UPLOAD
+    );
     const [row] = await db.delete(media).where(eq(media.id, id)).returning();
     if (!row) throw new NotFoundException('File not found');
     await storage().remove(row.key);
-    await auditService.log({ actorId: access.userId, action: 'delete', targetType: 'media', targetId: id, targetName: row.filename });
+    await auditService.log({
+      actorId: access.userId,
+      action: 'delete',
+      targetType: 'media',
+      targetId: id,
+      targetName: row.filename,
+    });
     return row;
   },
 
@@ -168,4 +220,6 @@ export const mediaService = {
   },
 };
 
-export type MediaItem = Awaited<ReturnType<typeof mediaService.list>>['data'][number];
+export type MediaItem = Awaited<
+  ReturnType<typeof mediaService.list>
+>['data'][number];

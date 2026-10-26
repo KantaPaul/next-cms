@@ -8,27 +8,25 @@ import {
   inArray,
   like,
   or,
-  sql,
   type SQLWrapper,
+  sql,
 } from 'drizzle-orm';
-import { z } from 'zod';
 import { redirect } from 'next/navigation';
+import { z } from 'zod';
 import { MESSAGES } from '@/config/messages';
 import { db } from '@/db';
-import type { User, UpdateUser } from '@/db/schemas/auth.schema';
+import { UserStatus } from '@/db/schema';
+import type { UpdateUser, User } from '@/db/schemas/auth.schema';
 import {
-  users as usersModel,
   users,
+  users as usersModel,
   userUpdateSchema,
 } from '@/db/schemas/auth.schema';
-
+import { validateSession } from '@/lib/auth/session.validation';
+import type { DBTrx } from '@/lib/types';
 import { ApplicationException } from '@/lib/utils/error';
 import { newDate } from '@/lib/utils/format-date';
-import type { DBTrx } from '@/lib/types';
-import { UserStatus } from '@/db/schema';
-import { validateSession } from '@/lib/auth/session.validation';
 import { logout } from '@/server/actions/auth.actions';
-
 
 export type UserParams = {
   size?: number;

@@ -1,17 +1,19 @@
 ---
+
 name: Analytics trend page
 overview: Add a dedicated /dashboard/analytics route that compares the current 7- or 30-day window with the previous one, and shows one breakdown list at a time. The dashboard home stays a short traffic summary that links there.
 todos:
-  - id: trends-query
-    content: Add analyticsService.trends for current vs previous window, daily series, and only the active list (pages, paths, or referrers)
-    status: completed
-  - id: analytics-route
-    content: Add /dashboard/analytics with trend cards, dual-bar chart, and one active list (pages, paths, or referrers)
-    status: completed
-  - id: home-and-nav
-    content: Slim the dashboard traffic section to 30-day stats plus a link, and add the sidebar item
-    status: completed
-isProject: false
+- id: trends-query
+  content: Add analyticsService.trends for current vs previous window, daily series, and only the active list (pages, paths, or referrers)
+  status: completed
+- id: analytics-route
+  content: Add /dashboard/analytics with trend cards, dual-bar chart, and one active list (pages, paths, or referrers)
+  status: completed
+- id: home-and-nav
+  content: Slim the dashboard traffic section to 30-day stats plus a link, and add the sidebar item
+  status: completed
+  isProject: false
+
 ---
 
 # Analytics trend page

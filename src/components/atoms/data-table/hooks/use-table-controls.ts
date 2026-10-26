@@ -8,12 +8,12 @@ import isEmpty from 'lodash/isEmpty';
 import isEqual from 'lodash/isEqual';
 import isFunction from 'lodash/isFunction';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import type { PersonalizedProps } from '@/components/atoms/data-table/types';
 import { DEFAULT_PAGE_SIZE } from '@/config/constant';
 import {
   createPersonalizedSection,
   updatePersonalizedSection,
 } from '@/db/common/personalizations/personalization.actions';
-import type { PersonalizedProps } from '@/components/atoms/data-table/types';
 
 // const safeQuerySchema =(defaults)=> z.object({
 //   q: z.string().optional(),
@@ -48,7 +48,8 @@ export function useTableControls(options?: Partial<UseTableControlsOptions>) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const page = searchParams.get('page');
-  const limit = searchParams.get('size') ?? _defs?.personalizedProps?.limit?.toString();
+  const limit =
+    searchParams.get('size') ?? _defs?.personalizedProps?.limit?.toString();
   const field = searchParams.get('sort');
   const order = searchParams.get('order');
 
@@ -77,7 +78,9 @@ export function useTableControls(options?: Partial<UseTableControlsOptions>) {
     }
   }
 
-  const onPaginationChange: OnChangeFn<PaginationState> = async (updaterOrValue) => {
+  const onPaginationChange: OnChangeFn<
+    PaginationState
+  > = async updaterOrValue => {
     const { pageIndex, pageSize } = isFunction(updaterOrValue)
       ? updaterOrValue(pagination)
       : updaterOrValue;
@@ -106,9 +109,13 @@ export function useTableControls(options?: Partial<UseTableControlsOptions>) {
     router.replace(`${pathname}/?${urlSearchParams.toString()}`);
   };
 
-  const onSortingChange: OnChangeFn<SortingState> = (updaterOrValue) => {
-    const [sort_by] = isFunction(updaterOrValue) ? updaterOrValue(sorting) : updaterOrValue;
-    const { sort, order, page, ...includes } = Object.fromEntries(searchParams.entries());
+  const onSortingChange: OnChangeFn<SortingState> = updaterOrValue => {
+    const [sort_by] = isFunction(updaterOrValue)
+      ? updaterOrValue(sorting)
+      : updaterOrValue;
+    const { sort, order, page, ...includes } = Object.fromEntries(
+      searchParams.entries()
+    );
     const urlSearchParams = new URLSearchParams({
       ...includes,
       ...(!isEmpty(sort_by) && {
@@ -122,10 +129,14 @@ export function useTableControls(options?: Partial<UseTableControlsOptions>) {
     router.replace(`${pathname}?${urlSearchParams.toString()}`);
   };
 
-  const onColumnFiltersChange: OnChangeFn<ColumnFiltersState> = (updaterOrValue) => {
-    const filters = isFunction(updaterOrValue) ? updaterOrValue(columnFilters) : updaterOrValue;
+  const onColumnFiltersChange: OnChangeFn<
+    ColumnFiltersState
+  > = updaterOrValue => {
+    const filters = isFunction(updaterOrValue)
+      ? updaterOrValue(columnFilters)
+      : updaterOrValue;
     const includes = _defs.includeKeys
-      .map((key) => [key, searchParams.get(key)])
+      .map(key => [key, searchParams.get(key)])
       .filter(([_, value]) => value) as [string, string][];
     const urlSearchParams = new URLSearchParams([
       ...includes,

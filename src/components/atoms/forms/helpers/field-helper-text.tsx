@@ -24,7 +24,10 @@ export default function FieldHelperText({
 }: React.PropsWithChildren<FieldHelperTextProps>) {
   const Component = tag;
   return (
-    <Component role="alert" className={cn(size && helperTextClasses.size[size], className)}>
+    <Component
+      role="alert"
+      className={cn(size && helperTextClasses.size[size], className)}
+    >
       {children}
     </Component>
   );

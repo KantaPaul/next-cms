@@ -25,27 +25,42 @@ export function SegmentFilter({
   isPending,
   handlers,
 }: SegmentFilterProps) {
-  const activeSegments = useMemo(() => segments.filter((seg) => seg.active), [segments]);
+  const activeSegments = useMemo(
+    () => segments.filter(seg => seg.active),
+    [segments]
+  );
 
-  const selectedSegmentIds = useMemo(() => value?.split(ARRAY_SEPARATOR) ?? [], [value]);
+  const selectedSegmentIds = useMemo(
+    () => value?.split(ARRAY_SEPARATOR) ?? [],
+    [value]
+  );
 
   return (
-    <div className={cn('grid gap-4', isDrawer ? 'grid-cols-1' : 'grid-cols-3', className)}>
-      {activeSegments.map((segment) => {
-        const segmentOptions = segment.attributes.map((attr) => ({
+    <div
+      className={cn(
+        'grid gap-4',
+        isDrawer ? 'grid-cols-1' : 'grid-cols-3',
+        className
+      )}
+    >
+      {activeSegments.map(segment => {
+        const segmentOptions = segment.attributes.map(attr => ({
           label: attr.name,
           value: attr.id,
         }));
 
-        const segmentSelectedIds = selectedSegmentIds.filter((id) =>
-          segment.attributes.some((attr) => attr.id === id)
+        const segmentSelectedIds = selectedSegmentIds.filter(id =>
+          segment.attributes.some(attr => attr.id === id)
         );
 
-        const [groupOptions, options] = groupSelectedOptions(segmentOptions, segmentSelectedIds);
+        const [groupOptions, options] = groupSelectedOptions(
+          segmentOptions,
+          segmentSelectedIds
+        );
 
         const handleClear = () => {
           const remainingIds = selectedSegmentIds.filter(
-            (id) => !segment.attributes.some((attr) => attr.id === id)
+            id => !segment.attributes.some(attr => attr.id === id)
           );
 
           if (remainingIds.length > 0) {
@@ -58,7 +73,7 @@ export function SegmentFilter({
         const handleChange = (newValue: any) => {
           const selectedValues = handleOnChange(newValue) as string[];
           const otherSegmentIds = selectedSegmentIds.filter(
-            (id) => !segment.attributes.some((attr) => attr.id === id)
+            id => !segment.attributes.some(attr => attr.id === id)
           );
           const allSelectedIds = [...otherSegmentIds, ...selectedValues];
 

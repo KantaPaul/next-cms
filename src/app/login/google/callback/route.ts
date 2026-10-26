@@ -1,12 +1,12 @@
-import { cookies } from 'next/headers';
 import { OAuth2RequestError } from 'arctic';
+import { cookies } from 'next/headers';
 
 import { google } from '@/auth';
+import { PAGES } from '@/config/pages';
 import type { User } from '@/db/schemas/auth.schema';
 import { UserStatus } from '@/db/schemas/shared.schema';
-import { AuthService } from "@/server/services/auth.services";
-import { PAGES } from "@/config/pages";
-import { login } from "@/server/actions/auth.actions";
+import { login } from '@/server/actions/auth.actions';
+import { AuthService } from '@/server/services/auth.services';
 
 export interface GoogleAuthResponse {
   sub: string;
@@ -27,7 +27,13 @@ export async function GET(request: Request): Promise<Response> {
   const storedState = cookieStore.get('google_oauth_state')?.value ?? null;
   const codeVerifier = cookieStore.get('google_code_verifier')?.value ?? null;
 
-  if (!code || !state || !storedState || state !== storedState || !codeVerifier) {
+  if (
+    !code ||
+    !state ||
+    !storedState ||
+    state !== storedState ||
+    !codeVerifier
+  ) {
     return new Response(null, {
       status: 400,
     });
@@ -35,11 +41,14 @@ export async function GET(request: Request): Promise<Response> {
 
   try {
     const tokens = await google.validateAuthorizationCode(code, codeVerifier);
-    const response = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
-      headers: {
-        Authorization: `Bearer ${tokens.accessToken()}`,
-      },
-    });
+    const response = await fetch(
+      'https://openidconnect.googleapis.com/v1/userinfo',
+      {
+        headers: {
+          Authorization: `Bearer ${tokens.accessToken()}`,
+        },
+      }
+    );
     const user: GoogleAuthResponse = await response.json();
 
     const createUserInputs: User = {

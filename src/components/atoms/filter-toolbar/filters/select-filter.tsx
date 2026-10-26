@@ -12,7 +12,13 @@ interface SelectFilterProps
   extends BaseFilterProps,
     Omit<
       SelectProps<Option>,
-      'value' | 'onChange' | 'onClear' | 'size' | 'label' | 'className' | 'placeholder'
+      | 'value'
+      | 'onChange'
+      | 'onClear'
+      | 'size'
+      | 'label'
+      | 'className'
+      | 'placeholder'
     > {}
 
 export function SelectFilter({
@@ -39,7 +45,9 @@ export function SelectFilter({
       isClearable
       isDisabled={isDisabled}
       isLoading={isPending}
-      onChange={(newValue) => handlers.setValue(handleOnChange(newValue) as string)}
+      onChange={newValue =>
+        handlers.setValue(handleOnChange(newValue) as string)
+      }
       onClear={handlers.clear}
       options={options}
       placeholder={placeholder}

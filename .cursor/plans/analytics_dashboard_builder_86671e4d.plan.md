@@ -1,26 +1,28 @@
 ---
+
 name: Analytics dashboard builder
 overview: "Add named, shared analytics dashboards: a drag-and-drop grid of stat, chart, and table widgets, where each widget is a small query over existing page views. The fixed /dashboard/analytics trend page stays."
 todos:
-  - id: schema
-    content: Add analytics_dashboards and a zod layout schema (widget types, query, span, max 12)
-    status: completed
-  - id: widget-query
-    content: Add analyticsService.widget for stat, day series, and page/path/referrer breakdowns over the current and previous windows
-    status: completed
-  - id: board-crud
-    content: "Add board service and accessProcedure actions: create, update, delete, previewWidget"
-    status: completed
-  - id: list-and-view
-    content: Add the boards list and the server-rendered view grid, with the 7d/30d override for inherited widgets
-    status: completed
-  - id: builder
-    content: Add the dnd-kit palette, sortable 12-column canvas, inspector, live preview, save, and the traffic-overview preset
-    status: completed
-  - id: entry
-    content: Register routes and add a Dashboards link on the existing analytics trend page
-    status: completed
-isProject: false
+- id: schema
+  content: Add analytics_dashboards and a zod layout schema (widget types, query, span, max 12)
+  status: completed
+- id: widget-query
+  content: Add analyticsService.widget for stat, day series, and page/path/referrer breakdowns over the current and previous windows
+  status: completed
+- id: board-crud
+  content: "Add board service and accessProcedure actions: create, update, delete, previewWidget"
+  status: completed
+- id: list-and-view
+  content: Add the boards list and the server-rendered view grid, with the 7d/30d override for inherited widgets
+  status: completed
+- id: builder
+  content: Add the dnd-kit palette, sortable 12-column canvas, inspector, live preview, save, and the traffic-overview preset
+  status: completed
+- id: entry
+  content: Register routes and add a Dashboards link on the existing analytics trend page
+  status: completed
+  isProject: false
+
 ---
 
 # Drag-and-drop analytics builder

@@ -1,20 +1,22 @@
 ---
+
 name: Match global editor
 overview: "Give the global-block editor the same chrome as the page builder: top bar, Blocks/Layers rail, canvas, and floating inspector. Saving stays a single explicit save, because a global block goes live immediately."
 todos:
-  - id: global-kind
-    content: Add a global builder kind that saves via saveGlobalBlock and uses a config without GlobalRef or page root fields
-    status: completed
-  - id: route
-    content: Render the global page through BuilderLoader and remove the default Puck editor
-    status: completed
-  - id: chrome
-    content: Hide page-only header actions, the Page tab, and save-as-global when editing a global block
-    status: completed
-  - id: verify
-    content: Typecheck and compare both editor URLs in the browser
-    status: completed
-isProject: false
+- id: global-kind
+  content: Add a global builder kind that saves via saveGlobalBlock and uses a config without GlobalRef or page root fields
+  status: completed
+- id: route
+  content: Render the global page through BuilderLoader and remove the default Puck editor
+  status: completed
+- id: chrome
+  content: Hide page-only header actions, the Page tab, and save-as-global when editing a global block
+  status: completed
+- id: verify
+  content: Typecheck and compare both editor URLs in the browser
+  status: completed
+  isProject: false
+
 ---
 
 # Match the global editor to the page builder

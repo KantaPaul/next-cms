@@ -4,7 +4,10 @@ import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import { metaObject } from '@/lib/utils/metadata';
 import { requirePermission } from '@/server/services/require-permission';
-import { CategoriesManager, TagsManager } from './_components/taxonomy-managers';
+import {
+  CategoriesManager,
+  TagsManager,
+} from './_components/taxonomy-managers';
 import { taxonomyService } from './_modules/taxonomy.service';
 
 const TITLE = 'Taxonomies';
@@ -29,7 +32,10 @@ export default async function TaxonomyPage() {
     );
   }
 
-  const [categories, tags] = await Promise.all([taxonomyService.listCategories(), taxonomyService.listTags()]);
+  const [categories, tags] = await Promise.all([
+    taxonomyService.listCategories(),
+    taxonomyService.listTags(),
+  ]);
 
   return (
     <>

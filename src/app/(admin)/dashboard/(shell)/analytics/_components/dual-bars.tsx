@@ -50,7 +50,11 @@ export function DualBars({
               </rect>
             )}
             <rect
-              x={showPrevious ? x + barWidth + gap : x + Math.floor((slotWidth - barWidth) / 2)}
+              x={
+                showPrevious
+                  ? x + barWidth + gap
+                  : x + Math.floor((slotWidth - barWidth) / 2)
+              }
               y={height - hCurr}
               width={barWidth}
               height={hCurr}

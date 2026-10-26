@@ -7,19 +7,19 @@ if (!process.env.DATABASE_URL) {
 }
 
 export default defineConfig({
-  schema: "./src/db/schema.ts",
-  out: "./src/db/migrations",
-  dialect: "postgresql",
-  casing: "snake_case",
+  schema: './src/db/schema.ts',
+  out: './src/db/migrations',
+  dialect: 'postgresql',
+  casing: 'snake_case',
   introspect: {
-    casing: "camel",
+    casing: 'camel',
   },
   dbCredentials: {
     url: process.env.DATABASE_URL,
   },
   migrations: {
-    table: "ledgerly_migrations",
-    schema: "public",
-    prefix: "timestamp",
+    table: 'ledgerly_migrations',
+    schema: 'public',
+    prefix: 'timestamp',
   },
 });

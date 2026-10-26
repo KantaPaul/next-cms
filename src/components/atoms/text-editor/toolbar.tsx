@@ -33,7 +33,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 // import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Toggle } from '@/components/ui/toggle';
 import { cn } from '@/lib/utils/cn';
 import { Input } from '../forms';
@@ -121,63 +125,87 @@ export function Toolbar({ className, editor }: ToolbarProps) {
             </DropdownMenuItem>
             <DropdownMenuItem
               className="flex items-center justify-between"
-              onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+              onClick={() =>
+                editor.chain().focus().toggleHeading({ level: 1 }).run()
+              }
             >
               <div className="flex items-center gap-2">
                 <Heading1 className="h-4 w-4" />
                 <span>Heading 1</span>
               </div>
-              {editor.isActive('heading', { level: 1 }) && <Check className="h-4 w-4" />}
+              {editor.isActive('heading', { level: 1 }) && (
+                <Check className="h-4 w-4" />
+              )}
             </DropdownMenuItem>
             <DropdownMenuItem
               className="flex items-center justify-between"
-              onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+              onClick={() =>
+                editor.chain().focus().toggleHeading({ level: 2 }).run()
+              }
             >
               <div className="flex items-center gap-2">
                 <Heading2 className="h-4 w-4" />
                 <span>Heading 2</span>
               </div>
-              {editor.isActive('heading', { level: 2 }) && <Check className="h-4 w-4" />}
+              {editor.isActive('heading', { level: 2 }) && (
+                <Check className="h-4 w-4" />
+              )}
             </DropdownMenuItem>
             <DropdownMenuItem
               className="flex items-center justify-between"
-              onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+              onClick={() =>
+                editor.chain().focus().toggleHeading({ level: 3 }).run()
+              }
             >
               <div className="flex items-center gap-2">
                 <Heading3 className="h-4 w-4" />
                 <span>Heading 3</span>
               </div>
-              {editor.isActive('heading', { level: 3 }) && <Check className="h-4 w-4" />}
+              {editor.isActive('heading', { level: 3 }) && (
+                <Check className="h-4 w-4" />
+              )}
             </DropdownMenuItem>
             <DropdownMenuItem
               className="flex items-center justify-between"
-              onClick={() => editor.chain().focus().toggleHeading({ level: 4 }).run()}
+              onClick={() =>
+                editor.chain().focus().toggleHeading({ level: 4 }).run()
+              }
             >
               <div className="flex items-center gap-2">
                 <HeadingIcon className="h-4 w-4" />
                 <span>Heading 4</span>
               </div>
-              {editor.isActive('heading', { level: 4 }) && <Check className="h-4 w-4" />}
+              {editor.isActive('heading', { level: 4 }) && (
+                <Check className="h-4 w-4" />
+              )}
             </DropdownMenuItem>
             <DropdownMenuItem
               className="flex items-center justify-between"
-              onClick={() => editor.chain().focus().toggleHeading({ level: 5 }).run()}
+              onClick={() =>
+                editor.chain().focus().toggleHeading({ level: 5 }).run()
+              }
             >
               <div className="flex items-center gap-2">
                 <HeadingIcon className="h-4 w-4" />
                 <span>Heading 5</span>
               </div>
-              {editor.isActive('heading', { level: 5 }) && <Check className="h-4 w-4" />}
+              {editor.isActive('heading', { level: 5 }) && (
+                <Check className="h-4 w-4" />
+              )}
             </DropdownMenuItem>
             <DropdownMenuItem
               className="flex items-center justify-between"
-              onClick={() => editor.chain().focus().toggleHeading({ level: 6 }).run()}
+              onClick={() =>
+                editor.chain().focus().toggleHeading({ level: 6 }).run()
+              }
             >
               <div className="flex items-center gap-2">
                 <HeadingIcon className="h-4 w-4" />
                 <span>Heading 6</span>
               </div>
-              {editor.isActive('heading', { level: 6 }) && <Check className="h-4 w-4" />}
+              {editor.isActive('heading', { level: 6 }) && (
+                <Check className="h-4 w-4" />
+              )}
             </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
@@ -239,28 +267,36 @@ export function Toolbar({ className, editor }: ToolbarProps) {
       <Toggle
         size="sm"
         pressed={editor.isActive({ textAlign: 'left' })}
-        onPressedChange={() => editor.chain().focus().setTextAlign('left').run()}
+        onPressedChange={() =>
+          editor.chain().focus().setTextAlign('left').run()
+        }
       >
         <AlignLeft className="h-4 w-4" />
       </Toggle>
       <Toggle
         size="sm"
         pressed={editor.isActive({ textAlign: 'center' })}
-        onPressedChange={() => editor.chain().focus().setTextAlign('center').run()}
+        onPressedChange={() =>
+          editor.chain().focus().setTextAlign('center').run()
+        }
       >
         <AlignCenter className="h-4 w-4" />
       </Toggle>
       <Toggle
         size="sm"
         pressed={editor.isActive({ textAlign: 'right' })}
-        onPressedChange={() => editor.chain().focus().setTextAlign('right').run()}
+        onPressedChange={() =>
+          editor.chain().focus().setTextAlign('right').run()
+        }
       >
         <AlignRight className="h-4 w-4" />
       </Toggle>
       <Toggle
         size="sm"
         pressed={editor.isActive({ textAlign: 'justify' })}
-        onPressedChange={() => editor.chain().focus().setTextAlign('justify').run()}
+        onPressedChange={() =>
+          editor.chain().focus().setTextAlign('justify').run()
+        }
       >
         <AlignJustify className="h-4 w-4" />
       </Toggle>
@@ -276,7 +312,11 @@ export function Toolbar({ className, editor }: ToolbarProps) {
         </PopoverTrigger>
         <PopoverContent className="w-80">
           <div className="flex space-x-2">
-            <Input placeholder="Paste link" value={url} onChange={(e) => setUrl(e.target.value)} />
+            <Input
+              placeholder="Paste link"
+              value={url}
+              onChange={e => setUrl(e.target.value)}
+            />
             <Button onClick={setLink}>Add</Button>
           </div>
         </PopoverContent>

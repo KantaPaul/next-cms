@@ -1,14 +1,24 @@
 'use client';
 
+import { CheckIcon, LinkIcon } from 'lucide-react';
+import {
+  type Dispatch,
+  type SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import { toast } from 'sonner';
 import { Input } from '@/components/atoms/forms';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Toggle } from '@/components/ui/toggle';
 import { isValidUrl } from '@/lib/utils';
 import { cn } from '@/lib/utils/cn';
-import { CheckIcon, LinkIcon } from 'lucide-react';
-import { type Dispatch, type SetStateAction, useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
 
 interface LinkSelectorProps {
   editor: any;
@@ -27,7 +37,9 @@ export function AddLink({ editor, setIsOpen, isOpen }: LinkSelectorProps) {
     }
 
     if (!isValidUrl(url)) {
-      toast.error('Enter a valid URL in the correct format (e.g., https://www.example.com).');
+      toast.error(
+        'Enter a valid URL in the correct format (e.g., https://www.example.com).'
+      );
       editor.chain().focus().extendMarkRange('link').unsetLink().run();
       return;
     }
@@ -71,7 +83,7 @@ export function AddLink({ editor, setIsOpen, isOpen }: LinkSelectorProps) {
             placeholder="Paste link"
             className="w-full rounded-none"
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={e => setUrl(e.target.value)}
           />
           <Button
             variant="ghost"

@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { MESSAGES } from '@/config/messages';
 
 import { handleServerError } from './error';
+
 export { cn } from '@/lib/utils/cn';
 // import { uploadSingleFile } from './s3/upload-single';
 
@@ -47,7 +48,7 @@ export function copyToClipboard(text: string, message: string): void {
     () => {
       toast.success(message);
     },
-    (err) => {
+    err => {
       toast.error(MESSAGES.FAILED_TO_COPY_PLEASE_TRY_AGAIN);
     }
   );
@@ -143,9 +144,9 @@ export function createOptions<T>(
   valueKey: keyof T,
   labelSeparator = ' '
 ) {
-  return items.map((item) => {
+  return items.map(item => {
     const label = Array.isArray(labelKeys)
-      ? labelKeys.map((key) => item[key]).join(labelSeparator)
+      ? labelKeys.map(key => item[key]).join(labelSeparator)
       : String(item[labelKeys]);
 
     return {

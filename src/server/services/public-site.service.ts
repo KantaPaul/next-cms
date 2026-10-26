@@ -1,10 +1,10 @@
 import 'server-only';
 import { and, asc, eq, inArray, isNull, type SQL } from 'drizzle-orm';
 import { cache } from 'react';
+import { normalizeContent } from '@/builder/data';
 import { db } from '@/db';
 import { menuItems, menus, pageContents, pages, seoMeta } from '@/db/schema';
 import { DEFAULT_LANGUAGE, LANGUAGE_CODES } from '@/db/schemas/shared.schema';
-import { normalizeContent } from '@/builder/data';
 
 export type SiteRoute = { language: string; slug: string | null };
 
@@ -14,10 +14,15 @@ export function resolveRoute(segments: string[] = []): SiteRoute | null {
   if (parts.length === 0) return { language: DEFAULT_LANGUAGE, slug: null };
 
   const [first, second] = parts;
-  const isLanguage = first !== DEFAULT_LANGUAGE && LANGUAGE_CODES.includes(first);
+  const isLanguage =
+    first !== DEFAULT_LANGUAGE && LANGUAGE_CODES.includes(first);
 
-  if (parts.length === 1) return isLanguage ? { language: first, slug: null } : { language: DEFAULT_LANGUAGE, slug: first };
-  if (parts.length === 2 && isLanguage) return { language: first, slug: second };
+  if (parts.length === 1)
+    return isLanguage
+      ? { language: first, slug: null }
+      : { language: DEFAULT_LANGUAGE, slug: first };
+  if (parts.length === 2 && isLanguage)
+    return { language: first, slug: second };
   return null;
 }
 
@@ -43,7 +48,11 @@ async function findPage(route: SiteRoute, extra?: SQL) {
       route.slug === null ? eq(pages.isHome, true) : eq(pages.slug, route.slug),
       extra
     );
-    const [page] = await db.select(pageSelect).from(pages).where(where).limit(1);
+    const [page] = await db
+      .select(pageSelect)
+      .from(pages)
+      .where(where)
+      .limit(1);
     return page ?? null;
   } catch {
     return null;
@@ -65,23 +74,36 @@ async function loadContent(pageId: string, kind: 'draft' | 'published') {
 
 async function loadSeo(pageId: string) {
   try {
-    const [row] = await db.select().from(seoMeta).where(eq(seoMeta.pageId, pageId)).limit(1);
+    const [row] = await db
+      .select()
+      .from(seoMeta)
+      .where(eq(seoMeta.pageId, pageId))
+      .limit(1);
     return row ?? null;
   } catch {
     return null;
   }
 }
 
-async function loadAlternates(page: { id: string; translationGroupId: string | null }, publishedOnly: boolean) {
+async function loadAlternates(
+  page: { id: string; translationGroupId: string | null },
+  publishedOnly: boolean
+) {
   if (!page.translationGroupId) return [];
   return db
-    .select({ language: pages.language, slug: pages.slug, isHome: pages.isHome })
+    .select({
+      language: pages.language,
+      slug: pages.slug,
+      isHome: pages.isHome,
+    })
     .from(pages)
     .where(
       and(
         eq(pages.translationGroupId, page.translationGroupId),
         isNull(pages.deletedAt),
-        publishedOnly ? and(eq(pages.status, 'published'), eq(pages.visibility, 'public')) : undefined
+        publishedOnly
+          ? and(eq(pages.status, 'published'), eq(pages.visibility, 'public'))
+          : undefined
       )
     );
 }
@@ -89,38 +111,56 @@ async function loadAlternates(page: { id: string; translationGroupId: string | n
 export const publicSiteService = {
   /** Published, public page for a route, with its published content. */
   getPublished: cache(async (language: string, slug: string | null) => {
-    const page = await findPage({ language, slug }, and(eq(pages.status, 'published'), eq(pages.visibility, 'public')));
+    const page = await findPage(
+      { language, slug },
+      and(eq(pages.status, 'published'), eq(pages.visibility, 'public'))
+    );
     if (!page) return null;
     const [content, seo, alternates] = await Promise.all([
       loadContent(page.id, 'published'),
       loadSeo(page.id),
       loadAlternates(page, true),
     ]);
-    return { ...page, content: normalizeContent(page.editorType, content), seo, alternates, isDraft: false as const };
-  }),
-
-  /** Draft version of the page at a route, only when it is the page being previewed. */
-  getDraft: cache(async (language: string, slug: string | null, previewPageId: string) => {
-    const page = await findPage({ language, slug }, eq(pages.id, previewPageId));
-    if (!page) return null;
-    const [draft, published, seo, alternates] = await Promise.all([
-      loadContent(page.id, 'draft'),
-      loadContent(page.id, 'published'),
-      loadSeo(page.id),
-      loadAlternates(page, false),
-    ]);
     return {
       ...page,
-      content: normalizeContent(page.editorType, draft ?? published),
+      content: normalizeContent(page.editorType, content),
       seo,
       alternates,
-      isDraft: true as const,
+      isDraft: false as const,
     };
   }),
 
+  /** Draft version of the page at a route, only when it is the page being previewed. */
+  getDraft: cache(
+    async (language: string, slug: string | null, previewPageId: string) => {
+      const page = await findPage(
+        { language, slug },
+        eq(pages.id, previewPageId)
+      );
+      if (!page) return null;
+      const [draft, published, seo, alternates] = await Promise.all([
+        loadContent(page.id, 'draft'),
+        loadContent(page.id, 'published'),
+        loadSeo(page.id),
+        loadAlternates(page, false),
+      ]);
+      return {
+        ...page,
+        content: normalizeContent(page.editorType, draft ?? published),
+        seo,
+        alternates,
+        isDraft: true as const,
+      };
+    }
+  ),
+
   getPageRouteById: async (id: string) => {
     const [page] = await db
-      .select({ slug: pages.slug, language: pages.language, isHome: pages.isHome })
+      .select({
+        slug: pages.slug,
+        language: pages.language,
+        isHome: pages.isHome,
+      })
       .from(pages)
       .where(and(eq(pages.id, id), isNull(pages.deletedAt)))
       .limit(1);
@@ -141,7 +181,13 @@ export const publicSiteService = {
       })
       .from(pages)
       .leftJoin(seoMeta, eq(seoMeta.pageId, pages.id))
-      .where(and(eq(pages.status, 'published'), eq(pages.visibility, 'public'), isNull(pages.deletedAt))),
+      .where(
+        and(
+          eq(pages.status, 'published'),
+          eq(pages.visibility, 'public'),
+          isNull(pages.deletedAt)
+        )
+      ),
 
   getMenusById: cache(async (ids: (string | null | undefined)[]) => {
     try {
@@ -149,7 +195,11 @@ export const publicSiteService = {
       if (!wanted.length) return {};
       const [menuRows, itemRows] = await Promise.all([
         db.select().from(menus).where(inArray(menus.id, wanted)),
-        db.select().from(menuItems).where(inArray(menuItems.menuId, wanted)).orderBy(asc(menuItems.order)),
+        db
+          .select()
+          .from(menuItems)
+          .where(inArray(menuItems.menuId, wanted))
+          .orderBy(asc(menuItems.order)),
       ]);
 
       return Object.fromEntries(
@@ -157,7 +207,10 @@ export const publicSiteService = {
           const items = itemRows.filter(i => i.menuId === menu.id);
           const tree = items
             .filter(i => !i.parentId)
-            .map(item => ({ ...item, children: items.filter(child => child.parentId === item.id) }));
+            .map(item => ({
+              ...item,
+              children: items.filter(child => child.parentId === item.id),
+            }));
           return [menu.id, { ...menu, items: tree }];
         })
       ) as Record<string, MenuWithItems>;
@@ -167,6 +220,12 @@ export const publicSiteService = {
   }),
 };
 
-export type MenuItemNode = typeof menuItems.$inferSelect & { children: (typeof menuItems.$inferSelect)[] };
-export type MenuWithItems = typeof menus.$inferSelect & { items: MenuItemNode[] };
-export type PublicPage = NonNullable<Awaited<ReturnType<typeof publicSiteService.getPublished>>>;
+export type MenuItemNode = typeof menuItems.$inferSelect & {
+  children: (typeof menuItems.$inferSelect)[];
+};
+export type MenuWithItems = typeof menus.$inferSelect & {
+  items: MenuItemNode[];
+};
+export type PublicPage = NonNullable<
+  Awaited<ReturnType<typeof publicSiteService.getPublished>>
+>;
