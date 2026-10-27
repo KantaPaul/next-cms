@@ -1,6 +1,6 @@
 ---
 name: Combined CMS refs
-overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, full-site production optimization, commercial launch readiness, international website-builder market-gap audit, Elementor-style nested container/Flexbox/CSS Grid, dynamic content, global design styles, and conditional display. Numbered implementation steps R001–R533 include builder tasks, React-first differentiators, multisite reliability, market-gap builder features, docs sites, and approval gates. Name a numbered step to implement only that piece.
+overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, full-site production optimization, commercial launch readiness, international website-builder market-gap audit, Elementor-style nested container/Flexbox/CSS Grid, dynamic content, global design styles, and conditional display. Numbered implementation steps R001–R570 include builder tasks, React-first differentiators, multisite reliability, market-gap builder features, docs sites, agency, local business, portfolio, and video library site packs, and approval gates. Name a numbered step to implement only that piece.
 todos:
   - id: R001
     content: "P1-01 Register Slider, Tabs, and Accordion as builderConfig component keys"
@@ -1601,10 +1601,121 @@ todos:
   - id: R533
     content: "DOC-23 Gate 27 approval: docs page tree, navigation, code blocks, import, versions, and search verified"
     status: pending
+  - id: R534
+    content: "AGY-01 All-sites overview listing each site with domain, last publish, page count, and 30-day views"
+    status: pending
+  - id: R535
+    content: "AGY-02 Clone a site from an existing site or a starter, copying pages, templates, globals, menus, and settings but not users or form data"
+    status: pending
+  - id: R536
+    content: "AGY-03 Domain setup instructions and a DNS check that shows each domain as pending, verified, or misconfigured"
+    status: pending
+  - id: R537
+    content: "AGY-04 Client role that can edit content and media on its own site but not settings, users, templates, or code"
+    status: pending
+  - id: R538
+    content: "AGY-05 Content-only editing: lock block layout and style so the Client role can change text and images only"
+    status: pending
+  - id: R539
+    content: "AGY-06 White-label admin: per-install logo, product name, and accent color on the dashboard and login"
+    status: pending
+  - id: R540
+    content: "AGY-07 Shared template library across sites, with an explicit sync or detach when the source template changes"
+    status: pending
+  - id: R541
+    content: "AGY-08 Client feedback comments on preview links, resolved by the agency in the review queue"
+    status: pending
+  - id: R542
+    content: "AGY-09 Handoff checklist per site covering SEO, forms, domain, analytics, and an invited client owner"
+    status: pending
+  - id: R543
+    content: "AGY-10 Per-site activity log view built on the existing audit log"
+    status: pending
+  - id: R544
+    content: "LOC-01 Opening hours with weekly hours, holiday overrides, and an open-now label in the site time zone"
+    status: pending
+  - id: R545
+    content: "LOC-02 Multiple locations stored per site and reused by the Location block from R318"
+    status: pending
+  - id: R546
+    content: "LOC-03 LocalBusiness JSON-LD built from site settings, locations, and hours"
+    status: pending
+  - id: R547
+    content: "LOC-04 Click-to-call, WhatsApp, and directions buttons on the Button block and a mobile sticky contact bar"
+    status: pending
+  - id: R548
+    content: "LOC-05 Services or menu block with categories, prices, and dietary or feature tags"
+    status: pending
+  - id: R549
+    content: "LOC-06 Appointment request form with preferred date and time, sent to the form inbox with no calendar sync"
+    status: pending
+  - id: R550
+    content: "LOC-07 Announcement bar for offers or closures with start and end dates"
+    status: pending
+  - id: R551
+    content: "LOC-08 Reviews block for owner-entered reviews, with no invented rating markup"
+    status: pending
+  - id: R552
+    content: "PRT-01 Projects collection with title, cover, gallery, client, year, role, tags, and an external link"
+    status: pending
+  - id: R553
+    content: "PRT-02 Project detail template with case-study sections and next and previous project links"
+    status: pending
+  - id: R554
+    content: "PRT-03 Filterable project grid by tag, without a full page reload, feeding the Projects block from R316"
+    status: pending
+  - id: R555
+    content: "PRT-04 Lightbox for Gallery and project images with keyboard and swipe navigation"
+    status: pending
+  - id: R556
+    content: "PRT-05 Masonry and justified layouts on the Gallery block"
+    status: pending
+  - id: R557
+    content: "PRT-06 Before and after image comparison block"
+    status: pending
+  - id: R558
+    content: "PRT-07 Image hover effects on project cards from an allowlist"
+    status: pending
+  - id: R559
+    content: "PRT-08 CreativeWork JSON-LD and social preview images on project pages"
+    status: pending
+  - id: R560
+    content: "VID-01 Public video detail pages at a per-site video path with title, description, and player"
+    status: pending
+  - id: R561
+    content: "VID-02 Public playlist pages listing their published videos in order"
+    status: pending
+  - id: R562
+    content: "VID-03 VideoObject JSON-LD and a video sitemap for published videos"
+    status: pending
+  - id: R563
+    content: "VID-04 Caption and subtitle tracks from VTT URLs on the native player, with the language label"
+    status: pending
+  - id: R564
+    content: "VID-05 Chapters from timestamps in the description, shown as a clickable list"
+    status: pending
+  - id: R565
+    content: "VID-06 Related videos by playlist and tag on the detail page"
+    status: pending
+  - id: R566
+    content: "VID-07 Video plays and completion rates in analytics boards, built on video_progress and page views"
+    status: pending
+  - id: R567
+    content: "VID-08 Subscriber-only flag on videos that reuses the S2 entitlement check"
+    status: pending
+  - id: R568
+    content: "SITE-01 Tests for site cloning, the Client role, content-only locks, hours and open-now, project filters, and video pages"
+    status: pending
+  - id: R569
+    content: "SITE-02 Lint, tsc, and a browser check of one agency, local, portfolio, and video site"
+    status: pending
+  - id: R570
+    content: "SITE-03 Gate 28 approval: agency, local business, portfolio, and video library site features verified"
+    status: pending
 isProject: false
 ---
 
-# Combined refs R001–R533
+# Combined refs R001–R570
 
 Say **implement R042** (or the original id, such as **P2-14**, **L3-01**, **A2-01**, **O1-01**, or **M2-01**). That ref is the whole task. Do not continue to the next ref unless you ask.
 
@@ -3079,3 +3190,76 @@ Let customers build a documentation site with the builder: pages in a tree, a do
 - **Gate 27 (R533):** approve only after tests, typecheck, lint, and the browser check pass for a three-level docs site with two versions.
 
 <!-- END: docs-site-features -->
+
+---
+
+# Site-type packs: agency, local business, portfolio, and video library
+<!-- BEGIN: site-type-packs -->
+## Goal
+Make four kinds of site work well, not just partly: agencies running several client sites, small local businesses, portfolios, and video libraries. These steps only add what earlier refs do not cover. They build on multi-site (R032–R039) and its hardening (R463–R475), the Location, Projects, and Team blocks (R316–R318), the agency, portfolio, and local business starters (R320, R321, R324), the video library (R123–R156), and subscriber entitlement (R086–R087).
+
+Do the multisite hardening gates (R463–R475) before the agency steps, because cloning and the Client role depend on site isolation. Do the video library block (R149–R150) before the VID steps.
+
+## R534–R543 — Agency running several client sites (AGY-01–AGY-10)
+- **R534 (AGY-01):** All-sites overview listing each site with domain, last publish, page count, and 30-day views.
+- **R535 (AGY-02):** Clone a site from an existing site or a starter, copying pages, templates, globals, menus, and settings but not users or form data.
+- **R536 (AGY-03):** Domain setup instructions and a DNS check that shows each domain as pending, verified, or misconfigured.
+- **R537 (AGY-04):** Client role that can edit content and media on its own site but not settings, users, templates, or code.
+- **R538 (AGY-05):** Content-only editing: lock block layout and style so the Client role can change text and images only.
+- **R539 (AGY-06):** White-label admin: per-install logo, product name, and accent color on the dashboard and login.
+- **R540 (AGY-07):** Shared template library across sites, with an explicit sync or detach when the source template changes.
+- **R541 (AGY-08):** Client feedback comments on preview links, resolved by the agency in the review queue.
+- **R542 (AGY-09):** Handoff checklist per site covering SEO, forms, domain, analytics, and an invited client owner.
+- **R543 (AGY-10):** Per-site activity log view built on the existing audit log.
+
+## R544–R551 — Small business and local sites (LOC-01–LOC-08)
+- **R544 (LOC-01):** Opening hours with weekly hours, holiday overrides, and an open-now label in the site time zone.
+- **R545 (LOC-02):** Multiple locations stored per site and reused by the Location block from R318.
+- **R546 (LOC-03):** LocalBusiness JSON-LD built from site settings, locations, and hours.
+- **R547 (LOC-04):** Click-to-call, WhatsApp, and directions buttons on the Button block and a mobile sticky contact bar.
+- **R548 (LOC-05):** Services or menu block with categories, prices, and dietary or feature tags.
+- **R549 (LOC-06):** Appointment request form with preferred date and time, sent to the form inbox with no calendar sync.
+- **R550 (LOC-07):** Announcement bar for offers or closures with start and end dates.
+- **R551 (LOC-08):** Reviews block for owner-entered reviews, with no invented rating markup.
+
+## R552–R559 — Portfolio sites (PRT-01–PRT-08)
+- **R552 (PRT-01):** Projects collection with title, cover, gallery, client, year, role, tags, and an external link.
+- **R553 (PRT-02):** Project detail template with case-study sections and next and previous project links.
+- **R554 (PRT-03):** Filterable project grid by tag, without a full page reload, feeding the Projects block from R316.
+- **R555 (PRT-04):** Lightbox for Gallery and project images with keyboard and swipe navigation.
+- **R556 (PRT-05):** Masonry and justified layouts on the Gallery block.
+- **R557 (PRT-06):** Before and after image comparison block.
+- **R558 (PRT-07):** Image hover effects on project cards from an allowlist.
+- **R559 (PRT-08):** CreativeWork JSON-LD and social preview images on project pages.
+
+## R560–R567 — Video library sites (VID-01–VID-08)
+- **R560 (VID-01):** Public video detail pages at a per-site video path with title, description, and player.
+- **R561 (VID-02):** Public playlist pages listing their published videos in order.
+- **R562 (VID-03):** VideoObject JSON-LD and a video sitemap for published videos.
+- **R563 (VID-04):** Caption and subtitle tracks from VTT URLs on the native player, with the language label.
+- **R564 (VID-05):** Chapters from timestamps in the description, shown as a clickable list.
+- **R565 (VID-06):** Related videos by playlist and tag on the detail page.
+- **R566 (VID-07):** Video plays and completion rates in analytics boards, built on video_progress and page views.
+- **R567 (VID-08):** Subscriber-only flag on videos that reuses the S2 entitlement check.
+
+## R568–R570 — Checks (SITE-01–SITE-03)
+- **R568 (SITE-01):** Tests for site cloning, the Client role, content-only locks, hours and open-now, project filters, and video pages.
+- **R569 (SITE-02):** Lint, tsc, and a browser check of one agency, local, portfolio, and video site.
+- **R570 (SITE-03):** Gate 28 approval: agency, local business, portfolio, and video library site features verified.
+
+## Acceptance criteria
+
+- Cloning a site never copies users, memberships, form submissions, analytics, or API keys, and the clone gets its own site_id on every row.
+- The Client role is enforced on the server; hiding a button is not enough. A Client cannot read or change another site.
+- Content-only locks keep layout and style props unchanged when a Client saves, even if the request is edited by hand.
+- Opening hours and open-now use the site time zone, and holiday overrides win over weekly hours.
+- Structured data (LocalBusiness, CreativeWork, VideoObject) only describes content visible on the page and never invents ratings.
+- Project filters and the lightbox work with the keyboard and respect reduced motion.
+- Subscriber-only videos hide the player and source URL from visitors without access, in pages, the API, and the video sitemap.
+- New tables and columns use additive Drizzle migrations; existing sites look unchanged until a feature is turned on.
+
+## Approval gates
+
+- **Gate 28 (R570):** approve only after tests, typecheck, lint, and a browser check pass for one agency, local business, portfolio, and video library site.
+
+<!-- END: site-type-packs -->
