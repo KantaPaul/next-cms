@@ -370,82 +370,82 @@ todos:
     status: pending
   - id: R123
     content: "V1-01 Journal the existing page_views SQL"
-    status: pending
+    status: in_progress
   - id: R124
     content: "V1-02 video_playlists, videos, video_progress, and video_settings"
-    status: pending
+    status: completed
   - id: R125
     content: "V1-03 Generate the video Drizzle migration"
-    status: pending
+    status: in_progress
   - id: R126
     content: "V2-01 parseVideoUrl for YouTube, Vimeo, and direct MP4/WebM"
-    status: pending
+    status: completed
   - id: R127
     content: "V2-02 buildEmbed allowlisted iframe src"
-    status: pending
+    status: completed
   - id: R128
     content: "V2-03 videoSettingsSchema and defaults"
-    status: pending
+    status: completed
   - id: R129
     content: "V2-04 clampProgress completion rule"
-    status: pending
+    status: completed
   - id: R130
     content: "V2-05 node:test for video parsers plus a test script"
-    status: pending
+    status: completed
   - id: R131
     content: "V2-06 Official oEmbed client for YouTube and Vimeo"
-    status: pending
+    status: completed
   - id: R132
     content: "V3-01 Video permission keys"
-    status: pending
+    status: completed
   - id: R133
     content: "V3-02 Audit target video"
-    status: pending
+    status: completed
   - id: R134
     content: "V3-03 Persist videoSettings"
-    status: pending
+    status: completed
   - id: R135
     content: "V3-04 Video library section on the settings form"
-    status: pending
+    status: completed
   - id: R136
     content: "V4-01 Dashboard video routes and sidebar item"
-    status: pending
+    status: completed
   - id: R137
     content: "V4-02 Playlist service and actions"
-    status: pending
+    status: completed
   - id: R138
     content: "V4-03 Playlist panel on the videos page"
-    status: pending
+    status: completed
   - id: R139
     content: "V4-04 Video create and update service"
-    status: pending
+    status: completed
   - id: R140
     content: "V4-05 Publish, unpublish, soft-delete, and reorder"
-    status: pending
+    status: completed
   - id: R141
     content: "V4-06 Video list table"
-    status: pending
+    status: completed
   - id: R142
     content: "V4-07 Create and edit form with invalid-URL message"
-    status: pending
+    status: completed
   - id: R143
     content: "V5-01 Native player controls for direct MP4 and WebM"
-    status: pending
+    status: completed
   - id: R144
     content: "V5-02 YouTube and Vimeo iframe player"
-    status: pending
+    status: completed
   - id: R145
     content: "V5-03 Native-only seek restriction"
-    status: pending
+    status: completed
   - id: R146
     content: "V5-04 Video list with search, playlist filter, and load more"
-    status: pending
+    status: completed
   - id: R147
     content: "V5-05 Sidebar and stacked library layouts"
     status: pending
   - id: R148
     content: "V5-06 Admin preview dialog"
-    status: pending
+    status: completed
   - id: R149
     content: "V6-01 Published-video query for the block"
     status: pending

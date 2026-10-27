@@ -5,82 +5,82 @@ overview: URL-only video library split into small refs (V1-01 through V7-03). Na
 todos:
 - id: V1-01
   content: Journal the existing page_views SQL so the video migration does not recreate it
-  status: pending
+  status: in_progress
 - id: V1-02
   content: Add video_playlists, videos, video_progress, and site_settings.video_settings
-  status: pending
+  status: completed
 - id: V1-03
   content: Generate the Drizzle migration and confirm it only adds video tables and video_settings
-  status: pending
+  status: in_progress
 - id: V2-01
   content: parseVideoUrl for YouTube, Vimeo, and direct MP4/WebM
-  status: pending
+  status: completed
 - id: V2-02
   content: buildEmbed allowlisted iframe src from a parsed id
-  status: pending
+  status: completed
 - id: V2-03
   content: videoSettingsSchema and defaults
-  status: pending
+  status: completed
 - id: V2-04
   content: clampProgress completion rule
-  status: pending
+  status: completed
 - id: V2-05
   content: node:test for parsers, embed hosts, settings, and progress clamp, plus a test script
-  status: pending
+  status: completed
 - id: V2-06
   content: Official oEmbed client for YouTube and Vimeo only
-  status: pending
+  status: completed
 - id: V3-01
   content: videos.create, videos.edit, videos.publish, videos.delete in the permission matrix
-  status: pending
+  status: completed
 - id: V3-02
   content: Audit target video
-  status: pending
+  status: completed
 - id: V3-03
   content: Persist videoSettings in the site settings service and action
-  status: pending
+  status: completed
 - id: V3-04
   content: Video library section on the settings form
-  status: pending
+  status: completed
 - id: V4-01
   content: Dashboard video routes and sidebar item
-  status: pending
+  status: completed
 - id: V4-02
   content: Playlist service and actions
-  status: pending
+  status: completed
 - id: V4-03
   content: Playlist panel on the videos page
-  status: pending
+  status: completed
 - id: V4-04
   content: Video create and update service with parser, provider flags, and oEmbed fill
-  status: pending
+  status: completed
 - id: V4-05
   content: Publish, unpublish, soft-delete, and reorder actions
-  status: pending
+  status: completed
 - id: V4-06
   content: Video list table
-  status: pending
+  status: completed
 - id: V4-07
   content: Create and edit form with invalid-URL message
-  status: pending
+  status: completed
 - id: V5-01
   content: Native player controls for direct MP4 and WebM
-  status: pending
+  status: completed
 - id: V5-02
   content: YouTube and Vimeo iframe player with unavailable fallback
-  status: pending
+  status: completed
 - id: V5-03
   content: Native-only seek restriction
-  status: pending
+  status: completed
 - id: V5-04
   content: Video list with search, playlist filter, and load more
-  status: pending
+  status: completed
 - id: V5-05
   content: Sidebar and stacked library layouts
   status: pending
 - id: V5-06
   content: Admin preview dialog
-  status: pending
+  status: completed
 - id: V6-01
   content: Published-video query for the block, including catalog mode and viewer access
   status: pending

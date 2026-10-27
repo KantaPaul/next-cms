@@ -5,13 +5,13 @@ overview: "Restyle the page builder’s Blocks and Layers panels so they match t
 todos:
 - id: rail-chrome
   content: Restyle LeftRail tabs, width, and search in builder-shell.tsx
-  status: pending
+  status: completed
 - id: block-cards
   content: Render Drawer.Item rows as tinted icon cards with collapsible categories
-  status: pending
+  status: completed
 - id: layers-tree
   content: Replace Puck.Outline with a custom tree that selects, nests slots, and scrolls the canvas
-  status: pending
+  status: completed
 - id: verify
   content: Typecheck and verify blocks drag plus layers selection in the browser
   status: pending

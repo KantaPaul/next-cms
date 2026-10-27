@@ -61,10 +61,10 @@ TypeScript strict mode (`tsc --noEmit`) reported **7 actual type errors** across
 
 ## Implement later (TODO)
 
-- [ ] Wire up real `collectionsService` methods (`create`, `update`, `delete`, `get`, `getFields`, `addField`, `updateField`, `deleteField`, `listEntries`, `createEntry`, `updateEntry`, `publishEntry`, `unpublishEntry`, `deleteEntry`, `getEntry`, `getPublishedEntry`) — currently stubbed/assumed to exist in `@/server/services/collections.service`.
-- [ ] Add collection entry API routes under `src/app/api/v1/collections/...` if not present.
-- [ ] Add database schema/migrations for collections, collection fields, and collection entries (`src/db/schemas/collections.schema.ts`).
-- [ ] Add navigation menu item for Collections (already partially in `src/menus/index.tsx` — verify).
+- [x] Wire up real `collectionsService` methods (`create`, `update`, `delete`, `get`, `getFields`, `addField`, `updateField`, `deleteField`, `listEntries`, `createEntry`, `updateEntry`, `publishEntry`, `unpublishEntry`, `deleteEntry`, `getEntry`, `getPublishedEntry`) — currently stubbed/assumed to exist in `@/server/services/collections.service`.
+- [x] Add collection entry API routes under `src/app/api/v1/collections/...` if not present.
+- [x] Add database schema/migrations for collections, collection fields, and collection entries (`src/db/schemas/collections.schema.ts`).
+- [x] Add navigation menu item for Collections (already partially in `src/menus/index.tsx` — verify).
 - [ ] Add client-side confirmation dialogs for delete actions (currently `window.confirm` in `entry-status-card.tsx` only).
 - [ ] Add `entryData` typing instead of `Record<string, unknown> | undefined` casts.
 - [ ] Add optimistic updates / revalidation handling for entry create/edit.

@@ -5,34 +5,34 @@ overview: "An analysis of the current next-cms codebase and the self-hosted visu
 todos:
 - id: p0
   content: "Phase 0: Fix pages service/content persistence, getById bug, indexes, edit route, list table"
-  status: pending
+  status: completed
 - id: p1
   content: "Phase 1: editorType enum, Puck block registry, builder route, hybrid switch"
-  status: pending
+  status: completed
 - id: p2
   content: "Phase 2: Public [[...slug]] renderer, ISR/revalidate, draft preview tokens, scheduling"
-  status: pending
+  status: completed
 - id: p3
   content: "Phase 3: Revisions table, draft vs published, autosave, restore UI"
-  status: pending
+  status: completed
 - id: p4
   content: "Phase 4: Media library with storage adapter and MediaPicker for Puck/Tiptap/SEO"
-  status: pending
+  status: completed
 - id: p5
   content: "Phase 5: SEO tab, categories/tags CRUD, menus, site settings, sitemap/robots"
-  status: pending
+  status: completed
 - id: p6
   content: "Phase 6: Global blocks, templates gallery, design tokens, responsive controls"
-  status: pending
+  status: completed
 - id: p7
   content: "Phase 7: Roles/permissions enforcement, review workflow, audit log"
-  status: pending
+  status: completed
 - id: p8
   content: "Phase 8: i18n translations and versioned public REST API with API keys"
-  status: pending
+  status: completed
 - id: p9
   content: "Phase 9: AI page generation and content assistant"
-  status: pending
+  status: completed
 - id: p10
   content: "Phase 10: Tests, Lighthouse CI, Docker distribution, plugin API"
   status: pending

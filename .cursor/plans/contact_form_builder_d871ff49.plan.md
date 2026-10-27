@@ -5,13 +5,13 @@ overview: Use a country-aware phone input on the Contact form block, show the op
 todos:
 - id: phone
   content: Render tel fields with react-phone-number-input and post E.164 via a hidden input
-  status: pending
+  status: completed
 - id: options
   content: Show the options textarea only when the field type is dropdown or radio
-  status: pending
+  status: completed
 - id: routes
   content: Add the contact forms list and builder, stored as contact-form global blocks pages can embed
-  status: pending
+  status: completed
   isProject: false
 
 ---

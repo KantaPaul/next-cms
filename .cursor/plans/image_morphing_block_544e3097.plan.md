@@ -5,19 +5,19 @@ overview: "Add an Image Morphing block that matches the ElementsKit widget: a sh
 todos:
 - id: model
   content: Add morph settings, allowlists, default blob paths, and resolveMorph
-  status: pending
+  status: completed
 - id: svg-extract
   content: Add a media action that returns sanitized path data from an uploaded SVG
-  status: pending
+  status: completed
 - id: inspector
   content: Add the Image Morphing inspector field with content and style groups
-  status: pending
+  status: completed
 - id: player
   content: Render the SVG morph with flubber, allowlisted easing, and reduced motion
-  status: pending
+  status: completed
 - id: wire
   content: Register the block in the Puck config and the block registry
-  status: pending
+  status: completed
 - id: verify
   content: Typecheck and verify effects, timing, custom SVGs, and the public page in the browser
   status: pending
