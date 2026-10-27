@@ -1,6 +1,6 @@
 ---
 name: Combined CMS refs
-overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, full-site production optimization, commercial launch readiness, international website-builder market-gap audit, Elementor-style nested container/Flexbox/CSS Grid, dynamic content, global design styles, and conditional display. Numbered implementation steps R001–R510 include builder tasks, React-first differentiators, multisite reliability, market-gap builder features, and approval gates. Name a numbered step to implement only that piece.
+overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, full-site production optimization, commercial launch readiness, international website-builder market-gap audit, Elementor-style nested container/Flexbox/CSS Grid, dynamic content, global design styles, and conditional display. Numbered implementation steps R001–R533 include builder tasks, React-first differentiators, multisite reliability, market-gap builder features, docs sites, and approval gates. Name a numbered step to implement only that piece.
 todos:
   - id: R001
     content: "P1-01 Register Slider, Tabs, and Accordion as builderConfig component keys"
@@ -1532,10 +1532,79 @@ todos:
   - id: R510
     content: "MKT-35 Gate 26 approval: editor basics, theme builder, popups, blocks, and forms verified"
     status: pending
+  - id: R511
+    content: "DOC-01 Nullable parent_id on pages with an additive migration and a cycle guard"
+    status: pending
+  - id: R512
+    content: "DOC-02 Sort order among sibling pages, with drag-to-reorder in the pages list"
+    status: pending
+  - id: R513
+    content: "DOC-03 Nested URL paths from the page tree, with redirects when a slug or parent changes"
+    status: pending
+  - id: R514
+    content: "DOC-04 Docs sidebar block built from the page tree, collapsible, with the active page highlighted"
+    status: pending
+  - id: R515
+    content: "DOC-05 Docs layout template with sidebar, content, and on-this-page columns that collapse on mobile"
+    status: pending
+  - id: R516
+    content: "DOC-06 On-this-page contents list built from h2 and h3 headings"
+    status: pending
+  - id: R517
+    content: "DOC-07 Stable heading anchor ids with a copy-link button"
+    status: pending
+  - id: R518
+    content: "DOC-08 Previous and next links from the page tree order"
+    status: pending
+  - id: R519
+    content: "DOC-09 Breadcrumbs from the page tree with BreadcrumbList JSON-LD"
+    status: pending
+  - id: R520
+    content: "DOC-10 Server-side syntax highlighting on the Code block with a language select"
+    status: pending
+  - id: R521
+    content: "DOC-11 Copy button, filename title, and line highlights on the Code block"
+    status: pending
+  - id: R522
+    content: "DOC-12 Code group block with tabs for several languages"
+    status: pending
+  - id: R523
+    content: "DOC-13 Callout block for note, tip, warning, and danger"
+    status: pending
+  - id: R524
+    content: "DOC-14 Import Markdown and MDX into pages, mapping to registered blocks and never running JSX"
+    status: pending
+  - id: R525
+    content: "DOC-15 Export a docs page or section as Markdown"
+    status: pending
+  - id: R526
+    content: "DOC-16 Last-updated date, edit-this-page link, and a was-this-helpful vote on docs pages"
+    status: pending
+  - id: R527
+    content: "DOC-17 Docs versions with a version switcher, per-version URLs, latest as default, and canonical to latest"
+    status: pending
+  - id: R528
+    content: "DOC-18 Search scoped to the current docs section and version"
+    status: pending
+  - id: R529
+    content: "DOC-19 Cmd+K quick search dialog on public docs pages"
+    status: pending
+  - id: R530
+    content: "DOC-20 Docs starter template using the docs layout; fulfils R323 (M3-05)"
+    status: pending
+  - id: R531
+    content: "DOC-21 Tests for the page tree, nested URLs, redirects, anchors, Markdown import, and version routing"
+    status: pending
+  - id: R532
+    content: "DOC-22 Lint, tsc, and a browser check of a three-level docs site on desktop and mobile"
+    status: pending
+  - id: R533
+    content: "DOC-23 Gate 27 approval: docs page tree, navigation, code blocks, import, versions, and search verified"
+    status: pending
 isProject: false
 ---
 
-# Combined refs R001–R510
+# Combined refs R001–R533
 
 Say **implement R042** (or the original id, such as **P2-14**, **L3-01**, **A2-01**, **O1-01**, or **M2-01**). That ref is the whole task. Do not continue to the next ref unless you ask.
 
@@ -2950,3 +3019,63 @@ Close builder gaps that Elementor, Webflow, Framer, Wix Studio, and Builder.io u
 - **Gate 26 (R510):** approve only after tests, typecheck, lint, and the browser check pass for editor basics, the theme builder, popups, blocks, and forms.
 
 <!-- END: market-gap-builder-features -->
+
+---
+
+# Documentation sites (DOC-01–DOC-23)
+<!-- BEGIN: docs-site-features -->
+## Goal
+Let customers build a documentation site with the builder: pages in a tree, a docs sidebar, an on-this-page list, highlighted code, callouts, Markdown import, versions, and docs search. Today a docs site needs a hand-built menu and plain code blocks. Site search (R022–R024), redirects (R018–R021), nested menus, collections, and locales already exist and are reused, not rebuilt.
+
+## R511–R513 — Page tree
+- **R511 (DOC-01):** Nullable parent_id on pages with an additive migration and a cycle guard.
+- **R512 (DOC-02):** Sort order among sibling pages, with drag-to-reorder in the pages list.
+- **R513 (DOC-03):** Nested URL paths from the page tree, with redirects when a slug or parent changes.
+
+## R514–R519 — Docs navigation
+- **R514 (DOC-04):** Docs sidebar block built from the page tree, collapsible, with the active page highlighted.
+- **R515 (DOC-05):** Docs layout template with sidebar, content, and on-this-page columns that collapse on mobile.
+- **R516 (DOC-06):** On-this-page contents list built from h2 and h3 headings.
+- **R517 (DOC-07):** Stable heading anchor ids with a copy-link button.
+- **R518 (DOC-08):** Previous and next links from the page tree order.
+- **R519 (DOC-09):** Breadcrumbs from the page tree with BreadcrumbList JSON-LD.
+
+## R520–R523 — Docs content blocks
+- **R520 (DOC-10):** Server-side syntax highlighting on the Code block with a language select.
+- **R521 (DOC-11):** Copy button, filename title, and line highlights on the Code block.
+- **R522 (DOC-12):** Code group block with tabs for several languages.
+- **R523 (DOC-13):** Callout block for note, tip, warning, and danger.
+
+## R524–R526 — Authoring
+- **R524 (DOC-14):** Import Markdown and MDX into pages, mapping to registered blocks and never running JSX.
+- **R525 (DOC-15):** Export a docs page or section as Markdown.
+- **R526 (DOC-16):** Last-updated date, edit-this-page link, and a was-this-helpful vote on docs pages.
+
+## R527–R529 — Versions and search
+- **R527 (DOC-17):** Docs versions with a version switcher, per-version URLs, latest as default, and canonical to latest.
+- **R528 (DOC-18):** Search scoped to the current docs section and version.
+- **R529 (DOC-19):** Cmd+K quick search dialog on public docs pages.
+
+## R530 — Starter
+- **R530 (DOC-20):** Docs starter template using the docs layout; fulfils R323 (M3-05).
+
+## R531–R533 — Checks
+- **R531 (DOC-21):** Tests for the page tree, nested URLs, redirects, anchors, Markdown import, and version routing.
+- **R532 (DOC-22):** Lint, tsc, and a browser check of a three-level docs site on desktop and mobile.
+- **R533 (DOC-23):** Gate 27 approval: docs page tree, navigation, code blocks, import, versions, and search verified.
+
+## Acceptance criteria
+
+- Pages without a parent keep their current URLs; parent_id and sort order are additive and default to null and 0.
+- Moving or renaming a page creates a redirect from the old path, and a page can never become its own ancestor.
+- The sidebar, breadcrumbs, and previous/next links come from one page-tree query per site and locale, so they always agree.
+- Syntax highlighting happens on the server, so published code renders with no extra client JavaScript.
+- Markdown and MDX import only produces registered blocks; raw HTML is sanitized and JSX is never executed.
+- Older versions point their canonical URL at the latest version, and search returns only the current version by default.
+- Docs pages stay site-scoped and locale-scoped like the rest of the CMS.
+
+## Approval gates
+
+- **Gate 27 (R533):** approve only after tests, typecheck, lint, and the browser check pass for a three-level docs site with two versions.
+
+<!-- END: docs-site-features -->
