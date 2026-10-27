@@ -247,6 +247,181 @@ export function ContactForm(p: ContactFormProps) {
   );
 }
 
+/* ---------- Video ---------- */
+
+export type VideoProps = WithSection & {
+  url?: string;
+};
+
+type VideoSource = { kind: 'youtube' | 'vimeo' | 'file'; src: string };
+
+/** Recognizes one YouTube watch/embed or youtu.be URL, a Vimeo URL, or a direct mp4/webm URL. */
+function videoSource(url: string): VideoSource | null {
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return null;
+  }
+  const host = u.hostname.replace(/^www\.|^m\./, '');
+
+  if (host === 'youtube.com' || host.endsWith('.youtube.com')) {
+    const id = u.searchParams.get('v');
+    if (id) return { kind: 'youtube', src: `https://www.youtube.com/embed/${id}` };
+    if (u.pathname.startsWith('/embed/')) {
+      return { kind: 'youtube', src: `https://www.youtube.com${u.pathname}${u.search}` };
+    }
+    return null;
+  }
+
+  if (host === 'youtu.be') {
+    const id = u.pathname.replace(/^\//, '');
+    if (id) return { kind: 'youtube', src: `https://www.youtube.com/embed/${id}` };
+    return null;
+  }
+
+  if (host === 'vimeo.com' || host === 'player.vimeo.com') {
+    const match = u.pathname.match(/(\d+)/);
+    if (match) return { kind: 'vimeo', src: `https://player.vimeo.com/video/${match[1]}` };
+    return null;
+  }
+
+  if (
+    (u.protocol === 'https:' || u.protocol === 'http:') &&
+    /\.(mp4|webm)(\?|#|$)/.test(u.pathname)
+  ) {
+    return { kind: 'file', src: url };
+  }
+
+  return null;
+}
+
+export function Video(p: VideoProps) {
+  const source = p.url ? videoSource(p.url) : null;
+
+  if (!source) {
+    return p.editing ? (
+      <Section section={p.section} editing>
+        <div className="s-surface s-border s-muted s-radius flex aspect-video items-center justify-center border border-dashed text-sm">
+          Add a video URL in the sidebar
+        </div>
+      </Section>
+    ) : null;
+  }
+
+  return (
+    <Section section={p.section} editing={p.editing}>
+      {source.kind === 'youtube' ? (
+        <div className="aspect-video w-full">
+          <iframe
+            className="s-radius h-full w-full rounded"
+            src={source.src}
+            title="Video player"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+            allowFullScreen
+          />
+        </div>
+      ) : null}
+      {source.kind === 'vimeo' ? (
+        <iframe
+          className="s-radius aspect-video h-full w-full rounded"
+          src={source.src}
+          title="Video player"
+          allow="autoplay"
+          allowFullScreen
+        />
+      ) : null}
+      {source.kind === 'file' ? (
+        <video
+          controls
+          preload="metadata"
+          src={source.src}
+          className="s-radius aspect-video w-full rounded"
+        />
+      ) : null}
+    </Section>
+  );
+}
+
+/* ---------- Embed ---------- */
+
+export type EmbedProps = WithSection & {
+  url?: string;
+};
+
+const EMBED_HOSTS = new Set([
+  'youtube.com',
+  'youtube-nocookie.com',
+  'youtu.be',
+  'vimeo.com',
+  'player.vimeo.com',
+  'google.com',
+  'maps.google.com',
+  'openstreetmap.org',
+]);
+
+function embedHost(url: string): string | null {
+  try {
+    const u = new URL(url);
+    return u.hostname.replace(/^www\.|^m\./, '');
+  } catch {
+    return null;
+  }
+}
+
+export function Embed(p: EmbedProps) {
+  const url = p.url?.trim() || '';
+  const host = url ? embedHost(url) : null;
+  const allowed = !!host && EMBED_HOSTS.has(host);
+
+  if (!allowed) {
+    return p.editing ? (
+      <Section section={p.section} editing>
+        <div className="s-surface s-border s-muted s-radius flex aspect-video items-center justify-center border border-dashed text-sm">
+          Add an embeddable URL in the sidebar
+        </div>
+      </Section>
+    ) : null;
+  }
+
+  return (
+    <Section section={p.section} editing={p.editing}>
+      <iframe
+        className="s-radius aspect-video h-full w-full rounded"
+        src={url}
+        title="Embedded content"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+        allowFullScreen
+      />
+    </Section>
+  );
+}
+
+/* ---------- Code ---------- */
+
+export type CodeProps = WithSection & {
+  code?: string;
+};
+
+export function Code(p: CodeProps) {
+  const code = p.code ?? '';
+
+  return (
+    <Section section={p.section} editing={p.editing}>
+      {code ? (
+        <pre className="s-surface s-border s-muted s-radius overflow-auto rounded-lg border p-4 text-sm">
+          <code>{code}</code>
+        </pre>
+      ) : (
+        <div className="s-surface s-border s-muted s-radius flex min-h-40 items-center justify-center border border-dashed text-sm">
+          Add code in the sidebar
+        </div>
+      )}
+    </Section>
+  );
+}
+
 export type SlotRender = (props: {
   minEmptyHeight?: number | string;
 }) => ReactNode;

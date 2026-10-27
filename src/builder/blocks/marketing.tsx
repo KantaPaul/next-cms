@@ -1,7 +1,7 @@
 import { Check, Quote } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { BlockIcon } from '../icons';
-import type { UrlValue } from '../style';
+import { resolveLinkProps, type UrlValue } from '../style';
 import { PricingToggle } from './pricing-toggle';
 import {
   ButtonLink,
@@ -415,6 +415,172 @@ export function Cta(p: CtaProps) {
           </ButtonLink>
         </div>
       </div>
+    </Section>
+  );
+}
+
+/* =========================================================================
+   LOGO CLOUD
+   ========================================================================= */
+
+export type LogoCloudItem = {
+  url?: string;
+  alt?: string;
+  link?: UrlValue;
+};
+
+export type LogoCloudProps = WithSection & {
+  eyebrow?: string;
+  title?: string;
+  subtitle?: string;
+  items?: LogoCloudItem[];
+};
+
+export function LogoCloud(p: LogoCloudProps) {
+  const items = (p.items ?? []).filter(i => i.url);
+
+  return (
+    <Section section={p.section} editing={p.editing} hasItems>
+      <SectionHeading
+        eyebrow={p.eyebrow}
+        title={p.title}
+        subtitle={p.subtitle}
+        align="center"
+      />
+      <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
+        {items.map((item, i) => (
+          <MotionItem key={i} as="div" className="flex items-center justify-center">
+            {item.link ? (
+              <a
+                {...resolveLinkProps(item.link)}
+                className="flex items-center justify-center"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={item.url}
+                  alt={item.alt ?? ''}
+                  className="s-muted max-h-8 w-auto"
+                />
+              </a>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={item.url}
+                alt={item.alt ?? ''}
+                className="s-muted max-h-8 w-auto"
+              />
+            )}
+          </MotionItem>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+/* =========================================================================
+   TEAM
+   ========================================================================= */
+
+export type TeamItem = {
+  photo?: string;
+  name?: string;
+  role?: string;
+};
+
+export type TeamProps = WithSection & {
+  eyebrow?: string;
+  title?: string;
+  items?: TeamItem[];
+};
+
+export function Team(p: TeamProps) {
+  const items = p.items ?? [];
+
+  return (
+    <Section section={p.section} editing={p.editing} hasItems>
+      <SectionHeading eyebrow={p.eyebrow} title={p.title} />
+      {items.length ? (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map((item, i) => (
+            <MotionItem
+              key={i}
+              as="div"
+              className="s-surface s-border s-radius border p-6 text-center"
+            >
+              {item.photo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={item.photo}
+                  alt={item.name ?? ''}
+                  className="s-radius mx-auto size-20 object-cover"
+                />
+              ) : null}
+              {item.name ? (
+                <p className="mt-3 font-semibold">{item.name}</p>
+              ) : null}
+              {item.role ? (
+                <p className="s-muted mt-1 text-sm">{item.role}</p>
+              ) : null}
+            </MotionItem>
+          ))}
+        </div>
+      ) : (
+        p.editing ? (
+          <div className="s-surface s-border s-muted s-radius flex aspect-[16/9] items-center justify-center border border-dashed text-sm">
+            Add team members in the sidebar
+          </div>
+        ) : null
+      )}
+    </Section>
+  );
+}
+
+/* =========================================================================
+   TIMELINE
+   ========================================================================= */
+
+export type TimelineItem = {
+  date?: string;
+  title?: string;
+  body?: string;
+};
+
+export type TimelineProps = WithSection & {
+  eyebrow?: string;
+  title?: string;
+  items?: TimelineItem[];
+};
+
+export function Timeline(p: TimelineProps) {
+  const items = p.items ?? [];
+
+  return (
+    <Section section={p.section} editing={p.editing} hasItems>
+      <SectionHeading eyebrow={p.eyebrow} title={p.title} />
+      {items.length ? (
+        <ol className="relative space-y-8 border-l border-[color:var(--site-border)] pl-8">
+          {items.map((item, i) => (
+            <li key={i} className="relative">
+              <span className="absolute -left-[37px] size-3 rounded-full bg-[color:var(--site-primary)]" />
+              {item.date ? (
+                <p className="s-primary-text text-sm font-semibold">{item.date}</p>
+              ) : null}
+              {item.title ? (
+                <h3 className="text-lg font-semibold">{item.title}</h3>
+              ) : null}
+              {item.body ? (
+                <p className="s-muted mt-1 leading-relaxed">{item.body}</p>
+              ) : null}
+            </li>
+          ))}
+        </ol>
+      ) : (
+        p.editing ? (
+          <div className="s-surface s-border s-muted s-radius flex aspect-[16/9] items-center justify-center border border-dashed text-sm">
+            Add timeline entries in the sidebar
+          </div>
+        ) : null
+      )}
     </Section>
   );
 }

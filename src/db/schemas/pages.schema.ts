@@ -10,6 +10,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  unique,
   uniqueIndex,
   varchar,
 } from 'drizzle-orm/pg-core';
@@ -410,7 +411,9 @@ export const pageViews = pgTable(
     path: varchar('path', { length: 500 }).notNull(),
     referrerHost: varchar('referrer_host', { length: 255 }),
     visitorId: text('visitor_id').notNull(),
-    createdAt: baseColumns.createdAt,
+    /** A/B experiment variant (`a` or `b`) for the assigned page experiment. Null without one. */
+    variant: varchar('variant', { length: 1 }),
+    ...timestampColumns,
   },
   t => [
     index('page_views_created_at_index').on(t.createdAt),
@@ -420,6 +423,33 @@ export const pageViews = pgTable(
     check(
       'page_views_target_check',
       sql`num_nonnulls(${t.pageId}, ${t.postId}) = 1`
+    ),
+  ]
+);
+
+/** Soft edit lock for the page and post builders. One editor at a time per target. */
+export const editorLocks = pgTable(
+  'editor_locks',
+  {
+    id,
+    siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
+    targetType: varchar('target_type', { length: 20 }).notNull(),
+    targetId: text('target_id').notNull(),
+    userId: text('user_id')
+      .references(() => users.id, { onDelete: 'cascade' })
+      .notNull(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    ...timestampColumns,
+  },
+  t => [
+    unique('editor_locks_target_unique').on(t.targetType, t.targetId),
+    index('editor_locks_site_id_index').on(t.siteId),
+    index('editor_locks_last_seen_at_index').on(t.lastSeenAt),
+    check(
+      'editor_locks_target_check',
+      sql`${t.targetType} in ('page', 'post')`
     ),
   ]
 );

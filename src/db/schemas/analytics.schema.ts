@@ -1,9 +1,19 @@
 import { relations } from 'drizzle-orm';
-import { index, jsonb, pgTable, text, varchar } from 'drizzle-orm/pg-core';
+import {
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  unique,
+  uniqueIndex,
+  varchar,
+} from 'drizzle-orm/pg-core';
 import { z } from 'zod';
 import { baseColumns, relationConfig } from '@/db/helpers/base.columns';
 import { users } from '@/db/schemas/auth.schema';
 import { DEFAULT_SITE_ID } from '@/db/schemas/sites.schema';
+import { pages } from '@/db/schemas/pages.schema';
 
 const { id, ...timestampColumns } = baseColumns;
 const { setNull } = relationConfig;
@@ -192,3 +202,30 @@ export function defaultWidgetTitle(w: DashboardWidget): string {
 }
 
 export const EMPTY_LAYOUT: BoardLayout = { range: 30, widgets: [] };
+
+/** One A/B variant per published page. Posts are not included. */
+export const pageExperiments = pgTable(
+  'page_experiments',
+  {
+    id,
+    siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
+    pageId: text('page_id')
+      .references(() => pages.id, { onDelete: 'cascade' })
+      .notNull(),
+    variantContent: jsonb('variant_content').notNull(),
+    weight: integer('weight').notNull().default(50),
+    status: varchar('status', { length: 20 }).notNull().default('draft'),
+    ...timestampColumns,
+  },
+  t => [
+    unique('page_experiments_page_id_unique').on(t.pageId),
+    index('page_experiments_site_id_index').on(t.siteId),
+  ]
+);
+
+export const pageExperimentsRelations = relations(
+  pageExperiments,
+  ({ one }) => ({
+    page: one(pages, { fields: [pageExperiments.pageId], references: [pages.id] }),
+  })
+);

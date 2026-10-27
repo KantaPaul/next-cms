@@ -145,52 +145,52 @@ todos:
     status: pending
   - id: R048
     content: "P5-01 Video block"
-    status: pending
+    status: completed
   - id: R049
     content: "P5-02 Embed block"
-    status: pending
+    status: completed
   - id: R050
     content: "P5-03 Logo cloud block"
-    status: pending
+    status: completed
   - id: R051
     content: "P5-04 Team block with photo, name, and role; same block as R317"
-    status: pending
+    status: completed
   - id: R052
     content: "P5-05 Timeline block"
-    status: pending
+    status: completed
   - id: R053
     content: "P5-06 Map block; Location is R318"
-    status: pending
+    status: completed
   - id: R054
     content: "P5-07 Spacer block"
-    status: pending
+    status: completed
   - id: R055
     content: "P5-08 Button block"
-    status: pending
+    status: completed
   - id: R056
     content: "P5-09 Code block"
-    status: pending
+    status: completed
   - id: R057
     content: "P5-10 Newsletter block wired to the form inbox"
-    status: pending
+    status: completed
   - id: R058
     content: "P5-11 Image-morph block"
-    status: pending
+    status: completed
   - id: R059
     content: "P5-12 Load Puck components from src/builder/custom/"
-    status: pending
+    status: completed
   - id: R060
     content: "P5-13 Document the local plugin registration type"
-    status: pending
+    status: completed
   - id: R061
     content: "P5-14 Soft lock and presence on pages and posts"
-    status: pending
+    status: completed
   - id: R062
     content: "P5-15 One A/B variant per page"
-    status: pending
+    status: completed
   - id: R063
     content: "P5-16 Analytics group by variant and manual pick winner"
-    status: pending
+    status: completed
   - id: R064
     content: "P6-01 Threaded post comments"
     status: pending

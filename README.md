@@ -131,3 +131,22 @@ curl -X POST http://localhost:3000/api/cron/publish \
 | `pnpm db:push`              | Push the Drizzle schema, including `page_views` |
 | `pnpm db:seed`              | Seed starter content                            |
 | `pnpm exec tsc --noEmit`    | Typecheck                                       |
+
+## Builder plugins
+
+Local blocks live in `src/builder/custom/`. The loader lives in `src/builder/custom/index.ts`:
+
+```ts
+type CustomBlock = {
+  key: string;
+  label: string;
+  category?: string;
+  fields: Fields;
+  defaultProps: Record<string, unknown>;
+  render: ComponentType<Record<string, unknown>>;
+};
+```
+
+The loader adds the `section` field, so a plugin does not reimplement the section inspector. A duplicate `key` that matches a built-in block is ignored. Adding a later block means adding a file under `src/builder/custom/` and one line in that index. There is no marketplace and no remote install.
+
+Ship one example file, `src/builder/custom/example.tsx`, registered in the index, so the loader is exercised. It renders a heading and a text line and can be removed by deleting those two references.

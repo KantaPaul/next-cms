@@ -83,6 +83,7 @@ export const analyticsService = {
     userAgent?: string | null;
     pageId?: string | null;
     postId?: string | null;
+    variant?: 'a' | 'b' | null;
   }) => {
     if (input.userAgent && BOT_UA.test(input.userAgent)) {
       return { recorded: false, reason: 'bot' as const };
@@ -140,6 +141,7 @@ export const analyticsService = {
         path: input.path.slice(0, 500),
         referrerHost: parseReferrerHost(input.referrer),
         visitorId: input.visitorId,
+        variant: input.variant ?? null,
       });
     } else {
       const [post] = await db
@@ -184,6 +186,7 @@ export const analyticsService = {
         path: input.path.slice(0, 500),
         referrerHost: parseReferrerHost(input.referrer),
         visitorId: input.visitorId,
+        variant: input.variant ?? null,
       });
     }
 
@@ -724,6 +727,54 @@ export const analyticsService = {
         previous: compare ? Number(r.previousValue) : null,
       })),
     };
+  },
+
+  /**
+   * Variant breakdown for a page experiment: view count and unique visitors
+   * for each variant (`a` and `b`) over the last `rangeDays`.
+   */
+  variantBreakdown: async (
+    pageId: string,
+    rangeDays: 7 | 30 = 30
+  ): Promise<{
+    a: { views: number; uniqueVisitors: number };
+    b: { views: number; uniqueVisitors: number };
+  }> => {
+    const siteId = await adminSiteId();
+    const since = new Date();
+    since.setUTCDate(since.getUTCDate() - rangeDays);
+    since.setUTCHours(0, 0, 0, 0);
+
+    const rows = await db
+      .select({
+        variant: pageViews.variant,
+        views: count(),
+        uniqueVisitors: countDistinct(pageViews.visitorId),
+      })
+      .from(pageViews)
+      .where(
+        and(
+          eq(pageViews.siteId, siteId),
+          eq(pageViews.pageId, pageId),
+          gte(pageViews.createdAt, since)
+        )
+      )
+      .groupBy(pageViews.variant);
+
+    const result = {
+      a: { views: 0, uniqueVisitors: 0 },
+      b: { views: 0, uniqueVisitors: 0 },
+    };
+
+    for (const row of rows) {
+      const key = row.variant === 'b' ? 'b' : 'a';
+      result[key] = {
+        views: Number(row.views),
+        uniqueVisitors: Number(row.uniqueVisitors),
+      };
+    }
+
+    return result;
   },
 
   contentOverview: async () => {

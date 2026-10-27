@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { type Data, Render, resolveAllData } from '@measured/puck';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -25,6 +26,9 @@ import {
   localizedSettings,
   siteSettingsService,
 } from '@/server/services/site-settings.service';
+import { db } from '@/db';
+import { eq } from 'drizzle-orm';
+import { pageExperiments } from '@/db/schema';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 type Params = {
@@ -325,8 +329,36 @@ export default async function SitePage({ params, searchParams }: Params) {
     page.isHome,
     site.defaultLocale
   );
+
+  // A/B experiment variant for published builder pages
+  let variant: 'a' | 'b' | null = null;
+  let experimentContent: unknown = null;
+  if (!page.isDraft && page.editorType === 'builder') {
+    const jar = await cookies();
+    const [experiment] = await db
+      .select()
+      .from(pageExperiments)
+      .where(eq(pageExperiments.pageId, page.id))
+      .limit(1);
+
+    if (experiment && experiment.status === 'running') {
+      const stored = jar.get('cms_ab')?.value;
+      const [cookiePageId, cookieVariant] = (stored ?? '').split(':');
+      variant =
+        cookiePageId === page.id && (cookieVariant === 'a' || cookieVariant === 'b')
+          ? (cookieVariant as 'a' | 'b')
+          : Math.floor(Math.random() * 100) + 1 <= (experiment.weight ?? 50)
+            ? 'b'
+            : 'a';
+
+      if (variant === 'b') {
+        experimentContent = experiment.variantContent;
+      }
+    }
+  }
+
   const beacon = !page.isDraft ? (
-    <ViewBeacon pageId={page.id} path={path || '/'} />
+    <ViewBeacon pageId={page.id} path={path || '/'} variant={variant} />
   ) : null;
 
   if (page.editorType === 'builder') {
@@ -344,7 +376,11 @@ export default async function SitePage({ params, searchParams }: Params) {
       <>
         {beacon}
         <StructuredData page={page} base={base} />
-        <Render config={builderConfig} data={data} metadata={metadata} />
+        <Render
+          config={builderConfig}
+          data={variant === 'b' ? (experimentContent as Data) : data}
+          metadata={metadata}
+        />
       </>
     );
   }

@@ -6,9 +6,10 @@ type Props = {
   path: string;
   pageId?: string;
   postId?: string;
+  variant?: 'a' | 'b' | null;
 };
 
-export function ViewBeacon({ pageId, postId, path }: Props) {
+export function ViewBeacon({ pageId, postId, path, variant }: Props) {
   const sent = useRef(false);
 
   useEffect(() => {
@@ -23,6 +24,7 @@ export function ViewBeacon({ pageId, postId, path }: Props) {
       path,
       referrer:
         typeof document !== 'undefined' ? document.referrer || null : null,
+      variant: variant ?? null,
     });
 
     // Prefer sendBeacon so the request survives navigation; fall back to fetch.

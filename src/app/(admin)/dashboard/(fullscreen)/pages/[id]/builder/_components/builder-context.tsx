@@ -32,7 +32,7 @@ export type BuilderContextValue = {
   pageTitle: string;
   status: string;
   canPublish: boolean;
-  busy: null | 'save' | 'publish' | 'review';
+  busy: null | 'save' | 'publish' | 'review' | 'take-over';
   autosaveStatus: AutosaveStatus;
   savedAt: Date | null;
   /** True when the canvas differs from the last saved snapshot. */
@@ -41,6 +41,7 @@ export type BuilderContextValue = {
   save: () => Promise<boolean>;
   publish: () => Promise<void>;
   submitForReview: () => Promise<void>;
+  takeOver: () => Promise<void>;
   openRevisions: () => void;
   aiGenerateOpen: boolean;
   setAiGenerateOpen: (open: boolean) => void;
@@ -50,6 +51,13 @@ export type BuilderContextValue = {
   setGlobalTarget: (target: BuilderTarget | null) => void;
   motionPreview: boolean;
   setMotionPreview: (on: boolean) => void;
+  /** Soft-lock status for the document being edited. */
+  lockStatus: {
+    kind: 'free' | 'locked';
+    userName?: string | null;
+    isStale?: boolean;
+    isCurrentUser?: boolean;
+  } | null;
 };
 
 export const BuilderContext = createContext<BuilderContextValue | null>(null);

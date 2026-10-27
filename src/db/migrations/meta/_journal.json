@@ -43,6 +43,13 @@
       "when": 1792993650348,
       "tag": "20261026054730_lucky_ikaris",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793076074559,
+      "tag": "20261027044114_tidy_blazing_skull",
+      "breakpoints": true
     }
   ]
 }

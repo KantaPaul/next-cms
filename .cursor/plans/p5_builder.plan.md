@@ -5,19 +5,19 @@ overview: Add the missing marketing blocks, including the image-morph block, and
 todos:
 - id: r048-r057
   content: Add Video, Embed, Logo cloud, Team, Timeline, Map, Spacer, Button, Code, and Newsletter blocks.
-  status: in_progress
+  status: completed
 - id: r058
   content: Add the Image Morph block, inspector, and sanitized SVG path extraction.
-  status: pending
+  status: completed
 - id: r059-r060
   content: Load local plugins from src/builder/custom and document the registration type.
-  status: pending
+  status: completed
 - id: r061
   content: Soft-lock the page and post builders and show who has them open.
-  status: pending
+  status: completed
 - id: r062-r063
   content: Run one A/B variant per page, record it on the beacon, and pick a winner by hand.
-  status: pending
+  status: completed
   isProject: false
 
 ---

@@ -155,6 +155,9 @@ importers:
       drizzle-zod:
         specifier: ^0.8.3
         version: 0.8.3(drizzle-orm@0.44.7(@types/pg@8.15.6)(pg@8.16.3))(zod@4.1.13)
+      flubber:
+        specifier: ^0.4.2
+        version: 0.4.2
       jotai:
         specifier: ^2.15.1
         version: 2.15.1(@babel/template@7.27.2)(@types/react@19.2.7)(react@19.2.0)
@@ -3404,6 +3407,12 @@ packages:
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
 
+  d3-array@1.2.4:
+    resolution: {integrity: sha512-KHW6M86R+FUPYGb3R5XiYjXPq7VzwxZ22buHhAEVG5ztoEcZZMLov530mmccaqA1GghZArjQV46fuc8kUqhhHw==}
+
+  d3-polygon@1.0.6:
+    resolution: {integrity: sha512-k+RF7WvI08PC8reEoXa/w2nSg5AUMTi+peBD9cmFc+0ixHfbs4QmxxkarVal1IkVkgxVuk9JSHhJURHiyHKAuQ==}
+
   damerau-levenshtein@1.0.8:
     resolution: {integrity: sha512-sdQSFB7+llfUcQHUQO3+B8ERRj0Oa4w9POWMI/puGtuf7gFywGmkaLCElnudfTiKZV+NvHqL0ifzdrI8Ro7ESA==}
 
@@ -3612,6 +3621,9 @@ packages:
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
     engines: {node: '>= 0.4'}
+
+  earcut@2.2.4:
+    resolution: {integrity: sha512-/pjZsA1b4RPHbeWZQn66SWS8nZZWLQQ23oE3Eam7aroEFGEvwKAsJfZ9ytiEMycfzXWpca4FA9QIOehf7PocBQ==}
 
   earlgrey-runtime@0.1.2:
     resolution: {integrity: sha512-T4qoScXi5TwALDv8nlGTvOuCT8jXcKcxtO8qVdqv46IA2GHJfQzwoBPbkOmORnyhu3A98cVVuhWLsM2CzPljJg==}
@@ -3903,6 +3915,9 @@ packages:
 
   flatted@3.4.4:
     resolution: {integrity: sha512-5+ybhBZANEJxaH3X5evAFatUxLfEHSr7n6kYJ+1Qd0mUqr4eu9gIf6GDbWHf8RJijHrjjO8G+la14SlL2SeS1Q==}
+
+  flubber@0.4.2:
+    resolution: {integrity: sha512-79RkJe3rA4nvRCVc2uXjj7U/BAUq84TS3KHn6c0Hr9K64vhj83ZNLUziNx4pJoBumSPhOl5VjH+Z0uhi+eE8Uw==}
 
   for-each@0.3.5:
     resolution: {integrity: sha512-dKx12eRCVIzqCxFGplyFKJMPvLEWgmNtUrpTiJIR5u97zEhRG8ySrtboPHZXx7daLxQVrl643cTzbab2tkQjxg==}
@@ -5389,6 +5404,12 @@ packages:
     resolution: {integrity: sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==}
     engines: {node: '>= 0.4'}
 
+  svg-path-properties@0.2.2:
+    resolution: {integrity: sha512-GmrB+b6woz6CCdQe6w1GHs/1lt25l7SR5hmhF8jRdarpv/OgjLyuQygLu1makJapixeb1aQhP/Oa1iKi93o/aQ==}
+
+  svgpath@2.6.0:
+    resolution: {integrity: sha512-OIWR6bKzXvdXYyO4DK/UWa1VA1JeKq8E+0ug2DG98Y/vOmMpfZNj+TIG988HjfYSqtcy/hFOtZq/n/j5GSESNg==}
+
   tagged-tag@1.0.0:
     resolution: {integrity: sha512-yEFYrVhod+hdNyx7g5Bnkkb0G6si8HJurOoOEgC8B/O0uXLHlaey/65KRv6cuWBNhBgHKAROVpc7QyYqE5gFng==}
     engines: {node: '>=20'}
@@ -5434,6 +5455,10 @@ packages:
   to-regex-range@5.0.1:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
     engines: {node: '>=8.0'}
+
+  topojson-client@3.1.0:
+    resolution: {integrity: sha512-605uxS6bcYxGXw9qi62XyrV6Q3xwbndjachmNxu8HWTtVPxZfEJN9fd/SZS1Q54Sn2y0TMyMxFj/cJINqGHrKw==}
+    hasBin: true
 
   tough-cookie@2.5.0:
     resolution: {integrity: sha512-nlLsUzgm1kfLXSXfRZMc1KLAugd4hqJHDTvc2hDIwS3mZAfMEuMbc03SujMF+GEcpaX/qboeycw6iO8JwVv2+g==}
@@ -8613,6 +8638,10 @@ snapshots:
 
   csstype@3.2.3: {}
 
+  d3-array@1.2.4: {}
+
+  d3-polygon@1.0.6: {}
+
   damerau-levenshtein@1.0.8: {}
 
   dashdash@1.14.1:
@@ -8725,6 +8754,8 @@ snapshots:
       call-bind-apply-helpers: 1.0.2
       es-errors: 1.3.0
       gopd: 1.2.0
+
+  earcut@2.2.4: {}
 
   earlgrey-runtime@0.1.2:
     dependencies:
@@ -9223,6 +9254,15 @@ snapshots:
   flat@5.0.2: {}
 
   flatted@3.4.4: {}
+
+  flubber@0.4.2:
+    dependencies:
+      d3-array: 1.2.4
+      d3-polygon: 1.0.6
+      earcut: 2.2.4
+      svg-path-properties: 0.2.2
+      svgpath: 2.6.0
+      topojson-client: 3.1.0
 
   for-each@0.3.5:
     dependencies:
@@ -10784,6 +10824,10 @@ snapshots:
 
   supports-preserve-symlinks-flag@1.0.0: {}
 
+  svg-path-properties@0.2.2: {}
+
+  svgpath@2.6.0: {}
+
   tagged-tag@1.0.0: {}
 
   tailwind-merge@3.7.0: {}
@@ -10845,6 +10889,10 @@ snapshots:
   to-regex-range@5.0.1:
     dependencies:
       is-number: 7.0.0
+
+  topojson-client@3.1.0:
+    dependencies:
+      commander: 2.20.3
 
   tough-cookie@2.5.0:
     dependencies:

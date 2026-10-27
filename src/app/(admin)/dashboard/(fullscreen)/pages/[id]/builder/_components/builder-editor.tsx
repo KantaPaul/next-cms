@@ -21,6 +21,12 @@ import {
   saveDraft,
   updatePage,
 } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.actions';
+import {
+  getEditorLock,
+  heartbeatEditorLock,
+  releaseEditorLock,
+  takeOverEditorLock,
+} from '@/app/(admin)/dashboard/(shell)/pages/_modules/builder-lock.actions';
 import { POST_REVISION_ACTIONS } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-revision-actions';
 import {
   publishPost,
@@ -250,6 +256,53 @@ export function BuilderEditor({
   );
   const [globalTarget, setGlobalTarget] = useState<BuilderTarget | null>(null);
   const [motionPreview, setMotionPreview] = useState(false);
+  const [lockStatus, setLockStatus] = useState<{
+    kind: 'free' | 'locked';
+    userName?: string | null;
+    isStale?: boolean;
+    isCurrentUser?: boolean;
+  } | null>(null);
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const targetType = kind === 'page' ? 'page' : kind === 'post' ? 'post' : 'page';
+
+  /** Check the soft lock when the builder opens. */
+  useEffect(() => {
+    let active = true;
+    getEditorLock(targetType, page.id).then(result => {
+      if (!active) return;
+      if (result.ok && result.lock) {
+        setLockStatus({
+          kind: 'locked',
+          userName: result.lock.userName,
+          isStale: result.lock.isStale,
+          isCurrentUser: result.lock.isCurrentUser,
+        });
+      } else {
+        setLockStatus({ kind: 'free' });
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [page.id, targetType, getEditorLock]);
+
+  /** Heartbeat every 20s while the builder is open, plus once on close. */
+  useEffect(() => {
+    const beat = async () => {
+      const result = await heartbeatEditorLock(targetType, page.id);
+      if (!result.ok && result.error !== 'unauthenticated') {
+        // Heartbeat failures are non-fatal; the lock may simply be stale.
+      }
+    };
+    beat();
+    heartbeatRef.current = setInterval(beat, 20_000);
+    return () => {
+      if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+      heartbeatRef.current = null;
+      void heartbeatEditorLock(targetType, page.id);
+    };
+  }, [page.id, targetType, heartbeatEditorLock]);
   const isGlobalLike = kind === 'global' || kind === 'contact-form';
   const metadata = useMemo(
     () => ({
@@ -288,6 +341,13 @@ export function BuilderEditor({
   }, []);
 
   const save = useCallback(async () => {
+    // Reject saves when another editor holds a fresh lock on this document.
+    if (lockStatus?.kind === 'locked' && !lockStatus.isCurrentUser) {
+      toast.error(
+        `${lockStatus.userName ?? 'Another editor'} is editing this page. Take over to edit.`
+      );
+      return false;
+    }
     const snapshot = JSON.stringify(dataRef.current);
     const response = await adapter.saveDraft(dataRef.current, false);
     if (response && typeof response === 'object' && 'error' in response) {
@@ -296,7 +356,7 @@ export function BuilderEditor({
     return handleActionResponse(response as never, () =>
       autosave.markSaved(snapshot)
     );
-  }, [adapter, autosave]);
+  }, [adapter, autosave, lockStatus]);
 
   const run = useCallback(
     async (
@@ -365,6 +425,23 @@ export function BuilderEditor({
           );
         });
       }),
+    takeOver: async () => {
+      if (lockStatus?.kind !== 'locked' || lockStatus.isCurrentUser) return;
+      await run('take-over', async () => {
+        const result = await takeOverEditorLock(targetType, page.id);
+        if (result.ok) {
+          setLockStatus({
+            kind: 'locked',
+            userName: null,
+            isStale: false,
+            isCurrentUser: true,
+          });
+          toast.success('You took over editing this document.');
+        } else {
+          toast.error(result.error ?? 'Could not take over the document.');
+        }
+      });
+    },
     submitForReview: () =>
       run('review', async () => {
         if (!adapter.submitForReview || !(await save())) return;
@@ -385,6 +462,7 @@ export function BuilderEditor({
     setGlobalTarget,
     motionPreview,
     setMotionPreview,
+    lockStatus,
   };
 
   return (

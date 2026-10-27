@@ -19,24 +19,35 @@ import {
   RelatedPosts,
 } from './blocks/blog';
 import {
+  Code,
   Columns,
   ContactForm,
+  Embed,
   Gallery,
   GlobalRef,
   ImageBlock,
   RichText,
+  Video,
   renderSlot,
   type SlotValue,
 } from './blocks/content';
+import { Button, Spacer } from './blocks/layout';
+import { Map } from './blocks/map';
+import { Newsletter } from './blocks/newsletter';
+import { ImageMorph } from './blocks/image-morph';
+import { ImageMorphField } from './controls/image-morph';
 import { Accordion, Slider, Tabs } from './blocks/interactive';
 import {
   Cta,
   Faq,
   Features,
   Hero,
+  LogoCloud,
   Pricing,
   Stats,
+  Team,
   Testimonials,
+  Timeline,
 } from './blocks/marketing';
 import { DEFAULT_SECTION } from './blocks/section';
 import { PageTransitionField } from './controls/page-transition';
@@ -54,6 +65,7 @@ import { ContactFormOptionsField } from './fields/contact-form-options-field';
 import { MotionScope } from './motion';
 import { POST_BLOCK_TYPES, type PostView, SAMPLE_POST } from './post-template';
 import { fontStylesheetUrl, resolveThemeTokens, themeStyle } from './theme';
+import { customBlocks, customBlockEntries } from './custom';
 
 /* ---------- field helpers ---------- */
 
@@ -178,17 +190,26 @@ export const builderConfig: Config = {
     heroes: { title: 'Heroes & calls to action', components: ['Hero', 'CTA'] },
     marketing: {
       title: 'Marketing',
-      components: ['Features', 'Stats', 'Pricing', 'Testimonials', 'FAQ'],
+      components: [
+        'Features',
+        'Stats',
+        'Pricing',
+        'Testimonials',
+        'FAQ',
+        'LogoCloud',
+        'Team',
+        'Timeline',
+      ],
     },
     content: {
       title: 'Content',
-      components: ['RichText', 'Image', 'Gallery'],
+      components: ['RichText', 'Image', 'Gallery', 'Video', 'Embed', 'Map', 'Code', 'Newsletter'],
     },
     contact: { title: 'Contact form', components: ['ContactForm'] },
     blog: { title: 'Blog', components: ['BlogPosts'] },
     layout: {
       title: 'Layout',
-      components: ['Columns', 'Slider', 'Tabs', 'Accordion'],
+      components: ['Columns', 'Slider', 'Tabs', 'Accordion', 'Button', 'Spacer'],
     },
     global: { title: 'Global blocks', components: ['GlobalRef'] },
   },
@@ -277,6 +298,7 @@ export const builderConfig: Config = {
     },
   },
   components: {
+    ...customBlockEntries,
     Hero: {
       label: 'Hero',
       fields: withSection({
@@ -627,6 +649,98 @@ export const builderConfig: Config = {
       },
       render: renderBlock(Columns),
     },
+    Video: {
+      label: 'Video',
+      fields: withSection({
+        url: text('Video URL'),
+      }),
+      defaultProps: {
+        url: '',
+        section: DEFAULT_SECTION,
+      },
+      render: renderBlock(Video),
+    },
+    Embed: {
+      label: 'Embed',
+      fields: withSection({
+        url: text('Embed URL'),
+      }),
+      defaultProps: {
+        url: '',
+        section: DEFAULT_SECTION,
+      },
+      render: renderBlock(Embed),
+    },
+    Map: {
+      label: 'Map',
+      fields: withSection({
+        address: text('Address'),
+      }),
+      defaultProps: {
+        address: '',
+        section: DEFAULT_SECTION,
+      },
+      render: renderBlock(Map),
+    },
+    Code: {
+      label: 'Code',
+      fields: withSection({
+        code: textarea('Code'),
+      }),
+      defaultProps: {
+        code: '',
+        section: DEFAULT_SECTION,
+      },
+      render: renderBlock(Code),
+    },
+    Newsletter: {
+      label: 'Newsletter',
+      fields: withSection({
+        title: text('Title'),
+        subtitle: text('Short text'),
+        email: text('Email'),
+      }),
+      defaultProps: {
+        title: 'Newsletter',
+        subtitle: '',
+        email: '',
+        section: DEFAULT_SECTION,
+      },
+      render: renderBlock(Newsletter),
+    },
+    ImageMorph: {
+      label: 'Image morph',
+      fields: withSection({
+        morph: {
+          type: 'custom',
+          label: 'Morph',
+          render: ImageMorphField as never,
+        },
+      }),
+      defaultProps: {
+        morph: {
+          effect: 'image',
+          image: {
+            url: '',
+            opacity: 1,
+            zoom: 1,
+            posX: 50,
+            posY: 50,
+          },
+          shape: { type: 'default' },
+          timing: {
+            easing: 'ease-in-out',
+            direction: 'normal',
+            loop: false,
+            duration: 0.6,
+            delay: 0,
+            endDelay: 0,
+          },
+        },
+        section: DEFAULT_SECTION,
+      },
+      render: renderBlock(ImageMorph),
+    },
     RichText: {
       label: 'Rich text',
       fields: withSection({
@@ -808,6 +922,41 @@ export const builderConfig: Config = {
       },
       render: renderBlock(ContactForm),
     },
+    Button: {
+      label: 'Button',
+      fields: withSection({
+        label: text('Label'),
+        link: url('Link'),
+        alignment: {
+          type: 'radio',
+          label: 'Alignment',
+          options: ALIGN_OPTIONS,
+        },
+      }),
+      defaultProps: {
+        label: '',
+        link: '',
+        alignment: 'center',
+        section: DEFAULT_SECTION,
+      },
+      render: renderBlock(Button),
+    },
+    Spacer: {
+      label: 'Spacer',
+      fields: withSection({
+        height: {
+          type: 'number',
+          label: 'Height (px)',
+          min: 0,
+          max: 400,
+        },
+      }),
+      defaultProps: {
+        height: 96,
+        section: DEFAULT_SECTION,
+      },
+      render: renderBlock(Spacer),
+    },
     GlobalRef: {
       label: 'Global block',
       fields: {
@@ -836,6 +985,83 @@ export const builderConfig: Config = {
         };
       },
       render: renderBlock(GlobalRef),
+    },
+    LogoCloud: {
+      label: 'Logo cloud',
+      fields: withSection({
+        eyebrow: text('Eyebrow'),
+        title: text('Title'),
+        subtitle: textarea('Subtitle'),
+        items: {
+          type: 'array',
+          label: 'Logos',
+          getItemSummary: (item: { url?: string }) => item.url || 'Logo',
+          defaultItemProps: { url: '', alt: '', link: '' },
+          arrayFields: {
+            url: media('Logo'),
+            alt: text('Alt text'),
+            link: url('Link (optional)'),
+          },
+        },
+      }),
+      defaultProps: {
+        eyebrow: '',
+        title: 'Trusted by teams',
+        subtitle: '',
+        items: [],
+        section: DEFAULT_SECTION,
+      },
+      render: renderBlock(LogoCloud),
+    },
+    Team: {
+      label: 'Team',
+      fields: withSection({
+        eyebrow: text('Eyebrow'),
+        title: text('Title'),
+        items: {
+          type: 'array',
+          label: 'Members',
+          getItemSummary: (item: { name?: string }) => item.name || 'Member',
+          defaultItemProps: { photo: '', name: '', role: '' },
+          arrayFields: {
+            photo: media('Photo'),
+            name: text('Name'),
+            role: text('Role'),
+          },
+        },
+      }),
+      defaultProps: {
+        eyebrow: '',
+        title: 'Meet the team',
+        items: [],
+        section: DEFAULT_SECTION,
+      },
+      render: renderBlock(Team),
+    },
+    Timeline: {
+      label: 'Timeline',
+      fields: withSection({
+        eyebrow: text('Eyebrow'),
+        title: text('Title'),
+        items: {
+          type: 'array',
+          label: 'Events',
+          getItemSummary: (item: { title?: string }) => item.title || 'Event',
+          defaultItemProps: { date: '', title: '', body: '' },
+          arrayFields: {
+            date: text('Date'),
+            title: text('Title'),
+            body: textarea('Body'),
+          },
+        },
+      }),
+      defaultProps: {
+        eyebrow: '',
+        title: 'Timeline',
+        items: [],
+        section: DEFAULT_SECTION,
+      },
+      render: renderBlock(Timeline),
     },
     BlogPosts: {
       label: 'Blog posts',

@@ -2,9 +2,14 @@ import { createId } from '@paralleldrive/cuid2';
 import { cookies, headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { analyticsService } from '@/server/services/analytics.service';
+import { db } from '@/db';
+import { eq } from 'drizzle-orm';
+import { pageExperiments } from '@/db/schema';
 
 const COOKIE = 'cms_vid';
+const AB_COOKIE = 'cms_ab';
 const MAX_AGE = 60 * 60 * 24 * 365; // 1 year
+const AB_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
 export async function POST(request: Request) {
   let body: {
@@ -12,6 +17,7 @@ export async function POST(request: Request) {
     postId?: string;
     path?: string;
     referrer?: string | null;
+    variant?: 'a' | 'b' | null;
   };
   try {
     body = await request.json();
@@ -41,8 +47,30 @@ export async function POST(request: Request) {
   }
 
   let visitorId = jar.get(COOKIE)?.value;
-  const isNew = !visitorId;
+  const isNewVisitor = !visitorId;
   if (!visitorId) visitorId = createId();
+
+  // A/B experiment variant assignment
+  let variant: 'a' | 'b' | null = body.variant ?? null;
+  if (pageId && variant === null) {
+    const [experiment] = await db
+      .select()
+      .from(pageExperiments)
+      .where(eq(pageExperiments.pageId, pageId))
+      .limit(1);
+
+    if (experiment && experiment.status === 'running') {
+      const stored = jar.get(AB_COOKIE)?.value;
+      const [cookiePageId, cookieVariant] = (stored ?? '').split(':');
+      const assignedVariant =
+        cookiePageId === pageId && (cookieVariant === 'a' || cookieVariant === 'b')
+          ? (cookieVariant as 'a' | 'b')
+          : Math.floor(Math.random() * 100) + 1 <= (experiment.weight ?? 50)
+            ? 'b'
+            : 'a';
+      variant = assignedVariant;
+    }
+  }
 
   const result = await analyticsService.recordView({
     pageId: pageId || null,
@@ -51,16 +79,26 @@ export async function POST(request: Request) {
     referrer: body.referrer ?? hdrs.get('referer'),
     visitorId,
     userAgent: hdrs.get('user-agent'),
+    variant: variant ?? undefined,
   });
 
-  const res = NextResponse.json({ ok: true, ...result });
-  if (isNew) {
+  const res = NextResponse.json({ ok: true, ...result, variant });
+  if (isNewVisitor) {
     res.cookies.set(COOKIE, visitorId, {
       httpOnly: true,
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
       path: '/',
       maxAge: MAX_AGE,
+    });
+  }
+  if (pageId && variant) {
+    res.cookies.set(AB_COOKIE, `${pageId}:${variant}`, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: AB_MAX_AGE,
     });
   }
   return res;
