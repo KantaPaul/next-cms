@@ -1,6 +1,6 @@
 ---
 name: Combined CMS refs
-overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, full-site production optimization, commercial launch readiness, international website-builder market-gap audit, Elementor-style nested container/Flexbox/CSS Grid, dynamic content, global design styles, and conditional display. Numbered implementation steps R001–R602 include builder tasks, React-first differentiators, multisite reliability, market-gap builder features, docs sites, agency, local business, portfolio, and video library site packs, builder listing and search pages, and approval gates. Name a numbered step to implement only that piece.
+overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, full-site production optimization, commercial launch readiness, international website-builder market-gap audit, Elementor-style nested container/Flexbox/CSS Grid, dynamic content, global design styles, conditional display, and an ecommerce store builder. Numbered implementation steps R001–R643 include builder tasks, React-first differentiators, multisite reliability, market-gap builder features, docs sites, agency, local business, portfolio, and video library site packs, builder listing and search pages, ecommerce product, shop, cart, and checkout templates, and approval gates. Name a numbered step to implement only that piece.
 todos:
   - id: R001
     content: "P1-01 Register Slider, Tabs, and Accordion as builderConfig component keys"
@@ -1544,6 +1544,129 @@ todos:
   - id: R602
     content: "QRY-32 Gate 29 approval: listing, filtering, search, archives, SEO, caching, and accessibility verified"
     status: pending
+  - id: R603
+    content: "ECM-01 Gate 30 approval: confirm store scope, goods types, target markets, and payment providers"
+    status: pending
+  - id: R604
+    content: "ECM-02 Audit R069-R072 products and orders and the COM order lifecycle; extend them, never build a second order system"
+    status: pending
+  - id: R605
+    content: "ECM-03 Product catalog schema with variants, options, SKU, price, compare-at price, stock, weight, images, site_id, and locale"
+    status: pending
+  - id: R636
+    content: "ECM-34 Store permissions store.manage, products.edit, and orders.manage, a Shop Manager role, and site isolation for products, carts, and orders"
+    status: pending
+  - id: R606
+    content: "ECM-04 Product categories, tags, and manual or rule-based collections"
+    status: pending
+  - id: R607
+    content: "ECM-05 Inventory with stock levels, low-stock threshold, backorders, and stock reservation during checkout"
+    status: pending
+  - id: R608
+    content: "ECM-06 Money stored in integer minor units with per-site currency and price formatting by locale"
+    status: pending
+  - id: R609
+    content: "ECM-07 Admin product list and editor with variant matrix, media gallery, SEO fields, bulk edit, and CSV import and export"
+    status: pending
+  - id: R610
+    content: "ECM-08 Digital product type that reuses the R373 secure fulfillment and R374 license issuance"
+    status: pending
+  - id: R615
+    content: "ECM-13 Product dynamic fields for title, price, sale badge, gallery, description, stock status, and SKU on the BLD-22 dynamic-value schema"
+    status: pending
+  - id: R611
+    content: "ECM-09 Single product template built in the builder and assigned per site, locale, or category with a built-in fallback"
+    status: pending
+  - id: R612
+    content: "ECM-10 Shop and category archive templates using Query Loop with a products source"
+    status: pending
+  - id: R616
+    content: "ECM-14 Product gallery block with thumbnails, zoom, lightbox, and image switch on variant change"
+    status: pending
+  - id: R617
+    content: "ECM-15 Variant picker block with swatches, buttons, or dropdowns that updates price, stock, and image"
+    status: pending
+  - id: R618
+    content: "ECM-16 Add-to-cart block with quantity, variant validation, and a server-side stock check"
+    status: pending
+  - id: R619
+    content: "ECM-17 Product Query Loop presets for featured, on sale, new, best sellers, related, upsell, and cross-sell; keep R070 rendering"
+    status: pending
+  - id: R620
+    content: "ECM-18 Shop filters for price range, attributes, category, and in stock, with sort, using the QRY filter blocks and facet counts"
+    status: pending
+  - id: R621
+    content: "ECM-19 Product details tabs or accordion for description, specifications, and shipping info using the existing Tabs and Accordion"
+    status: pending
+  - id: R622
+    content: "ECM-20 Product breadcrumbs and Product JSON-LD with real price and availability, and no invented ratings"
+    status: pending
+  - id: R623
+    content: "ECM-21 Server-side cart with guest cookie, merge on login, site scope, and prices recalculated on the server"
+    status: pending
+  - id: R627
+    content: "ECM-25 Payment adapter interface with Stripe from R071, the provider chosen in R370, and optional cash on delivery"
+    status: pending
+  - id: R628
+    content: "ECM-26 Shipping zones with flat, weight-based, and free-over-threshold rates and local pickup"
+    status: pending
+  - id: R629
+    content: "ECM-27 Tax settings for inclusive or exclusive prices and rates by country or region, shown on cart and invoice"
+    status: pending
+  - id: R630
+    content: "ECM-28 Cart coupons for percent, fixed amount, and free shipping with limits and dates, extending R377"
+    status: pending
+  - id: R624
+    content: "ECM-22 Mini-cart block and slide-out cart drawer for header templates"
+    status: pending
+  - id: R625
+    content: "ECM-23 Cart block with line items, quantity change, remove, coupon field, and totals summary"
+    status: pending
+  - id: R626
+    content: "ECM-24 Checkout blocks for contact, address, shipping, payment, and summary with guest checkout and locked required fields"
+    status: pending
+  - id: R613
+    content: "ECM-11 Cart and checkout page templates built in the builder from the cart and checkout blocks"
+    status: pending
+  - id: R614
+    content: "ECM-12 Order-received page and customer account templates built in the builder"
+    status: pending
+  - id: R631
+    content: "ECM-29 Physical order lifecycle from paid to processing, shipped, delivered, canceled, and refunded, with stock returned on cancel or refund"
+    status: pending
+  - id: R632
+    content: "ECM-30 Admin orders inbox with fulfillment, tracking number, packing slip, partial refund, notes, and audit log"
+    status: pending
+  - id: R633
+    content: "ECM-31 Order confirmation, shipped, and refund emails from editable templates"
+    status: pending
+  - id: R634
+    content: "ECM-32 Customer account for order history, addresses, and reorder, extending the R375 portal"
+    status: pending
+  - id: R635
+    content: "ECM-33 Abandoned cart reminder emails with the R379 consent rules"
+    status: pending
+  - id: R637
+    content: "ECM-35 Store analytics for revenue, orders, average order value, top products, and the funnel, extending R378 and R387"
+    status: pending
+  - id: R638
+    content: "ECM-36 Store starter template with home, shop, product, cart, checkout, and account pages and demo products"
+    status: pending
+  - id: R639
+    content: "ECM-37 Cache product and shop pages, revalidate on price or stock change, and never cache cart, checkout, or account"
+    status: pending
+  - id: R640
+    content: "ECM-38 Accessible variant picker, cart drawer, and checkout forms"
+    status: pending
+  - id: R641
+    content: "ECM-39 Tests for money math, stock races, coupons, tax and shipping, webhook idempotency, cart tampering, and site isolation"
+    status: pending
+  - id: R642
+    content: "ECM-40 Lint, tsc, and a browser check from browse and filter to product, cart, sandbox checkout, email, fulfilment, and refund"
+    status: pending
+  - id: R643
+    content: "ECM-41 Gate 31 approval: catalog, product templates, cart, checkout, payments, orders, and store SEO verified"
+    status: pending
   - id: R435
     content: "RFB-01 Audit the current component registry, Puck custom fields, server/client boundaries, rendering pipeline, export support, and developer extension points"
     status: pending
@@ -1811,7 +1934,7 @@ todos:
 isProject: false
 ---
 
-# Combined refs R001–R602
+# Combined refs R001–R643
 
 Say **implement R042** (or the original id, such as **P2-14**, **L3-01**, **A2-01**, **O1-01**, or **M2-01**). That ref is the whole task. Do not continue to the next ref unless you ask.
 
@@ -3458,3 +3581,116 @@ The common pattern: one query-driven loop block, a card designed visually, filte
 - **Gate 29 (R602):** approve only after tests, typecheck, lint, and a browser check pass for a blog listing, a filtered collection grid, site search in two locales, and a category archive.
 
 <!-- END: listing-and-search-pages -->
+
+---
+
+# Ecommerce store builder (ECM-01–ECM-41)
+<!-- BEGIN: ecommerce-store-builder -->
+## Goal
+Let users build a full online store in the builder, the way market builders do: a product catalog with variants and stock, single-product and shop templates designed visually, product blocks with dynamic fields, a cart and checkout built from locked blocks, payments through an adapter, and an order lifecycle with fulfilment and refunds. This extends the one-product checkout (R069–R072) and the digital-product commerce work (R366–R392); it does not replace them.
+
+## Market reference
+
+| Builder | Catalog | Product and shop pages | Cart and checkout |
+|---|---|---|---|
+| Elementor Pro with WooCommerce | WooCommerce products, variations, stock | Single Product and Products Archive templates with product widgets | Cart, Checkout, and My Account widgets, menu cart |
+| Wix Studio | Wix Stores with options and inventory | Product page and shop pages editable in the editor | Side cart, cart page, customizable checkout |
+| Webflow | Ecommerce products and SKUs as CMS collections | Product and category template pages | Cart element, checkout and order confirmation pages |
+| Shopify themes | Products, variants, inventory, collections | Product and collection templates with sections and blocks | Cart drawer and page; checkout is locked to the platform |
+| Framer | Third-party only | Third-party only | Third-party only |
+
+The common pattern: products are data, product and shop pages are templates bound to that data, cart and checkout are blocks with fixed rules and editable layout, and payment and order state are trusted only on the server.
+
+## How this relates to earlier refs
+
+- **R069–R072** stay the first products, orders, Stripe client, and webhook. ECM extends those tables and that route; never a second order system or Stripe client.
+- **R370–R375** decide the payment provider, payment verification, order lifecycle, digital fulfillment, licensing, and customer portal. ECM-08, ECM-25, ECM-29, and ECM-32 build on them.
+- **R377**, **R378**, **R379**, **R380**, and **R383** set coupon abuse rules, funnel analytics, consent for reminder email, review rules, and the tax and legal review that ECM reuses.
+- Product fields use the dynamic-value schema from **BLD-22 (R414)** and the resolver from **BLD-24 (R416)**.
+- Product, shop, cart, checkout, and account templates use the template storage from **MKT-08 (R483)**.
+- Shop listings and filters are a products source on **QRY-01 (R571)**, **QRY-05 (R575)**, **QRY-11 (R581)**, and **QRY-13 (R583)**; not separate list code.
+- Products, carts, and orders are site-owned data and follow the multisite hardening from **R463–R475**.
+- The audit appendix lists built-in ecommerce under add only after validation. **R603 (Gate 30)** is that validation; stop there if the store is not part of the confirmed product strategy.
+
+## Recommended order
+
+1. Scope gate and audit (R603–R604).
+2. Catalog, permissions, inventory, money, admin, and digital products (R605, R636, R606–R610).
+3. Product dynamic fields, product and shop templates, and product blocks (R615, R611–R612, R616–R622).
+4. Server cart, payments, shipping, tax, and coupons, then the cart and checkout blocks and templates (R623, R627–R630, R624–R626, R613–R614).
+5. Orders, emails, customer account, and abandoned cart (R631–R635).
+6. Analytics, starter, caching, accessibility, tests, and Gate 31 (R637–R643).
+
+## R603–R604 — Scope and audit
+- **R603 (ECM-01):** Gate 30 approval before any store code: confirm from COM-01 (R366) and COM-05 (R370) whether the store sells physical goods, digital goods, or both, which countries and currencies it serves, and which payment providers are eligible. Record what is out of scope for the first release.
+- **R604 (ECM-02):** Audit the products and orders tables from R069, the Product grid and Buy button from R070, Stripe Checkout and the webhook from R071-R072, and the order lifecycle from R371-R372. The store extends these tables and routes. Do not add a second orders table, a second Stripe client, or a second webhook route.
+
+## R605–R610 — Catalog and inventory
+- **R605 (ECM-03):** Product catalog schema: products with draft and published status, options (such as size and color), variants with SKU, price, compare-at price, stock, weight, and dimensions, plus product images. Every table has site_id and follows the locale model already used by pages. Additive Drizzle migration only.
+- **R606 (ECM-04):** Product categories (nested), tags, and collections that are either hand-picked or rule-based (category, tag, price, on sale, in stock).
+- **R607 (ECM-05):** Inventory tracking: stock per variant, low-stock threshold and admin notice, backorder on or off, and a short stock reservation while a checkout is open, released on expiry, failure, or cancel. Stock changes run in a transaction with a row lock so two buyers cannot take the last item.
+- **R608 (ECM-06):** Money stored as integer minor units with an ISO currency code; never floating point. Each site sets a store currency; prices are formatted by locale. Multi-currency checkout is out of scope unless Gate 30 approves it.
+- **R609 (ECM-07):** Admin product list with search, filter, sort, and pagination, and a product editor with a variant matrix, media gallery from the media library, SEO fields, duplicate, bulk price and stock edit, and CSV import and export validated row by row.
+- **R610 (ECM-08):** Digital product type: no shipping, files delivered through the secure fulfillment from R373, and optional license issuance through R374. A cart can mix digital and physical items when Gate 30 allows it.
+
+## R611–R622 — Product and shop templates and blocks
+- **R611 (ECM-09):** Single product template designed in the builder, stored like the header and footer templates from MKT-08 (R483), assigned per site, locale, or product category, with a built-in fallback template.
+- **R612 (ECM-10):** Shop page and product category archive templates designed in the builder, using the Query Loop from QRY-05 (R575) with a new products source added to the QRY-01 (R571) schema and the QRY-02 (R572) resolver.
+- **R613 (ECM-11):** Cart page and checkout page templates designed in the builder from the ECM-22 to ECM-24 blocks, assigned per site with a built-in fallback that always works.
+- **R614 (ECM-12):** Order-received (thank you) page and customer account pages (orders, order detail, addresses) as builder templates. The order-received page shows an order only to its buyer through a signed, short-lived token or the session.
+- **R615 (ECM-13):** Product dynamic fields (title, price, compare-at price, sale badge, gallery, short and long description, stock status, SKU, category, attributes) exposed through the dynamic-value schema from BLD-22 (R414) and resolved on the server by BLD-24 (R416). No second dynamic system.
+- **R616 (ECM-14):** Product gallery block: main image, thumbnails, hover or tap zoom, the lightbox from PRT-04 (R555), and an image switch when the selected variant has its own image.
+- **R617 (ECM-15):** Variant picker block with color swatches, buttons, or dropdowns. Unavailable combinations are disabled with a reason; price, stock status, SKU, and image update on change; the selected variant is kept in the URL.
+- **R618 (ECM-16):** Add-to-cart block with quantity stepper, buy-now option, variant validation, and a server-side stock and price check. Shows a clear message when the item is out of stock or the quantity is too high.
+- **R619 (ECM-17):** Product Query Loop presets: featured, on sale, new arrivals, best sellers, related, upsell, and cross-sell, as grid or carousel. The R070 Product grid block keeps rendering as before and offers a one-click convert, like QRY-10 (R580).
+- **R620 (ECM-18):** Shop filters: price range, attributes (size, color), category, in stock, and on sale, with sort by price, newest, and popularity. Built on the QRY-11 (R581) filter blocks, QRY-13 (R583) facet counts, and the QRY-15 (R585) mobile drawer.
+- **R621 (ECM-19):** Product details sections for description, specifications table, and shipping and returns info, rendered with the existing Tabs and Accordion blocks and the product dynamic fields.
+- **R622 (ECM-20):** Product breadcrumbs from the category tree and Product JSON-LD with real price, currency, and availability for the selected variant. Ratings appear only from real, moderated reviews (COM-15, R380 rules).
+
+## R623–R630 — Cart, checkout, payments, shipping, tax, and coupons
+- **R623 (ECM-21):** Server-side cart: guest cart id in an httpOnly cookie, merge into the account cart on login, scoped by site, and every price, discount, and total recalculated on the server. The client never sends a trusted price.
+- **R624 (ECM-22):** Mini-cart block for header templates with item count and a slide-out cart drawer that lists items, subtotal, and links to cart and checkout.
+- **R625 (ECM-23):** Cart block with line items, quantity change, remove, coupon field, shipping estimate, and a totals summary, all updated from the server cart.
+- **R626 (ECM-24):** Checkout blocks: contact, shipping and billing address, shipping method, payment method, and order summary. Guest checkout by default; account creation optional. Layout and labels are editable in the builder, but required fields, validation, and the payment step cannot be removed.
+- **R627 (ECM-25):** Payment adapter interface: Stripe from R071 as one adapter, the provider chosen in R370 as another (for example a local Bangladesh gateway), and optional cash on delivery. All paid states come from verified webhooks or provider API checks with the R371 signature, amount, currency, and idempotency rules.
+- **R628 (ECM-26):** Shipping zones by country and region with flat rate, weight-based rate, free shipping over a threshold, and local pickup. Shipping is skipped for carts that only hold digital items.
+- **R629 (ECM-27):** Tax settings: prices entered tax-inclusive or exclusive, rates by country and region, and tax lines shown on cart, checkout, and invoice. The plan follows R383 and makes no legal or tax-compliance claims.
+- **R630 (ECM-28):** Cart coupons: percent off, fixed amount, and free shipping, with minimum spend, product or category limits, usage limits per coupon and per customer, and start and end dates. Extends the abuse rules from COM-12 (R377).
+
+## R631–R635 — Orders and customers
+- **R631 (ECM-29):** Order lifecycle for physical goods: pending, paid, processing, shipped, delivered, canceled, and full or partial refund, extending R372. Stock returns on cancel or refund; every change is audited.
+- **R632 (ECM-30):** Admin orders inbox upgrade: filter by status, mark fulfilled with carrier and tracking number, printable packing slip and invoice, partial refunds through the payment adapter, internal notes, and the audit log.
+- **R633 (ECM-31):** Transactional emails for order confirmation, shipped with tracking, and refund, sent through the existing SMTP or Resend mailer from editable templates, with one send per event.
+- **R634 (ECM-32):** Customer account: order history, order detail, saved addresses, and reorder, extending the R375 customer portal on the same session cookie and ownership checks.
+- **R635 (ECM-33):** Abandoned cart reminders for carts with a consented email, following the COM-14 (R379) consent and frequency rules, with an unsubscribe link.
+
+## R636–R637 — Permissions and analytics
+- **R636 (ECM-34):** Permissions store.manage, products.edit, and orders.manage, a Shop Manager role, and server-side site isolation for products, carts, orders, and customers, following the multisite hardening rules from R463-R475. A Shop Manager cannot change settings, users, or licenses.
+- **R637 (ECM-35):** Store analytics boards: revenue, orders, average order value, refunds, top products, and the product view to cart to checkout to paid funnel, extending R378 and R387 and storing no card data.
+
+## R638–R643 — Starter, quality, and checks
+- **R638 (ECM-36):** Store starter template: home, shop, product, cart, checkout, and account pages with a few demo products, header mini-cart, and footer, seeded only when the user picks it.
+- **R639 (ECM-37):** Store performance and SEO: cache product and shop pages per site and locale, revalidate on publish, price change, or stock change, never cache cart, checkout, or account responses, and use one canonical URL per product with variant parameters.
+- **R640 (ECM-38):** Accessibility for the variant picker, gallery, cart drawer, and checkout: labels, errors tied to fields, focus management, keyboard use, and announced cart updates.
+- **R641 (ECM-39):** Tests for money math and rounding, concurrent stock reservation, coupon rules, tax and shipping totals, duplicate and delayed webhooks, a hand-edited cart price, and cross-site access to products, carts, and orders.
+- **R642 (ECM-40):** Lint, tsc, and a browser check on desktop and mobile: browse the shop, filter, open a product, pick a variant, add to cart, check out in sandbox, receive the email, fulfil in admin, and refund.
+- **R643 (ECM-41):** Gate 31 approval: catalog, product and shop templates, cart, checkout, payments, order lifecycle, emails, analytics, and store SEO verified with test evidence.
+
+## Acceptance criteria
+
+- Prices, discounts, shipping, tax, and totals are always calculated on the server; a hand-edited cart, form, or URL cannot change what the buyer pays.
+- An order becomes paid only from a verified webhook or provider API check; a success redirect alone grants nothing. Duplicate or delayed events never create duplicate orders, stock moves, emails, or licenses.
+- Two buyers cannot both take the last unit; stock reservations expire and are released.
+- Money is stored in integer minor units with a currency code; no floating-point totals.
+- Cart, checkout, account, and order pages are never publicly cached and never show another buyer's or another site's data.
+- Checkout layout is editable, but required fields, validation, and the payment step cannot be removed in the builder.
+- Product JSON-LD matches the visible price and availability and never invents ratings.
+- Existing sites, the R070 Product grid, and the one-product checkout keep working unchanged until the store is turned on.
+- New tables and columns use additive Drizzle migrations with site_id.
+
+## Approval gates
+
+- **Gate 30 (R603):** approve store scope, goods types, markets, and payment providers before any store code.
+- **Gate 31 (R643):** approve only after tests, typecheck, lint, and a browser check pass for browse, filter, product, cart, sandbox checkout, email, fulfilment, and refund on desktop and mobile.
+
+<!-- END: ecommerce-store-builder -->
