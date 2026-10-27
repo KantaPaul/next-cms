@@ -1,0 +1,14 @@
+{
+    "recommendations": [
+        "TypeScriptTeam.native-preview",
+        "biomejs.biome",
+        "streetsidesoftware.code-spell-checker",
+        "usernamehw.errorlens",
+        "yoavbls.pretty-ts-errors",
+        "ms-playwright.playwright",
+        "gruntfuggly.todo-tree"
+    ],
+    "unwantedRecommendations": [
+      "esbenp.prettier-vscode"
+    ]
+}

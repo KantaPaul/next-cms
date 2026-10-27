@@ -21,6 +21,7 @@ import {
 import {
   Code,
   Columns,
+  CollectionItem,
   ContactForm,
   Embed,
   Gallery,
@@ -210,6 +211,10 @@ export const builderConfig: Config = {
     layout: {
       title: 'Layout',
       components: ['Columns', 'Slider', 'Tabs', 'Accordion', 'Button', 'Spacer'],
+    },
+    collections: {
+      title: 'Collections',
+      components: ['CollectionItem'],
     },
     global: { title: 'Global blocks', components: ['GlobalRef'] },
   },
@@ -956,6 +961,17 @@ export const builderConfig: Config = {
         section: DEFAULT_SECTION,
       },
       render: renderBlock(Spacer),
+    },
+    CollectionItem: {
+      label: 'Collection item',
+      fields: withSection({
+        field: text('Field key (optional)'),
+      }),
+      defaultProps: {
+        field: '',
+        section: DEFAULT_SECTION,
+      },
+      render: renderBlock(CollectionItem),
     },
     GlobalRef: {
       label: 'Global block',

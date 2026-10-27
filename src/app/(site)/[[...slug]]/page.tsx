@@ -1,17 +1,26 @@
-import { cookies } from 'next/headers';
 import { type Data, Render, resolveAllData } from '@measured/puck';
+import { and, eq, isNull } from 'drizzle-orm';
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { builderConfig, postBuilderConfig } from '@/builder/config';
 import { sanitizeRichText } from '@/builder/sanitize';
+import {
+  type CollectionEntryWithFields,
+  EntryProvider,
+  useEntry,
+} from '@/components/analytics/entry-context';
 import { ViewBeacon } from '@/components/analytics/view-beacon';
 import { PAGES } from '@/config/pages';
+import { db } from '@/db';
+import { pageContents, pageExperiments, pages } from '@/db/schema';
 import { env } from '@/env.mjs';
 import {
   blogService,
   type PublicPost,
   resolvePostRoute,
 } from '@/server/services/blog.service';
+import { collectionsService } from '@/server/services/collections.service';
 import {
   getPreviewPageId,
   getPreviewPostId,
@@ -26,9 +35,6 @@ import {
   localizedSettings,
   siteSettingsService,
 } from '@/server/services/site-settings.service';
-import { db } from '@/db';
-import { eq } from 'drizzle-orm';
-import { pageExperiments } from '@/db/schema';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 type Params = {
@@ -319,7 +325,98 @@ export default async function SitePage({ params, searchParams }: Params) {
   if (post) return <PostRoute post={post} settings={settings} />;
 
   const page = await loadPage(slug);
-  if (!page) notFound();
+  if (!page) {
+    // Collection route: /{collectionSlug}/{entrySlug}
+    const localeCodes =
+      (await siteContext.publicSite()).locales.map(l => l.code) ?? [];
+    if (
+      Array.isArray(slug) &&
+      slug.length === 2 &&
+      slug[0] &&
+      slug[1] &&
+      !localeCodes.includes(slug[0]) &&
+      slug[0] !== 'blog'
+    ) {
+      try {
+        const entry = await collectionsService.getPublishedEntry(
+          slug[0],
+          slug[1]
+        );
+        const site = await siteContext.publicSite();
+        const base = settings.siteUrl || env.SITE_URL;
+        const path = `/${slug[0]}/${slug[1]}`;
+
+        if (entry.collection.templatePageId) {
+          const template = await publicSiteService.getPublished(
+            site.defaultLocale,
+            ''
+          );
+          // Find the template page by id - getPublished looks up by slug,
+          // so we need to query pages directly for the template page.
+          const [templatePage] = await db
+            .select()
+            .from(pages)
+            .where(
+              and(
+                eq(pages.id, entry.collection.templatePageId),
+                eq(pages.siteId, site.id),
+                isNull(pages.deletedAt),
+                eq(pages.status, 'published')
+              )
+            )
+            .limit(1);
+
+          if (templatePage) {
+            const [contentRow] = await db
+              .select({ content: pageContents.content })
+              .from(pageContents)
+              .where(
+                and(
+                  eq(pageContents.pageId, templatePage.id),
+                  eq(pageContents.kind, 'published')
+                )
+              )
+              .limit(1);
+
+            const metadata = {
+              themeTokens: settings.themeTokens,
+              searchParams: await searchParams,
+              language: templatePage.language,
+            };
+            const data = await resolveAllData(
+              (contentRow?.content as Data) ?? {
+                root: { props: {} },
+                content: [],
+                zones: {},
+              },
+              builderConfig,
+              metadata
+            );
+            return (
+              <EntryProvider entry={entry}>
+                {beaconForEntry(entry, path)}
+                <Render
+                  config={builderConfig}
+                  data={data}
+                  metadata={metadata}
+                />
+              </EntryProvider>
+            );
+          }
+        }
+
+        // No template page - render plain field list
+        return (
+          <EntryProvider entry={entry}>
+            <CollectionEntryList entry={entry} base={base} />
+          </EntryProvider>
+        );
+      } catch {
+        notFound();
+      }
+    }
+    notFound();
+  }
 
   const site = await siteContext.publicSite();
   const base = settings.siteUrl || env.SITE_URL;
@@ -345,7 +442,8 @@ export default async function SitePage({ params, searchParams }: Params) {
       const stored = jar.get('cms_ab')?.value;
       const [cookiePageId, cookieVariant] = (stored ?? '').split(':');
       variant =
-        cookiePageId === page.id && (cookieVariant === 'a' || cookieVariant === 'b')
+        cookiePageId === page.id &&
+        (cookieVariant === 'a' || cookieVariant === 'b')
           ? (cookieVariant as 'a' | 'b')
           : Math.floor(Math.random() * 100) + 1 <= (experiment.weight ?? 50)
             ? 'b'
@@ -413,5 +511,51 @@ export default async function SitePage({ params, searchParams }: Params) {
         />
       </article>
     </>
+  );
+}
+
+function beaconForEntry(entry: { id: string }, path: string) {
+  return <ViewBeacon pageId={entry.id} path={path} />;
+}
+
+function CollectionEntryList({
+  entry,
+  base,
+}: {
+  entry: CollectionEntryWithFields;
+  base: string;
+}) {
+  const fields = entry.collection.fields ?? [];
+  const entryData = entry.data as Record<string, unknown> | undefined;
+  return (
+    <article className="mx-auto max-w-3xl px-5 py-14 md:px-8 md:py-20">
+      <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl">
+        Entry
+      </h1>
+      <div className="mt-6 space-y-4">
+        {fields.map((field: { key: string; label: string; type: string }) => {
+          const value = entryData?.[field.key];
+          return (
+            <div key={field.key}>
+              <h3 className="text-lg font-semibold">{field.label}</h3>
+              {field.type === 'richtext' ? (
+                <div
+                  className="s-prose prose prose-lg max-w-none"
+                  dangerouslySetInnerHTML={{
+                    __html: sanitizeRichText(String(value ?? '')),
+                  }}
+                />
+              ) : field.type === 'media' ? (
+                value ? (
+                  <img src={String(value)} alt="" className="max-w-full" />
+                ) : null
+              ) : (
+                <p>{String(value ?? '')}</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </article>
   );
 }

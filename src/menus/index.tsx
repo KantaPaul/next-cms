@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Database,
   FolderTree,
   GalleryVertical,
   Globe,
@@ -12,6 +13,8 @@ import {
   MenuIcon,
   Newspaper,
   Palette,
+  Play,
+  Share2,
   ShieldCheck,
 } from 'lucide-react';
 import { PAGES } from '@/config/pages';
@@ -43,6 +46,12 @@ export function getMenuItems(): {
       name: 'Media Library',
       href: PAGES.DASHBOARD.MEDIA,
       icon: <ImageIcon className="w-[18px]" />,
+    },
+    {
+      name: 'Videos',
+      href: PAGES.DASHBOARD.VIDEOS,
+      icon: <Play className="w-[18px]" />,
+      permission: PERMISSIONS.VIDEOS_CREATE,
     },
     {
       name: 'Templates & Globals',
@@ -101,6 +110,18 @@ export function getMenuItems(): {
       href: PAGES.DASHBOARD.API,
       icon: <KeyRound className="w-[18px]" />,
       permission: PERMISSIONS.API_MANAGE,
+    },
+    {
+      name: 'Collections',
+      href: PAGES.DASHBOARD.COLLECTIONS,
+      icon: <Database className="w-[18px]" />,
+      permission: PERMISSIONS.PAGES_EDIT,
+    },
+    {
+      name: 'Webhooks',
+      href: PAGES.DASHBOARD.WEBHOOKS,
+      icon: <Share2 className="w-[18px]" />,
+      permission: PERMISSIONS.SETTINGS_MANAGE,
     },
   ];
 }

@@ -1,149 +1,235 @@
 'use client';
 
 import { Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { type FormEvent, useState, useTransition } from 'react';
+import { useId, useTransition, type FormEvent } from 'react';
+import { useForm, FormProvider } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { DEFAULT_SITE_LOCALES } from '@/db/schemas/sites.schema';
-import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import { createSite } from '@/server/actions/site.actions';
+import { FormInput as Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Controller } from 'react-hook-form';
+import { Select } from '@/components/ui/select';
+import {
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { FormItem, FormMessage } from '@/components/ui/form';
 
-const inputClass =
-  'h-9 w-full rounded-md border border-steel-200 bg-white px-3 text-sm dark:border-dark-300 dark:bg-dark-100';
+const localeSchema = z.object({
+  code: z.string().trim().min(2, 'Code is required').max(12),
+  label: z.string().trim().min(1, 'Label is required').max(40),
+});
 
-export function SitesManager({
-  sites,
-  current,
-}: {
-  current: string;
+export const createSiteSchema = z.object({
+  name: z.string().trim().min(1, 'Site name is required').max(120),
+  primaryHost: z.string().trim().max(255).nullish(),
+  extraDomains: z.string().trim().max(1000).nullish(),
+  defaultLocale: z.string().trim().min(2, 'Default locale is required').max(12),
+  locales: z.array(localeSchema).min(1, 'At least one locale is required'),
+});
+
+export type CreateSiteInput = z.infer<typeof createSiteSchema>;
+
+interface SitesManagerProps {
   sites: {
     siteId: string;
     siteName: string;
     roleName: string;
     primaryHost: string | null;
   }[];
-}) {
-  const router = useRouter();
+  current: string;
+}
+
+type Locale = { code: string; label: string };
+
+export function SitesManager({
+  sites,
+  current,
+}: SitesManagerProps) {
   const [pending, startTransition] = useTransition();
-  const [name, setName] = useState('');
-  const [primaryHost, setPrimaryHost] = useState('');
-  const [extraDomains, setExtraDomains] = useState('');
-  const [selected, setSelected] = useState<string[]>(['en']);
-  const [defaultLocale, setDefaultLocale] = useState('en');
+
+  const form = useForm<CreateSiteInput>({
+    resolver: zodResolver(createSiteSchema),
+    defaultValues: {
+      name: '',
+      primaryHost: '',
+      extraDomains: '',
+      defaultLocale: DEFAULT_SITE_LOCALES[0].code,
+      locales: DEFAULT_SITE_LOCALES.map(l => ({
+        code: l.code,
+        label: l.label,
+      })),
+    },
+  });
+
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    startTransition(async () => {
+      try {
+        const result = await createSite({
+          name: form.getValues('name'),
+          primaryHost: form.getValues('primaryHost') || undefined,
+          extraDomains: form.getValues('extraDomains') || undefined,
+          defaultLocale: form.getValues('defaultLocale'),
+          locales: form.getValues('locales'),
+        });
+        if (result) {
+          form.reset();
+          toast.success('Site created');
+          window.location.reload();
+        }
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Failed to create site');
+      }
+    });
+  };
 
   const toggle = (code: string) => {
-    setSelected(currentCodes => {
-      const next = currentCodes.includes(code)
-        ? currentCodes.filter(item => item !== code)
-        : [...currentCodes, code];
-      if (!next.includes(defaultLocale)) setDefaultLocale(next[0] ?? 'en');
-      return next;
-    });
+    const currentCodes = form.getValues('locales') as Locale[];
+    const isSelected = currentCodes.some((item: Locale) => item.code === code);
+    const next: Locale[] = isSelected
+      ? currentCodes.filter((item: Locale) => item.code !== code)
+      : [...currentCodes, { code, label: '' }];
+    form.setValue('locales', next);
+    const defaultLocale = form.getValues('defaultLocale') as string;
+    if (!next.some((item: Locale) => item.code === defaultLocale)) {
+      form.setValue('defaultLocale', (next[0] as Locale | undefined)?.code ?? DEFAULT_SITE_LOCALES[0].code);
+    }
   };
 
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    const locales = DEFAULT_SITE_LOCALES.filter(locale =>
-      selected.includes(locale.code)
-    );
-    startTransition(async () => {
-      await handleActionResponse(
-        createSite({
-          name,
-          primaryHost,
-          extraDomains,
-          defaultLocale,
-          locales,
-        }),
-        () => {
-          toast.success('Site created');
-          setName('');
-          setPrimaryHost('');
-          setExtraDomains('');
-          router.refresh();
-        }
-      );
-    });
-  };
+  const isLocaleSelected = (code: string) =>
+    form.getValues('locales').some((l: Locale) => l.code === code);
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_22rem]">
-      <ul className="divide-y divide-steel-100 rounded-lg border border-steel-200 dark:divide-dark-300 dark:border-dark-300">
-        {sites.map(site => (
-          <li key={site.siteId} className="flex items-center justify-between px-4 py-3">
-            <div>
-              <p className="font-medium">
-                {site.siteName}
-                {site.siteId === current ? (
-                  <span className="ml-2 text-xs text-steel-500">Current</span>
-                ) : null}
-              </p>
-              <p className="text-sm text-steel-500">
-                {site.primaryHost || 'No primary host'} · {site.roleName}
-              </p>
-            </div>
-          </li>
-        ))}
-      </ul>
-      <form onSubmit={submit} className="grid gap-3 rounded-lg border border-steel-200 p-4 dark:border-dark-300">
-        <h2 className="font-semibold">New site</h2>
-        <label className="grid gap-1 text-sm">
-          Name
-          <input className={inputClass} value={name} onChange={e => setName(e.target.value)} required />
-        </label>
-        <label className="grid gap-1 text-sm">
-          Primary host
-          <input
-            className={inputClass}
-            value={primaryHost}
-            onChange={e => setPrimaryHost(e.target.value)}
-            placeholder="example.com"
-          />
-        </label>
-        <label className="grid gap-1 text-sm">
-          Extra domains
-          <textarea
-            className="min-h-20 w-full rounded-md border border-steel-200 bg-white px-3 py-2 text-sm dark:border-dark-300 dark:bg-dark-100"
-            value={extraDomains}
-            onChange={e => setExtraDomains(e.target.value)}
-            placeholder="www.example.com"
-          />
-        </label>
-        <fieldset className="grid gap-2 text-sm">
-          <legend>Languages</legend>
-          {DEFAULT_SITE_LOCALES.map(locale => (
-            <label key={locale.code} className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={selected.includes(locale.code)}
-                onChange={() => toggle(locale.code)}
-              />
-              {locale.label}
-            </label>
+    <FormProvider {...form}>
+      <div className="grid gap-8 lg:grid-cols-[1fr_22rem]">
+        <ul className="divide-y divide-steel-100 rounded-lg border border-steel-200 dark:divide-dark-300 dark:border-dark-300">
+          {sites.map(site => (
+            <li key={site.siteId} className="flex items-center justify-between px-4 py-3">
+              <div>
+                <p className="font-medium">
+                  {site.siteName}
+                  {site.siteId === current ? (
+                    <span className="ml-2 text-xs text-steel-500">Current</span>
+                  ) : null}
+                </p>
+                <p className="text-sm text-steel-500">
+                  {site.primaryHost || 'No primary host'} · {site.roleName}
+                </p>
+              </div>
+            </li>
           ))}
-        </fieldset>
-        <label className="grid gap-1 text-sm">
-          Default language
-          <select
-            className={inputClass}
-            value={defaultLocale}
-            onChange={e => setDefaultLocale(e.target.value)}
+        </ul>
+        <form onSubmit={onSubmit} className="grid gap-3 rounded-lg border border-steel-200 p-4 dark:border-dark-300">
+          <h2 className="font-semibold">New site</h2>
+          <Controller
+            name="name"
+            render={({ field, fieldState }) => {
+              const id = useId();
+              return (
+                <FormItem>
+                  <Label htmlFor={id}>Name</Label>
+                  <Input id={id} {...field} required />
+                  {fieldState.error && (
+                    <FormMessage>{fieldState.error.message}</FormMessage>
+                  )}
+                </FormItem>
+              );
+            }}
+          />
+          <Controller
+            name="primaryHost"
+            render={({ field, fieldState }) => {
+              const id = useId();
+              return (
+                <FormItem>
+                  <Label htmlFor={id}>Primary host</Label>
+                  <Input id={id} {...field} placeholder="example.com" />
+                  {fieldState.error && (
+                    <FormMessage>{fieldState.error.message}</FormMessage>
+                  )}
+                </FormItem>
+              );
+            }}
+          />
+          <Controller
+            name="extraDomains"
+            render={({ field, fieldState }) => {
+              const id = useId();
+              return (
+                <FormItem>
+                  <Label htmlFor={id}>Extra domains</Label>
+                  <textarea
+                    id={id}
+                    {...field}
+                    className="min-h-20 w-full rounded-md border border-steel-200 bg-white px-3 py-2 text-sm dark:border-dark-300 dark:bg-dark-100"
+                    placeholder="www.example.com"
+                  />
+                  {fieldState.error && (
+                    <FormMessage>{fieldState.error.message}</FormMessage>
+                  )}
+                </FormItem>
+              );
+            }}
+          />
+          <fieldset className="grid gap-2 text-sm">
+            <legend>Languages</legend>
+            {DEFAULT_SITE_LOCALES.map(locale => (
+              <label key={locale.code} className="flex items-center gap-2">
+                <Checkbox
+                  checked={isLocaleSelected(locale.code)}
+                  onCheckedChange={(checked: boolean) => toggle(locale.code)}
+                />
+                {locale.label}
+              </label>
+            ))}
+          </fieldset>
+          <Controller
+            name="defaultLocale"
+            render={({ field, fieldState }) => {
+              const id = useId();
+              const availableLocales = form.getValues('locales') as Locale[];
+              return (
+                <FormItem>
+                  <Label htmlFor={id}>Default language</Label>
+                  <Select
+                    id={id}
+                    {...field}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select default locale" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableLocales.map(locale => (
+                        <SelectItem key={locale.code} value={locale.code}>
+                          {locale.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {fieldState.error && (
+                    <FormMessage>{fieldState.error.message}</FormMessage>
+                  )}
+                </FormItem>
+              );
+            }}
+          />
+          <Button
+            type="submit"
+            disabled={pending || form.getValues('locales').length === 0}
           >
-            {DEFAULT_SITE_LOCALES.filter(locale => selected.includes(locale.code)).map(
-              locale => (
-                <option key={locale.code} value={locale.code}>
-                  {locale.label}
-                </option>
-              )
-            )}
-          </select>
-        </label>
-        <Button type="submit" disabled={pending || selected.length === 0}>
-          {pending ? <Loader2 className="animate-spin" /> : null}
-          Create site
-        </Button>
-      </form>
-    </div>
+            {pending ? <Loader2 className="animate-spin" /> : null}
+            Create site
+          </Button>
+        </form>
+      </div>
+    </FormProvider>
   );
 }

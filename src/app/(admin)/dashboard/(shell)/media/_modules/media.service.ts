@@ -47,6 +47,7 @@ export type MediaListParams = {
   type?: 'image' | 'video' | 'document' | '';
   page?: number;
   size?: number;
+  siteId?: string;
 };
 
 export const mediaService = {
@@ -56,9 +57,10 @@ export const mediaService = {
     type,
     page = 1,
     size = 40,
+    siteId,
   }: MediaListParams) => {
     const conditions: (SQL | undefined)[] = [
-      eq(media.siteId, await adminSiteId()),
+      eq(media.siteId, siteId ?? (await adminSiteId())),
     ];
     if (folder) conditions.push(eq(media.folder, folder));
     if (type === 'image') conditions.push(like(media.mime, 'image/%'));
@@ -121,6 +123,7 @@ export const mediaService = {
       alt?: string | null;
       width?: number | null;
       height?: number | null;
+      siteId?: string;
     },
     access: UserAccess
   ) => {
@@ -148,7 +151,7 @@ export const mediaService = {
     const [row] = await db
       .insert(media)
       .values({
-        siteId: await adminSiteId(),
+        siteId: meta.siteId ?? (await adminSiteId()),
         key,
         url,
         filename: file.name.slice(0, 255),

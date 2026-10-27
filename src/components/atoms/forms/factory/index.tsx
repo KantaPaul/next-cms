@@ -1,15 +1,13 @@
 'use client';
 
+import { useCallback } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   type DefaultValues,
-  type FieldPathValues,
   type FieldValues,
-  // type UseFormReturn,
   FormProvider,
   type SubmitHandler,
   useForm,
-  useWatch,
 } from 'react-hook-form';
 import type { z } from 'zod';
 import { cn } from '@/lib/utils/cn';
@@ -19,10 +17,10 @@ interface FormWrapperProps<TFieldValues extends FieldValues> {
   className?: string;
   schema: z.ZodType<TFieldValues, any, any>;
   defaultValues?: DefaultValues<TFieldValues>;
-  values?: Partial<TFieldValues>;
   onSubmit: SubmitHandler<TFieldValues>;
-  // children: (form: UseFormReturn<TFieldValues>) => React.ReactNode;
   children: React.ReactNode;
+  /** Reset the form to defaultValues after a successful submit. */
+  resetOnSuccess?: boolean;
 }
 
 export function FormFactory<TFieldValues extends FieldValues>({
@@ -32,23 +30,31 @@ export function FormFactory<TFieldValues extends FieldValues>({
   defaultValues,
   schema,
   className,
-  values,
+  resetOnSuccess = true,
 }: FormWrapperProps<TFieldValues>) {
   const methods = useForm<TFieldValues>({
     resolver: zodResolver(schema),
     defaultValues,
-    // values: values as TFieldValues,
   });
 
-  // const values = useWatch({ control: methods.control });
-  // console.log('values', values);
-  console.log('errors', methods.formState.errors);
+  const handleSubmit = useCallback(
+    (data: TFieldValues) => {
+      return onSubmit(data);
+    },
+    [onSubmit]
+  );
+
+  const reset = useCallback(() => {
+    if (resetOnSuccess) {
+      methods.reset(defaultValues);
+    }
+  }, [methods, resetOnSuccess, defaultValues]);
 
   return (
     <FormProvider {...methods}>
       <form
         id={id}
-        onSubmit={methods.handleSubmit(onSubmit)}
+        onSubmit={methods.handleSubmit(handleSubmit)}
         className={cn('grid grid-cols-1 gap-7 lg:gap-10', className)}
         noValidate
         autoComplete="off"

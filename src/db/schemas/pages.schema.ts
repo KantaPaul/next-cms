@@ -17,6 +17,7 @@ import {
 import { baseColumns, relationConfig } from '@/db/helpers/base.columns';
 import { users } from '@/db/schemas/auth.schema';
 import { DEFAULT_SITE_ID } from '@/db/schemas/sites.schema';
+import { type VideoSettings, DEFAULT_VIDEO_SETTINGS } from '@/db/schemas/video.schema';
 import type { SiteCopy } from '@/db/schemas/sites.schema';
 import {
   ContentKind,
@@ -312,6 +313,10 @@ export const siteSettings = pgTable('site_settings', {
     .$type<ThemeTokens>()
     .default(DEFAULT_THEME_TOKENS)
     .notNull(),
+  videoSettings: jsonb('video_settings')
+    .$type<VideoSettings>()
+    .default(DEFAULT_VIDEO_SETTINGS)
+    .notNull(),
   robotsTxt: text('robots_txt'),
   googleAnalyticsId: varchar('google_analytics_id', { length: 50 }),
   updatedAt: baseColumns.updatedAt,
@@ -372,13 +377,18 @@ export const apiKeys = pgTable(
     id,
     siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
     name: varchar('name', { length: 100 }).notNull(),
-  prefix: varchar('prefix', { length: 20 }).notNull(),
-  hashedKey: text('hashed_key').notNull().unique(),
-  lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
-  revokedAt: timestamp('revoked_at', { withTimezone: true }),
-  createdBy: text('created_by').references(() => users.id, setNull),
-  createdAt: baseColumns.createdAt,
-  },
+    prefix: varchar('prefix', { length: 20 }).notNull(),
+    hashedKey: text('hashed_key').notNull().unique(),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    createdBy: text('created_by').references(() => users.id, setNull),
+    /** Fixed after creation. Existing keys keep `{content:read}`. */
+    scopes: text('scopes')
+      .array()
+      .notNull()
+      .default(sql`'{"content:read"}'::text[]`),
+    createdAt: baseColumns.createdAt,
+    },
   t => [index('api_keys_site_id_index').on(t.siteId)]
 );
 
@@ -424,6 +434,25 @@ export const pageViews = pgTable(
       'page_views_target_check',
       sql`num_nonnulls(${t.pageId}, ${t.postId}) = 1`
     ),
+  ]
+);
+
+/** Shared fixed-window rate counter for API keys, lives in Postgres. */
+export const apiRateWindows = pgTable(
+  'api_rate_windows',
+  {
+    apiKeyId: text('api_key_id')
+      .references(() => apiKeys.id, { onDelete: 'cascade' })
+      .notNull(),
+    windowStart: timestamp('window_start', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    count: integer('count').notNull().default(0),
+    ...timestampColumns,
+  },
+  t => [
+    index('api_rate_windows_api_key_id_index').on(t.apiKeyId),
+    index('api_rate_windows_window_start_index').on(t.windowStart),
   ]
 );
 

@@ -20,20 +20,23 @@ const toItem = (item: {
   order: item.order,
 });
 
-export const GET = apiHandler(async (_request, { url }) => {
-  const location = enumParam(url, 'location', MENU_LOCATION);
-  const menus = await contentApiService.listMenus(location);
-  return {
-    data: menus.map(menu => ({
-      id: menu.id,
-      title: menu.title,
-      location: menu.location,
-      items: menu.items.map(item => ({
-        ...toItem(item),
-        children: item.children.map(toItem),
+export const GET = apiHandler(
+  async (_request, { url }) => {
+    const location = enumParam(url, 'location', MENU_LOCATION);
+    const menus = await contentApiService.listMenus(location);
+    return {
+      data: menus.map(menu => ({
+        id: menu.id,
+        title: menu.title,
+        location: menu.location,
+        items: menu.items.map(item => ({
+          ...toItem(item),
+          children: item.children.map(toItem),
+        })),
       })),
-    })),
-  };
-});
+    };
+  },
+  ['content:read']
+);
 
 export const OPTIONS = apiOptions;

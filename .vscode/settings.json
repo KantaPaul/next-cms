@@ -1,1 +1,73 @@
-{}
+{
+  // Use the native (Go) TypeScript 7 language server from the
+  // "TypeScript 7" (TypeScriptTeam.native-preview) extension.
+  "js/ts.experimental.useTsgo": true,
+  "js/ts.tsserver.maxMemory": "2048",
+  "typescript.tsserver.automaticTypeAcquisition.enabled": false,
+  "typescript.disableReferencedProjectLoad": true,
+  "typescript.disableSolutionSearching": true,
+  "editor.gotoLocation.multipleDefinitions": "goto",
+  "editor.gotoLocation.multipleTypeDefinitions": "goto",
+  "editor.gotoLocation.multipleImplementations": "goto",
+  "search.followSymlinks": false,
+  "files.exclude": {
+    "**/build": true,
+    "**/coverage": true,
+    "**/*.tsbuildinfo": true,
+    "**/*.tsbuildinfo.json": true,
+    "**/*.d.ts": true,
+    "**/*.d.ts.map": true,
+    // "**/dist": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.next": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/.turbo": true,
+    "**/coverage": true,
+    "**/bun.lock": true,
+    "**/.claude": true,
+    "**/*_snapshot.json": true,
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.next/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/.turbo/**": true,
+    "**/coverage/**": true,
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true
+  },
+  "editor.defaultFormatter": "biomejs.biome",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.biome": "explicit",
+    "source.organizeImports.biome": "explicit"
+  },
+  "cSpell.words": [
+    "asyncselect",
+    "authorisation",
+    "daterange",
+    "Forex",
+    "ILIKE",
+    "normalised",
+    "ORPC",
+    "RECOGNISED",
+    "timestamptz"
+  ],
+  "[typescript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "js/ts.server.goMemLimit": "2048"
+}

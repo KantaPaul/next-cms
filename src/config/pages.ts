@@ -35,6 +35,12 @@ export const PAGES = {
     CONTACT_FORMS_INBOX: '/dashboard/contact-forms/inbox',
     CONTACT_FORM_SUBMISSION: (id: string) =>
       `/dashboard/contact-forms/inbox/${id}`,
+    COLLECTIONS: '/dashboard/collections',
+    COLLECTION: (id: string) => `/dashboard/collections/${id}`,
+    COLLECTION_ENTRIES: (id: string) => `/dashboard/collections/${id}/entries`,
+    COLLECTION_ENTRY: (id: string, entryId: string) =>
+      `/dashboard/collections/${id}/entries/${entryId}`,
+    WEBHOOKS: '/dashboard/webhooks',
     REDIRECTS: '/dashboard/redirects',
     REVIEW: '/dashboard/review',
     ACCOUNT: '/dashboard/account',
@@ -42,6 +48,7 @@ export const PAGES = {
     SITES: '/dashboard/sites',
     USERS: '/dashboard/users',
     API: '/dashboard/api',
+    VIDEOS: '/dashboard/videos',
   },
   SITE: {
     page: (

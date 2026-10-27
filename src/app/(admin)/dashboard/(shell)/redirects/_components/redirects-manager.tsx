@@ -1,7 +1,11 @@
 'use client';
 
+import { Loader2 } from 'lucide-react';
+import { useId, useState, useTransition, type FormEvent } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useRouter } from 'next/navigation';
-import { type FormEvent, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import {
   TableBody,
@@ -13,73 +17,153 @@ import {
   TableRow,
 } from '@/components/atoms/table';
 import { Button } from '@/components/ui/button';
-import { FormInput } from '@/components/ui/input';
+import { FormInput as Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Controller } from 'react-hook-form';
+import { Select } from '@/components/ui/select';
+import {
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { FormItem, FormMessage } from '@/components/ui/form';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import { createRedirect, importRedirects } from '../_modules/redirects.actions';
+import { createRedirectSchema } from '../_modules/redirects.schemas';
+import { useFormAction } from '@/hooks/use-form-action';
+
+export type RedirectRow = {
+  id: string;
+  fromPath: string;
+  toPath: string;
+  statusCode: number;
+};
 
 export function RedirectsManager({
   rows,
 }: {
-  rows: { id: string; fromPath: string; toPath: string; statusCode: number }[];
+  rows: RedirectRow[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [csv, setCsv] = useState('');
 
-  function onCreate(event: FormEvent<HTMLFormElement>) {
+  const form = useForm<z.infer<typeof createRedirectSchema>>({
+    resolver: zodResolver(createRedirectSchema),
+    defaultValues: { fromPath: '', toPath: '', statusCode: '301' },
+  });
+
+  const { submit, isPending: createPending } = useFormAction(
+    async (data: z.infer<typeof createRedirectSchema>) => {
+      const result = await createRedirect(data);
+      return result as Record<string, unknown>;
+    },
+    {
+      onSuccess: () => {
+        form.reset({ fromPath: '', toPath: '', statusCode: '301' });
+        toast.success('Redirect saved');
+        router.refresh();
+      },
+    }
+  );
+
+  const onCreate = (data: z.infer<typeof createRedirectSchema>) => {
+    submit({
+      fromPath: data.fromPath,
+      toPath: data.toPath,
+      statusCode: data.statusCode as '301' | '302',
+    });
+  };
+
+  function onImport(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const status = data.get('statusCode') === '302' ? 302 : 301;
     startTransition(async () => {
+      const formData = new FormData(event.currentTarget);
+      const csv = formData.get('csv') as string;
       await handleActionResponse(
-        createRedirect({
-          fromPath: String(data.get('fromPath') ?? ''),
-          toPath: String(data.get('toPath') ?? ''),
-          statusCode: status,
-        }),
-        () => {
-          toast.success('Redirect saved');
-          event.currentTarget.reset();
+        importRedirects({ csv }),
+        result => {
+          toast.success(`Imported ${(result as { created: number }).created} redirects`);
+          setCsv('');
           router.refresh();
         }
       );
     });
   }
 
-  function onImport(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    startTransition(async () => {
-      await handleActionResponse(importRedirects({ csv }), result => {
-        toast.success(`Imported ${(result as { created: number }).created} redirects`);
-        setCsv('');
-        router.refresh();
-      });
-    });
-  }
-
   return (
     <div className="grid gap-8">
-      <form onSubmit={onCreate} className="flex flex-wrap items-end gap-3">
+      <form
+        onSubmit={form.handleSubmit(onCreate)}
+        className="flex flex-wrap items-end gap-3"
+      >
         <label className="grid gap-1 text-sm">
           From
-          <FormInput name="fromPath" required placeholder="/old-path" />
+          <Controller
+            name="fromPath"
+            render={({ field, fieldState }) => {
+              const id = useId();
+              return (
+                <FormItem>
+                  <Label htmlFor={id}>From</Label>
+                  <Input id={id} {...field} required placeholder="/old-path" />
+                  {fieldState.error && (
+                    <FormMessage>{fieldState.error.message}</FormMessage>
+                  )}
+                </FormItem>
+              );
+            }}
+          />
         </label>
         <label className="grid gap-1 text-sm">
           To
-          <FormInput name="toPath" required placeholder="/new-path" />
+          <Controller
+            name="toPath"
+            render={({ field, fieldState }) => {
+              const id = useId();
+              return (
+                <FormItem>
+                  <Label htmlFor={id}>To</Label>
+                  <Input id={id} {...field} required placeholder="/new-path" />
+                  {fieldState.error && (
+                    <FormMessage>{fieldState.error.message}</FormMessage>
+                  )}
+                </FormItem>
+              );
+            }}
+          />
         </label>
         <label className="grid gap-1 text-sm">
           Status
-          <select
+          <Controller
             name="statusCode"
-            className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
-            defaultValue="301"
-          >
-            <option value="301">301</option>
-            <option value="302">302</option>
-          </select>
+            render={({ field, fieldState }) => {
+              const id = useId();
+              return (
+                <FormItem>
+                  <Label htmlFor={id}>Status</Label>
+                  <Select
+                    id={id}
+                    {...field}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="301">301</SelectItem>
+                      <SelectItem value="302">302</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {fieldState.error && (
+                    <FormMessage>{fieldState.error.message}</FormMessage>
+                  )}
+                </FormItem>
+              );
+            }}
+          />
         </label>
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" disabled={createPending}>
           Add
         </Button>
       </form>

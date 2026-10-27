@@ -1,3 +1,5 @@
+'use client';
+
 import type { RowSelectionState } from '@tanstack/react-table';
 import { useCallback, useMemo, useState } from 'react';
 

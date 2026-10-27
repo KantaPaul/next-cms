@@ -7,6 +7,10 @@ export const PERMISSIONS = {
   MEDIA_UPLOAD: 'media.upload',
   SETTINGS_MANAGE: 'settings.manage',
   API_MANAGE: 'api.manage',
+  VIDEOS_CREATE: 'videos.create',
+  VIDEOS_EDIT: 'videos.edit',
+  VIDEOS_PUBLISH: 'videos.publish',
+  VIDEOS_DELETE: 'videos.delete',
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -58,6 +62,26 @@ export const PERMISSION_MATRIX: {
     key: PERMISSIONS.API_MANAGE,
     label: 'Manage REST API keys',
     roles: { Admin: true, Editor: false, Author: false, Viewer: false },
+  },
+  {
+    key: PERMISSIONS.VIDEOS_CREATE,
+    label: 'Create and edit videos',
+    roles: { Admin: true, Editor: true, Author: true, Viewer: false },
+  },
+  {
+    key: PERMISSIONS.VIDEOS_EDIT,
+    label: 'Edit any video',
+    roles: { Admin: true, Editor: true, Author: true, Viewer: false },
+  },
+  {
+    key: PERMISSIONS.VIDEOS_PUBLISH,
+    label: 'Publish and unpublish videos',
+    roles: { Admin: true, Editor: true, Author: false, Viewer: false },
+  },
+  {
+    key: PERMISSIONS.VIDEOS_DELETE,
+    label: 'Delete and archive videos',
+    roles: { Admin: true, Editor: true, Author: false, Viewer: false },
   },
 ];
 

@@ -29,7 +29,11 @@ export type AuditTarget =
   | 'global_block'
   | 'api_key'
   | 'user'
-  | 'site';
+  | 'site'
+  | 'collection'
+  | 'collection_field'
+  | 'collection_entry'
+  | 'video';
 
 export const auditService = {
   log: async (

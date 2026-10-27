@@ -81,13 +81,19 @@ export const apiKeysService = {
   },
 
   /** Resolves an active key from its plaintext value and records when it was last used. */
-  verify: async (key: string) => {
+  verify: async (key: string): Promise<{
+    id: string;
+    name: string;
+    siteId: string;
+    scopes: string[];
+  } | null> => {
     if (!key.startsWith(KEY_PREFIX)) return null;
     const [row] = await db
       .select({
         id: apiKeys.id,
         siteId: apiKeys.siteId,
         name: apiKeys.name,
+        scopes: apiKeys.scopes,
         lastUsedAt: apiKeys.lastUsedAt,
       })
       .from(apiKeys)
@@ -109,7 +115,12 @@ export const apiKeysService = {
         .where(eq(apiKeys.id, row.id));
     }
 
-    return { id: row.id, name: row.name, siteId: row.siteId };
+    return {
+      id: row.id,
+      name: row.name,
+      siteId: row.siteId,
+      scopes: row.scopes,
+    };
   },
 };
 

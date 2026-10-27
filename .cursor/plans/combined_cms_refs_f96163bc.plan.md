@@ -121,28 +121,28 @@ todos:
     status: completed
   - id: R040
     content: "P4-01 collections and collection_fields tables"
-    status: pending
+    status: completed
   - id: R041
     content: "P4-02 Validate collection entry JSON"
-    status: pending
+    status: completed
   - id: R042
     content: "P4-03 Generated admin list and edit screens for collections"
-    status: pending
+    status: completed
   - id: R043
     content: "P4-04 CollectionItem block and collection slug route"
-    status: pending
+    status: completed
   - id: R044
     content: "P4-05 Scoped API keys"
-    status: pending
+    status: completed
   - id: R045
     content: "P4-06 Draft-first write endpoints"
-    status: pending
+    status: completed
   - id: R046
     content: "P4-07 Postgres rate limit"
-    status: pending
+    status: completed
   - id: R047
     content: "P4-08 Signed webhooks and a delivery log"
-    status: pending
+    status: completed
   - id: R048
     content: "P5-01 Video block"
     status: completed

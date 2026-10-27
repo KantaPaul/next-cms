@@ -60,6 +60,11 @@ const settingsSchema = z.object({
     borderRadius: z.enum(['none', 'sm', 'md', 'lg', 'full']),
     colorMode: z.enum(['light', 'dark', 'system']),
   }),
+  videoSettings: z
+    .object({
+      providers: z.record(z.enum(['youtube', 'vimeo', 'direct']), z.boolean()),
+    })
+    .nullish(),
 });
 
 export const updateSiteSettings = permissionProcedure(
@@ -70,4 +75,24 @@ export const updateSiteSettings = permissionProcedure(
     const row = await siteSettingsService.update(input, ctx.access);
     revalidatePath(PAGES.DASHBOARD.SETTINGS);
     return row;
+  });
+
+export const updateVideoSettings = permissionProcedure(
+  PERMISSIONS.SETTINGS_MANAGE
+)
+  .input(
+    z.object({
+      providers: z.record(z.enum(['youtube', 'vimeo', 'direct']), z.boolean()),
+    })
+  )
+  .action(async ({ input, ctx }) => {
+    const result = await siteSettingsService.updateVideoSettings(
+      input,
+      ctx.access
+    );
+    if (!result.ok) {
+      return { ok: false, error: result.error };
+    }
+    revalidatePath(PAGES.DASHBOARD.SETTINGS);
+    return { ok: true, data: result.data };
   });

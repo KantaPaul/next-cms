@@ -1,7 +1,10 @@
 import 'server-only';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { and, eq } from 'drizzle-orm';
 import { env } from '@/env.mjs';
+import { db } from '@/db';
+import { apiRateWindows } from '@/db/schema';
 import { apiKeysService } from '@/server/services/api-keys.service';
 import { siteContext } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
@@ -9,29 +12,54 @@ import { siteSettingsService } from '@/server/services/site-settings.service';
 const RATE_LIMIT = 60;
 const WINDOW_MS = 60_000;
 
-// Per-process fixed window. Good enough for a single instance; use a shared store when running several.
-const windows = new Map<string, { start: number; count: number }>();
+async function rateLimit(keyId: string) {
+  const now = new Date();
+  const windowStart = new Date(
+    Math.floor(now.getTime() / WINDOW_MS) * WINDOW_MS
+  );
 
-function rateLimit(keyId: string) {
-  const now = Date.now();
-  let entry = windows.get(keyId);
+  const [existing] = await db
+    .select({ count: apiRateWindows.count })
+    .from(apiRateWindows)
+    .where(
+      and(
+        eq(apiRateWindows.apiKeyId, keyId),
+        eq(apiRateWindows.windowStart, windowStart)
+      )
+    )
+    .limit(1);
 
-  if (!entry || now - entry.start >= WINDOW_MS) {
-    entry = { start: now, count: 0 };
-    windows.set(keyId, entry);
+  let count: number;
+  if (existing) {
+    const [row] = await db
+      .update(apiRateWindows)
+      .set({ count: (existing.count as number) + 1 })
+      .where(
+        and(
+          eq(apiRateWindows.apiKeyId, keyId),
+          eq(apiRateWindows.windowStart, windowStart)
+        )
+      )
+      .returning({ count: apiRateWindows.count });
+    count = row.count as number;
+  } else {
+    const [row] = await db
+      .insert(apiRateWindows)
+      .values({ apiKeyId: keyId, windowStart, count: 1 })
+      .returning({ count: apiRateWindows.count });
+    count = row.count as number;
   }
 
-  entry.count += 1;
   return {
-    allowed: entry.count <= RATE_LIMIT,
-    remaining: Math.max(0, RATE_LIMIT - entry.count),
-    reset: Math.ceil((entry.start + WINDOW_MS) / 1000),
+    allowed: count <= RATE_LIMIT,
+    remaining: Math.max(0, RATE_LIMIT - count),
+    reset: Math.ceil((windowStart.getTime() + WINDOW_MS) / 1000),
   };
 }
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
   'Access-Control-Allow-Headers': 'Authorization, Content-Type',
 };
 
@@ -79,9 +107,10 @@ function readKey(request: Request) {
 
 export type ApiContext<P> = { params: P; url: URL; siteUrl: string };
 
-/** Wraps a read-only v1 handler with API key auth, rate limiting, and CORS. */
+/** Wraps a v1 handler with API key auth, scope check, rate limiting, and CORS. */
 export function apiHandler<P = Record<string, never>>(
-  handler: (request: Request, ctx: ApiContext<P>) => Promise<unknown>
+  handler: (request: Request, ctx: ApiContext<P>) => Promise<unknown>,
+  requiredScopes: string[] = []
 ) {
   return async (request: Request, route: { params: Promise<P> }) => {
     const key = readKey(request);
@@ -98,7 +127,13 @@ export function apiHandler<P = Record<string, never>>(
       return apiError(401, 'Invalid or revoked API key.');
     }
 
-    const limit = rateLimit(apiKey.id);
+    // Scope check
+    const keyScopes = apiKey.scopes ?? [];
+    if (requiredScopes.length && !requiredScopes.some(s => keyScopes.includes(s))) {
+      return apiError(403, 'API key missing required scope.', limitHeadersPlaceholder());
+    }
+
+    const limit = await rateLimit(apiKey.id);
     const limitHeaders = {
       'X-RateLimit-Limit': String(RATE_LIMIT),
       'X-RateLimit-Remaining': String(limit.remaining),
@@ -140,6 +175,14 @@ export function apiHandler<P = Record<string, never>>(
       console.error('[api/v1]', error);
       return apiError(500, 'Something went wrong.', limitHeaders);
     }
+  };
+}
+
+function limitHeadersPlaceholder(): Record<string, string> {
+  return {
+    'X-RateLimit-Limit': String(RATE_LIMIT),
+    'X-RateLimit-Remaining': String(RATE_LIMIT),
+    'X-RateLimit-Reset': String(Math.ceil(Date.now() / 1000) + 60),
   };
 }
 

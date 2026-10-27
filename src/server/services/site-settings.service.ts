@@ -5,8 +5,14 @@ import { cache } from 'react';
 import { resolveThemeTokens } from '@/builder/theme';
 import { PERMISSIONS } from '@/config/permissions';
 import { db } from '@/db';
-import { SITE_SETTINGS_ID, siteSettings, type ThemeTokens } from '@/db/schema';
+import {
+  SITE_SETTINGS_ID,
+  siteSettings,
+  type ThemeTokens,
+  type VideoSettings,
+} from '@/db/schema';
 import type { SiteCopy } from '@/db/schemas/sites.schema';
+import { parseVideoSettings } from '@/lib/video/settings';
 import { adminSiteId, siteContext } from '@/server/services/site-context';
 import { revalidatePublicSite } from '@/lib/utils/revalidate-site';
 import {
@@ -25,6 +31,7 @@ export type SiteSettingsInput = {
   headerMenuId?: string | null;
   footerMenuId?: string | null;
   themeTokens: ThemeTokens;
+  videoSettings?: VideoSettings;
   robotsTxt?: string | null;
   googleAnalyticsId?: string | null;
   seoTitle?: string | null;
@@ -142,6 +149,41 @@ export const siteSettingsService = {
     });
     revalidatePublicSite();
     return row;
+  },
+
+  updateVideoSettings: async (
+    input: unknown,
+    access: UserAccess
+  ): Promise<{ ok: true; data: VideoSettings } | { ok: false; error: string }> => {
+    await accessService.assertPermission(
+      access.userId,
+      PERMISSIONS.SETTINGS_MANAGE
+    );
+    const siteId = await adminSiteId();
+    await loadSettings(siteId);
+
+    const parsed = parseVideoSettings(input);
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    await db
+      .update(siteSettings)
+      .set({
+        videoSettings: parsed.data,
+        updatedAt: new Date(),
+      })
+      .where(eq(siteSettings.siteId, siteId));
+
+    await auditService.log({
+      actorId: access.userId,
+      action: 'update',
+      targetType: 'settings',
+      targetId: siteId,
+      targetName: 'Site settings (video)',
+    });
+    revalidatePublicSite();
+    return { ok: true, data: parsed.data };
   },
 };
 

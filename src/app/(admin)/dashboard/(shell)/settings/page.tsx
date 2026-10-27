@@ -59,6 +59,7 @@ export default async function SettingsPage() {
           seoDescription: settings.seoDescription ?? null,
           translations: settings.translations ?? null,
           themeTokens: settings.themeTokens,
+          videoSettings: settings.videoSettings ?? null,
         }}
         menus={menus.map(m => ({
           id: m.id,
