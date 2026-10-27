@@ -1,6 +1,6 @@
 ---
 name: Combined CMS refs
-overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, full-site production optimization, commercial launch readiness, international website-builder market-gap audit, Elementor-style nested container/Flexbox/CSS Grid, dynamic content, global design styles, and conditional display. Numbered implementation steps R001–R570 include builder tasks, React-first differentiators, multisite reliability, market-gap builder features, docs sites, agency, local business, portfolio, and video library site packs, and approval gates. Name a numbered step to implement only that piece.
+overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, full-site production optimization, commercial launch readiness, international website-builder market-gap audit, Elementor-style nested container/Flexbox/CSS Grid, dynamic content, global design styles, and conditional display. Numbered implementation steps R001–R602 include builder tasks, React-first differentiators, multisite reliability, market-gap builder features, docs sites, agency, local business, portfolio, and video library site packs, builder listing and search pages, and approval gates. Name a numbered step to implement only that piece.
 todos:
   - id: R001
     content: "P1-01 Register Slider, Tabs, and Accordion as builderConfig component keys"
@@ -1712,10 +1712,106 @@ todos:
   - id: R570
     content: "SITE-03 Gate 28 approval: agency, local business, portfolio, and video library site features verified"
     status: pending
+  - id: R571
+    content: "QRY-01 Typed listing query schema: source (posts, pages, collection entries, videos), filters, sort, limit, offset, and exclude-current, validated against allowlisted fields"
+    status: pending
+  - id: R572
+    content: "QRY-02 Server query resolver per source that only returns published, site-scoped, locale-scoped, access-checked items, with a hard maximum page size"
+    status: pending
+  - id: R573
+    content: "QRY-03 Namespaced URL parameters per listing block so two listings and their filters on one page never clash"
+    status: pending
+  - id: R574
+    content: "QRY-04 Database indexes for the filter and sort columns each source allows"
+    status: pending
+  - id: R575
+    content: "QRY-05 Query Loop block whose card is a slot designed in the builder, with item fields (title, image, excerpt, date, author, terms, collection field) read from the loop item"
+    status: pending
+  - id: R576
+    content: "QRY-06 Loop layouts: grid, list, masonry, carousel, and table, with per-device columns and gap"
+    status: pending
+  - id: R577
+    content: "QRY-07 Pagination styles: numbered, load more, and infinite scroll, always with crawlable page links underneath"
+    status: pending
+  - id: R578
+    content: "QRY-08 Empty-state slot and a loading skeleton for Query Loop"
+    status: pending
+  - id: R579
+    content: "QRY-09 Query Loop presets for latest posts, related posts, collection entries, and videos"
+    status: pending
+  - id: R580
+    content: "QRY-10 Keep BlogPosts and RelatedPosts rendering unchanged and offer a one-click convert to a Query Loop preset"
+    status: pending
+  - id: R581
+    content: "QRY-11 Filter blocks linked to a Query Loop by block id: keyword, taxonomy (select, checkboxes, chips), date range, number range, yes/no toggle, and sort"
+    status: pending
+  - id: R582
+    content: "QRY-12 Result count and active-filter chips with clear-one and clear-all"
+    status: pending
+  - id: R583
+    content: "QRY-13 Facet counts for each filter option computed on the server for the current query"
+    status: pending
+  - id: R584
+    content: "QRY-14 Filters work as a plain GET form with no JavaScript, and update results without a reload when JavaScript runs, keeping browser history"
+    status: pending
+  - id: R585
+    content: "QRY-15 Mobile filter drawer with an apply button"
+    status: pending
+  - id: R586
+    content: "QRY-16 Search results template built in the builder and assigned per site, rendered by /search with the current page as fallback"
+    status: pending
+  - id: R587
+    content: "QRY-17 Search box block with live suggestions, keyboard navigation, and a link to the full results page"
+    status: pending
+  - id: R588
+    content: "QRY-18 Search quality: Postgres text config per locale instead of hard-coded english, prefix matching for type-ahead, unaccent, and title weighted above body"
+    status: pending
+  - id: R589
+    content: "QRY-19 Typo tolerance with pg_trgm similarity when full-text search returns nothing"
+    status: pending
+  - id: R590
+    content: "QRY-20 Index collection entries and videos alongside pages and posts, with result type tabs"
+    status: pending
+  - id: R591
+    content: "QRY-21 Search results paging, highlighted snippets, type badges, and thumbnails"
+    status: pending
+  - id: R592
+    content: "QRY-22 Search analytics: top queries and zero-result queries on analytics boards, storing no personal data"
+    status: pending
+  - id: R593
+    content: "QRY-23 Per-site synonyms and pinned results managed in settings"
+    status: pending
+  - id: R594
+    content: "QRY-24 Search adapter interface with Postgres as the default, so Meilisearch or Typesense can be added later without block changes"
+    status: pending
+  - id: R595
+    content: "QRY-25 Category, tag, author, and date archive templates built in the builder, with Query Loop bound to the current term"
+    status: pending
+  - id: R596
+    content: "QRY-26 Assign archive templates per site and locale with a built-in fallback"
+    status: pending
+  - id: R597
+    content: "QRY-27 Listing SEO: self-canonical paginated pages, noindex for filter combinations, ItemList JSON-LD, and archive pages in the sitemap"
+    status: pending
+  - id: R598
+    content: "QRY-28 Cache listing and search results per site, locale, and query, and revalidate on publish"
+    status: pending
+  - id: R599
+    content: "QRY-29 Accessible results: aria-live result counts, focus moves to results after filtering, and a combobox pattern for suggestions"
+    status: pending
+  - id: R600
+    content: "QRY-30 Tests for the query schema, site and access scoping, URL namespaces, facet counts, locale text configs, and archive resolution"
+    status: pending
+  - id: R601
+    content: "QRY-31 Lint, tsc, and a browser check of a blog listing, a filtered collection grid, site search, and a category archive"
+    status: pending
+  - id: R602
+    content: "QRY-32 Gate 29 approval: listing, filtering, search, archives, SEO, caching, and accessibility verified"
+    status: pending
 isProject: false
 ---
 
-# Combined refs R001–R570
+# Combined refs R001–R602
 
 Say **implement R042** (or the original id, such as **P2-14**, **L3-01**, **A2-01**, **O1-01**, or **M2-01**). That ref is the whole task. Do not continue to the next ref unless you ask.
 
@@ -3263,3 +3359,102 @@ Do the multisite hardening gates (R463–R475) before the agency steps, because 
 - **Gate 28 (R570):** approve only after tests, typecheck, lint, and a browser check pass for one agency, local business, portfolio, and video library site.
 
 <!-- END: site-type-packs -->
+
+---
+
+# Listing and search pages in the builder (QRY-01–QRY-32)
+<!-- BEGIN: listing-and-search-pages -->
+## Goal
+Let users build any listing page (blog, collection, portfolio, videos, archives) and the site search page in the builder, with filters, sorting, and pagination, the way market builders do. Today the only listing is the posts-only BlogPosts block with fixed cards, and /search is a hard-coded route outside the builder that searches pages and posts in English only, with 20 results and no paging.
+
+## Market reference
+
+| Builder | Listing | Filters | Search |
+|---|---|---|---|
+| Elementor Pro | Loop Grid and Loop Carousel with a designed loop item template | Taxonomy Filter widget linked to a loop | Search widget and a search results archive template |
+| WordPress blocks | Query Loop with a designable post template, pagination, and no-results block | Mostly plugins | Search block and a search template |
+| Webflow | Collection List bound to a collection, with filter, sort, and limit | Commonly added with Finsweet Attributes | Site search with a search results page |
+| Wix Studio | Dataset connected to a repeater | Input elements connected to the dataset without code | Wix Site Search |
+| Framer | CMS collection list with filter, sort, and limit | Limited | Search component |
+
+The common pattern: one query-driven loop block, a card designed visually, filter controls linked to that loop, and search and archive pages that are templates in the builder.
+
+## How this relates to earlier refs
+
+- QRY-01 to QRY-10 are the concrete delivery of RFB-10 (R444) and RFB-11 (R445); mark those complete when the QRY listing steps pass.
+- Loop item fields use the dynamic-value schema from BLD-22 (R414) and BLD-24 (R416). If BLD is not done yet, build only the loop-item subset in a shape BLD can extend; never two dynamic systems.
+- Archive and search templates follow the same template storage as the header and footer templates in MKT-08 (R483).
+- Docs search (DOC-18, R528) and docs Cmd+K (DOC-19, R529) reuse the search adapter, search box block, and locale text configs from this section.
+- The Projects grid (PRT-03, R554) and video library listings (R146, R149) should become Query Loop presets instead of separate list code.
+
+## Recommended order
+
+1. Query foundation (R571–R574).
+2. Query Loop, layouts, pagination, and presets (R575–R580).
+3. Filter blocks (R581–R585).
+4. Search quality first (R588–R589), then the search template and search box (R586–R587), then more sources and analytics (R590–R594).
+5. Archive templates (R595–R596).
+6. SEO, caching, accessibility, and checks (R597–R602).
+
+## R571–R574 — Query foundation
+- **R571 (QRY-01):** Typed listing query schema: source (posts, pages, collection entries, videos), filters, sort, limit, offset, and exclude-current, validated against allowlisted fields.
+- **R572 (QRY-02):** Server query resolver per source that only returns published, site-scoped, locale-scoped, access-checked items, with a hard maximum page size.
+- **R573 (QRY-03):** Namespaced URL parameters per listing block so two listings and their filters on one page never clash.
+- **R574 (QRY-04):** Database indexes for the filter and sort columns each source allows.
+
+## R575–R580 — Listing blocks
+- **R575 (QRY-05):** Query Loop block whose card is a slot designed in the builder, with item fields (title, image, excerpt, date, author, terms, collection field) read from the loop item.
+- **R576 (QRY-06):** Loop layouts: grid, list, masonry, carousel, and table, with per-device columns and gap.
+- **R577 (QRY-07):** Pagination styles: numbered, load more, and infinite scroll, always with crawlable page links underneath.
+- **R578 (QRY-08):** Empty-state slot and a loading skeleton for Query Loop.
+- **R579 (QRY-09):** Query Loop presets for latest posts, related posts, collection entries, and videos.
+- **R580 (QRY-10):** Keep BlogPosts and RelatedPosts rendering unchanged and offer a one-click convert to a Query Loop preset.
+
+## R581–R585 — Filter blocks
+- **R581 (QRY-11):** Filter blocks linked to a Query Loop by block id: keyword, taxonomy (select, checkboxes, chips), date range, number range, yes/no toggle, and sort.
+- **R582 (QRY-12):** Result count and active-filter chips with clear-one and clear-all.
+- **R583 (QRY-13):** Facet counts for each filter option computed on the server for the current query.
+- **R584 (QRY-14):** Filters work as a plain GET form with no JavaScript, and update results without a reload when JavaScript runs, keeping browser history.
+- **R585 (QRY-15):** Mobile filter drawer with an apply button.
+
+## R586–R594 — Site search
+- **R586 (QRY-16):** Search results template built in the builder and assigned per site, rendered by /search with the current page as fallback.
+- **R587 (QRY-17):** Search box block with live suggestions, keyboard navigation, and a link to the full results page.
+- **R588 (QRY-18):** Search quality: Postgres text config per locale instead of hard-coded english, prefix matching for type-ahead, unaccent, and title weighted above body.
+- **R589 (QRY-19):** Typo tolerance with pg_trgm similarity when full-text search returns nothing.
+- **R590 (QRY-20):** Index collection entries and videos alongside pages and posts, with result type tabs.
+- **R591 (QRY-21):** Search results paging, highlighted snippets, type badges, and thumbnails.
+- **R592 (QRY-22):** Search analytics: top queries and zero-result queries on analytics boards, storing no personal data.
+- **R593 (QRY-23):** Per-site synonyms and pinned results managed in settings.
+- **R594 (QRY-24):** Search adapter interface with Postgres as the default, so Meilisearch or Typesense can be added later without block changes.
+
+## R595–R596 — Archive pages
+- **R595 (QRY-25):** Category, tag, author, and date archive templates built in the builder, with Query Loop bound to the current term.
+- **R596 (QRY-26):** Assign archive templates per site and locale with a built-in fallback.
+
+## R597–R599 — SEO, performance, and accessibility
+- **R597 (QRY-27):** Listing SEO: self-canonical paginated pages, noindex for filter combinations, ItemList JSON-LD, and archive pages in the sitemap.
+- **R598 (QRY-28):** Cache listing and search results per site, locale, and query, and revalidate on publish.
+- **R599 (QRY-29):** Accessible results: aria-live result counts, focus moves to results after filtering, and a combobox pattern for suggestions.
+
+## R600–R602 — Checks
+- **R600 (QRY-30):** Tests for the query schema, site and access scoping, URL namespaces, facet counts, locale text configs, and archive resolution.
+- **R601 (QRY-31):** Lint, tsc, and a browser check of a blog listing, a filtered collection grid, site search, and a category archive.
+- **R602 (QRY-32):** Gate 29 approval: listing, filtering, search, archives, SEO, caching, and accessibility verified.
+
+## Acceptance criteria
+
+- Listings and search never return drafts, another site's items, another locale's items (unless asked), or subscriber-only bodies to visitors without access.
+- A listing query can only use allowlisted sources, fields, operators, and sorts; a hand-edited URL or saved JSON cannot widen it, and page size is capped on the server.
+- Every listing and filter state has a real URL that renders the same results on the server, so pages work without JavaScript and can be shared.
+- Two listings on one page keep separate filters and pagination.
+- Existing BlogPosts and RelatedPosts blocks render exactly as before until a user converts them.
+- Search works for every enabled locale, and type-ahead returns prefix matches.
+- Paginated pages are self-canonical, filtered combinations are noindex, and structured data lists only visible items.
+- Filter and result updates are announced to screen readers, and every control works with the keyboard.
+
+## Approval gates
+
+- **Gate 29 (R602):** approve only after tests, typecheck, lint, and a browser check pass for a blog listing, a filtered collection grid, site search in two locales, and a category archive.
+
+<!-- END: listing-and-search-pages -->
