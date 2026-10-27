@@ -34,7 +34,7 @@ export default function AuthDropdown({ user }: { user: User }) {
         <MenuTrigger
           user={user}
           isLoading={isPending}
-          className="cursor-pointer"
+          className="cursor-pointer max-w-80"
         />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">

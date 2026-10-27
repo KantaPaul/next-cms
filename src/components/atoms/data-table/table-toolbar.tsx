@@ -125,7 +125,7 @@ export function TableToolbar<TData>({
       )}
       {inlineSearch && !disableSearch && (
         <TableSearch
-          formClassName={cn(formClassName, 'ms-auto md:min-w-96')}
+          formClassName={cn(formClassName, 'md:min-w-96')}
           placeholder={searchPlaceHolder}
         />
       )}

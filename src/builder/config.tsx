@@ -20,24 +20,22 @@ import {
 } from './blocks/blog';
 import {
   Code,
-  Columns,
   CollectionItem,
+  Columns,
   ContactForm,
   Embed,
   Gallery,
   GlobalRef,
   ImageBlock,
   RichText,
-  Video,
   renderSlot,
   type SlotValue,
+  Video,
 } from './blocks/content';
-import { Button, Spacer } from './blocks/layout';
-import { Map } from './blocks/map';
-import { Newsletter } from './blocks/newsletter';
 import { ImageMorph } from './blocks/image-morph';
-import { ImageMorphField } from './controls/image-morph';
 import { Accordion, Slider, Tabs } from './blocks/interactive';
+import { Button, Spacer } from './blocks/layout';
+import { Map as MapBlock } from './blocks/map';
 import {
   Cta,
   Faq,
@@ -50,9 +48,12 @@ import {
   Testimonials,
   Timeline,
 } from './blocks/marketing';
+import { Newsletter } from './blocks/newsletter';
 import { DEFAULT_SECTION } from './blocks/section';
+import { ImageMorphField } from './controls/image-morph';
 import { PageTransitionField } from './controls/page-transition';
 import { SectionField } from './controls/section-inspector';
+import { customBlockEntries, customBlocks } from './custom';
 import {
   CategoryLockField,
   GlobalBlockSelectField,
@@ -66,7 +67,6 @@ import { ContactFormOptionsField } from './fields/contact-form-options-field';
 import { MotionScope } from './motion';
 import { POST_BLOCK_TYPES, type PostView, SAMPLE_POST } from './post-template';
 import { fontStylesheetUrl, resolveThemeTokens, themeStyle } from './theme';
-import { customBlocks, customBlockEntries } from './custom';
 
 /* ---------- field helpers ---------- */
 
@@ -204,13 +204,29 @@ export const builderConfig: Config = {
     },
     content: {
       title: 'Content',
-      components: ['RichText', 'Image', 'Gallery', 'Video', 'Embed', 'Map', 'Code', 'Newsletter'],
+      components: [
+        'RichText',
+        'Image',
+        'Gallery',
+        'Video',
+        'Embed',
+        'Map',
+        'Code',
+        'Newsletter',
+      ],
     },
     contact: { title: 'Contact form', components: ['ContactForm'] },
     blog: { title: 'Blog', components: ['BlogPosts'] },
     layout: {
       title: 'Layout',
-      components: ['Columns', 'Slider', 'Tabs', 'Accordion', 'Button', 'Spacer'],
+      components: [
+        'Columns',
+        'Slider',
+        'Tabs',
+        'Accordion',
+        'Button',
+        'Spacer',
+      ],
     },
     collections: {
       title: 'Collections',
@@ -685,7 +701,7 @@ export const builderConfig: Config = {
         address: '',
         section: DEFAULT_SECTION,
       },
-      render: renderBlock(Map),
+      render: renderBlock(MapBlock),
     },
     Code: {
       label: 'Code',

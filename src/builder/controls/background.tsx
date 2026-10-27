@@ -38,7 +38,7 @@ export function BackgroundControl({
     <div className="space-y-3">
       {/* Label row with tabs-in-label */}
       <div className="flex min-h-5 items-center justify-between gap-2">
-        <Label>Custom background</Label>
+        <Label>Custom Background</Label>
         <div className="flex items-center gap-1">
           <div className="flex rounded-md border border-steel-200 bg-steel-50/80 p-0.5">
             {TYPES.map(t => {
@@ -49,6 +49,8 @@ export function BackgroundControl({
                 <Button
                   key={t.value}
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   title={t.label}
                   aria-label={t.label}
                   aria-pressed={selected}
@@ -69,9 +71,11 @@ export function BackgroundControl({
               type="button"
               title="Reset background"
               onClick={() => onChange(undefined)}
-              className="ml-1 inline-flex items-center gap-0.5 text-[11px] text-steel-400 hover:text-steel-700"
+              variant="outline"
+              size="icon-sm"
+              className="ml-1 inline-flex items-center gap-0.5 text-steel-400 hover:text-steel-700"
             >
-              <RotateCcw className="size-2.5" />
+              <RotateCcw className="size-3.5" />
             </Button>
           )}
         </div>

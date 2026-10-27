@@ -12,12 +12,12 @@ import {
 } from 'lucide-react';
 import { useId } from 'react';
 import {
-  LENGTH_LIMITS,
-  PROP_UNITS,
-  SPACING_LIMITS,
   type Device,
+  LENGTH_LIMITS,
   type LengthUnit,
+  PROP_UNITS,
   type SectionSettings,
+  SPACING_LIMITS,
   type SpacingUnit,
 } from '../style';
 import { AnimationControl } from './animation';
@@ -39,12 +39,19 @@ import {
   UnitSlider,
 } from './primitives';
 import { ShadowControl } from './shadow';
-import { TypographyControl } from './typography';
+// import { TypographyControl } from './typography';
 
 const usePuck = createUsePuck();
 
 /** Blocks that wrap repeated children in `MotionItem`, so stagger and per-item hover apply. */
-export const STAGGER_BLOCKS = ['Features', 'Stats', 'Pricing', 'Testimonials', 'FAQ', 'Columns'];
+export const STAGGER_BLOCKS = [
+  'Features',
+  'Stats',
+  'Pricing',
+  'Testimonials',
+  'FAQ',
+  'Columns',
+];
 
 type Props = {
   value: SectionSettings | undefined;
@@ -79,8 +86,15 @@ function StyleControls({
         <StateTabs
           normal={
             <div className="space-y-3">
-              <BackgroundControl value={s.fill} onChange={fill => set({ fill })} />
-              <ColorPicker label="Text color" value={s.textColor} onChange={textColor => set({ textColor })} />
+              <BackgroundControl
+                value={s.fill}
+                onChange={fill => set({ fill })}
+              />
+              {/* <ColorPicker
+                label="Text color"
+                value={s.textColor}
+                onChange={textColor => set({ textColor })}
+              /> */}
             </div>
           }
           hover={
@@ -90,29 +104,35 @@ function StyleControls({
                 value={hover.fill}
                 onChange={fill => set({ hover: { ...hover, fill } })}
               />
-              <ColorPicker
+              {/* <ColorPicker
                 label="Text color"
                 value={hover.textColor}
                 onChange={textColor => set({ hover: { ...hover, textColor } })}
-              />
+              /> */}
             </div>
           }
         />
       </Group>
 
-      <Group title="Typography">
+      {/* <Group title="Typography">
         <TypographyControl
           value={s.typography}
           onChange={typography => set({ typography })}
         />
-      </Group>
+      </Group> */}
 
       <Group title="Border">
         <StateTabs
           normal={
             <div className="space-y-3">
-              <BorderControl value={s.border} onChange={border => set({ border })} />
-              <ShadowControl value={s.shadow} onChange={shadow => set({ shadow })} />
+              <BorderControl
+                value={s.border}
+                onChange={border => set({ border })}
+              />
+              <ShadowControl
+                value={s.shadow}
+                onChange={shadow => set({ shadow })}
+              />
             </div>
           }
           hover={
@@ -121,7 +141,9 @@ function StyleControls({
               <ColorPicker
                 label="Border color"
                 value={hover.borderColor}
-                onChange={borderColor => set({ hover: { ...hover, borderColor } })}
+                onChange={borderColor =>
+                  set({ hover: { ...hover, borderColor } })
+                }
               />
               <ShadowControl
                 value={hover.shadow}
@@ -146,24 +168,43 @@ function StyleControls({
             { value: 'screen', label: 'Full screen' },
           ]}
           onChange={minHeight =>
-            set({ display: { ...s.display, minHeight: minHeight || undefined } })
+            set({
+              display: { ...s.display, minHeight: minHeight || undefined },
+            })
           }
         />
         <ResponsiveChoose
           label="Content position"
           value={s.display?.contentAlign}
           options={[
-            { value: 'start', label: 'Top', icon: <AlignVerticalJustifyStart /> },
-            { value: 'center', label: 'Middle', icon: <AlignVerticalJustifyCenter /> },
-            { value: 'end', label: 'Bottom', icon: <AlignVerticalJustifyEnd /> },
+            {
+              value: 'start',
+              label: 'Top',
+              icon: <AlignVerticalJustifyStart />,
+            },
+            {
+              value: 'center',
+              label: 'Middle',
+              icon: <AlignVerticalJustifyCenter />,
+            },
+            {
+              value: 'end',
+              label: 'Bottom',
+              icon: <AlignVerticalJustifyEnd />,
+            },
           ]}
           onChange={contentAlign =>
-            set({ display: { ...s.display, contentAlign: contentAlign || undefined } })
+            set({
+              display: {
+                ...s.display,
+                contentAlign: contentAlign || undefined,
+              },
+            })
           }
         />
       </Group>
 
-      <Group title="Animation" defaultOpen>
+      <Group title="Animation">
         <AnimationControl
           value={s.animation}
           supportsStagger={!!blockType && STAGGER_BLOCKS.includes(blockType)}
@@ -189,14 +230,13 @@ function LayoutControls({
   };
 
   const widthUnits = PROP_UNITS.width as readonly LengthUnit[];
-  const widthLimits = Object.fromEntries(widthUnits.map(u => [u, LENGTH_LIMITS[u]])) as Record<
-    LengthUnit,
-    { min: number; max: number; step: number }
-  >;
+  const widthLimits = Object.fromEntries(
+    widthUnits.map(u => [u, LENGTH_LIMITS[u]])
+  ) as Record<LengthUnit, { min: number; max: number; step: number }>;
 
   return (
     <div>
-      <Group title="Spacing" defaultOpen>
+      <Group title="Spacing">
         <Choose
           label="Vertical padding preset"
           value={s.paddingY ?? 'md'}
@@ -212,7 +252,9 @@ function LayoutControls({
           label="Custom padding"
           value={s.spacing}
           unit={s.spacingUnit ?? 'px'}
-          onUnitChange={spacingUnit => set({ spacingUnit: spacingUnit as SpacingUnit })}
+          onUnitChange={spacingUnit =>
+            set({ spacingUnit: spacingUnit as SpacingUnit })
+          }
           onChange={spacing => set({ spacing })}
         />
         <Dimensions
@@ -220,7 +262,9 @@ function LayoutControls({
           value={s.margin}
           unit={s.marginUnit ?? 'px'}
           max={SPACING_LIMITS[s.marginUnit ?? 'px'].max}
-          onUnitChange={marginUnit => set({ marginUnit: marginUnit as SpacingUnit })}
+          onUnitChange={marginUnit =>
+            set({ marginUnit: marginUnit as SpacingUnit })
+          }
           onChange={margin => set({ margin })}
         />
       </Group>
@@ -245,7 +289,7 @@ function LayoutControls({
         />
       </Group>
 
-      <Group title="Alignment" defaultOpen>
+      <Group title="Alignment">
         <ResponsiveChoose
           label="Text alignment"
           value={s.align}
@@ -282,7 +326,9 @@ function LayoutControls({
             id={anchorId}
             value={s.anchor ?? ''}
             placeholder="pricing"
-            onChange={e => set({ anchor: e.target.value.replace(/[^a-zA-Z0-9_-]/g, '-') })}
+            onChange={e =>
+              set({ anchor: e.target.value.replace(/[^a-zA-Z0-9_-]/g, '-') })
+            }
             className="h-8 w-full rounded-md border border-steel-200 bg-white px-2 text-xs"
           />
         </div>
@@ -301,14 +347,19 @@ export function SectionField({ value, onChange }: Props) {
   const s = value ?? {};
   const set = (patch: Partial<SectionSettings>) => onChange({ ...s, ...patch });
 
-  if (tab === 'style') return <StyleControls value={s} set={set} blockType={blockType} />;
+  if (tab === 'style')
+    return <StyleControls value={s} set={set} blockType={blockType} />;
   if (tab === 'layout') return <LayoutControls value={s} set={set} />;
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-semibold tracking-wide text-steel-400 uppercase">Style</p>
+      <p className="text-xs font-semibold tracking-wide text-steel-400 uppercase">
+        Style
+      </p>
       <StyleControls value={s} set={set} blockType={blockType} />
-      <p className="pt-2 text-xs font-semibold tracking-wide text-steel-400 uppercase">Layout</p>
+      <p className="pt-2 text-xs font-semibold tracking-wide text-steel-400 uppercase">
+        Layout
+      </p>
       <LayoutControls value={s} set={set} />
     </div>
   );

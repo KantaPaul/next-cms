@@ -16,6 +16,8 @@ import {
   InspectorTabContext,
   useInspectorTab,
 } from '@/builder/controls/inspector-tab';
+import { Button } from '@/components/ui/button';
+import { FormInput as Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils/cn';
 import { useBuilder } from './builder-context';
 
@@ -144,7 +146,7 @@ function DescribeChange() {
       className="flex items-center gap-2 border-b border-steel-100 px-3 py-2"
     >
       <Sparkles className="size-4 shrink-0 text-violet-500" aria-hidden />
-      <input
+      <Input
         value={text}
         maxLength={300}
         onChange={e => setText(e.target.value)}
@@ -152,14 +154,14 @@ function DescribeChange() {
         aria-label="Describe a change"
         className="h-8 min-w-0 flex-1 border-0 bg-transparent px-0 text-sm placeholder:text-steel-400 focus:ring-0"
       />
-      <button
+      <Button
         type="submit"
         disabled={!text.trim()}
         aria-label="Apply with AI"
         className="rounded-md bg-violet-600 p-1.5 text-white transition-opacity disabled:opacity-30"
       >
         <ArrowUp className="size-3.5" />
-      </button>
+      </Button>
     </form>
   );
 }
@@ -214,7 +216,7 @@ export function SelectionCard({
         }
       }}
       className={cn(
-        'absolute z-30 flex max-h-[calc(100%-24px)] w-[340px] flex-col overflow-hidden rounded-xl border border-steel-200 bg-white text-steel-800 shadow-2xl shadow-steel-900/15 transition-[left,top] duration-150',
+        'absolute z-30 flex max-h-[calc(100%-24px)] w-[340px] flex-col overflow-hidden rounded-xl border border-steel-200 bg-white text-steel-800 shadow-2xl shadow-steel-900/15',
         !pos && 'invisible'
       )}
       style={{ left: pos?.left ?? 0, top: pos?.top ?? 0 }}
@@ -231,8 +233,8 @@ export function SelectionCard({
         <div className="flex shrink-0 items-center gap-0.5">
           {itemSelector?.zone && (
             <>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
                 onClick={() =>
                   dispatch({
                     type: 'duplicate',
@@ -242,12 +244,12 @@ export function SelectionCard({
                 }
                 aria-label="Duplicate block"
                 title="Duplicate"
-                className="rounded p-1 text-steel-400 hover:bg-steel-100 hover:text-steel-700"
+                size="icon"
               >
                 <Copy className="size-4" />
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="ghost"
                 onClick={() =>
                   dispatch({
                     type: 'remove',
@@ -257,20 +259,21 @@ export function SelectionCard({
                 }
                 aria-label="Delete block"
                 title="Delete"
+                size="icon"
                 className="rounded p-1 text-steel-400 hover:bg-red-50 hover:text-red-600"
               >
                 <Trash2 className="size-4" />
-              </button>
+              </Button>
             </>
           )}
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             onClick={close}
             aria-label="Close inspector"
-            className="rounded p-1 text-steel-400 hover:bg-steel-100 hover:text-steel-700"
+            size="icon"
           >
             <X className="size-4" />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -283,21 +286,22 @@ export function SelectionCard({
           className="flex gap-4 border-b border-steel-100 px-3"
         >
           {TABS.map(t => (
-            <button
+            <Button
               key={t.value}
-              type="button"
+              variant="ghost"
+              size="sm"
               role="tab"
               aria-selected={activeTab === t.value}
               onClick={() => setTab(t.value)}
               className={cn(
-                '-mb-px border-b-2 py-2 text-sm transition-colors',
+                '-mb-px border-b-2 py-2 text-sm transition-colors rounded-none',
                 activeTab === t.value
                   ? 'border-steel-800 font-medium text-steel-900'
                   : 'border-transparent text-steel-500 hover:text-steel-800'
               )}
             >
               {t.label}
-            </button>
+            </Button>
           ))}
         </div>
       )}

@@ -73,7 +73,7 @@ function SearchBase({
         id="search"
         type="search"
         name="search"
-        label="Search"
+        // label="Search"
         inputClassName={cn(inputClassName)}
         placeholder={placeholder ?? 'Search...'}
         value={value}

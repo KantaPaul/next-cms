@@ -54,6 +54,7 @@ export function TablePagination({
           size="md"
           menuPlacement="top"
           placeholder=""
+          className="max-w-20"
           value={handleSelected(pageSizeOptions, pageSize.toString())}
           options={pageSizeOptions}
           isLoading={isPending}

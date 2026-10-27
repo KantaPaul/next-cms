@@ -2,6 +2,11 @@
 
 import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
+import {
+  handleSelected,
+  type Option,
+  ReactSelect,
+} from '@/components/atoms/react-select';
 import { switchSite } from '@/server/actions/site.actions';
 
 export function SiteSwitcher({
@@ -16,27 +21,30 @@ export function SiteSwitcher({
 
   if (memberships.length === 0) return null;
 
+  const options = memberships.map(site => ({
+    label: site.siteName,
+    value: site.siteId,
+  }));
+
   return (
-    <label className="flex items-center gap-2 text-sm">
-      <span className="sr-only">Site</span>
-      <select
-        className="h-9 max-w-44 rounded-md border border-steel-200 bg-white px-2 text-sm dark:border-dark-300 dark:bg-dark-100"
-        value={current}
-        disabled={pending || memberships.length < 2}
-        onChange={event => {
-          const siteId = event.target.value;
-          startTransition(async () => {
-            await switchSite(siteId);
-            router.refresh();
-          });
-        }}
-      >
-        {memberships.map(site => (
-          <option key={site.siteId} value={site.siteId}>
-            {site.siteName}
-          </option>
-        ))}
-      </select>
-    </label>
+    <ReactSelect
+      isSearchable={false}
+      isClearable={false}
+      size="md"
+      menuPlacement="top"
+      placeholder=""
+      className="max-w-44"
+      // value={current}
+      value={handleSelected(options, current)}
+      disabled={pending || options.length < 2}
+      onChange={event => {
+        const siteId = (event as Option).value;
+        startTransition(async () => {
+          await switchSite(siteId);
+          router.refresh();
+        });
+      }}
+      options={options}
+    />
   );
 }

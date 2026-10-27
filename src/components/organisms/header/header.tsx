@@ -51,7 +51,7 @@ export default async function Header() {
 
         <Flex
           justify="end"
-          className="order-3 ml-auto flex w-auto items-center gap-0.5 md:gap-4 lg:gap-7"
+          className="order-3 flex w-full ml-auto items-center gap-0.5 md:gap-4 lg:gap-7"
         >
           <SiteSwitcher current={currentSite} memberships={memberships} />
           <ThemeToggle />

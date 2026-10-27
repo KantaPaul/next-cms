@@ -81,7 +81,7 @@ export function Group({
           type="button"
           variant="ghost"
           aria-controls={id}
-          className="flex h-auto w-full items-center justify-between rounded-none px-0 py-2.5 text-left text-sm font-medium text-steel-800 hover:bg-transparent"
+          className="flex h-auto w-full items-center justify-between rounded-none px-0 text-left text-sm font-medium text-steel-800 hover:bg-transparent has-[>svg]:px-0"
         >
           {title}
           <ChevronDown
@@ -829,16 +829,16 @@ export function StateTabs({
 }) {
   return (
     <Tabs defaultValue="normal" className="space-y-3">
-      <TabsList className="grid h-8 w-full grid-cols-2 rounded-md p-0">
+      <TabsList className="grid h-8 w-full grid-cols-2 rounded-md border border-border">
         <TabsTrigger
           value="normal"
-          className="h-full rounded-none text-xs capitalize data-[state=active]:bg-muted"
+          className="h-full rounded-none text-xs capitalize data-[state=active]:bg-muted data-[state=active]:text-foreground bg-white ring-0 border-0"
         >
           Normal
         </TabsTrigger>
         <TabsTrigger
           value="hover"
-          className="h-full rounded-none text-xs capitalize data-[state=active]:bg-muted"
+          className="h-full rounded-none text-xs capitalize data-[state=active]:bg-muted data-[state=active]:text-foreground bg-white ring-0 border-0"
         >
           Hover
         </TabsTrigger>
