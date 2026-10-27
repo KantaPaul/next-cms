@@ -1,6 +1,6 @@
 ---
 name: Combined CMS refs
-overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, full-site production optimization, commercial launch readiness, international website-builder market-gap audit, Elementor-style nested container/Flexbox/CSS Grid, dynamic content, global design styles, and conditional display. Numbered implementation steps R001–R462 include builder tasks, React-first differentiators, and approval gates. Name a numbered step to implement only that piece.
+overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, full-site production optimization, commercial launch readiness, international website-builder market-gap audit, Elementor-style nested container/Flexbox/CSS Grid, dynamic content, global design styles, and conditional display. Numbered implementation steps R001–R510 include builder tasks, React-first differentiators, multisite reliability, market-gap builder features, and approval gates. Name a numbered step to implement only that piece.
 todos:
   - id: R001
     content: "P1-01 Register Slider, Tabs, and Accordion as builderConfig component keys"
@@ -1427,10 +1427,115 @@ todos:
   - id: R475
     content: "P3-21 Add Site A/Site B fetch-contract tests for admin switching, public domains, cache isolation, and cross-site denial"
     status: pending
+  - id: R476
+    content: "MKT-01 Visible undo and redo buttons in the builder header, wired to Puck history with disabled states"
+    status: pending
+  - id: R477
+    content: "MKT-02 Builder keyboard shortcuts for undo, redo, duplicate, delete, and save, plus a shortcut help dialog"
+    status: pending
+  - id: R478
+    content: "MKT-03 Copy and paste block style between blocks, keeping only allowlisted style keys"
+    status: pending
+  - id: R479
+    content: "MKT-04 Allowlisted custom CSS class names on each block's Advanced tab"
+    status: pending
+  - id: R480
+    content: "MKT-05 Site-wide and per-page custom CSS for settings.manage, scoped to the site root and audited"
+    status: pending
+  - id: R481
+    content: "MKT-06 Site-wide head and body code injection for analytics tags, settings.manage only and audited"
+    status: pending
+  - id: R482
+    content: "MKT-07 Export and import a section or page as versioned JSON validated against the block registry"
+    status: pending
+  - id: R483
+    content: "MKT-08 Header and footer templates edited in the Puck builder and stored like global blocks"
+    status: pending
+  - id: R484
+    content: "MKT-09 Assign header and footer templates per site, locale, or page with a site default"
+    status: pending
+  - id: R485
+    content: "MKT-10 Public layout renders the assigned header and footer, falling back to the current menu header"
+    status: pending
+  - id: R486
+    content: "MKT-11 Sticky and transparent header options"
+    status: pending
+  - id: R487
+    content: "MKT-12 Mega menu panel for top-level header menu items"
+    status: pending
+  - id: R488
+    content: "MKT-13 404 page template edited in the Puck builder"
+    status: pending
+  - id: R489
+    content: "MKT-14 popups table and a popup editor that reuses the builder shell"
+    status: pending
+  - id: R490
+    content: "MKT-15 Popup triggers: on click, after a delay, at scroll depth, and on exit intent"
+    status: pending
+  - id: R491
+    content: "MKT-16 Popup targeting by page, locale, and device, with a cookie frequency cap"
+    status: pending
+  - id: R492
+    content: "MKT-17 Accessible popup modal with focus trap, Escape to close, focus return, and reduced motion"
+    status: pending
+  - id: R493
+    content: "MKT-18 Countdown block with an end date and an expired message"
+    status: pending
+  - id: R494
+    content: "MKT-19 Progress bar block"
+    status: pending
+  - id: R495
+    content: "MKT-20 Icon list block using IconPickerField"
+    status: pending
+  - id: R496
+    content: "MKT-21 Social icons block"
+    status: pending
+  - id: R497
+    content: "MKT-22 Table block with header row and responsive scroll"
+    status: pending
+  - id: R498
+    content: "MKT-23 Testimonial carousel built on the existing Slider"
+    status: pending
+  - id: R499
+    content: "MKT-24 Video background option on Section with a poster and reduced-motion fallback"
+    status: pending
+  - id: R500
+    content: "MKT-25 Parallax and scroll effects on Section with a reduced-motion guard"
+    status: pending
+  - id: R501
+    content: "MKT-26 Lottie block loaded lazily from a media URL"
+    status: pending
+  - id: R502
+    content: "MKT-27 Sticky element option on blocks"
+    status: pending
+  - id: R503
+    content: "MKT-28 Multi-step contact forms with a step indicator"
+    status: pending
+  - id: R504
+    content: "MKT-29 Conditional form fields shown from earlier answers, validated on the server"
+    status: pending
+  - id: R505
+    content: "MKT-30 File upload field with size and type limits, stored through storage()"
+    status: pending
+  - id: R506
+    content: "MKT-31 Send form submissions to a Mailchimp list or the existing signed webhooks"
+    status: pending
+  - id: R507
+    content: "MKT-32 Custom breakpoints beyond desktop, tablet, and mobile, building on BLD-09 (R401)"
+    status: pending
+  - id: R508
+    content: "MKT-33 Tests for section import and export, popup rules, header and footer resolution, and form steps"
+    status: pending
+  - id: R509
+    content: "MKT-34 Lint, tsc, and a browser check of undo, popups, header and footer templates, and the new blocks"
+    status: pending
+  - id: R510
+    content: "MKT-35 Gate 26 approval: editor basics, theme builder, popups, blocks, and forms verified"
+    status: pending
 isProject: false
 ---
 
-# Combined refs R001–R462
+# Combined refs R001–R510
 
 Say **implement R042** (or the original id, such as **P2-14**, **L3-01**, **A2-01**, **O1-01**, or **M2-01**). That ref is the whole task. Do not continue to the next ref unless you ask.
 
@@ -2774,3 +2879,74 @@ Make the existing multisite foundation (R032–R039) behave reliably across the 
 - Preserve the unjournaled `src/db/migrations/20261022070000_page_views.sql`; if `page_views` needs `site_id`, use a new migration and the project's normal Drizzle journal workflow.
 
 <!-- END: wordpress-multisite-reliability -->
+
+---
+
+# Market-gap builder features (MKT-01–MKT-35)
+<!-- BEGIN: market-gap-builder-features -->
+## Goal
+Close builder gaps that Elementor, Webflow, Framer, Wix Studio, and Builder.io users expect and that no earlier ref covers. Container/flex/grid (BLD-01–20), global styles, dynamic content, conditional display (BLD-21–42), locales, RTL, accessibility diagnostics, ecommerce, and export are already planned and are not repeated here.
+
+## R476–R482 — Editor basics
+- **R476 (MKT-01):** Visible undo and redo buttons in the builder header, wired to Puck history with disabled states.
+- **R477 (MKT-02):** Builder keyboard shortcuts for undo, redo, duplicate, delete, and save, plus a shortcut help dialog.
+- **R478 (MKT-03):** Copy and paste block style between blocks, keeping only allowlisted style keys.
+- **R479 (MKT-04):** Allowlisted custom CSS class names on each block's Advanced tab.
+- **R480 (MKT-05):** Site-wide and per-page custom CSS for settings.manage, scoped to the site root and audited.
+- **R481 (MKT-06):** Site-wide head and body code injection for analytics tags, settings.manage only and audited.
+- **R482 (MKT-07):** Export and import a section or page as versioned JSON validated against the block registry.
+
+## R483–R488 — Theme builder: header, footer, and 404
+- **R483 (MKT-08):** Header and footer templates edited in the Puck builder and stored like global blocks.
+- **R484 (MKT-09):** Assign header and footer templates per site, locale, or page with a site default.
+- **R485 (MKT-10):** Public layout renders the assigned header and footer, falling back to the current menu header.
+- **R486 (MKT-11):** Sticky and transparent header options.
+- **R487 (MKT-12):** Mega menu panel for top-level header menu items.
+- **R488 (MKT-13):** 404 page template edited in the Puck builder.
+
+## R489–R492 — Popups
+- **R489 (MKT-14):** popups table and a popup editor that reuses the builder shell.
+- **R490 (MKT-15):** Popup triggers: on click, after a delay, at scroll depth, and on exit intent.
+- **R491 (MKT-16):** Popup targeting by page, locale, and device, with a cookie frequency cap.
+- **R492 (MKT-17):** Accessible popup modal with focus trap, Escape to close, focus return, and reduced motion.
+
+## R493–R502 — Blocks
+- **R493 (MKT-18):** Countdown block with an end date and an expired message.
+- **R494 (MKT-19):** Progress bar block.
+- **R495 (MKT-20):** Icon list block using IconPickerField.
+- **R496 (MKT-21):** Social icons block.
+- **R497 (MKT-22):** Table block with header row and responsive scroll.
+- **R498 (MKT-23):** Testimonial carousel built on the existing Slider.
+- **R499 (MKT-24):** Video background option on Section with a poster and reduced-motion fallback.
+- **R500 (MKT-25):** Parallax and scroll effects on Section with a reduced-motion guard.
+- **R501 (MKT-26):** Lottie block loaded lazily from a media URL.
+- **R502 (MKT-27):** Sticky element option on blocks.
+
+## R503–R506 — Forms
+- **R503 (MKT-28):** Multi-step contact forms with a step indicator.
+- **R504 (MKT-29):** Conditional form fields shown from earlier answers, validated on the server.
+- **R505 (MKT-30):** File upload field with size and type limits, stored through storage().
+- **R506 (MKT-31):** Send form submissions to a Mailchimp list or the existing signed webhooks.
+
+## R507 — Breakpoints
+- **R507 (MKT-32):** Custom breakpoints beyond desktop, tablet, and mobile, building on BLD-09 (R401).
+
+## R508–R510 — Checks
+- **R508 (MKT-33):** Tests for section import and export, popup rules, header and footer resolution, and form steps.
+- **R509 (MKT-34):** Lint, tsc, and a browser check of undo, popups, header and footer templates, and the new blocks.
+- **R510 (MKT-35):** Gate 26 approval: editor basics, theme builder, popups, blocks, and forms verified.
+
+## Acceptance criteria
+
+- Custom CSS, code injection, and class names are limited to users with settings.manage or an allowlist; stored JSON cannot inject arbitrary styles into blocks.
+- Imported JSON is rejected unless every block type and prop validates against the registry; unknown blocks fail with a clear message.
+- Header, footer, and 404 templates fall back to the current public layout when none is assigned, so existing sites look unchanged.
+- Popups, parallax, Lottie, video backgrounds, and countdowns respect reduced motion and do not block first render.
+- Form steps and conditional fields are validated on the server; hidden fields are never required, and uploads are type- and size-checked.
+- Existing pages keep rendering without migration; new schema changes use additive Drizzle migrations.
+
+## Approval gates
+
+- **Gate 26 (R510):** approve only after tests, typecheck, lint, and the browser check pass for editor basics, the theme builder, popups, blocks, and forms.
+
+<!-- END: market-gap-builder-features -->
