@@ -4,6 +4,7 @@ import Script from 'next/script';
 import { fontStylesheetUrl, themeStyle } from '@/builder/theme';
 import { LanguageSwitcher } from '@/components/site/language-switcher';
 import { PAGES } from '@/config/pages';
+import { siteHref } from '@/lib/utils/site-href';
 import { getPreviewSession } from '@/server/services/preview-session';
 import {
   type MenuWithItems,
@@ -12,18 +13,31 @@ import {
 } from '@/server/services/public-site.service';
 import { resolvePostRoute } from '@/server/services/blog.service';
 import { maybePublishScheduled } from '@/server/services/scheduler';
-import { siteContext, sitePathSegments } from '@/server/services/site-context';
+import {
+  siteContext,
+  sitePathSegments,
+  siteSlugPrefix,
+} from '@/server/services/site-context';
 import {
   localizedSettings,
   siteSettingsService,
 } from '@/server/services/site-settings.service';
 
+/** Menu URLs may be saved with or without the site slug; prefix only once. */
+function menuHref(url: string, siteSlug?: string) {
+  if (siteSlug && (url === `/${siteSlug}` || url.startsWith(`/${siteSlug}/`)))
+    return url;
+  return siteHref(url, siteSlug);
+}
+
 function MenuLinks({
   menu,
   className,
+  siteSlug,
 }: {
   menu?: MenuWithItems;
   className?: string;
+  siteSlug?: string;
 }) {
   if (!menu?.items.length) return null;
   return (
@@ -31,7 +45,7 @@ function MenuLinks({
       {menu.items.map(item => (
         <li key={item.id} className="group relative">
           <a
-            href={item.url}
+            href={menuHref(item.url, siteSlug)}
             target={item.target}
             rel={item.target === '_blank' ? 'noopener noreferrer' : undefined}
             className="inline-flex items-center gap-1.5 hover:opacity-80"
@@ -48,7 +62,7 @@ function MenuLinks({
               {item.children.map(child => (
                 <li key={child.id}>
                   <a
-                    href={child.url}
+                    href={menuHref(child.url, siteSlug)}
                     target={child.target}
                     className="block rounded px-2 py-1.5 text-sm hover:opacity-80"
                   >
@@ -78,6 +92,7 @@ export default async function SiteLayout({
   ]);
   const pathname = headerStore.get('x-pathname') ?? '/';
   const segments = sitePathSegments(pathname, site);
+  const siteSlug = siteSlugPrefix(site);
   const language =
     resolvePostRoute(segments, site)?.language ??
     resolveRoute(segments, site)?.language ??
@@ -122,7 +137,7 @@ export default async function SiteLayout({
           aria-label="Main"
           className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-4 md:px-8"
         >
-          <Link href="/" className="flex items-center gap-2 text-lg font-bold">
+          <Link href={siteHref('/', siteSlug)} className="flex items-center gap-2 text-lg font-bold">
             {settings.logo && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -136,6 +151,7 @@ export default async function SiteLayout({
           <div className="flex flex-wrap items-center gap-5">
             <MenuLinks
               menu={header ?? undefined}
+              siteSlug={siteSlug}
               className="flex flex-wrap items-center gap-5 text-sm font-medium"
             />
             <LanguageSwitcher />
@@ -155,6 +171,7 @@ export default async function SiteLayout({
           </div>
           <MenuLinks
             menu={footer ?? undefined}
+            siteSlug={siteSlug}
             className="s-muted flex flex-wrap gap-x-6 gap-y-2 text-sm"
           />
         </div>

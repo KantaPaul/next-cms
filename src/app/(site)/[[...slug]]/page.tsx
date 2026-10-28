@@ -344,11 +344,12 @@ export default async function SitePage({ params, searchParams }: Params) {
   const siteSlug = siteSlugPrefix(site);
   const segments = sitePathSegments((slug?.join('/') ?? '/'), site);
 
-  // Root URL in path mode redirects to the default (prefixed) site.
+  // Root URL in path mode redirects to the default (prefixed) site. Only the
+  // bare `/` redirects; `/{site}` is already that site's home.
   if (
     (routingMode() === 'path' || routingMode() === 'both') &&
     site.slug &&
-    segments.length === 0
+    !slug?.length
   ) {
     redirect(`/${site.slug}`);
   }

@@ -18,7 +18,7 @@ function setPath(obj: Record<string, unknown>, path: string, value: unknown) {
   }
 }
 
-function rehydrateItem(
+export function rehydrateItem(
   item: BuilderItem,
   zones?: Record<string, BuilderItem[]>
 ): BuilderItem {

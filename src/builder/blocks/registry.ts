@@ -11,6 +11,7 @@ import {
   RichText,
   Video,
 } from './content';
+import { Container } from './container';
 import { ImageMorph } from './image-morph';
 import { Accordion, Slider, Tabs } from './interactive';
 import { Button, Spacer } from './layout';
@@ -38,6 +39,7 @@ const builtInComponents = {
   FAQ: Faq,
   CTA: Cta,
   Columns,
+  Container,
   RichText,
   Image: ImageBlock,
   ContactForm,

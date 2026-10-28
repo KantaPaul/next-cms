@@ -18,7 +18,7 @@ import {
   sitePathSegments,
   validateSiteSlug,
 } from '@/lib/utils/site-slug';
-import { NotFoundException } from '@/lib/utils/error';
+import { notFound } from 'next/navigation';
 
 export const SITE_COOKIE = 'cms_site';
 
@@ -294,7 +294,7 @@ export const siteContext = {
       if (siteSlug) {
         const site = await getSiteBySlug(siteSlug);
         if (site) return { ...site, source: 'path' as const };
-        throw new NotFoundException(`Unknown site slug: ${siteSlug}`);
+        notFound();
       }
     }
 

@@ -8,7 +8,10 @@ import {
   queryBlogPosts,
 } from '@/server/actions/blog.actions';
 import { queryVideos } from '@/app/(admin)/dashboard/(shell)/videos/_modules/videos.actions';
-import { VideoLibrary, type VideoLibraryVideoItem } from '@/components/video/video-library';
+import {
+  VideoLibrary,
+  type VideoLibraryVideoItem,
+} from '@/components/video/video-library';
 import { VideoLibraryBlock } from '@/components/video/video-library';
 // import type { BuilderItem } from './data';
 import {
@@ -36,6 +39,8 @@ import {
   Video,
 } from './blocks/content';
 import { ImageMorph } from './blocks/image-morph';
+import { Container, DEFAULT_CONTAINER } from './blocks/container';
+import { ContainerLayoutControl } from './controls/container-layout';
 import { Accordion, Slider, Tabs } from './blocks/interactive';
 import { Button, Spacer } from './blocks/layout';
 import { Map as MapBlock } from './blocks/map';
@@ -224,6 +229,7 @@ export const builderConfig: Config = {
     layout: {
       title: 'Layout',
       components: [
+        'Container',
         'Columns',
         'Slider',
         'Tabs',
@@ -673,6 +679,23 @@ export const builderConfig: Config = {
         section: DEFAULT_SECTION,
       },
       render: renderBlock(Columns),
+    },
+    Container: {
+      label: 'Container',
+      fields: withSection({
+        container: {
+          type: 'custom',
+          label: 'Container',
+          render: ContainerLayoutControl as never,
+        },
+        content: { type: 'slot', label: 'Content' },
+      }),
+      defaultProps: {
+        container: { ...DEFAULT_CONTAINER },
+        section: { ...DEFAULT_SECTION, paddingY: 'none' },
+        content: [],
+      },
+      render: renderBlock(Container),
     },
     Video: {
       label: 'Video',

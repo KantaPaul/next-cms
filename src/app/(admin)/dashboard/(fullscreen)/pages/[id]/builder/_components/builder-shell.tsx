@@ -62,6 +62,8 @@ export function getBlockIcon(name: string) {
       return Images;
     case 'ContactForm':
       return Mail;
+    case 'Container':
+      return LayoutGrid;
     case 'Columns':
       return Columns3;
     case 'Slider':
@@ -227,7 +229,7 @@ function BlocksPanel() {
         <button
           type="button"
           onClick={() => toggleCategory(group.key)}
-          className="flex w-full items-center justify-between py-1 text-left select-none hover:opacity-80 transition-opacity"
+          className="flex w-full select-none items-center justify-between py-1 text-left transition-opacity hover:opacity-80"
         >
           <div className="flex items-center gap-1.5">
             <ChevronRight
@@ -254,7 +256,7 @@ function BlocksPanel() {
                 return (
                   <Drawer.Item key={name} name={name}>
                     {() => (
-                      <div className="group flex w-full items-center justify-between rounded-lg border border-border/70 bg-background p-2 text-xs font-medium text-foreground transition-all hover:border-border hover:shadow-xs cursor-grab active:cursor-grabbing">
+                      <div className="hover:shadow-xs group flex w-full cursor-grab items-center justify-between rounded-lg border border-border/70 bg-background p-2 text-xs font-medium text-foreground transition-all hover:border-border active:cursor-grabbing">
                         <div className="flex min-w-0 items-center gap-2.5">
                           <div
                             className={cn(
@@ -371,7 +373,7 @@ function LeftRail() {
               className={cn(
                 'flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs transition-all',
                 activeTab === t.value
-                  ? 'bg-background font-semibold text-foreground shadow-xs'
+                  ? 'shadow-xs bg-background font-semibold text-foreground'
                   : 'font-medium text-muted-foreground hover:text-foreground'
               )}
             >

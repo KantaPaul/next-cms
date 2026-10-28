@@ -55,6 +55,7 @@ type LinkablePage = {
   title: string;
   slug: string;
   language: string | null;
+  isHome: boolean;
 };
 
 type EditorItem = {
@@ -89,19 +90,30 @@ const toEditorItems = (items: MenuDetail['items']): EditorItem[] =>
     })),
   }));
 
-const pageHref = (page: LinkablePage, defaultLocale: string) =>
-  page.language && page.language !== defaultLocale
-    ? `/${page.language}/${page.slug}`
-    : `/${page.slug}`;
+/** Public URL of a page, with the site slug in path routing mode. */
+const pageHref = (
+  page: LinkablePage,
+  defaultLocale: string,
+  siteSlug?: string
+) =>
+  PAGES.SITE.page(
+    page.slug,
+    page.language ?? defaultLocale,
+    page.isHome,
+    defaultLocale,
+    siteSlug
+  );
 
 export function MenusManager({
   menus,
   linkablePages,
   assigned,
+  siteSlug,
 }: {
   menus: MenuDetail[];
   linkablePages: LinkablePage[];
   assigned: { header: string | null; footer: string | null };
+  siteSlug?: string;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(
     menus[0]?.id ?? null
@@ -171,6 +183,7 @@ export function MenusManager({
           key={selected.id}
           menu={selected}
           linkablePages={linkablePages}
+          siteSlug={siteSlug}
         />
       ) : (
         <div className="flex items-center justify-center rounded-lg border border-dashed border-steel-200 p-12 text-sm text-steel-500 dark:border-dark-300">
@@ -257,9 +270,11 @@ function NewMenuForm({ onCreated }: { onCreated: (id: string) => void }) {
 function MenuEditor({
   menu,
   linkablePages,
+  siteSlug,
 }: {
   menu: MenuDetail;
   linkablePages: LinkablePage[];
+  siteSlug?: string;
 }) {
   const router = useRouter();
   const dndId = useId();
@@ -635,7 +650,7 @@ function MenuEditor({
           value=""
           onChange={e => {
             const page = linkablePages.find(p => p.id === e.target.value);
-            if (page) addItem({ label: page.title, url: pageHref(page, defaultLocale) });
+            if (page) addItem({ label: page.title, url: pageHref(page, defaultLocale, siteSlug) });
           }}
         >
           <option value="">
@@ -645,7 +660,7 @@ function MenuEditor({
           </option>
           {linkablePages.map(page => (
             <option key={page.id} value={page.id}>
-              {page.title} ({pageHref(page, defaultLocale)})
+              {page.title} ({pageHref(page, defaultLocale, siteSlug)})
             </option>
           ))}
         </select>

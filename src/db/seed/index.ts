@@ -190,8 +190,8 @@ async function main() {
     {
       id: DEFAULT_SITE_ID,
       name: 'Next CMS',
-      slug: 'nextcms',
-      primaryHost: 'localhost:3000',
+      slug: 'main',
+      primaryHost: null,
       locales: DEFAULT_SITE_LOCALES,
     },
     {
@@ -205,10 +205,10 @@ async function main() {
       ],
     },
     {
-      id: 'site-blog',
+      id: 'site-devblog',
       name: 'Dev Blog',
-      slug: 'blog',
-      primaryHost: 'blog.localhost',
+      slug: 'devblog',
+      primaryHost: 'devblog.localhost',
       locales: [
         { code: 'en', label: 'English' },
         { code: 'fr', label: 'French' },
@@ -267,7 +267,10 @@ async function main() {
       siteDescription: `Site settings for ${ctx.name}`,
       seoTitle: `${ctx.name} — Official Site`,
       seoDescription: `Welcome to ${ctx.name}`,
-      siteUrl: `http://${ctx.siteId === DEFAULT_SITE_ID ? 'localhost:3000' : ctx.siteId}.localhost`,
+      siteUrl:
+        ctx.siteId === DEFAULT_SITE_ID
+          ? 'http://localhost:3000'
+          : `http://${ctx.siteId}.localhost`,
       themeTokens: DEFAULT_THEME_TOKENS,
       videoSettings: DEFAULT_VIDEO_SETTINGS,
     });
@@ -428,7 +431,7 @@ async function main() {
           siteId: ctx.siteId,
           title,
           slug,
-          status: i === 0 ? 'published' : 'draft',
+          status: i === 0 || isBlogIndex ? 'published' : 'draft',
           visibility: 'public',
           editorType: 'builder',
           isHome,

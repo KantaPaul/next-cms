@@ -218,9 +218,11 @@ function StyleControls({
 function LayoutControls({
   value: s,
   set,
+  blockType,
 }: {
   value: SectionSettings;
   set: (patch: Partial<SectionSettings>) => void;
+  blockType?: string;
 }) {
   const anchorId = useId();
   const shown: Record<Device, boolean> = {
@@ -269,25 +271,27 @@ function LayoutControls({
         />
       </Group>
 
-      <Group title="Size">
-        <UnitSlider
-          label="Width"
-          value={s.width}
-          unit={s.widthUnit}
-          units={widthUnits}
-          limits={widthLimits}
-          onChange={(width, widthUnit) => set({ width, widthUnit })}
-        />
-        <Slider
-          label="Z-index"
-          value={s.zIndex}
-          min={0}
-          max={50}
-          step={1}
-          placeholder="0"
-          onChange={zIndex => set({ zIndex })}
-        />
-      </Group>
+      {blockType !== 'Container' && (
+        <Group title="Size">
+          <UnitSlider
+            label="Width"
+            value={s.width}
+            unit={s.widthUnit}
+            units={widthUnits}
+            limits={widthLimits}
+            onChange={(width, widthUnit) => set({ width, widthUnit })}
+          />
+          <Slider
+            label="Z-index"
+            value={s.zIndex}
+            min={0}
+            max={50}
+            step={1}
+            placeholder="0"
+            onChange={zIndex => set({ zIndex })}
+          />
+        </Group>
+      )}
 
       <Group title="Alignment">
         <ResponsiveChoose
@@ -349,18 +353,19 @@ export function SectionField({ value, onChange }: Props) {
 
   if (tab === 'style')
     return <StyleControls value={s} set={set} blockType={blockType} />;
-  if (tab === 'layout') return <LayoutControls value={s} set={set} />;
+  if (tab === 'layout')
+    return <LayoutControls value={s} set={set} blockType={blockType} />;
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-semibold tracking-wide text-steel-400 uppercase">
+      <p className="text-xs font-semibold uppercase tracking-wide text-steel-400">
         Style
       </p>
       <StyleControls value={s} set={set} blockType={blockType} />
-      <p className="pt-2 text-xs font-semibold tracking-wide text-steel-400 uppercase">
+      <p className="pt-2 text-xs font-semibold uppercase tracking-wide text-steel-400">
         Layout
       </p>
-      <LayoutControls value={s} set={set} />
+      <LayoutControls value={s} set={set} blockType={blockType} />
     </div>
   );
 }

@@ -4,43 +4,43 @@ overview: "Add an Elementor-style nested Container with Flexbox and CSS Grid mod
 todos:
   - id: R393
     content: "BLD-01 Audit the existing Puck builder, Columns/Section components, stored page data, public renderer, and responsive controls before designing layout changes"
-    status: pending
+    status: completed
   - id: R394
     content: "BLD-02 Define a strict typed, backward-compatible layout schema for container, flex, grid, sizing, and breakpoint settings"
-    status: pending
+    status: completed
   - id: R395
     content: "BLD-03 Implement a nested Container component with a Puck slot/drop zone and safe default props"
-    status: pending
+    status: completed
   - id: R396
     content: "BLD-04 Add Flexbox controls for direction, justify-content, align-items, align-content, gap, wrap, and child alignment"
-    status: pending
+    status: completed
   - id: R397
     content: "BLD-05 Add container sizing controls for width, max/min width, height, min/max height, grow, shrink, basis, and box sizing"
-    status: in_progress
+    status: completed
   - id: R398
     content: "BLD-06 Add CSS Grid controls for column/row tracks, repeat patterns, gaps, auto-flow, and responsive track definitions"
-    status: pending
+    status: completed
   - id: R399
     content: "BLD-07 Add per-child grid placement controls for column/row start, span, and order with validated values"
-    status: pending
+    status: completed
   - id: R400
     content: "BLD-08 Implement canvas resize handles for container width and flex/grid column proportions without breaking Puck drag-and-drop selection"
     status: pending
   - id: R401
     content: "BLD-09 Add responsive breakpoint values and desktop/tablet/mobile preview, including inheritance and reset-to-inherited behavior"
-    status: in_progress
+    status: completed
   - id: R402
     content: "BLD-10 Reuse existing section style controls for spacing, padding, margin, background, border, radius, and overflow where compatible"
-    status: pending
+    status: completed
   - id: R403
     content: "BLD-11 Preserve existing Columns and Section content with a non-destructive compatibility path and normalization for legacy saved pages"
-    status: pending
+    status: completed
   - id: R404
     content: "BLD-12 Render layout styles consistently in editor, preview, and published pages without unsafe arbitrary CSS or style injection"
-    status: pending
+    status: completed
   - id: R405
     content: "BLD-13 Add unit tests for layout schema validation, defaults, legacy normalization, breakpoint inheritance, and CSS style generation"
-    status: pending
+    status: completed
   - id: R406
     content: "BLD-14 Add integration/e2e tests for nesting, drag/drop, resize, save/reload, publish, and public-page rendering"
     status: pending
@@ -64,10 +64,10 @@ todos:
     status: pending
   - id: R668
     content: "CFG-01 Container HTML tag choice (div, section, article, header, footer, aside, nav, main) with a warning for duplicate main or nav landmarks"
-    status: pending
+    status: completed
   - id: R669
     content: "CFG-02 Content width: full width or boxed, with the boxed width taken from a site setting and overridable per container"
-    status: pending
+    status: completed
   - id: R670
     content: "CFG-03 Structure picker when a Container is added: one, two, three, and four columns, 1:2, 2:1, 1:1:2, and a bento grid"
     status: pending
@@ -105,6 +105,8 @@ isProject: false
 
 Source: the "Elementor-style Container, Flexbox, and Grid Builder Extension" section of [combined_cms_refs_f96163bc.plan.md](combined_cms_refs_f96163bc.plan.md). Keep step statuses in both files in sync.
 
+Engine: if the custom builder engine ([custom_builder_engine_refs.plan.md](custom_builder_engine_refs.plan.md), R680–R710) is approved, read "Puck slots" below as the engine's named slots, and build R400 resize handles once, as R695.
+
 Feeds: listing layouts (QRY-06, R576), docs layout (DOC-05, R515), the portfolio grid (PRT-03, R554), and the Product Query Loop (ECM-17, R619).
 Related but planned elsewhere: copy and paste style (MKT-03, R478), sticky elements (MKT-27, R502), global design tokens (BLD-27 to BLD-31, R419–R423).
 
@@ -112,19 +114,19 @@ Related but planned elsewhere: copy and paste style (MKT-03, R478), sticky eleme
 
 Checked against the code on 2026-10-28. No step is complete. The builder has a fixed `Columns` block, not a Container, so most steps have not started; two have reusable groundwork.
 
-- **R393** (pending): BLD-01 Audit the existing Puck builder, Columns/Section components, stored page data, public renderer, and responsive controls before designing layout changes. No written audit yet. Known today: Puck ^0.20.2, a fixed `Columns` block (`src/builder/blocks/content.tsx`) with 2–4 `slot` fields and five preset layouts, no Container block.
-- **R394** (pending): BLD-02 Define a strict typed, backward-compatible layout schema for container, flex, grid, sizing, and breakpoint settings. No container/flex/grid schema. `SectionSettings` in `src/builder/style.ts` is the base to extend.
-- **R395** (pending): BLD-03 Implement a nested Container component with a Puck slot/drop zone and safe default props. No Container block. `Columns` uses Puck slots but disallows nesting `Columns` inside itself.
-- **R396** (pending): BLD-04 Add Flexbox controls for direction, justify-content, align-items, align-content, gap, wrap, and child alignment. No flex controls. Only `Columns.verticalAlign` (start/center/end) and the section `contentAlign` exist.
-- **R397** (in_progress): BLD-05 Add container sizing controls for width, max/min width, height, min/max height, grow, shrink, basis, and box sizing. Partly there: responsive `width` with %/px/vw and `minHeight` presets (auto/half/screen) in `SectionSettings`. Missing: max/min width, height, max height, grow, shrink, basis, box sizing.
-- **R398** (pending): BLD-06 Add CSS Grid controls for column/row tracks, repeat patterns, gaps, auto-flow, and responsive track definitions. No grid controls. `Columns` only offers fixed Tailwind presets (`md:grid-cols-2`, `2fr_1fr`, …) and sm/md/lg gap.
-- **R399** (pending): BLD-07 Add per-child grid placement controls for column/row start, span, and order with validated values. Not started.
-- **R400** (pending): BLD-08 Implement canvas resize handles for container width and flex/grid column proportions without breaking Puck drag-and-drop selection. No resize handles on the canvas.
-- **R401** (in_progress): BLD-09 Add responsive breakpoint values and desktop/tablet/mobile preview, including inheritance and reset-to-inherited behavior. Partly there: `Device` desktop/tablet/mobile, `Responsive<T>` values with fallback order, and `device-row.tsx` resizes the Puck viewport. Not yet applied to layout values, and no explicit reset-to-inherited for them.
-- **R402** (pending): BLD-10 Reuse existing section style controls for spacing, padding, margin, background, border, radius, and overflow where compatible. Controls exist and are ready to reuse (spacing, margin, fill, border, radius, shadow, overflow in `src/builder/controls/`); waiting on the Container block.
-- **R403** (pending): BLD-11 Preserve existing Columns and Section content with a non-destructive compatibility path and normalization for legacy saved pages. Not started; `Columns` keeps working as is today.
-- **R404** (pending): BLD-12 Render layout styles consistently in editor, preview, and published pages without unsafe arbitrary CSS or style injection. Style generation in `style.ts` already clamps values and emits classes; layout styles do not exist yet.
-- **R405** (pending): BLD-13 Add unit tests for layout schema validation, defaults, legacy normalization, breakpoint inheritance, and CSS style generation. No builder tests. `npm test` only runs video and permissions tests.
+- **R393** (completed): BLD-01 Audit done. Puck ^0.20.2; fixed `Columns` block (`src/builder/blocks/content.tsx`) with 2–4 `slot` fields, no Container block; `SectionSettings` in `src/builder/style.ts` is the style base; public renderer uses `resolveAllData` + `Render` with `builderConfig` in `app/(site)/[[...slug]]/page.tsx`.
+- **R394** (completed): BLD-02 Schema added to `src/builder/style.ts`: `ContainerSettings` (mode, flex, grid, sizing, content width, tag, link), `FlexChildSettings`/`GridChildSettings` on `SectionSettings`, enums, limits, `safeTrackList` validation, `normalizeContainerSettings`, `resolveContainerStyle`, `resolveFlexItemStyle`, `resolveGridItemStyle`.
+- **R395** (completed): BLD-03 New `src/builder/blocks/container.tsx`: `Container` block with `content` Puck slot (nesting allowed), `zones` rehydration, per-child flex/grid item styles on `MotionItem` wrappers, semantic tag, landmark duplicate warning (editor), whole-container link, empty-state drop zone.
+- **R396** (completed): BLD-04 Flexbox controls in `src/builder/controls/container-layout.tsx` (direction, wrap, justify, align-items, align-content, gap, column gap, row gap — all responsive with reset-to-inherited), registered in `config.tsx` Layout category.
+- **R397** (completed): BLD-05 Sizing controls (width, min/max width, height, min/max height with shared unit, grow, shrink, basis, box sizing), all validated and clamped.
+- **R398** (completed): BLD-06 CSS Grid controls (template columns/rows with validated track syntax incl. repeat/minmax/fit-content, auto-flow, gaps) plus per-child grid placement stored on `SectionSettings.gridItem` and applied to child `MotionItem` wrappers.
+- **R399** (completed): BLD-07 Per-child grid placement (column/row start and span, per device) via `SectionSettings.gridItem` + `resolveGridItemStyle`; validated 1–100 line numbers.
+- **R400** (pending): BLD-08 Canvas drag-resize handles NOT implemented in this step. Numeric/responsive sizing controls (keyboard accessible) ship instead; drag handles deferred to follow-up work so Puck drag-and-drop and touch scrolling are not put at risk.
+- **R401** (completed): BLD-09 Responsive values via existing `Responsive<T>` convention with `resolveResponsive` fallback order (desktop → tablet → mobile), per-device overrides, and reset-to-inherited UI in every responsive control.
+- **R402** (completed): BLD-10 Container reuses `Section` for spacing/padding/margin/background/border/radius/overflow/animation; `SectionField` skips the generic Size group for Container blocks.
+- **R403** (completed): BLD-11 Additive change only — `Columns` and `Section` unchanged and still render/edit; `normalizeContainerSettings` clamps/drops invalid stored values defensively with no data migration.
+- **R404** (completed): BLD-12 Same `Container` component and `resolveContainerStyle` output render in the editor iframe and the public page; layout data holds validated units/keywords only, no arbitrary CSS strings.
+- **R405** (completed): BLD-13 Unit tests in `src/builder/__tests__/layout.test.ts` (19 tests) covering normalization, defaults, track validation/injection rejection, breakpoint inheritance, flex/grid style generation; added to `npm test`.
 - **R406** (pending): BLD-14 Add integration/e2e tests for nesting, drag/drop, resize, save/reload, publish, and public-page rendering.
 - **R407** (pending): BLD-15 Make resize and layout controls accessible with keyboard operation, labels, focus states, and numeric alternatives to dragging.
 - **R408** (pending): BLD-16 Add starter layouts/templates demonstrating flex rows, responsive card grids, split hero sections, and nested containers.
@@ -132,7 +134,10 @@ Checked against the code on 2026-10-28. No step is complete. The builder has a f
 - **R410** (pending): BLD-18 Gate 13 approval: architecture audit, schema compatibility, and container/flex/grid foundations verified.
 - **R411** (pending): BLD-19 Gate 14 approval: visual resizing, responsive preview, accessibility, and legacy content compatibility verified.
 - **R412** (pending): BLD-20 Gate 15 approval: tests, save/publish/public rendering, performance, and release regression checks pass.
-- **R668–R679** (pending): market-gap layout steps; see the section at the end of this file.
+- **R668** (completed): CFG-01 Tag choice (div/section/article/header/footer/aside/nav/main) with editor warning for duplicate main/nav landmarks.
+- **R669** (completed): CFG-02 Content width full/boxed with per-container overridable boxed width.
+- **R670–R678** (pending): market-gap steps; per plan rules they start after Gate 13 (R410).
+- **R679** (pending): Gate 33 awaits review.
 
 <!-- BEGIN: container_flex_grid_builder_plan -->
 

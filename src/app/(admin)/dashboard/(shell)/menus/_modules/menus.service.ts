@@ -61,6 +61,7 @@ export const menusService = {
         title: pages.title,
         slug: pages.slug,
         language: pages.language,
+        isHome: pages.isHome,
       })
       .from(pages)
       .where(
