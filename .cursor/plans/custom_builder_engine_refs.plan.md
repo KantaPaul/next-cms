@@ -1,6 +1,6 @@
 ---
-name: Custom builder engine refs R680–R710, modern editor experience R711–R736, data saving and fetching R737–R754, standalone builder package R755–R772, and block extension API R773–R795
-overview: "Replace the Puck editor and renderer with an in-house builder engine while keeping the existing block components, style system, and controls. Covers the document format, Puck converter, server renderer, editor store and commands, iframe canvas, dnd-kit drag and drop, inspector, responsive editing, resize handles, parity for every builder kind, migration, tests, and Gates 34–36, then a modern editor experience (command palette, quick insert, patterns, zoom, multi-device view, smart guides, multi-select, style classes, history, version compare, comments, presence, AI assist, live checks, onboarding) with Gate 37, then best-practice data saving and fetching (version checks, patch saves, offline-safe save queue, compact revisions, one-trip editor load, publish-time compile, tag-based public caching, indexes) with Gate 38, then standalone builder packages (workspace split, adapters, plugin API, self-contained styling, examples, docs, release) with Gate 39, then a block extension API (typed defineBlock, traits, extendBlock, presets, custom fields, UI overrides, block versioning, scaffolding, playground) with Gate 40. Name one numbered ref to implement only that piece."
+name: Custom builder engine refs R680–R710, modern editor experience R711–R736, data saving and fetching R737–R754, standalone builder package R755–R772, block extension API R773–R795, and robustness refs R796–R812
+overview: "Replace the Puck editor and renderer with an in-house builder engine while keeping the existing block components, style system, and controls. Covers the document format, Puck converter, server renderer, editor store and commands, iframe canvas, dnd-kit drag and drop, inspector, responsive editing, resize handles, parity for every builder kind, migration, tests, and Gates 34–36, then a modern editor experience (command palette, quick insert, patterns, zoom, multi-device view, smart guides, multi-select, style classes, history, version compare, comments, presence, AI assist, live checks, onboarding) with Gate 37, then best-practice data saving and fetching (version checks, patch saves, offline-safe save queue, compact revisions, one-trip editor load, publish-time compile, tag-based public caching, indexes) with Gate 38, then standalone builder packages (workspace split, adapters, plugin API, self-contained styling, examples, docs, release) with Gate 39, then a block extension API (typed defineBlock, traits, extendBlock, presets, custom fields, UI overrides, block versioning, scaffolding, playground) with Gate 40, then robustness (non-goals, error recovery, telemetry, permissions, i18n, stronger testing, dual-engine ops, security, large-document handling) with Gate 41. Name one numbered ref to implement only that piece."
 todos:
   - id: R680
     content: "ENG-01 Record every Puck problem the team hits, each with repro steps, the page or block it breaks, and whether a Puck upgrade or setting already fixes it"
@@ -350,10 +350,62 @@ todos:
   - id: R795
     content: "EXT-23 Gate 40 approval: a developer new to the project builds a custom block, extends a built-in block, and adds a trait using only the docs, and the CMS blocks themselves use this API"
     status: pending
+
+  - id: R796
+    content: "ROB-01 Non-goals document for the whole builder rewrite: full OT/CRDT co-editing, native mobile editor, non-React hosts, visual page builder for non-developers, and headless-only usage without the React editor stay out of scope for Gates 34–41"
+    status: pending
+  - id: R797
+    content: "ROB-02 Editor error surfaces: what the user sees when a block loader fails, schema validation fails on load, a global block is missing, or the document is corrupt; include quarantine mode, open-as-read-only, and guided repair"
+    status: pending
+  - id: R798
+    content: "ROB-03 Network and API error UX while editing: retry, offline banner, conflict compare, and never lose the local command log"
+    status: pending
+  - id: R799
+    content: "ROB-04 Telemetry for the rewrite: editor error reporting, feature-flag usage (Puck vs new engine per site), save success and conflict rates, and Core Web Vitals impact after migration"
+    status: pending
+  - id: R800
+    content: "ROB-05 Permissions model: field-level and block-level permissions enforced in the command layer and UI, role-based insert/delete/publish restrictions, and how the permissions adapter (PKG-05) constrains actions"
+    status: pending
+  - id: R801
+    content: "ROB-06 Editor i18n: localize chrome, command palette, empty states, onboarding, and error messages; wire the RTL preference (R733) to real layout direction and test with at least one RTL locale"
+    status: pending
+  - id: R802
+    content: "ROB-07 Visual regression suite on the canvas that runs on every PR, plus contract tests for every adapter (storage, media, data sources, permissions, AI, comments)"
+    status: pending
+  - id: R803
+    content: "ROB-08 Property-based and fuzz tests on the converter, command layer, nesting rules, and responsive inheritance"
+    status: pending
+  - id: R804
+    content: "ROB-09 Dual-engine operational playbook: expected dual-mode duration, criteria to flip a site permanently, rollback after publish, monitoring, and a kill-switch if the new renderer produces bad public pages"
+    status: pending
+  - id: R805
+    content: "ROB-10 Security of the document format and extension surface: XSS surface in rich text and custom fields, size and DoS limits, and sandboxing expectations for untrusted custom blocks"
+    status: pending
+  - id: R806
+    content: "ROB-11 Large-document handling beyond the 500-block budget: progressive node-tree loading, virtualized layers panel, and deferred field editors"
+    status: pending
+  - id: R807
+    content: "ROB-12 Accessibility specifics for multi-select, smart guides, floating toolbar, and marquee selection (keyboard and screen-reader paths)"
+    status: pending
+  - id: R808
+    content: "ROB-13 Estimate and track migration cost for other plans that currently assume Puck (MKT, QRY, container/flex/grid, market-gap shortcuts)"
+    status: pending
+  - id: R809
+    content: "ROB-14 Minimum-viable packages first: land PKG-01–03 and a thin public surface before ENG work, then expand packages; avoid rewriting ENG code twice"
+    status: pending
+  - id: R810
+    content: "ROB-15 Dual-engine test matrix: both engines reading and writing the same pages, converter round-trips under concurrent edits, and screenshot + HTML/prop diffs"
+    status: pending
+  - id: R811
+    content: "ROB-16 Document recovery drills: restore from backup, rebuild a revision from patches, and open a partially migrated document safely"
+    status: pending
+  - id: R812
+    content: "ROB-17 Gate 41 approval: non-goals published, error recovery and telemetry live, permissions and i18n verified, dual-engine playbook rehearsed, security review passed, and large-document + a11y tests green"
+    status: pending
 isProject: false
 ---
 
-# Custom builder engine refs R680–R710, modern editor experience R711–R736, data saving and fetching R737–R754, standalone builder package R755–R772, and block extension API R773–R795
+# Custom builder engine refs R680–R710, modern editor experience R711–R736, data saving and fetching R737–R754, standalone builder package R755–R772, block extension API R773–R795, and robustness refs R796–R812
 
 Also tracked in [combined_cms_refs_f96163bc.plan.md](combined_cms_refs_f96163bc.plan.md). Keep step statuses in both files in sync. No step is started.
 
@@ -414,6 +466,16 @@ Do not start the editor core before Gate 34 (R708). Do not remove Puck before Ga
 - **R709 (ENG-30):** Gate 35 approval: editor core and every builder kind reach parity with the Puck editor.
 - **R710 (ENG-31):** Gate 36 approval: migration, rollback, tests, performance budget, and Puck removal verified.
 
+## Non-goals (first release through Gate 41)
+
+- Full real-time OT/CRDT co-editing (presence and soft locks only).
+- Native mobile editor app.
+- Non-React host applications.
+- Visual page builder aimed at non-developers with no code.
+- Headless-only usage that never loads the React editor package.
+
+Documented in R796; revisit only after Gate 41.
+
 ## Rules
 
 - Keep every block component engine-agnostic: props in, children through a slot render function. New blocks written during the rewrite (for example the in-progress Container in `src/builder/blocks/container.tsx`) must follow this so they move over without changes.
@@ -422,6 +484,7 @@ Do not start the editor core before Gate 34 (R708). Do not remove Puck before Ga
 - Store layout intent, not pixel positions. Sanitize and validate every stored prop; no arbitrary CSS.
 - TypeScript strict, no `any`.
 - Site scoping, preview rules, and caching follow the multisite plan (R463–R475) and site slug routing (R644–R667).
+- Every user-visible failure path (loader, schema, missing global, network, conflict) has a defined surface (R797–R798).
 
 ## How this changes other plans
 
@@ -434,6 +497,9 @@ Do not start the editor core before Gate 34 (R708). Do not remove Puck before Ga
 - **Parity takes the longest.** Puck gives drag and drop, iframe preview, history, fields, and layers for free; each must be rebuilt and tested.
 - **Data migration.** A bad conversion breaks live pages, so the flag, round-trip tests, backup, and rollback come before any write.
 - **Two engines during rollout.** Keep the rollout short and freeze new Puck-only features once Gate 34 passes.
+- **Error and recovery gaps.** Without explicit loader/schema/global-block failure UX (R797–R798) and recovery drills (R811), editors can lose work or ship broken pages.
+- **Permissions and security.** Field/block permissions and the extension surface need design before public packages ship (R800, R805).
+- **Observability blind spots.** Without rewrite-specific telemetry (R799) and a dual-engine playbook (R804), rollout decisions stay anecdotal.
 
 ## Approval gates
 
@@ -513,6 +579,8 @@ Already planned elsewhere and not repeated: undo and redo buttons and shortcuts 
 - Every change goes through the R688 command layer, so it is undoable and appears in history.
 - Panels, toolbars, and overlays never shift the canvas content or block drag and drop.
 - Meet WCAG 2.2 AA in the editor UI itself, and respect reduced motion.
+- Multi-select, smart guides, floating toolbar, and marquee selection have explicit keyboard and screen-reader paths (R807).
+- Editor chrome, command palette, empty states, onboarding, and errors are localizable; RTL preference drives real layout direction (R801).
 - Measure before and after: time per task in the usability test, and selection and drag latency.
 
 ## Approval gates
@@ -587,6 +655,8 @@ Use current best practice for how the builder saves and loads page data, and how
 - The public site never runs editor code and never reads draft data outside preview.
 - Every cache key and tag includes the site; follow the multisite plan (R463–R475) and site slug routing (R644–R667).
 - Change one thing at a time and compare against the R737 baseline.
+- Document size and field limits are enforced on save; recovery drills (R811) must pass before Gate 38.
+- XSS surface in rich text and custom fields is reviewed as part of R805.
 
 ## Related steps not repeated here
 
@@ -668,7 +738,7 @@ import { BuilderRenderer } from '@nextcms/builder-core/renderer';
 
 ## Order
 
-Do R755–R757 before the engine work starts, so ENG code is written inside the packages from the first line. Then R758–R762 shape the API while ENG-03 to ENG-18 are built. R763–R766 and R767–R771 follow before Gate 35 (R709).
+Do R755–R757 (and the thin public surface in R809) before the engine work starts, so ENG code is written inside the packages from the first line. Prefer minimum-viable packages first, then expand, to avoid rewriting ENG code twice. Then R758–R762 shape the API while ENG-03 to ENG-18 are built. R763–R766 and R767–R771 follow before Gate 35 (R709).
 
 ## Rules
 
@@ -791,3 +861,98 @@ Build R773–R776 with ENG-18 (block definition API), R777–R782 and R783–R78
 PKG-04, PKG-06, PKG-07 (public API, custom blocks, plugins), RFB-02, RFB-04, RFB-06 (component adapter contract), BLD-22 and BLD-27 to BLD-31 (dynamic values and tokens, used by dynamic() and token()), BLD-33 (conditional fields), MKT-04 (allowlisted classes), DAT-16 (batched loaders).
 
 <!-- END: builder-extension-api -->
+
+---
+
+# Robustness, operations, and safety refs R796–R812
+
+<!-- BEGIN: builder-robustness -->
+
+## Goal
+
+Close the gaps that turn a correct engine into a production-safe one: explicit non-goals, error and recovery UX, telemetry, permissions, editor i18n, stronger testing, dual-engine operations, security of the document and extension surface, and large-document handling.
+
+## Non-goals (published in R796)
+
+- Full OT/CRDT real-time co-editing (presence + soft locks only).
+- Native mobile editor.
+- Non-React host applications.
+- Visual builder for non-developers.
+- Pure headless usage that never ships the React editor.
+
+## Steps
+
+### Scope and clarity
+
+- **R796 (ROB-01):** Non-goals document for the whole builder rewrite: full OT/CRDT co-editing, native mobile editor, non-React hosts, visual page builder for non-developers, and headless-only usage without the React editor stay out of scope for Gates 34–41.
+
+### Error handling and recovery
+
+- **R797 (ROB-02):** Editor error surfaces: what the user sees when a block loader fails, schema validation fails on load, a global block is missing, or the document is corrupt; include quarantine mode, open-as-read-only, and guided repair.
+- **R798 (ROB-03):** Network and API error UX while editing: retry, offline banner, conflict compare, and never lose the local command log.
+- **R811 (ROB-16):** Document recovery drills: restore from backup, rebuild a revision from patches, and open a partially migrated document safely.
+
+### Observability
+
+- **R799 (ROB-04):** Telemetry for the rewrite: editor error reporting, feature-flag usage (Puck vs new engine per site), save success and conflict rates, and Core Web Vitals impact after migration.
+
+### Permissions
+
+- **R800 (ROB-05):** Permissions model: field-level and block-level permissions enforced in the command layer and UI, role-based insert/delete/publish restrictions, and how the permissions adapter (PKG-05) constrains actions. Builds on EXT-14 (R786).
+
+### Internationalization
+
+- **R801 (ROB-06):** Editor i18n: localize chrome, command palette, empty states, onboarding, and error messages; wire the RTL preference (R733) to real layout direction and test with at least one RTL locale.
+
+### Testing depth
+
+- **R802 (ROB-07):** Visual regression suite on the canvas that runs on every PR, plus contract tests for every adapter (storage, media, data sources, permissions, AI, comments).
+- **R803 (ROB-08):** Property-based and fuzz tests on the converter, command layer, nesting rules, and responsive inheritance.
+- **R810 (ROB-15):** Dual-engine test matrix: both engines reading and writing the same pages, converter round-trips under concurrent edits, and screenshot + HTML/prop diffs.
+
+### Dual-engine operations
+
+- **R804 (ROB-09):** Dual-engine operational playbook: expected dual-mode duration, criteria to flip a site permanently, rollback after publish, monitoring, and a kill-switch if the new renderer produces bad public pages.
+- **R808 (ROB-13):** Estimate and track migration cost for other plans that currently assume Puck (MKT, QRY, container/flex/grid, market-gap shortcuts).
+
+### Security
+
+- **R805 (ROB-10):** Security of the document format and extension surface: XSS surface in rich text and custom fields, size and DoS limits, and sandboxing expectations for untrusted custom blocks.
+
+### Scale and accessibility
+
+- **R806 (ROB-11):** Large-document handling beyond the 500-block budget: progressive node-tree loading, virtualized layers panel, and deferred field editors.
+- **R807 (ROB-12):** Accessibility specifics for multi-select, smart guides, floating toolbar, and marquee selection (keyboard and screen-reader paths).
+
+### Package sequencing
+
+- **R809 (ROB-14):** Minimum-viable packages first: land PKG-01–03 and a thin public surface before ENG work, then expand packages; avoid rewriting ENG code twice.
+
+### Gate
+
+- **R812 (ROB-17):** Gate 41 approval: non-goals published, error recovery and telemetry live, permissions and i18n verified, dual-engine playbook rehearsed, security review passed, and large-document + a11y tests green.
+
+## Rules
+
+- Non-goals are written down and linked from every gate checklist; scope creep requires an explicit decision to reopen them.
+- No save is acknowledged until the database commit succeeds; the local command log survives reload and offline periods.
+- Permissions are enforced in the command layer, not only in the UI.
+- Every adapter has a contract test; the canvas has visual regression coverage on PR.
+- Dual-engine mode has a written playbook and a kill-switch before any production site is flipped.
+- Security review of the document format and extension surface is a Gate 41 prerequisite.
+
+## Order
+
+- R796 and R809 early (with or just after PKG-01–03).
+- R797–R798 and R811 before Gate 36 and Gate 38.
+- R799 and R804 before any broad production rollout.
+- R800 and R805 before Gate 39 (public packages).
+- R801, R802, R803, R807, R810 before Gate 37 and Gate 41.
+- R806 can follow the 500-block performance work (R701 / R753).
+- R812 is the final gate after 34–40.
+
+## Related steps not repeated here
+
+ENG-22 / R701 (performance budget), DAT-02 / DAT-03 / DAT-04 (version checks, patch saves, save queue), UXE-16 / R726 (autosave and crash recovery), PKG-05 (adapters), EXT-14 / R786 (per-block and per-field permissions), R733 (RTL preference).
+
+<!-- END: builder-robustness -->
