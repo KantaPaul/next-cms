@@ -7,6 +7,9 @@ import {
   getRelatedPosts,
   queryBlogPosts,
 } from '@/server/actions/blog.actions';
+import { queryVideos } from '@/app/(admin)/dashboard/(shell)/videos/_modules/videos.actions';
+import { VideoLibrary, type VideoLibraryVideoItem } from '@/components/video/video-library';
+import { VideoLibraryBlock } from '@/components/video/video-library';
 // import type { BuilderItem } from './data';
 import {
   type BlogActiveFilters,
@@ -209,6 +212,7 @@ export const builderConfig: Config = {
         'Image',
         'Gallery',
         'Video',
+        'VideoLibrary',
         'Embed',
         'Map',
         'Code',
@@ -680,6 +684,62 @@ export const builderConfig: Config = {
         section: DEFAULT_SECTION,
       },
       render: renderBlock(Video),
+    },
+    VideoLibrary: {
+      label: 'Video library',
+      fields: withSection({
+        title: text('Title'),
+        description: textarea('Description'),
+        layout: select('Layout', [
+          { label: 'Sidebar', value: 'sidebar' },
+          { label: 'Stacked', value: 'stacked' },
+        ]),
+        playlistId: text('Playlist ID (optional)'),
+        pageSize: { type: 'number', label: 'Videos per page', min: 1, max: 48 },
+      }),
+      defaultProps: {
+        title: 'Videos',
+        description: '',
+        layout: 'sidebar',
+        playlistId: '',
+        pageSize: 12,
+        section: DEFAULT_SECTION,
+      },
+      resolveData: async data => {
+        const props = data.props as {
+          title?: string;
+          description?: string;
+          layout?: string;
+          playlistId?: string;
+          pageSize?: number;
+        };
+        const result = await queryVideos({
+          playlistId: props.playlistId || null,
+          pageSize: props.pageSize,
+        });
+        return {
+          ...data,
+          props: {
+            ...data.props,
+            videos: result.videos as VideoLibraryVideoItem[],
+            settings: {
+              enabled: result.enabled,
+              title: result.title,
+              description: result.description,
+              layout: result.layout,
+              defaultPlaylistId: result.defaultPlaylistId,
+              thumbnails: true,
+              descriptions: true,
+              pageSize: result.pageSize,
+              providers: result.providers,
+              progress: result.progress,
+              resume: result.resume,
+              completionPercent: result.completionPercent,
+            },
+          },
+        };
+      },
+      render: renderBlock(VideoLibraryBlock),
     },
     Embed: {
       label: 'Embed',

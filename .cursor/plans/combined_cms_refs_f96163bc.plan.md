@@ -262,34 +262,34 @@ todos:
     status: completed
   - id: R123
     content: "V1-01 Journal the existing page_views SQL"
-    status: in_progress
+    status: completed
   - id: R125
     content: "V1-03 Generate the video Drizzle migration"
-    status: in_progress
+    status: completed
   - id: R147
     content: "V5-05 Sidebar and stacked library layouts"
-    status: pending
+    status: completed
   - id: R149
     content: "V6-01 Published-video query for the block"
-    status: pending
+    status: completed
   - id: R150
     content: "V6-02 Register the VideoLibrary Puck block"
-    status: pending
+    status: completed
   - id: R151
     content: "V6-03 saveVideoProgress for signed-in viewers"
-    status: pending
+    status: completed
   - id: R152
     content: "V6-04 Resume start position"
-    status: pending
+    status: completed
   - id: R153
     content: "V6-05 Wire progress into the widget"
-    status: pending
+    status: completed
   - id: R154
     content: "V7-01 Permission matrix test for the four video keys"
-    status: pending
+    status: completed
   - id: R155
     content: "V7-02 Lint and tsc on the video files"
-    status: pending
+    status: completed
   - id: R156
     content: "V7-03 Browser check of the admin form and the public widget"
     status: pending

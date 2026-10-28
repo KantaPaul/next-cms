@@ -530,7 +530,7 @@ CREATE TABLE "site_settings" (
 	"header_menu_id" text,
 	"footer_menu_id" text,
 	"theme_tokens" jsonb DEFAULT '{"primaryColor":"#4f46e5","accentColor":"#0ea5e9","fontFamily":"Inter","borderRadius":"md","colorMode":"light"}'::jsonb NOT NULL,
-	"video_settings" jsonb DEFAULT '{"providers":{"youtube":true,"vimeo":true,"direct":true}}'::jsonb NOT NULL,
+	"video_settings" jsonb DEFAULT '{"enabled":true,"title":"Videos","description":"","layout":"sidebar","defaultPlaylistId":null,"thumbnails":true,"descriptions":true,"pageSize":12,"providers":{"youtube":true,"vimeo":true,"direct":true},"directHostAllowlist":[],"progress":true,"resume":true,"mutedAutoplay":false,"nativePlaybackSpeed":true,"completionPercent":90,"nativeSeekRestriction":false,"catalogMode":"all-published","viewerAccess":"public","preferCaptions":false}'::jsonb NOT NULL,
 	"robots_txt" text,
 	"google_analytics_id" varchar(50),
 	"updated_at" timestamp with time zone,

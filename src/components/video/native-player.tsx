@@ -22,6 +22,8 @@ export type NativePlayerProps = {
   lockSeek?: boolean;
   /** Whether download button should be shown (native only). */
   allowDownload?: boolean;
+  /** Resume position in seconds (from saved progress). */
+  startPosition?: number | null;
   onProgress?: (progress: { position: number; duration: number | null; completed: boolean }) => void;
   onPlay?: () => void;
   onPause?: () => void;
@@ -34,6 +36,7 @@ export function NativePlayer({
   duration,
   lockSeek = false,
   allowDownload = true,
+  startPosition,
   onProgress,
   onPlay,
   onPause,
@@ -119,11 +122,12 @@ export function NativePlayer({
   const handleCanPlay = useCallback(() => {
     const el = videoRef.current;
     if (!el) return;
-    // Resume to last known position if we have one
-    if (lastPositionRef.current > 0) {
-      el.currentTime = lastPositionRef.current;
+    // Resume to the saved position if we have one
+    if (startPosition && startPosition > 0) {
+      el.currentTime = startPosition;
     }
-  }, []);
+    lastPositionRef.current = startPosition && startPosition > 0 ? startPosition : 0;
+  }, [startPosition]);
 
   return (
     <div className="relative bg-black rounded-lg overflow-hidden aspect-video">

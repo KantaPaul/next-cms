@@ -15,6 +15,10 @@ export type EmbedPlayerProps = {
   thumbnailUrl?: string | null;
   width?: number;
   height?: number;
+  /** Resume start position in seconds (from saved progress). */
+  start?: number | null;
+  /** Accessible title for the iframe. */
+  title?: string;
   onUnavailable?: () => void;
 };
 
@@ -23,6 +27,8 @@ export function EmbedPlayer({
   thumbnailUrl,
   width = 640,
   height = 360,
+  start = null,
+  title,
   onUnavailable,
 }: EmbedPlayerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -56,6 +62,11 @@ export function EmbedPlayer({
       clearTimeout(timer);
     };
   }, [isLoaded, isUnavailable, onUnavailable]);
+
+  const resolvedSrc =
+    embed && start && start > 0
+      ? `${embed.src}${embed.src.includes('?') ? '&' : '?'}start=${Math.floor(start)}`
+      : embed?.src;
 
   if (isUnavailable) {
     return (
@@ -97,11 +108,11 @@ export function EmbedPlayer({
     <div className="relative bg-black rounded-lg overflow-hidden aspect-video" style={{ width, height }}>
       <iframe
         ref={iframeRef}
-        src={embed.src}
+        src={resolvedSrc ?? undefined}
         width={width}
         height={height}
         className="w-full h-full"
-        title={`${embed.provider} video`}
+        title={title ?? `${embed.provider} video`}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
         loading="lazy"

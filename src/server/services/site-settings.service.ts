@@ -8,6 +8,7 @@ import { db } from '@/db';
 import {
   SITE_SETTINGS_ID,
   siteSettings,
+  DEFAULT_VIDEO_SETTINGS,
   type ThemeTokens,
   type VideoSettings,
 } from '@/db/schema';
@@ -110,6 +111,7 @@ async function loadSettings(siteId: string) {
       seoDescription: null,
       translations: null,
       themeTokens: resolveThemeTokens(null),
+      videoSettings: DEFAULT_VIDEO_SETTINGS,
       robotsTxt: null,
       googleAnalyticsId: null,
       updatedAt: new Date(),

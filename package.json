@@ -11,7 +11,7 @@
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
-    "test": "tsx --test src/lib/video/__tests__/video.test.ts",
+    "test": "tsx --test src/lib/video/__tests__/video.test.ts src/config/__tests__/permissions.test.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "biome check .",

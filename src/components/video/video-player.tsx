@@ -15,13 +15,11 @@ export type VideoPlayerProps = {
   lockSeek?: boolean;
   /** Poster/thumbnail URL. */
   poster?: string | null;
+  /** Video title, used as the iframe title. */
+  title?: string;
   /** Video duration in seconds. */
   duration?: number | null;
-  onProgress?: (progress: {
-    position: number;
-    duration: number | null;
-    completed: boolean;
-  }) => void;
+  onProgress?: (progress: { position: number; duration: number | null; completed: boolean }) => void;
   onPlay?: () => void;
   onPause?: () => void;
   onEnded?: () => void;
@@ -36,6 +34,7 @@ export function VideoPlayer({
   startPosition,
   lockSeek = false,
   poster,
+  title,
   duration,
   onProgress,
   onPlay,
@@ -64,7 +63,8 @@ export function VideoPlayer({
         poster={poster}
         duration={duration}
         lockSeek={lockSeek}
-        allowDownload={true}
+        allowDownload
+        startPosition={startPosition}
         onProgress={handleProgress}
         onPlay={onPlay}
         onPause={onPause}
@@ -76,9 +76,7 @@ export function VideoPlayer({
   if (!embed) {
     return (
       <div className="bg-steel-100 rounded-lg aspect-video flex items-center justify-center dark:bg-dark-200">
-        <p className="text-sm text-steel-500">
-          Unsupported video provider
-        </p>
+        <p className="text-sm text-steel-500">Unsupported video provider</p>
       </div>
     );
   }
@@ -87,6 +85,8 @@ export function VideoPlayer({
     <EmbedPlayer
       embed={embed}
       thumbnailUrl={poster}
+      start={startPosition}
+      title={title}
       onUnavailable={() => {
         // Fallback already rendered by EmbedPlayer
       }}

@@ -14,15 +14,18 @@ import { PERMISSIONS } from '@/config/permissions';
 import { db } from '@/db';
 import {
   videoPlaylists,
+  videoProgress,
   videos,
 } from '@/db/schema';
+import { DEFAULT_VIDEO_SETTINGS, type VideoSettings } from '@/db/schemas/video.schema';
 import { ApplicationException, NotFoundException } from '@/lib/utils/error';
 import {
   accessService,
   type UserAccess,
 } from '@/server/services/access.service';
 import { auditService } from '@/server/services/audit.service';
-import { adminSiteId } from '@/server/services/site-context';
+import { adminSiteId, siteContext } from '@/server/services/site-context';
+import { siteSettingsService } from '@/server/services/site-settings.service';
 import { parseVideoUrl } from '@/lib/video/parse';
 import { fetchOEmbed } from '@/lib/video/oembed';
 import { revalidatePublicSite } from '@/lib/utils/revalidate-site';
@@ -452,6 +455,150 @@ export const videoService = {
     });
     revalidatePublicSite();
     return row as unknown as VideoItem;
+  },
+};
+
+/** ─── Public library query for the video widget (Puck block / public site) ─── */
+
+export type VideoLibraryItem = {
+  id: string;
+  siteId: string;
+  playlistId: string | null;
+  title: string;
+  slug: string;
+  url: string;
+  provider: string;
+  providerId: string;
+  thumbnailUrl: string | null;
+  duration: number | null;
+  status: string;
+  visibility: string;
+  publishedAt: Date | null;
+  playlistName: string | null;
+  position: number;
+  completed: boolean;
+};
+
+export const videoLibraryService = {
+  /**
+   * Published videos for the public widget, honouring the site video settings:
+   * master enable flag, catalog mode (`all-published` | `playlist-only`) and
+   * viewer access (`public` | `authenticated`).
+   */
+  listPublished: async (input: {
+    siteId?: string;
+    playlistId?: string | null;
+    catalogMode?: 'all-published' | 'playlist-only';
+    pageSize?: number;
+    viewerId?: string | null;
+  }) => {
+    const siteId =
+      input.siteId ?? (await siteContext.publicSite())?.id ?? 'default';
+    const settings = await siteSettingsService.getPublic();
+    const videoSettings: VideoSettings = settings.videoSettings ?? DEFAULT_VIDEO_SETTINGS;
+
+    const result = {
+      enabled: videoSettings.enabled,
+      title: videoSettings.title,
+      description: videoSettings.description,
+      layout: videoSettings.layout,
+      defaultPlaylistId: videoSettings.defaultPlaylistId,
+      pageSize: videoSettings.pageSize,
+      progress: videoSettings.progress,
+      resume: videoSettings.resume,
+      completionPercent: videoSettings.completionPercent,
+      providers: videoSettings.providers,
+      viewerAccess: videoSettings.viewerAccess,
+      videos: [] as VideoLibraryItem[],
+    };
+
+    if (!videoSettings.enabled) {
+      return result;
+    }
+
+    const viewerId: string =
+      videoSettings.viewerAccess === 'authenticated'
+        ? input.viewerId ?? ''
+        : '';
+
+    if (videoSettings.viewerAccess === 'authenticated' && !input.viewerId) {
+      // Anonymous visitors get no library rows; the widget shows a sign-in prompt.
+      return result;
+    }
+
+    const wantsPlaylistOnly =
+      (input.catalogMode ?? videoSettings.catalogMode) === 'playlist-only';
+    const effectivePlaylistId =
+      input.playlistId ?? videoSettings.defaultPlaylistId ?? null;
+
+    const conditions: SQL[] = [
+      eq(videos.siteId, siteId),
+      eq(videos.status, 'published'),
+      eq(videos.visibility, 'public'),
+      isNull(videos.deletedAt),
+    ];
+
+    if (wantsPlaylistOnly) {
+      if (!effectivePlaylistId) {
+        return { ...result, videos: [] };
+      }
+      conditions.push(eq(videos.playlistId, effectivePlaylistId));
+    }
+
+    const pageSize = Math.min(Math.max(input.pageSize ?? videoSettings.pageSize, 1), 48);
+
+    const rows = await db
+      .select({
+        id: videos.id,
+        siteId: videos.siteId,
+        playlistId: videos.playlistId,
+        title: videos.title,
+        slug: videos.slug,
+        url: videos.url,
+        provider: videos.provider,
+        providerId: videos.providerId,
+        thumbnailUrl: videos.thumbnailUrl,
+        duration: videos.duration,
+        status: videos.status,
+        visibility: videos.visibility,
+        publishedAt: videos.publishedAt,
+        playlistName: videoPlaylists.name,
+        position: videoProgress.position,
+        completed: videoProgress.completed,
+      })
+      .from(videos)
+      .leftJoin(videoPlaylists, eq(videos.playlistId, videoPlaylists.id))
+      .leftJoin(
+        videoProgress,
+        and(
+          eq(videoProgress.videoId, videos.id),
+          eq(videoProgress.userId, viewerId)
+        )
+      )
+      .where(and(...conditions))
+      .orderBy(asc(videos.position), asc(videos.createdAt))
+      .limit(pageSize);
+
+    const videosList: VideoLibraryItem[] = rows.map(row => ({
+      id: row.id,
+      siteId: row.siteId,
+      playlistId: row.playlistId,
+      title: row.title,
+      slug: row.slug,
+      url: row.url,
+      provider: row.provider,
+      providerId: row.providerId,
+      thumbnailUrl: row.thumbnailUrl,
+      duration: row.duration,
+      status: row.status,
+      visibility: row.visibility,
+      publishedAt: row.publishedAt,
+      playlistName: row.playlistName,
+      position: row.position ?? 0,
+      completed: row.completed ?? false,
+    }));
+
+    return { ...result, videos: videosList };
   },
 };
 

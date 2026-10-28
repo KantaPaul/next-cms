@@ -12,13 +12,13 @@ import {
 } from 'drizzle-orm/pg-core';
 import { baseColumns, relationConfig } from '@/db/helpers/base.columns';
 import { users } from '@/db/schemas/auth.schema';
-import { DEFAULT_SITE_ID } from '@/db/schemas/sites.schema';
 import {
   PageStatus,
-  VisibilityStatus,
   pageStatusEnum,
+  VisibilityStatus,
   visibilityStatusEnum,
 } from '@/db/schemas/shared.schema';
+import { DEFAULT_SITE_ID } from '@/db/schemas/sites.schema';
 
 const { id, ...timestampColumns } = baseColumns;
 const { cascade, setNull } = relationConfig;
@@ -26,11 +26,47 @@ const { cascade, setNull } = relationConfig;
 export type VideoProvider = 'youtube' | 'vimeo' | 'direct';
 
 export type VideoSettings = {
+  enabled: boolean;
+  title: string;
+  description: string;
+  layout: 'sidebar' | 'stacked';
+  defaultPlaylistId: string | null;
+  thumbnails: boolean;
+  descriptions: boolean;
+  pageSize: number;
   providers: Record<VideoProvider, boolean>;
+  directHostAllowlist: string[];
+  progress: boolean;
+  resume: boolean;
+  mutedAutoplay: boolean;
+  nativePlaybackSpeed: boolean;
+  completionPercent: number;
+  nativeSeekRestriction: boolean;
+  catalogMode: 'all-published' | 'playlist-only';
+  viewerAccess: 'public' | 'authenticated';
+  preferCaptions: boolean;
 };
 
 export const DEFAULT_VIDEO_SETTINGS: VideoSettings = {
+  enabled: true,
+  title: 'Videos',
+  description: '',
+  layout: 'sidebar',
+  defaultPlaylistId: null,
+  thumbnails: true,
+  descriptions: true,
+  pageSize: 12,
   providers: { youtube: true, vimeo: true, direct: true },
+  directHostAllowlist: [],
+  progress: true,
+  resume: true,
+  mutedAutoplay: false,
+  nativePlaybackSpeed: true,
+  completionPercent: 90,
+  nativeSeekRestriction: false,
+  catalogMode: 'all-published',
+  viewerAccess: 'public',
+  preferCaptions: false,
 };
 
 /** A playlist of videos. */
@@ -61,7 +97,10 @@ export const videos = pgTable(
   {
     id,
     siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
-    playlistId: text('playlist_id').references(() => videoPlaylists.id, setNull),
+    playlistId: text('playlist_id').references(
+      () => videoPlaylists.id,
+      setNull
+    ),
     title: varchar('title', { length: 200 }).notNull(),
     slug: varchar('slug', { length: 200 }).notNull(),
     url: text('url').notNull(),

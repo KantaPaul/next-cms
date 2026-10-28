@@ -12,7 +12,6 @@ const optionalText = (max: number) =>
 const hex = z
   .string()
   .regex(/^#[0-9a-fA-F]{6}$/, 'Use a hex colour like #4f46e5');
-
 export const settingsSchema = z.object({
   siteName: z.string().trim().min(1, 'Site name is required').max(100),
   siteDescription: optionalText(500),
@@ -57,7 +56,25 @@ export const settingsSchema = z.object({
   }),
   videoSettings: z
     .object({
-      providers: z.record(z.enum(['youtube', 'vimeo', 'direct']), z.boolean()),
+      enabled: z.boolean().optional(),
+      title: z.string().max(200).optional(),
+      description: z.string().max(500).optional(),
+      layout: z.enum(['sidebar', 'stacked']).optional(),
+      defaultPlaylistId: z.string().max(150).nullish(),
+      thumbnails: z.boolean().optional(),
+      descriptions: z.boolean().optional(),
+      pageSize: z.coerce.number().int().min(1).max(48).optional(),
+      providers: z.record(z.enum(['youtube', 'vimeo', 'direct']), z.boolean()).optional(),
+      directHostAllowlist: z.array(z.string().max(255)).max(20).optional(),
+      progress: z.boolean().optional(),
+      resume: z.boolean().optional(),
+      mutedAutoplay: z.boolean().optional(),
+      nativePlaybackSpeed: z.boolean().optional(),
+      completionPercent: z.coerce.number().int().min(50).max(100).optional(),
+      nativeSeekRestriction: z.boolean().optional(),
+      catalogMode: z.enum(['all-published', 'playlist-only']).optional(),
+      viewerAccess: z.enum(['public', 'authenticated']).optional(),
+      preferCaptions: z.boolean().optional(),
     })
     .nullish(),
 });

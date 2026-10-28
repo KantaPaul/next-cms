@@ -174,16 +174,22 @@ describe('clampProgress', () => {
     assert.equal(result.completed, true);
   });
 
-  it('marks complete at 95% of duration', () => {
+  it('marks complete at 90% of duration by default', () => {
     const result = clampProgress(95, 100);
     assert.equal(result.completed, true);
     assert.equal(result.progress, 0.95);
   });
 
-  it('is not complete at 94% of duration', () => {
-    const result = clampProgress(94, 100);
+  it('is complete once the watched percent reaches the configured completion percent', () => {
+    const result = clampProgress(90, 100);
+    assert.equal(result.completed, true);
+    assert.equal(result.progress, 0.9);
+  });
+
+  it('is not complete below the configured completion percent', () => {
+    const result = clampProgress(89, 100);
     assert.equal(result.completed, false);
-    assert.equal(result.progress, 0.94);
+    assert.equal(result.progress, 0.89);
   });
 
   const result = clampProgress(30, 100);
@@ -194,6 +200,13 @@ describe('clampProgress', () => {
   it('returns null progress when duration is unknown', () => {
     const result = clampProgress(30, null);
     assert.equal(result.progress, null);
+    assert.equal(result.completed, false);
+  });
+
+  it('clamps to a 24 hour ceiling when the duration is unknown', () => {
+    const result = clampProgress(100000, null);
+    assert.equal(result.position, 24 * 60 * 60);
+    assert.equal(result.duration, null);
     assert.equal(result.completed, false);
   });
 

@@ -5,13 +5,13 @@ overview: URL-only video library split into small refs (V1-01 through V7-03). Na
 todos:
 - id: V1-01
   content: Journal the existing page_views SQL so the video migration does not recreate it
-  status: in_progress
+  status: completed
 - id: V1-02
   content: Add video_playlists, videos, video_progress, and site_settings.video_settings
   status: completed
 - id: V1-03
   content: Generate the Drizzle migration and confirm it only adds video tables and video_settings
-  status: in_progress
+  status: completed
 - id: V2-01
   content: parseVideoUrl for YouTube, Vimeo, and direct MP4/WebM
   status: completed
@@ -77,31 +77,31 @@ todos:
   status: completed
 - id: V5-05
   content: Sidebar and stacked library layouts
-  status: pending
+  status: completed
 - id: V5-06
   content: Admin preview dialog
   status: completed
 - id: V6-01
   content: Published-video query for the block, including catalog mode and viewer access
-  status: pending
+  status: completed
 - id: V6-02
   content: Register the VideoLibrary Puck block
-  status: pending
+  status: completed
 - id: V6-03
   content: saveVideoProgress that no-ops for anonymous visitors and clamps on the server
-  status: pending
+  status: completed
 - id: V6-04
   content: Resume start position for native, YouTube, and Vimeo
-  status: pending
+  status: completed
 - id: V6-05
   content: Wire progress into the widget when the setting is on
-  status: pending
+  status: completed
 - id: V7-01
   content: Permission matrix test for the four video keys
-  status: pending
+  status: completed
 - id: V7-02
   content: Lint and tsc on the touched files
-  status: pending
+  status: completed
 - id: V7-03
   content: Browser check of the admin form and the public widget
   status: pending

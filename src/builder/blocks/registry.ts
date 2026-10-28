@@ -1,3 +1,5 @@
+import { VideoLibrary } from '@/components/video/video-library';
+import { customBlocks } from '../custom';
 import { BlogPosts } from './blog';
 import {
   Code,
@@ -9,11 +11,10 @@ import {
   RichText,
   Video,
 } from './content';
-import { Map } from './map';
-import { Newsletter } from './newsletter';
 import { ImageMorph } from './image-morph';
 import { Accordion, Slider, Tabs } from './interactive';
 import { Button, Spacer } from './layout';
+import { Map as MapBlock } from './map';
 import {
   Cta,
   Faq,
@@ -26,7 +27,7 @@ import {
   Testimonials,
   Timeline,
 } from './marketing';
-import { customBlocks } from '../custom';
+import { Newsletter } from './newsletter';
 
 const builtInComponents = {
   Hero,
@@ -46,9 +47,10 @@ const builtInComponents = {
   Tabs,
   Accordion,
   Video,
+  VideoLibrary,
   Embed,
   Code,
-  Map,
+  Map: MapBlock,
   Newsletter,
   LogoCloud,
   Team,

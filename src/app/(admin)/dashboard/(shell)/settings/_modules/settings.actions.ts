@@ -5,6 +5,7 @@ import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import { permissionProcedure } from '@/server/procedures/permission.procedure';
 import { siteSettingsService } from '@/server/services/site-settings.service';
+import { parseVideoSettings } from '@/lib/video/settings';
 
 const optionalText = (max: number) =>
   z
@@ -72,7 +73,16 @@ export const updateSiteSettings = permissionProcedure(
 )
   .input(settingsSchema)
   .action(async ({ input, ctx }) => {
-    const row = await siteSettingsService.update(input, ctx.access);
+    const parsedVideoSettings = input.videoSettings
+      ? parseVideoSettings(input.videoSettings)
+      : undefined;
+    const row = await siteSettingsService.update(
+      {
+        ...input,
+        videoSettings: parsedVideoSettings?.ok ? parsedVideoSettings.data : undefined,
+      },
+      ctx.access
+    );
     revalidatePath(PAGES.DASHBOARD.SETTINGS);
     return row;
   });
