@@ -1,6 +1,6 @@
 ---
-name: Custom builder engine refs R680–R710, modern editor experience R711–R736, and data saving and fetching R737–R754
-overview: "Replace the Puck editor and renderer with an in-house builder engine while keeping the existing block components, style system, and controls. Covers the document format, Puck converter, server renderer, editor store and commands, iframe canvas, dnd-kit drag and drop, inspector, responsive editing, resize handles, parity for every builder kind, migration, tests, and Gates 34–36, then a modern editor experience (command palette, quick insert, patterns, zoom, multi-device view, smart guides, multi-select, style classes, history, version compare, comments, presence, AI assist, live checks, onboarding) with Gate 37, then best-practice data saving and fetching (version checks, patch saves, offline-safe save queue, compact revisions, one-trip editor load, publish-time compile, tag-based public caching, indexes) with Gate 38. Name one numbered ref to implement only that piece."
+name: Custom builder engine refs R680–R710, modern editor experience R711–R736, data saving and fetching R737–R754, standalone builder package R755–R772, and block extension API R773–R795
+overview: "Replace the Puck editor and renderer with an in-house builder engine while keeping the existing block components, style system, and controls. Covers the document format, Puck converter, server renderer, editor store and commands, iframe canvas, dnd-kit drag and drop, inspector, responsive editing, resize handles, parity for every builder kind, migration, tests, and Gates 34–36, then a modern editor experience (command palette, quick insert, patterns, zoom, multi-device view, smart guides, multi-select, style classes, history, version compare, comments, presence, AI assist, live checks, onboarding) with Gate 37, then best-practice data saving and fetching (version checks, patch saves, offline-safe save queue, compact revisions, one-trip editor load, publish-time compile, tag-based public caching, indexes) with Gate 38, then standalone builder packages (workspace split, adapters, plugin API, self-contained styling, examples, docs, release) with Gate 39, then a block extension API (typed defineBlock, traits, extendBlock, presets, custom fields, UI overrides, block versioning, scaffolding, playground) with Gate 40. Name one numbered ref to implement only that piece."
 todos:
   - id: R680
     content: "ENG-01 Record every Puck problem the team hits, each with repro steps, the page or block it breaks, and whether a Puck upgrade or setting already fixes it"
@@ -227,10 +227,133 @@ todos:
   - id: R754
     content: "DAT-18 Gate 38 approval: conflict-safe saving, patch saves, offline recovery, editor load, and public caching meet the R753 budgets"
     status: pending
+  - id: R755
+    content: "PKG-01 Turn the repo into a pnpm workspace (apps/cms plus packages/*), keep one lockfile by removing package-lock.json, choose the package scope name (for example @nextcms), and build packages with tsup"
+    status: pending
+  - id: R756
+    content: "PKG-02 Split the builder into packages: builder-core (document format, validation, commands, store, converter, renderer, no UI), builder-react (editor UI), builder-blocks (default block library, optional), and builder-next (Next.js helpers, optional)"
+    status: pending
+  - id: R757
+    content: "PKG-03 Decouple from the app: remove every import of the app's database, server actions, config, shadcn components, media, and video from builder code, replacing them with adapters; a lint rule blocks @/ imports inside packages"
+    status: pending
+  - id: R758
+    content: "PKG-04 Small public API: defineBlock, defineField, createBuilderConfig, BuilderEditor, BuilderRenderer, useBuilder hooks, and validateDocument, migrateDocument, and serializeDocument; everything else stays internal"
+    status: pending
+  - id: R759
+    content: "PKG-05 Adapters the host provides, each optional with a working default: storage (load, patch save, version conflict), media picker and upload, link picker, data sources for dynamic content and query loops, permissions, AI, translation, and comments and presence transport"
+    status: pending
+  - id: R760
+    content: "PKG-06 Custom blocks in a few lines: the host registers its own React component with a Zod props schema; fields, defaults, and validation are generated from it, with slots and server loaders; this is the RFB-02 and RFB-04 contract"
+    status: pending
+  - id: R761
+    content: "PKG-07 Plugin API for panels, toolbar actions, commands, field types, and canvas overlays; the CMS features (templates, global blocks, contact forms, AI, revisions) are built as plugins on it"
+    status: pending
+  - id: R762
+    content: "PKG-08 Exported document format version with migrate functions, so hosts upgrade stored data when they upgrade the package"
+    status: pending
+  - id: R763
+    content: "PKG-09 Self-contained styling: the editor UI ships compiled, prefixed CSS with CSS variables for theming, so the host needs no Tailwind or shadcn; light and dark themes; blocks read theme tokens"
+    status: pending
+  - id: R764
+    content: "PKG-10 Framework support: plain React 18 and 19 for the editor and renderer, an SSR-safe renderer with a React Server Components entry, and optional Next.js helpers; tested in a Vite React app and a Next.js app"
+    status: pending
+  - id: R765
+    content: "PKG-11 Editor UI text in English by default with host-supplied translations and right-to-left support"
+    status: pending
+  - id: R766
+    content: "PKG-12 Separate entry points (core, editor, renderer, blocks), ESM with type definitions, tree-shakeable, and a renderer entry with no editor code; bundle size budgets checked in CI"
+    status: pending
+  - id: R767
+    content: "PKG-13 The CMS app uses the packages exactly like an outside user, through the public API only, with no deep imports"
+    status: pending
+  - id: R768
+    content: "PKG-14 Examples folder: a Vite React example and a Next.js example, each getting an editor that saves to localStorage in under 50 lines"
+    status: pending
+  - id: R769
+    content: "PKG-15 Docs: getting started, config, blocks, fields, adapters, plugins, theming, document format, and upgrade guide, plus an API reference generated from the types with TypeDoc"
+    status: pending
+  - id: R770
+    content: "PKG-16 Tests per package, adapter contract tests any host can run against its own adapters, and both examples built and smoke-tested in CI"
+    status: pending
+  - id: R771
+    content: "PKG-17 Release with Changesets for versions and changelogs; decide public npm or a private registry and the package license together with the licensing plan (R217–R261), since the CMS is sold as licensed software"
+    status: pending
+  - id: R772
+    content: "PKG-18 Gate 39 approval: both examples and the CMS app run on the published packages through the public API, with docs, tests, and size budgets passing"
+    status: pending
+  - id: R773
+    content: "EXT-01 defineBlock with full type inference: props are inferred from the Zod schema, so render, defaults, loaders, and fields all autocomplete and type-check with no hand-written prop types"
+    status: pending
+  - id: R774
+    content: "EXT-02 Editor metadata on every block: label, icon, category, keywords for search, thumbnail, inline-editable props, and placeholder text, all optional with sensible defaults"
+    status: pending
+  - id: R775
+    content: "EXT-03 Defaults as a value or a function of context (site, locale, theme tokens, parent block), so new blocks start right for where they are dropped"
+    status: pending
+  - id: R776
+    content: "EXT-04 Named slots with allowed block types, min and max children, and default children, declared in the schema with slot()"
+    status: pending
+  - id: R777
+    content: "EXT-05 Prop traits: reusable prop groups such as withStyle, withLayout, withAnimation, withVisibility, withDynamic, and withA11y that any block opts into with traits: [...], each bringing its schema, fields, defaults, and render wrapper"
+    status: pending
+  - id: R778
+    content: "EXT-06 Schema helpers that wrap any field type: responsive(...) for per-device values, token(...) for design tokens, dynamic(...) for data bindings, and translatable(...) for per-locale text"
+    status: pending
+  - id: R779
+    content: "EXT-07 extendBlock to customize an existing block (built-in or third party): add or hide fields, change defaults, add presets, and wrap or replace render while receiving the original as Base"
+    status: pending
+  - id: R780
+    content: "EXT-08 Extend every block at once from a plugin (for example a tracking id or test id prop), with a clear order when several plugins extend the same block"
+    status: pending
+  - id: R781
+    content: "EXT-09 Presets and variants per block: named prop sets (for example Hero Split and Hero Centered) shown in the insert panel; the host can add presets to built-in blocks"
+    status: pending
+  - id: R782
+    content: "EXT-10 Safe escape hatches: allowlisted class names, data attributes, and token-based style overrides; never raw CSS strings or arbitrary HTML attributes"
+    status: pending
+  - id: R783
+    content: "EXT-11 defineField for custom field types: schema, input component, compact preview, and validation message, usable inside object, list, and responsive fields"
+    status: pending
+  - id: R784
+    content: "EXT-12 Field composition: object, list with sortable items, tabs and groups, conditional visibility (BLD-33), and computed read-only fields"
+    status: pending
+  - id: R785
+    content: "EXT-13 Typed UI overrides for editor parts (inspector header, block card, toolbar, empty state, canvas overlay) through a component map, replacing the Puck overrides pattern"
+    status: pending
+  - id: R786
+    content: "EXT-14 Per-block and per-field permissions: hide or lock fields by role, and lock props in templates so page editors cannot change them"
+    status: pending
+  - id: R787
+    content: "EXT-15 Wrap any existing React component as a block in one call, mapping its props to a schema; works with server components, and client components keep their use client boundary"
+    status: pending
+  - id: R788
+    content: "EXT-16 Typed server loaders per block with site, locale, preview, and cache context, batched per request (DAT-16), so custom blocks fetch data safely"
+    status: pending
+  - id: R789
+    content: "EXT-17 Block versioning: each block has a version and a migrate function, so props saved by old versions upgrade when the block changes"
+    status: pending
+  - id: R790
+    content: "EXT-18 Scaffold command that creates a new block with component, schema, presets, preview, and test in one step"
+    status: pending
+  - id: R791
+    content: "EXT-19 Block playground page that shows every block with its fields, presets, and devices, and checks that defaults pass the schema"
+    status: pending
+  - id: R792
+    content: "EXT-20 Development warnings for unknown props, schema mismatches in stored data, missing slots, and slow loaders, shown in the console and the editor"
+    status: pending
+  - id: R793
+    content: "EXT-21 Test helpers to render a block with props, build valid fixture props from the schema, and run the adapter contract tests"
+    status: pending
+  - id: R794
+    content: "EXT-22 Recipes in the docs: custom hero, card grid with a loader, extend a built-in block, add a trait, custom color field, lock fields in a template, and wrap a third-party component"
+    status: pending
+  - id: R795
+    content: "EXT-23 Gate 40 approval: a developer new to the project builds a custom block, extends a built-in block, and adds a trait using only the docs, and the CMS blocks themselves use this API"
+    status: pending
 isProject: false
 ---
 
-# Custom builder engine refs R680–R710, modern editor experience R711–R736, and data saving and fetching R737–R754
+# Custom builder engine refs R680–R710, modern editor experience R711–R736, data saving and fetching R737–R754, standalone builder package R755–R772, and block extension API R773–R795
 
 Also tracked in [combined_cms_refs_f96163bc.plan.md](combined_cms_refs_f96163bc.plan.md). Keep step statuses in both files in sync. No step is started.
 
@@ -470,3 +593,201 @@ Use current best practice for how the builder saves and loads page data, and how
 OZ-06 and OZ-07 (site-wide caching and query profiling), QRY-28 (listing cache), ECM-37 (shop cache), ENG-06 (block data loaders), ENG-22 (editor performance budget), UXE-16 (autosave status and crash recovery).
 
 <!-- END: builder-data-performance -->
+
+---
+
+# Standalone builder package refs R755–R772
+
+<!-- BEGIN: builder-package -->
+
+## Goal
+
+Ship the new builder as installable packages that any React or Next.js app can use with a few lines of code, and have this CMS use them the same way.
+
+## Today (checked 2026-10-28)
+
+- One Next.js app, not a monorepo; both package-lock.json and pnpm-lock.yaml are committed.
+- 20 files in src/builder import app code: shadcn UI (24 imports), @/lib/utils (18), media and video components, server actions, and database schemas.
+- Puck is still the engine; the new engine (R680–R710) does not exist yet.
+
+## Target usage
+
+```tsx
+// Editor
+import { BuilderEditor, createBuilderConfig } from '@nextcms/builder-react';
+import { defaultBlocks } from '@nextcms/builder-blocks';
+import '@nextcms/builder-react/styles.css';
+
+const config = createBuilderConfig({ blocks: [...defaultBlocks, MyHero] });
+
+<BuilderEditor
+  config={config}
+  value={doc}
+  adapters={{ storage: myStorage, media: myMediaPicker }}
+/>;
+
+// Public page, no editor code shipped
+import { BuilderRenderer } from '@nextcms/builder-core/renderer';
+<BuilderRenderer config={config} document={doc} />;
+```
+
+## Steps
+
+### Workspace and package split
+
+- **R755 (PKG-01):** Turn the repo into a pnpm workspace (apps/cms plus packages/*), keep one lockfile by removing package-lock.json, choose the package scope name (for example @nextcms), and build packages with tsup.
+- **R756 (PKG-02):** Split the builder into packages: builder-core (document format, validation, commands, store, converter, renderer, no UI), builder-react (editor UI), builder-blocks (default block library, optional), and builder-next (Next.js helpers, optional).
+- **R757 (PKG-03):** Decouple from the app: remove every import of the app's database, server actions, config, shadcn components, media, and video from builder code, replacing them with adapters; a lint rule blocks @/ imports inside packages.
+
+### Easy public API
+
+- **R758 (PKG-04):** Small public API: defineBlock, defineField, createBuilderConfig, BuilderEditor, BuilderRenderer, useBuilder hooks, and validateDocument, migrateDocument, and serializeDocument; everything else stays internal.
+- **R759 (PKG-05):** Adapters the host provides, each optional with a working default: storage (load, patch save, version conflict), media picker and upload, link picker, data sources for dynamic content and query loops, permissions, AI, translation, and comments and presence transport.
+- **R760 (PKG-06):** Custom blocks in a few lines: the host registers its own React component with a Zod props schema; fields, defaults, and validation are generated from it, with slots and server loaders; this is the RFB-02 and RFB-04 contract.
+- **R761 (PKG-07):** Plugin API for panels, toolbar actions, commands, field types, and canvas overlays; the CMS features (templates, global blocks, contact forms, AI, revisions) are built as plugins on it.
+- **R762 (PKG-08):** Exported document format version with migrate functions, so hosts upgrade stored data when they upgrade the package.
+
+### Works anywhere
+
+- **R763 (PKG-09):** Self-contained styling: the editor UI ships compiled, prefixed CSS with CSS variables for theming, so the host needs no Tailwind or shadcn; light and dark themes; blocks read theme tokens.
+- **R764 (PKG-10):** Framework support: plain React 18 and 19 for the editor and renderer, an SSR-safe renderer with a React Server Components entry, and optional Next.js helpers; tested in a Vite React app and a Next.js app.
+- **R765 (PKG-11):** Editor UI text in English by default with host-supplied translations and right-to-left support.
+- **R766 (PKG-12):** Separate entry points (core, editor, renderer, blocks), ESM with type definitions, tree-shakeable, and a renderer entry with no editor code; bundle size budgets checked in CI.
+
+### Prove it and ship it
+
+- **R767 (PKG-13):** The CMS app uses the packages exactly like an outside user, through the public API only, with no deep imports.
+- **R768 (PKG-14):** Examples folder: a Vite React example and a Next.js example, each getting an editor that saves to localStorage in under 50 lines.
+- **R769 (PKG-15):** Docs: getting started, config, blocks, fields, adapters, plugins, theming, document format, and upgrade guide, plus an API reference generated from the types with TypeDoc.
+- **R770 (PKG-16):** Tests per package, adapter contract tests any host can run against its own adapters, and both examples built and smoke-tested in CI.
+- **R771 (PKG-17):** Release with Changesets for versions and changelogs; decide public npm or a private registry and the package license together with the licensing plan (R217–R261), since the CMS is sold as licensed software.
+
+### Gate
+
+- **R772 (PKG-18):** Gate 39 approval: both examples and the CMS app run on the published packages through the public API, with docs, tests, and size budgets passing.
+
+## Order
+
+Do R755–R757 before the engine work starts, so ENG code is written inside the packages from the first line. Then R758–R762 shape the API while ENG-03 to ENG-18 are built. R763–R766 and R767–R771 follow before Gate 35 (R709).
+
+## Rules
+
+- Packages never import the host app; everything app-specific comes through adapters or plugins.
+- No package needs a database, Next.js, Tailwind, or shadcn to work.
+- The renderer entry never pulls in editor code.
+- Breaking changes need a major version, a migrate function, and an upgrade guide entry.
+
+## Related steps not repeated here
+
+RFB-02 and RFB-04 (component adapter contract), RFB-06 (wrapping project components), RFB-21 (extension packs), MKT-07 (JSON import and export), DAT-02 and DAT-03 (version checks and patch saves, which the storage adapter carries).
+
+<!-- END: builder-package -->
+
+---
+
+# Block extension and custom components refs R773–R795
+
+<!-- BEGIN: builder-extension-api -->
+
+## Goal
+
+Make blocks easy to customize: extend props without forking, reuse prop groups across blocks, add custom fields, and turn any React component into a block with full TypeScript inference. This is the detailed design for the PKG-04 public API, PKG-06 custom blocks, and PKG-07 plugins.
+
+## Example
+
+```tsx
+import { z } from 'zod';
+import { defineBlock, extendBlock, slot, responsive, token } from '@nextcms/builder-core';
+import { withStyle, withAnimation } from '@nextcms/builder-core/traits';
+import { Hero } from '@nextcms/builder-blocks';
+
+// 1. A custom block: props are inferred from the schema
+export const PricingCard = defineBlock({
+  type: 'PricingCard',
+  label: 'Pricing card',
+  category: 'Marketing',
+  schema: z.object({
+    title: z.string().default('Pro'),
+    price: z.number().min(0).default(29),
+    accent: token('color').default('primary'),
+    columns: responsive(z.number().int().min(1).max(4)).default({ desktop: 3, mobile: 1 }),
+    features: slot({ allow: ['Text', 'IconList'], max: 10 }),
+  }),
+  traits: [withStyle(), withAnimation()],
+  presets: { Highlighted: { accent: 'accent' } },
+  render: ({ title, price, features }) => (
+    <article><h3>{title}</h3><p>${price}</p>{features}</article>
+  ),
+});
+
+// 2. Extend a built-in block without forking it
+export const BrandHero = extendBlock(Hero, {
+  fields: { add: { badge: z.string().optional() }, hide: ['secondaryButton'] },
+  defaults: { align: 'center' },
+  render: (props, Base) => (
+    <>{props.badge && <span>{props.badge}</span>}<Base {...props} /></>
+  ),
+});
+```
+
+## Steps
+
+### Typed block definition
+
+- **R773 (EXT-01):** defineBlock with full type inference: props are inferred from the Zod schema, so render, defaults, loaders, and fields all autocomplete and type-check with no hand-written prop types.
+- **R774 (EXT-02):** Editor metadata on every block: label, icon, category, keywords for search, thumbnail, inline-editable props, and placeholder text, all optional with sensible defaults.
+- **R775 (EXT-03):** Defaults as a value or a function of context (site, locale, theme tokens, parent block), so new blocks start right for where they are dropped.
+- **R776 (EXT-04):** Named slots with allowed block types, min and max children, and default children, declared in the schema with slot().
+
+### Extending props without forking
+
+- **R777 (EXT-05):** Prop traits: reusable prop groups such as withStyle, withLayout, withAnimation, withVisibility, withDynamic, and withA11y that any block opts into with traits: [...], each bringing its schema, fields, defaults, and render wrapper.
+- **R778 (EXT-06):** Schema helpers that wrap any field type: responsive(...) for per-device values, token(...) for design tokens, dynamic(...) for data bindings, and translatable(...) for per-locale text.
+- **R779 (EXT-07):** extendBlock to customize an existing block (built-in or third party): add or hide fields, change defaults, add presets, and wrap or replace render while receiving the original as Base.
+- **R780 (EXT-08):** Extend every block at once from a plugin (for example a tracking id or test id prop), with a clear order when several plugins extend the same block.
+- **R781 (EXT-09):** Presets and variants per block: named prop sets (for example Hero Split and Hero Centered) shown in the insert panel; the host can add presets to built-in blocks.
+- **R782 (EXT-10):** Safe escape hatches: allowlisted class names, data attributes, and token-based style overrides; never raw CSS strings or arbitrary HTML attributes.
+
+### Custom fields and editor UI
+
+- **R783 (EXT-11):** defineField for custom field types: schema, input component, compact preview, and validation message, usable inside object, list, and responsive fields.
+- **R784 (EXT-12):** Field composition: object, list with sortable items, tabs and groups, conditional visibility (BLD-33), and computed read-only fields.
+- **R785 (EXT-13):** Typed UI overrides for editor parts (inspector header, block card, toolbar, empty state, canvas overlay) through a component map, replacing the Puck overrides pattern.
+- **R786 (EXT-14):** Per-block and per-field permissions: hide or lock fields by role, and lock props in templates so page editors cannot change them.
+
+### Custom components the easy way
+
+- **R787 (EXT-15):** Wrap any existing React component as a block in one call, mapping its props to a schema; works with server components, and client components keep their use client boundary.
+- **R788 (EXT-16):** Typed server loaders per block with site, locale, preview, and cache context, batched per request (DAT-16), so custom blocks fetch data safely.
+- **R789 (EXT-17):** Block versioning: each block has a version and a migrate function, so props saved by old versions upgrade when the block changes.
+- **R790 (EXT-18):** Scaffold command that creates a new block with component, schema, presets, preview, and test in one step.
+
+### Developer experience
+
+- **R791 (EXT-19):** Block playground page that shows every block with its fields, presets, and devices, and checks that defaults pass the schema.
+- **R792 (EXT-20):** Development warnings for unknown props, schema mismatches in stored data, missing slots, and slow loaders, shown in the console and the editor.
+- **R793 (EXT-21):** Test helpers to render a block with props, build valid fixture props from the schema, and run the adapter contract tests.
+- **R794 (EXT-22):** Recipes in the docs: custom hero, card grid with a loader, extend a built-in block, add a trait, custom color field, lock fields in a template, and wrap a third-party component.
+
+### Gate
+
+- **R795 (EXT-23):** Gate 40 approval: a developer new to the project builds a custom block, extends a built-in block, and adds a trait using only the docs, and the CMS blocks themselves use this API.
+
+## Best-practice rules
+
+- **Schema is the single source of truth.** Types, fields, defaults, validation, docs, and fixtures all come from one Zod schema.
+- **Composition over inheritance.** Traits, slots, and extendBlock compose; no class hierarchies, no copying a block to change one prop.
+- **Opt in, never surprise.** Traits and plugin extensions are explicit and ordered; a block only gets props it asked for.
+- **Stored data stays valid.** Every schema change ships with a block version and a migrate function.
+- **Safe by default.** Style overrides go through tokens and allowlists; no raw CSS or arbitrary attributes in stored props.
+- **Dogfood it.** Every built-in CMS block is written with this public API, so the API stays good enough for others.
+
+## Order
+
+Build R773–R776 with ENG-18 (block definition API), R777–R782 and R783–R786 before porting blocks in ENG-18 finishes, and R787–R794 before Gate 39 (R772).
+
+## Related steps not repeated here
+
+PKG-04, PKG-06, PKG-07 (public API, custom blocks, plugins), RFB-02, RFB-04, RFB-06 (component adapter contract), BLD-22 and BLD-27 to BLD-31 (dynamic values and tokens, used by dynamic() and token()), BLD-33 (conditional fields), MKT-04 (allowlisted classes), DAT-16 (batched loaders).
+
+<!-- END: builder-extension-api -->
