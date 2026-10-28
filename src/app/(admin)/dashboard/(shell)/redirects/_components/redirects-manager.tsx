@@ -144,7 +144,6 @@ export function RedirectsManager({
                 <FormItem>
                   <Label htmlFor={id}>Status</Label>
                   <Select
-                    id={id}
                     {...field}
                   >
                     <SelectTrigger>

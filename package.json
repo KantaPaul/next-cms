@@ -23,7 +23,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:drop": "drizzle-kit drop",
     "db:check": "drizzle-kit check",
-    "db:seed": "tsx --conditions=react-server src/db/seed/index.ts"
+    "db:seed": "tsx src/db/seed/index.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1152.0",
