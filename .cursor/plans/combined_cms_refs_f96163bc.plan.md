@@ -3221,6 +3221,8 @@ Position the product as a developer-friendly, self-hostable React/Next.js visual
 
 <!-- BEGIN: wordpress-multisite-reliability -->
 
+Also kept as a separate plan: [multisite_hardening_refs.plan.md](multisite_hardening_refs.plan.md). Keep step statuses in both files in sync.
+
 ## Goal
 
 Make the existing multisite foundation (R032–R039) behave reliably across the complete CMS. Use WordPress Multisite as a behavioral reference for managing multiple sites from one installation, but do not promise PHP/plugin compatibility or copy WordPress internals. Treat this as a reliability and security pass, not a rebuild.
