@@ -55,13 +55,23 @@ export const PAGES = {
       slug: string,
       language = 'en',
       isHome = false,
-      defaultLocale = 'en'
+      defaultLocale = 'en',
+      siteSlug?: string
     ) => {
-      const prefix = language === defaultLocale ? '' : `/${language}`;
-      return isHome ? prefix || '/' : `${prefix}/${slug}`;
+      const langPrefix = language === defaultLocale ? '' : `/${language}`;
+      const base = isHome ? (langPrefix || '/') : `${langPrefix}/${slug}`;
+      return siteSlug ? `/${siteSlug}${base === '/' ? '' : base}` : base;
     },
-    post: (slug: string, language = 'en', defaultLocale = 'en') =>
-      `${language === defaultLocale ? '' : `/${language}`}/blog/${slug}`,
+    post: (
+      slug: string,
+      language = 'en',
+      defaultLocale = 'en',
+      siteSlug?: string
+    ) => {
+      const langPrefix = language === defaultLocale ? '' : `/${language}`;
+      const base = `${langPrefix}/blog/${slug}`;
+      return siteSlug ? `/${siteSlug}${base}` : base;
+    },
     PREVIEW: (pageId: string) =>
       `/api/preview?pageId=${encodeURIComponent(pageId)}`,
     PREVIEW_POST: (postId: string) =>

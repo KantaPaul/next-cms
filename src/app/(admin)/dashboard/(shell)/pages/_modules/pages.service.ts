@@ -204,11 +204,13 @@ async function clearOtherHomePages(
   language: string,
   orm: DBTrx = db
 ) {
+  const siteId = await adminSiteId();
   await orm
     .update(pages)
     .set({ isHome: false })
     .where(
       and(
+        eq(pages.siteId, siteId),
         eq(pages.language, language),
         eq(pages.isHome, true),
         ne(pages.id, pageId)
@@ -221,11 +223,13 @@ async function clearOtherBlogIndexPages(
   language: string,
   orm: DBTrx = db
 ) {
+  const siteId = await adminSiteId();
   await orm
     .update(pages)
     .set({ isBlogIndex: false })
     .where(
       and(
+        eq(pages.siteId, siteId),
         eq(pages.language, language),
         eq(pages.isBlogIndex, true),
         ne(pages.id, pageId)
@@ -352,8 +356,10 @@ export const pagesServices = {
   },
 
   getById: async ({ id }: { id: string }) => {
+    const siteId = await adminSiteId();
     const page = await db.query.pages.findFirst({
-      where: (t, { eq, and, isNull }) => and(eq(t.id, id), isNull(t.deletedAt)),
+      where: (t, { eq, and, isNull }) =>
+        and(eq(t.id, id), eq(t.siteId, siteId), isNull(t.deletedAt)),
       with: {
         contents: true,
         seo: true,
@@ -407,10 +413,11 @@ export const pagesServices = {
     let initialContent = content;
 
     if (templateId) {
+      const siteId = await adminSiteId();
       const [template] = await db
         .select()
         .from(pageTemplates)
-        .where(eq(pageTemplates.id, templateId));
+        .where(and(eq(pageTemplates.id, templateId), eq(pageTemplates.siteId, siteId)));
       if (!template) throw new NotFoundException('Template not found');
       editorType = template.editorType;
       initialContent = template.content;
@@ -1021,28 +1028,28 @@ export const pagesServices = {
       .select({ id: pages.id, title: pages.title, createdBy: pages.createdBy })
       .from(pages)
       .where(
-        and(
-          eq(pages.status, 'scheduled'),
-          lte(pages.scheduledAt, new Date()),
-          await alive()
-        )
+        and(eq(pages.status, 'scheduled'), lte(pages.scheduledAt, new Date()))
       );
 
     for (const page of due) {
-      await db.transaction(async tx => {
-        await publishInTx(page.id, page.createdBy, tx);
-        await auditService.log(
-          {
-            actorId: null,
-            action: 'publish',
-            targetType: 'page',
-            targetId: page.id,
-            targetName: page.title,
-            details: 'Scheduled publish',
-          },
-          tx
-        );
-      });
+      try {
+        await db.transaction(async tx => {
+          await publishInTx(page.id, page.createdBy, tx);
+          await auditService.log(
+            {
+              actorId: null,
+              action: 'publish',
+              targetType: 'page',
+              targetId: page.id,
+              targetName: page.title,
+              details: 'Scheduled publish',
+            },
+            tx
+          );
+        });
+      } catch (error) {
+        console.error('[pages.publishDueScheduled] failed for', page.id, error);
+      }
     }
 
     if (due.length) revalidatePublicSite();

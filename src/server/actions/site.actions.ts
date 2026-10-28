@@ -15,6 +15,7 @@ export async function switchSite(siteId: string) {
   const { userId } = await getCurrentUserAndTeamId();
   const memberships = await siteContext.memberships(userId);
   if (!memberships.some(row => row.siteId === siteId)) return;
+  // Clear cached admin site context for this user by revalidating layout
   const jar = await cookies();
   jar.set(SITE_COOKIE, siteId, {
     httpOnly: true,
@@ -34,6 +35,7 @@ export const createSite = permissionProcedure(PERMISSIONS.SETTINGS_MANAGE)
   .input(
     z.object({
       name: z.string().trim().min(1).max(120),
+      slug: z.string().trim().min(1).max(40),
       primaryHost: z.string().trim().max(255).nullish(),
       extraDomains: z.string().trim().max(1000).nullish(),
       defaultLocale: z.string().trim().min(2).max(12),
@@ -44,6 +46,7 @@ export const createSite = permissionProcedure(PERMISSIONS.SETTINGS_MANAGE)
     const site = await sitesService.create(
       {
         name: input.name,
+        slug: input.slug || undefined,
         primaryHost: input.primaryHost,
         extraDomains: input.extraDomains,
         defaultLocale: input.defaultLocale,

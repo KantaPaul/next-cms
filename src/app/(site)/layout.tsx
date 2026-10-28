@@ -12,7 +12,7 @@ import {
 } from '@/server/services/public-site.service';
 import { resolvePostRoute } from '@/server/services/blog.service';
 import { maybePublishScheduled } from '@/server/services/scheduler';
-import { siteContext } from '@/server/services/site-context';
+import { siteContext, sitePathSegments } from '@/server/services/site-context';
 import {
   localizedSettings,
   siteSettingsService,
@@ -77,7 +77,7 @@ export default async function SiteLayout({
     headers(),
   ]);
   const pathname = headerStore.get('x-pathname') ?? '/';
-  const segments = pathname.split('/').filter(Boolean);
+  const segments = sitePathSegments(pathname, site);
   const language =
     resolvePostRoute(segments, site)?.language ??
     resolveRoute(segments, site)?.language ??

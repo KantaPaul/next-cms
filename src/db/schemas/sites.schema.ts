@@ -37,6 +37,7 @@ export const sites = pgTable(
   {
     id,
     name: varchar('name', { length: 120 }).notNull(),
+    slug: varchar('slug', { length: 40 }),
     primaryHost: varchar('primary_host', { length: 255 }),
     extraDomains: text('extra_domains')
       .array()
@@ -55,6 +56,7 @@ export const sites = pgTable(
     uniqueIndex('sites_primary_host_unique')
       .on(t.primaryHost)
       .where(sql`${t.primaryHost} is not null`),
+    uniqueIndex('sites_slug_unique').on(t.slug).where(sql`${t.slug} is not null`),
   ]
 );
 

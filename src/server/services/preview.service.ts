@@ -6,6 +6,7 @@ import { pages, posts, previewTokens, users } from '@/db/schema';
 import { NotFoundException } from '@/lib/utils/error';
 import type { UserAccess } from '@/server/services/access.service';
 import { auditService } from '@/server/services/audit.service';
+import { adminSiteId } from '@/server/services/site-context';
 
 const DEFAULT_TTL_DAYS = 7;
 
@@ -24,13 +25,20 @@ const listSelect = {
   createdByName: users.name,
 };
 
-const list = (where: ReturnType<typeof eq>) =>
-  db
+const list = async (where?: ReturnType<typeof eq>) => {
+  const siteId = await adminSiteId();
+  return db
     .select(listSelect)
     .from(previewTokens)
     .leftJoin(users, eq(users.id, previewTokens.createdBy))
-    .where(where)
+    .leftJoin(pages, eq(pages.id, previewTokens.pageId))
+    .leftJoin(posts, eq(posts.id, previewTokens.postId))
+    .where(
+      where ??
+        sql`(${pages.siteId} = ${siteId} OR ${posts.siteId} = ${siteId})`
+    )
     .orderBy(desc(previewTokens.createdAt));
+};
 
 async function findTarget({
   pageId,
@@ -39,11 +47,12 @@ async function findTarget({
   pageId?: string | null;
   postId?: string | null;
 }) {
+  const siteId = await adminSiteId();
   if (postId) {
     const [post] = await db
       .select({ id: posts.id, title: posts.title })
       .from(posts)
-      .where(and(eq(posts.id, postId), isNull(posts.deletedAt)));
+      .where(and(eq(posts.id, postId), eq(posts.siteId, siteId), isNull(posts.deletedAt)));
     if (!post) throw new NotFoundException('Post not found');
     return { ...post, type: 'post' as const };
   }
@@ -51,7 +60,7 @@ async function findTarget({
   const [page] = await db
     .select({ id: pages.id, title: pages.title })
     .from(pages)
-    .where(and(eq(pages.id, pageId ?? ''), isNull(pages.deletedAt)));
+    .where(and(eq(pages.id, pageId ?? ''), eq(pages.siteId, siteId), isNull(pages.deletedAt)));
   if (!page) throw new NotFoundException('Page not found');
   return { ...page, type: 'page' as const };
 }
@@ -126,8 +135,17 @@ export const previewService = {
   /** Returns the page or post for a usable token and records the visit. */
   consume: async (token: string): Promise<PreviewTarget | null> => {
     const [row] = await db
-      .select()
+      .select({
+        id: previewTokens.id,
+        pageId: previewTokens.pageId,
+        postId: previewTokens.postId,
+        expiresAt: previewTokens.expiresAt,
+        pageSiteId: pages.siteId,
+        postSiteId: posts.siteId,
+      })
       .from(previewTokens)
+      .leftJoin(pages, eq(pages.id, previewTokens.pageId))
+      .leftJoin(posts, eq(posts.id, previewTokens.postId))
       .where(
         and(eq(previewTokens.token, token), eq(previewTokens.status, 'active'))
       )
@@ -135,6 +153,8 @@ export const previewService = {
 
     if (!row) return null;
     if (row.expiresAt && row.expiresAt.getTime() < Date.now()) return null;
+    if (row.pageId && !row.pageSiteId) return null;
+    if (row.postId && !row.postSiteId) return null;
 
     await db
       .update(previewTokens)
@@ -154,14 +174,20 @@ export const previewService = {
         pageId: previewTokens.pageId,
         postId: previewTokens.postId,
         expiresAt: previewTokens.expiresAt,
+        pageSiteId: pages.siteId,
+        postSiteId: posts.siteId,
       })
       .from(previewTokens)
+      .leftJoin(pages, eq(pages.id, previewTokens.pageId))
+      .leftJoin(posts, eq(posts.id, previewTokens.postId))
       .where(
         and(eq(previewTokens.token, token), eq(previewTokens.status, 'active'))
       )
       .limit(1);
     if (!row || (row.expiresAt && row.expiresAt.getTime() < Date.now()))
       return null;
+    if (row.pageId && !row.pageSiteId) return null;
+    if (row.postId && !row.postSiteId) return null;
     return { pageId: row.pageId, postId: row.postId };
   },
 };

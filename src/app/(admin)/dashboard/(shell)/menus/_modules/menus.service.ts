@@ -132,11 +132,12 @@ export const menusService = {
 
   /** Replaces the menu's items with the given two-level tree, in order. */
   saveItems: async (menuId: string, items: MenuItemInput[], userId: string) => {
+    const siteId = await adminSiteId();
     await db.transaction(async tx => {
       const [menu] = await tx
         .select({ id: menus.id })
         .from(menus)
-        .where(eq(menus.id, menuId))
+        .where(and(eq(menus.id, menuId), eq(menus.siteId, siteId)))
         .limit(1);
       if (!menu) throw new NotFoundException('Menu not found');
 

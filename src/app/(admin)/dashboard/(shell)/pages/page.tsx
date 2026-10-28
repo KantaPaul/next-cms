@@ -15,6 +15,7 @@ import {
 import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { metaObject } from '@/lib/utils/metadata';
 import { accessService } from '@/server/services/access.service';
+import { siteContext, siteSlugPrefix } from '@/server/services/site-context';
 
 export const metadata = {
   ...metaObject(TITLE),
@@ -34,6 +35,7 @@ export default async function Page({
     pagesServices.getPaginated(parseSearchParams(params)),
     pagesServices.getStatusCounts(),
   ]);
+  const siteSlug = siteSlugPrefix(await siteContext.publicSite());
 
   return (
     <>
@@ -57,7 +59,7 @@ export default async function Page({
           </div>
         ))}
       </div>
-      <PagesTable data={data} totalCount={totalCount} />
+      <PagesTable data={data} totalCount={totalCount} siteSlug={siteSlug} />
     </>
   );
 }

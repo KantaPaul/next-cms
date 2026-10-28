@@ -16,7 +16,9 @@ export const metadata = {
 export default async function VideosPage() {
   await requirePermission(PERMISSIONS.VIDEOS_CREATE);
 
-  const playlists = await playlistService.list('default');
+  const { adminSiteId } = await import('@/server/services/site-context');
+  const siteId = await adminSiteId();
+  const playlists = await playlistService.list(siteId);
 
   return (
     <>

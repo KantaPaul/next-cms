@@ -189,6 +189,7 @@ export const mediaService = {
       access.userId,
       PERMISSIONS.MEDIA_UPLOAD
     );
+    const siteId = await adminSiteId();
     const [row] = await db
       .update(media)
       .set({
@@ -198,7 +199,7 @@ export const mediaService = {
           folder: sanitizeFolder(input.folder),
         }),
       })
-      .where(eq(media.id, input.id))
+      .where(and(eq(media.id, input.id), eq(media.siteId, siteId)))
       .returning();
     if (!row) throw new NotFoundException('File not found');
     return row;

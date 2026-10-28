@@ -181,7 +181,7 @@ export const playlistService = {
     const existing = await db
       .select()
       .from(videoPlaylists)
-      .where(eq(videoPlaylists.id, input.id))
+      .where(and(eq(videoPlaylists.id, input.id), eq(videoPlaylists.siteId, siteId)))
       .limit(1);
     if (!existing[0]) {
       throw new NotFoundException('Playlist not found');
@@ -195,7 +195,7 @@ export const playlistService = {
         ...(input.description !== undefined && { description: input.description }),
         updatedAt: new Date(),
       })
-      .where(eq(videoPlaylists.id, input.id))
+      .where(and(eq(videoPlaylists.id, input.id), eq(videoPlaylists.siteId, siteId)))
       .returning();
 
     await auditService.log({
@@ -216,10 +216,11 @@ export const playlistService = {
       access.userId,
       PERMISSIONS.VIDEOS_DELETE
     );
+    const siteId = await adminSiteId();
     const [row] = await db
       .select()
       .from(videoPlaylists)
-      .where(eq(videoPlaylists.id, input.id))
+      .where(and(eq(videoPlaylists.id, input.id), eq(videoPlaylists.siteId, siteId)))
       .limit(1);
     if (!row) {
       throw new NotFoundException('Playlist not found');
@@ -228,7 +229,7 @@ export const playlistService = {
     await db
       .update(videoPlaylists)
       .set({ deletedAt: new Date(), updatedAt: new Date() })
-      .where(eq(videoPlaylists.id, input.id));
+      .where(and(eq(videoPlaylists.id, input.id), eq(videoPlaylists.siteId, siteId)));
 
     await auditService.log({
       actorId: access.userId,
@@ -399,10 +400,18 @@ export const videoService = {
     const existing = await db
       .select()
       .from(videos)
-      .where(eq(videos.id, input.id))
+      .where(and(eq(videos.id, input.id), eq(videos.siteId, siteId)))
       .limit(1);
     if (!existing[0]) {
       throw new NotFoundException('Video not found');
+    }
+    if (input.playlistId) {
+      const [pl] = await db
+        .select({ id: videoPlaylists.id })
+        .from(videoPlaylists)
+        .where(and(eq(videoPlaylists.id, input.playlistId), eq(videoPlaylists.siteId, siteId)))
+        .limit(1);
+      if (!pl) throw new NotFoundException('Playlist not found');
     }
 
     const setValues: Record<string, unknown> = {
@@ -443,7 +452,7 @@ export const videoService = {
     const [row] = await db
       .update(videos)
       .set(setValues)
-      .where(eq(videos.id, input.id))
+      .where(and(eq(videos.id, input.id), eq(videos.siteId, siteId)))
       .returning();
 
     await auditService.log({
@@ -610,10 +619,13 @@ export const videoLifecycle = {
       access.userId,
       PERMISSIONS.VIDEOS_PUBLISH
     );
-    await db
+    const siteId = await adminSiteId();
+    const [row] = await db
       .update(videos)
       .set({ status: 'published', publishedAt: new Date(), updatedAt: new Date() })
-      .where(eq(videos.id, id));
+      .where(and(eq(videos.id, id), eq(videos.siteId, siteId)))
+      .returning({ id: videos.id });
+    if (!row) throw new NotFoundException('Video not found');
     await auditService.log({
       actorId: access.userId,
       action: 'publish',
@@ -628,10 +640,13 @@ export const videoLifecycle = {
       access.userId,
       PERMISSIONS.VIDEOS_PUBLISH
     );
-    await db
+    const siteId = await adminSiteId();
+    const [row] = await db
       .update(videos)
       .set({ status: 'draft', updatedAt: new Date() })
-      .where(eq(videos.id, id));
+      .where(and(eq(videos.id, id), eq(videos.siteId, siteId)))
+      .returning({ id: videos.id });
+    if (!row) throw new NotFoundException('Video not found');
     await auditService.log({
       actorId: access.userId,
       action: 'unpublish',
@@ -646,10 +661,11 @@ export const videoLifecycle = {
       access.userId,
       PERMISSIONS.VIDEOS_DELETE
     );
+    const siteId = await adminSiteId();
     const [row] = await db
       .select({ title: videos.title })
       .from(videos)
-      .where(eq(videos.id, id))
+      .where(and(eq(videos.id, id), eq(videos.siteId, siteId)))
       .limit(1);
     if (!row) {
       throw new NotFoundException('Video not found');
@@ -657,7 +673,7 @@ export const videoLifecycle = {
     await db
       .update(videos)
       .set({ deletedAt: new Date(), updatedAt: new Date() })
-      .where(eq(videos.id, id));
+      .where(and(eq(videos.id, id), eq(videos.siteId, siteId)));
     await auditService.log({
       actorId: access.userId,
       action: 'delete',
@@ -676,12 +692,13 @@ export const videoLifecycle = {
       access.userId,
       PERMISSIONS.VIDEOS_EDIT
     );
+    const siteId = await adminSiteId();
     await db.transaction(async (tx) => {
       for (const [index, id] of ids.entries()) {
         await tx
           .update(videos)
           .set({ position: index, updatedAt: new Date() })
-          .where(eq(videos.id, id));
+          .where(and(eq(videos.id, id), eq(videos.siteId, siteId)));
       }
     });
     await auditService.log({

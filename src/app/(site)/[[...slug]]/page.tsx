@@ -2,7 +2,7 @@ import { type Data, Render, resolveAllData } from '@measured/puck';
 import { and, eq, isNull } from 'drizzle-orm';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { builderConfig, postBuilderConfig } from '@/builder/config';
 import { sanitizeRichText } from '@/builder/sanitize';
 import {
@@ -30,7 +30,12 @@ import {
   publicSiteService,
   resolveRoute,
 } from '@/server/services/public-site.service';
-import { siteContext } from '@/server/services/site-context';
+import {
+  siteContext,
+  sitePathSegments,
+  siteSlugPrefix,
+  routingMode,
+} from '@/server/services/site-context';
 import {
   localizedSettings,
   siteSettingsService,
@@ -86,14 +91,15 @@ type Settings = Awaited<ReturnType<typeof siteSettingsService.get>>;
 function postMetadata(
   post: PublicPost,
   settings: Settings,
-  defaultLocale: string
+  defaultLocale: string,
+  siteSlug: string
 ): Metadata {
   const copy = localizedSettings(settings, post.view.language, defaultLocale);
   const base = settings.siteUrl || env.SITE_URL;
   const { view, seo } = post;
   const url = absolute(
     base,
-    PAGES.SITE.post(view.slug, view.language, defaultLocale)
+    PAGES.SITE.post(view.slug, view.language, defaultLocale, siteSlug)
   );
   const title = seo?.title || view.title;
   const description =
@@ -103,7 +109,7 @@ function postMetadata(
   const languages = Object.fromEntries(
     post.alternates.map(alt => [
       alt.language,
-      absolute(base, PAGES.SITE.post(alt.slug, alt.language, defaultLocale)),
+      absolute(base, PAGES.SITE.post(alt.slug, alt.language, defaultLocale, siteSlug)),
     ])
   );
 
@@ -144,16 +150,19 @@ function postMetadata(
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
   const site = await siteContext.publicSite();
-  const post = await loadPost(slug);
+  const siteSlug = siteSlugPrefix(site);
+  const segments = sitePathSegments((slug?.join('/') ?? '/'), site);
+  const post = await loadPost(segments);
   if (post)
     return postMetadata(
       post,
       await siteSettingsService.getPublic(),
-      site.defaultLocale
+      site.defaultLocale,
+      siteSlug ?? ''
     );
 
   const [page, settings] = await Promise.all([
-    loadPage(slug),
+    loadPage(segments),
     siteSettingsService.getPublic(),
   ]);
   if (!page) return { title: 'Not found' };
@@ -164,7 +173,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     page.slug,
     page.language,
     page.isHome,
-    site.defaultLocale
+    site.defaultLocale,
+    siteSlug
   );
   const seo = page.seo;
   const title = seo?.title || page.title;
@@ -175,7 +185,13 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       alt.language,
       absolute(
         base,
-        PAGES.SITE.page(alt.slug, alt.language, alt.isHome, site.defaultLocale)
+        PAGES.SITE.page(
+          alt.slug,
+          alt.language,
+          alt.isHome,
+          site.defaultLocale,
+          siteSlug
+        ),
       ),
     ])
   );
@@ -228,9 +244,11 @@ function JsonLd({ json }: { json: Record<string, unknown> }) {
 function StructuredData({
   page,
   base,
+  siteSlug,
 }: {
   page: PublicPage | NonNullable<Awaited<ReturnType<typeof loadPage>>>;
   base: string;
+  siteSlug: string;
 }) {
   const type = page.seo?.structuredDataType;
   if (!type) return null;
@@ -244,7 +262,7 @@ function StructuredData({
         description: page.seo?.description ?? undefined,
         url: absolute(
           base,
-          PAGES.SITE.page(page.slug, page.language, page.isHome)
+          PAGES.SITE.page(page.slug, page.language, page.isHome, siteSlug)
         ),
         inLanguage: page.language,
         ...(page.publishedAt && {
@@ -262,13 +280,15 @@ function StructuredData({
 async function PostRoute({
   post,
   settings,
+  siteSlug,
 }: {
   post: PublicPost;
   settings: Settings;
+  siteSlug: string;
 }) {
   const { view, seo } = post;
   const base = settings.siteUrl || env.SITE_URL;
-  const path = PAGES.SITE.post(view.slug, view.language);
+  const path = PAGES.SITE.post(view.slug, view.language, siteSlug);
   const beacon = !post.isDraft ? (
     <ViewBeacon postId={view.id} path={path} />
   ) : null;
@@ -293,7 +313,7 @@ async function PostRoute({
           '@type': seo?.structuredDataType || 'BlogPosting',
           headline: seo?.title || view.title,
           description: seo?.description || view.excerpt || undefined,
-          url: absolute(base, PAGES.SITE.post(view.slug, view.language)),
+          url: absolute(base, PAGES.SITE.post(view.slug, view.language, siteSlug)),
           inLanguage: view.language,
           ...(image && { image }),
           ...(view.authorName && {
@@ -320,31 +340,41 @@ async function PostRoute({
 export default async function SitePage({ params, searchParams }: Params) {
   const { slug } = await params;
   const settings = await siteSettingsService.getPublic();
+  const site = await siteContext.publicSite();
+  const siteSlug = siteSlugPrefix(site);
+  const segments = sitePathSegments((slug?.join('/') ?? '/'), site);
 
-  const post = await loadPost(slug);
-  if (post) return <PostRoute post={post} settings={settings} />;
+  // Root URL in path mode redirects to the default (prefixed) site.
+  if (
+    (routingMode() === 'path' || routingMode() === 'both') &&
+    site.slug &&
+    segments.length === 0
+  ) {
+    redirect(`/${site.slug}`);
+  }
 
-  const page = await loadPage(slug);
+  const post = await loadPost(segments);
+  if (post) return <PostRoute post={post} settings={settings} siteSlug={siteSlug ?? ''} />;
+
+  const page = await loadPage(segments);
   if (!page) {
     // Collection route: /{collectionSlug}/{entrySlug}
-    const localeCodes =
-      (await siteContext.publicSite()).locales.map(l => l.code) ?? [];
+    const localeCodes = site.locales.map(l => l.code) ?? [];
     if (
-      Array.isArray(slug) &&
-      slug.length === 2 &&
-      slug[0] &&
-      slug[1] &&
-      !localeCodes.includes(slug[0]) &&
-      slug[0] !== 'blog'
+      Array.isArray(segments) &&
+      segments.length === 2 &&
+      segments[0] &&
+      segments[1] &&
+      !localeCodes.includes(segments[0]) &&
+      segments[0] !== 'blog'
     ) {
       try {
         const entry = await collectionsService.getPublishedEntry(
-          slug[0],
-          slug[1]
+          segments[0],
+          segments[1]
         );
-        const site = await siteContext.publicSite();
         const base = settings.siteUrl || env.SITE_URL;
-        const path = `/${slug[0]}/${slug[1]}`;
+        const path = `/${segments[0]}/${segments[1]}`;
 
         if (entry.collection.templatePageId) {
           const template = await publicSiteService.getPublished(
@@ -418,13 +448,13 @@ export default async function SitePage({ params, searchParams }: Params) {
     notFound();
   }
 
-  const site = await siteContext.publicSite();
   const base = settings.siteUrl || env.SITE_URL;
   const path = PAGES.SITE.page(
     page.slug,
     page.language,
     page.isHome,
-    site.defaultLocale
+    site.defaultLocale,
+    siteSlug
   );
 
   // A/B experiment variant for published builder pages
@@ -473,7 +503,7 @@ export default async function SitePage({ params, searchParams }: Params) {
     return (
       <>
         {beacon}
-        <StructuredData page={page} base={base} />
+        <StructuredData page={page} base={base} siteSlug={siteSlug ?? ''} />
         <Render
           config={builderConfig}
           data={variant === 'b' ? (experimentContent as Data) : data}
@@ -486,7 +516,7 @@ export default async function SitePage({ params, searchParams }: Params) {
   return (
     <>
       {beacon}
-      <StructuredData page={page} base={base} />
+      <StructuredData page={page} base={base} siteSlug={siteSlug ?? ''} />
       <article
         className="mx-auto max-w-3xl px-5 py-14 md:px-8 md:py-20"
         lang={page.language}

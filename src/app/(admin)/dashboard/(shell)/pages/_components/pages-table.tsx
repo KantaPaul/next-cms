@@ -70,7 +70,13 @@ const filtersFor = (
   },
 ];
 
-function RowActions({ page }: { page: PageListItem }) {
+function RowActions({
+  page,
+  siteSlug,
+}: {
+  page: PageListItem;
+  siteSlug?: string;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const { permissions, userId } = useAccess();
@@ -107,7 +113,13 @@ function RowActions({ page }: { page: PageListItem }) {
           label="View live page"
           onClick={() =>
             window.open(
-              PAGES.SITE.page(page.slug, page.language, page.isHome),
+              PAGES.SITE.page(
+                page.slug,
+                page.language,
+                page.isHome,
+                undefined,
+                siteSlug
+              ),
               '_blank'
             )
           }
@@ -161,7 +173,7 @@ function RowActions({ page }: { page: PageListItem }) {
   );
 }
 
-const columns: ColumnDef<PageListItem>[] = [
+const buildColumns = (siteSlug?: string): ColumnDef<PageListItem>[] => [
   {
     accessorKey: 'title',
     header: 'Title',
@@ -189,7 +201,7 @@ const columns: ColumnDef<PageListItem>[] = [
             {page.title}
           </Link>
           <span className="text-xs text-steel-400">
-            {PAGES.SITE.page(page.slug, page.language, page.isHome)}
+            {PAGES.SITE.page(page.slug, page.language, page.isHome, undefined, siteSlug)}
           </span>
         </div>
       );
@@ -266,7 +278,9 @@ const columns: ColumnDef<PageListItem>[] = [
             href={PAGES.SITE.page(
               row.original.slug,
               row.original.language,
-              row.original.isHome
+              row.original.isHome,
+              undefined,
+              siteSlug
             )}
             target="_blank"
             rel="noreferrer"
@@ -276,7 +290,7 @@ const columns: ColumnDef<PageListItem>[] = [
             <ExternalLink className="size-4" />
           </a>
         )}
-        <RowActions page={row.original} />
+        <RowActions page={row.original} siteSlug={siteSlug} />
       </div>
     ),
   },
@@ -285,14 +299,16 @@ const columns: ColumnDef<PageListItem>[] = [
 export function PagesTable({
   data,
   totalCount,
+  siteSlug,
 }: {
   data: PageListItem[];
   totalCount: number;
+  siteSlug?: string;
 }) {
   const { locales } = useSiteLocales();
   return (
     <DataTable
-      columns={columns}
+      columns={buildColumns(siteSlug)}
       data={data}
       totalCount={totalCount}
       filters={filtersFor(locales)}

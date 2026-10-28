@@ -6,7 +6,7 @@ import { env } from '@/env.mjs';
 import { db } from '@/db';
 import { apiRateWindows } from '@/db/schema';
 import { apiKeysService } from '@/server/services/api-keys.service';
-import { siteContext } from '@/server/services/site-context';
+import { siteContext, siteBySlug } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 
 const RATE_LIMIT = 60;
@@ -122,7 +122,9 @@ export function apiHandler<P = Record<string, never>>(
 
     const apiKey = await apiKeysService.verify(key);
     if (!apiKey) return apiError(401, 'Invalid or revoked API key.');
-    const site = await siteContext.publicSite();
+    const siteSlug = new URL(request.url).searchParams.get('site')?.trim();
+    const site = siteSlug ? await siteBySlug(siteSlug) : await siteContext.publicSite();
+    if (!site) return apiError(404, 'Site not found.');
     if (apiKey.siteId !== site.id) {
       return apiError(401, 'Invalid or revoked API key.');
     }

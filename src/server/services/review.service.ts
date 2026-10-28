@@ -105,10 +105,18 @@ export const reviewService = {
     const trimmed = note.trim();
     if (!trimmed) throw new ApplicationException('Add a note for the author.');
     const table = kind === 'page' ? pages : posts;
+    const siteId = await adminSiteId();
     const [row] = await db
       .update(table)
       .set({ status: 'draft' })
-      .where(and(eq(table.id, id), eq(table.status, 'review'), isNull(table.deletedAt)))
+      .where(
+        and(
+          eq(table.id, id),
+          eq(table.siteId, siteId),
+          eq(table.status, 'review'),
+          isNull(table.deletedAt)
+        )
+      )
       .returning();
     if (!row) throw new ApplicationException('That item is no longer in review.');
     await auditService.log({

@@ -9,7 +9,7 @@ import {
   posts,
   searchDocuments,
 } from '@/db/schema';
-import { siteContext } from '@/server/services/site-context';
+import { siteContext, siteSlugPrefix } from '@/server/services/site-context';
 import type { DBTrx } from '@/lib/types';
 import { extractDocumentText, stripHtml } from '@/lib/search-text';
 
@@ -73,7 +73,8 @@ export const searchIndex = {
         page.slug,
         page.language,
         page.isHome,
-        site?.defaultLocale ?? 'en'
+        site?.defaultLocale ?? 'en',
+        site ? siteSlugPrefix(site) : undefined
       ),
       language: page.language,
       body: extractDocumentText(content?.content),
@@ -105,7 +106,12 @@ export const searchIndex = {
       postId: post.id,
       siteId: post.siteId,
       title: post.title,
-      path: PAGES.SITE.post(post.slug, post.language, site?.defaultLocale ?? 'en'),
+      path: PAGES.SITE.post(
+        post.slug,
+        post.language,
+        site?.defaultLocale ?? 'en',
+        site ? siteSlugPrefix(site) : undefined
+      ),
       language: post.language,
       body,
     });

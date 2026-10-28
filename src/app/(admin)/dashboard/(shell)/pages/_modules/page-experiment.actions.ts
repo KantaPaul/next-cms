@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/db';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { pages, pageContents, pageExperiments } from '@/db/schema';
 import { ContentKindType } from '@/db/schemas/shared.schema';
 import { permissionProcedure } from '@/server/procedures/permission.procedure';
@@ -23,6 +23,8 @@ export const startPageExperiment = permissionProcedure('pages.publish')
     })
   )
   .action(async ({ input, ctx }) => {
+    const { adminSiteId } = await import('@/server/services/site-context');
+    const siteId = await adminSiteId();
     const [page] = await db
       .select({
         id: pages.id,
@@ -30,7 +32,7 @@ export const startPageExperiment = permissionProcedure('pages.publish')
         editorType: pages.editorType,
       })
       .from(pages)
-      .where(eq(pages.id, input.pageId))
+      .where(and(eq(pages.id, input.pageId), eq(pages.siteId, siteId)))
       .limit(1);
 
     if (!page) {
@@ -89,6 +91,14 @@ export const pickPageExperimentWinner = permissionProcedure('pages.publish')
     })
   )
   .action(async ({ input, ctx }) => {
+    const { adminSiteId } = await import('@/server/services/site-context');
+    const siteId = await adminSiteId();
+    const [page] = await db
+      .select({ id: pages.id })
+      .from(pages)
+      .where(and(eq(pages.id, input.pageId), eq(pages.siteId, siteId)))
+      .limit(1);
+    if (!page) return { ok: false, error: 'page_not_found' };
     const [experiment] = await db
       .select()
       .from(pageExperiments)
@@ -138,6 +148,14 @@ export const endPageExperiment = permissionProcedure('pages.publish')
     })
   )
   .action(async ({ input, ctx }) => {
+    const { adminSiteId } = await import('@/server/services/site-context');
+    const siteId = await adminSiteId();
+    const [page] = await db
+      .select({ id: pages.id })
+      .from(pages)
+      .where(and(eq(pages.id, input.pageId), eq(pages.siteId, siteId)))
+      .limit(1);
+    if (!page) return { ok: false, error: 'page_not_found' };
     await db
       .update(pageExperiments)
       .set({ status: 'ended', updatedAt: new Date() })

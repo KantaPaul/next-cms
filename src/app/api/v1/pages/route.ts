@@ -7,7 +7,7 @@ import {
   pagination,
 } from '@/server/api/v1';
 import { contentApiService } from '@/server/services/content-api.service';
-import { siteContext } from '@/server/services/site-context';
+import { siteContext, siteSlugPrefix } from '@/server/services/site-context';
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
 import { pagesServices } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
@@ -28,6 +28,7 @@ export const dynamic = 'force-dynamic';
 export const GET = apiHandler(
   async (_request, { url, siteUrl }) => {
     const site = await siteContext.publicSite();
+    const siteSlug = siteSlugPrefix(site);
     const language = enumParam(
       url,
       'lang',
@@ -45,7 +46,13 @@ export const GET = apiHandler(
         ...p,
         url: absoluteUrl(
           siteUrl,
-          PAGES.SITE.page(p.slug, p.language, p.isHome, site.defaultLocale)
+          PAGES.SITE.page(
+            p.slug,
+            p.language,
+            p.isHome,
+            site.defaultLocale,
+            siteSlug
+          )
         ),
       })),
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) },

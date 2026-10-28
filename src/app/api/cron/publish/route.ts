@@ -21,11 +21,16 @@ export async function GET(request: Request) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const [published, publishedPosts] = await Promise.all([
-    pagesServices.publishDueScheduled(),
-    postsService.publishDueScheduled(),
-  ]);
-  return NextResponse.json({ published, publishedPosts });
+  try {
+    const [published, publishedPosts] = await Promise.all([
+      pagesServices.publishDueScheduled(),
+      postsService.publishDueScheduled(),
+    ]);
+    return NextResponse.json({ published, publishedPosts });
+  } catch (error) {
+    console.error('[cron/publish] failed', error);
+    return NextResponse.json({ message: 'Cron failed' }, { status: 500 });
+  }
 }
 
 export const POST = GET;

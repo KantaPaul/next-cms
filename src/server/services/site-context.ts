@@ -9,12 +9,23 @@ import {
   DEFAULT_SITE_LOCALES,
   type SiteLocale,
 } from '@/db/schemas/sites.schema';
+import {
+  DEFAULT_ROUTING_MODE,
+  DEV_ROUTING_MODE,
+  type SiteRoutingMode,
+  resolveRoutingMode,
+  routingMode,
+  sitePathSegments,
+  validateSiteSlug,
+} from '@/lib/utils/site-slug';
+import { NotFoundException } from '@/lib/utils/error';
 
 export const SITE_COOKIE = 'cms_site';
 
 export type ResolvedSite = {
   id: string;
   name: string;
+  slug: string | null;
   primaryHost: string | null;
   extraDomains: string[];
   defaultLocale: string;
@@ -24,13 +35,28 @@ export type ResolvedSite = {
 export type SiteMembership = {
   siteId: string;
   siteName: string;
+  slug: string | null;
   roleId: string;
   primaryHost: string | null;
+};
+
+export type SiteContextSource =
+  | 'host'
+  | 'path'
+  | 'preview'
+  | 'admin-cookie'
+  | 'admin-membership'
+  | 'fallback'
+  | 'system';
+
+export type SiteContext = ResolvedSite & {
+  source: SiteContextSource;
 };
 
 const fallbackSite = (): ResolvedSite => ({
   id: DEFAULT_SITE_ID,
   name: 'Next CMS',
+  slug: 'main',
   primaryHost: null,
   extraDomains: [],
   defaultLocale: 'en',
@@ -40,7 +66,76 @@ const fallbackSite = (): ResolvedSite => ({
 export function normalizeHost(value: string | null | undefined) {
   if (!value) return '';
   const first = value.split(',')[0]?.trim() ?? '';
-  return first.replace(/:\d+$/, '').replace(/\.$/, '').toLowerCase();
+  if (!first) return '';
+  let host = first;
+  // Strip scheme if accidentally passed
+  if (host.includes('://')) {
+    try {
+      host = new URL(host).hostname;
+    } catch {
+      // fall through
+    }
+  }
+  // Strip port (IPv6 safe)
+  if (host.startsWith('[')) {
+    const end = host.indexOf(']');
+    if (end !== -1) host = host.slice(1, end);
+  } else {
+    host = host.replace(/:\d+$/, '');
+  }
+  host = host.replace(/\.$/, '').toLowerCase();
+  return host;
+}
+
+export function isLocalHost(host: string) {
+  if (!host) return true;
+  if (host === 'localhost' || host === '::1' || host === '127.0.0.1')
+    return true;
+  if (host.endsWith('.local') || host.endsWith('.test')) return true;
+  return false;
+}
+
+export function normalizeDomainList(value: string | null | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(/[\s,]+/)
+    .map(v => normalizeHost(v))
+    .filter((v, i, arr) => v && arr.indexOf(v) === i);
+}
+
+export async function validateHostOwnership(
+  host: string,
+  excludeSiteId?: string
+): Promise<{ ok: boolean; conflictingSiteId?: string }> {
+  const h = normalizeHost(host);
+  if (!h) return { ok: false };
+  const rows = await db
+    .select({ id: sites.id, primaryHost: sites.primaryHost, extraDomains: sites.extraDomains })
+    .from(sites)
+    .where(isNull(sites.deletedAt));
+  for (const row of rows) {
+    if (excludeSiteId && row.id === excludeSiteId) continue;
+    if (normalizeHost(row.primaryHost) === h) {
+      return { ok: false, conflictingSiteId: row.id };
+    }
+    const extras = Array.isArray(row.extraDomains) ? row.extraDomains : [];
+    for (const ex of extras) {
+      if (normalizeHost(ex) === h) {
+        return { ok: false, conflictingSiteId: row.id };
+      }
+    }
+  }
+  return { ok: true };
+}
+
+export function isTrustedProxyHost(host: string | null | undefined): boolean {
+  const h = normalizeHost(host);
+  if (!h) return false;
+  const trusted = process.env.CMS_TRUSTED_PROXY_HOSTS?.split(',')
+    .map(x => normalizeHost(x))
+    .filter(Boolean);
+  if (!trusted?.length) return false;
+  return trusted.includes(h);
 }
 
 function toSite(row: typeof sites.$inferSelect): ResolvedSite {
@@ -51,6 +146,7 @@ function toSite(row: typeof sites.$inferSelect): ResolvedSite {
   return {
     id: row.id,
     name: row.name,
+    slug: row.slug ?? null,
     primaryHost: row.primaryHost,
     extraDomains: row.extraDomains ?? [],
     defaultLocale: row.defaultLocale || 'en',
@@ -61,6 +157,18 @@ function toSite(row: typeof sites.$inferSelect): ResolvedSite {
 async function fallback() {
   const row = await siteContext.getById(DEFAULT_SITE_ID);
   return row ?? fallbackSite();
+}
+
+/** Looks a site up by its URL-safe slug. Returns null for reserved/invalid/unknown slugs. */
+async function getSiteBySlug(slug: string): Promise<ResolvedSite | null> {
+  const valid = validateSiteSlug(slug);
+  if (!valid.ok) return null;
+  const [row] = await db
+    .select()
+    .from(sites)
+    .where(and(eq(sites.slug, valid.slug), isNull(sites.deletedAt)))
+    .limit(1);
+  return row ? toSite(row) : null;
 }
 
 /**
@@ -131,7 +239,7 @@ export const siteContext = {
   matchHost: cache(async (rawHost: string | null | undefined) => {
     const host = normalizeHost(rawHost);
     if (!host) return null;
-    const [match] = await db
+    const matches = await db
       .select()
       .from(sites)
       .where(
@@ -140,18 +248,32 @@ export const siteContext = {
           sql`(
             lower(${sites.primaryHost}) = ${host}
             OR ${host} = ANY (
-              SELECT lower(domain) FROM unnest(${sites.extraDomains}) AS domain
+              SELECT lower(domain) FROM unnest(coalesce(${sites.extraDomains}, '{}')) AS domain
             )
           )`
         )
       )
-      .limit(1);
-    return match ? toSite(match) : null;
+      .limit(2);
+    if (matches.length > 1) {
+      console.error(
+        `[site-context] Host collision detected for "${host}": sites=${matches
+          .map(m => m.id)
+          .join(',')}. Falling back to the first match to avoid cross-tenant leakage.`
+      );
+      return matches[0] ? toSite(matches[0]) : null;
+    }
+    return matches[0] ? toSite(matches[0]) : null;
   }),
 
   /** Host match, or site `default` when the host is not assigned to a site. */
   siteForHost: cache(async (rawHost: string | null | undefined) => {
-    return (await siteContext.matchHost(rawHost)) ?? fallback();
+    const matched = await siteContext.matchHost(rawHost);
+    if (matched) return matched;
+    const policy = getUnknownHostPolicy();
+    if (policy === 'deny') {
+      throw new Error(`Unknown host: ${normalizeHost(rawHost)}`);
+    }
+    return fallback();
   }),
 
   /**
@@ -159,17 +281,66 @@ export const siteContext = {
    * On an unassigned host such as localhost, a draft preview uses that page's site,
    * and a signed-in member sees the site chosen in the dashboard.
    */
-  publicSite: cache(async () => {
+  publicSite: cache(async (): Promise<SiteContext> => {
     const headerStore = await headers();
-    const host =
+    const routing = routingMode();
+
+    // Path-based routing ({/site}/...): the proxy strips any client-sent
+    // site headers and sets x-cms-site-slug from the first path segment.
+    // Resolve from the slug before the host. An unknown slug returns 404
+    // and never falls back to another site.
+    if (routing === 'path' || routing === 'both') {
+      const siteSlug = headerStore.get('x-cms-site-slug')?.trim();
+      if (siteSlug) {
+        const site = await getSiteBySlug(siteSlug);
+        if (site) return { ...site, source: 'path' as const };
+        throw new NotFoundException(`Unknown site slug: ${siteSlug}`);
+      }
+    }
+
+    const rawHostHeader =
       headerStore.get('x-cms-host') ??
       headerStore.get('x-forwarded-host') ??
       headerStore.get('host');
-    const matched = await siteContext.matchHost(host);
-    if (matched) return matched;
-    return (
-      (await siteFromPreview()) ?? (await siteSelectedInAdmin()) ?? fallback()
-    );
+    const remoteIp =
+      headerStore.get('x-real-ip') ??
+      headerStore.get('x-forwarded-for')?.split(',')[0]?.trim();
+    const host = rawHostHeader;
+    // Only trust forwarded headers if from trusted proxy
+    if (
+      (headerStore.get('x-cms-host') || headerStore.get('x-forwarded-host')) &&
+      !isTrustedProxyHost(remoteIp ?? normalizeHost(rawHostHeader))
+    ) {
+      // Don't trust client-supplied forwarded headers unless trusted
+      const matched = await siteContext.matchHost(headerStore.get('host'));
+      if (matched) {
+        const policy = getUnknownHostPolicy();
+        if (policy === 'deny' && !matched) {
+          throw new Error(`Unknown host: ${normalizeHost(headerStore.get('host'))}`);
+        }
+        return { ...matched, source: 'host' as const };
+      }
+    } else {
+      const matched = await siteContext.matchHost(host);
+      if (matched) {
+        return { ...matched, source: 'host' as const };
+      }
+    }
+    const policy = getUnknownHostPolicy();
+    if (policy === 'deny') {
+      throw new Error(`Unknown host: ${normalizeHost(host)}`);
+    }
+    const preview = await siteFromPreview();
+    if (preview) return { ...preview, source: 'preview' as const };
+    const admin = await siteSelectedInAdmin();
+    if (admin) return { ...admin, source: 'admin-cookie' as const };
+    const fb = await fallback();
+    return { ...fb, source: 'fallback' as const };
+  }),
+
+  /** Canonical public site context resolver. */
+  publicSiteContext: cache(async (): Promise<SiteContext> => {
+    return siteContext.publicSite();
   }),
 
   memberships: cache(async (userId: string): Promise<SiteMembership[]> => {
@@ -177,6 +348,7 @@ export const siteContext = {
       .select({
         siteId: siteMemberships.siteId,
         siteName: sites.name,
+        slug: sites.slug,
         roleId: siteMemberships.roleId,
         primaryHost: sites.primaryHost,
       })
@@ -195,14 +367,120 @@ export const siteContext = {
     return rows[0]?.siteId ?? DEFAULT_SITE_ID;
   }),
 
-  adminSite: cache(async (userId: string) => {
+  adminSite: cache(async (userId: string): Promise<SiteContext> => {
     const id = await siteContext.adminSiteId(userId);
-    return (await siteContext.getById(id)) ?? fallback();
+    const site = (await siteContext.getById(id)) ?? (await fallback());
+    const rows = await siteContext.memberships(userId);
+    const cookie = (await cookies()).get(SITE_COOKIE)?.value;
+    const source: SiteContextSource =
+      cookie && rows.some(row => row.siteId === cookie)
+        ? 'admin-cookie'
+        : rows[0]?.siteId === id
+        ? 'admin-membership'
+        : 'fallback';
+    return { ...site, source };
+  }),
+
+  /** Canonical dashboard/admin site context resolver. */
+  adminSiteContext: cache(async (userId: string): Promise<SiteContext> => {
+    return siteContext.adminSite(userId);
+  }),
+
+  /** Canonical preview site context resolver. */
+  previewSiteContext: cache(async (): Promise<SiteContext | null> => {
+    const site = await siteFromPreview();
+    if (!site) return null;
+    return { ...site, source: 'preview' as const };
+  }),
+
+  /**
+   * Canonical system/site context resolver for background jobs/cron where
+   * there is no request session or headers.
+   */
+  systemSiteContext: cache(
+    async (siteId?: string | null): Promise<SiteContext> => {
+      if (siteId) {
+        const site = await siteContext.getById(siteId);
+        if (site) return { ...site, source: 'system' as const };
+      }
+      const fb = await fallback();
+      return { ...fb, source: 'system' as const };
+    }
+  ),
+
+  /** Resolve all sites for system operations. */
+  allSites: cache(async (): Promise<ResolvedSite[]> => {
+    const rows = await db
+      .select()
+      .from(sites)
+      .where(isNull(sites.deletedAt))
+      .orderBy(asc(sites.name));
+    return rows.map(toSite);
   }),
 };
+
+export async function resolveSiteContext(input: {
+  kind: 'public' | 'admin' | 'preview' | 'system';
+  userId?: string;
+  siteId?: string;
+  host?: string | null;
+}): Promise<SiteContext | null> {
+  if (input.kind === 'public') {
+    return siteContext.publicSite();
+  }
+  if (input.kind === 'admin') {
+    if (!input.userId) return null;
+    return siteContext.adminSite(input.userId);
+  }
+  if (input.kind === 'preview') {
+    return siteContext.previewSiteContext();
+  }
+  if (input.kind === 'system') {
+    return siteContext.systemSiteContext(input.siteId);
+  }
+  return null;
+}
 
 export async function adminSiteId() {
   const { getCurrentUserAndTeamId } = await import('@/lib/auth');
   const { userId } = await getCurrentUserAndTeamId();
   return siteContext.adminSiteId(userId);
 }
+
+export async function getPublicSiteContext(): Promise<SiteContext> {
+  return siteContext.publicSite();
+}
+
+export async function getAdminSiteContext(
+  userId: string
+): Promise<SiteContext> {
+  return siteContext.adminSite(userId);
+}
+
+export type UnknownHostPolicy = 'fallback-default' | 'deny' | 'redirect';
+
+export const DEFAULT_UNKNOWN_HOST_POLICY: UnknownHostPolicy = 'fallback-default';
+
+export function getUnknownHostPolicy(): UnknownHostPolicy {
+  const policy = process.env.CMS_UNKNOWN_HOST_POLICY?.toLowerCase();
+  if (policy === 'deny' || policy === 'redirect') return policy;
+  return DEFAULT_UNKNOWN_HOST_POLICY;
+}
+
+export { routingMode, sitePathSegments } from '@/lib/utils/site-slug';
+
+/**
+ * Returns the site slug to prefix public URLs with in path/both mode, or
+ * undefined in host mode. Public URL builders pass this to `PAGES.SITE.*`.
+ */
+export function siteSlugPrefix(site: ResolvedSite): string | undefined {
+  const mode = routingMode();
+  if ((mode === 'path' || mode === 'both') && site.slug) return site.slug;
+  return undefined;
+}
+
+/** Looks a site up by its URL-safe slug (null for reserved/invalid/unknown). */
+export async function siteBySlug(slug: string): Promise<ResolvedSite | null> {
+  return getSiteBySlug(slug);
+}
+

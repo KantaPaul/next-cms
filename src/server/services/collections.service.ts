@@ -402,10 +402,12 @@ export const collectionsService = {
       );
     }
 
+    const siteId = await adminSiteId();
     const [field] = await db
       .select()
       .from(collectionFields)
-      .where(eq(collectionFields.id, fieldId))
+      .innerJoin(collections, eq(collections.id, collectionFields.collectionId))
+      .where(and(eq(collectionFields.id, fieldId), eq(collections.siteId, siteId)))
       .limit(1);
     if (!field) throw new NotFoundException('Field not found');
 
@@ -427,7 +429,7 @@ export const collectionsService = {
       action: 'update',
       targetType: 'collection_field',
       targetId: fieldId,
-      targetName: field.label,
+      targetName: (field as any).label,
     });
     return row;
   },
@@ -441,12 +443,17 @@ export const collectionsService = {
       );
     }
 
-    const [field] = await db
-      .select({ collectionId: collectionFields.collectionId, label: collectionFields.label })
+    const siteId = await adminSiteId();
+    const owned = await db
+      .select({ id: collectionFields.id })
       .from(collectionFields)
-      .where(eq(collectionFields.id, fieldId))
+      .innerJoin(collections, eq(collections.id, collectionFields.collectionId))
+      .where(and(eq(collectionFields.id, fieldId), eq(collections.siteId, siteId)))
       .limit(1);
-    if (!field) throw new NotFoundException('Field not found');
+    if (!owned[0]) throw new NotFoundException('Field not found');
+    let fieldLabel: string | undefined;
+    const fl = await db.select().from(collectionFields).where(eq(collectionFields.id, fieldId)).limit(1);
+    fieldLabel = (fl[0] as any)?.label;
 
     await db
       .delete(collectionFields)
@@ -457,7 +464,7 @@ export const collectionsService = {
       action: 'delete',
       targetType: 'collection_field',
       targetId: fieldId,
-      targetName: field.label,
+      targetName: fieldLabel,
     });
   },
 

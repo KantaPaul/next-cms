@@ -32,7 +32,10 @@ import {
   users,
 } from '@/db/schema';
 import { DEFAULT_LANGUAGE, LANGUAGE_CODES } from '@/db/schemas/shared.schema';
-import { siteContext } from '@/server/services/site-context';
+import {
+  siteContext,
+  siteSlugPrefix,
+} from '@/server/services/site-context';
 
 type LocaleSite = {
   defaultLocale: string;
@@ -194,7 +197,12 @@ async function toCards(rows: CardRow[]): Promise<PostCard[]> {
   return rows.map(row => ({
     ...row,
     publishedAt: row.publishedAt?.toISOString() ?? null,
-    url: PAGES.SITE.post(row.slug, row.language, site.defaultLocale),
+    url: PAGES.SITE.post(
+      row.slug,
+      row.language,
+      site.defaultLocale,
+      siteSlugPrefix(site)
+    ),
     categories: categoriesByPost.get(row.id) ?? [],
     tags: tagsByPost.get(row.id) ?? [],
   }));
@@ -207,6 +215,7 @@ const ORDER: Record<BlogSort, SQL[]> = {
 };
 
 const blogIndexUrl = cache(async (language: string) => {
+  const site = await siteContext.publicSite();
   const [page] = await db
     .select({
       slug: pages.slug,
@@ -216,7 +225,7 @@ const blogIndexUrl = cache(async (language: string) => {
     .from(pages)
     .where(
       and(
-        eq(pages.siteId, (await siteContext.publicSite()).id),
+        eq(pages.siteId, site.id),
         eq(pages.isBlogIndex, true),
         eq(pages.language, language),
         eq(pages.status, 'published'),
@@ -230,7 +239,8 @@ const blogIndexUrl = cache(async (language: string) => {
         page.slug,
         page.language,
         page.isHome,
-        (await siteContext.publicSite()).defaultLocale
+        site.defaultLocale,
+        siteSlugPrefix(site)
       )
     : null;
 });

@@ -1,14 +1,18 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
+import { Loader2, ExternalLink } from 'lucide-react';
 import { useId, useTransition, type FormEvent } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { DEFAULT_SITE_LOCALES } from '@/db/schemas/sites.schema';
+import {
+  DEFAULT_SITE_LOCALES,
+} from '@/db/schemas/sites.schema';
 import { createSite } from '@/server/actions/site.actions';
+import { createSiteSchema } from '@/app/(admin)/dashboard/(shell)/sites/_modules/sites.schemas';
+import type { CreateSiteInput } from '@/app/(admin)/dashboard/(shell)/sites/_modules/sites.schemas';
 import { FormInput as Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Controller } from 'react-hook-form';
@@ -27,22 +31,13 @@ const localeSchema = z.object({
   label: z.string().trim().min(1, 'Label is required').max(40),
 });
 
-export const createSiteSchema = z.object({
-  name: z.string().trim().min(1, 'Site name is required').max(120),
-  primaryHost: z.string().trim().max(255).nullish(),
-  extraDomains: z.string().trim().max(1000).nullish(),
-  defaultLocale: z.string().trim().min(2, 'Default locale is required').max(12),
-  locales: z.array(localeSchema).min(1, 'At least one locale is required'),
-});
-
-export type CreateSiteInput = z.infer<typeof createSiteSchema>;
-
 interface SitesManagerProps {
   sites: {
     siteId: string;
     siteName: string;
-    roleName: string;
+    slug: string | null;
     primaryHost: string | null;
+    roleName: string;
   }[];
   current: string;
 }
@@ -59,6 +54,7 @@ export function SitesManager({
     resolver: zodResolver(createSiteSchema),
     defaultValues: {
       name: '',
+      slug: '',
       primaryHost: '',
       extraDomains: '',
       defaultLocale: DEFAULT_SITE_LOCALES[0].code,
@@ -75,6 +71,7 @@ export function SitesManager({
       try {
         const result = await createSite({
           name: form.getValues('name'),
+          slug: form.getValues('slug') || undefined,
           primaryHost: form.getValues('primaryHost') || undefined,
           extraDomains: form.getValues('extraDomains') || undefined,
           defaultLocale: form.getValues('defaultLocale'),
@@ -121,9 +118,21 @@ export function SitesManager({
                   ) : null}
                 </p>
                 <p className="text-sm text-steel-500">
+                  {site.slug ? `/${site.slug}` : 'No slug'} ·
                   {site.primaryHost || 'No primary host'} · {site.roleName}
                 </p>
               </div>
+              {site.slug && (
+                <a
+                  href={`/${site.slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-sm text-steel-500 hover:text-steel-700"
+                >
+                  <ExternalLink size={14} />
+                  View site
+                </a>
+              )}
             </li>
           ))}
         </ul>
@@ -137,6 +146,32 @@ export function SitesManager({
                 <FormItem>
                   <Label htmlFor={id}>Name</Label>
                   <Input id={id} {...field} required />
+                  {fieldState.error && (
+                    <FormMessage>{fieldState.error.message}</FormMessage>
+                  )}
+                </FormItem>
+              );
+            }}
+          />
+          <Controller
+            name="slug"
+            render={({ field, fieldState }) => {
+              const id = useId();
+              const preview = field.value
+                ? `/${field.value.replace(/^\/+/, '')}`
+                : '/<slug>';
+              return (
+                <FormItem>
+                  <Label htmlFor={id}>Slug</Label>
+                  <Input
+                    id={id}
+                    {...field}
+                    placeholder="main"
+                    className="font-mono text-sm"
+                  />
+                  <p className="text-xs text-steel-500 mt-1">
+                    Public URL prefix: <code className="block">{preview}</code>
+                  </p>
                   {fieldState.error && (
                     <FormMessage>{fieldState.error.message}</FormMessage>
                   )}

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { PAGES } from '@/config/pages';
 import { searchIndex } from '@/server/services/search.service';
+import { siteContext, siteSlugPrefix } from '@/server/services/site-context';
 
 export const metadata: Metadata = { title: 'Search' };
 
@@ -12,6 +13,8 @@ export default async function SearchPage({
   const { q = '' } = await searchParams;
   const query = q.trim();
   const results = query ? await searchIndex.search({ q: query }) : [];
+  const site = await siteContext.publicSite();
+  const siteSlug = siteSlugPrefix(site);
 
   return (
     <main className="mx-auto grid w-full max-w-3xl gap-6 px-6 py-12">
@@ -40,7 +43,7 @@ export default async function SearchPage({
         ))}
       </ul>
       <p className="s-muted text-sm">
-        <a href={PAGES.SITE.page('', 'en', true)}>Back home</a>
+        <a href={PAGES.SITE.page('', 'en', true, 'en', siteSlug)}>Back home</a>
       </p>
     </main>
   );

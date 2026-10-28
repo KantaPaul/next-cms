@@ -15,9 +15,11 @@ import {
 } from '@/server/services/access.service';
 import { auditService } from '@/server/services/audit.service';
 import { normalizeHost, siteContext } from '@/server/services/site-context';
+import { slugifySiteName } from '@/lib/utils/site-slug';
 
 export type CreateSiteInput = {
   name: string;
+  slug?: string | null;
   primaryHost?: string | null;
   extraDomains?: string | null;
   defaultLocale: string;
@@ -56,11 +58,15 @@ export const sitesService = {
     if (!admin) throw new ApplicationException('Roles are not set up yet.');
 
     const siteId = createId();
+    const slug = input.slug
+      ? input.slug
+      : slugifySiteName(input.name);
     try {
       await db.transaction(async tx => {
         await tx.insert(sites).values({
           id: siteId,
           name: input.name.trim(),
+          slug,
           primaryHost,
           extraDomains: domains(input.extraDomains),
           defaultLocale: input.defaultLocale,

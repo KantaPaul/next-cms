@@ -19,6 +19,7 @@ import {
 import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { metaObject } from '@/lib/utils/metadata';
 import { accessService } from '@/server/services/access.service';
+import { siteContext, siteSlugPrefix } from '@/server/services/site-context';
 
 export const metadata = {
   ...metaObject(TITLE),
@@ -39,6 +40,7 @@ export default async function PostsPage({
     postsService.getStatusCounts(),
     postTemplatesService.list(),
   ]);
+  const siteSlug = siteSlugPrefix(await siteContext.publicSite());
 
   return (
     <>
@@ -71,7 +73,12 @@ export default async function PostsPage({
           </div>
         ))}
       </div>
-      <PostsTable data={data} totalCount={totalCount} templates={templates} />
+      <PostsTable
+        data={data}
+        totalCount={totalCount}
+        templates={templates}
+        siteSlug={siteSlug}
+      />
     </>
   );
 }

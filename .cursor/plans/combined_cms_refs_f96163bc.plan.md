@@ -1,6 +1,6 @@
 ---
 name: Combined CMS refs
-overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, full-site production optimization, commercial launch readiness, international website-builder market-gap audit, Elementor-style nested container/Flexbox/CSS Grid, dynamic content, global design styles, conditional display, and an ecommerce store builder. Numbered implementation steps R001–R643 include builder tasks, React-first differentiators, multisite reliability, market-gap builder features, docs sites, agency, local business, portfolio, and video library site packs, builder listing and search pages, ecommerce product, shop, cart, and checkout templates, and approval gates. Name a numbered step to implement only that piece.
+overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, full-site production optimization, commercial launch readiness, international website-builder market-gap audit, Elementor-style nested container/Flexbox/CSS Grid, dynamic content, global design styles, conditional display, and an ecommerce store builder. Numbered implementation steps R001–R679 include builder tasks, React-first differentiators, multisite reliability, market-gap builder features, docs sites, agency, local business, portfolio, and video library site packs, builder listing and search pages, ecommerce product, shop, cart, and checkout templates, site slug routing, container layout market gaps, and approval gates. Name a numbered step to implement only that piece.
 todos:
   - id: R001
     content: "P1-01 Register Slider, Tabs, and Accordion as builderConfig component keys"
@@ -295,43 +295,43 @@ todos:
     status: pending
   - id: R463
     content: "P3-09 Audit current multisite behavior and reproduce cross-site failures before fixes"
-    status: pending
+    status: completed
   - id: R464
     content: "P3-10 Establish canonical typed site context for public, dashboard, preview, and system requests"
-    status: pending
+    status: completed
   - id: R465
     content: "P3-11 Harden host/domain normalization, ownership, collisions, and unknown-host fallback policy"
-    status: pending
+    status: completed
   - id: R471
     content: "P3-17 Audit and centralize site-aware data fetching for every admin dashboard route, server component, server action, and API"
-    status: pending
+    status: completed
   - id: R472
     content: "P3-18 Fix admin site-switch refresh, query invalidation, loading/error/empty states, and stale response handling"
-    status: pending
+    status: completed
   - id: R473
     content: "P3-19 Audit public page/post/layout/navigation/settings/SEO fetches against the resolved host and active locale"
-    status: pending
+    status: completed
   - id: R474
     content: "P3-20 Make public route, metadata, search, redirect, preview, and published-content fetches site-scoped and cache-safe"
-    status: pending
+    status: completed
   - id: R466
     content: "P3-12 Enforce site isolation across CRUD, relations, joins, aggregates, APIs, and background jobs"
-    status: pending
+    status: completed
   - id: R467
     content: "P3-13 Verify membership, role permissions, site switching, cookies, and membership revocation"
-    status: pending
+    status: completed
   - id: R468
     content: "P3-14 Make cache, revalidation, preview, and static/export output site-aware"
-    status: pending
+    status: completed
   - id: R469
     content: "P3-15 Add cross-site unit, integration, and end-to-end isolation and routing tests"
-    status: pending
+    status: completed
   - id: R475
     content: "P3-21 Add Site A/Site B fetch-contract tests for admin switching, public domains, cache isolation, and cross-site denial"
-    status: pending
+    status: completed
   - id: R470
     content: "P3-16 Pass multisite security and regression approval gates before marking R032-R039 complete or starting P4"
-    status: pending
+    status: completed
   - id: R262
     content: "A1-01 auth_settings on site_settings for login, registration, approval, session, and lockout"
     status: pending
@@ -673,7 +673,7 @@ todos:
     status: pending
   - id: R397
     content: "BLD-05 Add container sizing controls for width, max/min width, height, min/max height, grow, shrink, basis, and box sizing"
-    status: pending
+    status: in_progress
   - id: R398
     content: "BLD-06 Add CSS Grid controls for column/row tracks, repeat patterns, gaps, auto-flow, and responsive track definitions"
     status: pending
@@ -685,7 +685,7 @@ todos:
     status: pending
   - id: R401
     content: "BLD-09 Add responsive breakpoint values and desktop/tablet/mobile preview, including inheritance and reset-to-inherited behavior"
-    status: pending
+    status: in_progress
   - id: R402
     content: "BLD-10 Reuse existing section style controls for spacing, padding, margin, background, border, radius, and overflow where compatible"
     status: pending
@@ -1931,10 +1931,118 @@ todos:
   - id: R570
     content: "SITE-03 Gate 28 approval: agency, local business, portfolio, and video library site features verified"
     status: pending
+  - id: R644
+    content: "SLG-01 Add a unique, URL-safe slug column to sites with an additive migration, backfilling existing sites from their name and giving the default site the slug main"
+    status: pending
+  - id: R645
+    content: "SLG-02 Validate site slugs: lowercase letters, numbers, and hyphens, 2–40 characters, not a reserved route (dashboard, api, login, blog, search, media, sitemap.xml, robots.txt, _next) and not an enabled locale code"
+    status: pending
+  - id: R646
+    content: "SLG-03 Slug field on the sites admin page with a live URL preview, and a redirect from the old prefix when a slug changes"
+    status: pending
+  - id: R647
+    content: "SLG-04 Routing mode setting per install: host (today), path (/{site}/...), or both, with path as the development default"
+    status: pending
+  - id: R648
+    content: "SLG-05 In path mode, choose whether the default site keeps unprefixed URLs or also gets /main/"
+    status: pending
+  - id: R649
+    content: "SLG-06 Root URL in path mode redirects to the default site, or shows a simple list of public sites when that option is on"
+    status: pending
+  - id: R650
+    content: "SLG-07 Proxy strips any client-sent x-cms-host and x-cms-site-slug headers, reads the first path segment as the site slug, and sets x-cms-site-slug itself"
+    status: pending
+  - id: R651
+    content: "SLG-08 siteContext.publicSite resolves the site from x-cms-site-slug in path mode before the host, with source 'path'; an unknown slug returns 404 and never falls back to another site"
+    status: pending
+  - id: R652
+    content: "SLG-09 resolveRoute and resolvePostRoute strip the site segment first, then the locale, then the page or post slug, in the order /{site}/{locale}/{slug}"
+    status: pending
+  - id: R653
+    content: "SLG-10 Collection routes, /blog, and /search parse correctly under the site prefix, with a route table that rejects ambiguous paths"
+    status: pending
+  - id: R654
+    content: "SLG-11 PAGES.SITE.page, post, and a new search builder take the site and add its prefix; update all 33 call sites"
+    status: pending
+  - id: R655
+    content: "SLG-12 A siteHref helper prefixes internal links in menus, buttons, rich text, and builder blocks at render time, leaving external links alone"
+    status: pending
+  - id: R656
+    content: "SLG-13 The language switcher, breadcrumbs, and previous/next links keep the site prefix"
+    status: pending
+  - id: R657
+    content: "SLG-14 Dashboard view-page links, the share panel, and builder preview links use the prefixed public URL"
+    status: pending
+  - id: R658
+    content: "SLG-15 Preview links carry the site slug, and exiting preview returns to the prefixed page"
+    status: pending
+  - id: R659
+    content: "SLG-16 Canonical, hreflang, Open Graph URLs, and JSON-LD include the site prefix in path mode and the primary host in host mode"
+    status: pending
+  - id: R660
+    content: "SLG-17 Per-site sitemaps at /{site}/sitemap.xml plus a sitemap index, and robots.txt pointing at them"
+    status: pending
+  - id: R661
+    content: "SLG-18 Redirects match after the site prefix is stripped, and redirect targets get the prefix added"
+    status: pending
+  - id: R662
+    content: "SLG-19 Form submit, newsletter, and the analytics beacon send the page or form id and the server derives the site from it, never from a client-sent site value"
+    status: pending
+  - id: R663
+    content: "SLG-20 /api/v1 accepts ?site={slug} as well as the host, and an API key only works for its own site"
+    status: pending
+  - id: R664
+    content: "SLG-21 revalidatePublicSite purges only the changed site's prefix in path mode"
+    status: pending
+  - id: R665
+    content: "SLG-22 Tests for slug validation, the route parsing table, URL builders, proxy header stripping, unknown-slug 404, and cross-site denial"
+    status: pending
+  - id: R666
+    content: "SLG-23 Lint, tsc, and a browser check of two sites in path mode: pages, posts, search, language switch, preview, forms, and sitemaps"
+    status: pending
+  - id: R667
+    content: "SLG-24 Gate 32 approval: site slug routing, links, SEO, redirects, endpoints, and tests verified"
+    status: pending
+  - id: R668
+    content: "CFG-01 Container HTML tag choice (div, section, article, header, footer, aside, nav, main) with a warning for duplicate main or nav landmarks"
+    status: pending
+  - id: R669
+    content: "CFG-02 Content width: full width or boxed, with the boxed width taken from a site setting and overridable per container"
+    status: pending
+  - id: R670
+    content: "CFG-03 Structure picker when a Container is added: one, two, three, and four columns, 1:2, 2:1, 1:1:2, and a bento grid"
+    status: pending
+  - id: R671
+    content: "CFG-04 Per-child flex settings on any block inside a flex container: grow, shrink, basis, align-self, and order, per device"
+    status: pending
+  - id: R672
+    content: "CFG-05 Auto-fit card grid: a minimum item width that fills the row without per-device column counts"
+    status: pending
+  - id: R673
+    content: "CFG-06 Responsive direction and wrap, so a row can stack or reverse on tablet and mobile"
+    status: pending
+  - id: R674
+    content: "CFG-07 Horizontal scroll row on mobile with scroll snap, as a container option instead of a carousel block"
+    status: pending
+  - id: R675
+    content: "CFG-08 Whole-container link that renders one anchor and blocks nested links and buttons inside it"
+    status: pending
+  - id: R676
+    content: "CFG-09 Wrap selected blocks in a Container and unwrap a Container while keeping its children, both undoable"
+    status: pending
+  - id: R677
+    content: "CFG-10 One-click convert of a Columns block into a Container that renders the same, keeping the original until saved"
+    status: pending
+  - id: R678
+    content: "CFG-11 Opt-in absolute position inside a container with offsets and z-index, off by default and hidden on mobile unless set"
+    status: pending
+  - id: R679
+    content: "CFG-12 Gate 33 approval: CFG-01 to CFG-11 verified in the editor, preview, published page, and two devices"
+    status: pending
 isProject: false
 ---
 
-# Combined refs R001–R643
+# Combined refs R001–R679
 
 Say **implement R042** (or the original id, such as **P2-14**, **L3-01**, **A2-01**, **O1-01**, or **M2-01**). That ref is the whole task. Do not continue to the next ref unless you ask.
 
@@ -2010,7 +2118,7 @@ The first release is a **developer-friendly, self-hostable React/Next.js visual 
 | Ship basics | R073–R079 | Export, tests, docker, Lighthouse, CI |
 | Single-install licensing | R217–R261 | The product is sold as licensed software |
 | Selling the product | R366–R375, R378, R381–R392 | One offer, verified payment, fulfillment, license issuance, customer portal, legal and support pages, funnel, Gates 6–8 |
-| Container, Flexbox, and Grid | R393–R412 | Core of a modern visual builder |
+| Container, Flexbox, and Grid | R393–R412 (separate plan: container_flex_grid_refs.plan.md) | Core of a modern visual builder |
 | Dynamic content and global styles | R413–R423, R428–R433 | Design tokens are a launch must-have; dynamic values power listings |
 | Editor basics and header/footer templates | R476, R477, R483–R485 | Undo, redo, shortcuts; template storage that listing and search templates reuse |
 | Listing and search pages | R571–R589, R595–R602 | Blog, collection, archive, and search pages in the builder |
@@ -2997,6 +3105,8 @@ For each feature, record: shipped, partial, missing, not applicable, or intentio
 
 <!-- BEGIN: container_flex_grid_builder_plan -->
 
+Also tracked in [container_flex_grid_refs.plan.md](container_flex_grid_refs.plan.md), with R668–R679 market-gap layout steps. Keep statuses in sync.
+
 ## Goal
 
 Extend the existing Puck-based builder in place. Do not replace Puck or rebuild the CMS. Add a nested Container component with Flexbox and CSS Grid modes, visual resize handles, responsive controls, and reliable public rendering while preserving existing saved pages and blocks.
@@ -3744,3 +3854,114 @@ The common pattern: products are data, product and shop pages are templates boun
 - **Gate 31 (R643):** approve only after tests, typecheck, lint, and a browser check pass for browse, filter, product, cart, sandbox checkout, email, fulfilment, and refund on desktop and mobile.
 
 <!-- END: ecommerce-store-builder -->
+
+---
+
+# Site slug in every public route (SLG-01–SLG-24)
+
+<!-- BEGIN: site-slug-routing -->
+
+## Goal
+
+Put the site's slug in every public URL, like WordPress Multisite's subdirectory mode (`example.com/site-a/about`), so anyone can see which site a page belongs to, and several sites work on one domain or on localhost without setting up hosts. Host-based routing keeps working as a mode.
+
+## Checked against the code (2026-10-28)
+
+None of this is built yet, so every SLG step is pending:
+
+- `sites` has no slug column (`src/db/schemas/sites.schema.ts`); sites are found only by `primary_host` and `extra_domains`.
+- `siteContext.publicSite()` resolves by host, then preview, then the admin cookie, then the default site. There is no path-based lookup.
+- `PAGES.SITE.page` and `PAGES.SITE.post` (`src/config/pages.ts`) build `/{locale}/{slug}` and `/blog/{slug}` with no site segment, and are used in 33 places.
+- `src/proxy.ts` forwards the client's host as `x-cms-host`, and `publicSite` trusts that header and `x-forwarded-host` from any request, so a visitor can choose a site by sending a header. SLG-07 closes this together with R465.
+
+## Depends on
+
+- R464 and R465: SLG-07 and SLG-08 extend the same `SiteContext` (new source `path`) instead of adding a second resolver.
+- R468: SLG-22 uses the per-site invalidation built there.
+
+## R644–R646 — Site slug
+
+- **R644 (SLG-01):** Add a unique, URL-safe slug column to sites with an additive migration, backfilling existing sites from their name and giving the default site the slug main.
+- **R645 (SLG-02):** Validate site slugs: lowercase letters, numbers, and hyphens, 2–40 characters, not a reserved route (dashboard, api, login, blog, search, media, sitemap.xml, robots.txt, _next) and not an enabled locale code.
+- **R646 (SLG-03):** Slug field on the sites admin page with a live URL preview, and a redirect from the old prefix when a slug changes.
+
+## R647–R649 — Routing mode
+
+- **R647 (SLG-04):** Routing mode setting per install: host (today), path (/{site}/...), or both, with path as the development default.
+- **R648 (SLG-05):** In path mode, choose whether the default site keeps unprefixed URLs or also gets /main/.
+- **R649 (SLG-06):** Root URL in path mode redirects to the default site, or shows a simple list of public sites when that option is on.
+
+## R650–R653 — Request handling
+
+- **R650 (SLG-07):** Proxy strips any client-sent x-cms-host and x-cms-site-slug headers, reads the first path segment as the site slug, and sets x-cms-site-slug itself.
+- **R651 (SLG-08):** siteContext.publicSite resolves the site from x-cms-site-slug in path mode before the host, with source 'path'; an unknown slug returns 404 and never falls back to another site.
+- **R652 (SLG-09):** resolveRoute and resolvePostRoute strip the site segment first, then the locale, then the page or post slug, in the order /{site}/{locale}/{slug}.
+- **R653 (SLG-10):** Collection routes, /blog, and /search parse correctly under the site prefix, with a route table that rejects ambiguous paths.
+
+## R654–R658 — Links and URLs
+
+- **R654 (SLG-11):** PAGES.SITE.page, post, and a new search builder take the site and add its prefix; update all 33 call sites.
+- **R655 (SLG-12):** A siteHref helper prefixes internal links in menus, buttons, rich text, and builder blocks at render time, leaving external links alone.
+- **R656 (SLG-13):** The language switcher, breadcrumbs, and previous/next links keep the site prefix.
+- **R657 (SLG-14):** Dashboard view-page links, the share panel, and builder preview links use the prefixed public URL.
+- **R658 (SLG-15):** Preview links carry the site slug, and exiting preview returns to the prefixed page.
+
+## R659–R661 — SEO and redirects
+
+- **R659 (SLG-16):** Canonical, hreflang, Open Graph URLs, and JSON-LD include the site prefix in path mode and the primary host in host mode.
+- **R660 (SLG-17):** Per-site sitemaps at /{site}/sitemap.xml plus a sitemap index, and robots.txt pointing at them.
+- **R661 (SLG-18):** Redirects match after the site prefix is stripped, and redirect targets get the prefix added.
+
+## R662–R664 — Server endpoints
+
+- **R662 (SLG-19):** Form submit, newsletter, and the analytics beacon send the page or form id and the server derives the site from it, never from a client-sent site value.
+- **R663 (SLG-20):** /api/v1 accepts ?site={slug} as well as the host, and an API key only works for its own site.
+- **R664 (SLG-21):** revalidatePublicSite purges only the changed site's prefix in path mode.
+
+## R665–R667 — Checks
+
+- **R665 (SLG-22):** Tests for slug validation, the route parsing table, URL builders, proxy header stripping, unknown-slug 404, and cross-site denial.
+- **R666 (SLG-23):** Lint, tsc, and a browser check of two sites in path mode: pages, posts, search, language switch, preview, forms, and sitemaps.
+- **R667 (SLG-24):** Gate 32 approval: site slug routing, links, SEO, redirects, endpoints, and tests verified.
+
+## Acceptance criteria
+
+- In path mode every public page, post, collection item, search page, sitemap, and preview URL starts with the site slug, and every internal link on the page keeps it.
+- An unknown or deleted site slug returns 404 and never shows another site's content.
+- A request header can never pick the site; only the proxy sets the site headers, after removing any the client sent.
+- Changing a slug redirects the old URLs, and no slug can hide a reserved route or a locale code.
+- Host mode works exactly as today, and existing URLs keep working when an install switches to path mode with the default site unprefixed.
+- Canonical and hreflang URLs match the URL the page was served on.
+
+## Approval gates
+
+- **Gate 32 (R667):** approve only after the tests, typecheck, lint, and the two-site browser check pass in path mode and host mode.
+
+<!-- END: site-slug-routing -->
+
+---
+
+# Container layout market gaps R668–R679
+
+<!-- BEGIN: container-layout-market-gaps -->
+
+Also tracked in [container_flex_grid_refs.plan.md](container_flex_grid_refs.plan.md). Builds on the Container (R395) and layout schema (R394); start after Gate 13 (R410).
+
+- **R668 (CFG-01):** Container HTML tag choice (div, section, article, header, footer, aside, nav, main) with a warning for duplicate main or nav landmarks.
+- **R669 (CFG-02):** Content width: full width or boxed, with the boxed width taken from a site setting and overridable per container.
+- **R670 (CFG-03):** Structure picker when a Container is added: one, two, three, and four columns, 1:2, 2:1, 1:1:2, and a bento grid.
+- **R671 (CFG-04):** Per-child flex settings on any block inside a flex container: grow, shrink, basis, align-self, and order, per device.
+- **R672 (CFG-05):** Auto-fit card grid: a minimum item width that fills the row without per-device column counts.
+- **R673 (CFG-06):** Responsive direction and wrap, so a row can stack or reverse on tablet and mobile.
+- **R674 (CFG-07):** Horizontal scroll row on mobile with scroll snap, as a container option instead of a carousel block.
+- **R675 (CFG-08):** Whole-container link that renders one anchor and blocks nested links and buttons inside it.
+- **R676 (CFG-09):** Wrap selected blocks in a Container and unwrap a Container while keeping its children, both undoable.
+- **R677 (CFG-10):** One-click convert of a Columns block into a Container that renders the same, keeping the original until saved.
+- **R678 (CFG-11):** Opt-in absolute position inside a container with offsets and z-index, off by default and hidden on mobile unless set.
+- **R679 (CFG-12):** Gate 33 approval: CFG-01 to CFG-11 verified in the editor, preview, published page, and two devices.
+
+## Approval gates
+
+- **Gate 33 (R679):** approve only after each CFG step works in the editor, preview, and published page on desktop and mobile, and the R405 and R406 tests cover it.
+
+<!-- END: container-layout-market-gaps -->

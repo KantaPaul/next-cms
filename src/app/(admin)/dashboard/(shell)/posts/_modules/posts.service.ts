@@ -371,8 +371,10 @@ export const postsService = {
   },
 
   getById: async ({ id }: { id: string }) => {
+    const siteId = await adminSiteId();
     const post = await db.query.posts.findFirst({
-      where: (t, { eq, and, isNull }) => and(eq(t.id, id), isNull(t.deletedAt)),
+      where: (t, { eq, and, isNull }) =>
+        and(eq(t.id, id), eq(t.siteId, siteId), isNull(t.deletedAt)),
       with: {
         contents: true,
         seo: true,
@@ -963,28 +965,28 @@ export const postsService = {
       .select({ id: posts.id, title: posts.title, createdBy: posts.createdBy })
       .from(posts)
       .where(
-        and(
-          eq(posts.status, 'scheduled'),
-          lte(posts.scheduledAt, new Date()),
-          await alive()
-        )
+        and(eq(posts.status, 'scheduled'), lte(posts.scheduledAt, new Date()))
       );
 
     for (const post of due) {
-      await db.transaction(async tx => {
-        await publishInTx(post.id, post.createdBy, tx);
-        await auditService.log(
-          {
-            actorId: null,
-            action: 'publish',
-            targetType: 'post',
-            targetId: post.id,
-            targetName: post.title,
-            details: 'Scheduled publish',
-          },
-          tx
-        );
-      });
+      try {
+        await db.transaction(async tx => {
+          await publishInTx(post.id, post.createdBy, tx);
+          await auditService.log(
+            {
+              actorId: null,
+              action: 'publish',
+              targetType: 'post',
+              targetId: post.id,
+              targetName: post.title,
+              details: 'Scheduled publish',
+            },
+            tx
+          );
+        });
+      } catch (error) {
+        console.error('[posts.publishDueScheduled] failed for', post.id, error);
+      }
     }
 
     if (due.length) revalidatePublicSite();

@@ -3,7 +3,7 @@ import { PAGES } from '@/config/pages';
 import { env } from '@/env.mjs';
 import { blogService } from '@/server/services/blog.service';
 import { publicSiteService } from '@/server/services/public-site.service';
-import { siteContext } from '@/server/services/site-context';
+import { siteContext, siteSlugPrefix } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 
 export const dynamic = 'force-dynamic';
@@ -16,10 +16,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     siteContext.publicSite(),
   ]);
   const base = (settings.siteUrl || env.SITE_URL).replace(/\/$/, '');
+  const siteSlug = siteSlugPrefix(site);
   const url = (p: { slug: string; language: string; isHome: boolean }) =>
-    `${base}${PAGES.SITE.page(p.slug, p.language, p.isHome, site.defaultLocale)}`;
+    `${base}${PAGES.SITE.page(p.slug, p.language, p.isHome, site.defaultLocale, siteSlug)}`;
   const postUrl = (p: { slug: string; language: string }) =>
-    `${base}${PAGES.SITE.post(p.slug, p.language, site.defaultLocale)}`;
+    `${base}${PAGES.SITE.post(p.slug, p.language, site.defaultLocale, siteSlug)}`;
   const indexable = pages.filter(p => !p.noIndex);
   const indexablePosts = posts.filter(p => !p.noIndex);
 

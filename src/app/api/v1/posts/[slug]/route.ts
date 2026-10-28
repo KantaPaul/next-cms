@@ -11,7 +11,7 @@ import {
   enumParam,
 } from '@/server/api/v1';
 import { blogService } from '@/server/services/blog.service';
-import { siteContext } from '@/server/services/site-context';
+import { siteContext, siteSlugPrefix } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 import { ApiRequestError } from '@/server/api/v1';
 import { PERMISSIONS } from '@/config/permissions';
@@ -27,6 +27,7 @@ export const dynamic = 'force-dynamic';
 export const GET = apiHandler<{ slug: string }>(
   async (_request, { params, url, siteUrl }) => {
     const site = await siteContext.publicSite();
+    const siteSlug = siteSlugPrefix(site);
     const language =
       enumParam(
         url,
@@ -54,7 +55,7 @@ export const GET = apiHandler<{ slug: string }>(
         ...rest,
         url: absoluteUrl(
           siteUrl,
-          PAGES.SITE.post(view.slug, view.language, site.defaultLocale)
+          PAGES.SITE.post(view.slug, view.language, site.defaultLocale, siteSlug)
         ),
         blogUrl: blogUrl ? absoluteUrl(siteUrl, blogUrl) : null,
         updatedAt: post.updatedAt,

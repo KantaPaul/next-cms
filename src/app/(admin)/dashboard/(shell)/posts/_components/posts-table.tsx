@@ -76,9 +76,11 @@ const buildFilters = (
 function RowActions({
   post,
   templates,
+  siteSlug,
 }: {
   post: PostListItem;
   templates: PostTemplateListItem[];
+  siteSlug?: string;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -123,7 +125,7 @@ function RowActions({
           <ActionDropdownItem
             label="View live post"
             onClick={() =>
-              window.open(PAGES.SITE.post(post.slug, post.language), '_blank')
+              window.open(PAGES.SITE.post(post.slug, post.language, siteSlug), '_blank')
             }
           />
         ) : (
@@ -187,7 +189,8 @@ function RowActions({
 }
 
 const buildColumns = (
-  templates: PostTemplateListItem[]
+  templates: PostTemplateListItem[],
+  siteSlug?: string
 ): ColumnDef<PostListItem>[] => [
   {
     accessorKey: 'title',
@@ -217,7 +220,7 @@ const buildColumns = (
               {post.title}
             </Link>
             <span className="truncate text-xs text-steel-400">
-              {PAGES.SITE.post(post.slug, post.language)}
+              {PAGES.SITE.post(post.slug, post.language, siteSlug)}
             </span>
           </div>
         </div>
@@ -292,7 +295,11 @@ const buildColumns = (
       <div className="flex items-center justify-end gap-1">
         {row.original.status === 'published' && (
           <a
-            href={PAGES.SITE.post(row.original.slug, row.original.language)}
+            href={PAGES.SITE.post(
+              row.original.slug,
+              row.original.language,
+              siteSlug
+            )}
             target="_blank"
             rel="noreferrer"
             className="p-1 text-steel-400 hover:text-steel-700"
@@ -301,7 +308,7 @@ const buildColumns = (
             <ExternalLink className="size-4" />
           </a>
         )}
-        <RowActions post={row.original} templates={templates} />
+        <RowActions post={row.original} templates={templates} siteSlug={siteSlug} />
       </div>
     ),
   },
@@ -311,12 +318,17 @@ export function PostsTable({
   data,
   totalCount,
   templates,
+  siteSlug,
 }: {
   data: PostListItem[];
   totalCount: number;
   templates: PostTemplateListItem[];
+  siteSlug?: string;
 }) {
-  const columns = useMemo(() => buildColumns(templates), [templates]);
+  const columns = useMemo(() => buildColumns(templates, siteSlug), [
+    templates,
+    siteSlug,
+  ]);
   const { locales } = useSiteLocales();
   const filters = useMemo(
     () => buildFilters(templates, locales),

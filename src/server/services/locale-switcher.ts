@@ -2,7 +2,11 @@
 
 import { PAGES } from '@/config/pages';
 import { blogService, resolvePostRoute } from '@/server/services/blog.service';
-import { siteContext } from '@/server/services/site-context';
+import {
+  siteContext,
+  sitePathSegments,
+  siteSlugPrefix,
+} from '@/server/services/site-context';
 import {
   getPreviewPageId,
   getPreviewPostId,
@@ -32,7 +36,7 @@ export async function localeLinksForPath(
 ): Promise<LocaleLink[]> {
   const site = await siteContext.publicSite();
   const labels = new Map(site.locales.map(locale => [locale.code, locale.label]));
-  const segments = pathname.split('/').filter(Boolean);
+  const segments = sitePathSegments(pathname, site);
 
   const postRoute = resolvePostRoute(segments, site);
   if (postRoute) {
@@ -56,7 +60,12 @@ export async function localeLinksForPath(
           {
             code: alt.language,
             label,
-            href: PAGES.SITE.post(alt.slug, alt.language, site.defaultLocale),
+            href: PAGES.SITE.post(
+              alt.slug,
+              alt.language,
+              site.defaultLocale,
+              siteSlugPrefix(site)
+            ),
             current: alt.language === postRoute.language,
           },
         ];
@@ -92,7 +101,8 @@ export async function localeLinksForPath(
             alt.slug,
             alt.language,
             alt.isHome,
-            site.defaultLocale
+            site.defaultLocale,
+            siteSlugPrefix(site)
           ),
           current: alt.language === pageRoute.language,
         },

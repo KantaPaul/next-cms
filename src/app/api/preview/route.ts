@@ -15,6 +15,7 @@ import {
   PREVIEW_TOKEN_COOKIE,
 } from '@/server/services/preview-session';
 import { publicSiteService } from '@/server/services/public-site.service';
+import { siteContext, siteSlugPrefix } from '@/server/services/site-context';
 
 const cookieOptions = {
   httpOnly: true,
@@ -23,16 +24,16 @@ const cookieOptions = {
   path: '/',
 };
 
-async function routeFor(target: PreviewTarget) {
+async function routeFor(target: PreviewTarget, siteSlug: string) {
   if (target.postId) {
     const post = await blogService.getRouteById(target.postId);
-    return post && PAGES.SITE.post(post.slug, post.language);
+    return post && PAGES.SITE.post(post.slug, post.language, siteSlug);
   }
 
   const page = target.pageId
     ? await publicSiteService.getPageRouteById(target.pageId)
     : null;
-  return page && PAGES.SITE.page(page.slug, page.language, page.isHome);
+  return page && PAGES.SITE.page(page.slug, page.language, page.isHome, undefined, siteSlug);
 }
 
 export async function GET(request: Request) {
@@ -81,7 +82,10 @@ export async function GET(request: Request) {
     });
   }
 
-  const path = await routeFor(target);
+  const path = await routeFor(
+    target,
+    siteSlugPrefix(await siteContext.publicSite()) ?? ''
+  );
   if (!path)
     return new NextResponse(
       target.postId ? 'Post not found' : 'Page not found',

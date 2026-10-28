@@ -213,6 +213,7 @@ export const postTemplatesService = {
     access: UserAccess
   ) => {
     await assertCanManage(access);
+    const siteId = await adminSiteId();
     const [row] = await db
       .update(postTemplates)
       .set({
@@ -220,7 +221,7 @@ export const postTemplatesService = {
         description: input.description || null,
         updatedAt: new Date(),
       })
-      .where(eq(postTemplates.id, input.id))
+      .where(and(eq(postTemplates.id, input.id), eq(postTemplates.siteId, siteId)))
       .returning();
     if (!row) throw new NotFoundException('Template not found');
     await audit(access, 'update', row);
@@ -234,10 +235,11 @@ export const postTemplatesService = {
     await assertCanManage(access);
     if (!isBuilderData(content))
       throw new ApplicationException('The template layout is not valid.');
+    const siteId = await adminSiteId();
     const [row] = await db
       .update(postTemplates)
       .set({ draftContent: content, updatedAt: new Date() })
-      .where(eq(postTemplates.id, id))
+      .where(and(eq(postTemplates.id, id), eq(postTemplates.siteId, siteId)))
       .returning({ id: postTemplates.id });
     if (!row) throw new NotFoundException('Template not found');
     return { savedAt: new Date().toISOString() };
