@@ -101,6 +101,26 @@
           }
         }
       }
+    },
+    {
+      "includes": ["packages/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["@/**"],
+                    "message": "Builder packages must not import the host app. Pass app code in through adapters, loaders, or render options (R757)."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
     }
   ]
 }

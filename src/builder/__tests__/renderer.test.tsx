@@ -10,7 +10,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { Render, type Data } from '@measured/puck';
 import { builderConfig } from '../config';
-import { documentToPuck, puckToDocument } from '../converter';
+import { documentToPuck, puckToDocument } from '@nextcms/builder-core';
 import type { BuilderData } from '../data';
 import { BuilderRenderer } from '../renderer';
 

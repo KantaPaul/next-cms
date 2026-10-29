@@ -1,11 +1,11 @@
 /**
  * Round-trip tests for the Puck ↔ BuilderDocument converter (R683).
  *
- * Run with: npx tsx --test src/builder/__tests__/converter.test.ts
+ * Run with: pnpm --filter @nextcms/builder-core test
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import type { BuilderData } from '../data';
+import type { PuckData } from '../puck-data';
 import {
   documentToPuck,
   documentsEqual,
@@ -16,7 +16,7 @@ import {
 } from '../converter';
 import { DOCUMENT_VERSION, emptyDocument, isBuilderDocument } from '../document';
 
-const flatPage: BuilderData = {
+const flatPage: PuckData = {
   root: { props: { maxWidth: 'xl', theme: 'site', paddingY: 'none' } },
   content: [
     {
@@ -39,7 +39,7 @@ const flatPage: BuilderData = {
   zones: {},
 };
 
-const containerPage: BuilderData = {
+const containerPage: PuckData = {
   root: { props: { maxWidth: 'full' } },
   content: [
     {
@@ -65,7 +65,7 @@ const containerPage: BuilderData = {
   },
 };
 
-const columnsPage: BuilderData = {
+const columnsPage: PuckData = {
   root: { props: {} },
   content: [
     {
@@ -83,7 +83,7 @@ const columnsPage: BuilderData = {
   },
 };
 
-const tabsPage: BuilderData = {
+const tabsPage: PuckData = {
   root: { props: {} },
   content: [
     {

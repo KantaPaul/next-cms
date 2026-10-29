@@ -1,8 +1,8 @@
 /**
- * Two-way converter between legacy Puck BuilderData and BuilderDocument (R683 / ENG-04).
+ * Two-way converter between legacy Puck PuckData and BuilderDocument (R683 / ENG-04).
  *
  * Puck stores:
- *   { root, content: BuilderItem[], zones: { "parentId:slotPath": BuilderItem[] } }
+ *   { root, content: PuckItem[], zones: { "parentId:slotPath": PuckItem[] } }
  *
  * Zone key shapes (from layers-panel / rehydrateItem):
  *   - Simple slot:     `${id}:content` | `${id}:column1` | …
@@ -11,7 +11,7 @@
  * Document stores a flat node map + named slots (slot path → child ids).
  */
 
-import type { BuilderData, BuilderItem } from './data';
+import type { PuckData, PuckItem } from './puck-data';
 import {
   DOCUMENT_VERSION,
   type BuilderDocument,
@@ -25,7 +25,7 @@ import {
 /** Slot path as stored on the node (everything after `${id}:`). */
 type SlotPath = string;
 
-function ensureId(item: BuilderItem, fallbackType: string): string {
+function ensureId(item: PuckItem, fallbackType: string): string {
   const id = item.props?.id;
   if (typeof id === 'string' && id.length > 0) return id;
   return `${fallbackType}-${Math.random().toString(36).slice(2, 10)}`;
@@ -67,14 +67,14 @@ function stripSlotArraysFromProps(
 }
 
 /**
- * Convert Puck BuilderData → BuilderDocument.
+ * Convert Puck PuckData → BuilderDocument.
  */
-export function puckToDocument(data: BuilderData): BuilderDocument {
+export function puckToDocument(data: PuckData): BuilderDocument {
   const zones = data.zones ?? {};
   const nodes: Record<NodeId, BuilderNode> = {};
   const visited = new Set<NodeId>();
 
-  function processItem(item: BuilderItem): NodeId {
+  function processItem(item: PuckItem): NodeId {
     const id = ensureId(item, item.type || 'Block');
     if (visited.has(id)) return id;
     visited.add(id);
@@ -92,7 +92,7 @@ export function puckToDocument(data: BuilderData): BuilderDocument {
       const childIds: NodeId[] = [];
       for (const child of zoneItems ?? []) {
         if (!child || typeof child !== 'object') continue;
-        childIds.push(processItem(child as BuilderItem));
+        childIds.push(processItem(child as PuckItem));
       }
       slots[slotPath] = childIds;
     }
@@ -101,19 +101,19 @@ export function puckToDocument(data: BuilderData): BuilderDocument {
     const propsIn = (item.props ?? {}) as Record<string, unknown>;
     for (const [key, value] of Object.entries(propsIn)) {
       if (!Array.isArray(value) || value.length === 0) continue;
-      // Array of BuilderItems (slot stored inline)
+      // Array of Puck items (slot stored inline)
       if (
         value.every(
           v =>
             v &&
             typeof v === 'object' &&
-            typeof (v as BuilderItem).type === 'string' &&
-            (v as BuilderItem).props
+            typeof (v as PuckItem).type === 'string' &&
+            (v as PuckItem).props
         )
       ) {
         if (slots[key]) continue; // zones already won
         slotPaths.push(key);
-        slots[key] = (value as BuilderItem[]).map(processItem);
+        slots[key] = (value as PuckItem[]).map(processItem);
         continue;
       }
       // Array of panel objects with nested content slot
@@ -126,13 +126,13 @@ export function puckToDocument(data: BuilderData): BuilderDocument {
             v =>
               v &&
               typeof v === 'object' &&
-              typeof (v as BuilderItem).type === 'string'
+              typeof (v as PuckItem).type === 'string'
           )
         ) {
           const path = `${key}[${idx}].content`;
           if (slots[path]) return;
           slotPaths.push(path);
-          slots[path] = (content as BuilderItem[]).map(processItem);
+          slots[path] = (content as PuckItem[]).map(processItem);
         }
       });
     }
@@ -169,16 +169,16 @@ export type DocumentToPuckOptions = {
 };
 
 /**
- * Convert BuilderDocument → Puck BuilderData.
+ * Convert BuilderDocument → Puck PuckData.
  */
 export function documentToPuck(
   doc: BuilderDocument,
   options: DocumentToPuckOptions = {}
-): BuilderData {
+): PuckData {
   const useZones = options.slots === 'zones';
-  const zones: Record<string, BuilderItem[]> = {};
+  const zones: Record<string, PuckItem[]> = {};
 
-  function nodeToItem(id: NodeId): BuilderItem | null {
+  function nodeToItem(id: NodeId): PuckItem | null {
     const node = doc.nodes[id];
     if (!node) return null;
 
@@ -190,7 +190,7 @@ export function documentToPuck(
     for (const [slotPath, childIds] of Object.entries(node.slots)) {
       const children = childIds
         .map(cid => nodeToItem(cid))
-        .filter((c): c is BuilderItem => c !== null);
+        .filter((c): c is PuckItem => c !== null);
 
       if (useZones) zones[`${node.id}:${slotPath}`] = children;
 
@@ -221,7 +221,7 @@ export function documentToPuck(
 
   const content = doc.rootSlot
     .map(id => nodeToItem(id))
-    .filter((c): c is BuilderItem => c !== null);
+    .filter((c): c is PuckItem => c !== null);
 
   return {
     root: { props: { ...(doc.root?.props ?? {}) } },
@@ -235,16 +235,16 @@ export function documentToPuck(
  */
 export function toDocument(value: unknown): BuilderDocument {
   if (isBuilderDocument(value)) return value;
-  if (isLegacyPuckData(value)) return puckToDocument(value as BuilderData);
+  if (isLegacyPuckData(value)) return puckToDocument(value as PuckData);
   return emptyDocument();
 }
 
 /**
- * Accept either format and return Puck BuilderData.
+ * Accept either format and return Puck PuckData.
  */
-export function toPuckData(value: unknown): BuilderData {
+export function toPuckData(value: unknown): PuckData {
   if (isBuilderDocument(value)) return documentToPuck(value);
-  if (isLegacyPuckData(value)) return value as BuilderData;
+  if (isLegacyPuckData(value)) return value as PuckData;
   return { root: { props: {} }, content: [], zones: {} };
 }
 
@@ -255,16 +255,16 @@ export function documentsEqual(a: BuilderDocument, b: BuilderDocument): boolean 
   return stableStringify(a) === stableStringify(b);
 }
 
-export function puckDataEqual(a: BuilderData, b: BuilderData): boolean {
+export function puckDataEqual(a: PuckData, b: PuckData): boolean {
   return stableStringify(normalizePuckForCompare(a)) ===
     stableStringify(normalizePuckForCompare(b));
 }
 
-function normalizePuckForCompare(data: BuilderData): unknown {
+function normalizePuckForCompare(data: PuckData): unknown {
   // Drop empty zone entries; sort zone keys
   const zones: Record<string, unknown> = {};
   for (const key of Object.keys(data.zones ?? {}).sort()) {
-    const items = data.zones![key] ?? [];
+    const items = data.zones?.[key] ?? [];
     if (items.length) zones[key] = items;
   }
   return {

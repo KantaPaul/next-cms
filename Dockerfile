@@ -9,7 +9,9 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Install dependencies based on the preferred package manager
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* .npmrc* ./
+COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* pnpm-workspace.yaml* .npmrc* ./
+# Workspace package manifests, so pnpm can link them before the source is copied
+COPY packages/builder-core/package.json ./packages/builder-core/
 COPY ./assets /app/assets
 RUN npm install pnpm -g && pnpm i --frozen-lockfile
 

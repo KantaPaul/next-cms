@@ -228,14 +228,14 @@ todos:
     content: "DAT-18 Gate 38 approval: conflict-safe saving, patch saves, offline recovery, editor load, and public caching meet the R753 budgets"
     status: pending
   - id: R755
-    content: "PKG-01 Turn the repo into a pnpm workspace (apps/cms plus packages/*), keep one lockfile by removing package-lock.json, choose the package scope name (for example @nextcms), and build packages with tsup"
-    status: pending
+    content: "PKG-01 Turn the repo into a pnpm workspace with the app at the root plus packages/* (moving the app to apps/cms is deferred), keep one lockfile by removing package-lock.json, use the @nextcms scope, and ship packages as TypeScript source compiled by the host (a tsup build is added for release in R771)"
+    status: completed
   - id: R756
     content: "PKG-02 Split the builder into packages: builder-core (document format, validation, commands, store, converter, renderer, no UI), builder-react (editor UI), builder-blocks (default block library, optional), and builder-next (Next.js helpers, optional)"
-    status: pending
+    status: in_progress
   - id: R757
     content: "PKG-03 Decouple from the app: remove every import of the app's database, server actions, config, shadcn components, media, and video from builder code, replacing them with adapters; a lint rule blocks @/ imports inside packages"
-    status: pending
+    status: in_progress
   - id: R758
     content: "PKG-04 Small public API: defineBlock, defineField, createBuilderConfig, BuilderEditor, BuilderRenderer, useBuilder hooks, and validateDocument, migrateDocument, and serializeDocument; everything else stays internal"
     status: pending
@@ -392,7 +392,7 @@ todos:
     status: completed
   - id: R809
     content: "ROB-14 Minimum-viable packages first: land PKG-01–03 and a thin public surface before ENG work, then expand packages; avoid rewriting ENG code twice"
-    status: pending
+    status: completed
   - id: R810
     content: "ROB-15 Dual-engine test matrix: both engines reading and writing the same pages, converter round-trips under concurrent edits, and screenshot + HTML/prop diffs"
     status: pending
@@ -432,6 +432,12 @@ Updated 2026-10-29 after batch B0. Details in [builder_engine_b0_audit.md](build
   - `loaders.test.ts` crashed on `server-only`; loaders now import server actions when they run.
 - **New:** `scripts/server-only-stub.mjs` lets Node tests and scripts import server code.
 - **R680 in progress.** Problems found in the code are listed; the team's own Puck problems still need adding.
+- **B1 (2026-10-29): R755 and R809 completed, R756 and R757 in progress.**
+  - pnpm workspace with `packages/*`; `package-lock.json` removed; the Dockerfile copies the workspace manifests before `pnpm i`.
+  - `@nextcms/builder-core` holds the document format, Puck converter, renderer (`renderDocument`, `renderNodes`, `transformProps`), and loader registry (`createLoaderRegistry`), with 15 tests of its own and no Puck or app imports.
+  - The app's `src/builder/renderer.tsx` and `loaders.ts` now sit on the core and keep only CMS parts: block registry, site root, panels, and the four CMS loaders.
+  - A Biome rule fails any `@/` app import inside `packages/`.
+  - Left for R756: `builder-react`, `builder-blocks`, and `builder-next` are created with their code in B3, B4, and B11. Left for R757: blocks and controls still import app UI and move behind adapters in B4.
 - **Not wired yet.** The public site and `/api/v1` still use Puck `Render` and `resolveAllData`; switching is R686 in B2.
 
 ## Batches
@@ -848,7 +854,7 @@ import { BuilderRenderer } from '@nextcms/builder-core/renderer';
 
 ### Workspace and package split
 
-- **R755 (PKG-01):** Turn the repo into a pnpm workspace (apps/cms plus packages/*), keep one lockfile by removing package-lock.json, choose the package scope name (for example @nextcms), and build packages with tsup.
+- **R755 (PKG-01):** Turn the repo into a pnpm workspace with the app at the root plus packages/* (moving the app to apps/cms is deferred), keep one lockfile by removing package-lock.json, use the @nextcms scope, and ship packages as TypeScript source compiled by the host (a tsup build is added for release in R771).
 - **R756 (PKG-02):** Split the builder into packages: builder-core (document format, validation, commands, store, converter, renderer, no UI), builder-react (editor UI), builder-blocks (default block library, optional), and builder-next (Next.js helpers, optional).
 - **R757 (PKG-03):** Decouple from the app: remove every import of the app's database, server actions, config, shadcn components, media, and video from builder code, replacing them with adapters; a lint rule blocks @/ imports inside packages.
 

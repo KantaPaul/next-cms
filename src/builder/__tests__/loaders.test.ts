@@ -11,7 +11,7 @@ import {
   resolveDocumentData,
   type BlockLoader,
 } from '../loaders';
-import { DOCUMENT_VERSION, type BuilderDocument } from '../document';
+import { DOCUMENT_VERSION, type BuilderDocument } from '@nextcms/builder-core';
 
 describe('loader registry', () => {
   it('registers the built-in types that currently use resolveData',

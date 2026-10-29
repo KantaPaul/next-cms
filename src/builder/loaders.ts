@@ -9,13 +9,19 @@
  * and the underlying queries use React `cache` / Next cache tags (DAT-12/16).
  */
 
+import {
+  type BlockLoader as CoreBlockLoader,
+  type BuilderDocument,
+  createLoaderRegistry,
+  documentToPuck,
+  puckToDocument,
+} from '@nextcms/builder-core';
 import type { VideoLibraryVideoItem } from '@/components/video/video-library';
 import type { BlogActiveFilters, BlogPostsProps } from './blocks/blog';
-import type { BuilderDocument, NodeId } from './document';
 import type { PostView } from './post-template';
 
 // Server actions are imported inside each loader, so importing this module
-// (registry, tests, the future builder-core package) never loads the app's
+// (registry, tests) never loads the app's
 // database or server-only code.
 
 /* ---------- context ---------- */
@@ -36,10 +42,7 @@ export type LoaderContext = {
 };
 
 /** Returns a shallow prop patch merged onto the node's existing props. */
-export type BlockLoader = (
-  props: Record<string, unknown>,
-  ctx: LoaderContext
-) => Promise<Record<string, unknown>>;
+export type BlockLoader = CoreBlockLoader<LoaderContext>;
 
 /* ---------- helpers ---------- */
 
@@ -163,70 +166,32 @@ const loadVideoLibrary: BlockLoader = async props => {
  * ContactForm stores fields inline today; query-loop blocks will register here
  * when QRY lands. Hosts / plugins can extend via `registerBlockLoader`.
  */
-const LOADER_REGISTRY: Record<string, BlockLoader> = {
-  BlogPosts: loadBlogPosts,
-  RelatedPosts: loadRelatedPosts,
-  GlobalRef: loadGlobalRef,
-  VideoLibrary: loadVideoLibrary,
-};
+const registry = createLoaderRegistry<LoaderContext>(
+  {
+    BlogPosts: loadBlogPosts,
+    RelatedPosts: loadRelatedPosts,
+    GlobalRef: loadGlobalRef,
+    VideoLibrary: loadVideoLibrary,
+  },
+  {
+    onError: (err, node) =>
+      console.error(`[builder/loaders] ${node.type} (${node.id}) failed:`, err),
+  }
+);
 
-export function registerBlockLoader(type: string, loader: BlockLoader): void {
-  LOADER_REGISTRY[type] = loader;
-}
-
-export function getBlockLoader(type: string): BlockLoader | undefined {
-  return LOADER_REGISTRY[type];
-}
-
-export function listLoaderTypes(): string[] {
-  return Object.keys(LOADER_REGISTRY);
-}
-
-/* ---------- document resolution ---------- */
+export const registerBlockLoader = registry.register;
+export const getBlockLoader = registry.get;
+export const listLoaderTypes = registry.types;
 
 /**
- * Walk every node in the document, run loaders for registered types, and
- * return a new document with resolved props. Nodes without loaders are copied
- * as-is. Failures are logged and the original props kept.
+ * Run loaders for every registered block type and return a new document with
+ * resolved props. Failures are logged and the original props kept.
  */
-export async function resolveDocumentData(
+export function resolveDocumentData(
   doc: BuilderDocument,
   ctx: LoaderContext = {}
 ): Promise<BuilderDocument> {
-  const nodeIds = Object.keys(doc.nodes) as NodeId[];
-  if (nodeIds.length === 0) return doc;
-
-  const patches = await Promise.all(
-    nodeIds.map(async id => {
-      const node = doc.nodes[id];
-      if (!node) return null;
-      const loader = LOADER_REGISTRY[node.type];
-      if (!loader) return null;
-      try {
-        const patch = await loader(node.props, ctx);
-        return { id, patch } as const;
-      } catch (err) {
-        console.error(`[builder/loaders] ${node.type} (${id}) failed:`, err);
-        return null;
-      }
-    })
-  );
-
-  const nodes = { ...doc.nodes };
-  for (const entry of patches) {
-    if (!entry) continue;
-    const node = nodes[entry.id];
-    if (!node) continue;
-    nodes[entry.id] = {
-      ...node,
-      props: { ...node.props, ...entry.patch },
-    };
-  }
-
-  return {
-    ...doc,
-    nodes,
-  };
+  return registry.resolve(doc, ctx);
 }
 
 /**
@@ -237,7 +202,6 @@ export async function resolvePuckData(
   data: import('./data').BuilderData,
   ctx: LoaderContext = {}
 ): Promise<import('./data').BuilderData> {
-  const { puckToDocument, documentToPuck } = await import('./converter');
   const doc = puckToDocument(data);
   const resolved = await resolveDocumentData(doc, ctx);
   return documentToPuck(resolved);

@@ -8,6 +8,12 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { Render, type Data } from '@measured/puck';
+import {
+  documentToPuck,
+  isLegacyPuckData,
+  puckDataEqual,
+  puckToDocument,
+} from '@nextcms/builder-core';
 import { isNotNull } from 'drizzle-orm';
 import { db } from '@/db';
 import {
@@ -19,9 +25,7 @@ import {
   postTemplates,
 } from '@/db/schema';
 import { builderConfig, postBuilderConfig } from './config';
-import { documentToPuck, puckDataEqual, puckToDocument } from './converter';
 import type { BuilderData } from './data';
-import { isLegacyPuckData } from './document';
 import { BuilderRenderer } from './renderer';
 
 type Stored = { name: string; content: unknown; post?: boolean };

@@ -1,25 +1,28 @@
 /**
- * Server renderer for BuilderDocument (R684 / ENG-05).
- * Renders with existing block components from the registry. No Puck.
+ * CMS page renderer on top of @nextcms/builder-core (R684 / ENG-05).
  *
- * Blocks receive the same props as under Puck `Render` (see buildProps), so
- * published HTML is identical during the R686 rollout:
- * - every slot path (`content`, `column1`, `items[0].content`) is a slot function;
- * - interactive blocks (Slider, Tabs, Accordion) receive resolved `panels`,
- *   so they never see slot functions across the client boundary.
+ * builder-core renders blocks with the same props Puck `Render` passes; this
+ * file adds the CMS parts: the block registry, the site root (theme tokens,
+ * fonts, page transition), and resolved `panels` for Slider, Tabs, and
+ * Accordion, which are client components and cannot receive slot functions.
  */
 
-import type { ComponentType, CSSProperties, ReactNode } from 'react';
-import type { BuilderDocument, BuilderNode, NodeId } from './document';
+import {
+  type BlockComponents,
+  type BuilderDocument,
+  type BuilderNode,
+  type NodeId,
+  type RenderOptions,
+  renderDocument,
+  renderNodes,
+} from '@nextcms/builder-core';
+import type { ReactNode } from 'react';
+import { cn } from '@/lib/utils/cn';
 import { renderSlot, type SlotValue } from './blocks/content';
 import { getBlockComponents } from './blocks/registry';
-import { cn } from '@/lib/utils/cn';
+import { type LoaderContext, resolveDocumentData } from './loaders';
 import { MotionScope } from './motion';
 import { fontStylesheetUrl, resolveThemeTokens, themeStyle } from './theme';
-import {
-  resolveDocumentData,
-  type LoaderContext,
-} from './loaders';
 
 export type RenderMetadata = {
   themeTokens?: unknown;
@@ -29,11 +32,6 @@ export type RenderMetadata = {
   /** Extra context passed through to blocks that need it (post, searchParams, …). */
   [key: string]: unknown;
 };
-
-type BlockComponents = Record<
-  string,
-  ComponentType<Record<string, unknown>>
->;
 
 const MAX_WIDTH: Record<string, string> = {
   md: '48rem',
@@ -49,79 +47,34 @@ const ROOT_PADDING: Record<string, string> = {
   lg: 'py-16',
 };
 
-function renderNode(
-  id: NodeId,
-  doc: BuilderDocument,
-  components: BlockComponents,
-  metadata: RenderMetadata
-): ReactNode {
-  const node = doc.nodes[id];
-  if (!node) return null;
-
-  const Component = components[node.type];
-  if (!Component) return null;
-
-  const props = buildProps(node, doc, components, metadata);
-  return <Component key={id} {...props} />;
-}
-
 /** Client blocks that receive resolved `panels` instead of `items` with slots. */
 const PANEL_TYPES = new Set(['Slider', 'Tabs', 'Accordion']);
 
-/** Matches Puck's slot render function: children inside a plain wrapper div. */
-type SlotRender = (options?: {
-  className?: string;
-  style?: CSSProperties;
-  minEmptyHeight?: number;
-}) => ReactNode;
-
-/**
- * Builds the props Puck `Render` passes to a block, so every block renders the
- * same with either engine: each slot path becomes a slot function, panel blocks
- * get resolved `panels`, and `id` is dropped like `renderBlock` does in config.
- */
-function buildProps(
+/** Same as `renderPanels` in config.tsx: resolve each item's slot to a node. */
+function resolvePanels(
   node: BuilderNode,
-  doc: BuilderDocument,
-  components: BlockComponents,
-  metadata: RenderMetadata
+  props: Record<string, unknown>
 ): Record<string, unknown> {
-  const props: Record<string, unknown> = { ...node.props };
-  delete props.id;
-
-  for (const [slotPath, childIds] of Object.entries(node.slots)) {
-    const slot: SlotRender = options => (
-      <div className={options?.className} style={options?.style}>
-        {childIds.map(cid => renderNode(cid, doc, components, metadata))}
-      </div>
-    );
-    const panel = slotPath.match(/^(\w+)\[(\d+)\]\.(\w+)$/);
-    if (panel) {
-      const [, arrayKey, index, key] = panel;
-      const items = Array.isArray(props[arrayKey])
-        ? [...(props[arrayKey] as Record<string, unknown>[])]
-        : [];
-      while (items.length <= Number(index)) items.push({});
-      items[Number(index)] = { ...items[Number(index)], [key]: slot };
-      props[arrayKey] = items;
-    } else {
-      props[slotPath] = slot;
-    }
-  }
-
-  if (PANEL_TYPES.has(node.type)) {
-    const items = Array.isArray(props.items)
-      ? (props.items as { label?: string; title?: string; content?: SlotValue }[])
-      : [];
-    props.panels = items.map(item => ({
+  if (!PANEL_TYPES.has(node.type)) return props;
+  const { items, ...rest } = props;
+  const list = Array.isArray(items)
+    ? (items as { label?: string; title?: string; content?: SlotValue }[])
+    : [];
+  return {
+    ...rest,
+    panels: list.map(item => ({
       label: item?.label ?? item?.title,
       node: renderSlot(item?.content),
-    }));
-    delete props.items;
-  }
+    })),
+  };
+}
 
-  props.editing = !!metadata.editing;
-  return props;
+function renderOptions(metadata: RenderMetadata): RenderOptions {
+  return {
+    components: getBlockComponents() as unknown as BlockComponents,
+    editing: !!metadata.editing,
+    transformProps: resolvePanels,
+  };
 }
 
 /**
@@ -136,7 +89,6 @@ export function BuilderRenderer({
   document: BuilderDocument;
   metadata?: RenderMetadata;
 }): ReactNode {
-  const components = getBlockComponents() as unknown as BlockComponents;
   const rootProps = (doc.root?.props ?? {}) as {
     maxWidth?: string;
     theme?: string;
@@ -153,10 +105,6 @@ export function BuilderRenderer({
         : 'light';
   const fontUrl = fontStylesheetUrl(tokens);
   const editing = !!metadata.editing;
-
-  const children = doc.rootSlot.map(id =>
-    renderNode(id, doc, components, metadata)
-  );
 
   return (
     <div
@@ -186,8 +134,7 @@ export function BuilderRenderer({
         preview={!!metadata.motionPreview}
         transition={rootProps.pageTransition}
       >
-        {/* Same wrapper as Puck's root drop zone, so published HTML stays identical during the R686 rollout. */}
-        <div>{children}</div>
+        {renderDocument(doc, renderOptions(metadata))}
       </MotionScope>
     </div>
   );
@@ -201,12 +148,7 @@ export function renderDocumentSubtree(
   rootIds: NodeId[],
   metadata: RenderMetadata = {}
 ): ReactNode {
-  const components = getBlockComponents() as unknown as BlockComponents;
-  return (
-    <>
-      {rootIds.map(id => renderNode(id, doc, components, metadata))}
-    </>
-  );
+  return renderNodes(doc, rootIds, renderOptions(metadata));
 }
 
 /**
