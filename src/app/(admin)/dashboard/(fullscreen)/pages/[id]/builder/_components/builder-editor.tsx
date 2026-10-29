@@ -61,6 +61,7 @@ import {
   type BuilderTarget,
 } from './builder-context';
 import { BuilderShell } from './builder-shell';
+import { PuckEditorBridge } from './puck-editor-bridge';
 import { InspectorFields } from './selection-card';
 
 export type BuilderPageProps = {
@@ -482,7 +483,9 @@ export function BuilderEditor({
           metadata={metadata}
           iframe={{ enabled: true }}
         >
-          <BuilderShell />
+          <PuckEditorBridge>
+            <BuilderShell />
+          </PuckEditorBridge>
         </Puck>
       </div>
       {value.hasRevisions && (

@@ -1,6 +1,5 @@
 'use client';
 
-import { createUsePuck } from '@measured/puck';
 import { Paintbrush, X } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
@@ -13,9 +12,9 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils/cn';
 import { safeColor } from '../style';
+import { useEditorBridge } from './editor-bridge';
 import { ControlLabel } from './primitives';
 
-const usePuck = createUsePuck();
 
 const DEFAULT_SWATCHES = [
   '#6366f1',
@@ -49,13 +48,7 @@ export function ColorPicker({
   aside,
   responsive,
 }: ColorPickerProps) {
-  const themeTokens = usePuck(s => {
-    const anyS = s as unknown as {
-      metadata?: { themeTokens?: Record<string, string> };
-      appState?: { metadata?: { themeTokens?: Record<string, string> } };
-    };
-    return anyS?.metadata?.themeTokens ?? anyS?.appState?.metadata?.themeTokens;
-  });
+  const { themeTokens } = useEditorBridge();
   const [draft, setDraft] = useState(value ?? '');
 
   useEffect(() => {

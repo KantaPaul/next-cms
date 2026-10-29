@@ -2080,10 +2080,10 @@ todos:
     status: pending
   - id: R693
     content: "ENG-14 Inspector with a field registry (text, textarea, select, number, url, color, image, icon, rich text, list, object, custom) reusing the controls in src/builder/controls and src/builder/fields, plus conditional fields"
-    status: pending
+    status: completed
   - id: R694
     content: "ENG-15 Responsive editing: the device switch resizes the iframe; each field can hold per-device values with inheritance and reset to inherited"
-    status: pending
+    status: completed
   - id: R695
     content: "ENG-16 Canvas resize handles for container width, spacing, and flex or grid tracks, each drag committing one undoable command, with numeric input as the keyboard alternative"
     status: pending
@@ -2092,7 +2092,7 @@ todos:
     status: pending
   - id: R697
     content: "ENG-18 Block definition API: one definition per block with type, label, category, icon, fields, defaults, slots, allowed children, loader, and render; port every block now in src/builder/config.tsx"
-    status: pending
+    status: in_progress
   - id: R698
     content: "ENG-19 Port the builder chrome: save draft, publish, autosave, editor lock, unsaved-changes guard, revisions and restore"
     status: pending
@@ -2320,16 +2320,16 @@ todos:
     status: pending
   - id: R773
     content: "EXT-01 defineBlock with full type inference: props are inferred from the Zod schema, so render, defaults, loaders, and fields all autocomplete and type-check with no hand-written prop types"
-    status: pending
+    status: completed
   - id: R774
     content: "EXT-02 Editor metadata on every block: label, icon, category, keywords for search, thumbnail, inline-editable props, and placeholder text, all optional with sensible defaults"
-    status: pending
+    status: completed
   - id: R775
     content: "EXT-03 Defaults as a value or a function of context (site, locale, theme tokens, parent block), so new blocks start right for where they are dropped"
-    status: pending
+    status: completed
   - id: R776
     content: "EXT-04 Named slots with allowed block types, min and max children, and default children, declared in the schema with slot()"
-    status: pending
+    status: completed
   - id: R777
     content: "EXT-05 Prop traits: reusable prop groups such as withStyle, withLayout, withAnimation, withVisibility, withDynamic, and withA11y that any block opts into with traits: [...], each bringing its schema, fields, defaults, and render wrapper"
     status: pending
@@ -2350,10 +2350,10 @@ todos:
     status: pending
   - id: R783
     content: "EXT-11 defineField for custom field types: schema, input component, compact preview, and validation message, usable inside object, list, and responsive fields"
-    status: pending
+    status: completed
   - id: R784
     content: "EXT-12 Field composition: object, list with sortable items, tabs and groups, conditional visibility (BLD-33), and computed read-only fields"
-    status: pending
+    status: in_progress
   - id: R785
     content: "EXT-13 Typed UI overrides for editor parts (inspector header, block card, toolbar, empty state, canvas overlay) through a component map, replacing the Puck overrides pattern"
     status: pending

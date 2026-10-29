@@ -8,6 +8,7 @@
 import {
   type BlockComponents,
   type BuilderNode,
+  type Device,
   type NodeId,
   type RenderOptions,
   renderDocument,
@@ -30,6 +31,13 @@ import { CanvasFrame } from './frame';
 
 const ACCENT = '#4f46e5';
 
+/** Canvas width per device; desktop fills the available space. */
+export const DEVICE_WIDTHS: Record<Device, number | null> = {
+  desktop: null,
+  tablet: 768,
+  mobile: 375,
+};
+
 export type EditorCanvasProps = {
   components: BlockComponents;
   drag: DragController;
@@ -41,6 +49,8 @@ export type EditorCanvasProps = {
   renderRoot?: (children: ReactNode) => ReactNode;
   /** Gives the editor page the iframe, for keyboard listeners. */
   onFrame?: (frame: HTMLIFrameElement) => void;
+  /** Overrides canvas widths per device. */
+  deviceWidths?: Partial<Record<Device, number | null>>;
   style?: CSSProperties;
 };
 
@@ -262,10 +272,13 @@ export function EditorCanvas({
   loaded,
   renderRoot,
   onFrame,
+  deviceWidths,
   style,
 }: EditorCanvasProps) {
   const store = useEditorStore();
   const dragState = useDragState(drag);
+  const device = useEditor(state => state.device);
+  const width = { ...DEVICE_WIDTHS, ...deviceWidths }[device];
   const [frame, setFrame] = useState<HTMLIFrameElement | null>(null);
 
   const onReady = useCallback(
@@ -310,16 +323,37 @@ export function EditorCanvas({
   }, [frame, store]);
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', ...style }}>
-      <CanvasFrame onReady={onReady}>
-        <CanvasDocument
-          components={components}
-          transformProps={transformProps}
-          loaded={loaded}
-          renderRoot={renderRoot}
-        />
-      </CanvasFrame>
-      {frame && <CanvasOverlay frame={frame} drag={drag} />}
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'center',
+        width: '100%',
+        height: '100%',
+        overflow: 'auto',
+        background: width ? 'rgba(127,127,127,.12)' : undefined,
+        ...style,
+      }}
+    >
+      <div
+        data-device={device}
+        style={{
+          position: 'relative',
+          flex: width ? `0 0 ${width}px` : '1 1 auto',
+          height: '100%',
+          boxShadow: width ? '0 0 0 1px rgba(127,127,127,.25), 0 8px 24px rgba(0,0,0,.08)' : undefined,
+          transition: 'flex-basis .2s ease',
+        }}
+      >
+        <CanvasFrame onReady={onReady}>
+          <CanvasDocument
+            components={components}
+            transformProps={transformProps}
+            loaded={loaded}
+            renderRoot={renderRoot}
+          />
+        </CanvasFrame>
+        {frame && <CanvasOverlay frame={frame} drag={drag} />}
+      </div>
       {dragState.active && (
         <div
           aria-hidden

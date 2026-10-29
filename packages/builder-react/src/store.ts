@@ -8,6 +8,7 @@
 import {
   type BlockSchemas,
   type BuilderDocument,
+  type Device,
   canPlace,
   canRedo,
   canUndo,
@@ -51,6 +52,8 @@ export type EditorState = {
   clipboard: Subtree | null;
   /** The document as last saved, for the unsaved-changes state. */
   savedDoc: BuilderDocument;
+  /** Device the canvas shows and per-device fields edit (R694). */
+  device: Device;
 };
 
 export type EditorStoreOptions = {
@@ -78,6 +81,7 @@ export function createEditorStore({
     hovered: null,
     clipboard: null,
     savedDoc: initial,
+    device: 'desktop',
   };
   const listeners = new Set<Listener>();
 
@@ -290,6 +294,10 @@ export function createEditorStore({
     paste() {
       if (!state.clipboard) return null;
       return insertCopy(state.clipboard, defaultPosition(), 'Paste');
+    },
+
+    setDevice(device: Device) {
+      if (state.device !== device) set({ device });
     },
 
     canUndo: () => canUndo(state.history),

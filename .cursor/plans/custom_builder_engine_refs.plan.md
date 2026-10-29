@@ -43,10 +43,10 @@ todos:
     status: pending
   - id: R693
     content: "ENG-14 Inspector with a field registry (text, textarea, select, number, url, color, image, icon, rich text, list, object, custom) reusing the controls in src/builder/controls and src/builder/fields, plus conditional fields"
-    status: pending
+    status: completed
   - id: R694
     content: "ENG-15 Responsive editing: the device switch resizes the iframe; each field can hold per-device values with inheritance and reset to inherited"
-    status: pending
+    status: completed
   - id: R695
     content: "ENG-16 Canvas resize handles for container width, spacing, and flex or grid tracks, each drag committing one undoable command, with numeric input as the keyboard alternative"
     status: pending
@@ -55,7 +55,7 @@ todos:
     status: pending
   - id: R697
     content: "ENG-18 Block definition API: one definition per block with type, label, category, icon, fields, defaults, slots, allowed children, loader, and render; port every block now in src/builder/config.tsx"
-    status: pending
+    status: in_progress
   - id: R698
     content: "ENG-19 Port the builder chrome: save draft, publish, autosave, editor lock, unsaved-changes guard, revisions and restore"
     status: pending
@@ -283,16 +283,16 @@ todos:
     status: pending
   - id: R773
     content: "EXT-01 defineBlock with full type inference: props are inferred from the Zod schema, so render, defaults, loaders, and fields all autocomplete and type-check with no hand-written prop types"
-    status: pending
+    status: completed
   - id: R774
     content: "EXT-02 Editor metadata on every block: label, icon, category, keywords for search, thumbnail, inline-editable props, and placeholder text, all optional with sensible defaults"
-    status: pending
+    status: completed
   - id: R775
     content: "EXT-03 Defaults as a value or a function of context (site, locale, theme tokens, parent block), so new blocks start right for where they are dropped"
-    status: pending
+    status: completed
   - id: R776
     content: "EXT-04 Named slots with allowed block types, min and max children, and default children, declared in the schema with slot()"
-    status: pending
+    status: completed
   - id: R777
     content: "EXT-05 Prop traits: reusable prop groups such as withStyle, withLayout, withAnimation, withVisibility, withDynamic, and withA11y that any block opts into with traits: [...], each bringing its schema, fields, defaults, and render wrapper"
     status: pending
@@ -313,10 +313,10 @@ todos:
     status: pending
   - id: R783
     content: "EXT-11 defineField for custom field types: schema, input component, compact preview, and validation message, usable inside object, list, and responsive fields"
-    status: pending
+    status: completed
   - id: R784
     content: "EXT-12 Field composition: object, list with sortable items, tabs and groups, conditional visibility (BLD-33), and computed read-only fields"
-    status: pending
+    status: in_progress
   - id: R785
     content: "EXT-13 Typed UI overrides for editor parts (inspector header, block card, toolbar, empty state, canvas overlay) through a component map, replacing the Puck overrides pattern"
     status: pending
@@ -438,6 +438,11 @@ Updated 2026-10-29 after batch B0. Details in [builder_engine_b0_audit.md](build
   - The app's `src/builder/renderer.tsx` and `loaders.ts` now sit on the core and keep only CMS parts: block registry, site root, panels, and the four CMS loaders.
   - A Biome rule fails any `@/` app import inside `packages/`.
   - Left for R756: `builder-react`, `builder-blocks`, and `builder-next` are created with their code in B3, B4, and B11. Left for R757: blocks and controls still import app UI and move behind adapters in B4.
+- **B4 (2026-10-29): R693, R694, R773–R776, R783 completed; R697 and R784 in progress.**
+  - builder-core: `defineBlock` with Zod inference, `slot()`, defaults from the schema or a context function, fields generated from Zod types, `validateProps`, field definitions (list, object, groups, `when`, computed), and per-device value helpers.
+  - builder-react: inspector with a field registry (`defineField`; Puck-style custom fields plug in), device switch that resizes the canvas, per-device fields with inherit and reset.
+  - CMS: an editor bridge (`src/builder/controls/editor-bridge.tsx`) so the section, colour, device, and contact-form controls work in both editors; the Puck builder provides it through `PuckEditorBridge`. Definitions in `src/builder/definitions/`: Hero, Button, and Spacer written with `defineBlock` (same defaults as Puck, tested), the other blocks read from the Puck config by an adapter.
+  - Left for R697: port the remaining blocks from the adapter to `defineBlock`. Left for R784: tabs (fields are grouped in sections) and drag-to-reorder in lists (up and down buttons today).
 - **B3 (2026-10-29): R687–R691 completed.** Commands, history, nesting rules, and slot normalization in builder-core; new `@nextcms/builder-react` (store, iframe canvas with overlays, pointer drag and drop with drop lines and auto-scroll, keyboard). Preview at `/dashboard/pages/{id}/editor` (not saved yet; saving is R698/R740). Canvas drag uses a small pointer engine instead of dnd-kit, because dnd-kit cannot follow a pointer into an iframe. Browser-checked: select, insert, drag to move, drag into a nested column, a refused Columns-in-Columns drop, undo, and every keyboard action.
 - **B2 (2026-10-29): R686 and R804 completed, R702 and R810 in progress, Gate 34 (R708) approved by the user on 2026-10-29.**
   - Each site has `render_engine` (`puck` or `core`), switched in Dashboard → Sites and logged in the audit log; `BUILDER_RENDER_ENGINE` forces one engine for every site (kill switch). Migration `20261029050007_site_render_engine`.

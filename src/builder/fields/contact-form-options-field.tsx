@@ -1,8 +1,8 @@
 'use client';
 
-import { usePuck } from '@measured/puck';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useEditorBridge } from '../controls/editor-bridge';
 
 type Props = {
   field: { label?: string };
@@ -13,11 +13,11 @@ type Props = {
 
 const OPTION_TYPES = new Set(['select', 'radio']);
 
-/** Array item index for this options field (`fields[2].options` → 2). */
+/** Array item index for this options field (`fields[2].options` or `fields.2.options` → 2). */
 function itemIndex(name: string) {
-  const matches = [...name.matchAll(/\[(\d+)\]/g)];
+  const matches = [...name.matchAll(/\[(\d+)\]|\.(\d+)\./g)];
   const last = matches.at(-1);
-  return last ? Number(last[1]) : -1;
+  return last ? Number(last[1] ?? last[2]) : -1;
 }
 
 export function ContactFormOptionsField({
@@ -26,9 +26,9 @@ export function ContactFormOptionsField({
   onChange,
   value,
 }: Props) {
-  const { selectedItem } = usePuck();
+  const { selectedProps } = useEditorBridge();
   const index = itemIndex(name);
-  const fields = selectedItem?.props?.fields;
+  const fields = selectedProps?.fields;
   const rawType =
     Array.isArray(fields) && index >= 0 ? fields[index]?.type : undefined;
   const fieldType = typeof rawType === 'string' ? rawType : undefined;

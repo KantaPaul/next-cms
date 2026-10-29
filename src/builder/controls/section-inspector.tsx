@@ -1,6 +1,5 @@
 'use client';
 
-import { createUsePuck } from '@measured/puck';
 import {
   AlignCenter,
   AlignLeft,
@@ -20,6 +19,7 @@ import {
   SPACING_LIMITS,
   type SpacingUnit,
 } from '../style';
+import { useEditorBridge } from './editor-bridge';
 import { AnimationControl } from './animation';
 import { BackgroundControl } from './background';
 import { BorderControl } from './border';
@@ -41,7 +41,6 @@ import {
 import { ShadowControl } from './shadow';
 // import { TypographyControl } from './typography';
 
-const usePuck = createUsePuck();
 
 /** Blocks that wrap repeated children in `MotionItem`, so stagger and per-item hover apply. */
 export const STAGGER_BLOCKS = [
@@ -347,7 +346,7 @@ function LayoutControls({
  */
 export function SectionField({ value, onChange }: Props) {
   const tab = useInspectorTab();
-  const blockType = usePuck(s => s.selectedItem?.type as string | undefined);
+  const blockType = useEditorBridge().selectedType;
   const s = value ?? {};
   const set = (patch: Partial<SectionSettings>) => onChange({ ...s, ...patch });
 

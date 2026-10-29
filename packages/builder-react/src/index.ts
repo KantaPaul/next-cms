@@ -4,6 +4,8 @@ export * from './context';
 export * from './dom';
 export * from './drag';
 export * from './drop';
+export * from './fields';
 export * from './frame';
+export * from './inspector';
 export * from './keyboard';
 export * from './store';

@@ -1,12 +1,10 @@
 'use client';
 
-import { createUsePuck } from '@measured/puck';
 import { Monitor, Smartphone, Tablet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils/cn';
-import { DEVICE_WIDTH, type Device, deviceForWidth } from '../style';
-
-const usePuck = createUsePuck();
+import type { Device } from '../style';
+import { useEditorBridge } from './editor-bridge';
 
 const ICONS = { desktop: Monitor, tablet: Tablet, mobile: Smartphone };
 const LABELS: Record<Device, string> = {
@@ -15,23 +13,9 @@ const LABELS: Record<Device, string> = {
   mobile: 'Mobile',
 };
 
-/** The device the canvas is showing. Changing it resizes the Puck viewport, so every device row stays in sync. */
+/** The device the canvas is showing. Changing it resizes the canvas in whichever editor hosts the control. */
 export function useCanvasDevice() {
-  const width = usePuck(s => s.appState.ui.viewports.current.width);
-  const dispatch = usePuck(s => s.dispatch);
-  const device = deviceForWidth(width);
-
-  const setDevice = (next: Device) =>
-    dispatch({
-      type: 'setUi',
-      ui: ui => ({
-        viewports: {
-          ...ui.viewports,
-          current: { width: DEVICE_WIDTH[next], height: 'auto' },
-        },
-      }),
-    });
-
+  const { device, setDevice } = useEditorBridge();
   return [device, setDevice] as const;
 }
 

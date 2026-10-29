@@ -4,8 +4,10 @@ import type { BuilderDocument, NodeId } from '@nextcms/builder-core';
 import {
   BlockList,
   createEditorStore,
+  DeviceSwitch,
   EditorCanvas,
   EditorProvider,
+  Inspector,
   SHORTCUTS,
   useDragController,
   useEditor,
@@ -15,7 +17,13 @@ import {
 import { ArrowLeft, Redo2, Undo2 } from 'lucide-react';
 import Link from 'next/link';
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
-import { pageBlockGroups, pageSchemas } from '@/builder/editor-schemas';
+import { EditorBridgeProvider } from '@/builder/controls/editor-bridge';
+import {
+  pageBlockGroups,
+  pageInspectorBlocks,
+  pageRootFields,
+  pageSchemas,
+} from '@/builder/definitions';
 import { cmsTransformProps, rendererComponents, SiteRoot } from '@/builder/renderer';
 import { Button } from '@/components/ui/button';
 import { PAGES } from '@/config/pages';
@@ -42,6 +50,32 @@ function EditorSiteRoot({
       {children}
     </SiteRoot>
   );
+}
+
+/** Gives the CMS inspector controls this editor's device, selection, and theme tokens. */
+function NewEditorBridge({
+  themeTokens,
+  children,
+}: {
+  themeTokens: unknown;
+  children: ReactNode;
+}) {
+  const store = useEditorStore();
+  const device = useEditor(state => state.device);
+  const node = useEditor(state =>
+    state.selection.length === 1 ? state.doc.nodes[state.selection[0]] : undefined
+  );
+  const value = useMemo(
+    () => ({
+      device,
+      setDevice: store.setDevice,
+      selectedType: node?.type,
+      selectedProps: node?.props,
+      themeTokens: themeTokens as Record<string, string> | undefined,
+    }),
+    [device, store, node, themeTokens]
+  );
+  return <EditorBridgeProvider value={value}>{children}</EditorBridgeProvider>;
 }
 
 function HistoryButtons() {
@@ -114,7 +148,8 @@ export function NewEditor({ page, document, loaded, themeTokens }: Props) {
           <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
             New editor preview · changes are not saved yet
           </span>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-3">
+            <DeviceSwitch />
             <HistoryButtons />
           </div>
         </header>
@@ -143,6 +178,22 @@ export function NewEditor({ page, document, loaded, themeTokens }: Props) {
               onFrame={onFrame}
             />
           </main>
+          <aside
+            aria-label="Settings"
+            className="w-80 shrink-0 overflow-y-auto border-l border-steel-200 bg-white p-4 dark:border-dark-300 dark:bg-dark-100"
+          >
+            <NewEditorBridge themeTokens={themeTokens}>
+              <Inspector
+                blocks={pageInspectorBlocks}
+                rootFields={pageRootFields}
+                empty={
+                  <p className="mb-2 text-xs text-steel-500">
+                    Select a block on the page to edit it. Page settings:
+                  </p>
+                }
+              />
+            </NewEditorBridge>
+          </aside>
         </div>
       </div>
     </EditorProvider>

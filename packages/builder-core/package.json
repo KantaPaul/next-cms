@@ -20,5 +20,8 @@
     "@types/react-dom": "19.2.3",
     "react": "19.2.0",
     "react-dom": "19.2.0"
+  },
+  "dependencies": {
+    "zod": "^4.1.12"
   }
 }
