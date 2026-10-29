@@ -1,0 +1,162 @@
+import { afterEach, beforeEach, describe, it, mock } from 'node:test';
+import assert from 'node:assert';
+import { type BlockSchemas, DOCUMENT_VERSION, type BuilderDocument } from '@nextcms/builder-core';
+import { createSaveQueue, type LocalCopy, type SaveInput, type SaveResult } from '../save';
+import { createEditorStore } from '../store';
+
+const schemas: BlockSchemas = { Text: { type: 'Text', label: 'Text', defaultProps: { text: 'Hi' } } };
+const doc: BuilderDocument = {
+  version: DOCUMENT_VERSION,
+  root: { props: {} },
+  nodes: { a: { id: 'a', type: 'Text', props: { text: 'A' }, slots: {} } },
+  rootSlot: ['a'],
+};
+
+type Call = { input: SaveInput; resolve: (r: SaveResult) => void; reject: (e: Error) => void };
+
+function setup(options: { debounceMs?: number } = {}) {
+  let n = 0;
+  const store = createEditorStore({ document: doc, schemas, createId: type => `${type}-${++n}` });
+  const calls: Call[] = [];
+  const saved = new Map<string, LocalCopy>();
+  const queue = createSaveQueue({
+    store,
+    version: 3,
+    debounceMs: options.debounceMs ?? 1000,
+    save: input => new Promise((resolve, reject) => calls.push({ input, resolve, reject })),
+    localKey: 'page:1',
+    storage: {
+      get: async key => saved.get(key),
+      set: async (key, value) => void saved.set(key, value),
+      remove: async key => void saved.delete(key),
+    },
+    isOnline: () => true,
+  });
+  queue.start();
+  return { store, queue, calls, saved };
+}
+
+const tick = () => new Promise<void>(resolve => setImmediate(resolve));
+
+describe('save queue', () => {
+  it('does not watch the store until started', () => {
+    const store = createEditorStore({ document: doc, schemas });
+    let saves = 0;
+    const queue = createSaveQueue({ store, version: 0, save: async () => { saves++; return { ok: true, version: 1 }; } });
+    store.updateProps('a', { text: 'x' });
+    assert.equal(queue.getState().status, 'saved', 'an unstarted queue ignores changes');
+    const stop = queue.start();
+    store.updateProps('a', { text: 'y' });
+    assert.equal(queue.getState().status, 'pending');
+    stop();
+    assert.equal(saves, 0);
+  });
+
+  beforeEach(() => mock.timers.enable({ apis: ['setTimeout'] }));
+  afterEach(() => mock.timers.reset());
+
+  it('debounces typing into one patch save', async () => {
+    const { store, queue, calls } = setup();
+    store.updateProps('a', { text: 'A1' }, 'a.text');
+    store.updateProps('a', { text: 'A12' }, 'a.text');
+    assert.equal(queue.getState().status, 'pending');
+    mock.timers.tick(999);
+    assert.equal(calls.length, 0);
+    mock.timers.tick(1);
+    await tick();
+    assert.equal(calls.length, 1);
+    const input = calls[0].input as unknown as { baseVersion: number; patch: { upsert: Record<string, { props: { text: string } }> } };
+    assert.equal(input.baseVersion, 3);
+    assert.deepEqual(Object.keys(input.patch.upsert), ['a']);
+    assert.equal(input.patch.upsert.a.props.text, 'A12');
+    calls[0].resolve({ ok: true, version: 4 });
+    await tick();
+    assert.equal(queue.getState().status, 'saved');
+    assert.equal(queue.getState().version, 4);
+    assert.ok(!store.isDirty());
+  });
+
+  it('saves structural changes at once and runs one save at a time', async () => {
+    const { store, calls } = setup();
+    store.insertBlock('Text');
+    mock.timers.tick(0);
+    await tick();
+    assert.equal(calls.length, 1, 'insert saves without waiting');
+    store.insertBlock('Text');
+    mock.timers.tick(0);
+    await tick();
+    assert.equal(calls.length, 1, 'second save waits for the first');
+    calls[0].resolve({ ok: true, version: 4 });
+    await tick();
+    mock.timers.tick(0);
+    await tick();
+    assert.equal(calls.length, 2);
+    assert.equal(calls[1].input.baseVersion, 4);
+  });
+
+  it('retries a failed save with backoff', async () => {
+    const { store, queue, calls } = setup({ debounceMs: 0 });
+    store.updateProps('a', { text: 'B' });
+    mock.timers.tick(0);
+    await tick();
+    calls[0].reject(new Error('network down'));
+    await tick();
+    assert.equal(queue.getState().status, 'error');
+    mock.timers.tick(999);
+    await tick();
+    assert.equal(calls.length, 1);
+    mock.timers.tick(1);
+    await tick();
+    assert.equal(calls.length, 2, 'retried after 1s');
+  });
+
+  it('stops on a conflict until the user chooses', async () => {
+    const { store, queue, calls } = setup({ debounceMs: 0 });
+    store.updateProps('a', { text: 'Mine' });
+    mock.timers.tick(0);
+    await tick();
+    const theirs = { ...doc, nodes: { a: { ...doc.nodes.a, props: { text: 'Theirs' } } } };
+    calls[0].resolve({ ok: false, conflict: true, version: 7, document: theirs });
+    await tick();
+    assert.equal(queue.getState().status, 'conflict');
+    store.updateProps('a', { text: 'Mine again' });
+    mock.timers.tick(10);
+    await tick();
+    assert.equal(calls.length, 1, 'no saves during a conflict');
+    queue.takeTheirs();
+    assert.equal(store.getState().doc.nodes.a.props.text, 'Theirs');
+    assert.equal(queue.getState().version, 7);
+    assert.equal(queue.getState().status, 'saved');
+  });
+
+  it('can keep this editor’s version over the other save', async () => {
+    const { store, queue, calls } = setup({ debounceMs: 0 });
+    store.updateProps('a', { text: 'Mine' });
+    mock.timers.tick(0);
+    await tick();
+    calls[0].resolve({ ok: false, conflict: true, version: 7, document: doc });
+    await tick();
+    const keeping = queue.keepMine();
+    await tick();
+    assert.equal(calls[1].input.baseVersion, 7);
+    assert.ok('document' in calls[1].input);
+    calls[1].resolve({ ok: true, version: 8 });
+    await keeping;
+    assert.equal(queue.getState().status, 'saved');
+  });
+
+  it('keeps a local copy until the save lands', async () => {
+    const { store, calls, saved } = setup({ debounceMs: 5000 });
+    store.updateProps('a', { text: 'Unsaved' });
+    mock.timers.tick(300);
+    await tick();
+    assert.equal(saved.get('page:1')?.document.nodes.a.props.text, 'Unsaved');
+    mock.timers.tick(5000);
+    await tick();
+    calls[0].resolve({ ok: true, version: 4 });
+    await tick();
+    mock.timers.tick(300);
+    await tick();
+    assert.equal(saved.has('page:1'), false);
+  });
+});

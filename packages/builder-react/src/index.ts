@@ -11,4 +11,5 @@ export * from './inspector';
 export * from './keyboard';
 export * from './layers';
 export * from './resize';
+export * from './save';
 export * from './store';

@@ -1,0 +1,1 @@
+ALTER TABLE "page_contents" ADD COLUMN "version" integer DEFAULT 0 NOT NULL;

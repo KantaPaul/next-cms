@@ -14,10 +14,17 @@ import {
   useEditor,
   useEditorKeyboard,
   useEditorStore,
+  indexedDbStorage,
+  type LocalCopy,
+  type SaveInput,
+  type SaveQueue,
+  type SaveResult,
+  useSaveQueue,
+  useSaveState,
 } from '@nextcms/builder-react';
 import { ArrowLeft, Redo2, Undo2 } from 'lucide-react';
 import Link from 'next/link';
-import { type ReactNode, useCallback, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { EditorBridgeProvider } from '@/builder/controls/editor-bridge';
 import { cmsInlineProps, cmsResizeHandles } from '@/builder/editor-handles';
 import {
@@ -29,9 +36,10 @@ import {
 import { cmsTransformProps, rendererComponents, SiteRoot } from '@/builder/renderer';
 import { Button } from '@/components/ui/button';
 import { PAGES } from '@/config/pages';
+import { saveEditorDraft } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.actions';
 
 type Props = {
-  page: { id: string; title: string };
+  page: { id: string; title: string; draftVersion: number };
   document: BuilderDocument;
   loaded: Record<NodeId, Record<string, unknown>>;
   themeTokens: unknown;
@@ -80,15 +88,87 @@ function NewEditorBridge({
   return <EditorBridgeProvider value={value}>{children}</EditorBridgeProvider>;
 }
 
+const STATUS_TEXT: Record<string, string> = {
+  saved: 'All changes saved',
+  pending: 'Unsaved changes',
+  saving: 'Saving…',
+  offline: 'Offline · will retry',
+  error: 'Save failed · retrying',
+  conflict: 'Someone else saved this page',
+};
+
+/** Save state in the header (R740). */
+function SaveIndicator({ queue }: { queue: SaveQueue }) {
+  const save = useSaveState(queue);
+  const tone =
+    save.status === 'error' || save.status === 'conflict'
+      ? 'text-red-600'
+      : save.status === 'offline'
+        ? 'text-amber-600'
+        : 'text-steel-500';
+  return (
+    <span role="status" aria-live="polite" className={`text-xs ${tone}`} title={save.error ?? undefined}>
+      {STATUS_TEXT[save.status]}
+    </span>
+  );
+}
+
+/** Choices when another save happened first (R738). */
+function ConflictBanner({ queue }: { queue: SaveQueue }) {
+  const save = useSaveState(queue);
+  if (save.status !== 'conflict') return null;
+  return (
+    <div role="alert" className="flex items-center gap-3 border-b border-red-200 bg-red-50 px-4 py-2 text-sm text-red-900">
+      This page was saved somewhere else (for example in the Puck builder) after you opened it.
+      <Button size="sm" variant="outline" onClick={() => queue.takeTheirs()}>
+        Use the saved version
+      </Button>
+      <Button size="sm" onClick={() => void queue.keepMine()}>
+        Keep my changes
+      </Button>
+    </div>
+  );
+}
+
+/** Offers unsaved work kept in this browser from an earlier visit (R740). */
+function LocalCopyBanner({ queue, version }: { queue: SaveQueue; version: number }) {
+  const store = useEditorStore();
+  const [copy, setCopy] = useState<LocalCopy | null>(null);
+  useEffect(() => {
+    queue.readLocalCopy().then(found => {
+      if (found) setCopy(found);
+    });
+  }, [queue]);
+  if (!copy) return null;
+  const close = () => {
+    setCopy(null);
+    void queue.discardLocalCopy();
+  };
+  return (
+    <div role="alert" className="flex items-center gap-3 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+      Unsaved changes from {new Date(copy.at).toLocaleString()} were kept in this browser
+      {copy.baseVersion !== version ? ', and the page has been saved since' : ''}.
+      <Button
+        size="sm"
+        onClick={() => {
+          store.replaceDocument(copy.document, { label: 'Restore unsaved changes' });
+          setCopy(null);
+        }}
+      >
+        Restore
+      </Button>
+      <Button size="sm" variant="outline" onClick={close}>
+        Discard
+      </Button>
+    </div>
+  );
+}
+
 function HistoryButtons() {
   const store = useEditorStore();
   const history = useEditor(state => state.history);
-  const dirty = useEditor(state => state.doc !== state.savedDoc);
   return (
     <div className="flex items-center gap-1">
-      {dirty && (
-        <span className="mr-2 text-xs text-steel-500">Unsaved changes</span>
-      )}
       <Button
         size="icon"
         variant="ghost"
@@ -119,6 +199,24 @@ export function NewEditor({ page, document, loaded, themeTokens }: Props) {
     [document]
   );
   const drag = useDragController(store);
+  const save = useCallback(
+    async (input: SaveInput): Promise<SaveResult> => {
+      const result = await saveEditorDraft({ id: page.id, ...input });
+      if (result && 'ok' in result) return result as SaveResult;
+      const message =
+        result && 'message' in result ? String(result.message) : 'Could not save';
+      throw new Error(message);
+    },
+    [page.id]
+  );
+  const storage = useMemo(() => indexedDbStorage('nextcms-editor'), []);
+  const queue = useSaveQueue({
+    store,
+    save,
+    version: page.draftVersion,
+    localKey: `page:${page.id}`,
+    storage,
+  });
   const [frameWindow, setFrameWindow] = useState<Window | null>(null);
   const [panel, setPanel] = useState<'blocks' | 'layers'>('blocks');
   useEditorKeyboard(store, [
@@ -149,13 +247,16 @@ export function NewEditor({ page, document, loaded, themeTokens }: Props) {
           </Button>
           <h1 className="truncate text-sm font-semibold">{page.title}</h1>
           <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
-            New editor preview · changes are not saved yet
+            New editor preview · saves drafts, publish in the builder
           </span>
           <div className="ml-auto flex items-center gap-3">
+            <SaveIndicator queue={queue} />
             <DeviceSwitch />
             <HistoryButtons />
           </div>
         </header>
+        <ConflictBanner queue={queue} />
+        <LocalCopyBanner queue={queue} version={page.draftVersion} />
         <div className="flex min-h-0 flex-1">
           <aside className="w-60 shrink-0 overflow-y-auto border-r border-steel-200 bg-white p-3 dark:border-dark-300 dark:bg-dark-100">
             <div role="tablist" aria-label="Left panel" className="mb-3 grid grid-cols-2 gap-1 rounded-md bg-steel-100 p-1 dark:bg-dark-200">

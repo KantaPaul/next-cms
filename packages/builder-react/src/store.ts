@@ -338,6 +338,22 @@ export function createEditorStore({
     canUndo: () => canUndo(state.history),
     canRedo: () => canRedo(state.history),
     isDirty: () => state.doc !== state.savedDoc,
+    /**
+     * Replaces the whole document, as one undo step: restoring a local copy,
+     * or taking the version someone else saved. `saved` marks it as stored.
+     */
+    replaceDocument(doc: BuilderDocument, options: { label?: string; saved?: boolean } = {}) {
+      const next = normalizeDocument(doc, schemas);
+      const history = commit(state.history, next, { label: options.label ?? 'Replace page' });
+      set({
+        history,
+        doc: next,
+        selection: state.selection.filter(id => next.nodes[id]),
+        hovered: null,
+        ...(options.saved ? { savedDoc: next } : {}),
+      });
+    },
+
     markSaved(doc: BuilderDocument = state.doc) {
       set({ savedDoc: doc });
     },

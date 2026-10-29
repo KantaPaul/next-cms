@@ -84,6 +84,8 @@ export const pageContents = pgTable(
       .notNull(),
     kind: contentKindEnum('kind').default(ContentKind.draft).notNull(),
     content: jsonb('content'),
+    /** Bumped on every write; editors send the version they started from (R738). */
+    version: integer('version').default(0).notNull(),
     ...timestampColumns,
   },
   t => [uniqueIndex('page_contents_page_kind_unique').on(t.pageId, t.kind)]

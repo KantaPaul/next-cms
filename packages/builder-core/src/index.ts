@@ -6,6 +6,7 @@ export * from './document';
 export * from './fields';
 export * from './history';
 export * from './loaders';
+export * from './patch';
 export * from './puck-data';
 export * from './renderer';
 export * from './tree';

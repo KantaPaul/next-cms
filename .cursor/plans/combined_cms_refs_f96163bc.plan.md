@@ -2212,19 +2212,19 @@ todos:
     status: pending
   - id: R737
     content: "DAT-01 Baseline before changes: save payload size, save latency, revision table growth per hour of editing, editor load time, public page TTFB cached and uncached, and database queries per public request, recorded in this plan"
-    status: pending
+    status: in_progress
   - id: R738
     content: "DAT-02 Version check on every save: each document has a version number, saves send the version they started from, and a stale save gets a conflict response that the editor shows as reload or compare, replacing today's silent last-write-wins"
-    status: pending
+    status: completed
   - id: R739
     content: "DAT-03 Patch saves: the editor sends only the changed nodes, built from the R688 command log, and the server applies them in one transaction and validates the result; a full save remains the fallback"
-    status: pending
+    status: completed
   - id: R740
     content: "DAT-04 Save queue: debounce typing (about 1 second), save at once on structural changes and when leaving the page, keep one request in flight and merge the rest, retry with backoff, and keep a local IndexedDB copy so offline or failed saves are never lost"
-    status: pending
+    status: completed
   - id: R741
     content: "DAT-05 Validate and normalize once on save (schema, sanitize, size limits per document and per field), so render paths trust stored data and skip re-validation on every request"
-    status: pending
+    status: in_progress
   - id: R742
     content: "DAT-06 Revision storage: full snapshots on publish and manual save, autosave revisions stored as patches against the last snapshot, a retention policy that keeps every named and published version, and rebuild of any revision on demand"
     status: pending
@@ -2233,7 +2233,7 @@ todos:
     status: pending
   - id: R744
     content: "DAT-08 Load the editor in one server round trip: page, draft, site settings, theme tokens, referenced global blocks, and block metadata fetched in parallel and streamed, with no client request waterfall"
-    status: pending
+    status: completed
   - id: R745
     content: "DAT-09 Load secondary panels on open (patterns, media library, revisions, comments) with pagination, cached per session using TanStack Query, which is already installed"
     status: pending

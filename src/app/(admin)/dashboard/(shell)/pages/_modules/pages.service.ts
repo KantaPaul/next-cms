@@ -12,8 +12,17 @@ import {
   ne,
   or,
   type SQL,
+  sql,
 } from 'drizzle-orm';
+import {
+  applyPatch,
+  type BuilderDocument,
+  type DocumentPatch,
+  documentToPuck,
+  toDocument,
+} from '@nextcms/builder-core';
 import { emptyContentFor, normalizeContent } from '@/builder/data';
+import { documentIssues } from '@/builder/validate-document';
 import { PERMISSIONS } from '@/config/permissions';
 import { offerForPublishedPath } from '@/server/services/redirects.service';
 import { searchIndex } from '@/server/services/search.service';
@@ -128,19 +137,26 @@ async function assertSlugAvailable(
   }
 }
 
+/** Writes content and bumps its version, so editors can detect other saves (R738). */
 async function upsertContent(
   pageId: string,
   kind: ContentKindType,
   content: unknown,
   orm: DBTrx = db
 ) {
-  await orm
+  const [row] = await orm
     .insert(pageContents)
-    .values({ pageId, kind, content: content as object })
+    .values({ pageId, kind, content: content as object, version: 1 })
     .onConflictDoUpdate({
       target: [pageContents.pageId, pageContents.kind],
-      set: { content: content as object, updatedAt: new Date() },
-    });
+      set: {
+        content: content as object,
+        version: sql`${pageContents.version} + 1`,
+        updatedAt: new Date(),
+      },
+    })
+    .returning({ version: pageContents.version });
+  return row.version;
 }
 
 async function getContent(
@@ -258,6 +274,49 @@ async function writeRevision(
     })
     .returning();
   return revision;
+}
+
+/** Stores draft content, updates the page, and records a revision like the builders always have. */
+async function writeDraft(
+  page: { id: string; title: string; editorType: EditorTypeType },
+  content: unknown,
+  options: { title?: string; autosave: boolean },
+  access: UserAccess,
+  tx: DBTrx
+) {
+  const version = await upsertContent(page.id, 'draft', content, tx);
+
+  const [updated] = await tx
+    .update(pages)
+    .set({ title: options.title ?? page.title, updatedAt: new Date() })
+    .where(eq(pages.id, page.id))
+    .returning();
+
+  if (options.autosave) {
+    const [lastAutosave] = await tx
+      .select({ createdAt: pageRevisions.createdAt })
+      .from(pageRevisions)
+      .where(
+        and(
+          eq(pageRevisions.pageId, page.id),
+          eq(pageRevisions.kind, 'autosave')
+        )
+      )
+      .orderBy(desc(pageRevisions.createdAt))
+      .limit(1);
+
+    if (
+      !lastAutosave ||
+      Date.now() - lastAutosave.createdAt.getTime() >
+        AUTOSAVE_REVISION_INTERVAL_MS
+    ) {
+      await writeRevision(updated, 'autosave', content, access.userId, 'Autosave', tx);
+    }
+  } else {
+    await writeRevision(updated, 'manual', content, access.userId, 'Saved draft', tx);
+  }
+
+  return { id: updated.id, savedAt: new Date().toISOString(), version };
 }
 
 async function publishInTx(pageId: string, authorId: string, orm: DBTrx) {
@@ -384,6 +443,8 @@ export const pagesServices = {
       publishedContent: published
         ? normalizeContent(page.editorType, published.content)
         : null,
+      /** Version of the stored draft; 0 when there is none yet. */
+      draftVersion: draft?.version ?? 0,
       hasUnpublishedChanges:
         page.status === 'published' &&
         JSON.stringify(draft?.content ?? null) !==
@@ -580,55 +641,66 @@ export const pagesServices = {
 
     const content = normalizeContent(page.editorType, input.content);
 
+    return db.transaction(tx =>
+      writeDraft(page, content, { title: input.title, autosave: !!input.autosave }, access, tx)
+    );
+  },
+
+  /**
+   * Saves the new editor's draft (R738, R739, R741): checks the version the
+   * editor started from, applies a patch (or takes a whole document), checks
+   * the result, and stores it as Puck data so both editors read it.
+   */
+  saveEditorDraft: async (
+    input: {
+      id: string;
+      baseVersion: number;
+      patch?: DocumentPatch;
+      document?: BuilderDocument;
+    },
+    access: UserAccess
+  ): Promise<
+    | { ok: true; version: number; savedAt: string }
+    | { ok: false; conflict: true; version: number; document: BuilderDocument }
+  > => {
+    const page = await getPageOrThrow(input.id);
+    assertCanEdit(page, access);
+    if (page.editorType !== 'builder') {
+      throw new ApplicationException('This page does not use the visual builder.');
+    }
+
     return db.transaction(async tx => {
-      await upsertContent(page.id, 'draft', content, tx);
-
-      const title = input.title ?? page.title;
-      const [updated] = await tx
-        .update(pages)
-        .set({ title, updatedAt: new Date() })
-        .where(eq(pages.id, page.id))
-        .returning();
-
-      if (input.autosave) {
-        const [lastAutosave] = await tx
-          .select({ createdAt: pageRevisions.createdAt })
-          .from(pageRevisions)
-          .where(
-            and(
-              eq(pageRevisions.pageId, page.id),
-              eq(pageRevisions.kind, 'autosave')
-            )
-          )
-          .orderBy(desc(pageRevisions.createdAt))
-          .limit(1);
-
-        if (
-          !lastAutosave ||
-          Date.now() - lastAutosave.createdAt.getTime() >
-            AUTOSAVE_REVISION_INTERVAL_MS
-        ) {
-          await writeRevision(
-            updated,
-            'autosave',
-            content,
-            access.userId,
-            'Autosave',
-            tx
-          );
-        }
-      } else {
-        await writeRevision(
-          updated,
-          'manual',
-          content,
-          access.userId,
-          'Saved draft',
-          tx
-        );
+      // Lock the draft row so two saves cannot both pass the version check.
+      const [row] = await tx
+        .select()
+        .from(pageContents)
+        .where(and(eq(pageContents.pageId, page.id), eq(pageContents.kind, 'draft')))
+        .for('update')
+        .limit(1);
+      const stored = row ?? (await getContent(page.id, 'published', tx));
+      const current = row?.version ?? 0;
+      const base = toDocument(stored?.content);
+      if (input.baseVersion !== current) {
+        return { ok: false as const, conflict: true as const, version: current, document: base };
       }
 
-      return { id: updated.id, savedAt: new Date().toISOString() };
+      const next = input.patch
+        ? applyPatch(base, input.patch)
+        : input.document;
+      if (!next) throw new ApplicationException('Nothing to save.');
+      const problems = documentIssues(next);
+      if (problems.length) {
+        throw new ApplicationException(`The page could not be saved: ${problems.slice(0, 3).join('; ')}`);
+      }
+
+      const saved = await writeDraft(
+        page,
+        documentToPuck(next),
+        { autosave: true },
+        access,
+        tx
+      );
+      return { ok: true as const, version: saved.version, savedAt: saved.savedAt };
     });
   },
 

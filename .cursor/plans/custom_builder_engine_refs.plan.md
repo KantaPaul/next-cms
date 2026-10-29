@@ -175,19 +175,19 @@ todos:
     status: pending
   - id: R737
     content: "DAT-01 Baseline before changes: save payload size, save latency, revision table growth per hour of editing, editor load time, public page TTFB cached and uncached, and database queries per public request, recorded in this plan"
-    status: pending
+    status: in_progress
   - id: R738
     content: "DAT-02 Version check on every save: each document has a version number, saves send the version they started from, and a stale save gets a conflict response that the editor shows as reload or compare, replacing today's silent last-write-wins"
-    status: pending
+    status: completed
   - id: R739
     content: "DAT-03 Patch saves: the editor sends only the changed nodes, built from the R688 command log, and the server applies them in one transaction and validates the result; a full save remains the fallback"
-    status: pending
+    status: completed
   - id: R740
     content: "DAT-04 Save queue: debounce typing (about 1 second), save at once on structural changes and when leaving the page, keep one request in flight and merge the rest, retry with backoff, and keep a local IndexedDB copy so offline or failed saves are never lost"
-    status: pending
+    status: completed
   - id: R741
     content: "DAT-05 Validate and normalize once on save (schema, sanitize, size limits per document and per field), so render paths trust stored data and skip re-validation on every request"
-    status: pending
+    status: in_progress
   - id: R742
     content: "DAT-06 Revision storage: full snapshots on publish and manual save, autosave revisions stored as patches against the last snapshot, a retention policy that keeps every named and published version, and rebuild of any revision on demand"
     status: pending
@@ -196,7 +196,7 @@ todos:
     status: pending
   - id: R744
     content: "DAT-08 Load the editor in one server round trip: page, draft, site settings, theme tokens, referenced global blocks, and block metadata fetched in parallel and streamed, with no client request waterfall"
-    status: pending
+    status: completed
   - id: R745
     content: "DAT-09 Load secondary panels on open (patterns, media library, revisions, comments) with pagination, cached per session using TanStack Query, which is already installed"
     status: pending
@@ -438,6 +438,14 @@ Updated 2026-10-29 after batch B0. Details in [builder_engine_b0_audit.md](build
   - The app's `src/builder/renderer.tsx` and `loaders.ts` now sit on the core and keep only CMS parts: block registry, site root, panels, and the four CMS loaders.
   - A Biome rule fails any `@/` app import inside `packages/`.
   - Left for R756: `builder-react`, `builder-blocks`, and `builder-next` are created with their code in B3, B4, and B11. Left for R757: blocks and controls still import app UI and move behind adapters in B4.
+- **B6 (2026-10-29): R738, R739, R740, R744 completed; R737 and R741 in progress; R742, R743, R745, R746 pending.**
+  - Baseline (R737), dev database: the Puck builder autosaves the whole page 3 s after the last change; stored drafts average 234 bytes JSON (largest template 4.8 KB); a 500-block page is about 180 KB per save and its draft write takes 27 ms median (44 ms max) in Postgres; 19 revisions use 48 kB. Not measured yet: public TTFB cached and uncached, and database queries per request; these need a production build and come with R753.
+  - Version check (R738): `page_contents.version` (migration `20261029131123_page_content_version`) is bumped by every draft write, from either editor; the new editor sends the version it started from and gets the stored page back on a conflict, with Keep my changes or Use the saved version.
+  - Patch saves (R739): `diffDocuments` and `applyPatch` in builder-core; unchanged nodes keep their object identity, so the diff compares references (equivalent to building it from the command log). A one-block edit on a 500-block page sends under 1% of the page. The server applies the patch under a row lock and stores Puck data, so both editors keep reading the same draft.
+  - Save queue (R740): typing waits 1 s, adding, moving, and deleting save at once; one request at a time; retries at 1, 2, 5, 10, then 30 s; offline state; a local copy in IndexedDB with Restore or Discard on the next visit; a warning when leaving with unsaved changes. The queue starts from an effect, so React Strict Mode cannot create a second saving queue.
+  - Validate on save (R741): structure, 2 MB and 5,000-block limits, known block types, and schema checks for native blocks (`src/builder/validate-document.ts`). Left: the Puck builder's save path does not run these checks, and rendering still sanitizes (kept as defense in depth).
+  - One-trip load (R744): the editor route loads the page, settings, and block data on the server in one request.
+  - Pending: compact revisions as patches (R742), asset ids instead of URLs (R743), lazy side panels with TanStack Query once those panels exist (R745), per-block code splitting (R746).
 - **B5 (2026-10-29): R692 completed; R695 and R696 in progress.**
   - Layers panel: tree with slot headings, select, hover highlight, rename (double-click or F2), hide on the canvas, lock, and drag to reorder or move into a slot. Rename, hide, and lock are node `meta`, kept in Puck data as `__editor` and never passed to blocks (stripped in the Puck render adapters too). Drag uses pointer events like the canvas instead of dnd-kit, so one drag model covers both.
   - Resize handles: CMS handles for section width (%), bottom spacing (px, pins desktop first because spacing applies only with a desktop value), and Spacer height; a drag is one undo step, Escape cancels, arrow keys are the keyboard alternative. The desktop canvas is never narrower than 1024px, so media queries match the device being edited.

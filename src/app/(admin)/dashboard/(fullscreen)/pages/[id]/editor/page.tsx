@@ -13,8 +13,8 @@ import { NewEditor } from './_components/new-editor';
 export const metadata = metaObject('New editor (preview)');
 
 /**
- * Preview of the new editor core (B3: R687–R691) on a page's draft. Editing
- * works in the browser only; saving arrives with the editor chrome (R698).
+ * The new editor on a page's draft. Edits save as patches with a version
+ * check (B6: R738–R740); publishing arrives with the editor chrome (R698).
  */
 export default async function NewEditorPage({
   params,
@@ -44,7 +44,7 @@ export default async function NewEditorPage({
 
   return (
     <NewEditor
-      page={{ id: page.id, title: page.title }}
+      page={{ id: page.id, title: page.title, draftVersion: page.draftVersion }}
       document={document}
       loaded={loaded}
       themeTokens={settings.themeTokens}
