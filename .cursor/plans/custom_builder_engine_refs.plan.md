@@ -58,13 +58,13 @@ todos:
     status: in_progress
   - id: R698
     content: "ENG-19 Port the builder chrome: save draft, publish, autosave, editor lock, unsaved-changes guard, revisions and restore"
-    status: pending
+    status: completed
   - id: R699
     content: "ENG-20 Port every builder kind: pages, posts, post templates, page templates, global blocks with GlobalRef, contact forms, and the save-as-template and save-as-global dialogs"
-    status: pending
+    status: completed
   - id: R700
     content: "ENG-21 Port AI dialogs, motion and animation preview, theme tokens, and selection card actions"
-    status: pending
+    status: completed
   - id: R701
     content: "ENG-22 Performance budget: a 500-block page keeps smooth drag and typing, the editor bundle stays under a set size, and the public renderer ships no editor code"
     status: pending
@@ -356,10 +356,10 @@ todos:
     status: completed
   - id: R797
     content: "ROB-02 Editor error surfaces: what the user sees when a block loader fails, schema validation fails on load, a global block is missing, or the document is corrupt; include quarantine mode, open-as-read-only, and guided repair"
-    status: pending
+    status: completed
   - id: R798
     content: "ROB-03 Network and API error UX while editing: retry, offline banner, conflict compare, and never lose the local command log"
-    status: pending
+    status: completed
   - id: R799
     content: "ROB-04 Telemetry for the rewrite: editor error reporting, feature-flag usage (Puck vs new engine per site), save success and conflict rates, and Core Web Vitals impact after migration"
     status: pending
