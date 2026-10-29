@@ -29,6 +29,9 @@ importers:
       '@nextcms/builder-core':
         specifier: workspace:*
         version: link:packages/builder-core
+      '@nextcms/builder-react':
+        specifier: workspace:*
+        version: link:packages/builder-react
       '@paralleldrive/cuid2':
         specifier: ^3.0.4
         version: 3.0.4
@@ -323,6 +326,25 @@ importers:
         version: 5.9.3
 
   packages/builder-core:
+    devDependencies:
+      '@types/react':
+        specifier: 19.2.7
+        version: 19.2.7
+      '@types/react-dom':
+        specifier: 19.2.3
+        version: 19.2.3(@types/react@19.2.7)
+      react:
+        specifier: 19.2.0
+        version: 19.2.0
+      react-dom:
+        specifier: 19.2.0
+        version: 19.2.0(react@19.2.0)
+
+  packages/builder-react:
+    dependencies:
+      '@nextcms/builder-core':
+        specifier: workspace:*
+        version: link:../builder-core
     devDependencies:
       '@types/react':
         specifier: 19.2.7

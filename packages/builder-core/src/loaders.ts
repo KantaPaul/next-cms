@@ -19,6 +19,14 @@ export type LoaderRegistry<Ctx extends LoaderContext = LoaderContext> = {
   register(type: string, loader: BlockLoader<Ctx>): void;
   get(type: string): BlockLoader<Ctx> | undefined;
   types(): string[];
+  /**
+   * Runs the loaders for every node and returns each node's prop patch, for
+   * an editor that shows loaded data without storing it in the document.
+   */
+  load(
+    doc: BuilderDocument,
+    ctx: Ctx
+  ): Promise<Record<NodeId, Record<string, unknown>>>;
   /** Runs the loaders for every node and returns a new, resolved document. */
   resolve(doc: BuilderDocument, ctx: Ctx): Promise<BuilderDocument>;
 };
@@ -34,37 +42,38 @@ export function createLoaderRegistry<Ctx extends LoaderContext = LoaderContext>(
 ): LoaderRegistry<Ctx> {
   const loaders: Record<string, BlockLoader<Ctx>> = { ...initial };
 
-  return {
+  const registry: LoaderRegistry<Ctx> = {
     register: (type, loader) => {
       loaders[type] = loader;
     },
     get: type => loaders[type],
     types: () => Object.keys(loaders),
-    resolve: async (doc, ctx) => {
-      const nodeIds = Object.keys(doc.nodes) as NodeId[];
-      if (nodeIds.length === 0) return doc;
-
-      const patches = await Promise.all(
-        nodeIds.map(async id => {
+    load: async (doc, ctx) => {
+      const entries = await Promise.all(
+        (Object.keys(doc.nodes) as NodeId[]).map(async id => {
           const node = doc.nodes[id];
           const loader = node && loaders[node.type];
           if (!loader) return null;
           try {
-            return { id, patch: await loader(node.props, ctx) };
+            return [id, await loader(node.props, ctx)] as const;
           } catch (error) {
             options.onError?.(error, node);
             return null;
           }
         })
       );
-
+      return Object.fromEntries(entries.filter(entry => entry !== null));
+    },
+    resolve: async (doc, ctx) => {
+      const patches = await registry.load(doc, ctx);
+      if (Object.keys(patches).length === 0) return doc;
       const nodes = { ...doc.nodes };
-      for (const entry of patches) {
-        const node = entry && nodes[entry.id];
-        if (!entry || !node) continue;
-        nodes[entry.id] = { ...node, props: { ...node.props, ...entry.patch } };
+      for (const [id, patch] of Object.entries(patches)) {
+        const node = nodes[id];
+        if (node) nodes[id] = { ...node, props: { ...node.props, ...patch } };
       }
       return { ...doc, nodes };
     },
   };
+  return registry;
 }

@@ -25,19 +25,19 @@ todos:
     status: completed
   - id: R687
     content: "ENG-08 Editor store: node map, selection, hover, clipboard, and dirty state on React context and useSyncExternalStore, so only changed nodes re-render; no new state library"
-    status: pending
+    status: completed
   - id: R688
     content: "ENG-09 Command layer: insert, move, delete, duplicate, update props, wrap, and unwrap as commands with undo and redo, merging a drag or a typing burst into one undo step"
-    status: pending
+    status: completed
   - id: R689
     content: "ENG-10 Canvas in an iframe with site styles and theme tokens injected, rendering the same block components; selection, hover, and labels drawn as an overlay outside block DOM"
-    status: pending
+    status: completed
   - id: R690
     content: "ENG-11 Drag and drop with dnd-kit (already used by analytics boards): from the block library, within and between nested slots, with drop lines, auto-scroll, and allowed-children rules"
-    status: pending
+    status: completed
   - id: R691
     content: "ENG-12 Keyboard control: select parent, child, and sibling; move up and down; delete, duplicate, copy, paste, undo, redo; Escape to deselect"
-    status: pending
+    status: completed
   - id: R692
     content: "ENG-13 Layers panel on the new tree with drag reorder, expand and collapse, rename, hide, and lock"
     status: pending
@@ -438,6 +438,7 @@ Updated 2026-10-29 after batch B0. Details in [builder_engine_b0_audit.md](build
   - The app's `src/builder/renderer.tsx` and `loaders.ts` now sit on the core and keep only CMS parts: block registry, site root, panels, and the four CMS loaders.
   - A Biome rule fails any `@/` app import inside `packages/`.
   - Left for R756: `builder-react`, `builder-blocks`, and `builder-next` are created with their code in B3, B4, and B11. Left for R757: blocks and controls still import app UI and move behind adapters in B4.
+- **B3 (2026-10-29): R687–R691 completed.** Commands, history, nesting rules, and slot normalization in builder-core; new `@nextcms/builder-react` (store, iframe canvas with overlays, pointer drag and drop with drop lines and auto-scroll, keyboard). Preview at `/dashboard/pages/{id}/editor` (not saved yet; saving is R698/R740). Canvas drag uses a small pointer engine instead of dnd-kit, because dnd-kit cannot follow a pointer into an iframe. Browser-checked: select, insert, drag to move, drag into a nested column, a refused Columns-in-Columns drop, undo, and every keyboard action.
 - **B2 (2026-10-29): R686 and R804 completed, R702 and R810 in progress, Gate 34 (R708) approved by the user on 2026-10-29.**
   - Each site has `render_engine` (`puck` or `core`), switched in Dashboard → Sites and logged in the audit log; `BUILDER_RENDER_ENGINE` forces one engine for every site (kill switch). Migration `20261029050007_site_render_engine`.
   - The public page, post, collection template, A/B variant, and `/api/v1` pages and posts render through `renderBuilderContent` and `resolveBuilderData` in `src/builder/render-content.tsx`.

@@ -182,6 +182,8 @@ const registry = createLoaderRegistry<LoaderContext>(
 export const registerBlockLoader = registry.register;
 export const getBlockLoader = registry.get;
 export const listLoaderTypes = registry.types;
+/** Each node's loaded data, for the editor to show without storing it. */
+export const loadDocumentData = registry.load;
 
 /**
  * Run loaders for every registered block type and return a new document with

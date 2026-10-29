@@ -2062,19 +2062,19 @@ todos:
     status: completed
   - id: R687
     content: "ENG-08 Editor store: node map, selection, hover, clipboard, and dirty state on React context and useSyncExternalStore, so only changed nodes re-render; no new state library"
-    status: pending
+    status: completed
   - id: R688
     content: "ENG-09 Command layer: insert, move, delete, duplicate, update props, wrap, and unwrap as commands with undo and redo, merging a drag or a typing burst into one undo step"
-    status: pending
+    status: completed
   - id: R689
     content: "ENG-10 Canvas in an iframe with site styles and theme tokens injected, rendering the same block components; selection, hover, and labels drawn as an overlay outside block DOM"
-    status: pending
+    status: completed
   - id: R690
     content: "ENG-11 Drag and drop with dnd-kit (already used by analytics boards): from the block library, within and between nested slots, with drop lines, auto-scroll, and allowed-children rules"
-    status: pending
+    status: completed
   - id: R691
     content: "ENG-12 Keyboard control: select parent, child, and sibling; move up and down; delete, duplicate, copy, paste, undo, redo; Escape to deselect"
-    status: pending
+    status: completed
   - id: R692
     content: "ENG-13 Layers panel on the new tree with drag reorder, expand and collapse, rename, hide, and lock"
     status: pending

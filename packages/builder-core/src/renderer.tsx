@@ -10,8 +10,9 @@
  *   panels for client components).
  */
 
-import type { ComponentType, CSSProperties, ReactNode } from 'react';
+import { type ComponentType, type CSSProperties, Fragment, type ReactNode } from 'react';
 import type { BuilderDocument, BuilderNode, NodeId } from './document';
+import { ROOT_SLOT } from './tree';
 
 export type BlockComponents = Record<
   string,
@@ -25,6 +26,17 @@ export type SlotRender = (options?: {
   minEmptyHeight?: number;
 }) => ReactNode;
 
+/** What a custom slot renderer receives; see `RenderOptions.renderSlot`. */
+export type SlotRenderArgs = {
+  /** `null` for the page's top level. */
+  parentId: NodeId | null;
+  slot: string;
+  className?: string;
+  style?: CSSProperties;
+  empty: boolean;
+  children: ReactNode;
+};
+
 export type RenderOptions = {
   components: BlockComponents;
   /** Passed to every block as `editing`. */
@@ -34,6 +46,13 @@ export type RenderOptions = {
     node: BuilderNode,
     props: Record<string, unknown>
   ) => Record<string, unknown>;
+  /** Wraps each rendered block, so an editor can find and measure it. */
+  wrapNode?: (node: BuilderNode, element: ReactNode) => ReactNode;
+  /**
+   * Renders slot wrappers, including the page's top level. Without it a slot
+   * is a plain div and the top level has no wrapper, as in Puck `Render`.
+   */
+  renderSlot?: (args: SlotRenderArgs) => ReactNode;
 };
 
 const PANEL_SLOT = /^(\w+)\[(\d+)\]\.(\w+)$/;
@@ -47,11 +66,24 @@ function buildProps(
   delete props.id;
 
   for (const [slotPath, childIds] of Object.entries(node.slots)) {
-    const slot: SlotRender = slotOptions => (
-      <div className={slotOptions?.className} style={slotOptions?.style}>
-        {renderNodes(doc, childIds, options)}
-      </div>
-    );
+    const slot: SlotRender = slotOptions => {
+      const children = renderNodes(doc, childIds, options);
+      if (options.renderSlot) {
+        return options.renderSlot({
+          parentId: node.id,
+          slot: slotPath,
+          className: slotOptions?.className,
+          style: slotOptions?.style,
+          empty: childIds.length === 0,
+          children,
+        });
+      }
+      return (
+        <div className={slotOptions?.className} style={slotOptions?.style}>
+          {children}
+        </div>
+      );
+    };
     const panel = slotPath.match(PANEL_SLOT);
     if (panel) {
       const [, arrayKey, index, key] = panel;
@@ -80,7 +112,9 @@ export function renderNode(
   if (!node) return null;
   const Component = options.components[node.type];
   if (!Component) return null;
-  return <Component key={id} {...buildProps(node, doc, options)} />;
+  const element = <Component key={id} {...buildProps(node, doc, options)} />;
+  if (!options.wrapNode) return element;
+  return <Fragment key={id}>{options.wrapNode(node, element)}</Fragment>;
 }
 
 /** Renders a list of sibling nodes, for example a global block body. */
@@ -100,5 +134,12 @@ export function renderDocument(
   doc: BuilderDocument,
   options: RenderOptions
 ): ReactNode {
-  return renderNodes(doc, doc.rootSlot, options);
+  const children = renderNodes(doc, doc.rootSlot, options);
+  if (!options.renderSlot) return children;
+  return options.renderSlot({
+    parentId: null,
+    slot: ROOT_SLOT,
+    empty: doc.rootSlot.length === 0,
+    children,
+  });
 }

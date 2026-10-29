@@ -12,6 +12,7 @@ WORKDIR /app
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* pnpm-workspace.yaml* .npmrc* ./
 # Workspace package manifests, so pnpm can link them before the source is copied
 COPY packages/builder-core/package.json ./packages/builder-core/
+COPY packages/builder-react/package.json ./packages/builder-react/
 COPY ./assets /app/assets
 RUN npm install pnpm -g && pnpm i --frozen-lockfile
 

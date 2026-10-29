@@ -95,42 +95,46 @@ function resolvePanels(
   };
 }
 
+/** CMS prop changes per block: the current post for post blocks, panels for panel blocks. */
+export function cmsTransformProps(
+  metadata: RenderMetadata,
+  kind: RenderKind
+): NonNullable<RenderOptions['transformProps']> {
+  const post = (metadata.post as PostView | undefined) ?? SAMPLE_POST;
+  return (node, props) =>
+    kind === 'post' && node.type in POST_BLOCKS
+      ? { ...props, post }
+      : resolvePanels(node, props);
+}
+
 function renderOptions(
   metadata: RenderMetadata,
   kind: RenderKind
 ): RenderOptions {
-  const post = (metadata.post as PostView | undefined) ?? SAMPLE_POST;
   return {
     components: rendererComponents(kind),
     editing: !!metadata.editing,
-    transformProps: (node, props) =>
-      kind === 'post' && node.type in POST_BLOCKS
-        ? { ...props, post }
-        : resolvePanels(node, props),
+    transformProps: cmsTransformProps(metadata, kind),
   };
 }
 
-/**
- * Render a full BuilderDocument for the public site or preview.
- * Safe to use as a React Server Component entry (blocks that are client
- * components keep their "use client" boundary).
- */
-export function BuilderRenderer({
-  document: doc,
-  metadata = {},
-  kind = 'page',
-}: {
-  document: BuilderDocument;
-  metadata?: RenderMetadata;
-  kind?: RenderKind;
-}): ReactNode {
-  const rootProps = (doc.root?.props ?? {}) as {
-    maxWidth?: string;
-    theme?: string;
-    paddingY?: string;
-    pageTransition?: string;
-  };
+type RootProps = {
+  maxWidth?: string;
+  theme?: string;
+  paddingY?: string;
+  pageTransition?: string;
+};
 
+/** The site root around page content: theme tokens, fonts, width, and page transition. */
+export function SiteRoot({
+  rootProps,
+  metadata = {},
+  children,
+}: {
+  rootProps: RootProps;
+  metadata?: RenderMetadata;
+  children: ReactNode;
+}): ReactNode {
   const tokens = resolveThemeTokens(metadata.themeTokens as never);
   const mode =
     rootProps.theme === 'light' || rootProps.theme === 'dark'
@@ -169,9 +173,30 @@ export function BuilderRenderer({
         preview={!!metadata.motionPreview}
         transition={rootProps.pageTransition}
       >
-        {renderDocument(doc, renderOptions(metadata, kind))}
+        {children}
       </MotionScope>
     </div>
+  );
+}
+
+/**
+ * Render a full BuilderDocument for the public site or preview.
+ * Safe to use as a React Server Component entry (blocks that are client
+ * components keep their "use client" boundary).
+ */
+export function BuilderRenderer({
+  document: doc,
+  metadata = {},
+  kind = 'page',
+}: {
+  document: BuilderDocument;
+  metadata?: RenderMetadata;
+  kind?: RenderKind;
+}): ReactNode {
+  return (
+    <SiteRoot rootProps={(doc.root?.props ?? {}) as RootProps} metadata={metadata}>
+      {renderDocument(doc, renderOptions(metadata, kind))}
+    </SiteRoot>
   );
 }
 

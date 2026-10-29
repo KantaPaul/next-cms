@@ -14,6 +14,8 @@ export const PAGES = {
       INDEX: '/dashboard/pages',
       EDIT: (id: string) => `/dashboard/pages/${id}/edit`,
       BUILDER: (id: string) => `/dashboard/pages/${id}/builder`,
+      /** Preview of the new editor (B3); replaces BUILDER after Gate 35. */
+      EDITOR: (id: string) => `/dashboard/pages/${id}/editor`,
     },
     POSTS: {
       INDEX: '/dashboard/posts',
