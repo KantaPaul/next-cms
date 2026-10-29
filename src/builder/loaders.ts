@@ -9,17 +9,14 @@
  * and the underlying queries use React `cache` / Next cache tags (DAT-12/16).
  */
 
-import { getGlobalBlockContent } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
-import { queryVideos } from '@/app/(admin)/dashboard/(shell)/videos/_modules/videos.actions';
 import type { VideoLibraryVideoItem } from '@/components/video/video-library';
-import {
-  getBlogFilterOptions,
-  getRelatedPosts,
-  queryBlogPosts,
-} from '@/server/actions/blog.actions';
 import type { BlogActiveFilters, BlogPostsProps } from './blocks/blog';
 import type { BuilderDocument, NodeId } from './document';
-import { SAMPLE_POST, type PostView } from './post-template';
+import type { PostView } from './post-template';
+
+// Server actions are imported inside each loader, so importing this module
+// (registry, tests, the future builder-core package) never loads the app's
+// database or server-only code.
 
 /* ---------- context ---------- */
 
@@ -76,6 +73,9 @@ const loadBlogPosts: BlockLoader = async (props, ctx) => {
   const language =
     typeof ctx.language === 'string' ? ctx.language : undefined;
 
+  const { getBlogFilterOptions, queryBlogPosts } = await import(
+    '@/server/actions/blog.actions'
+  );
   const [result, options] = await Promise.all([
     queryBlogPosts({
       language,
@@ -99,6 +99,10 @@ const loadBlogPosts: BlockLoader = async (props, ctx) => {
 };
 
 const loadRelatedPosts: BlockLoader = async (props, ctx) => {
+  const [{ getRelatedPosts }, { SAMPLE_POST }] = await Promise.all([
+    import('@/server/actions/blog.actions'),
+    import('./post-template'),
+  ]);
   const post = (ctx.post as PostView | undefined) ?? SAMPLE_POST;
   const limit = Number(props.limit) || 3;
   const posts = await getRelatedPosts({
@@ -114,6 +118,9 @@ const loadGlobalRef: BlockLoader = async props => {
   const id =
     typeof props.globalBlockId === 'string' ? props.globalBlockId : '';
   if (!id) return { blocks: [], globalBlockName: '' };
+  const { getGlobalBlockContent } = await import(
+    '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions'
+  );
   const result = await getGlobalBlockContent(id);
   return {
     blocks: result?.blocks ?? [],
@@ -128,6 +135,9 @@ const loadVideoLibrary: BlockLoader = async props => {
       : null;
   const pageSize =
     typeof props.pageSize === 'number' ? props.pageSize : undefined;
+  const { queryVideos } = await import(
+    '@/app/(admin)/dashboard/(shell)/videos/_modules/videos.actions'
+  );
   const result = await queryVideos({ playlistId, pageSize });
   return {
     videos: result.videos as VideoLibraryVideoItem[],

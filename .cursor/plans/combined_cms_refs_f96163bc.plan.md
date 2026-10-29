@@ -1,6 +1,6 @@
 ---
 name: Combined CMS refs
-overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, full-site production optimization, commercial launch readiness, international website-builder market-gap audit, Elementor-style nested container/Flexbox/CSS Grid, dynamic content, global design styles, conditional display, and an ecommerce store builder. Numbered implementation steps R001–R795 include builder tasks, React-first differentiators, multisite reliability, market-gap builder features, docs sites, agency, local business, portfolio, and video library site packs, builder listing and search pages, ecommerce product, shop, cart, and checkout templates, site slug routing, container layout market gaps, a custom builder engine to replace Puck, a modern editor experience, builder data saving and fetching performance, a standalone builder package, a block extension API, and approval gates. Name a numbered step to implement only that piece.
+overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, full-site production optimization, commercial launch readiness, international website-builder market-gap audit, Elementor-style nested container/Flexbox/CSS Grid, dynamic content, global design styles, conditional display, and an ecommerce store builder. Numbered implementation steps R001–R812 include builder tasks, React-first differentiators, multisite reliability, market-gap builder features, docs sites, agency, local business, portfolio, and video library site packs, builder listing and search pages, ecommerce product, shop, cart, and checkout templates, site slug routing, container layout market gaps, a custom builder engine to replace Puck, a modern editor experience, builder data saving and fetching performance, a standalone builder package, a block extension API, builder rewrite robustness, and approval gates. Name a numbered step to implement only that piece.
 todos:
   - id: R001
     content: "P1-01 Register Slider, Tabs, and Accordion as builderConfig component keys"
@@ -2041,22 +2041,22 @@ todos:
     status: pending
   - id: R680
     content: "ENG-01 Record every Puck problem the team hits, each with repro steps, the page or block it breaks, and whether a Puck upgrade or setting already fixes it"
-    status: pending
+    status: in_progress
   - id: R681
     content: "ENG-02 Inventory every Puck API, override, field type, and route in use (20 files, including Puck, Render, resolveAllData, createUsePuck, useGetPuck, slots, overrides, viewports) and map each to its replacement"
-    status: pending
+    status: completed
   - id: R682
     content: "ENG-03 Define the versioned page document format: a node map keyed by id, named child slots per node, root props, and per-device prop values that match Responsive<T> in src/builder/style.ts"
-    status: pending
+    status: completed
   - id: R683
     content: "ENG-04 Two-way converter between Puck Data (content, zones, slot props) and the new format, with round-trip tests on every seeded and stored page, post, template, and global block"
-    status: pending
+    status: completed
   - id: R684
     content: "ENG-05 Server renderer that renders a document with the existing block components and no Puck, as React Server Components where a block allows it"
-    status: pending
+    status: completed
   - id: R685
     content: "ENG-06 Server data loaders per block (blog posts, global refs, contact forms, query loops) replacing resolveAllData, scoped to the site and cache-safe"
-    status: pending
+    status: completed
   - id: R686
     content: "ENG-07 Switch the public site, preview, /api/v1 pages and posts, and export to the new renderer behind a flag, with a screenshot diff against Puck Render on every seeded page"
     status: pending
@@ -2387,10 +2387,61 @@ todos:
   - id: R795
     content: "EXT-23 Gate 40 approval: a developer new to the project builds a custom block, extends a built-in block, and adds a trait using only the docs, and the CMS blocks themselves use this API"
     status: pending
+  - id: R796
+    content: "ROB-01 Non-goals document for the whole builder rewrite: full OT/CRDT co-editing, native mobile editor, non-React hosts, visual page builder for non-developers, and headless-only usage without the React editor stay out of scope for Gates 34–41"
+    status: completed
+  - id: R797
+    content: "ROB-02 Editor error surfaces: what the user sees when a block loader fails, schema validation fails on load, a global block is missing, or the document is corrupt; include quarantine mode, open-as-read-only, and guided repair"
+    status: pending
+  - id: R798
+    content: "ROB-03 Network and API error UX while editing: retry, offline banner, conflict compare, and never lose the local command log"
+    status: pending
+  - id: R799
+    content: "ROB-04 Telemetry for the rewrite: editor error reporting, feature-flag usage (Puck vs new engine per site), save success and conflict rates, and Core Web Vitals impact after migration"
+    status: pending
+  - id: R800
+    content: "ROB-05 Permissions model: field-level and block-level permissions enforced in the command layer and UI, role-based insert/delete/publish restrictions, and how the permissions adapter (PKG-05) constrains actions"
+    status: pending
+  - id: R801
+    content: "ROB-06 Editor i18n: localize chrome, command palette, empty states, onboarding, and error messages; wire the RTL preference (R733) to real layout direction and test with at least one RTL locale"
+    status: pending
+  - id: R802
+    content: "ROB-07 Visual regression suite on the canvas that runs on every PR, plus contract tests for every adapter (storage, media, data sources, permissions, AI, comments)"
+    status: pending
+  - id: R803
+    content: "ROB-08 Property-based and fuzz tests on the converter, command layer, nesting rules, and responsive inheritance"
+    status: pending
+  - id: R804
+    content: "ROB-09 Dual-engine operational playbook: expected dual-mode duration, criteria to flip a site permanently, rollback after publish, monitoring, and a kill-switch if the new renderer produces bad public pages"
+    status: pending
+  - id: R805
+    content: "ROB-10 Security of the document format and extension surface: XSS surface in rich text and custom fields, size and DoS limits, and sandboxing expectations for untrusted custom blocks"
+    status: pending
+  - id: R806
+    content: "ROB-11 Large-document handling beyond the 500-block budget: progressive node-tree loading, virtualized layers panel, and deferred field editors"
+    status: pending
+  - id: R807
+    content: "ROB-12 Accessibility specifics for multi-select, smart guides, floating toolbar, and marquee selection (keyboard and screen-reader paths)"
+    status: pending
+  - id: R808
+    content: "ROB-13 Estimate and track migration cost for other plans that currently assume Puck (MKT, QRY, container/flex/grid, market-gap shortcuts)"
+    status: completed
+  - id: R809
+    content: "ROB-14 Minimum-viable packages first: land PKG-01–03 and a thin public surface before ENG work, then expand packages; avoid rewriting ENG code twice"
+    status: pending
+  - id: R810
+    content: "ROB-15 Dual-engine test matrix: both engines reading and writing the same pages, converter round-trips under concurrent edits, and screenshot + HTML/prop diffs"
+    status: pending
+  - id: R811
+    content: "ROB-16 Document recovery drills: restore from backup, rebuild a revision from patches, and open a partially migrated document safely"
+    status: pending
+  - id: R812
+    content: "ROB-17 Gate 41 approval: non-goals published, error recovery and telemetry live, permissions and i18n verified, dual-engine playbook rehearsed, security review passed, and large-document + a11y tests green"
+    status: pending
 isProject: false
 ---
 
-# Combined refs R001–R795
+# Combined refs R001–R812
 
 Say **implement R042** (or the original id, such as **P2-14**, **L3-01**, **A2-01**, **O1-01**, or **M2-01**). That ref is the whole task. Do not continue to the next ref unless you ask.
 
@@ -4720,3 +4771,31 @@ Build R773–R776 with ENG-18 (block definition API), R777–R782 and R783–R78
 PKG-04, PKG-06, PKG-07 (public API, custom blocks, plugins), RFB-02, RFB-04, RFB-06 (component adapter contract), BLD-22 and BLD-27 to BLD-31 (dynamic values and tokens, used by dynamic() and token()), BLD-33 (conditional fields), MKT-04 (allowlisted classes), DAT-16 (batched loaders).
 
 <!-- END: builder-extension-api -->
+
+---
+
+# Builder rewrite robustness R796–R812
+
+<!-- BEGIN: builder-robustness -->
+
+Also tracked in [custom_builder_engine_refs.plan.md](custom_builder_engine_refs.plan.md), which also has the implementation batches (B0–B14) for R680–R812.
+
+- **R796 (ROB-01):** Non-goals document for the whole builder rewrite: full OT/CRDT co-editing, native mobile editor, non-React hosts, visual page builder for non-developers, and headless-only usage without the React editor stay out of scope for Gates 34–41.
+- **R797 (ROB-02):** Editor error surfaces: what the user sees when a block loader fails, schema validation fails on load, a global block is missing, or the document is corrupt; include quarantine mode, open-as-read-only, and guided repair.
+- **R798 (ROB-03):** Network and API error UX while editing: retry, offline banner, conflict compare, and never lose the local command log.
+- **R799 (ROB-04):** Telemetry for the rewrite: editor error reporting, feature-flag usage (Puck vs new engine per site), save success and conflict rates, and Core Web Vitals impact after migration.
+- **R800 (ROB-05):** Permissions model: field-level and block-level permissions enforced in the command layer and UI, role-based insert/delete/publish restrictions, and how the permissions adapter (PKG-05) constrains actions.
+- **R801 (ROB-06):** Editor i18n: localize chrome, command palette, empty states, onboarding, and error messages; wire the RTL preference (R733) to real layout direction and test with at least one RTL locale.
+- **R802 (ROB-07):** Visual regression suite on the canvas that runs on every PR, plus contract tests for every adapter (storage, media, data sources, permissions, AI, comments).
+- **R803 (ROB-08):** Property-based and fuzz tests on the converter, command layer, nesting rules, and responsive inheritance.
+- **R804 (ROB-09):** Dual-engine operational playbook: expected dual-mode duration, criteria to flip a site permanently, rollback after publish, monitoring, and a kill-switch if the new renderer produces bad public pages.
+- **R805 (ROB-10):** Security of the document format and extension surface: XSS surface in rich text and custom fields, size and DoS limits, and sandboxing expectations for untrusted custom blocks.
+- **R806 (ROB-11):** Large-document handling beyond the 500-block budget: progressive node-tree loading, virtualized layers panel, and deferred field editors.
+- **R807 (ROB-12):** Accessibility specifics for multi-select, smart guides, floating toolbar, and marquee selection (keyboard and screen-reader paths).
+- **R808 (ROB-13):** Estimate and track migration cost for other plans that currently assume Puck (MKT, QRY, container/flex/grid, market-gap shortcuts).
+- **R809 (ROB-14):** Minimum-viable packages first: land PKG-01–03 and a thin public surface before ENG work, then expand packages; avoid rewriting ENG code twice.
+- **R810 (ROB-15):** Dual-engine test matrix: both engines reading and writing the same pages, converter round-trips under concurrent edits, and screenshot + HTML/prop diffs.
+- **R811 (ROB-16):** Document recovery drills: restore from backup, rebuild a revision from patches, and open a partially migrated document safely.
+- **R812 (ROB-17):** Gate 41 approval: non-goals published, error recovery and telemetry live, permissions and i18n verified, dual-engine playbook rehearsed, security review passed, and large-document + a11y tests green.
+
+<!-- END: builder-robustness -->

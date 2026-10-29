@@ -156,7 +156,7 @@ describe('documentToPuck', () => {
   it('round-trips Container zones',
     () => {
       const doc = puckToDocument(containerPage);
-      const back = documentToPuck(doc);
+      const back = documentToPuck(doc, { slots: 'zones' });
       assert.ok(puckDataEqual(containerPage, back));
       assert.deepEqual(
         back.zones?.['ctr-1:content']?.map(i => i.props.id),
@@ -166,8 +166,9 @@ describe('documentToPuck', () => {
 
   it('round-trips Columns and Tabs',
     () => {
-      assert.ok(puckDataEqual(columnsPage, documentToPuck(puckToDocument(columnsPage))));
-      assert.ok(puckDataEqual(tabsPage, documentToPuck(puckToDocument(tabsPage))));
+      const zones = { slots: 'zones' } as const;
+      assert.ok(puckDataEqual(columnsPage, documentToPuck(puckToDocument(columnsPage), zones)));
+      assert.ok(puckDataEqual(tabsPage, documentToPuck(puckToDocument(tabsPage), zones)));
     });
 
   it('document → puck → document preserves the node map',

@@ -159,10 +159,23 @@ export function puckToDocument(data: BuilderData): BuilderDocument {
   };
 }
 
+export type DocumentToPuckOptions = {
+  /**
+   * Where slot children go. `inline` (default) writes them into props at the
+   * slot path, which is how Puck 0.20 `slot` fields store them. `zones` writes
+   * `{id}:{slotPath}` zone entries, for data saved with the older DropZone API.
+   */
+  slots?: 'inline' | 'zones';
+};
+
 /**
  * Convert BuilderDocument → Puck BuilderData.
  */
-export function documentToPuck(doc: BuilderDocument): BuilderData {
+export function documentToPuck(
+  doc: BuilderDocument,
+  options: DocumentToPuckOptions = {}
+): BuilderData {
+  const useZones = options.slots === 'zones';
   const zones: Record<string, BuilderItem[]> = {};
 
   function nodeToItem(id: NodeId): BuilderItem | null {
@@ -174,28 +187,29 @@ export function documentToPuck(doc: BuilderDocument): BuilderData {
       id: node.id,
     };
 
-    // Rebuild zones and optionally re-embed empty slot placeholders for Puck
     for (const [slotPath, childIds] of Object.entries(node.slots)) {
       const children = childIds
         .map(cid => nodeToItem(cid))
         .filter((c): c is BuilderItem => c !== null);
 
-      const zoneKey = `${node.id}:${slotPath}`;
-      zones[zoneKey] = children;
+      if (useZones) zones[`${node.id}:${slotPath}`] = children;
 
-      // For simple slots, leave props without the array (Puck reads zones).
-      // For array panel paths items[i].content, ensure the parent array item exists.
+      // Array panel paths items[i].content: make sure the parent item exists,
+      // and put the children on it when slots are stored inline.
       const match = slotPath.match(/^(\w+)\[(\d+)\]\.(\w+)$/);
       if (match) {
-        const [, arrayKey, indexStr] = match;
+        const [, arrayKey, indexStr, slotKey] = match;
         const idx = Number(indexStr);
-        let arr = props[arrayKey];
-        if (!Array.isArray(arr)) arr = [];
-        const copy = [...arr] as Record<string, unknown>[];
+        const existing = props[arrayKey];
+        const copy: Record<string, unknown>[] = Array.isArray(existing)
+          ? [...existing]
+          : [];
         while (copy.length <= idx) copy.push({});
-        // Keep label/title/etc.; do not embed children in props (they live in zones)
         if (!copy[idx] || typeof copy[idx] !== 'object') copy[idx] = {};
+        if (!useZones) copy[idx] = { ...copy[idx], [slotKey]: children };
         props[arrayKey] = copy;
+      } else if (!useZones) {
+        props[slotPath] = children;
       }
     }
 
