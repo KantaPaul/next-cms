@@ -8,6 +8,7 @@ import {
   EditorCanvas,
   EditorProvider,
   Inspector,
+  LayersPanel,
   SHORTCUTS,
   useDragController,
   useEditor,
@@ -18,6 +19,7 @@ import { ArrowLeft, Redo2, Undo2 } from 'lucide-react';
 import Link from 'next/link';
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
 import { EditorBridgeProvider } from '@/builder/controls/editor-bridge';
+import { cmsInlineProps, cmsResizeHandles } from '@/builder/editor-handles';
 import {
   pageBlockGroups,
   pageInspectorBlocks,
@@ -118,6 +120,7 @@ export function NewEditor({ page, document, loaded, themeTokens }: Props) {
   );
   const drag = useDragController(store);
   const [frameWindow, setFrameWindow] = useState<Window | null>(null);
+  const [panel, setPanel] = useState<'blocks' | 'layers'>('blocks');
   useEditorKeyboard(store, [
     typeof window === 'undefined' ? null : window,
     frameWindow,
@@ -155,7 +158,25 @@ export function NewEditor({ page, document, loaded, themeTokens }: Props) {
         </header>
         <div className="flex min-h-0 flex-1">
           <aside className="w-60 shrink-0 overflow-y-auto border-r border-steel-200 bg-white p-3 dark:border-dark-300 dark:bg-dark-100">
-            <BlockList groups={pageBlockGroups} drag={drag} />
+            <div role="tablist" aria-label="Left panel" className="mb-3 grid grid-cols-2 gap-1 rounded-md bg-steel-100 p-1 dark:bg-dark-200">
+              {(['blocks', 'layers'] as const).map(tab => (
+                <button
+                  key={tab}
+                  type="button"
+                  role="tab"
+                  aria-selected={panel === tab}
+                  onClick={() => setPanel(tab)}
+                  className={`rounded px-2 py-1 text-xs font-medium capitalize ${panel === tab ? 'bg-white shadow-sm dark:bg-dark-100' : 'text-steel-500'}`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+            {panel === 'blocks' ? (
+              <BlockList groups={pageBlockGroups} drag={drag} />
+            ) : (
+              <LayersPanel />
+            )}
             <details className="mt-6 text-xs text-steel-500">
               <summary className="cursor-pointer font-medium">Keyboard shortcuts</summary>
               <dl className="mt-2 grid grid-cols-[1fr_auto] gap-x-2 gap-y-1">
@@ -176,6 +197,8 @@ export function NewEditor({ page, document, loaded, themeTokens }: Props) {
               loaded={loaded}
               renderRoot={renderRoot}
               onFrame={onFrame}
+              resizeHandles={cmsResizeHandles}
+              inlineProps={cmsInlineProps}
             />
           </main>
           <aside

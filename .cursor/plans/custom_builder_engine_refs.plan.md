@@ -40,7 +40,7 @@ todos:
     status: completed
   - id: R692
     content: "ENG-13 Layers panel on the new tree with drag reorder, expand and collapse, rename, hide, and lock"
-    status: pending
+    status: completed
   - id: R693
     content: "ENG-14 Inspector with a field registry (text, textarea, select, number, url, color, image, icon, rich text, list, object, custom) reusing the controls in src/builder/controls and src/builder/fields, plus conditional fields"
     status: completed
@@ -49,10 +49,10 @@ todos:
     status: completed
   - id: R695
     content: "ENG-16 Canvas resize handles for container width, spacing, and flex or grid tracks, each drag committing one undoable command, with numeric input as the keyboard alternative"
-    status: pending
+    status: in_progress
   - id: R696
     content: "ENG-17 Inline text editing on the canvas for headings, buttons, and rich text using the project's Tiptap setup"
-    status: pending
+    status: in_progress
   - id: R697
     content: "ENG-18 Block definition API: one definition per block with type, label, category, icon, fields, defaults, slots, allowed children, loader, and render; port every block now in src/builder/config.tsx"
     status: in_progress
@@ -438,6 +438,11 @@ Updated 2026-10-29 after batch B0. Details in [builder_engine_b0_audit.md](build
   - The app's `src/builder/renderer.tsx` and `loaders.ts` now sit on the core and keep only CMS parts: block registry, site root, panels, and the four CMS loaders.
   - A Biome rule fails any `@/` app import inside `packages/`.
   - Left for R756: `builder-react`, `builder-blocks`, and `builder-next` are created with their code in B3, B4, and B11. Left for R757: blocks and controls still import app UI and move behind adapters in B4.
+- **B5 (2026-10-29): R692 completed; R695 and R696 in progress.**
+  - Layers panel: tree with slot headings, select, hover highlight, rename (double-click or F2), hide on the canvas, lock, and drag to reorder or move into a slot. Rename, hide, and lock are node `meta`, kept in Puck data as `__editor` and never passed to blocks (stripped in the Puck render adapters too). Drag uses pointer events like the canvas instead of dnd-kit, so one drag model covers both.
+  - Resize handles: CMS handles for section width (%), bottom spacing (px, pins desktop first because spacing applies only with a desktop value), and Spacer height; a drag is one undo step, Escape cancels, arrow keys are the keyboard alternative. The desktop canvas is never narrower than 1024px, so media queries match the device being edited.
+  - Inline text: double-click text on the canvas to edit the prop it shows (Enter saves, Escape cancels); the block re-mounts afterwards.
+  - Left for R695: flex and grid track handles for Container. Left for R696: rich text with the Tiptap toolbar (plain text props only today).
 - **B4 (2026-10-29): R693, R694, R773–R776, R783 completed; R697 and R784 in progress.**
   - builder-core: `defineBlock` with Zod inference, `slot()`, defaults from the schema or a context function, fields generated from Zod types, `validateProps`, field definitions (list, object, groups, `when`, computed), and per-device value helpers.
   - builder-react: inspector with a field registry (`defineField`; Puck-style custom fields plug in), device switch that resizes the canvas, per-device fields with inherit and reset.

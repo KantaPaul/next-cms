@@ -183,3 +183,24 @@ describe('block schemas', () => {
     );
   });
 });
+
+describe('node meta', () => {
+  it('survives a Puck round trip and stays out of props', async () => {
+    const { documentToPuck, puckToDocument } = await import('../converter');
+    const { updateMeta } = await import('../commands');
+    const named = updateMeta(doc, 'a', { name: 'Intro', locked: true });
+    assert.deepEqual(named.nodes.a.meta, { name: 'Intro', locked: true });
+    const puck = documentToPuck(named);
+    assert.deepEqual(puck.content[0].props.__editor, { name: 'Intro', locked: true });
+    const back = puckToDocument(puck);
+    const first = back.nodes[back.rootSlot[0]];
+    assert.deepEqual(first.meta, { name: 'Intro', locked: true });
+    assert.equal(first.props.__editor, undefined);
+  });
+
+  it('drops empty values', async () => {
+    const { updateMeta } = await import('../commands');
+    const named = updateMeta(doc, 'a', { name: 'Intro' });
+    assert.equal(updateMeta(named, 'a', { name: '' }).nodes.a.meta, undefined);
+  });
+});

@@ -28,6 +28,8 @@ import type { DragController } from './drag';
 import { useDragState } from './drag';
 import type { Rect } from './drop';
 import { CanvasFrame } from './frame';
+import { type InlinePropsFor, useInlineEditing } from './inline';
+import { ResizeHandles, type ResizeHandlesFor } from './resize';
 
 const ACCENT = '#4f46e5';
 
@@ -37,6 +39,12 @@ export const DEVICE_WIDTHS: Record<Device, number | null> = {
   tablet: 768,
   mobile: 375,
 };
+
+/**
+ * Desktop never renders narrower than the desktop breakpoint, so the page's
+ * media queries match the device being edited; small windows scroll instead.
+ */
+export const DESKTOP_MIN_WIDTH = 1024;
 
 export type EditorCanvasProps = {
   components: BlockComponents;
@@ -51,6 +59,10 @@ export type EditorCanvasProps = {
   onFrame?: (frame: HTMLIFrameElement) => void;
   /** Overrides canvas widths per device. */
   deviceWidths?: Partial<Record<Device, number | null>>;
+  /** Resize handles for a block (R695). */
+  resizeHandles?: ResizeHandlesFor;
+  /** Props of a block type that can be edited as text on the canvas (R696). */
+  inlineProps?: InlinePropsFor;
   style?: CSSProperties;
 };
 
@@ -90,21 +102,27 @@ function renderSlot({ parentId, slot, className, style, empty, children }: SlotR
   );
 }
 
-function wrapNode(node: BuilderNode, element: ReactNode) {
-  return (
-    <div {...{ [NODE_ATTR]: node.id }} style={{ display: 'contents' }}>
-      {element}
-    </div>
-  );
-}
-
 function CanvasDocument({
   components,
   transformProps,
   loaded,
   renderRoot,
-}: Pick<EditorCanvasProps, 'components' | 'transformProps' | 'loaded' | 'renderRoot'>) {
+  remount,
+}: Pick<EditorCanvasProps, 'components' | 'transformProps' | 'loaded' | 'renderRoot'> & {
+  /** Bumped per block after inline editing, so its DOM is rebuilt by React. */
+  remount: Record<NodeId, number>;
+}) {
   const doc = useEditor(state => state.doc);
+  // Hidden blocks are hidden on the canvas only; the wrapper adds no box.
+  const wrapNode = (node: BuilderNode, element: ReactNode) => (
+    <div
+      key={remount[node.id] ?? 0}
+      {...{ [NODE_ATTR]: node.id }}
+      style={{ display: node.meta?.hidden ? 'none' : 'contents' }}
+    >
+      {element}
+    </div>
+  );
   const content = renderDocument(doc, {
     components,
     editing: true,
@@ -171,15 +189,22 @@ const buttonStyle: CSSProperties = {
 function Toolbar({ id, rect, drag }: { id: NodeId; rect: Rect; drag: DragController }) {
   const store = useEditorStore();
   const type = useEditor(state => state.doc.nodes[id]?.type);
-  const label = (type && store.schemas[type]?.label) ?? type;
+  const name = useEditor(state => state.doc.nodes[id]?.meta?.name);
+  const locked = useEditor(state => !!state.doc.nodes[id]?.meta?.locked);
+  const label = name || ((type && store.schemas[type]?.label) ?? type);
   const above = rect.top >= 30;
-  const actions: [string, string, () => void][] = [
-    ['Select parent', '↖', () => store.selectParent()],
-    ['Move up', '▲', () => store.nudge(id, -1)],
-    ['Move down', '▼', () => store.nudge(id, 1)],
-    ['Duplicate', '⧉', () => store.duplicate([id])],
-    ['Delete', '✕', () => store.remove([id])],
-  ];
+  const actions: [string, string, () => void][] = locked
+    ? [
+        ['Select parent', '↖', () => store.selectParent()],
+        ['Unlock', '🔒', () => store.updateMeta(id, { locked: false })],
+      ]
+    : [
+        ['Select parent', '↖', () => store.selectParent()],
+        ['Move up', '▲', () => store.nudge(id, -1)],
+        ['Move down', '▼', () => store.nudge(id, 1)],
+        ['Duplicate', '⧉', () => store.duplicate([id])],
+        ['Delete', '✕', () => store.remove([id])],
+      ];
   return (
     <div
       role="toolbar"
@@ -199,15 +224,17 @@ function Toolbar({ id, rect, drag }: { id: NodeId; rect: Rect; drag: DragControl
         zIndex: 2,
       }}
     >
-      <button
-        type="button"
-        aria-label={`Drag ${label}`}
-        title="Drag to move"
-        style={{ ...buttonStyle, cursor: 'grab' }}
-        onPointerDown={event => drag.start({ kind: 'move', id }, event)}
-      >
-        ⠿
-      </button>
+      {!locked && (
+        <button
+          type="button"
+          aria-label={`Drag ${label}`}
+          title="Drag to move"
+          style={{ ...buttonStyle, cursor: 'grab' }}
+          onPointerDown={event => drag.start({ kind: 'move', id }, event)}
+        >
+          ⠿
+        </button>
+      )}
       <span style={{ color: '#fff', font: '600 12px/1 system-ui, sans-serif', padding: '0 6px' }}>
         {label}
       </span>
@@ -220,7 +247,15 @@ function Toolbar({ id, rect, drag }: { id: NodeId; rect: Rect; drag: DragControl
   );
 }
 
-function CanvasOverlay({ frame, drag }: { frame: HTMLIFrameElement; drag: DragController }) {
+function CanvasOverlay({
+  frame,
+  drag,
+  resizeHandles,
+}: {
+  frame: HTMLIFrameElement;
+  drag: DragController;
+  resizeHandles?: ResizeHandlesFor;
+}) {
   const doc = useEditor(state => state.doc);
   const selection = useEditor(state => state.selection);
   const hovered = useEditor(state => state.hovered);
@@ -254,6 +289,9 @@ function CanvasOverlay({ frame, drag }: { frame: HTMLIFrameElement; drag: DragCo
         <div key={id} style={box(rect, { border: `2px solid ${ACCENT}` })} />
       ))}
       {primary && !dragState.active && <Toolbar id={primary[0]} rect={primary[1]} drag={drag} />}
+      {primary && !dragState.active && resizeHandles && rects.selected.length === 1 && (
+        <ResizeHandles id={primary[0]} rect={primary[1]} frame={frame} handlesFor={resizeHandles} />
+      )}
       {dragState.active && dragState.target && (
         <>
           <div style={box(dragState.target.slot, { background: `${ACCENT}0f`, border: `1px solid ${ACCENT}55` })} />
@@ -273,9 +311,12 @@ export function EditorCanvas({
   renderRoot,
   onFrame,
   deviceWidths,
+  resizeHandles,
+  inlineProps,
   style,
 }: EditorCanvasProps) {
   const store = useEditorStore();
+  const [remount, setRemount] = useState<Record<NodeId, number>>({});
   const dragState = useDragState(drag);
   const device = useEditor(state => state.device);
   const width = { ...DEVICE_WIDTHS, ...deviceWidths }[device];
@@ -290,6 +331,12 @@ export function EditorCanvas({
     [drag, onFrame]
   );
 
+  const onInlineDone = useCallback(
+    (id: NodeId) => setRemount(current => ({ ...current, [id]: (current[id] ?? 0) + 1 })),
+    []
+  );
+  useInlineEditing({ frame, store, inlineProps, onDone: onInlineDone });
+
   useEffect(() => {
     const doc = frame?.contentDocument;
     if (!doc) return;
@@ -300,7 +347,14 @@ export function EditorCanvas({
       if ((event.target as Element | null)?.closest?.('a, button, [role="button"]')) {
         event.preventDefault();
       }
-      store.select(nodeAt(event.target), { additive: event.shiftKey || event.metaKey });
+      // A locked block is not selectable on the canvas; its nearest unlocked parent is.
+      let element = (event.target as Element | null)?.closest?.(`[${NODE_ATTR}]`) ?? null;
+      while (element && store.isLocked(element.getAttribute(NODE_ATTR) ?? '')) {
+        element = element.parentElement?.closest(`[${NODE_ATTR}]`) ?? null;
+      }
+      store.select(element?.getAttribute(NODE_ATTR) ?? null, {
+        additive: event.shiftKey || event.metaKey,
+      });
     };
     let pending = 0;
     const onMove = (event: PointerEvent) => {
@@ -339,6 +393,7 @@ export function EditorCanvas({
         style={{
           position: 'relative',
           flex: width ? `0 0 ${width}px` : '1 1 auto',
+          minWidth: width ? undefined : DESKTOP_MIN_WIDTH,
           height: '100%',
           boxShadow: width ? '0 0 0 1px rgba(127,127,127,.25), 0 8px 24px rgba(0,0,0,.08)' : undefined,
           transition: 'flex-basis .2s ease',
@@ -350,9 +405,10 @@ export function EditorCanvas({
             transformProps={transformProps}
             loaded={loaded}
             renderRoot={renderRoot}
+            remount={remount}
           />
         </CanvasFrame>
-        {frame && <CanvasOverlay frame={frame} drag={drag} />}
+        {frame && <CanvasOverlay frame={frame} drag={drag} resizeHandles={resizeHandles} />}
       </div>
       {dragState.active && (
         <div

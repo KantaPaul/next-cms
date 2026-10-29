@@ -154,3 +154,43 @@ describe('drop geometry', () => {
     assert.equal(autoScrollSpeed(9999, 500), autoScrollSpeed(500, 500));
   });
 });
+
+describe('live edits, rename, hide, lock', () => {
+  it('records a drag as one undo step, and cancel restores', () => {
+    const store = setup();
+    store.updatePropsLive('a', { text: '1' });
+    store.updatePropsLive('a', { text: '12' });
+    assert.equal(store.getState().history.past.length, 0, 'nothing recorded while dragging');
+    assert.ok(store.commitLive('Resize'));
+    assert.equal(store.getState().history.past.length, 1);
+    store.updatePropsLive('a', { text: 'x' });
+    store.commitLive('Resize', { cancel: true });
+    assert.equal(store.getState().doc.nodes.a.props.text, '12');
+  });
+
+  it('locked blocks cannot be moved or deleted', () => {
+    const store = setup();
+    store.updateMeta('a', { locked: true, name: 'Intro' });
+    assert.ok(store.isLocked('a'));
+    assert.equal(store.move('a', { parentId: null, slot: 'root', index: 2 }), false);
+    store.select('a');
+    store.remove();
+    assert.ok(store.getState().doc.nodes.a, 'still there');
+    assert.equal(store.getState().doc.nodes.a.meta?.name, 'Intro');
+  });
+});
+
+describe('inline editing', () => {
+  it('finds the element that shows a prop', async () => {
+    const { findTextElement } = await import('../inline');
+    const el = (text: string, parent: Element | null) =>
+      ({ textContent: text, parentElement: parent }) as unknown as Element;
+    const wrapper = el('Title Sub', null);
+    const section = el('Title Sub', wrapper);
+    const h1 = el(' Title ', section);
+    const span = el('Ti', h1);
+    assert.equal(findTextElement(span, wrapper, 'Title'), h1);
+    assert.equal(findTextElement(span, wrapper, 'Missing'), null);
+    assert.equal(findTextElement(span, wrapper, ''), null);
+  });
+});

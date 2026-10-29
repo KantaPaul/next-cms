@@ -38,6 +38,8 @@ import {
   undo as undoHistory,
   unwrapNode,
   updateProps as updateNodeProps,
+  updateMeta,
+  type NodeMeta,
   updateRootProps,
   wrapNodes,
 } from '@nextcms/builder-core';
@@ -158,9 +160,14 @@ export function createEditorStore({
       return node.id;
     },
 
+    /** Whether a block is locked; locked blocks cannot be moved, deleted, or selected on the canvas. */
+    isLocked(id: NodeId) {
+      return !!state.doc.nodes[id]?.meta?.locked;
+    },
+
     move(id: NodeId, to: SlotPosition) {
       const node = state.doc.nodes[id];
-      if (!node || !allowed(node.type, to, id)) return false;
+      if (!node || node.meta?.locked || !allowed(node.type, to, id)) return false;
       return apply(moveNode(state.doc, id, to), 'Move block', { select: [id] });
     },
 
@@ -175,7 +182,7 @@ export function createEditorStore({
 
     remove(ids: NodeId[] = state.selection) {
       let doc = state.doc;
-      for (const id of ids) doc = removeNode(doc, id);
+      for (const id of ids) if (!doc.nodes[id]?.meta?.locked) doc = removeNode(doc, id);
       return apply(doc, ids.length > 1 ? 'Delete blocks' : 'Delete block', { select: [] });
     },
 
@@ -205,6 +212,34 @@ export function createEditorStore({
 
     updateRootProps(patch: Record<string, unknown>, mergeKey?: string) {
       return apply(updateRootProps(state.doc, patch), 'Edit page', { mergeKey });
+    },
+
+    /**
+     * Shows a prop change on the canvas without adding an undo step, for
+     * dragging a resize handle. `commitLive` then records one step.
+     */
+    updatePropsLive(id: NodeId, patch: Record<string, unknown>) {
+      const doc = updateNodeProps(state.doc, id, patch);
+      if (doc !== state.doc) set({ doc });
+    },
+
+    /** Records live changes as one undo step, or drops them with `cancel`. */
+    commitLive(label: string, options: { cancel?: boolean } = {}) {
+      const committed = state.history.present.doc;
+      if (state.doc === committed) return false;
+      if (options.cancel) {
+        set({ doc: committed });
+        return false;
+      }
+      const history = commit(state.history, state.doc, { label });
+      set({ history });
+      return true;
+    },
+
+    /** Renames, hides, or locks a block in the editor (R692). */
+    updateMeta(id: NodeId, patch: NodeMeta) {
+      const label = patch.name !== undefined ? 'Rename block' : patch.hidden !== undefined ? 'Hide block' : 'Lock block';
+      return apply(updateMeta(state.doc, id, patch), label);
     },
 
     /** Wraps the selected siblings in a new block of `type`, inside its first slot. */

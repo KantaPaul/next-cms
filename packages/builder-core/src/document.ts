@@ -12,6 +12,19 @@ export const DOCUMENT_VERSION = 1 as const;
 
 export type NodeId = string;
 
+/** Editor-only settings for a node; never passed to blocks or shown on the site. */
+export type NodeMeta = {
+  /** Name shown in the layers panel instead of the block label. */
+  name?: string;
+  /** Hidden on the editing canvas only. */
+  hidden?: boolean;
+  /** Cannot be selected on the canvas, moved, or deleted until unlocked. */
+  locked?: boolean;
+};
+
+/** Prop that carries `NodeMeta` in Puck data, so it survives a round trip. */
+export const META_PROP = '__editor';
+
 /**
  * One block instance in the document.
  * Props may contain Responsive<T> values (SectionSettings, ContainerSettings, etc.).
@@ -27,6 +40,7 @@ export type BuilderNode = {
    * Leaf blocks use an empty object.
    */
   slots: Record<string, NodeId[]>;
+  meta?: NodeMeta;
 };
 
 /**

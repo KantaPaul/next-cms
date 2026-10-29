@@ -118,6 +118,7 @@ export function cloneSubtree(
       id,
       type: node.type,
       props,
+      ...(node.meta ? { meta: { ...node.meta } } : {}),
       slots: Object.fromEntries(
         Object.entries(node.slots).map(([slot, children]) => [
           slot,

@@ -2077,7 +2077,7 @@ todos:
     status: completed
   - id: R692
     content: "ENG-13 Layers panel on the new tree with drag reorder, expand and collapse, rename, hide, and lock"
-    status: pending
+    status: completed
   - id: R693
     content: "ENG-14 Inspector with a field registry (text, textarea, select, number, url, color, image, icon, rich text, list, object, custom) reusing the controls in src/builder/controls and src/builder/fields, plus conditional fields"
     status: completed
@@ -2086,10 +2086,10 @@ todos:
     status: completed
   - id: R695
     content: "ENG-16 Canvas resize handles for container width, spacing, and flex or grid tracks, each drag committing one undoable command, with numeric input as the keyboard alternative"
-    status: pending
+    status: in_progress
   - id: R696
     content: "ENG-17 Inline text editing on the canvas for headings, buttons, and rich text using the project's Tiptap setup"
-    status: pending
+    status: in_progress
   - id: R697
     content: "ENG-18 Block definition API: one definition per block with type, label, category, icon, fields, defaults, slots, allowed children, loader, and render; port every block now in src/builder/config.tsx"
     status: in_progress

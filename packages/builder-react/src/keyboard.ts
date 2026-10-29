@@ -73,7 +73,7 @@ export function keyAction(input: KeyInput): KeyAction | null {
 export function isTypingTarget(target: EventTarget | null): boolean {
   const element = target as HTMLElement | null;
   if (!element || typeof element.closest !== 'function') return false;
-  return !!element.closest('input, textarea, select, [contenteditable=""], [contenteditable="true"]');
+  return !!element.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])');
 }
 
 export function runKeyAction(store: EditorStore, action: KeyAction): boolean {

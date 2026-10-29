@@ -146,10 +146,10 @@ const ROOT_PADDING = { none: '', sm: 'py-4', md: 'py-8', lg: 'py-16' };
 
 type AnyProps = Record<string, any>;
 
-/** Adapts a plain block component to Puck's render signature. */
+/** Adapts a plain block component to Puck's render signature. `__editor` is the new editor's layer settings, never a block prop. */
 
 const renderBlock = (Component: ComponentType<any>) => {
-  const Render = ({ puck, id: _id, ...props }: AnyProps) => (
+  const Render = ({ puck, id: _id, __editor: _meta, ...props }: AnyProps) => (
     <Component {...props} editing={!!puck?.isEditing} />
   );
   Render.displayName = `Block(${Component.displayName || Component.name || 'Component'})`;
@@ -162,7 +162,7 @@ const renderBlock = (Component: ComponentType<any>) => {
  * boundary. Resolve every slot here, then pass plain nodes.
  */
 const renderPanels = (Component: ComponentType<any>) => {
-  const Render = ({ puck, id: _id, items, ...props }: AnyProps) => (
+  const Render = ({ puck, id: _id, __editor: _meta, items, ...props }: AnyProps) => (
     <Component
       {...props}
       editing={!!puck?.isEditing}
@@ -1349,7 +1349,7 @@ export const builderConfig: Config = {
 /** Reads the post being rendered from Puck metadata; the template builder supplies a sample post. */
 
 const renderPostBlock = (Component: ComponentType<any>) => {
-  const Render = ({ puck, id: _id, ...props }: AnyProps) => (
+  const Render = ({ puck, id: _id, __editor: _meta, ...props }: AnyProps) => (
     <Component
       {...props}
       post={(puck?.metadata?.post as PostView | undefined) ?? SAMPLE_POST}

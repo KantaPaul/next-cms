@@ -20,6 +20,8 @@ import {
   emptyDocument,
   isBuilderDocument,
   isLegacyPuckData,
+  META_PROP,
+  type NodeMeta,
 } from './document';
 
 /** Slot path as stored on the node (everything after `${id}:`). */
@@ -143,12 +145,15 @@ export function puckToDocument(data: PuckData): BuilderDocument {
     }
 
     const props = stripSlotArraysFromProps({ ...propsIn }, slotPaths);
+    const meta = props[META_PROP] as NodeMeta | undefined;
+    delete props[META_PROP];
 
     nodes[id] = {
       id,
       type: item.type,
       props,
       slots,
+      ...(meta && typeof meta === 'object' ? { meta } : {}),
     };
 
     return id;
@@ -190,6 +195,7 @@ export function documentToPuck(
     // Zone keys need the id; inline items only carry one if it was stored.
     const props: Record<string, unknown> = { ...node.props };
     if (useZones || node.props.id !== undefined) props.id = node.id;
+    if (node.meta && Object.keys(node.meta).length) props[META_PROP] = node.meta;
 
     for (const [slotPath, childIds] of Object.entries(node.slots)) {
       const children = childIds

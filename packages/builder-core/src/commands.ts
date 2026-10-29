@@ -4,7 +4,7 @@
  * patch saves later (DAT-03). Invalid targets return the document unchanged.
  */
 
-import type { BuilderDocument, BuilderNode, NodeId } from './document';
+import type { BuilderDocument, BuilderNode, NodeId, NodeMeta } from './document';
 import {
   childIds,
   findPosition,
@@ -88,6 +88,23 @@ export function updateProps(
     ...doc,
     nodes: { ...doc.nodes, [id]: { ...node, props: { ...node.props, ...patch } } },
   };
+}
+
+/** Merges editor-only settings (name, hidden, locked); empty values are removed. */
+export function updateMeta(
+  doc: BuilderDocument,
+  id: NodeId,
+  patch: NodeMeta
+): BuilderDocument {
+  const node = doc.nodes[id];
+  if (!node) return doc;
+  const meta: NodeMeta = { ...node.meta, ...patch };
+  for (const key of Object.keys(meta) as (keyof NodeMeta)[]) {
+    if (meta[key] === undefined || meta[key] === false || meta[key] === '') delete meta[key];
+  }
+  const next: BuilderNode = { ...node, meta };
+  if (!Object.keys(meta).length) delete next.meta;
+  return { ...doc, nodes: { ...doc.nodes, [id]: next } };
 }
 
 export function updateRootProps(
