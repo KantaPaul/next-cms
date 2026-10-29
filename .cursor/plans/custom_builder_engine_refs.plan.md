@@ -13,7 +13,7 @@ todos:
     status: completed
   - id: R683
     content: "ENG-04 Two-way converter between Puck Data (content, zones, slot props) and the new format, with round-trip tests on every seeded and stored page, post, template, and global block"
-    status: pending
+    status: completed
   - id: R684
     content: "ENG-05 Server renderer that renders a document with the existing block components and no Puck, as React Server Components where a block allows it"
     status: completed
@@ -102,6 +102,6 @@ isProject: false
 
 Also tracked in combined_cms_refs_f96163bc.plan.md. Keep step statuses in both files in sync.
 
-**Progress (2026-10-29):** R682 (document format) and R684 (server renderer) completed. See `src/builder/document.ts` and `src/builder/renderer.tsx`.
+**Progress (2026-10-29):** R682 (document format), R683 (converter), and R684 (server renderer) completed. See `src/builder/document.ts`, `src/builder/converter.ts`, and `src/builder/renderer.tsx`.
 
 Full plan body (approach, rules, risks, modern UX, data, packages, extension API, robustness) remains in git history at commit 98b105cd4c857dcbdfa4ad7f68467880a33eca87. Restore the full markdown body from that commit when convenient; frontmatter todos above are the source of truth for status.
