@@ -29,6 +29,9 @@ import {
 import {
   type BlockAction,
   BlockList,
+  Breadcrumb,
+  type Command,
+  CommandPalette,
   createEditorStore,
   DeviceSwitch,
   EditorCanvas,
@@ -36,12 +39,14 @@ import {
   type EditorStore,
   Inspector,
   indexedDbStorage,
+  isTypingTarget,
   LayersPanel,
   type LocalCopy,
-  SHORTCUTS,
+  ResizablePanel,
   type SaveInput,
   type SaveQueue,
   type SaveResult,
+  SHORTCUTS,
   useDragController,
   useEditor,
   useEditorKeyboard,
@@ -49,9 +54,27 @@ import {
   useSaveQueue,
   useSaveState,
 } from '@nextcms/builder-react';
-import { ArrowLeft, Eye, History, LayoutTemplate, Redo2, Sparkles, Undo2, Wand2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  CommandIcon,
+  Eye,
+  History,
+  LayoutTemplate,
+  Maximize2,
+  Minimize2,
+  Redo2,
+  Sparkles,
+  Undo2,
+  Wand2,
+} from 'lucide-react';
 import Link from 'next/link';
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { toast } from 'sonner';
 import { RevisionsDrawer } from '@/app/(admin)/dashboard/(shell)/pages/_components/revisions-drawer';
 import {
@@ -65,24 +88,35 @@ import {
 } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.actions';
 import { POST_REVISION_ACTIONS } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-revision-actions';
 import { EditorBridgeProvider } from '@/builder/controls/editor-bridge';
+import type { BuilderData } from '@/builder/data';
 import { editorSetup } from '@/builder/definitions';
 import { cmsInlineProps, cmsResizeHandles } from '@/builder/editor-handles';
 import { SAMPLE_POST } from '@/builder/post-template';
-import { cmsTransformProps, rendererComponents, SiteRoot } from '@/builder/renderer';
-import type { BuilderData } from '@/builder/data';
+import {
+  cmsTransformProps,
+  rendererComponents,
+  SiteRoot,
+} from '@/builder/renderer';
 import { useAiEnabled } from '@/components/ai/use-ai-status';
 import { maybeOfferRedirect } from '@/components/dashboard/redirect-offer';
 import { Button } from '@/components/ui/button';
 import { PERMISSIONS } from '@/config/permissions';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import { useCan } from '@/providers/access.provider';
-import { AiGenerateDialogView, AiRewriteDialogView, type GenerateMode } from '../pages/[id]/builder/_components/ai-dialogs';
+import {
+  AiGenerateDialogView,
+  AiRewriteDialogView,
+  type GenerateMode,
+} from '../pages/[id]/builder/_components/ai-dialogs';
 import {
   adapterFor,
   type BuilderPageProps,
 } from '../pages/[id]/builder/_components/builder-adapters';
 import type { BuilderTarget } from '../pages/[id]/builder/_components/builder-context';
-import { type GlobalSection, SaveGlobalDialogView } from '../pages/[id]/builder/_components/save-global-dialog';
+import {
+  type GlobalSection,
+  SaveGlobalDialogView,
+} from '../pages/[id]/builder/_components/save-global-dialog';
 import { SaveTemplateDialogView } from '../pages/[id]/builder/_components/save-template-dialog';
 
 export type NewEditorProps = BuilderPageProps & {
@@ -97,9 +131,17 @@ export type NewEditorProps = BuilderPageProps & {
 /** Errors come back from actions as values; turn them into thrown errors so the queue retries. */
 function actionError(result: unknown): string | null {
   if (!result || typeof result !== 'object') return null;
-  const value = result as { hasError?: boolean; message?: string; error?: string; errors?: unknown };
+  const value = result as {
+    hasError?: boolean;
+    message?: string;
+    error?: string;
+    errors?: unknown;
+  };
   if (value.hasError) return value.message ?? 'Could not save';
-  if (value.error) return value.error === 'empty' ? 'Add at least one section before saving.' : value.error;
+  if (value.error)
+    return value.error === 'empty'
+      ? 'Add at least one section before saving.'
+      : value.error;
   if (value.errors) return 'Some fields are not valid.';
   return null;
 }
@@ -120,11 +162,19 @@ function EditorSiteRoot({
 }
 
 /** Gives the CMS inspector controls this editor's device, selection, and theme tokens. */
-function NewEditorBridge({ themeTokens, children }: { themeTokens: unknown; children: ReactNode }) {
+function NewEditorBridge({
+  themeTokens,
+  children,
+}: {
+  themeTokens: unknown;
+  children: ReactNode;
+}) {
   const store = useEditorStore();
   const device = useEditor(state => state.device);
   const node = useEditor(state =>
-    state.selection.length === 1 ? state.doc.nodes[state.selection[0]] : undefined
+    state.selection.length === 1
+      ? state.doc.nodes[state.selection[0]]
+      : undefined
   );
   const value = useMemo(
     () => ({
@@ -160,7 +210,12 @@ function SaveIndicator({ queue }: { queue: SaveQueue }) {
         : 'text-steel-500';
   return (
     <span className="flex items-center gap-2">
-      <span role="status" aria-live="polite" className={`text-xs ${tone}`} title={save.error ?? undefined}>
+      <span
+        role="status"
+        aria-live="polite"
+        className={`text-xs ${tone}`}
+        title={save.error ?? undefined}
+      >
         {STATUS_TEXT[save.status]}
       </span>
       {failing && (
@@ -175,7 +230,12 @@ function SaveIndicator({ queue }: { queue: SaveQueue }) {
 function blockNames(store: EditorStore, doc: BuilderDocument, ids: string[]) {
   return ids.map(id => {
     const node = doc.nodes[id];
-    return node?.meta?.name || store.schemas[node?.type ?? '']?.label || node?.type || id;
+    return (
+      node?.meta?.name ||
+      store.schemas[node?.type ?? '']?.label ||
+      node?.type ||
+      id
+    );
   });
 }
 
@@ -200,7 +260,10 @@ function ConflictBanner({ queue }: { queue: SaveQueue }) {
   const myIds = changed(mine);
   const both = myIds.filter(id => theirIds.includes(id));
   return (
-    <div role="alert" className="border-b border-red-200 bg-red-50 px-4 py-2 text-sm text-red-900">
+    <div
+      role="alert"
+      className="border-b border-red-200 bg-red-50 px-4 py-2 text-sm text-red-900"
+    >
       <div className="flex flex-wrap items-center gap-3">
         <span>This page was saved somewhere else after you opened it.</span>
         <Button size="sm" variant="outline" onClick={() => queue.takeTheirs()}>
@@ -211,7 +274,8 @@ function ConflictBanner({ queue }: { queue: SaveQueue }) {
         </Button>
       </div>
       <p className="mt-1 text-xs">
-        They changed {summary(theirIds, theirs)}. You changed {summary(myIds, mine)}.
+        They changed {summary(theirIds, theirs)}. You changed{' '}
+        {summary(myIds, mine)}.
         {both.length ? ` Both changed ${summary(both, mine)}.` : ''}
       </p>
     </div>
@@ -237,14 +301,24 @@ function OfflineBanner({ queue }: { queue: SaveQueue }) {
   }, [queue]);
   if (online) return null;
   return (
-    <div role="alert" className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
-      You are offline. Keep editing: changes are kept in this browser and save when you are back online.
+    <div
+      role="alert"
+      className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900"
+    >
+      You are offline. Keep editing: changes are kept in this browser and save
+      when you are back online.
     </div>
   );
 }
 
 /** Offers unsaved work kept in this browser from an earlier visit (R740). */
-function LocalCopyBanner({ queue, version }: { queue: SaveQueue; version: number }) {
+function LocalCopyBanner({
+  queue,
+  version,
+}: {
+  queue: SaveQueue;
+  version: number;
+}) {
   const store = useEditorStore();
   const [copy, setCopy] = useState<LocalCopy | null>(null);
   useEffect(() => {
@@ -254,13 +328,22 @@ function LocalCopyBanner({ queue, version }: { queue: SaveQueue; version: number
   }, [queue]);
   if (!copy) return null;
   return (
-    <div role="alert" className="flex items-center gap-3 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
-      Unsaved changes from {new Date(copy.at).toLocaleString()} were kept in this browser
-      {copy.baseVersion !== version ? ', and the page has been saved since' : ''}.
+    <div
+      role="alert"
+      className="flex items-center gap-3 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900"
+    >
+      Unsaved changes from {new Date(copy.at).toLocaleString()} were kept in
+      this browser
+      {copy.baseVersion !== version
+        ? ', and the page has been saved since'
+        : ''}
+      .
       <Button
         size="sm"
         onClick={() => {
-          store.replaceDocument(copy.document, { label: 'Restore unsaved changes' });
+          store.replaceDocument(copy.document, {
+            label: 'Restore unsaved changes',
+          });
           setCopy(null);
         }}
       >
@@ -288,15 +371,23 @@ function IssuesBanner({ issues }: { issues: string[] }) {
   if (!issues.length || hidden) return null;
   const structural = documentProblems(doc).length > 0;
   return (
-    <div role="alert" className="flex flex-wrap items-center gap-3 border-b border-red-200 bg-red-50 px-4 py-2 text-sm text-red-900">
+    <div
+      role="alert"
+      className="flex flex-wrap items-center gap-3 border-b border-red-200 bg-red-50 px-4 py-2 text-sm text-red-900"
+    >
       <span>
-        This page has {issues.length} problem{issues.length > 1 ? 's' : ''}: {issues.slice(0, 3).join('; ')}
+        This page has {issues.length} problem{issues.length > 1 ? 's' : ''}:{' '}
+        {issues.slice(0, 3).join('; ')}
         {issues.length > 3 ? '…' : ''}
       </span>
       {structural && (
         <Button
           size="sm"
-          onClick={() => store.replaceDocument(repairDocument(store.getState().doc), { label: 'Repair page' })}
+          onClick={() =>
+            store.replaceDocument(repairDocument(store.getState().doc), {
+              label: 'Repair page',
+            })
+          }
         >
           Repair and continue
         </Button>
@@ -313,12 +404,24 @@ function HistoryButtons() {
   const history = useEditor(state => state.history);
   return (
     <div className="flex items-center gap-1">
-      <Button size="icon" variant="ghost" aria-label="Undo" title="Undo (Mod + Z)"
-        disabled={history.past.length === 0} onClick={() => store.undo()}>
+      <Button
+        size="icon"
+        variant="ghost"
+        aria-label="Undo"
+        title="Undo (Mod + Z)"
+        disabled={history.past.length === 0}
+        onClick={() => store.undo()}
+      >
         <Undo2 />
       </Button>
-      <Button size="icon" variant="ghost" aria-label="Redo" title="Redo (Mod + Shift + Z)"
-        disabled={history.future.length === 0} onClick={() => store.redo()}>
+      <Button
+        size="icon"
+        variant="ghost"
+        aria-label="Redo"
+        title="Redo (Mod + Shift + Z)"
+        disabled={history.future.length === 0}
+        onClick={() => store.redo()}
+      >
         <Redo2 />
       </Button>
     </div>
@@ -328,12 +431,21 @@ function HistoryButtons() {
 type LockState = { userName?: string | null; isStale?: boolean } | null;
 
 /** Puts AI-generated blocks in the editor, with fresh ids so they never clash (R700). */
-function applyGenerated(store: EditorStore, data: BuilderData, mode: GenerateMode) {
+function applyGenerated(
+  store: EditorStore,
+  data: BuilderData,
+  mode: GenerateMode
+) {
   const generated = puckToDocument(data);
   const current = store.getState().doc;
   let doc: BuilderDocument =
     mode === 'replace'
-      ? { ...current, root: { props: { ...current.root.props, ...generated.root.props } }, nodes: {}, rootSlot: [] }
+      ? {
+          ...current,
+          root: { props: { ...current.root.props, ...generated.root.props } },
+          nodes: {},
+          rootSlot: [],
+        }
       : current;
   for (const rootId of generated.rootSlot) {
     const subtree = extractSubtree(generated, rootId);
@@ -344,7 +456,9 @@ function applyGenerated(store: EditorStore, data: BuilderData, mode: GenerateMod
       index: doc.rootSlot.length,
     });
   }
-  store.replaceDocument(doc, { label: mode === 'replace' ? 'Generate page' : 'Add generated blocks' });
+  store.replaceDocument(doc, {
+    label: mode === 'replace' ? 'Generate page' : 'Add generated blocks',
+  });
 }
 
 /** A block and everything in it, as the Puck data a global block stores. */
@@ -361,17 +475,31 @@ function sectionOf(store: EditorStore, id: NodeId): GlobalSection {
 }
 
 /** Replaces a block with a GlobalRef to the global block just saved from it. */
-function linkGlobal(store: EditorStore, id: NodeId, saved: { id: string; name: string }, section: GlobalSection) {
+function linkGlobal(
+  store: EditorStore,
+  id: NodeId,
+  saved: { id: string; name: string },
+  section: GlobalSection
+) {
   const doc = store.getState().doc;
   const position = findPosition(doc, id);
   if (!position) return;
   const ref: BuilderNode = {
     id: createNodeId('GlobalRef'),
     type: 'GlobalRef',
-    props: { globalBlockId: saved.id, globalBlockName: saved.name, blocks: [section.item], zones: section.zones },
+    props: {
+      globalBlockId: saved.id,
+      globalBlockName: saved.name,
+      blocks: [section.item],
+      zones: section.zones,
+    },
     slots: {},
   };
-  const next = insertSubtree(removeNode(doc, id), { rootId: ref.id, nodes: { [ref.id]: ref } }, position);
+  const next = insertSubtree(
+    removeNode(doc, id),
+    { rootId: ref.id, nodes: { [ref.id]: ref } },
+    position
+  );
   store.replaceDocument(next, { label: 'Link global block' });
 }
 
@@ -383,7 +511,10 @@ function useEditorLock(targetType: 'page' | 'post' | null, id: string) {
     let active = true;
     getEditorLock(targetType, id).then(result => {
       if (active && result.ok && result.lock && !result.lock.isCurrentUser) {
-        setLockedBy({ userName: result.lock.userName, isStale: result.lock.isStale });
+        setLockedBy({
+          userName: result.lock.userName,
+          isStale: result.lock.isStale,
+        });
       }
     });
     const beat = () => void heartbeatEditorLock(targetType, id);
@@ -419,16 +550,22 @@ export function NewEditor({
   issues = [],
 }: NewEditorProps) {
   const setup = useMemo(() => editorSetup(kind), [kind]);
-  const adapter = useMemo(() => adapterFor(kind, page, category), [kind, page, category]);
+  const adapter = useMemo(
+    () => adapterFor(kind, page, category),
+    [kind, page, category]
+  );
   const canPublishPermission = useCan(PERMISSIONS.PAGES_PUBLISH);
-  const savesGoLive = kind === 'global' || kind === 'contact-form' || kind === 'page-template';
+  const savesGoLive =
+    kind === 'global' || kind === 'contact-form' || kind === 'page-template';
   const canPublish = savesGoLive ? false : canPublishPermission;
   const hasRevisions = kind === 'page' || kind === 'post';
   const aiAvailable = !!useAiEnabled();
   const aiEnabled = kind === 'page' && aiAvailable;
   const [generateOpen, setGenerateOpen] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
-  const [rewriteTarget, setRewriteTarget] = useState<BuilderTarget | null>(null);
+  const [rewriteTarget, setRewriteTarget] = useState<BuilderTarget | null>(
+    null
+  );
   const [globalTarget, setGlobalTarget] = useState<BuilderTarget | null>(null);
 
   const store = useMemo(
@@ -446,7 +583,9 @@ export function NewEditor({
       }
       // Other kinds store whole documents through their adapter, without version checks.
       const next =
-        'document' in input ? input.document : applyPatch(store.getState().savedDoc, input.patch);
+        'document' in input
+          ? input.document
+          : applyPatch(store.getState().savedDoc, input.patch);
       const result = await adapter.saveDraft(documentToPuck(next), true);
       const error = actionError(result);
       if (error) throw new Error(error);
@@ -476,7 +615,31 @@ export function NewEditor({
   const [motionPreview, setMotionPreview] = useState(false);
   const [frameWindow, setFrameWindow] = useState<Window | null>(null);
   const [panel, setPanel] = useState<'blocks' | 'layers'>('blocks');
-  useEditorKeyboard(store, [typeof window === 'undefined' ? null : window, frameWindow]);
+  const [focusMode, setFocusMode] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  useEditorKeyboard(store, [
+    typeof window === 'undefined' ? null : window,
+    frameWindow,
+  ]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (
+        (event.metaKey || event.ctrlKey) &&
+        event.key.toLowerCase() === 'k' &&
+        !isTypingTarget(event.target)
+      ) {
+        event.preventDefault();
+        setPaletteOpen(open => !open);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    frameWindow?.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      frameWindow?.removeEventListener('keydown', onKeyDown);
+    };
+  }, [frameWindow]);
 
   const metadata = useMemo(
     () => ({
@@ -487,16 +650,24 @@ export function NewEditor({
     }),
     [themeTokens, motionPreview, page.language, setup.renderKind, post]
   );
-  const components = useMemo(() => rendererComponents(setup.renderKind), [setup.renderKind]);
+  const components = useMemo(
+    () => rendererComponents(setup.renderKind),
+    [setup.renderKind]
+  );
   const transformProps = useMemo(
     () => cmsTransformProps(metadata, setup.renderKind),
     [metadata, setup.renderKind]
   );
   const renderRoot = useCallback(
-    (children: ReactNode) => <EditorSiteRoot metadata={metadata}>{children}</EditorSiteRoot>,
+    (children: ReactNode) => (
+      <EditorSiteRoot metadata={metadata}>{children}</EditorSiteRoot>
+    ),
     [metadata]
   );
-  const onFrame = useCallback((frame: HTMLIFrameElement) => setFrameWindow(frame.contentWindow), []);
+  const onFrame = useCallback(
+    (frame: HTMLIFrameElement) => setFrameWindow(frame.contentWindow),
+    []
+  );
 
   const targetOf = (node: BuilderNode): BuilderTarget => ({
     id: node.id,
@@ -505,9 +676,25 @@ export function NewEditor({
   });
   const blockActions = useCallback(
     (node: BuilderNode): BlockAction[] => [
-      ...(aiEnabled ? [{ id: 'ai', label: 'Rewrite with AI', icon: '✦', run: () => setRewriteTarget(targetOf(node)) }] : []),
+      ...(aiEnabled
+        ? [
+            {
+              id: 'ai',
+              label: 'Rewrite with AI',
+              icon: '✦',
+              run: () => setRewriteTarget(targetOf(node)),
+            },
+          ]
+        : []),
       ...(!savesGoLive && node.type !== 'GlobalRef'
-        ? [{ id: 'global', label: 'Save as global block', icon: '◈', run: () => setGlobalTarget(targetOf(node)) }]
+        ? [
+            {
+              id: 'global',
+              label: 'Save as global block',
+              icon: '◈',
+              run: () => setGlobalTarget(targetOf(node)),
+            },
+          ]
         : []),
     ],
     [aiEnabled, savesGoLive]
@@ -516,7 +703,9 @@ export function NewEditor({
   /** Saves pending changes; false when they could not be saved. */
   const saveNow = async () => {
     if (lockedBy) {
-      toast.error(`${lockedBy.userName ?? 'Another editor'} is editing this page. Take over to save.`);
+      toast.error(
+        `${lockedBy.userName ?? 'Another editor'} is editing this page. Take over to save.`
+      );
       return false;
     }
     await queue.flush();
@@ -551,8 +740,12 @@ export function NewEditor({
         return;
       }
       if (kind === 'page' || kind === 'post') {
-        const create = kind === 'post' ? POST_REVISION_ACTIONS.create : createRevision;
-        await handleActionResponse(create({ id: page.id, label: 'Saved draft' }) as never, () => {});
+        const create =
+          kind === 'post' ? POST_REVISION_ACTIONS.create : createRevision;
+        await handleActionResponse(
+          create({ id: page.id, label: 'Saved draft' }) as never,
+          () => {}
+        );
       }
       toast.success('Draft saved');
     });
@@ -563,30 +756,78 @@ export function NewEditor({
       await handleActionResponse((await adapter.publish()) as never, data => {
         void maybeOfferRedirect(data);
         setStatus('published');
-        toast.success(kind === 'page' ? 'Page published' : kind === 'post' ? 'Post published' : 'Template published');
+        toast.success(
+          kind === 'page'
+            ? 'Page published'
+            : kind === 'post'
+              ? 'Post published'
+              : 'Template published'
+        );
       });
     });
 
   const submitForReview = () =>
     run('review', async () => {
       if (!adapter.submitForReview || !(await saveNow())) return;
-      await handleActionResponse((await adapter.submitForReview()) as never, () => {
-        setStatus('review');
-        toast.success('Submitted for review');
-      });
+      await handleActionResponse(
+        (await adapter.submitForReview()) as never,
+        () => {
+          setStatus('review');
+          toast.success('Submitted for review');
+        }
+      );
     });
+
+  const extraCommands = useMemo<Command[]>(
+    () => [
+      {
+        id: 'focus-mode',
+        section: 'Editor',
+        label: focusMode ? 'Exit focus mode' : 'Enter focus mode',
+        icon: '⛶',
+        run: () => setFocusMode(value => !value),
+      },
+      {
+        id: 'save-draft',
+        section: 'Editor',
+        label: 'Save draft',
+        icon: '⤓',
+        run: () => void saveSnapshot(),
+      },
+      ...(hasRevisions
+        ? [
+            {
+              id: 'revisions',
+              section: 'Editor',
+              label: 'Open revisions',
+              icon: '◷',
+              run: () => setRevisionsOpen(true),
+            },
+          ]
+        : []),
+    ],
+    [focusMode, hasRevisions]
+  );
 
   return (
     <EditorProvider store={store}>
       <div className="flex h-screen flex-col bg-steel-50 dark:bg-dark-50">
         <header className="flex h-12 shrink-0 items-center gap-2 border-b border-steel-200 bg-white px-3 dark:border-dark-300 dark:bg-dark-100">
-          <Button asChild size="icon" variant="ghost" aria-label={`Back to ${adapter.backLabel}`} title={adapter.backLabel}>
+          <Button
+            asChild
+            size="icon"
+            variant="ghost"
+            aria-label={`Back to ${adapter.backLabel}`}
+            title={adapter.backLabel}
+          >
             <Link href={adapter.backHref}>
               <ArrowLeft />
             </Link>
           </Button>
           <div className="min-w-0">
-            <p className="truncate text-[11px] uppercase tracking-wide text-steel-500">{adapter.label}</p>
+            <p className="truncate text-[11px] uppercase tracking-wide text-steel-500">
+              {adapter.label}
+            </p>
             <h1 className="truncate text-sm font-semibold">{page.title}</h1>
           </div>
           {status && !savesGoLive && (
@@ -598,36 +839,94 @@ export function NewEditor({
             <SaveIndicator queue={queue} />
             <DeviceSwitch />
             <HistoryButtons />
-            <Button size="icon" variant="ghost" aria-pressed={motionPreview} aria-label="Preview motion"
-              title="Preview animations" onClick={() => setMotionPreview(value => !value)}>
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label="Command palette"
+              title="Command palette (Mod + K)"
+              onClick={() => setPaletteOpen(true)}
+            >
+              <CommandIcon />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-pressed={focusMode}
+              aria-label={focusMode ? 'Exit focus mode' : 'Focus mode'}
+              title={
+                focusMode
+                  ? 'Exit focus mode'
+                  : 'Focus mode: hide the side panels'
+              }
+              onClick={() => setFocusMode(value => !value)}
+            >
+              {focusMode ? <Minimize2 /> : <Maximize2 />}
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-pressed={motionPreview}
+              aria-label="Preview motion"
+              title="Preview animations"
+              onClick={() => setMotionPreview(value => !value)}
+            >
               <Sparkles />
             </Button>
             {aiEnabled && (
-              <Button size="sm" variant="outline" onClick={() => setGenerateOpen(true)}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setGenerateOpen(true)}
+              >
                 <Wand2 /> Generate
               </Button>
             )}
             {kind === 'page' && (
-              <Button size="icon" variant="ghost" aria-label="Save as template" title="Save as template"
-                onClick={() => setTemplateOpen(true)}>
+              <Button
+                size="icon"
+                variant="ghost"
+                aria-label="Save as template"
+                title="Save as template"
+                onClick={() => setTemplateOpen(true)}
+              >
                 <LayoutTemplate />
               </Button>
             )}
             {hasRevisions && (
-              <Button size="icon" variant="ghost" aria-label="Revisions" title="Revisions"
-                onClick={() => setRevisionsOpen(true)}>
+              <Button
+                size="icon"
+                variant="ghost"
+                aria-label="Revisions"
+                title="Revisions"
+                onClick={() => setRevisionsOpen(true)}
+              >
                 <History />
               </Button>
             )}
             {adapter.previewHref && (
-              <Button asChild size="icon" variant="ghost" aria-label="Preview" title="Preview">
-                <a href={adapter.previewHref} target="_blank" rel="noopener noreferrer">
+              <Button
+                asChild
+                size="icon"
+                variant="ghost"
+                aria-label="Preview"
+                title="Preview"
+              >
+                <a
+                  href={adapter.previewHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <Eye />
                 </a>
               </Button>
             )}
             {!savesGoLive && (
-              <Button size="sm" variant="outline" disabled={busy !== null} onClick={saveSnapshot}>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={busy !== null}
+                onClick={saveSnapshot}
+              >
                 Save draft
               </Button>
             )}
@@ -640,15 +939,23 @@ export function NewEditor({
                 {adapter.liveLabel}
               </Button>
             ) : adapter.submitForReview ? (
-              <Button size="sm" disabled={busy !== null || status === 'review'} onClick={submitForReview}>
+              <Button
+                size="sm"
+                disabled={busy !== null || status === 'review'}
+                onClick={submitForReview}
+              >
                 Submit for review
               </Button>
             ) : null}
           </div>
         </header>
         {lockedBy && (
-          <div role="alert" className="flex items-center gap-3 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
-            {lockedBy.userName ?? 'Another editor'} is editing this page. Changes here are not saved until you take over.
+          <div
+            role="alert"
+            className="flex items-center gap-3 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900"
+          >
+            {lockedBy.userName ?? 'Another editor'} is editing this page.
+            Changes here are not saved until you take over.
             <Button size="sm" onClick={() => void takeOver()}>
               Take over
             </Button>
@@ -659,56 +966,111 @@ export function NewEditor({
         <LocalCopyBanner queue={queue} version={draftVersion} />
         <IssuesBanner issues={issues} />
         <div className="flex min-h-0 flex-1">
-          <aside className="w-60 shrink-0 overflow-y-auto border-r border-steel-200 bg-white p-3 dark:border-dark-300 dark:bg-dark-100">
-            <div role="tablist" aria-label="Left panel" className="mb-3 grid grid-cols-2 gap-1 rounded-md bg-steel-100 p-1 dark:bg-dark-200">
-              {(['blocks', 'layers'] as const).map(tab => (
-                <button key={tab} type="button" role="tab" aria-selected={panel === tab} onClick={() => setPanel(tab)}
-                  className={`rounded px-2 py-1 text-xs font-medium capitalize ${panel === tab ? 'bg-white shadow-sm dark:bg-dark-100' : 'text-steel-500'}`}>
-                  {tab}
-                </button>
-              ))}
+          {!focusMode && (
+            <ResizablePanel
+              side="left"
+              title="Blocks"
+              storageKey="nextcms-editor:left-panel"
+              style={{
+                borderRight: '1px solid var(--steel-200, #e2e8f0)',
+                background: 'var(--panel-bg, #fff)',
+              }}
+            >
+              <div className="p-3">
+                <div
+                  role="tablist"
+                  aria-label="Left panel"
+                  className="mb-3 grid grid-cols-2 gap-1 rounded-md bg-steel-100 p-1 dark:bg-dark-200"
+                >
+                  {(['blocks', 'layers'] as const).map(tab => (
+                    <button
+                      key={tab}
+                      type="button"
+                      role="tab"
+                      aria-selected={panel === tab}
+                      onClick={() => setPanel(tab)}
+                      className={`rounded px-2 py-1 text-xs font-medium capitalize ${panel === tab ? 'bg-white shadow-sm dark:bg-dark-100' : 'text-steel-500'}`}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+                {panel === 'blocks' ? (
+                  <BlockList groups={setup.groups} drag={drag} />
+                ) : (
+                  <LayersPanel />
+                )}
+                <details className="mt-6 text-xs text-steel-500">
+                  <summary className="cursor-pointer font-medium">
+                    Keyboard shortcuts
+                  </summary>
+                  <dl className="mt-2 grid grid-cols-[1fr_auto] gap-x-2 gap-y-1">
+                    {SHORTCUTS.map(([action, keys]) => (
+                      <div key={action} className="contents">
+                        <dt>{action.replace('-', ' ')}</dt>
+                        <dd className="font-mono">{keys}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </details>
+              </div>
+            </ResizablePanel>
+          )}
+          <main className="flex min-w-0 flex-1 flex-col">
+            <div className="flex h-9 shrink-0 items-center border-b border-steel-200 bg-white px-3 dark:border-dark-300 dark:bg-dark-100">
+              <Breadcrumb />
             </div>
-            {panel === 'blocks' ? <BlockList groups={setup.groups} drag={drag} /> : <LayersPanel />}
-            <details className="mt-6 text-xs text-steel-500">
-              <summary className="cursor-pointer font-medium">Keyboard shortcuts</summary>
-              <dl className="mt-2 grid grid-cols-[1fr_auto] gap-x-2 gap-y-1">
-                {SHORTCUTS.map(([action, keys]) => (
-                  <div key={action} className="contents">
-                    <dt>{action.replace('-', ' ')}</dt>
-                    <dd className="font-mono">{keys}</dd>
-                  </div>
-                ))}
-              </dl>
-            </details>
-          </aside>
-          <main className="min-w-0 flex-1">
-            <EditorCanvas
-              components={components}
-              drag={drag}
-              transformProps={transformProps}
-              loaded={loaded}
-              renderRoot={renderRoot}
-              onFrame={onFrame}
-              resizeHandles={cmsResizeHandles}
-              inlineProps={cmsInlineProps}
-              blockActions={blockActions}
-            />
-          </main>
-          <aside aria-label="Settings" className="w-80 shrink-0 overflow-y-auto border-l border-steel-200 bg-white p-4 dark:border-dark-300 dark:bg-dark-100">
-            <NewEditorBridge themeTokens={themeTokens}>
-              <Inspector
-                blocks={setup.inspectorBlocks}
-                rootFields={setup.rootFields}
-                empty={
-                  <p className="mb-2 text-xs text-steel-500">
-                    Select a block to edit it.{Object.keys(setup.rootFields).length ? ' Page settings:' : ''}
-                  </p>
-                }
+            <div className="min-h-0 flex-1">
+              <EditorCanvas
+                components={components}
+                drag={drag}
+                transformProps={transformProps}
+                loaded={loaded}
+                renderRoot={renderRoot}
+                onFrame={onFrame}
+                resizeHandles={cmsResizeHandles}
+                inlineProps={cmsInlineProps}
+                blockActions={blockActions}
+                insertGroups={setup.groups}
               />
-            </NewEditorBridge>
-          </aside>
+            </div>
+          </main>
+          {!focusMode && (
+            <ResizablePanel
+              side="right"
+              title="Settings"
+              storageKey="nextcms-editor:right-panel"
+              style={{
+                borderLeft: '1px solid var(--steel-200, #e2e8f0)',
+                background: 'var(--panel-bg, #fff)',
+              }}
+            >
+              <section aria-label="Settings" className="p-4">
+                <NewEditorBridge themeTokens={themeTokens}>
+                  <Inspector
+                    blocks={setup.inspectorBlocks}
+                    rootFields={setup.rootFields}
+                    empty={
+                      <p className="mb-2 text-xs text-steel-500">
+                        Select a block to edit it.
+                        {Object.keys(setup.rootFields).length
+                          ? ' Page settings:'
+                          : ''}
+                      </p>
+                    }
+                  />
+                </NewEditorBridge>
+              </section>
+            </ResizablePanel>
+          )}
         </div>
       </div>
+      <CommandPalette
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+        groups={setup.groups}
+        extraCommands={extraCommands}
+      />
       <AiGenerateDialogView
         open={generateOpen}
         onOpenChange={setGenerateOpen}
@@ -717,13 +1079,18 @@ export function NewEditor({
       <AiRewriteDialogView
         target={rewriteTarget}
         onClose={() => setRewriteTarget(null)}
-        onApply={(target, props) => store.updateProps(target.id, props) || !!store.getState().doc.nodes[target.id]}
+        onApply={(target, props) =>
+          store.updateProps(target.id, props) ||
+          !!store.getState().doc.nodes[target.id]
+        }
       />
       <SaveGlobalDialogView
         target={globalTarget}
         onClose={() => setGlobalTarget(null)}
         getSection={target => sectionOf(store, target.id)}
-        linkGlobal={(target, saved, section) => linkGlobal(store, target.id, saved, section)}
+        linkGlobal={(target, saved, section) =>
+          linkGlobal(store, target.id, saved, section)
+        }
       />
       <SaveTemplateDialogView
         open={templateOpen}

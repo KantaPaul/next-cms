@@ -30,17 +30,37 @@ export function dropLine(
 ): Rect {
   if (children.length === 0) {
     return axis === 'y'
-      ? { left: slot.left, top: slot.top + slot.height / 2, width: slot.width, height: DROP_LINE }
-      : { left: slot.left + slot.width / 2, top: slot.top, width: DROP_LINE, height: slot.height };
+      ? {
+          left: slot.left,
+          top: slot.top + slot.height / 2,
+          width: slot.width,
+          height: DROP_LINE,
+        }
+      : {
+          left: slot.left + slot.width / 2,
+          top: slot.top,
+          width: DROP_LINE,
+          height: slot.height,
+        };
   }
   const before = index < children.length;
   const rect = before ? children[index] : children[children.length - 1];
   if (axis === 'y') {
     const top = before ? rect.top : rect.top + rect.height;
-    return { left: rect.left, top: top - DROP_LINE / 2, width: rect.width, height: DROP_LINE };
+    return {
+      left: rect.left,
+      top: top - DROP_LINE / 2,
+      width: rect.width,
+      height: DROP_LINE,
+    };
   }
   const left = before ? rect.left : rect.left + rect.width;
-  return { left: left - DROP_LINE / 2, top: rect.top, width: DROP_LINE, height: rect.height };
+  return {
+    left: left - DROP_LINE / 2,
+    top: rect.top,
+    width: DROP_LINE,
+    height: rect.height,
+  };
 }
 
 /** Smallest rectangle around all rects; null when there are none. */
@@ -57,6 +77,24 @@ export function unionRect(rects: Rect[]): Rect | null {
 /** Scroll speed while dragging near the top or bottom edge, in pixels per frame. */
 export function autoScrollSpeed(y: number, height: number, edge = 48): number {
   if (y < edge) return -Math.ceil((edge - Math.max(y, 0)) / 3);
-  if (y > height - edge) return Math.ceil((Math.min(y, height) - (height - edge)) / 3);
+  if (y > height - edge)
+    return Math.ceil((Math.min(y, height) - (height - edge)) / 3);
   return 0;
+}
+
+/** True when two rectangles overlap at all (used by the marquee selection, R719). */
+export function rectsIntersect(a: Rect, b: Rect): boolean {
+  return (
+    a.left < b.left + b.width &&
+    a.left + a.width > b.left &&
+    a.top < b.top + b.height &&
+    a.top + a.height > b.top
+  );
+}
+
+/** Normalizes two drag points into a rectangle, whichever direction the drag went. */
+export function rectFromPoints(a: Point, b: Point): Rect {
+  const left = Math.min(a.x, b.x);
+  const top = Math.min(a.y, b.y);
+  return { left, top, width: Math.abs(a.x - b.x), height: Math.abs(a.y - b.y) };
 }

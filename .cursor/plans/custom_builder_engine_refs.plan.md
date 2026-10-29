@@ -97,16 +97,16 @@ todos:
     status: pending
   - id: R711
     content: "UXE-01 Editor layout with insert panel, canvas, and inspector as resizable, collapsible panels whose sizes are remembered per user, plus a focus mode that hides every panel"
-    status: pending
+    status: completed
   - id: R712
     content: "UXE-02 Command palette (Cmd/Ctrl+K) to insert any block, jump to a layer, run any editor action, open another page, and search settings"
-    status: pending
+    status: completed
   - id: R713
     content: "UXE-03 Quick insert on the canvas: type / in an empty spot or click the + shown between blocks on hover, with search and keyboard selection"
-    status: pending
+    status: completed
   - id: R714
     content: "UXE-04 Insert panel with search, categories, recent and favorite blocks, a live preview on hover, and click to insert at the selection or drag to place"
-    status: pending
+    status: in_progress
   - id: R715
     content: "UXE-05 Patterns library of sections and full pages with live thumbnails and filters, inserted as editable copies; users save their own patterns to a per-site team library"
     status: pending
@@ -118,16 +118,16 @@ todos:
     status: pending
   - id: R718
     content: "UXE-08 Breadcrumb of the selected block's parents under the canvas; click a crumb to select that parent"
-    status: pending
+    status: completed
   - id: R719
     content: "UXE-09 Multi-select with Shift or Cmd click and a marquee inside a container, with group delete, duplicate, wrap, align, and shared style edits"
-    status: pending
+    status: completed
   - id: R720
     content: "UXE-10 Floating toolbar beside the selection with the main actions for that block type, plus a right-click menu with every action and its shortcut"
-    status: pending
+    status: completed
   - id: R721
     content: "UXE-11 Empty states and drop hints: an empty container offers layout presets and a + button, and a blocked drop says why it is not allowed"
-    status: pending
+    status: completed
   - id: R722
     content: "UXE-12 Inspector tabs for Content, Style, and Advanced with search inside settings, a dot on every changed field, and reset per field and per device"
     status: pending
@@ -410,25 +410,25 @@ isProject: false
 
 Updated 2026-10-29 by `scripts/plan-progress.mjs`. Do not edit this block by hand.
 
-**29 of 133 completed (21.8%)** · 11 in progress · 93 pending
+**42 of 133 completed (31.6%)** · 12 in progress · 79 pending
 
-`███████░░░░░░░░░░░░░░░░░░░░░░░` 21.8%
+`█████████░░░░░░░░░░░░░░░░░░░░░` 31.6%
 
 | Section | Refs | Total | Done | In progress | Pending | % done | Bar |
 |---|---|---|---|---|---|---|---|
-| Engine (ENG) | R680–R710 | 31 | 15 | 5 | 11 | 48.4% | `█████░░░░░` |
-| Editor UX (UXE) | R711–R736 | 26 | 0 | 0 | 26 | 0.0% | `░░░░░░░░░░` |
+| Engine (ENG) | R680–R710 | 31 | 19 | 5 | 7 | 61.3% | `██████░░░░` |
+| Editor UX (UXE) | R711–R736 | 26 | 7 | 1 | 18 | 26.9% | `███░░░░░░░` |
 | Data saving (DAT) | R737–R754 | 18 | 4 | 2 | 12 | 22.2% | `██░░░░░░░░` |
 | Packages (PKG) | R755–R772 | 18 | 1 | 2 | 15 | 5.6% | `█░░░░░░░░░` |
 | Extension API (EXT) | R773–R795 | 23 | 5 | 1 | 17 | 21.7% | `██░░░░░░░░` |
-| Robustness (ROB) | R796–R812 | 17 | 4 | 1 | 12 | 23.5% | `██░░░░░░░░` |
-| **Total** | | **133** | **29** | **11** | **93** | **21.8%** | `██░░░░░░░░` |
+| Robustness (ROB) | R796–R812 | 17 | 6 | 1 | 10 | 35.3% | `████░░░░░░` |
+| **Total** | | **133** | **42** | **12** | **79** | **31.6%** | `███░░░░░░░` |
 
 ```mermaid
 pie showData title Todos by status
-  "Completed" : 29
-  "In progress" : 11
-  "Pending" : 93
+  "Completed" : 42
+  "In progress" : 12
+  "Pending" : 79
 ```
 <!-- progress:end -->
 

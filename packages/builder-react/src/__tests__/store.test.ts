@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { type BlockSchemas, DOCUMENT_VERSION, type BuilderDocument } from '@nextcms/builder-core';
-import { autoScrollSpeed, dropIndex, dropLine } from '../drop';
+import { autoScrollSpeed, dropIndex, dropLine, rectFromPoints, rectsIntersect } from '../drop';
 import { keyAction, runKeyAction } from '../keyboard';
 import { createEditorStore } from '../store';
 
@@ -127,6 +127,29 @@ describe('keyboard', () => {
   });
 });
 
+describe('multi-select (R719)', () => {
+  it('select accumulates and toggles ids additively', () => {
+    const store = setup();
+    store.select('a', { additive: true });
+    store.select('box', { additive: true });
+    assert.deepEqual(store.getState().selection, ['a', 'box']);
+    store.select('a', { additive: true });
+    assert.deepEqual(store.getState().selection, ['box'], 'toggled off');
+  });
+
+  it('removes and duplicates every selected id in one undo step', () => {
+    const store = setup();
+    const before = store.getState().history.past.length;
+    assert.ok(store.duplicate(['a', 'box']));
+    assert.equal(store.getState().history.past.length, before + 1, 'one undo step for both');
+    assert.equal(store.getState().doc.rootSlot.length, 4);
+    store.undo();
+    assert.ok(store.remove(['a', 'box']));
+    assert.deepEqual(store.getState().doc.rootSlot, []);
+    assert.equal(store.getState().doc.nodes.b, undefined, 'box\'s child goes with it');
+  });
+});
+
 describe('drop geometry', () => {
   const rows = [
     { left: 0, top: 0, width: 100, height: 40 },
@@ -152,6 +175,20 @@ describe('drop geometry', () => {
     assert.ok(autoScrollSpeed(495, 500) > 0);
     assert.equal(autoScrollSpeed(250, 500), 0);
     assert.equal(autoScrollSpeed(9999, 500), autoScrollSpeed(500, 500));
+  });
+
+  it('normalizes a drag in any direction into a rectangle (R719)', () => {
+    const forward = rectFromPoints({ x: 10, y: 10 }, { x: 50, y: 40 });
+    assert.deepEqual(forward, { left: 10, top: 10, width: 40, height: 30 });
+    const backward = rectFromPoints({ x: 50, y: 40 }, { x: 10, y: 10 });
+    assert.deepEqual(backward, forward);
+  });
+
+  it('detects whether two rectangles overlap (R719)', () => {
+    const a = { left: 0, top: 0, width: 100, height: 100 };
+    assert.ok(rectsIntersect(a, { left: 50, top: 50, width: 100, height: 100 }), 'overlapping');
+    assert.ok(!rectsIntersect(a, { left: 200, top: 0, width: 50, height: 50 }), 'disjoint');
+    assert.ok(!rectsIntersect(a, { left: 100, top: 0, width: 50, height: 50 }), 'touching edges do not count');
   });
 });
 
