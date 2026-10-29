@@ -1157,24 +1157,3 @@ Close the gaps that turn a correct engine into a production-safe one: explicit n
 ENG-22 / R701 (performance budget), DAT-02 / DAT-03 / DAT-04 (version checks, patch saves, save queue), UXE-16 / R726 (autosave and crash recovery), PKG-05 (adapters), EXT-14 / R786 (per-block and per-field permissions), R733 (RTL preference).
 
 <!-- END: builder-robustness -->
-
-## Progress
-
-**29 of 133 completed (21.8%)** · 11 in progress · 93 pending
-
-| Section | Refs | Total | Done | In progress | Pending | % done |
-|---|---|---|---|---|---|---|
-| Engine (ENG) | R680–R710 | 31 | 15 | 5 | 11 | 48.4% |
-| Editor UX (UXE) | R711–R736 | 26 | 0 | 0 | 26 | 0.0% |
-| Data saving (DAT) | R737–R754 | 18 | 4 | 2 | 12 | 22.2% |
-| Packages (PKG) | R755–R772 | 18 | 1 | 2 | 15 | 5.6% |
-| Extension API (EXT) | R773–R795 | 23 | 5 | 1 | 17 | 21.7% |
-| Robustness (ROB) | R796–R812 | 17 | 4 | 1 | 12 | 23.5% |
-| **Total** | | **133** | **29** | **11** | **93** | **21.8%** |
-
-```mermaid
-pie showData title Todos by status
-  "Completed" : 29
-  "In progress" : 11
-  "Pending" : 93
-```
