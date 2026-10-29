@@ -25,7 +25,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:drop": "drizzle-kit drop",
     "db:check": "drizzle-kit check",
-    "db:seed": "tsx src/db/seed/index.ts"
+    "db:seed": "tsx src/db/seed/index.ts",
+    "plan:progress": "node scripts/plan-progress.mjs"
   },
   "dependencies": {
     "@nextcms/builder-core": "workspace:*",
