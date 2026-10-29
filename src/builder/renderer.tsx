@@ -14,6 +14,10 @@ import type { BuilderDocument, BuilderNode, NodeId } from './document';
 import { getBlockComponents } from './blocks/registry';
 import { cn } from '@/lib/utils/cn';
 import { fontStylesheetUrl, resolveThemeTokens, themeStyle } from './theme';
+import {
+  resolveDocumentData,
+  type LoaderContext,
+} from './loaders';
 
 export type RenderMetadata = {
   themeTokens?: unknown;
@@ -80,8 +84,6 @@ function buildProps(
   const slotNames = Object.keys(node.slots);
   if (slotNames.length === 0) return base;
 
-  // Resolve every slot into React nodes and into a serializable child-item shape
-  // so both leaf-style and panel-style blocks work.
   for (const slotName of slotNames) {
     const childIds = node.slots[slotName] ?? [];
     const childNodes = childIds
@@ -93,17 +95,12 @@ function buildProps(
     );
 
     if (slotName === 'content' || slotName === 'default') {
-      // Container, Columns, and similar: expect `content` as an array of
-      // { type, props } items (BlockList / rehydrate style) OR as React nodes.
-      // Pass both shapes: content as items for legacy path, and children as nodes.
       base.content = childNodes.map(n => ({
         type: n.type,
         props: { ...n.props, id: n.id },
       }));
-      // Also expose resolved React nodes for components that prefer them.
       base._slotNodes = reactChildren;
     } else if (slotName === 'items' || slotName === 'panels') {
-      // Slider / Tabs / Accordion: prefer `panels` with pre-rendered nodes.
       const itemsProp = Array.isArray(node.props.items)
         ? (node.props.items as Array<Record<string, unknown>>)
         : [];
@@ -121,7 +118,6 @@ function buildProps(
         };
       });
     } else {
-      // Generic named slot: pass React nodes under the slot name.
       base[slotName] = reactChildren;
     }
   }
@@ -204,5 +200,27 @@ export function renderDocumentSubtree(
     <>
       {rootIds.map(id => renderNode(id, doc, components, metadata, false))}
     </>
+  );
+}
+
+/**
+ * Resolve server data (R685) then render. Preferred public-site entry once
+ * the R686 flag switches off Puck.
+ */
+export async function renderDocumentWithLoaders(
+  doc: BuilderDocument,
+  ctx: LoaderContext = {},
+  metadata: RenderMetadata = {}
+): Promise<ReactNode> {
+  const resolved = await resolveDocumentData(doc, ctx);
+  return (
+    <BuilderRenderer
+      document={resolved}
+      metadata={{
+        ...metadata,
+        language: metadata.language ?? ctx.language,
+        themeTokens: metadata.themeTokens ?? ctx.themeTokens,
+      }}
+    />
   );
 }
