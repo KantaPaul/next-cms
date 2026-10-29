@@ -19,7 +19,7 @@ todos:
     status: completed
   - id: R685
     content: "ENG-06 Server data loaders per block (blog posts, global refs, contact forms, query loops) replacing resolveAllData, scoped to the site and cache-safe"
-    status: pending
+    status: completed
   - id: R686
     content: "ENG-07 Switch the public site, preview, /api/v1 pages and posts, and export to the new renderer behind a flag, with a screenshot diff against Puck Render on every seeded page"
     status: pending
@@ -102,6 +102,6 @@ isProject: false
 
 Also tracked in combined_cms_refs_f96163bc.plan.md. Keep step statuses in both files in sync.
 
-**Progress (2026-10-29):** R682 (document format), R683 (converter), and R684 (server renderer) completed. See `src/builder/document.ts`, `src/builder/converter.ts`, and `src/builder/renderer.tsx`.
+**Progress (2026-10-29):** R682–R685 completed (document format, converter, server renderer, data loaders). See `src/builder/document.ts`, `converter.ts`, `renderer.tsx`, `loaders.ts`.
 
-Full plan body (approach, rules, risks, modern UX, data, packages, extension API, robustness) remains in git history at commit 98b105cd4c857dcbdfa4ad7f68467880a33eca87. Restore the full markdown body from that commit when convenient; frontmatter todos above are the source of truth for status.
+Full plan body remains in git history at commit 98b105cd4c857dcbdfa4ad7f68467880a33eca87. Frontmatter todos above are the source of truth for status.
