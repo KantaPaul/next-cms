@@ -13,6 +13,7 @@
     "lint:fix": "next lint --fix",
     "test": "tsx --import ./scripts/server-only-stub.mjs --test src/lib/video/__tests__/video.test.ts src/config/__tests__/permissions.test.ts src/builder/__tests__/*.test.ts src/builder/__tests__/*.test.tsx packages/*/src/__tests__/*.test.ts packages/*/src/__tests__/*.test.tsx",
     "builder:check-documents": "tsx --import ./scripts/server-only-stub.mjs src/builder/check-documents.tsx",
+    "builder:compare-engines": "scripts/compare-engines.sh",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "biome check .",

@@ -49,8 +49,8 @@ describe('renderDocument', () => {
     const html = renderToStaticMarkup(renderDocument(doc, { components }));
     assert.equal(
       html,
-      '<div><section data-id="undefined"><div class="inner"><p data-editing="false">Hi</p></div></section>' +
-        '<ul><li>One<div><p data-editing="false">Tab</p></div></li><li>Two<div></div></li></ul></div>'
+      '<section data-id="undefined"><div class="inner"><p data-editing="false">Hi</p></div></section>' +
+        '<ul><li>One<div><p data-editing="false">Tab</p></div></li><li>Two<div></div></li></ul>'
     );
   });
 

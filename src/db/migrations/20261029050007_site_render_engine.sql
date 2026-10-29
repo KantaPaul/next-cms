@@ -1,0 +1,1 @@
+ALTER TABLE "sites" ADD COLUMN "render_engine" varchar(16) DEFAULT 'puck' NOT NULL;

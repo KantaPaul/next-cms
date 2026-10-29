@@ -3,9 +3,11 @@ import { customBlocks } from '../custom';
 import { BlogPosts } from './blog';
 import {
   Code,
+  CollectionItem,
   Columns,
   ContactForm,
   Embed,
+  Gallery,
   GlobalRef,
   ImageBlock,
   RichText,
@@ -42,6 +44,8 @@ const builtInComponents = {
   Container,
   RichText,
   Image: ImageBlock,
+  Gallery,
+  CollectionItem,
   ContactForm,
   GlobalRef,
   BlogPosts,

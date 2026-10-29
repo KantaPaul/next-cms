@@ -1,9 +1,11 @@
-import { type Data, Render, resolveAllData } from '@measured/puck';
 import { and, eq, isNull } from 'drizzle-orm';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
-import { builderConfig, postBuilderConfig } from '@/builder/config';
+import {
+  renderBuilderContent,
+  renderEngineFor,
+} from '@/builder/render-content';
 import { sanitizeRichText } from '@/builder/sanitize';
 import {
   type CollectionEntryWithFields,
@@ -281,10 +283,12 @@ async function PostRoute({
   post,
   settings,
   siteSlug,
+  engine,
 }: {
   post: PublicPost;
   settings: Settings;
   siteSlug: string;
+  engine: ReturnType<typeof renderEngineFor>;
 }) {
   const { view, seo } = post;
   const base = settings.siteUrl || env.SITE_URL;
@@ -298,11 +302,12 @@ async function PostRoute({
     post: view,
     language: view.language,
   };
-  const data = await resolveAllData(
-    layout as Data,
-    postBuilderConfig,
-    metadata
-  );
+  const rendered = await renderBuilderContent({
+    engine,
+    content: layout,
+    kind: 'post',
+    metadata,
+  });
   const image = seo?.ogImage || view.featuredImage;
 
   return (
@@ -332,7 +337,7 @@ async function PostRoute({
         }}
       />
       {beacon}
-      <Render config={postBuilderConfig} data={data} metadata={metadata} />
+      {rendered}
     </>
   );
 }
@@ -355,7 +360,15 @@ export default async function SitePage({ params, searchParams }: Params) {
   }
 
   const post = await loadPost(segments);
-  if (post) return <PostRoute post={post} settings={settings} siteSlug={siteSlug ?? ''} />;
+  if (post)
+    return (
+      <PostRoute
+        post={post}
+        settings={settings}
+        siteSlug={siteSlug ?? ''}
+        engine={renderEngineFor(site)}
+      />
+    );
 
   const page = await loadPage(segments);
   if (!page) {
@@ -414,23 +427,15 @@ export default async function SitePage({ params, searchParams }: Params) {
               searchParams: await searchParams,
               language: templatePage.language,
             };
-            const data = await resolveAllData(
-              (contentRow?.content as Data) ?? {
-                root: { props: {} },
-                content: [],
-                zones: {},
-              },
-              builderConfig,
-              metadata
-            );
+            const rendered = await renderBuilderContent({
+              engine: renderEngineFor(site),
+              content: contentRow?.content,
+              metadata,
+            });
             return (
               <EntryProvider entry={entry}>
                 {beaconForEntry(entry, path)}
-                <Render
-                  config={builderConfig}
-                  data={data}
-                  metadata={metadata}
-                />
+                {rendered}
               </EntryProvider>
             );
           }
@@ -496,20 +501,17 @@ export default async function SitePage({ params, searchParams }: Params) {
       searchParams: await searchParams,
       language: page.language,
     };
-    const data = await resolveAllData(
-      page.content as Data,
-      builderConfig,
-      metadata
-    );
+    // Variant B content goes through the same data loading as the page.
+    const rendered = await renderBuilderContent({
+      engine: renderEngineFor(site),
+      content: variant === 'b' ? experimentContent : page.content,
+      metadata,
+    });
     return (
       <>
         {beacon}
         <StructuredData page={page} base={base} siteSlug={siteSlug ?? ''} />
-        <Render
-          config={builderConfig}
-          data={variant === 'b' ? (experimentContent as Data) : data}
-          metadata={metadata}
-        />
+        {rendered}
       </>
     );
   }

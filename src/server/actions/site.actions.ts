@@ -10,6 +10,7 @@ import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { permissionProcedure } from '@/server/procedures/permission.procedure';
 import { SITE_COOKIE, siteContext } from '@/server/services/site-context';
 import { sitesService } from '@/server/services/sites.service';
+import { revalidatePublicSite } from '@/lib/utils/revalidate-site';
 
 export async function switchSite(siteId: string) {
   const { userId } = await getCurrentUserAndTeamId();
@@ -65,4 +66,15 @@ export const createSite = permissionProcedure(PERMISSIONS.SETTINGS_MANAGE)
     }
     revalidatePath(PAGES.DASHBOARD.ROOT, 'layout');
     return site;
+  });
+
+export const setSiteRenderEngine = permissionProcedure(
+  PERMISSIONS.SETTINGS_MANAGE
+)
+  .input(z.object({ siteId: z.string().min(1), engine: z.enum(['puck', 'core']) }))
+  .action(async ({ input, ctx }) => {
+    await sitesService.setRenderEngine(input, ctx.access);
+    revalidatePublicSite(input.siteId);
+    revalidatePath(PAGES.DASHBOARD.ROOT, 'layout');
+    return { engine: input.engine };
   });

@@ -101,6 +101,34 @@ export const sitesService = {
     return siteContext.getById(siteId);
   },
 
+  /** Switches the engine that renders a site's builder content (R702). */
+  setRenderEngine: async (
+    input: { siteId: string; engine: 'puck' | 'core' },
+    access: UserAccess
+  ) => {
+    const memberships = await siteContext.memberships(access.userId);
+    const membership = memberships.find(row => row.siteId === input.siteId);
+    if (!membership)
+      throw new ApplicationException('You are not a member of this site.');
+    await db.transaction(async tx => {
+      await tx
+        .update(sites)
+        .set({ renderEngine: input.engine, updatedAt: new Date() })
+        .where(eq(sites.id, input.siteId));
+      await auditService.log(
+        {
+          actorId: access.userId,
+          action: 'settings_change',
+          targetType: 'site',
+          targetId: input.siteId,
+          targetName: membership.siteName,
+          details: `Render engine: ${membership.renderEngine} → ${input.engine}`,
+        },
+        tx
+      );
+    });
+  },
+
   listForUser: async (userId: string) => {
     const memberships = await siteContext.memberships(userId);
     const roleRows = await db

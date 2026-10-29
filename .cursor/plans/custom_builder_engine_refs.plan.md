@@ -22,7 +22,7 @@ todos:
     status: completed
   - id: R686
     content: "ENG-07 Switch the public site, preview, /api/v1 pages and posts, and export to the new renderer behind a flag, with a screenshot diff against Puck Render on every seeded page"
-    status: pending
+    status: completed
   - id: R687
     content: "ENG-08 Editor store: node map, selection, hover, clipboard, and dirty state on React context and useSyncExternalStore, so only changed nodes re-render; no new state library"
     status: pending
@@ -70,7 +70,7 @@ todos:
     status: pending
   - id: R702
     content: "ENG-23 Per-site flag to choose the Puck or new editor during rollout, with both reading and writing the same stored format through the converter"
-    status: pending
+    status: in_progress
   - id: R703
     content: "ENG-24 One-time migration of page_contents, post_contents, revisions, templates, and global blocks to the new format, with a backup and a tested rollback script"
     status: pending
@@ -88,7 +88,7 @@ todos:
     status: pending
   - id: R708
     content: "ENG-29 Gate 34 approval: document format, converter round trip, and the server renderer verified; the public site runs without Puck"
-    status: pending
+    status: completed
   - id: R709
     content: "ENG-30 Gate 35 approval: editor core and every builder kind reach parity with the Puck editor"
     status: pending
@@ -377,7 +377,7 @@ todos:
     status: pending
   - id: R804
     content: "ROB-09 Dual-engine operational playbook: expected dual-mode duration, criteria to flip a site permanently, rollback after publish, monitoring, and a kill-switch if the new renderer produces bad public pages"
-    status: pending
+    status: completed
   - id: R805
     content: "ROB-10 Security of the document format and extension surface: XSS surface in rich text and custom fields, size and DoS limits, and sandboxing expectations for untrusted custom blocks"
     status: pending
@@ -395,7 +395,7 @@ todos:
     status: completed
   - id: R810
     content: "ROB-15 Dual-engine test matrix: both engines reading and writing the same pages, converter round-trips under concurrent edits, and screenshot + HTML/prop diffs"
-    status: pending
+    status: in_progress
   - id: R811
     content: "ROB-16 Document recovery drills: restore from backup, rebuild a revision from patches, and open a partially migrated document safely"
     status: pending
@@ -438,7 +438,12 @@ Updated 2026-10-29 after batch B0. Details in [builder_engine_b0_audit.md](build
   - The app's `src/builder/renderer.tsx` and `loaders.ts` now sit on the core and keep only CMS parts: block registry, site root, panels, and the four CMS loaders.
   - A Biome rule fails any `@/` app import inside `packages/`.
   - Left for R756: `builder-react`, `builder-blocks`, and `builder-next` are created with their code in B3, B4, and B11. Left for R757: blocks and controls still import app UI and move behind adapters in B4.
-- **Not wired yet.** The public site and `/api/v1` still use Puck `Render` and `resolveAllData`; switching is R686 in B2.
+- **B2 (2026-10-29): R686 and R804 completed, R702 and R810 in progress, Gate 34 (R708) approved by the user on 2026-10-29.**
+  - Each site has `render_engine` (`puck` or `core`), switched in Dashboard → Sites and logged in the audit log; `BUILDER_RENDER_ENGINE` forces one engine for every site (kill switch). Migration `20261029050007_site_render_engine`.
+  - The public page, post, collection template, A/B variant, and `/api/v1` pages and posts render through `renderBuilderContent` and `resolveBuilderData` in `src/builder/render-content.tsx`.
+  - Fixed on the way: the renderer was missing Gallery, CollectionItem, and every post block; it matched Puck's client build instead of the server build Next uses; the converter gave blocks without an id a random one; A/B variant B never loaded block data.
+  - Evidence and rollout steps: [builder_dual_engine_playbook.md](builder_dual_engine_playbook.md). There is no static export path in the code yet, so R686's export part has nothing to switch.
+  - Left for R702 and R810: choosing the editor per site and testing writes from both engines, once the new editor exists (B3).
 
 ## Batches
 

@@ -1,13 +1,16 @@
 /**
- * Checks every stored builder document against the new engine (R683 / R684):
- * Puck → BuilderDocument → Puck must round-trip unchanged, and BuilderRenderer
- * must produce the same HTML as Puck `Render`.
+ * Checks every stored builder document against the new engine (R683, R684,
+ * R810): Puck → BuilderDocument → Puck must round-trip unchanged,
+ * BuilderRenderer must produce the same HTML as Puck `Render`, and the core
+ * loaders must load the same block data as Puck `resolveAllData`.
  *
  * Run with: pnpm builder:check-documents
  */
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { Render, type Data } from '@measured/puck';
+import type { Data } from '@measured/puck';
+// Puck's server build: what Next.js uses to render published pages.
+import { Render } from '@measured/puck/rsc';
 import {
   documentToPuck,
   isLegacyPuckData,
@@ -26,6 +29,7 @@ import {
 } from '@/db/schema';
 import { builderConfig, postBuilderConfig } from './config';
 import type { BuilderData } from './data';
+import { resolveBuilderData } from './render-content';
 import { BuilderRenderer } from './renderer';
 
 type Stored = { name: string; content: unknown; post?: boolean };
@@ -57,6 +61,15 @@ async function loadAll(): Promise<Stored[]> {
 const normalize = (html: string) =>
   html.replace(/\s+/g, ' ').replace(/ id="[^"]*"/g, '').trim();
 
+/** JSON with sorted keys, so key order does not count as a difference. */
+function stableJson(value: unknown): string {
+  return JSON.stringify(value, (_key, v) =>
+    v && typeof v === 'object' && !Array.isArray(v)
+      ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b)))
+      : v
+  );
+}
+
 function firstDifference(a: string, b: string) {
   let i = 0;
   while (i < a.length && a[i] === b[i]) i++;
@@ -64,41 +77,19 @@ function firstDifference(a: string, b: string) {
   return `at ${i}\n    puck: ${around(a)}\n    new:  ${around(b)}`;
 }
 
-/** Puck data with every item's `id` removed, for documents saved before ids existed. */
-function withoutIds(data: BuilderData): BuilderData {
-  const strip = (items: BuilderData['content']) =>
-    items.map(({ type, props }) => {
-      const { id: _id, ...rest } = props;
-      return { type, props: rest } as BuilderData['content'][number];
-    });
-  return {
-    root: data.root,
-    content: strip(data.content ?? []),
-    zones: Object.fromEntries(
-      Object.entries(data.zones ?? {}).map(([key, items]) => [key, strip(items)])
-    ),
-  };
-}
-
 async function main() {
   const stored = (await loadAll()).filter(s => isLegacyPuckData(s.content));
   const failures: string[] = [];
   let roundTrips = 0;
   let sameHtml = 0;
+  let sameData = 0;
+  const needsRequest: string[] = [];
 
   for (const { name, content, post } of stored) {
     const data = content as BuilderData;
     try {
-      // The first pass may add ids to items saved without one (Puck does the
-      // same on load); after that, a round trip must change nothing at all.
       const doc = puckToDocument(data);
-      const once = documentToPuck(doc);
-      const twice = documentToPuck(puckToDocument(once));
-      const hasIds = (data.content ?? []).every(item => item.props?.id);
-      const sameAsStored = hasIds
-        ? puckDataEqual(data, once)
-        : puckDataEqual(withoutIds(data), withoutIds(once));
-      if (sameAsStored && puckDataEqual(once, twice)) roundTrips++;
+      if (puckDataEqual(data, documentToPuck(doc))) roundTrips++;
       else failures.push(`round trip changed: ${name}`);
 
       const puckHtml = normalize(
@@ -110,18 +101,47 @@ async function main() {
         )
       );
       const newHtml = normalize(
-        renderToStaticMarkup(createElement(BuilderRenderer, { document: doc }))
+        renderToStaticMarkup(
+          createElement(BuilderRenderer, {
+            document: doc,
+            kind: post ? 'post' : 'page',
+          })
+        )
       );
       if (puckHtml === newHtml) sameHtml++;
       else failures.push(`html differs: ${name} ${firstDifference(puckHtml, newHtml)}`);
+
+      // What /api/v1 returns with each engine.
+      const input = {
+        content: data,
+        kind: post ? ('post' as const) : ('page' as const),
+        metadata: { language: 'en' },
+      };
+      // Loaders that read request headers (site context) only run inside
+      // Next.js; those documents are compared on the live site instead.
+      const puckData = await resolveBuilderData({ ...input, engine: 'puck' }).catch(
+        (error: Error) => {
+          if (!error.message.includes('outside a request scope')) throw error;
+          needsRequest.push(name);
+          return null;
+        }
+      );
+      if (puckData === null) continue;
+      const coreData = await resolveBuilderData({ ...input, engine: 'core' });
+      if (stableJson(puckData) === stableJson(coreData)) sameData++;
+      else failures.push(`loaded data differs: ${name} ${firstDifference(stableJson(puckData), stableJson(coreData))}`);
     } catch (error) {
       failures.push(`error: ${name}: ${(error as Error).message}`);
     }
   }
 
   console.log(
-    `${stored.length} documents: ${roundTrips} round-trip unchanged, ${sameHtml} render the same HTML`
+    `${stored.length} documents: ${roundTrips} round-trip unchanged, ${sameHtml} render the same HTML, ${sameData} load the same data`
   );
+  if (needsRequest.length)
+    console.log(
+      `${needsRequest.length} need a live request to load data (compare on the site): ${needsRequest.join(', ')}`
+    );
   for (const failure of failures) console.log(`- ${failure}`);
   process.exit(failures.length ? 1 : 0);
 }

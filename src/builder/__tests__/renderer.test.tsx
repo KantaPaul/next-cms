@@ -8,11 +8,14 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { Render, type Data } from '@measured/puck';
-import { builderConfig } from '../config';
+import type { Data } from '@measured/puck';
+// Puck's server build: what Next.js uses to render published pages.
+import { Render } from '@measured/puck/rsc';
+import { builderConfig, postBuilderConfig } from '../config';
 import { documentToPuck, puckToDocument } from '@nextcms/builder-core';
 import type { BuilderData } from '../data';
-import { BuilderRenderer } from '../renderer';
+import { SAMPLE_POST } from '../post-template';
+import { BuilderRenderer, rendererComponents } from '../renderer';
 
 // Slot children are stored inline in props, as Puck 0.20 `slot` fields save them.
 const fixtures: Record<string, BuilderData> = {
@@ -75,6 +78,36 @@ const fixtures: Record<string, BuilderData> = {
   },
 };
 
+// Blocks that page and post content use in the single-post template.
+fixtures.gallery = {
+  root: { props: {} },
+  content: [
+    {
+      type: 'Gallery',
+      props: {
+        id: 'gal-1',
+        title: 'Work',
+        columns: 3,
+        items: [{ image: '/a.jpg', caption: 'A' }, { image: '/b.jpg', caption: 'B' }],
+      },
+    },
+    { type: 'CollectionItem', props: { id: 'ci-1', field: 'title' } },
+  ],
+  zones: {},
+};
+
+const postFixture: BuilderData = {
+  root: { props: {} },
+  content: [
+    { type: 'PostTitle', props: { id: 'pt-1' } },
+    { type: 'PostFeaturedImage', props: { id: 'pf-1' } },
+    { type: 'PostMeta', props: { id: 'pm-1' } },
+    { type: 'PostContent', props: { id: 'pc-1' } },
+    { type: 'RelatedPosts', props: { id: 'rp-1', posts: [] } },
+  ],
+  zones: {},
+};
+
 const normalize = (html: string) => html.replace(/\s+/g, ' ').trim();
 const puckHtml = (data: BuilderData) =>
   normalize(renderToStaticMarkup(createElement(Render, { config: builderConfig, data: data as Data })));
@@ -87,6 +120,48 @@ describe('BuilderRenderer matches Puck Render', () => {
       assert.equal(newHtml(data), puckHtml(data));
     });
   }
+});
+
+describe('renderer covers every Puck block', () => {
+  it('has a component for every page block', () => {
+    const missing = Object.keys(builderConfig.components).filter(
+      type => !(type in rendererComponents('page'))
+    );
+    assert.deepEqual(missing, []);
+  });
+
+  it('has a component for every post block', () => {
+    const missing = Object.keys(postBuilderConfig.components).filter(
+      type => !(type in rendererComponents('post'))
+    );
+    assert.deepEqual(missing, []);
+  });
+});
+
+describe('post layouts render the same', () => {
+  it('renders post blocks with the current post', () => {
+    const metadata = { post: { ...SAMPLE_POST, title: 'Real post title' } };
+    const puck = normalize(
+      renderToStaticMarkup(
+        createElement(Render, {
+          config: postBuilderConfig,
+          data: postFixture as Data,
+          metadata,
+        })
+      )
+    );
+    const next = normalize(
+      renderToStaticMarkup(
+        createElement(BuilderRenderer, {
+          document: puckToDocument(postFixture),
+          metadata,
+          kind: 'post',
+        })
+      )
+    );
+    assert.ok(puck.includes('Real post title'));
+    assert.equal(next, puck);
+  });
 });
 
 describe('documents converted back to Puck render the same', () => {

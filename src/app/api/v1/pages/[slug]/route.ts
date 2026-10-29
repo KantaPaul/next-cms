@@ -1,7 +1,9 @@
-import { type Data, resolveAllData } from '@measured/puck';
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
-import { builderConfig } from '@/builder/config';
+import {
+  renderEngineFor,
+  resolveBuilderData,
+} from '@/builder/render-content';
 import { sanitizeRichText } from '@/builder/sanitize';
 import { PAGES } from '@/config/pages';
 import {
@@ -47,8 +49,10 @@ export const GET = apiHandler<{ slug: string }>(
     const settings = await siteSettingsService.getPublic();
     const content =
       page.editorType === 'builder'
-        ? await resolveAllData(page.content as Data, builderConfig, {
-            themeTokens: settings.themeTokens,
+        ? await resolveBuilderData({
+            engine: renderEngineFor(site),
+            content: page.content,
+            metadata: { themeTokens: settings.themeTokens },
           })
         : sanitizeRichText(page.content);
     const link = (p: { slug: string; language: string; isHome: boolean }) =>

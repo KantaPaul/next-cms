@@ -25,12 +25,6 @@ import {
 /** Slot path as stored on the node (everything after `${id}:`). */
 type SlotPath = string;
 
-function ensureId(item: PuckItem, fallbackType: string): string {
-  const id = item.props?.id;
-  if (typeof id === 'string' && id.length > 0) return id;
-  return `${fallbackType}-${Math.random().toString(36).slice(2, 10)}`;
-}
-
 /** Strip nested slot arrays from props when those children live in zones/slots. */
 function stripSlotArraysFromProps(
   props: Record<string, unknown>,
@@ -73,9 +67,20 @@ export function puckToDocument(data: PuckData): BuilderDocument {
   const zones = data.zones ?? {};
   const nodes: Record<NodeId, BuilderNode> = {};
   const visited = new Set<NodeId>();
+  let generated = 0;
+
+  // Items saved without an id get a deterministic one, so converting the same
+  // data twice gives the same document. Their props keep no id, so converting
+  // back returns the item as it was stored.
+  function idFor(item: PuckItem): NodeId {
+    const id = item.props?.id;
+    if (typeof id === 'string' && id.length > 0) return id;
+    generated += 1;
+    return `${item.type || 'Block'}-auto-${generated}`;
+  }
 
   function processItem(item: PuckItem): NodeId {
-    const id = ensureId(item, item.type || 'Block');
+    const id = idFor(item);
     if (visited.has(id)) return id;
     visited.add(id);
 
@@ -137,7 +142,7 @@ export function puckToDocument(data: PuckData): BuilderDocument {
       });
     }
 
-    const props = stripSlotArraysFromProps({ ...propsIn, id }, slotPaths);
+    const props = stripSlotArraysFromProps({ ...propsIn }, slotPaths);
 
     nodes[id] = {
       id,
@@ -182,10 +187,9 @@ export function documentToPuck(
     const node = doc.nodes[id];
     if (!node) return null;
 
-    const props: Record<string, unknown> = {
-      ...node.props,
-      id: node.id,
-    };
+    // Zone keys need the id; inline items only carry one if it was stored.
+    const props: Record<string, unknown> = { ...node.props };
+    if (useZones || node.props.id !== undefined) props.id = node.id;
 
     for (const [slotPath, childIds] of Object.entries(node.slots)) {
       const children = childIds

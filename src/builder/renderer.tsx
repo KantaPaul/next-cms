@@ -3,8 +3,9 @@
  *
  * builder-core renders blocks with the same props Puck `Render` passes; this
  * file adds the CMS parts: the block registry, the site root (theme tokens,
- * fonts, page transition), and resolved `panels` for Slider, Tabs, and
- * Accordion, which are client components and cannot receive slot functions.
+ * fonts, page transition), resolved `panels` for Slider, Tabs, and Accordion
+ * (client components cannot receive slot functions), and, for posts, the post
+ * blocks with the current post, matching `builderConfig` and `postBuilderConfig`.
  */
 
 import {
@@ -18,11 +19,22 @@ import {
 } from '@nextcms/builder-core';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils/cn';
+import {
+  PostContent,
+  PostFeaturedImage,
+  PostMeta,
+  PostTitle,
+  RelatedPosts,
+} from './blocks/blog';
 import { renderSlot, type SlotValue } from './blocks/content';
 import { getBlockComponents } from './blocks/registry';
 import { type LoaderContext, resolveDocumentData } from './loaders';
 import { MotionScope } from './motion';
+import { type PostView, SAMPLE_POST } from './post-template';
 import { fontStylesheetUrl, resolveThemeTokens, themeStyle } from './theme';
+
+/** `post` adds the post blocks, like `postBuilderConfig` does for Puck. */
+export type RenderKind = 'page' | 'post';
 
 export type RenderMetadata = {
   themeTokens?: unknown;
@@ -50,6 +62,20 @@ const ROOT_PADDING: Record<string, string> = {
 /** Client blocks that receive resolved `panels` instead of `items` with slots. */
 const PANEL_TYPES = new Set(['Slider', 'Tabs', 'Accordion']);
 
+/** Blocks bound to the post being rendered, like `renderPostBlock` in config.tsx. */
+const POST_BLOCKS = { PostTitle, PostFeaturedImage, PostMeta, PostContent };
+
+/** Every component a kind of content can render; mirrors the Puck configs. */
+export function rendererComponents(kind: RenderKind): BlockComponents {
+  const page = getBlockComponents() as unknown as BlockComponents;
+  if (kind === 'page') return page;
+  return {
+    ...page,
+    ...(POST_BLOCKS as unknown as BlockComponents),
+    RelatedPosts: RelatedPosts as unknown as BlockComponents[string],
+  };
+}
+
 /** Same as `renderPanels` in config.tsx: resolve each item's slot to a node. */
 function resolvePanels(
   node: BuilderNode,
@@ -69,11 +95,18 @@ function resolvePanels(
   };
 }
 
-function renderOptions(metadata: RenderMetadata): RenderOptions {
+function renderOptions(
+  metadata: RenderMetadata,
+  kind: RenderKind
+): RenderOptions {
+  const post = (metadata.post as PostView | undefined) ?? SAMPLE_POST;
   return {
-    components: getBlockComponents() as unknown as BlockComponents,
+    components: rendererComponents(kind),
     editing: !!metadata.editing,
-    transformProps: resolvePanels,
+    transformProps: (node, props) =>
+      kind === 'post' && node.type in POST_BLOCKS
+        ? { ...props, post }
+        : resolvePanels(node, props),
   };
 }
 
@@ -85,9 +118,11 @@ function renderOptions(metadata: RenderMetadata): RenderOptions {
 export function BuilderRenderer({
   document: doc,
   metadata = {},
+  kind = 'page',
 }: {
   document: BuilderDocument;
   metadata?: RenderMetadata;
+  kind?: RenderKind;
 }): ReactNode {
   const rootProps = (doc.root?.props ?? {}) as {
     maxWidth?: string;
@@ -134,7 +169,7 @@ export function BuilderRenderer({
         preview={!!metadata.motionPreview}
         transition={rootProps.pageTransition}
       >
-        {renderDocument(doc, renderOptions(metadata))}
+        {renderDocument(doc, renderOptions(metadata, kind))}
       </MotionScope>
     </div>
   );
@@ -146,9 +181,10 @@ export function BuilderRenderer({
 export function renderDocumentSubtree(
   doc: BuilderDocument,
   rootIds: NodeId[],
-  metadata: RenderMetadata = {}
+  metadata: RenderMetadata = {},
+  kind: RenderKind = 'page'
 ): ReactNode {
-  return renderNodes(doc, rootIds, renderOptions(metadata));
+  return renderNodes(doc, rootIds, renderOptions(metadata, kind));
 }
 
 /**
@@ -158,11 +194,13 @@ export function renderDocumentSubtree(
 export async function renderDocumentWithLoaders(
   doc: BuilderDocument,
   ctx: LoaderContext = {},
-  metadata: RenderMetadata = {}
+  metadata: RenderMetadata = {},
+  kind: RenderKind = 'page'
 ): Promise<ReactNode> {
   const resolved = await resolveDocumentData(doc, ctx);
   return (
     <BuilderRenderer
+      kind={kind}
       document={resolved}
       metadata={{
         ...metadata,

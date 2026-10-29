@@ -45,6 +45,9 @@ export const env = createEnv({
     SMTP_USER: z.string().optional(),
     SMTP_PASS: z.string().optional(),
     TURNSTILE_SECRET_KEY: z.string().optional(),
+    // Forces one builder render engine for every site; unset uses each
+    // site's setting. `puck` is the kill switch for the new renderer.
+    BUILDER_RENDER_ENGINE: z.enum(['puck', 'core']).optional(),
   },
   client: {
     NEXT_PUBLIC_APP_NAME: z.string().default('Next CMS'),
@@ -62,6 +65,7 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
     SITE_URL: process.env.SITE_URL,
+    BUILDER_RENDER_ENGINE: process.env.BUILDER_RENDER_ENGINE,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
     DATABASE_URL: process.env.DATABASE_URL,
 

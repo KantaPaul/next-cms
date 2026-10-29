@@ -2059,7 +2059,7 @@ todos:
     status: completed
   - id: R686
     content: "ENG-07 Switch the public site, preview, /api/v1 pages and posts, and export to the new renderer behind a flag, with a screenshot diff against Puck Render on every seeded page"
-    status: pending
+    status: completed
   - id: R687
     content: "ENG-08 Editor store: node map, selection, hover, clipboard, and dirty state on React context and useSyncExternalStore, so only changed nodes re-render; no new state library"
     status: pending
@@ -2107,7 +2107,7 @@ todos:
     status: pending
   - id: R702
     content: "ENG-23 Per-site flag to choose the Puck or new editor during rollout, with both reading and writing the same stored format through the converter"
-    status: pending
+    status: in_progress
   - id: R703
     content: "ENG-24 One-time migration of page_contents, post_contents, revisions, templates, and global blocks to the new format, with a backup and a tested rollback script"
     status: pending
@@ -2125,7 +2125,7 @@ todos:
     status: pending
   - id: R708
     content: "ENG-29 Gate 34 approval: document format, converter round trip, and the server renderer verified; the public site runs without Puck"
-    status: pending
+    status: completed
   - id: R709
     content: "ENG-30 Gate 35 approval: editor core and every builder kind reach parity with the Puck editor"
     status: pending
@@ -2413,7 +2413,7 @@ todos:
     status: pending
   - id: R804
     content: "ROB-09 Dual-engine operational playbook: expected dual-mode duration, criteria to flip a site permanently, rollback after publish, monitoring, and a kill-switch if the new renderer produces bad public pages"
-    status: pending
+    status: completed
   - id: R805
     content: "ROB-10 Security of the document format and extension surface: XSS surface in rich text and custom fields, size and DoS limits, and sandboxing expectations for untrusted custom blocks"
     status: pending
@@ -2431,7 +2431,7 @@ todos:
     status: completed
   - id: R810
     content: "ROB-15 Dual-engine test matrix: both engines reading and writing the same pages, converter round-trips under concurrent edits, and screenshot + HTML/prop diffs"
-    status: pending
+    status: in_progress
   - id: R811
     content: "ROB-16 Document recovery drills: restore from backup, rebuild a revision from patches, and open a partially migrated document safely"
     status: pending

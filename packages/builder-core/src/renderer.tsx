@@ -92,10 +92,13 @@ export function renderNodes(
   return <>{ids.map(id => renderNode(doc, id, options))}</>;
 }
 
-/** Renders the page's top-level blocks inside the same wrapper div as a slot. */
+/**
+ * Renders the page's top-level blocks. Like Puck's server `Render`, the root
+ * has no wrapper element; only slots wrap their children in a div.
+ */
 export function renderDocument(
   doc: BuilderDocument,
   options: RenderOptions
 ): ReactNode {
-  return <div>{renderNodes(doc, doc.rootSlot, options)}</div>;
+  return renderNodes(doc, doc.rootSlot, options);
 }

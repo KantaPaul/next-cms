@@ -179,6 +179,26 @@ describe('documentToPuck', () => {
     });
 });
 
+describe('items saved without an id', () => {
+  const noIds = {
+    root: { props: {} },
+    content: [
+      { type: 'Hero', props: { title: 'A' } },
+      { type: 'Hero', props: { title: 'B' } },
+    ],
+    zones: {},
+  } as unknown as PuckData;
+
+  it('get the same generated ids every time', () => {
+    assert.deepEqual(puckToDocument(noIds).rootSlot, ['Hero-auto-1', 'Hero-auto-2']);
+    assert.ok(documentsEqual(puckToDocument(noIds), puckToDocument(noIds)));
+  });
+
+  it('round-trip without gaining an id', () => {
+    assert.ok(puckDataEqual(noIds, documentToPuck(puckToDocument(noIds))));
+  });
+});
+
 describe('toDocument / toPuckData adapters', () => {
   it('detects each format',
     () => {

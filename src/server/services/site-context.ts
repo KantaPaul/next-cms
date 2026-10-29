@@ -30,6 +30,8 @@ export type ResolvedSite = {
   extraDomains: string[];
   defaultLocale: string;
   locales: SiteLocale[];
+  /** Builder render engine for this site (R702); see `renderEngineFor`. */
+  renderEngine: 'puck' | 'core';
 };
 
 export type SiteMembership = {
@@ -38,6 +40,7 @@ export type SiteMembership = {
   slug: string | null;
   roleId: string;
   primaryHost: string | null;
+  renderEngine: 'puck' | 'core';
 };
 
 export type SiteContextSource =
@@ -61,6 +64,7 @@ const fallbackSite = (): ResolvedSite => ({
   extraDomains: [],
   defaultLocale: 'en',
   locales: DEFAULT_SITE_LOCALES,
+  renderEngine: 'puck',
 });
 
 export function normalizeHost(value: string | null | undefined) {
@@ -151,6 +155,7 @@ function toSite(row: typeof sites.$inferSelect): ResolvedSite {
     extraDomains: row.extraDomains ?? [],
     defaultLocale: row.defaultLocale || 'en',
     locales,
+    renderEngine: row.renderEngine === 'core' ? 'core' : 'puck',
   };
 }
 
@@ -351,6 +356,7 @@ export const siteContext = {
         slug: sites.slug,
         roleId: siteMemberships.roleId,
         primaryHost: sites.primaryHost,
+        renderEngine: sites.renderEngine,
       })
       .from(siteMemberships)
       .innerJoin(sites, eq(sites.id, siteMemberships.siteId))

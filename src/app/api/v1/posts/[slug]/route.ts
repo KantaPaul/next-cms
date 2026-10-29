@@ -1,7 +1,9 @@
-import { type Data, resolveAllData } from '@measured/puck';
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
-import { postBuilderConfig } from '@/builder/config';
+import {
+  renderEngineFor,
+  resolveBuilderData,
+} from '@/builder/render-content';
 import { sanitizeRichText } from '@/builder/sanitize';
 import { PAGES } from '@/config/pages';
 import {
@@ -43,10 +45,15 @@ export const GET = apiHandler<{ slug: string }>(
     const settings = await siteSettingsService.getPublic();
     const { view, seo } = post;
     const tree = await blogService.layoutFor(post);
-    const layout = await resolveAllData(tree as Data, postBuilderConfig, {
-      themeTokens: settings.themeTokens,
-      post: view,
-      language: view.language,
+    const layout = await resolveBuilderData({
+      engine: renderEngineFor(site),
+      content: tree,
+      kind: 'post',
+      metadata: {
+        themeTokens: settings.themeTokens,
+        post: view,
+        language: view.language,
+      },
     });
     const { body, blogUrl, ...rest } = view;
 
