@@ -14,8 +14,8 @@ export const PAGES = {
       INDEX: '/dashboard/pages',
       EDIT: (id: string) => `/dashboard/pages/${id}/edit`,
       BUILDER: (id: string) => `/dashboard/pages/${id}/builder`,
-      /** Preview of the new editor (B3); replaces BUILDER after Gate 35. */
-      EDITOR: (id: string) => `/dashboard/pages/${id}/editor`,
+      /** The new editor; replaces BUILDER after Gate 35. Other builder kinds add `?editor=new` to their builder link. */
+      EDITOR: (id: string) => `/dashboard/pages/${id}/builder?editor=new`,
     },
     POSTS: {
       INDEX: '/dashboard/posts',

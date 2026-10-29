@@ -6,6 +6,7 @@
  */
 
 import {
+  type BlockDefinition,
   type BuilderDocument,
   documentProblems,
   validateProps,
@@ -17,14 +18,17 @@ export const MAX_DOCUMENT_BYTES = 2_000_000;
 /** Most blocks on one page. */
 export const MAX_NODES = 5_000;
 
-export function documentIssues(doc: BuilderDocument): string[] {
+export function documentIssues(
+  doc: BuilderDocument,
+  definitions: Record<string, BlockDefinition> = pageDefinitions
+): string[] {
   const issues = documentProblems(doc);
   const nodes = Object.values(doc.nodes);
   if (nodes.length > MAX_NODES) issues.push(`more than ${MAX_NODES} blocks`);
   const bytes = new TextEncoder().encode(JSON.stringify(doc)).length;
   if (bytes > MAX_DOCUMENT_BYTES) issues.push(`larger than ${Math.round(MAX_DOCUMENT_BYTES / 1_000_000)} MB`);
   for (const node of nodes) {
-    const definition = pageDefinitions[node.type];
+    const definition = definitions[node.type];
     if (!definition) {
       issues.push(`unknown block type ${node.type}`);
       continue;

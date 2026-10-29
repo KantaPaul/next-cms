@@ -1,5 +1,5 @@
 import { notFound, redirect } from 'next/navigation';
-import { BuilderLoader } from '@/app/(admin)/dashboard/(fullscreen)/pages/[id]/builder/_components/builder-loader';
+import { BuilderOrNewEditor } from '@/app/(admin)/dashboard/(fullscreen)/_editor/builder-or-new-editor';
 import { postTemplatesService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
@@ -13,8 +13,10 @@ export const metadata = metaObject('Post template');
 
 export default async function PostTemplateBuilderPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { id } = await params;
   const { userId } = await getCurrentUserAndTeamId();
@@ -31,7 +33,8 @@ export default async function PostTemplateBuilderPage({
   ]);
 
   return (
-    <BuilderLoader
+    <BuilderOrNewEditor
+      searchParams={searchParams}
       kind="post-template"
       page={{
         id: template.id,

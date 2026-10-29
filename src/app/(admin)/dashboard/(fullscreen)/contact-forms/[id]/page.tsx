@@ -1,6 +1,6 @@
 import type { Data } from '@measured/puck';
 import { notFound, redirect } from 'next/navigation';
-import { BuilderLoader } from '@/app/(admin)/dashboard/(fullscreen)/pages/[id]/builder/_components/builder-loader';
+import { BuilderOrNewEditor } from '@/app/(admin)/dashboard/(fullscreen)/_editor/builder-or-new-editor';
 import { templatesService } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.service';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
@@ -31,8 +31,10 @@ function normalizeGlobalContent(raw: unknown): Data {
 
 export default async function ContactFormBuilderPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { id } = await params;
   const { allowed } = await requirePermission(PERMISSIONS.PAGES_EDIT);
@@ -46,7 +48,8 @@ export default async function ContactFormBuilderPage({
   if (block.category !== 'contact-form') notFound();
 
   return (
-    <BuilderLoader
+    <BuilderOrNewEditor
+      searchParams={searchParams}
       kind="contact-form"
       category="contact-form"
       page={{

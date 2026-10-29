@@ -1,6 +1,6 @@
 import type { Data } from '@measured/puck';
 import { notFound, redirect } from 'next/navigation';
-import { BuilderLoader } from '@/app/(admin)/dashboard/(fullscreen)/pages/[id]/builder/_components/builder-loader';
+import { BuilderOrNewEditor } from '@/app/(admin)/dashboard/(fullscreen)/_editor/builder-or-new-editor';
 import { templatesService } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.service';
 import { normalizeContent } from '@/builder/data';
 import { PAGES } from '@/config/pages';
@@ -13,8 +13,10 @@ export const metadata = metaObject('Edit page template');
 
 export default async function PageTemplateEditorPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { id } = await params;
   const { allowed } = await requirePermission(PERMISSIONS.PAGES_CREATE);
@@ -31,7 +33,8 @@ export default async function PageTemplateEditorPage({
   const content = normalizeContent('builder', template.content) as Data;
 
   return (
-    <BuilderLoader
+    <BuilderOrNewEditor
+      searchParams={searchParams}
       kind="page-template"
       page={{
         id: template.id,

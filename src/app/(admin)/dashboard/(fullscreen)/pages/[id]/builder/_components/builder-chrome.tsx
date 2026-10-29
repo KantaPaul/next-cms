@@ -69,6 +69,12 @@ export function BuilderHeaderActions() {
       <span className="hidden lg:inline-flex">
         <AutosaveIndicator status={b.autosaveStatus} savedAt={b.savedAt} />
       </span>
+      <Button type="button" variant="ghost" size="sm" asChild>
+        {/* The new editor opens the same document from this route (R699). */}
+        <Link href="?editor=new" title="Open this in the new editor (preview)">
+          Try the new editor
+        </Link>
+      </Button>
       {b.aiEnabled && (
         <Button
           type="button"

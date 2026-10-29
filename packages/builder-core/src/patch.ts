@@ -86,3 +86,31 @@ export function documentProblems(doc: BuilderDocument): string[] {
   }
   return problems;
 }
+
+/**
+ * Makes a damaged document safe to edit (R797): drops references to missing
+ * nodes, keeps each node in its first place only, and removes nodes that are
+ * not on the page. Returns the document unchanged when nothing is wrong.
+ */
+export function repairDocument(doc: BuilderDocument): BuilderDocument {
+  if (documentProblems(doc).length === 0) return doc;
+  const placed = new Set<NodeId>();
+  const nodes: Record<NodeId, BuilderNode> = {};
+  const keep = (ids: NodeId[], path: Set<NodeId>): NodeId[] =>
+    ids.filter(id => {
+      const node = doc.nodes[id];
+      if (!node || placed.has(id) || path.has(id)) return false;
+      placed.add(id);
+      const next = new Set(path).add(id);
+      nodes[id] = {
+        ...node,
+        slots: Object.fromEntries(
+          Object.entries(node.slots).map(([slot, children]) => [slot, keep(children, next)])
+        ),
+      };
+      return true;
+    });
+  const rootSlot = keep(doc.rootSlot, new Set());
+  return { ...doc, rootSlot, nodes };
+}
+

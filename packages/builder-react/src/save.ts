@@ -51,6 +51,11 @@ export type SaveQueueOptions = {
   version: number;
   /** Wait after a prop edit before saving. */
   debounceMs?: number;
+  /**
+   * Save on every change (default). Turn off where saving publishes, such as
+   * global blocks that update every page at once; then only `flush` saves.
+   */
+  autosave?: boolean;
   /** Local copy key, such as `page:<id>`; omit to keep no local copy. */
   localKey?: string;
   storage?: LocalCopyStorage;
@@ -73,6 +78,7 @@ export function createSaveQueue({
   save,
   version,
   debounceMs = 1_000,
+  autosave = true,
   localKey,
   storage,
   isOnline = () => typeof navigator === 'undefined' || navigator.onLine,
@@ -88,6 +94,7 @@ export function createSaveQueue({
   let localTimer: ReturnType<typeof setTimeout> | undefined;
   let inFlight: Promise<void> | null = null;
   let attempts = 0;
+  let paused = false;
 
   const schedule = (delay: number) => {
     clearTimeout(timer);
@@ -136,7 +143,7 @@ export function createSaveQueue({
   /** Saves now, unless a save is running (then it follows) or there is a conflict. */
   const flush = async (): Promise<void> => {
     clearTimeout(timer);
-    if (state.status === 'conflict') return;
+    if (state.status === 'conflict' || paused) return;
     if (inFlight) {
       await inFlight;
       return flush();
@@ -160,7 +167,7 @@ export function createSaveQueue({
     const patch = diffDocuments(savedDoc, doc);
     if (isEmptyPatch(patch)) return;
     if (state.status === 'saved') set({ status: 'pending' });
-    schedule(isStructural(patch, savedDoc) ? 0 : debounceMs);
+    if (autosave && !paused) schedule(isStructural(patch, savedDoc) ? 0 : debounceMs);
   };
   let unsubscribe: (() => void) | null = null;
 
@@ -171,6 +178,13 @@ export function createSaveQueue({
       return () => listeners.delete(listener);
     },
     flush,
+
+    /** Holds saves (for example while someone else has the page open); resuming saves what is pending. */
+    setPaused(next: boolean) {
+      paused = next;
+      if (next) clearTimeout(timer);
+      else if (autosave && state.status !== 'saved') void flush();
+    },
 
     /** Overwrites the other save with this editor's page. */
     async keepMine() {

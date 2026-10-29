@@ -15,7 +15,9 @@ import {
   type SlotRenderArgs,
 } from '@nextcms/builder-core';
 import {
+  Component,
   type CSSProperties,
+  type ErrorInfo,
   type ReactNode,
   useCallback,
   useEffect,
@@ -32,6 +34,9 @@ import { type InlinePropsFor, useInlineEditing } from './inline';
 import { ResizeHandles, type ResizeHandlesFor } from './resize';
 
 const ACCENT = '#4f46e5';
+
+export type BlockAction = { id: string; label: string; icon: string; run: () => void };
+export type BlockActionsFor = (node: BuilderNode) => BlockAction[];
 
 /** Canvas width per device; desktop fills the available space. */
 export const DEVICE_WIDTHS: Record<Device, number | null> = {
@@ -63,6 +68,8 @@ export type EditorCanvasProps = {
   resizeHandles?: ResizeHandlesFor;
   /** Props of a block type that can be edited as text on the canvas (R696). */
   inlineProps?: InlinePropsFor;
+  /** Extra actions on a selected block's toolbar, such as host dialogs. */
+  blockActions?: BlockActionsFor;
   style?: CSSProperties;
 };
 
@@ -102,6 +109,62 @@ function renderSlot({ parentId, slot, className, style, empty, children }: SlotR
   );
 }
 
+/** Editor-only notice in place of a block (R797). */
+function BlockNotice({ title, detail }: { title: string; detail?: string }) {
+  return (
+    <div
+      role="note"
+      style={{
+        margin: 8,
+        padding: '12px 14px',
+        borderRadius: 8,
+        border: '1px dashed #dc2626',
+        background: '#fef2f2',
+        color: '#991b1b',
+        font: '13px/1.4 system-ui, sans-serif',
+      }}
+    >
+      <strong>{title}</strong>
+      {detail && <div style={{ marginTop: 4, opacity: 0.8 }}>{detail}</div>}
+    </div>
+  );
+}
+
+/** Keeps one failing block from breaking the canvas; the rest of the page still edits (R797). */
+class BlockErrorBoundary extends Component<
+  { type: string; children: ReactNode },
+  { error: Error | null }
+> {
+  state = { error: null as Error | null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error(`[builder] ${this.props.type} failed to render`, error, info.componentStack);
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <BlockNotice
+          title={`This ${this.props.type} block could not be shown.`}
+          detail={`${this.state.error.message}. Its settings are kept; edit or delete it to continue.`}
+        />
+      );
+    }
+    return this.props.children;
+  }
+}
+
+const renderUnknown = (node: BuilderNode) => (
+  <BlockNotice
+    title={`Unknown block: ${node.type}`}
+    detail="This block type is not installed. It is kept in the page; delete it or install the block."
+  />
+);
+
 function CanvasDocument({
   components,
   transformProps,
@@ -120,13 +183,14 @@ function CanvasDocument({
       {...{ [NODE_ATTR]: node.id }}
       style={{ display: node.meta?.hidden ? 'none' : 'contents' }}
     >
-      {element}
+      <BlockErrorBoundary type={node.type}>{element}</BlockErrorBoundary>
     </div>
   );
   const content = renderDocument(doc, {
     components,
     editing: true,
     wrapNode,
+    renderUnknown,
     renderSlot,
     transformProps: (node, props) => {
       const merged = loaded?.[node.id] ? { ...props, ...loaded[node.id] } : props;
@@ -186,8 +250,19 @@ const buttonStyle: CSSProperties = {
   font: '600 13px/1 system-ui, sans-serif',
 };
 
-function Toolbar({ id, rect, drag }: { id: NodeId; rect: Rect; drag: DragController }) {
+function Toolbar({
+  id,
+  rect,
+  drag,
+  blockActions,
+}: {
+  id: NodeId;
+  rect: Rect;
+  drag: DragController;
+  blockActions?: BlockActionsFor;
+}) {
   const store = useEditorStore();
+  const node = useEditor(state => state.doc.nodes[id]);
   const type = useEditor(state => state.doc.nodes[id]?.type);
   const name = useEditor(state => state.doc.nodes[id]?.meta?.name);
   const locked = useEditor(state => !!state.doc.nodes[id]?.meta?.locked);
@@ -243,6 +318,13 @@ function Toolbar({ id, rect, drag }: { id: NodeId; rect: Rect; drag: DragControl
           {icon}
         </button>
       ))}
+      {node &&
+        !locked &&
+        blockActions?.(node).map(action => (
+          <button key={action.id} type="button" aria-label={action.label} title={action.label} style={buttonStyle} onClick={action.run}>
+            {action.icon}
+          </button>
+        ))}
     </div>
   );
 }
@@ -251,10 +333,12 @@ function CanvasOverlay({
   frame,
   drag,
   resizeHandles,
+  blockActions,
 }: {
   frame: HTMLIFrameElement;
   drag: DragController;
   resizeHandles?: ResizeHandlesFor;
+  blockActions?: BlockActionsFor;
 }) {
   const doc = useEditor(state => state.doc);
   const selection = useEditor(state => state.selection);
@@ -288,7 +372,9 @@ function CanvasOverlay({
       {rects.selected.map(([id, rect]) => (
         <div key={id} style={box(rect, { border: `2px solid ${ACCENT}` })} />
       ))}
-      {primary && !dragState.active && <Toolbar id={primary[0]} rect={primary[1]} drag={drag} />}
+      {primary && !dragState.active && (
+        <Toolbar id={primary[0]} rect={primary[1]} drag={drag} blockActions={blockActions} />
+      )}
       {primary && !dragState.active && resizeHandles && rects.selected.length === 1 && (
         <ResizeHandles id={primary[0]} rect={primary[1]} frame={frame} handlesFor={resizeHandles} />
       )}
@@ -313,6 +399,7 @@ export function EditorCanvas({
   deviceWidths,
   resizeHandles,
   inlineProps,
+  blockActions,
   style,
 }: EditorCanvasProps) {
   const store = useEditorStore();
@@ -408,7 +495,9 @@ export function EditorCanvas({
             remount={remount}
           />
         </CanvasFrame>
-        {frame && <CanvasOverlay frame={frame} drag={drag} resizeHandles={resizeHandles} />}
+        {frame && (
+          <CanvasOverlay frame={frame} drag={drag} resizeHandles={resizeHandles} blockActions={blockActions} />
+        )}
       </div>
       {dragState.active && (
         <div

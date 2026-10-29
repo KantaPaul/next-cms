@@ -46,6 +46,8 @@ export type RenderOptions = {
     node: BuilderNode,
     props: Record<string, unknown>
   ) => Record<string, unknown>;
+  /** Renders a block whose type has no component; without it the block is skipped. */
+  renderUnknown?: (node: BuilderNode) => ReactNode;
   /** Wraps each rendered block, so an editor can find and measure it. */
   wrapNode?: (node: BuilderNode, element: ReactNode) => ReactNode;
   /**
@@ -111,8 +113,12 @@ export function renderNode(
   const node = doc.nodes[id];
   if (!node) return null;
   const Component = options.components[node.type];
-  if (!Component) return null;
-  const element = <Component key={id} {...buildProps(node, doc, options)} />;
+  const element = Component ? (
+    <Component key={id} {...buildProps(node, doc, options)} />
+  ) : options.renderUnknown ? (
+    options.renderUnknown(node)
+  ) : null;
+  if (!element) return null;
   if (!options.wrapNode) return element;
   return <Fragment key={id}>{options.wrapNode(node, element)}</Fragment>;
 }

@@ -1,5 +1,5 @@
 import { notFound, redirect } from 'next/navigation';
-import { BuilderLoader } from '@/app/(admin)/dashboard/(fullscreen)/pages/[id]/builder/_components/builder-loader';
+import { BuilderOrNewEditor } from '@/app/(admin)/dashboard/(fullscreen)/_editor/builder-or-new-editor';
 import { postsService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.service';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
@@ -13,8 +13,10 @@ export const metadata = metaObject('Post layout builder');
 
 export default async function PostBuilderPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { id } = await params;
   const { userId } = await getCurrentUserAndTeamId();
@@ -32,7 +34,8 @@ export default async function PostBuilderPage({
     redirect(PAGES.DASHBOARD.POSTS.EDIT(id));
 
   return (
-    <BuilderLoader
+    <BuilderOrNewEditor
+      searchParams={searchParams}
       kind="post"
       post={draft?.view}
       page={{

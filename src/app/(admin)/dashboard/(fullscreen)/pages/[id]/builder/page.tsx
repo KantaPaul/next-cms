@@ -6,14 +6,16 @@ import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { metaObject } from '@/lib/utils/metadata';
 import { accessService } from '@/server/services/access.service';
 import { siteSettingsService } from '@/server/services/site-settings.service';
-import { BuilderLoader } from './_components/builder-loader';
+import { BuilderOrNewEditor } from '@/app/(admin)/dashboard/(fullscreen)/_editor/builder-or-new-editor';
 
 export const metadata = metaObject('Visual builder');
 
 export default async function BuilderPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { id } = await params;
   const { userId } = await getCurrentUserAndTeamId();
@@ -29,7 +31,8 @@ export default async function BuilderPage({
   if (page.editorType !== 'builder') redirect(PAGES.DASHBOARD.PAGES.EDIT(id));
 
   return (
-    <BuilderLoader
+    <BuilderOrNewEditor
+      searchParams={searchParams}
       page={{
         id: page.id,
         title: page.title,
@@ -41,6 +44,7 @@ export default async function BuilderPage({
         content: page.content,
       }}
       themeTokens={settings.themeTokens}
+      draftVersion={page.draftVersion}
     />
   );
 }

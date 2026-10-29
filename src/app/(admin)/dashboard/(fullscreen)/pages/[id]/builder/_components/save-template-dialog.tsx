@@ -20,16 +20,18 @@ import {
 } from '@/components/ui/dialog';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 
-export function SaveTemplateDialog({
+/** The save-as-template dialog without Puck; `getContent` returns the page as Puck data. */
+export function SaveTemplateDialogView({
   open,
   onOpenChange,
   pageTitle,
+  getContent,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   pageTitle: string;
+  getContent: () => unknown;
 }) {
-  const getPuck = useGetPuck();
   const [name, setName] = useState(pageTitle);
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('Custom');
@@ -37,14 +39,13 @@ export function SaveTemplateDialog({
 
   const save = () =>
     startTransition(async () => {
-      const { appState } = getPuck();
       await handleActionResponse(
         await saveTemplate({
           name,
           description,
           category,
           editorType: 'builder',
-          content: appState.data,
+          content: getContent(),
         }),
         row => {
           toast.success(
@@ -117,4 +118,14 @@ export function SaveTemplateDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+/** The save-as-template dialog in the Puck builder. */
+export function SaveTemplateDialog(props: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  pageTitle: string;
+}) {
+  const getPuck = useGetPuck();
+  return <SaveTemplateDialogView {...props} getContent={() => getPuck().appState.data} />;
 }

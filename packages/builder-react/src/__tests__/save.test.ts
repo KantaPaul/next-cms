@@ -159,4 +159,23 @@ describe('save queue', () => {
     await tick();
     assert.equal(saved.has('page:1'), false);
   });
+
+  it('waits for flush when autosave is off, and holds saves while paused', async () => {
+    const store = createEditorStore({ document: doc, schemas });
+    const calls: SaveInput[] = [];
+    const queue = createSaveQueue({ store, version: 1, autosave: false, save: async input => { calls.push(input); return { ok: true, version: 2 }; } });
+    queue.start();
+    store.updateProps('a', { text: 'Global change' });
+    mock.timers.tick(5000);
+    await tick();
+    assert.equal(calls.length, 0, 'nothing saved until asked');
+    assert.equal(queue.getState().status, 'pending');
+    queue.setPaused(true);
+    await queue.flush();
+    assert.equal(calls.length, 0, 'paused');
+    queue.setPaused(false);
+    await queue.flush();
+    assert.equal(calls.length, 1);
+    assert.equal(queue.getState().status, 'saved');
+  });
 });

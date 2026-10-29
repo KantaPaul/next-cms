@@ -22,14 +22,31 @@ import {
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import type { BuilderTarget } from './builder-context';
 
-export function SaveGlobalDialog({
+/** A block with everything inside it, as Puck data for a global block. */
+export type GlobalSection = {
+  item: BuilderItem;
+  zones: Record<string, BuilderItem[]>;
+};
+
+/**
+ * The save-as-global dialog without Puck: `getSection` returns the block with
+ * its children, `linkGlobal` swaps it for a linked GlobalRef.
+ */
+export function SaveGlobalDialogView({
   target,
   onClose,
+  getSection,
+  linkGlobal,
 }: {
   target: BuilderTarget | null;
   onClose: () => void;
+  getSection: (target: BuilderTarget) => GlobalSection;
+  linkGlobal: (
+    target: BuilderTarget,
+    saved: { id: string; name: string },
+    section: GlobalSection
+  ) => void;
 }) {
-  const getPuck = useGetPuck();
   const [name, setName] = useState('');
   const [category, setCategory] = useState('General');
   const [link, setLink] = useState(true);
@@ -48,46 +65,8 @@ export function SaveGlobalDialog({
     setPending(true);
 
     try {
-      const { appState, dispatch, getSelectorForId } = getPuck();
-      const allZones = (appState?.data?.zones ?? {}) as Record<
-        string,
-        BuilderItem[]
-      >;
-
-      // BFS to find all child block ids and their nested zones
-      const collectedIds = new Set<string>([target.id]);
-      let added = true;
-      while (added) {
-        added = false;
-        for (const [zoneKey, items] of Object.entries(allZones)) {
-          const colonIdx = zoneKey.indexOf(':');
-          const ownerId =
-            colonIdx !== -1 ? zoneKey.slice(0, colonIdx) : zoneKey;
-          if (collectedIds.has(ownerId)) {
-            for (const childItem of items ?? []) {
-              if (
-                childItem?.props?.id &&
-                !collectedIds.has(childItem.props.id)
-              ) {
-                collectedIds.add(childItem.props.id);
-                added = true;
-              }
-            }
-          }
-        }
-      }
-
-      // Collect all zones belonging to target or any child block
-      const relevantZones: Record<string, BuilderItem[]> = {};
-      for (const [zoneKey, items] of Object.entries(allZones)) {
-        const colonIdx = zoneKey.indexOf(':');
-        const ownerId = colonIdx !== -1 ? zoneKey.slice(0, colonIdx) : zoneKey;
-        if (collectedIds.has(ownerId)) {
-          relevantZones[zoneKey] = items;
-        }
-      }
-
-      const item: BuilderItem = { type: target.type, props: target.props };
+      const section = getSection(target);
+      const { item, zones: relevantZones } = section;
       await handleActionResponse(
         await saveGlobalBlock({
           name,
@@ -97,27 +76,7 @@ export function SaveGlobalDialog({
         row => {
           const saved = row as { id: string; name: string };
 
-          if (link) {
-            const selector = getSelectorForId(target.id);
-            if (selector) {
-              dispatch({
-                type: 'replace',
-                destinationIndex: selector.index,
-                destinationZone: selector.zone,
-                data: {
-                  type: 'GlobalRef',
-                  // Puck's replace action requires the node to keep its id.
-                  props: {
-                    id: target.id,
-                    globalBlockId: saved.id,
-                    globalBlockName: saved.name,
-                    blocks: [item],
-                    zones: relevantZones,
-                  },
-                },
-              });
-            }
-          }
+          if (link) linkGlobal(target, saved, section);
 
           toast.success(`Saved "${saved.name}" as a global block`);
           onClose();
@@ -184,5 +143,85 @@ export function SaveGlobalDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** The save-as-global dialog in the Puck builder. */
+export function SaveGlobalDialog(props: {
+  target: BuilderTarget | null;
+  onClose: () => void;
+}) {
+  const getPuck = useGetPuck();
+  return (
+    <SaveGlobalDialogView
+      {...props}
+      getSection={target => {
+        const { appState } = getPuck();
+        const allZones = (appState?.data?.zones ?? {}) as Record<
+          string,
+          BuilderItem[]
+        >;
+
+        // BFS to find all child block ids and their nested zones
+        const collectedIds = new Set<string>([target.id]);
+        let added = true;
+        while (added) {
+          added = false;
+          for (const [zoneKey, items] of Object.entries(allZones)) {
+            const colonIdx = zoneKey.indexOf(':');
+            const ownerId =
+              colonIdx !== -1 ? zoneKey.slice(0, colonIdx) : zoneKey;
+            if (collectedIds.has(ownerId)) {
+              for (const childItem of items ?? []) {
+                if (
+                  childItem?.props?.id &&
+                  !collectedIds.has(childItem.props.id)
+                ) {
+                  collectedIds.add(childItem.props.id);
+                  added = true;
+                }
+              }
+            }
+          }
+        }
+
+        // Collect all zones belonging to target or any child block
+        const relevantZones: Record<string, BuilderItem[]> = {};
+        for (const [zoneKey, items] of Object.entries(allZones)) {
+          const colonIdx = zoneKey.indexOf(':');
+          const ownerId =
+            colonIdx !== -1 ? zoneKey.slice(0, colonIdx) : zoneKey;
+          if (collectedIds.has(ownerId)) {
+            relevantZones[zoneKey] = items;
+          }
+        }
+
+        return {
+          item: { type: target.type, props: target.props },
+          zones: relevantZones,
+        };
+      }}
+      linkGlobal={(target, saved, section) => {
+        const { dispatch, getSelectorForId } = getPuck();
+        const selector = getSelectorForId(target.id);
+        if (!selector) return;
+        dispatch({
+          type: 'replace',
+          destinationIndex: selector.index,
+          destinationZone: selector.zone,
+          data: {
+            type: 'GlobalRef',
+            // Puck's replace action requires the node to keep its id.
+            props: {
+              id: target.id,
+              globalBlockId: saved.id,
+              globalBlockName: saved.name,
+              blocks: [section.item],
+              zones: section.zones,
+            },
+          },
+        });
+      }}
+    />
   );
 }

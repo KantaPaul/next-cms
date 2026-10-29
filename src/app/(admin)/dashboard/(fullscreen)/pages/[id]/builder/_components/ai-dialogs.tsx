@@ -44,15 +44,19 @@ const PAGE_TYPES = [
   { value: 'other', label: 'Other' },
 ];
 
-export function AiGenerateDialog({
+export type GenerateMode = 'replace' | 'append';
+
+/** The generate dialog without Puck; `onApply` puts the generated blocks in the editor. */
+export function AiGenerateDialogView({
   open,
   onOpenChange,
+  onApply,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onApply: (data: BuilderData, mode: GenerateMode) => void;
 }) {
   const { locales } = useSiteLocales();
-  const getPuck = useGetPuck();
   const [prompt, setPrompt] = useState('');
   const [pageType, setPageType] = useState('landing');
   const [tone, setTone] = useState('');
@@ -77,32 +81,9 @@ export function AiGenerateDialog({
       );
     });
 
-  const apply = (mode: 'replace' | 'append') => {
+  const apply = (mode: GenerateMode) => {
     if (!result) return;
-    const { dispatch } = getPuck();
-    dispatch({
-      type: 'setData',
-      data: (previous: Data) =>
-        mode === 'replace'
-          ? {
-              ...previous,
-              root: {
-                ...previous.root,
-                props: {
-                  ...(previous.root?.props ?? {}),
-                  ...result.data.root.props,
-                },
-              },
-              content: result.data.content as Data['content'],
-            }
-          : {
-              ...previous,
-              content: [
-                ...previous.content,
-                ...(result.data.content as Data['content']),
-              ],
-            },
-    });
+    onApply(result.data, mode);
     toast.success(
       mode === 'replace'
         ? 'Page replaced with generated blocks'
@@ -251,15 +232,17 @@ const MODES = [
   { value: 'translate', label: 'Translate' },
 ] as const;
 
-export function AiRewriteDialog({
+/** The rewrite dialog without Puck; `onApply` returns false when the block is gone. */
+export function AiRewriteDialogView({
   target,
   onClose,
+  onApply,
 }: {
   target: BuilderTarget | null;
   onClose: () => void;
+  onApply: (target: BuilderTarget, props: Record<string, unknown>) => boolean;
 }) {
   const { locales } = useSiteLocales();
-  const getPuck = useGetPuck();
   const [mode, setMode] = useState<(typeof MODES)[number]['value']>('rewrite');
   const [language, setLanguage] = useState('es');
   const [tone, setTone] = useState('');
@@ -299,20 +282,10 @@ export function AiRewriteDialog({
 
   const apply = () => {
     if (!target || !nextProps) return;
-    const { dispatch, getSelectorForId } = getPuck();
-    const selector = getSelectorForId(target.id);
-
-    if (!selector) {
+    if (!onApply(target, nextProps)) {
       toast.error('That block is no longer on the page.');
       return;
     }
-
-    dispatch({
-      type: 'replace',
-      destinationIndex: selector.index,
-      destinationZone: selector.zone,
-      data: { type: target.type, props: { ...nextProps, id: target.id } },
-    });
     toast.success('Block updated');
     onClose();
   };
@@ -445,5 +418,56 @@ export function AiRewriteDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** The generate dialog in the Puck builder. */
+export function AiGenerateDialog(props: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const getPuck = useGetPuck();
+  return (
+    <AiGenerateDialogView
+      {...props}
+      onApply={(data, mode) =>
+        getPuck().dispatch({
+          type: 'setData',
+          data: (previous: Data) =>
+            mode === 'replace'
+              ? {
+                  ...previous,
+                  root: {
+                    ...previous.root,
+                    props: { ...(previous.root?.props ?? {}), ...data.root.props },
+                  },
+                  content: data.content as Data['content'],
+                }
+              : {
+                  ...previous,
+                  content: [...previous.content, ...(data.content as Data['content'])],
+                },
+        })
+      }
+    />
+  );
+}
+
+/** The rewrite dialog in the Puck builder. */
+export function AiRewriteDialog(props: { target: BuilderTarget | null; onClose: () => void }) {
+  const getPuck = useGetPuck();
+  return (
+    <AiRewriteDialogView
+      {...props}
+      onApply={(target, nextProps) => {
+        const { dispatch, getSelectorForId } = getPuck();
+        const selector = getSelectorForId(target.id);
+        if (!selector) return false;
+        dispatch({
+          type: 'replace',
+          destinationIndex: selector.index,
+          destinationZone: selector.zone,
+          data: { type: target.type, props: { ...nextProps, id: target.id } },
+        });
+        return true;
+      }}
+    />
   );
 }

@@ -64,3 +64,21 @@ describe('documentProblems', () => {
     assert.match(documentProblems(orphan)[0], /not on the page/);
   });
 });
+
+describe('repairDocument', () => {
+  it('fixes dangling ids, duplicates, and orphans, and leaves sound documents alone', async () => {
+    const { repairDocument } = await import('../patch');
+    assert.equal(repairDocument(doc), doc);
+    const broken: BuilderDocument = {
+      ...doc,
+      rootSlot: ['a', 'box', 'ghost', 'b'],
+      nodes: { ...doc.nodes, z: { id: 'z', type: 'Text', props: {}, slots: {} } },
+    };
+    const fixed = repairDocument(broken);
+    assert.deepEqual(documentProblems(fixed), []);
+    // Depth first: b inside box comes before the later top-level copy.
+    assert.deepEqual(fixed.rootSlot, ['a', 'box']);
+    assert.deepEqual(fixed.nodes.box.slots.content, ['b'], 'b kept in its first place only');
+    assert.equal(fixed.nodes.z, undefined);
+  });
+});
