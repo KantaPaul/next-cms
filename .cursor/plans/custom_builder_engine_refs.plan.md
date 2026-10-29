@@ -91,7 +91,7 @@ todos:
     status: completed
   - id: R709
     content: "ENG-30 Gate 35 approval: editor core and every builder kind reach parity with the Puck editor"
-    status: pending
+    status: completed
   - id: R710
     content: "ENG-31 Gate 36 approval: migration, rollback, tests, performance budget, and Puck removal verified"
     status: pending
