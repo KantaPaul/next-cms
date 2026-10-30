@@ -1,6 +1,7 @@
 export * from './accessibility';
 export * from './block-list';
 export * from './breadcrumb';
+export * from './builder-editor';
 export * from './canvas';
 export * from './command-palette';
 export * from './comments';

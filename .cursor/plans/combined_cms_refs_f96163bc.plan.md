@@ -2275,19 +2275,19 @@ todos:
     status: in_progress
   - id: R758
     content: "PKG-04 Small public API: defineBlock, defineField, createBuilderConfig, BuilderEditor, BuilderRenderer, useBuilder hooks, and validateDocument, migrateDocument, and serializeDocument; everything else stays internal"
-    status: pending
+    status: completed
   - id: R759
     content: "PKG-05 Adapters the host provides, each optional with a working default: storage (load, patch save, version conflict), media picker and upload, link picker, data sources for dynamic content and query loops, permissions, AI, translation, and comments and presence transport"
     status: pending
   - id: R760
     content: "PKG-06 Custom blocks in a few lines: the host registers its own React component with a Zod props schema; fields, defaults, and validation are generated from it, with slots and server loaders; this is the RFB-02 and RFB-04 contract"
-    status: pending
+    status: completed
   - id: R761
     content: "PKG-07 Plugin API for panels, toolbar actions, commands, field types, and canvas overlays; the CMS features (templates, global blocks, contact forms, AI, revisions) are built as plugins on it"
     status: pending
   - id: R762
     content: "PKG-08 Exported document format version with migrate functions, so hosts upgrade stored data when they upgrade the package"
-    status: pending
+    status: completed
   - id: R763
     content: "PKG-09 Self-contained styling: the editor UI ships compiled, prefixed CSS with CSS variables for theming, so the host needs no Tailwind or shadcn; light and dark themes; blocks read theme tokens"
     status: pending
@@ -2446,25 +2446,25 @@ isProject: false
 
 Updated 2026-10-30 by `scripts/plan-progress.mjs`. Do not edit this block by hand.
 
-**173 of 812 completed (21.3%)** · 14 in progress · 625 pending
+**176 of 812 completed (21.7%)** · 14 in progress · 622 pending
 
-`██████░░░░░░░░░░░░░░░░░░░░░░░░` 21.3%
+`███████░░░░░░░░░░░░░░░░░░░░░░░` 21.7%
 
 | Section | Refs | Total | Done | In progress | Pending | % done | Bar |
 |---|---|---|---|---|---|---|---|
 | Engine (ENG) | R680–R710 | 31 | 19 | 5 | 7 | 61.3% | `██████░░░░` |
 | Editor UX (UXE) | R711–R736 | 26 | 22 | 1 | 3 | 84.6% | `████████░░` |
 | Data saving (DAT) | R737–R754 | 18 | 4 | 2 | 12 | 22.2% | `██░░░░░░░░` |
-| Packages (PKG) | R755–R772 | 18 | 1 | 2 | 15 | 5.6% | `█░░░░░░░░░` |
+| Packages (PKG) | R755–R772 | 18 | 4 | 2 | 12 | 22.2% | `██░░░░░░░░` |
 | Extension API (EXT) | R773–R795 | 23 | 11 | 1 | 11 | 47.8% | `█████░░░░░` |
 | Robustness (ROB) | R796–R812 | 17 | 7 | 1 | 9 | 41.2% | `████░░░░░░` |
-| **Total** | | **812** | **173** | **14** | **625** | **21.3%** | `██░░░░░░░░` |
+| **Total** | | **812** | **176** | **14** | **622** | **21.7%** | `██░░░░░░░░` |
 
 ```mermaid
 pie showData title Todos by status
-  "Completed" : 173
+  "Completed" : 176
   "In progress" : 14
-  "Pending" : 625
+  "Pending" : 622
 ```
 <!-- progress:end -->
 

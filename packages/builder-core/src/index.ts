@@ -8,6 +8,7 @@ export * from './fields';
 export * from './history';
 export * from './loaders';
 export * from './patch';
+export * from './public-api';
 export * from './puck-data';
 export * from './renderer';
 export * from './schema-helpers';
