@@ -13,6 +13,7 @@ import postcss from 'postcss';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const input = join(root, 'src/editor-ui.css');
 const tokens = join(root, 'src/tokens.css');
+const motion = join(root, 'src/motion.css');
 const output = join(root, 'dist/editor-ui.css');
 
 // The app pins Tailwind 3 at the workspace root, so a bare 'tailwindcss/…'
@@ -108,9 +109,10 @@ async function build() {
     from: undefined,
   });
   const tokenCss = await readFile(tokens, 'utf8');
+  const motionCss = await readFile(motion, 'utf8');
   const { code } = transform({
     filename: 'editor-ui.css',
-    code: Buffer.from(`${scoped.css}\n${tokenCss}`),
+    code: Buffer.from(`${scoped.css}\n${tokenCss}\n${motionCss}`),
     minify: true,
   });
   const result = { css: code.toString() };

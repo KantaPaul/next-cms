@@ -1,0 +1,100 @@
+/* Shared motion for editor chrome (B15 E2b). Short, token-timed animations
+   keyed to Radix's data-state / data-side attributes, so a component only
+   adds a class. Durations come from --ne-duration-* (0ms under reduced
+   motion, see tokens.css); the block at the end also stops transitions. */
+
+@keyframes ne-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ne-fade-out { from { opacity: 1; } to { opacity: 0; } }
+
+@keyframes ne-zoom-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes ne-zoom-out {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.96); }
+}
+
+/* Centered dialogs keep their translate(-50%, -50%). */
+@keyframes ne-dialog-in {
+  from { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes ne-dialog-out {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  to { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
+}
+
+@keyframes ne-slide-from-top { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@keyframes ne-slide-from-bottom { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes ne-slide-from-left { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: none; } }
+@keyframes ne-slide-from-right { from { opacity: 0; transform: translateX(4px); } to { opacity: 1; transform: none; } }
+
+@keyframes ne-collapse-down {
+  from { height: 0; opacity: 0; }
+  to { height: var(--radix-collapsible-content-height); opacity: 1; }
+}
+@keyframes ne-collapse-up {
+  from { height: var(--radix-collapsible-content-height); opacity: 1; }
+  to { height: 0; opacity: 0; }
+}
+
+@keyframes ne-pop {
+  0% { transform: scale(0.4); opacity: 0; }
+  70% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+/* Backdrops behind dialogs and the palette. */
+.ne-motion-overlay[data-state='open'] { animation: ne-fade-in var(--ne-duration-normal) var(--ne-easing); }
+.ne-motion-overlay[data-state='closed'] { animation: ne-fade-out var(--ne-duration-fast) ease-in; }
+
+/* Centered dialogs. */
+.ne-motion-dialog[data-state='open'] { animation: ne-dialog-in var(--ne-duration-normal) var(--ne-easing); }
+.ne-motion-dialog[data-state='closed'] { animation: ne-dialog-out var(--ne-duration-fast) ease-in; }
+
+/* Popovers, menus, tooltips, select lists: grow out of their trigger side. */
+.ne-motion-pop[data-state='open'],
+.ne-motion-pop[data-state='delayed-open'],
+.ne-motion-pop[data-state='instant-open'] { animation: ne-zoom-in var(--ne-duration-fast) var(--ne-easing); }
+.ne-motion-pop[data-state='closed'] { animation: ne-zoom-out var(--ne-duration-fast) ease-in; }
+.ne-motion-pop[data-state='open'][data-side='bottom'],
+.ne-motion-pop[data-state='delayed-open'][data-side='bottom'] { animation-name: ne-slide-from-top; }
+.ne-motion-pop[data-state='open'][data-side='top'],
+.ne-motion-pop[data-state='delayed-open'][data-side='top'] { animation-name: ne-slide-from-bottom; }
+.ne-motion-pop[data-state='open'][data-side='right'],
+.ne-motion-pop[data-state='delayed-open'][data-side='right'] { animation-name: ne-slide-from-left; }
+.ne-motion-pop[data-state='open'][data-side='left'],
+.ne-motion-pop[data-state='delayed-open'][data-side='left'] { animation-name: ne-slide-from-right; }
+
+/* Collapsible content (field groups, tree branches). */
+.ne-motion-collapse { overflow: hidden; }
+.ne-motion-collapse[data-state='open'] { animation: ne-collapse-down var(--ne-duration-normal) var(--ne-easing); }
+.ne-motion-collapse[data-state='closed'] { animation: ne-collapse-up var(--ne-duration-fast) ease-in; }
+
+/* Content that appears in place (save status, banners, panels). */
+.ne-motion-enter { animation: ne-fade-in var(--ne-duration-normal) var(--ne-easing); }
+.ne-motion-enter-up { animation: ne-slide-from-bottom var(--ne-duration-normal) var(--ne-easing); }
+/* Small markers (changed dots). */
+.ne-motion-pop-in { animation: ne-pop var(--ne-duration-normal) var(--ne-easing); }
+
+/* Moving overlays on the canvas follow the target smoothly. */
+.ne-motion-follow {
+  transition-property: top, left, width, height, transform, opacity;
+  transition-duration: var(--ne-duration-fast);
+  transition-timing-function: var(--ne-easing);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ne-editor-root *,
+  .ne-editor-root *::before,
+  .ne-editor-root *::after,
+  .ne-ui,
+  .ne-ui *,
+  .ne-ui *::before,
+  .ne-ui *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
