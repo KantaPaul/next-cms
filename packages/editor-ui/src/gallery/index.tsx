@@ -5,10 +5,13 @@ import {
   Breadcrumb,
   Button,
   CommandPalette,
+  ContextMenu,
   type EditorDirection,
   EditorShell,
   type EditorTheme,
   EditorUIProvider,
+  FieldGroup,
+  Input,
   IconButton,
   Kbd,
   type LayerNode,
@@ -16,9 +19,11 @@ import {
   Panel,
   type SaveState,
   SaveStatus,
+  Switch,
   StatusBar,
   ToastProvider,
   TopBar,
+  useToast,
 } from '../index';
 import { DesignSystemGallery } from './DesignSystemGallery';
 
@@ -217,6 +222,71 @@ function ShellDemo({
   );
 }
 
+/** E2b: overlays opened from code, collapsible groups, and toasts. */
+function MotionDemo() {
+  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  const [last, setLast] = useState<string | null>(null);
+  const [snap, setSnap] = useState(true);
+  const { toast } = useToast();
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      <div
+        role="presentation"
+        onContextMenu={event => {
+          event.preventDefault();
+          setMenu({ x: event.clientX, y: event.clientY });
+        }}
+        className="flex h-40 select-none flex-col items-center justify-center gap-1 rounded-[var(--ne-radius-lg)] border border-dashed border-[var(--ne-border-strong)] bg-[var(--ne-surface)] text-xs text-[var(--ne-text-muted)]"
+      >
+        <span>Right-click here for the context menu</span>
+        {last && (
+          <span className="ne-motion-enter text-[var(--ne-text)]">
+            Chose: {last}
+          </span>
+        )}
+        <ContextMenu
+          open={!!menu}
+          x={menu?.x ?? 0}
+          y={menu?.y ?? 0}
+          onClose={() => setMenu(null)}
+          actions={['Duplicate', 'Copy style', 'Move up', 'Delete'].map(
+            label => ({
+              id: label,
+              label,
+              danger: label === 'Delete',
+              onClick: () => setLast(label),
+            })
+          )}
+        />
+      </div>
+      <div className="rounded-[var(--ne-radius-lg)] border border-[var(--ne-border)] bg-[var(--ne-surface)] px-3">
+        <FieldGroup title="Spacing">
+          <Input aria-label="Padding" placeholder="Padding" />
+          <Input aria-label="Margin" placeholder="Margin" />
+        </FieldGroup>
+        <FieldGroup title="Behavior" defaultExpanded={false}>
+          <Switch checked={snap} onChange={setSnap} label="Snap to grid" />
+        </FieldGroup>
+        <div className="py-2.5">
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() =>
+              toast({
+                type: 'success',
+                title: 'Saved',
+                message: 'Your changes are live.',
+              })
+            }
+          >
+            Show a toast
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export const EditorUIGallery: React.FC = () => {
   const [theme, setTheme] = useState<EditorTheme>('light');
   const [dir, setDir] = useState<EditorDirection>('ltr');
@@ -272,6 +342,13 @@ export const EditorUIGallery: React.FC = () => {
             <ShellDemo theme={theme} dir={dir} />
           </section>
         )}
+
+        <section className="mx-auto w-full max-w-6xl space-y-3 px-6 pb-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--ne-text-muted)]">
+            0b. Motion and overlays (E2b)
+          </h2>
+          <MotionDemo />
+        </section>
 
         <DesignSystemGallery
           isDark={theme === 'dark'}
