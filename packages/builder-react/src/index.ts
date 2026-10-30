@@ -1,4 +1,5 @@
 export * from './accessibility';
+export * from './adapters';
 export * from './block-list';
 export * from './breadcrumb';
 export * from './builder-editor';

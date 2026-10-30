@@ -16,6 +16,7 @@ import {
   type CommandPaletteItem,
 } from '@nextcms/editor-ui';
 import { type BlockDefinition, type BuilderConfig, type BuilderDocument, emptyDocument, fieldsOf, defaultProps } from '@nextcms/builder-core';
+import { EditorAdapters } from './adapters';
 import { BlockList } from './block-list';
 import { EditorCanvas } from './canvas';
 import { EditorProvider, useEditorStore } from './context';
@@ -33,6 +34,8 @@ export type BuilderEditorShellProps = {
   onChange?: (doc: BuilderDocument) => void;
   /** When true (or `NEXT_PUBLIC_USE_EDITOR_UI_SHELL` is set), use the shared editor-ui shell. */
   useSharedShell?: boolean;
+  /** Adapter bundle for storage, media, data, permissions, AI, etc. (R759). */
+  adapters?: EditorAdapters;
   style?: CSSProperties;
 };
 
@@ -177,6 +180,7 @@ export function BuilderEditorWithSharedShell({
   value,
   onChange,
   useSharedShell,
+  adapters,
   style,
 }: BuilderEditorShellProps) {
   const store = useMemo(
