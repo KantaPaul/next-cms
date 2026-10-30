@@ -30,21 +30,30 @@ interface ToastContextType {
 
 const TOASTER_ID = 'ne-editor';
 
-const ICONS = {
-  success: (
-    <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--ne-success)]" />
-  ),
-  warning: (
-    <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--ne-warning)]" />
-  ),
-  error: <AlertCircle className="h-4 w-4 shrink-0 text-[var(--ne-danger)]" />,
-  info: <Info className="h-4 w-4 shrink-0 text-[var(--ne-primary)]" />,
-};
+// Built on demand, not at import time, so loading this module renders nothing.
+function iconFor(type: NonNullable<ToastMessage['type']>) {
+  switch (type) {
+    case 'success':
+      return (
+        <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--ne-success)]" />
+      );
+    case 'warning':
+      return (
+        <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--ne-warning)]" />
+      );
+    case 'error':
+      return (
+        <AlertCircle className="h-4 w-4 shrink-0 text-[var(--ne-danger)]" />
+      );
+    default:
+      return <Info className="h-4 w-4 shrink-0 text-[var(--ne-primary)]" />;
+  }
+}
 
 function ToastCard({ id, type = 'info', title, message }: ToastMessage) {
   return (
     <div className="ne-ui flex w-[356px] max-w-[calc(100vw-2rem)] items-start gap-2.5 rounded-[var(--ne-radius-md)] border border-[var(--ne-border)] bg-[var(--ne-surface)] p-3 text-[var(--ne-text)] shadow-lg">
-      <div className="mt-0.5">{ICONS[type]}</div>
+      <div className="mt-0.5">{iconFor(type)}</div>
       <div className="min-w-0 flex-1">
         {title && (
           <p className="text-xs font-semibold text-[var(--ne-text)]">{title}</p>

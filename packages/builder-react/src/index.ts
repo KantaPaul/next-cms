@@ -1,4 +1,5 @@
 export * from './accessibility';
+export * from './announcements';
 export * from './adapters';
 export * from './block-list';
 export * from './breadcrumb';

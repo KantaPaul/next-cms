@@ -46,6 +46,7 @@ import {
   LockOpen,
   Trash2,
 } from 'lucide-react';
+import { useEditorAnnouncements } from './announcements';
 import type { BlockGroup } from './block-list';
 import { useEditor, useEditorStore } from './context';
 import {
@@ -673,6 +674,7 @@ export function EditorCanvas({
   style,
 }: EditorCanvasProps) {
   const store = useEditorStore();
+  useEditorAnnouncements(store);
   const [remount, setRemount] = useState<Record<NodeId, number>>({});
   const dragState = useDragState(drag);
   const device = useEditor(state => state.device);

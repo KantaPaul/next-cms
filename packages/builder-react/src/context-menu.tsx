@@ -4,6 +4,7 @@
  */
 
 import { ContextMenu as ContextMenuView } from '@nextcms/editor-ui';
+import { useEffect, useState } from 'react';
 
 export type ContextMenuItem = {
   id: string;
@@ -28,6 +29,11 @@ export function ContextMenu({
   target: ContextMenuTarget | null;
   onClose: () => void;
 }) {
+  // Client only: rendered on the server, Radix's generated ids would not
+  // match the client's and break hydration.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
   // editor-ui's menu (Radix): arrow keys, typeahead, Escape and focus return.
   // Modal, so a click anywhere (including inside the canvas iframe) closes it.
   return (
