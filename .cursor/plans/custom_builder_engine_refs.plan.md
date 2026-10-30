@@ -205,7 +205,7 @@ todos:
     status: pending
   - id: R747
     content: "DAT-11 Publish once, render fast: on publish, store a render-ready published document (normalized, style classes generated, global block versions pinned) so public requests skip that work; live data loaders still run per request"
-    status: pending
+    status: in_progress
   - id: R748
     content: "DAT-12 Fine-grained public caching with the Next.js 16 cache APIs (use cache, cacheTag) per site, page, locale, and global block; publish revalidates only the tags it changed instead of the whole site layout, extending SLG-21 and OZ-06"
     status: pending
@@ -410,7 +410,7 @@ isProject: false
 
 Updated 2026-10-30 by `scripts/plan-progress.mjs`. Do not edit this block by hand.
 
-**67 of 133 completed (50.4%)** · 12 in progress · 54 pending
+**67 of 133 completed (50.4%)** · 13 in progress · 53 pending
 
 `███████████████░░░░░░░░░░░░░░░` 50.4%
 
@@ -418,17 +418,17 @@ Updated 2026-10-30 by `scripts/plan-progress.mjs`. Do not edit this block by han
 |---|---|---|---|---|---|---|---|
 | Engine (ENG) | R680–R710 | 31 | 19 | 5 | 7 | 61.3% | `██████░░░░` |
 | Editor UX (UXE) | R711–R736 | 26 | 22 | 1 | 3 | 84.6% | `████████░░` |
-| Data saving (DAT) | R737–R754 | 18 | 4 | 2 | 12 | 22.2% | `██░░░░░░░░` |
+| Data saving (DAT) | R737–R754 | 18 | 4 | 3 | 11 | 22.2% | `██░░░░░░░░` |
 | Packages (PKG) | R755–R772 | 18 | 4 | 2 | 12 | 22.2% | `██░░░░░░░░` |
 | Extension API (EXT) | R773–R795 | 23 | 11 | 1 | 11 | 47.8% | `█████░░░░░` |
 | Robustness (ROB) | R796–R812 | 17 | 7 | 1 | 9 | 41.2% | `████░░░░░░` |
-| **Total** | | **133** | **67** | **12** | **54** | **50.4%** | `█████░░░░░` |
+| **Total** | | **133** | **67** | **13** | **53** | **50.4%** | `█████░░░░░` |
 
 ```mermaid
 pie showData title Todos by status
   "Completed" : 67
-  "In progress" : 12
-  "Pending" : 54
+  "In progress" : 13
+  "Pending" : 53
 ```
 <!-- progress:end -->
 
