@@ -1279,8 +1279,8 @@ export function NewEditor({
               {rightPanelContent}
             </>
           }
+          commandPalette={commandPalette}
         />
-        {commandPalette}
         {dialogs}
       </EditorProvider>
     );
