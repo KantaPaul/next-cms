@@ -12,18 +12,19 @@ import {
   type NodeId,
   type SlotPosition,
 } from '@nextcms/builder-core';
+import { DropLine, type LayerNode, LayersTree } from '@nextcms/editor-ui';
 import {
   type CSSProperties,
-  type KeyboardEvent,
   type PointerEvent,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
 import { useEditor, useEditorStore } from './context';
 import { DRAG_THRESHOLD } from './drag';
 
-const ACCENT = '#4f46e5';
+// Rows carry editor-ui's LAYER_ROW_ATTRIBUTE; slot headings use `id::slot`.
 const ROW = 'data-layer-row';
 
 /** "column1" → "Column 1", "items[0].content" → "Item 1". */
@@ -34,165 +35,6 @@ export function slotLabel(slot: string): string {
 }
 
 type DropAt = { position: SlotPosition; line: { top: number; left: number } };
-
-const iconButton: CSSProperties = {
-  all: 'unset',
-  cursor: 'pointer',
-  width: 20,
-  textAlign: 'center',
-  font: '12px/1 system-ui, sans-serif',
-  opacity: 0.6,
-};
-
-function Row({
-  id,
-  depth,
-  collapsed,
-  toggle,
-  onStartDrag,
-}: {
-  id: NodeId;
-  depth: number;
-  collapsed: Set<NodeId>;
-  toggle: (id: NodeId) => void;
-  onStartDrag: (id: NodeId, event: PointerEvent) => void;
-}) {
-  const store = useEditorStore();
-  const node = useEditor(state => state.doc.nodes[id]);
-  const selected = useEditor(state => state.selection.includes(id));
-  const hovered = useEditor(state => state.hovered === id);
-  const [renaming, setRenaming] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (selected) ref.current?.scrollIntoView({ block: 'nearest' });
-  }, [selected]);
-
-  if (!node) return null;
-  const label = node.meta?.name || store.schemas[node.type]?.label || node.type;
-  const slots = Object.keys(node.slots);
-  const open = slots.length > 0 && !collapsed.has(id);
-  const onKeyDown = (event: KeyboardEvent) => {
-    if (event.key === 'F2') {
-      event.preventDefault();
-      setRenaming(true);
-    }
-  };
-
-  return (
-    <div>
-      <div
-        ref={ref}
-        {...{ [ROW]: id }}
-        role="treeitem"
-        aria-selected={selected}
-        aria-expanded={slots.length ? open : undefined}
-        tabIndex={0}
-        onClick={event => store.select(id, { additive: event.shiftKey || event.metaKey })}
-        onDoubleClick={() => setRenaming(true)}
-        onKeyDown={onKeyDown}
-        onPointerEnter={() => store.hover(id)}
-        onPointerLeave={() => store.hover(null)}
-        onPointerDown={event => {
-          if ((event.target as HTMLElement).closest('button, input')) return;
-          onStartDrag(id, event);
-        }}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 4,
-          padding: `3px 6px 3px ${6 + depth * 14}px`,
-          borderRadius: 4,
-          cursor: 'default',
-          background: selected ? `${ACCENT}26` : hovered ? 'rgba(127,127,127,.12)' : undefined,
-          opacity: node.meta?.hidden ? 0.5 : 1,
-          font: '13px/1.4 system-ui, sans-serif',
-          userSelect: 'none',
-          touchAction: 'none',
-        }}
-      >
-        <button
-          type="button"
-          aria-label={open ? `Collapse ${label}` : `Expand ${label}`}
-          disabled={!slots.length}
-          onClick={() => toggle(id)}
-          style={{ ...iconButton, visibility: slots.length ? 'visible' : 'hidden' }}
-        >
-          {open ? '▾' : '▸'}
-        </button>
-        {renaming ? (
-          <input
-            // biome-ignore lint/a11y/noAutofocus: rename starts from an explicit double-click or F2
-            autoFocus
-            aria-label="Block name"
-            defaultValue={node.meta?.name ?? ''}
-            placeholder={store.schemas[node.type]?.label ?? node.type}
-            onBlur={event => {
-              store.updateMeta(id, { name: event.target.value.trim() || undefined });
-              setRenaming(false);
-            }}
-            onKeyDown={event => {
-              if (event.key === 'Enter') event.currentTarget.blur();
-              if (event.key === 'Escape') setRenaming(false);
-            }}
-            style={{ flex: 1, font: 'inherit', padding: '1px 4px', minWidth: 0 }}
-          />
-        ) : (
-          <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {label}
-          </span>
-        )}
-        <button
-          type="button"
-          aria-label={node.meta?.hidden ? `Show ${label}` : `Hide ${label} in the editor`}
-          aria-pressed={!!node.meta?.hidden}
-          title={node.meta?.hidden ? 'Show' : 'Hide in the editor'}
-          onClick={() => store.updateMeta(id, { hidden: !node.meta?.hidden })}
-          style={{ ...iconButton, opacity: node.meta?.hidden ? 1 : 0.6 }}
-        >
-          {node.meta?.hidden ? '◌' : '◉'}
-        </button>
-        <button
-          type="button"
-          aria-label={node.meta?.locked ? `Unlock ${label}` : `Lock ${label}`}
-          aria-pressed={!!node.meta?.locked}
-          title={node.meta?.locked ? 'Unlock' : 'Lock'}
-          onClick={() => store.updateMeta(id, { locked: !node.meta?.locked })}
-          style={{ ...iconButton, opacity: node.meta?.locked ? 1 : 0.6 }}
-        >
-          {node.meta?.locked ? '🔒' : '🔓'}
-        </button>
-      </div>
-      {open &&
-        slots.map(slot => (
-          <div key={slot}>
-            {slots.length > 1 && (
-              <div
-                {...{ [ROW]: `${id}::${slot}` }}
-                style={{
-                  padding: `2px 6px 2px ${26 + (depth + 1) * 14}px`,
-                  font: '600 11px/1.4 system-ui, sans-serif',
-                  opacity: 0.55,
-                }}
-              >
-                {slotLabel(slot)}
-              </div>
-            )}
-            {node.slots[slot].map(child => (
-              <Row
-                key={child}
-                id={child}
-                depth={depth + 1}
-                collapsed={collapsed}
-                toggle={toggle}
-                onStartDrag={onStartDrag}
-              />
-            ))}
-          </div>
-        ))}
-    </div>
-  );
-}
 
 /** Where a pointer over the tree would drop: before, after, or into a row. */
 function dropAt(
@@ -210,7 +52,10 @@ function dropAt(
   if (!row) return null;
   const rect = row.getBoundingClientRect();
   const key = row.getAttribute(ROW) ?? '';
-  const lineAt = (y: number) => ({ top: y - box.top + container.scrollTop, left: rect.left - box.left + 20 });
+  const lineAt = (y: number) => ({
+    top: y - box.top + container.scrollTop,
+    left: rect.left - box.left + 20,
+  });
 
   // A slot heading: drop as the slot's first child.
   if (key.includes('::')) {
@@ -225,29 +70,81 @@ function dropAt(
   // The middle of a row with one slot drops inside it, at the end.
   if (node && slots.length === 1 && ratio > 0.3 && ratio < 0.7) {
     const slot = slots[0];
-    const position = { parentId: node.id, slot, index: node.slots[slot].length };
+    const position = {
+      parentId: node.id,
+      slot,
+      index: node.slots[slot].length,
+    };
     if (canPlace(position)) return { position, line: lineAt(rect.bottom) };
   }
   const location = findPosition(doc, key);
   if (!location) return null;
-  const position = { ...location, index: location.index + (ratio < 0.5 ? 0 : 1) };
-  return canPlace(position) ? { position, line: lineAt(ratio < 0.5 ? rect.top : rect.bottom) } : null;
+  const position = {
+    ...location,
+    index: location.index + (ratio < 0.5 ? 0 : 1),
+  };
+  return canPlace(position)
+    ? { position, line: lineAt(ratio < 0.5 ? rect.top : rect.bottom) }
+    : null;
+}
+
+/** The document as LayersTree nodes; a block with several slots gets a heading per slot. */
+export function layerNodes(
+  doc: BuilderDocument,
+  labelOf: (type: string) => string
+): LayerNode[] {
+  const toNode = (id: NodeId): LayerNode | null => {
+    const node = doc.nodes[id];
+    if (!node) return null;
+    const slots = Object.keys(node.slots);
+    const childrenOf = (slot: string) =>
+      node.slots[slot].map(toNode).filter((n): n is LayerNode => n !== null);
+    return {
+      id,
+      type: node.type,
+      name: node.meta?.name || labelOf(node.type),
+      renameValue: node.meta?.name ?? '',
+      hidden: !!node.meta?.hidden,
+      locked: !!node.meta?.locked,
+      children:
+        slots.length > 1
+          ? slots.map(slot => ({
+              id: `${id}::${slot}`,
+              name: slotLabel(slot),
+              type: 'slot',
+              group: true,
+              children: childrenOf(slot),
+            }))
+          : slots.length === 1
+            ? childrenOf(slots[0])
+            : undefined,
+    };
+  };
+  return doc.rootSlot.map(toNode).filter((n): n is LayerNode => n !== null);
 }
 
 export function LayersPanel({ style }: { style?: CSSProperties }) {
   const store = useEditorStore();
-  const rootSlot = useEditor(state => state.doc.rootSlot);
-  const [collapsed, setCollapsed] = useState<Set<NodeId>>(new Set());
-  const [drag, setDrag] = useState<{ id: NodeId; at: DropAt | null } | null>(null);
+  const doc = useEditor(state => state.doc);
+  const selection = useEditor(state => state.selection);
+  const hovered = useEditor(state => state.hovered);
+  const [drag, setDrag] = useState<{ id: NodeId; at: DropAt | null } | null>(
+    null
+  );
   const containerRef = useRef<HTMLDivElement>(null);
+  const nodes = useMemo(
+    () => layerNodes(doc, type => store.schemas[type]?.label ?? type),
+    [doc, store]
+  );
 
-  const toggle = (id: NodeId) =>
-    setCollapsed(current => {
-      const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  // Keep the selected row in view, as selecting on the canvas expects.
+  useEffect(() => {
+    const id = selection[0];
+    if (!id) return;
+    containerRef.current
+      ?.querySelector(`[data-layer-id="${CSS.escape(id)}"]`)
+      ?.scrollIntoView({ block: 'nearest' });
+  }, [selection]);
 
   const onStartDrag = (id: NodeId, event: PointerEvent) => {
     if (event.button !== 0 || store.isLocked(id)) return;
@@ -278,32 +175,40 @@ export function LayersPanel({ style }: { style?: CSSProperties }) {
   };
 
   return (
-    <div
-      ref={containerRef}
-      role="tree"
-      aria-label="Layers"
-      style={{ position: 'relative', ...style }}
-    >
-      {rootSlot.length === 0 && (
-        <p style={{ margin: 0, opacity: 0.6, font: '13px/1.4 system-ui, sans-serif' }}>
-          No blocks yet.
-        </p>
-      )}
-      {rootSlot.map(id => (
-        <Row key={id} id={id} depth={0} collapsed={collapsed} toggle={toggle} onStartDrag={onStartDrag} />
-      ))}
+    <div ref={containerRef} style={{ position: 'relative', ...style }}>
+      <LayersTree
+        nodes={nodes}
+        label="Layers"
+        emptyLabel="No blocks yet."
+        selectedIds={selection}
+        onSelect={(id, options) => store.select(id, options)}
+        hoveredId={hovered}
+        onHover={id => store.hover(id)}
+        onRowPointerDown={onStartDrag}
+        onRename={(id, name) =>
+          store.updateMeta(id, { name: name || undefined })
+        }
+        onToggleHide={id =>
+          store.updateMeta(id, {
+            hidden: !store.getState().doc.nodes[id]?.meta?.hidden,
+          })
+        }
+        onToggleLock={id =>
+          store.updateMeta(id, {
+            locked: !store.getState().doc.nodes[id]?.meta?.locked,
+          })
+        }
+      />
       {drag?.at && (
-        <div
-          aria-hidden
-          style={{
-            position: 'absolute',
-            left: drag.at.line.left,
-            right: 4,
+        <DropLine
+          orientation="horizontal"
+          position={{
             top: drag.at.line.top - 1,
-            height: 2,
-            background: ACCENT,
-            borderRadius: 1,
-            pointerEvents: 'none',
+            left: drag.at.line.left,
+            length: Math.max(
+              0,
+              (containerRef.current?.clientWidth ?? 0) - drag.at.line.left - 4
+            ),
           }}
         />
       )}
