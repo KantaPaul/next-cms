@@ -1,3 +1,15 @@
 export { cn } from './lib/cn';
 export { Button, buttonVariants } from './primitives/Button';
 export type { ButtonProps } from './primitives/Button';
+export { Input } from './primitives/Input';
+export type { InputProps } from './primitives/Input';
+export { Textarea } from './primitives/Textarea';
+export type { TextareaProps } from './primitives/Textarea';
+export { Switch } from './primitives/Switch';
+export { Tabs, TabsList, TabsTrigger, TabsContent } from './primitives/Tabs';
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './primitives/Tooltip';
+export { Popover, PopoverTrigger, PopoverContent } from './primitives/Popover';
+export { Dialog, DialogPortal, DialogOverlay, DialogClose, DialogTrigger, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from './primitives/Dialog';
+export { Skeleton } from './primitives/Skeleton';
+export { Label } from './primitives/Label';
+export { Select } from './primitives/Select';
