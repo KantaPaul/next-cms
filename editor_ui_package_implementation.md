@@ -8,9 +8,11 @@ Use this after the prototype from `builder-editor-prototype-design-guideline.md`
 
 ---
 
-## Status (updated 2026-10-30, after the E1–E3 completion pass on top of `d876236`)
+## Status (updated 2026-10-30, after E6 step 1 — commits `3011a67`…`3877c1d`)
 
-**Overall: about 58%** (was about 50%). The E1–E3 gaps are closed, so this is the plan's first review point. Estimate from the code, weighted by phase size (small 1, medium 2, large 3). Verified: `pnpm test` (398 pass), `tsc` for `editor-ui` and `builder-react` (0 errors; `builder-react` had 37 after `df392e9` swapped in the prototype shell API), and the gallery in the browser in light, dark, LTR and RTL.
+**Overall: about 62%** (was about 58% after the E1–E3 pass). Estimate from the code, weighted by phase size (small 1, medium 2, large 3). Verified: `pnpm test` (400 pass), `tsc` for `editor-ui` and `builder-react` (0 errors; the root project's 210 errors are all in files this work does not touch), the gallery in light, dark, LTR and RTL, and the real page builder in both chromes.
+
+**Try it:** open any builder with `?shell=new` (for example `/dashboard/pages/{id}/builder?shell=new`), or set `NEXT_PUBLIC_EDITOR_UI_SHELL=1` to make the new chrome the default (`?shell=legacy` still switches back).
 
 | Phase | Size | Estimate | What's there / what's missing |
 | --- | --- | --- | --- |
@@ -20,12 +22,14 @@ Use this after the prototype from `builder-editor-prototype-design-guideline.md`
 | E3 Shell and feedback | medium | ~90% | **Done:** `EditorShell` with `topBar` / `library` / `canvas` / `inspector` / `statusBar` / `commandPalette` slots, `focusMode`, `theme`, `dir`, and no palette state of its own (G6). `Panel`: pointer resize, arrow / Shift / Home / End keys, sizes saved under `storageKey`, logical sides (G5). `CommandPalette`: cmdk inside the package's Radix dialog (focus trap, title, follows the editor's theme and direction). `TopBar` controls are optional; `StatusBar` has left / center / right slots; `Breadcrumb` uses `aria-current`; gallery shell demo. **Missing:** `builder-react/resizable-panel.tsx` does not render through `Panel` yet. |
 | E4 Library, tree, inspector | medium | ~65% | **Done:** `LayersTree` is a WAI-ARIA tree: one tab stop; arrows, Home/End, Enter/Space, F2, Alt+Up/Down; levels and set sizes (G8). One copy only (`src/tree/`). **Missing:** `builder-react` `layers.tsx`, `inspector.tsx`, `fields.tsx` and `block-list.tsx` do not render through these parts. |
 | E5 Overlays and a11y | medium | ~60% | **Done:** SelectionBox, HoverBox, DropLine, FloatingToolbar, ContextMenu, ResizeHandles, useKeyboardMove, LiveAnnouncer (the duplicate in `feedback/` is removed). **Not checked:** whether the canvas renders through them. |
-| E6 Page builder adoption | large | ~50% | **Done:** `builder-react/src/shared-shell.tsx` typechecks again on the slot API, with the palette in its slot and Cmd+K. **Missing:** no app route renders `BuilderEditorWithSharedShell` (the editor route still uses `NewEditor`); top bar not wired to save / publish; e2e checks. |
+| E6 Page builder adoption | large | ~75% | **Done:** every builder route (pages, posts, templates, globals, contact forms) renders `NewEditor` inside `EditorShell` behind the flag; the old chrome is unchanged and stays the default. Top bar: back link, real title, `SaveStatus` from the save queue (Retry flushes it), undo/redo, device switch, preview, focus mode, and the page's own primary action ("Update live page", "Submit for review", or save-live). Lock, conflict, offline, local-copy and issues banners sit in the new `notices` slot. Panels are the package `Panel` with the old storage keys. Status bar: breadcrumb, block and selection counts. The existing palette sits in the `commandPalette` slot. Theme follows editor preferences, or the admin's dark mode when set to "system". Checked in the browser: insert, undo/redo, device, focus mode, palette, panel resize, autosave. **Missing:** quick insert, breadcrumb and Content/Style/Advanced tabs not re-skinned with package parts yet (R713, R718, R722); the panel contents still look old until E4; no automated e2e (add, nest, drag, undo, save, publish); Publish not clicked in testing (it calls the same `publish` function as the old chrome). |
 | E8 Dynamic wiring | large | ~40% | **Done:** adapter contracts. **Missing:** they still use mock defaults; no real server actions or structured query endpoint. |
 | E7 Dashboard builder | large | ~60% | **Done:** `builder-react/src/dashboard-shell.tsx` typechecks on the package API; the library adds widgets. **Missing:** not used by any app route; widget state is local. |
 | E9 Quality and release | medium | ~35% | **Done:** README; tests for shell slots, focus mode, Panel, Breadcrumb, palette, tree semantics (15 in the package); size-budget script. **Missing:** CI wiring for the budget, gallery screenshot tests, axe check, a check that the public renderer does not import editor-ui, changesets. |
 
-**Next:** review the package shape at this point (plan rule: stop after E3), then run `pnpm install` once `node_modules` is owned by your user again (`sudo chown -R pobon:staff node_modules`), to finish the E1 dependency items.
+**Known bug, already there before this work (both chromes):** undoing an insert before its autosave lands makes the next save fail with "node … is not on the page". The patch asks the server to remove a block it never received. To fix in the save queue or the server patch step.
+
+**Next:** E4. Make `builder-react`'s layers, inspector tabs and block list render through `LayersTree`, `InspectorTabs` and `LibraryPanel`, so the panel contents match the new chrome. Also finish the E1 dependency items with `pnpm install` (`node_modules` is writable again).
 
 ---
 
