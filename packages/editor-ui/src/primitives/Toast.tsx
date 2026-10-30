@@ -1,6 +1,20 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import { CheckCircle2, AlertTriangle, AlertCircle, Info, X } from 'lucide-react';
+import {
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle2,
+  Info,
+  X,
+} from 'lucide-react';
+import type React from 'react';
+import { createContext, useContext, useMemo } from 'react';
+import { toast as sonnerToast, Toaster } from 'sonner';
 
+/**
+ * Editor toasts on sonner (B15 E2b): stacked, animated in and out, swipe or
+ * click to dismiss, announced politely. They go to the editor's own Toaster
+ * (`toasterId`), so the host app's sonner toasts never show twice. Same API
+ * as before: `const { toast, dismiss } = useToast()`.
+ */
 export interface ToastMessage {
   id: string;
   type?: 'success' | 'warning' | 'error' | 'info';
@@ -10,83 +24,86 @@ export interface ToastMessage {
 }
 
 interface ToastContextType {
-  toast: (msg: Omit<ToastMessage, 'id'>) => void;
+  toast: (msg: Omit<ToastMessage, 'id'>) => string;
   dismiss: (id: string) => void;
 }
 
+const TOASTER_ID = 'ne-editor';
+
+const ICONS = {
+  success: (
+    <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--ne-success)]" />
+  ),
+  warning: (
+    <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--ne-warning)]" />
+  ),
+  error: <AlertCircle className="h-4 w-4 shrink-0 text-[var(--ne-danger)]" />,
+  info: <Info className="h-4 w-4 shrink-0 text-[var(--ne-primary)]" />,
+};
+
+function ToastCard({ id, type = 'info', title, message }: ToastMessage) {
+  return (
+    <div className="ne-ui flex w-[356px] max-w-[calc(100vw-2rem)] items-start gap-2.5 rounded-[var(--ne-radius-md)] border border-[var(--ne-border)] bg-[var(--ne-surface)] p-3 text-[var(--ne-text)] shadow-lg">
+      <div className="mt-0.5">{ICONS[type]}</div>
+      <div className="min-w-0 flex-1">
+        {title && (
+          <p className="text-xs font-semibold text-[var(--ne-text)]">{title}</p>
+        )}
+        <p className="text-xs text-[var(--ne-text-muted)]">{message}</p>
+      </div>
+      <button
+        type="button"
+        aria-label="Dismiss"
+        onClick={() => sonnerToast.dismiss(id)}
+        className="cursor-pointer rounded p-0.5 text-[var(--ne-text-muted)] hover:text-[var(--ne-text)]"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+
+function show(msg: Omit<ToastMessage, 'id'>): string {
+  const id = sonnerToast.custom(
+    toastId => <ToastCard {...msg} id={String(toastId)} />,
+    {
+      toasterId: TOASTER_ID,
+      duration:
+        msg.duration && msg.duration > 0
+          ? msg.duration
+          : msg.duration === 0
+            ? Number.POSITIVE_INFINITY
+            : 4000,
+    }
+  );
+  return String(id);
+}
+
+const api: ToastContextType = {
+  toast: show,
+  dismiss: id => sonnerToast.dismiss(id),
+};
+
 const ToastContext = createContext<ToastContextType | null>(null);
 
-export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [toasts, setToasts] = useState<ToastMessage[]>([]);
-
-  const dismiss = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
-
-  const toast = useCallback((msg: Omit<ToastMessage, 'id'>) => {
-    const id = Math.random().toString(36).substring(2, 9);
-    const newToast: ToastMessage = { ...msg, id };
-    setToasts((prev) => [...prev, newToast]);
-
-    const duration = msg.duration ?? 4000;
-    if (duration > 0) {
-      setTimeout(() => {
-        dismiss(id);
-      }, duration);
-    }
-  }, [dismiss]);
-
+/** Renders the editor's Toaster once; nested providers reuse the outer one. */
+export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const outer = useContext(ToastContext);
+  const value = useMemo(() => api, []);
+  if (outer) return <>{children}</>;
   return (
-    <ToastContext.Provider value={{ toast, dismiss }}>
+    <ToastContext.Provider value={value}>
       {children}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm pointer-events-none">
-        {toasts.map((t) => {
-          const icon = {
-            success: <CheckCircle2 className="w-4 h-4 text-[var(--ne-success)] shrink-0" />,
-            warning: <AlertTriangle className="w-4 h-4 text-[var(--ne-warning)] shrink-0" />,
-            error: <AlertCircle className="w-4 h-4 text-[var(--ne-danger)] shrink-0" />,
-            info: <Info className="w-4 h-4 text-[var(--ne-primary)] shrink-0" />,
-          }[t.type || 'info'];
-
-          return (
-            <div
-              key={t.id}
-              role="alert"
-              className="pointer-events-auto flex items-start gap-2.5 p-3 bg-[var(--ne-surface)] border border-[var(--ne-border)] rounded-[var(--ne-radius-md)] shadow-lg animate-in slide-in-from-bottom-2 duration-150"
-            >
-              <div className="mt-0.5">{icon}</div>
-              <div className="flex-1 min-w-0">
-                {t.title && (
-                  <p className="text-xs font-semibold text-[var(--ne-text)] font-sans">
-                    {t.title}
-                  </p>
-                )}
-                <p className="text-xs text-[var(--ne-text-muted)] font-sans">
-                  {t.message}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => dismiss(t.id)}
-                className="text-[var(--ne-text-muted)] hover:text-[var(--ne-text)] p-0.5 rounded cursor-pointer"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          );
-        })}
-      </div>
+      <Toaster
+        id={TOASTER_ID}
+        position="bottom-right"
+        gap={8}
+        visibleToasts={4}
+      />
     </ToastContext.Provider>
   );
 };
 
-export const useToast = () => {
-  const context = useContext(ToastContext);
-  if (!context) {
-    return {
-      toast: (msg: Omit<ToastMessage, 'id'>) => console.log('Toast:', msg),
-      dismiss: () => {},
-    };
-  }
-  return context;
-};
+export const useToast = (): ToastContextType => useContext(ToastContext) ?? api;

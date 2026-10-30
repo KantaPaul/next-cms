@@ -1,6 +1,14 @@
-import React, { useState } from 'react';
+import * as Collapsible from '@radix-ui/react-collapsible';
 import { ChevronRight } from 'lucide-react';
+import type React from 'react';
+import { useState } from 'react';
+import { cn } from '../lib/cn';
 
+/**
+ * A titled, collapsible group of fields on Radix Collapsible (B15 E2b): the
+ * content animates open and closed, the header is a real button with
+ * aria-expanded. Same props as before.
+ */
 export interface FieldGroupProps {
   title: string;
   defaultExpanded?: boolean;
@@ -14,33 +22,33 @@ export const FieldGroup: React.FC<FieldGroupProps> = ({
   defaultExpanded = true,
   action,
   children,
-  className = '',
+  className,
 }) => {
   const [expanded, setExpanded] = useState(defaultExpanded);
-
   return (
-    <div className={`border-b border-[var(--ne-border)] last:border-b-0 py-2.5 ${className}`}>
-      <div className="flex items-center justify-between mb-1.5 select-none">
-        <button
-          type="button"
-          onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-1.5 text-xs font-semibold text-[var(--ne-text)] hover:text-[var(--ne-primary)] cursor-pointer transition-colors"
-        >
+    <Collapsible.Root
+      open={expanded}
+      onOpenChange={setExpanded}
+      className={cn(
+        'border-b border-[var(--ne-border)] py-2.5 last:border-b-0',
+        className
+      )}
+    >
+      <div className="mb-1.5 flex select-none items-center justify-between">
+        <Collapsible.Trigger className="flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-[var(--ne-text)] transition-colors hover:text-[var(--ne-primary)] focus-visible:outline-2 focus-visible:outline-[var(--ne-focus-ring)]">
           <ChevronRight
-            className={`w-3.5 h-3.5 text-[var(--ne-text-muted)] transition-transform duration-150 ${
-              expanded ? 'rotate-90' : ''
-            }`}
+            className={cn(
+              'h-3.5 w-3.5 text-[var(--ne-text-muted)] transition-transform duration-[var(--ne-duration-fast)]',
+              expanded ? 'rotate-90' : 'rtl:-scale-x-100'
+            )}
           />
           <span>{title}</span>
-        </button>
+        </Collapsible.Trigger>
         {action && <div>{action}</div>}
       </div>
-
-      {expanded && (
-        <div className="pl-5 pr-1 space-y-1">
-          {children}
-        </div>
-      )}
-    </div>
+      <Collapsible.Content className="ne-motion-collapse">
+        <div className="space-y-1 pe-1 ps-5">{children}</div>
+      </Collapsible.Content>
+    </Collapsible.Root>
   );
 };
