@@ -39,12 +39,13 @@ Use this after the prototype from `builder-editor-prototype-design-guideline.md`
 - [x] Inspector: edit, reset to default, device values, read-only when locked.
 - [x] Palette, focus mode, device switch, preview, panel resize; screen-reader announcements.
 - [x] End-to-end flows pass in `pnpm test`.
-- [ ] Publish and Submit for review clicked once on a throwaway page in the new chrome.
-- [ ] Nested drops and the blocked-drop notice checked on a page with container blocks.
-- [ ] Posts, templates, globals and contact forms opened once each with `?shell=new`.
-- [ ] Decision: dark mode stays deferred, so the editor follows the admin theme as it does today.
+- [x] Publish clicked on a throwaway page in the new chrome (2026-10-31): status Draft → Published, one "Page published" toast; page deleted afterwards.
+- [ ] Submit for review: only shown to accounts that cannot publish (e.g. the seeded author); not clicked, because testing it means signing out of the admin session in the browser. It calls the same `submitForReview` as the old chrome.
+- [x] Nested drops on a page with Container and Columns: a Button dragged from the library into a column lands inside it (layers level 2). A Columns block dropped over a column is refused there and placed at the page level instead, as the rules say. The blocked-drop notice only appears when nothing under the pointer accepts the block (the drag falls back to the nearest allowed place otherwise); on a normal page the root always accepts, so the notice is rare by design. It renders correctly in the gallery.
+- [x] Other builders with `?shell=new`: a post template (Draft badge, Save draft, "Update live template") and a global block (single "Save", no draft or badge) work in the new chrome. Not reachable on this site: posts (they use the rich-text editor, so the builder route redirects), page templates (built-in system templates, used through "Use template"), contact forms (none exist yet).
+- [x] Decision: dark mode stays deferred (your call of 2026-10-30), so the editor follows the admin theme as it does today.
 
-**Next:** finish that checklist, then switch the default. After that, E8 (real dashboard data), then E7 and E9.
+**Next:** Submit for review is the only open item (needs an author account); then switch the default. After that, E8 (real dashboard data), then E7 and E9.
 
 ---
 
