@@ -8,6 +8,27 @@ Use this after the prototype from `builder-editor-prototype-design-guideline.md`
 
 ---
 
+## Status (checked 2026-10-30, at commit `df392e9`)
+
+**Overall: about 50%.** Every phase from E1 to E9 has a commit, but most phases only partly meet their "Done when" check. This is an estimate from the code, weighted by phase size (small 1, medium 2, large 3). Tests and typecheck were not run for this check.
+
+| Phase | Size | Estimate | What's there / what's missing |
+| --- | --- | --- | --- |
+| E0 Audit | small | 0% | `docs/editor-ui-audit.md` does not exist. |
+| E1 Skeleton | small | ~50% | **Done:** package, Biome rule blocking `@/` in `packages/**`. **Missing:** compiled CSS build (`dist/editor-ui.css`, gap G1), `packages/editor-ui/components.json`, dev gallery route, size-budget script. `lucide-react` is a dependency, not a peer dependency; the package also depends on `@nextcms/builder-core`. |
+| E2 Tokens and primitives | medium | ~60% | **Done:** 16 primitives, `tokens.css`, `tokens.ts`. **Missing:** motion tokens as CSS variables (G4), `[data-ne-theme="dark"]` support, ThemeProvider and DirectionProvider (G2), gallery with all states. |
+| E3 Shell and feedback | medium | ~65% | **Done:** EditorShell, TopBar, Panel, Breadcrumb, StatusBar, CommandPalette, SaveStatus, EmptyState, ErrorState, StaleNotice, ConflictDialog. **Missing:** `Panel` does not save sizes or resize with arrow keys (G5). |
+| E4 Library, tree, inspector | medium | ~55% | **Done:** LibraryPanel, LibraryItem, LayersTree, the 8 inspector parts. **Missing:** `role="tree"` / `treeitem` and arrow-key navigation (G8). `LayersTree` exists twice (`src/layers/` and `src/tree/`). |
+| E5 Overlays and a11y | medium | ~60% | **Done:** SelectionBox, HoverBox, DropLine, FloatingToolbar, ContextMenu, ResizeHandles, useKeyboardMove, LiveAnnouncer (also duplicated in `a11y/` and `feedback/`). **Not checked:** whether the canvas renders through them. |
+| E6 Page builder adoption | large | ~60% | **Done:** `builder-react/src/shared-shell.tsx` behind a flag. **Not checked:** e2e checks (add, nest, drag, undo, save, publish). |
+| E8 Dynamic wiring | large | ~40% | **Done:** adapter contracts. **Missing:** they still use mock defaults; no real server actions or structured query endpoint. |
+| E7 Dashboard builder | large | ~60% | **Done:** `builder-react/src/dashboard-shell.tsx` on the shared package. |
+| E9 Quality and release | medium | ~25% | **Done:** README, 2 test files (`button.test.ts`, `cn.test.ts`). **Missing:** gallery screenshot tests, axe check, CI size budget, check that the public renderer does not import editor-ui, changesets. |
+
+**Biggest risk:** the components use Tailwind classes, but nothing compiles the package's CSS, and the app's Tailwind config only scans `./src/**`. Most editor-ui styling probably does not show up in the app (not checked in the browser). Fix the E1 CSS build first.
+
+---
+
 ## 0. What the prototype contains (checked 2026-10-30)
 
 Vite + React 19 + Tailwind v4 app, about 7,600 lines. Its layout is very close to the target package, so most phases **port and adapt** code instead of building it from scratch.
@@ -69,7 +90,7 @@ Working rules:
 ## 2. Before you start (one-time setup)
 
 - [x] Export the AI Studio prototype. Done: it is its own repo (link at the top). It is a reference, not production code.
-- [ ] Clone it, pinned, into a git-ignored `prototype/` folder so Claude Code can read it without committing it:
+- [x] Clone it, pinned, into a git-ignored `prototype/` folder so Claude Code can read it without committing it:
   `git clone https://github.com/KantaPaul/NextCMS-Shared-Editor-UI-Builder-Prototypes prototype && git -C prototype checkout 921e6be`, and add `prototype/` to `.gitignore`.
 - [ ] Run `pnpm test` and `pnpm builder:check-documents` and note that they pass.
 - [ ] Add a `CLAUDE.md` at the repo root (template below).
