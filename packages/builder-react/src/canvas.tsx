@@ -24,8 +24,28 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useRef,
   useState,
 } from 'react';
+import {
+  DropLine,
+  DropZone,
+  FloatingToolbar,
+  HoverBox,
+  MarqueeBox,
+  OverlayNotice,
+  SelectionBox,
+  type ToolbarAction,
+} from '@nextcms/editor-ui';
+import {
+  ArrowDown,
+  ArrowUp,
+  Copy,
+  CornerLeftUp,
+  Group,
+  LockOpen,
+  Trash2,
+} from 'lucide-react';
 import type { BlockGroup } from './block-list';
 import { useEditor, useEditorStore } from './context';
 import {
@@ -311,7 +331,9 @@ function CanvasDocument({
       // Apply state style overrides for preview (R725).
       if (stateStyle) {
         const stateOverrides = propsForState(node, stateStyle);
-        return transformProps ? transformProps(node, { ...merged, ...stateOverrides }) : { ...merged, ...stateOverrides };
+        return transformProps
+          ? transformProps(node, { ...merged, ...stateOverrides })
+          : { ...merged, ...stateOverrides };
       }
       return transformProps ? transformProps(node, merged) : merged;
     },
@@ -345,30 +367,6 @@ function useFrameLayoutTick(frame: HTMLIFrameElement | null) {
   return tick;
 }
 
-const box = (rect: Rect, style: CSSProperties): CSSProperties => ({
-  position: 'absolute',
-  left: rect.left,
-  top: rect.top,
-  width: rect.width,
-  height: rect.height,
-  boxSizing: 'border-box',
-  pointerEvents: 'none',
-  ...style,
-});
-
-const buttonStyle: CSSProperties = {
-  all: 'unset',
-  cursor: 'pointer',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: 24,
-  height: 24,
-  borderRadius: 4,
-  color: '#fff',
-  font: '600 13px/1 system-ui, sans-serif',
-};
-
 function Toolbar({
   id,
   rect,
@@ -385,155 +383,138 @@ function Toolbar({
   const type = useEditor(state => state.doc.nodes[id]?.type);
   const name = useEditor(state => state.doc.nodes[id]?.meta?.name);
   const locked = useEditor(state => !!state.doc.nodes[id]?.meta?.locked);
-  const label = name || ((type && store.schemas[type]?.label) ?? type);
-  const above = rect.top >= 30;
-  const actions: [string, string, () => void][] = locked
+  const label = name || ((type && store.schemas[type]?.label) ?? type) || '';
+  const icon = 'h-3.5 w-3.5';
+  const parent: ToolbarAction = {
+    id: 'parent',
+    label: 'Select parent',
+    icon: <CornerLeftUp className={icon} />,
+    onClick: () => store.selectParent(),
+  };
+  const actions: ToolbarAction[] = locked
     ? [
-        ['Select parent', '↖', () => store.selectParent()],
-        ['Unlock', '🔒', () => store.updateMeta(id, { locked: false })],
+        parent,
+        {
+          id: 'unlock',
+          label: 'Unlock',
+          icon: <LockOpen className={icon} />,
+          onClick: () => store.updateMeta(id, { locked: false }),
+        },
       ]
     : [
-        ['Select parent', '↖', () => store.selectParent()],
-        ['Move up', '▲', () => store.nudge(id, -1)],
-        ['Move down', '▼', () => store.nudge(id, 1)],
-        ['Duplicate', '⧉', () => store.duplicate([id])],
-        ['Delete', '✕', () => store.remove([id])],
+        parent,
+        {
+          id: 'up',
+          label: 'Move up',
+          shortcut: 'Alt+↑',
+          icon: <ArrowUp className={icon} />,
+          onClick: () => store.nudge(id, -1),
+        },
+        {
+          id: 'down',
+          label: 'Move down',
+          shortcut: 'Alt+↓',
+          icon: <ArrowDown className={icon} />,
+          onClick: () => store.nudge(id, 1),
+        },
+        {
+          id: 'duplicate',
+          label: 'Duplicate',
+          shortcut: '⌘D',
+          icon: <Copy className={icon} />,
+          onClick: () => store.duplicate([id]),
+        },
+        ...(node
+          ? (blockActions?.(node) ?? []).map(action => ({
+              id: action.id,
+              label: action.label,
+              icon: <span aria-hidden>{action.icon}</span>,
+              onClick: action.run,
+            }))
+          : []),
+        {
+          id: 'delete',
+          label: 'Delete',
+          shortcut: 'Del',
+          icon: <Trash2 className={icon} />,
+          onClick: () => store.remove([id]),
+          danger: true,
+        },
       ];
   return (
-    <div
-      role="toolbar"
-      aria-label={`${label} actions`}
-      style={{
-        position: 'absolute',
-        left: rect.left,
-        top: above ? rect.top - 28 : rect.top + 4,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 2,
-        padding: '2px 4px',
-        borderRadius: 6,
-        background: ACCENT,
-        boxShadow: '0 2px 8px rgba(0,0,0,.2)',
-        pointerEvents: 'auto',
-        zIndex: 2,
-      }}
-    >
-      {!locked && (
-        <button
-          type="button"
-          aria-label={`Drag ${label}`}
-          title="Drag to move"
-          style={{ ...buttonStyle, cursor: 'grab' }}
-          onPointerDown={event => drag.start({ kind: 'move', id }, event)}
-        >
-          ⠿
-        </button>
-      )}
-      <span
-        style={{
-          color: '#fff',
-          font: '600 12px/1 system-ui, sans-serif',
-          padding: '0 6px',
-        }}
-      >
-        {label}
-      </span>
-      {actions.map(([title, icon, run]) => (
-        <button
-          key={title}
-          type="button"
-          aria-label={title}
-          title={title}
-          style={buttonStyle}
-          onClick={run}
-        >
-          {icon}
-        </button>
-      ))}
-      {node &&
-        !locked &&
-        blockActions?.(node).map(action => (
-          <button
-            key={action.id}
-            type="button"
-            aria-label={action.label}
-            title={action.label}
-            style={buttonStyle}
-            onClick={action.run}
-          >
-            {action.icon}
-          </button>
-        ))}
-    </div>
+    <FloatingToolbar
+      top={rect.top}
+      left={rect.left}
+      placement={rect.top >= 34 ? 'above' : 'below'}
+      label={label}
+      tone={locked ? 'locked' : 'default'}
+      dragHandle={
+        locked
+          ? undefined
+          : {
+              label: `Drag ${label}`,
+              onPointerDown: event => drag.start({ kind: 'move', id }, event),
+            }
+      }
+      actions={actions}
+    />
   );
 }
 
 /** Toolbar shown above a multi-block selection (R719): duplicate, delete, and group. */
 function MultiSelectToolbar({ ids, rect }: { ids: NodeId[]; rect: Rect }) {
   const store = useEditorStore();
-  const above = rect.top >= 30;
   const canGroup =
     !!store.schemas.Container?.slots &&
     Object.keys(store.schemas.Container.slots ?? {}).length > 0;
+  const icon = 'h-3.5 w-3.5';
   return (
-    <div
-      role="toolbar"
-      aria-label={`${ids.length} blocks selected`}
-      style={{
-        position: 'absolute',
-        left: rect.left,
-        top: above ? rect.top - 28 : rect.top + 4,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 2,
-        padding: '2px 4px',
-        borderRadius: 6,
-        background: ACCENT,
-        boxShadow: '0 2px 8px rgba(0,0,0,.2)',
-        pointerEvents: 'auto',
-        zIndex: 2,
-      }}
-    >
-      <span
-        style={{
-          color: '#fff',
-          font: '600 12px/1 system-ui, sans-serif',
-          padding: '0 6px',
-        }}
-      >
-        {ids.length} selected
-      </span>
-      {canGroup && (
-        <button
-          type="button"
-          aria-label="Group in a container"
-          title="Group in a container"
-          style={buttonStyle}
-          onClick={() => store.wrap('Container', ids)}
-        >
-          ▣
-        </button>
-      )}
-      <button
-        type="button"
-        aria-label="Duplicate selection"
-        title="Duplicate"
-        style={buttonStyle}
-        onClick={() => store.duplicate(ids)}
-      >
-        ⧉
-      </button>
-      <button
-        type="button"
-        aria-label="Delete selection"
-        title="Delete"
-        style={buttonStyle}
-        onClick={() => store.remove(ids)}
-      >
-        ✕
-      </button>
-    </div>
+    <FloatingToolbar
+      top={rect.top}
+      left={rect.left}
+      placement={rect.top >= 34 ? 'above' : 'below'}
+      label={`${ids.length} selected`}
+      ariaLabel={`${ids.length} blocks selected`}
+      actions={[
+        ...(canGroup
+          ? [
+              {
+                id: 'group',
+                label: 'Group in a container',
+                icon: <Group className={icon} />,
+                onClick: () => store.wrap('Container', ids),
+              },
+            ]
+          : []),
+        {
+          id: 'duplicate',
+          label: 'Duplicate selection',
+          icon: <Copy className={icon} />,
+          onClick: () => store.duplicate(ids),
+        },
+        {
+          id: 'delete',
+          label: 'Delete selection',
+          icon: <Trash2 className={icon} />,
+          onClick: () => store.remove(ids),
+          danger: true,
+        },
+      ]}
+    />
   );
+}
+
+/** DropLine props from the drop target's line rect: wide is horizontal, tall is vertical. */
+function dropLineProps(line: Rect) {
+  const horizontal = line.width >= line.height;
+  return {
+    orientation: horizontal ? ('horizontal' as const) : ('vertical' as const),
+    position: {
+      top: horizontal ? line.top + line.height / 2 - 1 : line.top,
+      left: horizontal ? line.left : line.left + line.width / 2 - 1,
+      length: horizontal ? line.width : line.height,
+    },
+  };
 }
 
 function CanvasOverlay({
@@ -555,6 +536,22 @@ function CanvasOverlay({
   const hovered = useEditor(state => state.hovered);
   const dragState = useDragState(drag);
   const tick = useFrameLayoutTick(frame);
+  const store = useEditorStore();
+  const labelOf = (id: NodeId) => {
+    const node = doc.nodes[id];
+    return (
+      node?.meta?.name ||
+      store.schemas[node?.type ?? '']?.label ||
+      node?.type ||
+      ''
+    );
+  };
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const [visibleLeft, setVisibleLeft] = useState(0);
+  const inView = (rect: Rect): Rect => ({
+    ...rect,
+    left: Math.max(rect.left, visibleLeft + 8),
+  });
   const [rects, setRects] = useState<{
     hovered: Rect | null;
     selected: [NodeId, Rect][];
@@ -577,6 +574,21 @@ function CanvasOverlay({
         return rect ? [[id, rect] as [NodeId, Rect]] : [];
       }),
     });
+    // The canvas can be wider than its viewport (desktop width in a narrow
+    // window) and overflow on the left; keep toolbars where they can be seen.
+    const overlay = overlayRef.current;
+    let clip = overlay?.parentElement ?? null;
+    while (clip && getComputedStyle(clip).overflowX === 'visible')
+      clip = clip.parentElement;
+    if (overlay && clip) {
+      setVisibleLeft(
+        Math.max(
+          0,
+          clip.getBoundingClientRect().left -
+            overlay.getBoundingClientRect().left
+        )
+      );
+    }
   }, [frame, doc, selection, hovered, tick]);
 
   const primary = rects.selected[0];
@@ -586,6 +598,10 @@ function CanvasOverlay({
     : null;
   return (
     <div
+      // `.ne-ui`: editor-ui's styling scope, so these parts look the same in
+      // the old chrome, where the canvas is not inside EditorShell.
+      ref={overlayRef}
+      className="ne-ui"
       style={{
         position: 'absolute',
         inset: 0,
@@ -593,16 +609,21 @@ function CanvasOverlay({
         pointerEvents: 'none',
       }}
     >
-      {rects.hovered && !dragState.active && (
-        <div style={box(rects.hovered, { border: `1px dashed ${ACCENT}` })} />
+      {rects.hovered && hovered && !dragState.active && (
+        <HoverBox bounds={rects.hovered} label={labelOf(hovered)} />
       )}
       {rects.selected.map(([id, rect]) => (
-        <div key={id} style={box(rect, { border: `2px solid ${ACCENT}` })} />
+        <SelectionBox
+          key={id}
+          bounds={rect}
+          showHandles={false}
+          locked={!!doc.nodes[id]?.meta?.locked}
+        />
       ))}
       {primary && !multi && !dragState.active && (
         <Toolbar
           id={primary[0]}
-          rect={primary[1]}
+          rect={inView(primary[1])}
           drag={drag}
           blockActions={blockActions}
         />
@@ -610,7 +631,7 @@ function CanvasOverlay({
       {groupRect && !dragState.active && (
         <MultiSelectToolbar
           ids={rects.selected.map(([id]) => id)}
-          rect={groupRect}
+          rect={inView(groupRect)}
         />
       )}
       {primary && !multi && !dragState.active && resizeHandles && (
@@ -623,45 +644,14 @@ function CanvasOverlay({
       )}
       {dragState.active && dragState.target && (
         <>
-          <div
-            style={box(dragState.target.slot, {
-              background: `${ACCENT}0f`,
-              border: `1px solid ${ACCENT}55`,
-            })}
-          />
-          <div
-            style={box(dragState.target.line, {
-              background: ACCENT,
-              borderRadius: 2,
-            })}
-          />
+          <DropZone bounds={dragState.target.slot} />
+          <DropLine {...dropLineProps(dragState.target.line)} />
         </>
       )}
       {dragState.active && dragState.blockedReason && (
-        <div
-          style={{
-            position: 'absolute',
-            left: 12,
-            bottom: 12,
-            padding: '5px 10px',
-            borderRadius: 6,
-            background: '#dc2626',
-            color: '#fff',
-            font: '600 12px/1.4 system-ui, sans-serif',
-            boxShadow: '0 2px 8px rgba(0,0,0,.25)',
-          }}
-        >
-          {dragState.blockedReason}
-        </div>
+        <OverlayNotice tone="danger">{dragState.blockedReason}</OverlayNotice>
       )}
-      {marquee && (
-        <div
-          style={box(marquee, {
-            border: `1px solid ${ACCENT}`,
-            background: `${ACCENT}1a`,
-          })}
-        />
-      )}
+      {marquee && <MarqueeBox bounds={marquee} />}
     </div>
   );
 }
