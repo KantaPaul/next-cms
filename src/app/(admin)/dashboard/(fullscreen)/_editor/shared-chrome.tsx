@@ -96,7 +96,13 @@ export function EditorUIScopeBox({ children }: { children: ReactNode }) {
       className="ne-ui"
       data-ne-theme={theme}
       dir={dir}
-      style={{ color: 'var(--ne-text)' }}
+      // The old chrome's panels are white whatever the admin theme, so paint
+      // the editor surface here to keep text readable in dark mode.
+      style={{
+        color: 'var(--ne-text)',
+        background: 'var(--ne-surface)',
+        minHeight: '100%',
+      }}
     >
       {children}
     </div>

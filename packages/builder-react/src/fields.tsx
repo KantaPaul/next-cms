@@ -13,7 +13,24 @@ import {
   valueForDevice,
   withDeviceValue,
 } from '@nextcms/builder-core';
-import { type ComponentType, type CSSProperties, createContext, type ReactNode, useContext, useState } from 'react';
+import {
+  Button,
+  Chip,
+  IconButton,
+  Input,
+  Select,
+  Switch,
+  Textarea,
+} from '@nextcms/editor-ui';
+import { ArrowDown, ArrowUp, ChevronDown, Plus, X } from 'lucide-react';
+import {
+  type ComponentType,
+  type CSSProperties,
+  createContext,
+  type ReactNode,
+  useContext,
+  useState,
+} from 'react';
 import { DraggableNumber, TokenPicker, type Unit } from './style-controls';
 
 export type FieldProps<V = unknown> = {
@@ -30,133 +47,279 @@ export type FieldProps<V = unknown> = {
 export type FieldComponent = ComponentType<FieldProps<never>>;
 
 /** Registers a field type for the inspector: `defineField('custom:color', ColorField)`. */
-export function defineField<V>(type: string, component: ComponentType<FieldProps<V>>): [string, FieldComponent] {
+export function defineField<V>(
+  type: string,
+  component: ComponentType<FieldProps<V>>
+): [string, FieldComponent] {
   return [type, component as unknown as FieldComponent];
 }
 
 const FieldTypesContext = createContext<Record<string, FieldComponent>>({});
 
+/** Shared look for host fields that still style their own inputs (kept for compatibility). */
 export const inputStyle: CSSProperties = {
   boxSizing: 'border-box',
   width: '100%',
   padding: '6px 8px',
-  borderRadius: 6,
-  border: '1px solid rgba(127,127,127,.35)',
-  background: 'transparent',
+  borderRadius: 'var(--ne-radius-md, 6px)',
+  border: '1px solid var(--ne-border, rgba(127,127,127,.35))',
+  background: 'var(--ne-surface, transparent)',
   color: 'inherit',
   font: '13px/1.4 system-ui, sans-serif',
 };
 
-const smallButton: CSSProperties = {
-  padding: '2px 6px',
-  borderRadius: 4,
-  border: '1px solid rgba(127,127,127,.35)',
-  background: 'transparent',
-  color: 'inherit',
-  font: '12px/1.4 system-ui, sans-serif',
-  cursor: 'pointer',
-};
+const str = (value: unknown) =>
+  value === undefined || value === null ? '' : String(value);
 
-const str = (value: unknown) => (value === undefined || value === null ? '' : String(value));
+// `minmax(0, 1fr)` lets rows shrink to the panel instead of growing to their widest child.
+const stack = (gap: number): CSSProperties => ({
+  display: 'grid',
+  gap,
+  gridTemplateColumns: 'minmax(0, 1fr)',
+});
 
-function TextField({ field, id, value, onChange, readOnly }: FieldProps<string>) {
-  const placeholder = 'placeholder' in field ? (field.placeholder as string | undefined) : undefined;
+function TextField({
+  field,
+  id,
+  value,
+  onChange,
+  readOnly,
+}: FieldProps<string>) {
+  const placeholder =
+    'placeholder' in field
+      ? (field.placeholder as string | undefined)
+      : undefined;
   if (field.type === 'textarea') {
     return (
-      <textarea id={id} rows={3} style={inputStyle} value={str(value)} placeholder={placeholder}
-        readOnly={readOnly} onChange={event => onChange(event.target.value)} />
+      <Textarea
+        id={id}
+        rows={3}
+        value={str(value)}
+        placeholder={placeholder}
+        readOnly={readOnly}
+        onChange={event => onChange(event.target.value)}
+      />
     );
   }
   return (
-    <input id={id} type={field.type === 'url' ? 'url' : 'text'} style={inputStyle} value={str(value)}
-      placeholder={placeholder} readOnly={readOnly} onChange={event => onChange(event.target.value)} />
+    <Input
+      id={id}
+      type={field.type === 'url' ? 'url' : 'text'}
+      value={str(value)}
+      placeholder={placeholder}
+      readOnly={readOnly}
+      onChange={event => onChange(event.target.value)}
+    />
   );
 }
 
-function NumberField({ field, id, value, onChange, readOnly }: FieldProps<number | undefined>) {
+function NumberField({
+  field,
+  id,
+  value,
+  onChange,
+  readOnly,
+}: FieldProps<number | undefined>) {
   const range = field.type === 'number' ? field : undefined;
   return (
-    <input id={id} type="number" style={inputStyle} value={value ?? ''} min={range?.min} max={range?.max}
-      step={range?.step} readOnly={readOnly}
-      onChange={event => onChange(event.target.value === '' ? undefined : Number(event.target.value))} />
+    <Input
+      id={id}
+      type="number"
+      value={value ?? ''}
+      min={range?.min}
+      max={range?.max}
+      step={range?.step}
+      readOnly={readOnly}
+      onChange={event =>
+        onChange(
+          event.target.value === '' ? undefined : Number(event.target.value)
+        )
+      }
+    />
   );
 }
 
-function ToggleField({ id, value, onChange, readOnly }: FieldProps<boolean>) {
+function ToggleField({
+  field,
+  id,
+  value,
+  onChange,
+  readOnly,
+}: FieldProps<boolean>) {
   return (
-    <input id={id} type="checkbox" checked={!!value} disabled={readOnly}
-      onChange={event => onChange(event.target.checked)} />
+    <Switch
+      id={id}
+      aria-label={field.label}
+      checked={!!value}
+      disabled={readOnly}
+      onChange={checked => onChange(checked)}
+    />
   );
 }
 
-function SelectField({ field, id, value, onChange, readOnly }: FieldProps<string | number | boolean>) {
-  const options = field.type === 'select' || field.type === 'radio' ? field.options : [];
+function SelectField({
+  field,
+  id,
+  value,
+  onChange,
+  readOnly,
+}: FieldProps<string | number | boolean>) {
+  const options =
+    field.type === 'select' || field.type === 'radio' ? field.options : [];
   const index = options.findIndex(option => option.value === value);
   if (field.type === 'radio') {
     return (
-      <fieldset id={id} style={{ display: 'flex', flexWrap: 'wrap', gap: 4, border: 0, margin: 0, padding: 0 }}>
+      <fieldset
+        id={id}
+        aria-label={field.label}
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 4,
+          border: 0,
+          margin: 0,
+          padding: 0,
+        }}
+      >
         {options.map(option => (
-          <button key={String(option.value)} type="button" aria-pressed={option.value === value}
-            disabled={readOnly} onClick={() => onChange(option.value)}
-            style={{ ...smallButton, background: option.value === value ? 'rgba(79,70,229,.15)' : 'transparent' }}>
+          <Chip
+            key={String(option.value)}
+            active={option.value === value}
+            disabled={readOnly}
+            onClick={() => onChange(option.value)}
+          >
             {option.label}
-          </button>
+          </Chip>
         ))}
       </fieldset>
     );
   }
+  // Option values may be numbers or booleans, so the <select> works on indexes.
   return (
-    <select id={id} style={inputStyle} value={index === -1 ? '' : String(index)} disabled={readOnly}
-      onChange={event => onChange(options[Number(event.target.value)]?.value as string)}>
-      {index === -1 && <option value="">Choose…</option>}
-      {options.map((option, i) => (
-        <option key={String(option.value)} value={String(i)}>{option.label}</option>
-      ))}
-    </select>
+    <Select
+      id={id}
+      value={index === -1 ? '' : String(index)}
+      disabled={readOnly}
+      options={[
+        ...(index === -1 ? [{ value: '', label: 'Choose…' }] : []),
+        ...options.map((option, i) => ({
+          value: String(i),
+          label: option.label,
+        })),
+      ]}
+      onChange={event =>
+        onChange(options[Number(event.target.value)]?.value as string)
+      }
+    />
   );
 }
 
 function ColorField({ id, value, onChange, readOnly }: FieldProps<string>) {
   return (
-    <div style={{ display: 'flex', gap: 6 }}>
-      <input type="color" aria-label="Pick a color" value={/^#[0-9a-f]{6}$/i.test(str(value)) ? str(value) : '#000000'}
-        disabled={readOnly} onChange={event => onChange(event.target.value)} />
-      <input id={id} style={inputStyle} value={str(value)} placeholder="Inherit" readOnly={readOnly}
-        onChange={event => onChange(event.target.value)} />
-    </div>
+    <Input
+      id={id}
+      value={str(value)}
+      placeholder="Inherit"
+      readOnly={readOnly}
+      onChange={event => onChange(event.target.value)}
+      leftElement={
+        <input
+          type="color"
+          aria-label="Pick a color"
+          value={/^#[0-9a-f]{6}$/i.test(str(value)) ? str(value) : '#000000'}
+          disabled={readOnly}
+          onChange={event => onChange(event.target.value)}
+          style={{
+            width: 18,
+            height: 18,
+            padding: 0,
+            border: 0,
+            background: 'none',
+            cursor: 'pointer',
+          }}
+        />
+      }
+    />
   );
 }
 
 function ImageField({ id, value, onChange, readOnly }: FieldProps<string>) {
   return (
-    <div style={{ display: 'grid', gap: 6 }}>
+    <div style={stack(6)}>
       {/* biome-ignore lint/performance/noImgElement: framework-agnostic package; hosts may not use Next.js */}
-      {value ? <img src={value} alt="" style={{ maxWidth: '100%', borderRadius: 6 }} /> : null}
-      <input id={id} type="url" style={inputStyle} value={str(value)} placeholder="Image URL" readOnly={readOnly}
-        onChange={event => onChange(event.target.value)} />
+      {value ? (
+        <img
+          src={value}
+          alt=""
+          style={{ maxWidth: '100%', borderRadius: 'var(--ne-radius-md, 6px)' }}
+        />
+      ) : null}
+      <Input
+        id={id}
+        type="url"
+        value={str(value)}
+        placeholder="Image URL"
+        readOnly={readOnly}
+        onChange={event => onChange(event.target.value)}
+      />
     </div>
   );
 }
 
 function ComputedField({ field, id, props }: FieldProps<unknown>) {
   const text = field.type === 'computed' ? field.compute(props) : '';
-  return <output id={id} style={{ font: '13px/1.4 system-ui, sans-serif', opacity: 0.75 }}>{text}</output>;
+  return (
+    <output
+      id={id}
+      style={{
+        font: '13px/1.4 system-ui, sans-serif',
+        color: 'var(--ne-text-muted, inherit)',
+      }}
+    >
+      {text}
+    </output>
+  );
 }
 
-function ObjectField({ field, name, value, onChange, readOnly }: FieldProps<Record<string, unknown> | undefined>) {
+function ObjectField({
+  field,
+  name,
+  value,
+  onChange,
+  readOnly,
+}: FieldProps<Record<string, unknown> | undefined>) {
   const fields = field.type === 'object' ? field.fields : {};
   const current = value ?? {};
   return (
-    <div style={{ display: 'grid', gap: 10, paddingLeft: 8, borderLeft: '2px solid rgba(127,127,127,.2)' }}>
+    <div
+      style={{
+        ...stack(10),
+        paddingInlineStart: 8,
+        borderInlineStart: '2px solid var(--ne-border, rgba(127,127,127,.2))',
+      }}
+    >
       {Object.entries(fields).map(([key, inner]) => (
-        <FieldControl key={key} name={`${name}.${key}`} field={inner} value={current[key]} props={current}
-          readOnly={readOnly} onChange={next => onChange({ ...current, [key]: next })} />
+        <FieldControl
+          key={key}
+          name={`${name}.${key}`}
+          field={inner}
+          value={current[key]}
+          props={current}
+          readOnly={readOnly}
+          onChange={next => onChange({ ...current, [key]: next })}
+        />
       ))}
     </div>
   );
 }
 
-function ListField({ field, name, value, onChange, readOnly }: FieldProps<Record<string, unknown>[] | undefined>) {
+function ListField({
+  field,
+  name,
+  value,
+  onChange,
+  readOnly,
+}: FieldProps<Record<string, unknown>[] | undefined>) {
   const list = field.type === 'list' ? field : undefined;
   const items = value ?? [];
   const [open, setOpen] = useState<number | null>(null);
@@ -169,33 +332,102 @@ function ListField({ field, name, value, onChange, readOnly }: FieldProps<Record
     update(next);
     setOpen(to);
   };
-  const canAdd = !readOnly && (list.max === undefined || items.length < list.max);
-  const canRemove = !readOnly && (list.min === undefined || items.length > list.min);
+  const canAdd =
+    !readOnly && (list.max === undefined || items.length < list.max);
+  const canRemove =
+    !readOnly && (list.min === undefined || items.length > list.min);
+  const border = '1px solid var(--ne-border, rgba(127,127,127,.25))';
   return (
-    <div style={{ display: 'grid', gap: 6 }}>
+    <div style={stack(6)}>
       {items.map((item, index) => {
         const label = list.itemLabel?.(item, index) ?? `Item ${index + 1}`;
         return (
           // biome-ignore lint/suspicious/noArrayIndexKey: list items have no ids; position is their identity
-          <div key={index} style={{ border: '1px solid rgba(127,127,127,.25)', borderRadius: 6 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 6px' }}>
-              <button type="button" aria-expanded={open === index} onClick={() => setOpen(open === index ? null : index)}
-                style={{ ...smallButton, border: 0, flex: 1, textAlign: 'left' }}>
+          <div
+            key={index}
+            style={{
+              border,
+              borderRadius: 'var(--ne-radius-md, 6px)',
+              background: 'var(--ne-surface, transparent)',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                padding: '2px 4px',
+              }}
+            >
+              <Button
+                size="sm"
+                variant="ghost"
+                aria-expanded={open === index}
+                onClick={() => setOpen(open === index ? null : index)}
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  justifyContent: 'space-between',
+                }}
+                rightIcon={
+                  <ChevronDown
+                    style={{
+                      width: 12,
+                      height: 12,
+                      transform: open === index ? 'rotate(180deg)' : undefined,
+                    }}
+                  />
+                }
+              >
                 {label}
-              </button>
-              <button type="button" aria-label={`Move ${label} up`} disabled={readOnly || index === 0}
-                onClick={() => move(index, index - 1)} style={smallButton}>▲</button>
-              <button type="button" aria-label={`Move ${label} down`} disabled={readOnly || index === items.length - 1}
-                onClick={() => move(index, index + 1)} style={smallButton}>▼</button>
-              <button type="button" aria-label={`Remove ${label}`} disabled={!canRemove}
-                onClick={() => update(items.filter((_, i) => i !== index))} style={smallButton}>✕</button>
+              </Button>
+              <IconButton
+                size="sm"
+                aria-label={`Move ${label} up`}
+                tooltip="Move up"
+                disabled={readOnly || index === 0}
+                onClick={() => move(index, index - 1)}
+              >
+                <ArrowUp style={{ width: 12, height: 12 }} />
+              </IconButton>
+              <IconButton
+                size="sm"
+                aria-label={`Move ${label} down`}
+                tooltip="Move down"
+                disabled={readOnly || index === items.length - 1}
+                onClick={() => move(index, index + 1)}
+              >
+                <ArrowDown style={{ width: 12, height: 12 }} />
+              </IconButton>
+              <IconButton
+                size="sm"
+                variant="danger"
+                aria-label={`Remove ${label}`}
+                tooltip="Remove"
+                disabled={!canRemove}
+                onClick={() => update(items.filter((_, i) => i !== index))}
+              >
+                <X style={{ width: 12, height: 12 }} />
+              </IconButton>
             </div>
             {open === index && (
-              <div style={{ display: 'grid', gap: 10, padding: 8, borderTop: '1px solid rgba(127,127,127,.2)' }}>
+              <div style={{ ...stack(10), padding: 8, borderTop: border }}>
                 {Object.entries(list.item).map(([key, inner]) => (
-                  <FieldControl key={key} name={`${name}.${index}.${key}`} field={inner} value={item[key]} props={item}
+                  <FieldControl
+                    key={key}
+                    name={`${name}.${index}.${key}`}
+                    field={inner}
+                    value={item[key]}
+                    props={item}
                     readOnly={readOnly}
-                    onChange={next => update(items.map((it, i) => (i === index ? { ...it, [key]: next } : it)))} />
+                    onChange={next =>
+                      update(
+                        items.map((it, i) =>
+                          i === index ? { ...it, [key]: next } : it
+                        )
+                      )
+                    }
+                  />
                 ))}
               </div>
             )}
@@ -203,10 +435,17 @@ function ListField({ field, name, value, onChange, readOnly }: FieldProps<Record
         );
       })}
       {canAdd && (
-        <button type="button" style={smallButton}
-          onClick={() => { update([...items, { ...list.defaultItem }]); setOpen(items.length); }}>
-          + Add
-        </button>
+        <Button
+          size="sm"
+          variant="secondary"
+          leftIcon={<Plus style={{ width: 12, height: 12 }} />}
+          onClick={() => {
+            update([...items, { ...list.defaultItem }]);
+            setOpen(items.length);
+          }}
+        >
+          Add
+        </Button>
       )}
     </div>
   );
@@ -214,11 +453,14 @@ function ListField({ field, name, value, onChange, readOnly }: FieldProps<Record
 
 /** `type: 'custom'` with a Puck-style `render` function. */
 function CustomRenderField(props: FieldProps<unknown>) {
-  const render = props.field.render as ((p: FieldProps<unknown>) => ReactNode) | undefined;
+  const render = props.field.render as
+    | ((p: FieldProps<unknown>) => ReactNode)
+    | undefined;
   return render ? render(props) : null;
 }
 
-const asField = <V,>(component: ComponentType<FieldProps<V>>) => component as unknown as FieldComponent;
+const asField = <V,>(component: ComponentType<FieldProps<V>>) =>
+  component as unknown as FieldComponent;
 
 export const BUILT_IN_FIELDS: Record<string, FieldComponent> = {
   text: asField(TextField),
@@ -236,16 +478,39 @@ export const BUILT_IN_FIELDS: Record<string, FieldComponent> = {
   custom: asField(CustomRenderField),
 };
 
-export function FieldTypesProvider({ types, children }: { types?: Record<string, FieldComponent>; children: ReactNode }) {
-  return <FieldTypesContext.Provider value={{ ...BUILT_IN_FIELDS, ...types }}>{children}</FieldTypesContext.Provider>;
+export function FieldTypesProvider({
+  types,
+  children,
+}: {
+  types?: Record<string, FieldComponent>;
+  children: ReactNode;
+}) {
+  return (
+    <FieldTypesContext.Provider value={{ ...BUILT_IN_FIELDS, ...types }}>
+      {children}
+    </FieldTypesContext.Provider>
+  );
 }
 
 const DeviceContext = createContext<Device>('desktop');
 export const DeviceProvider = DeviceContext.Provider;
 
-const DEVICE_LABEL: Record<Device, string> = { desktop: 'Desktop', tablet: 'Tablet', mobile: 'Mobile' };
+const DEVICE_LABEL: Record<Device, string> = {
+  desktop: 'Desktop',
+  tablet: 'Tablet',
+  mobile: 'Mobile',
+};
 
-/** One field with its label, per-device handling, and conditional visibility. */
+/** The id a field's control gets, so an outside label can point at it. */
+export function fieldControlId(name: string): string {
+  return `field-${name.replace(/[^\w-]/g, '-')}`;
+}
+
+/**
+ * One field with its label, per-device handling, and conditional visibility.
+ * `bare` drops the label, device hint, reset and description, for callers
+ * (the inspector) that draw those in their own row.
+ */
 export function FieldControl({
   name,
   field,
@@ -253,6 +518,7 @@ export function FieldControl({
   onChange,
   props,
   readOnly,
+  bare = false,
 }: {
   name: string;
   field: FieldDef;
@@ -260,12 +526,14 @@ export function FieldControl({
   onChange: (value: unknown) => void;
   props: Record<string, unknown>;
   readOnly?: boolean;
+  bare?: boolean;
 }) {
   const types = useContext(FieldTypesContext);
   const device = useContext(DeviceContext);
   if (field.when && !field.when(props)) return null;
-  const Component = (types[field.type] ?? types.text) as unknown as ComponentType<FieldProps<unknown>>;
-  const id = `field-${name.replace(/[^\w-]/g, '-')}`;
+  const Component = (types[field.type] ??
+    types.text) as unknown as ComponentType<FieldProps<unknown>>;
+  const id = fieldControlId(name);
   const responsive = !!field.responsive;
   const shown = responsive ? valueForDevice(value, device) : value;
   const source = responsive ? inheritedFrom(value, device) : null;
@@ -273,24 +541,41 @@ export function FieldControl({
   const isContainer = field.type === 'list' || field.type === 'object';
 
   return (
-    <div style={{ display: 'grid', gap: 4 }}>
-      {field.label && (
+    <div style={stack(4)}>
+      {!bare && field.label && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <label htmlFor={isContainer ? undefined : id} style={{ font: '600 12px/1.4 system-ui, sans-serif' }}>
+          <label
+            htmlFor={isContainer ? undefined : id}
+            style={{
+              font: '500 12px/1.4 system-ui, sans-serif',
+              color: 'var(--ne-text, inherit)',
+            }}
+          >
             {field.label}
           </label>
           {responsive && (
-            <span style={{ font: '11px/1 system-ui, sans-serif', opacity: 0.6 }}>
+            <span
+              style={{
+                font: '11px/1 system-ui, sans-serif',
+                color: 'var(--ne-text-muted, inherit)',
+              }}
+            >
               {DEVICE_LABEL[device]}
-              {source && source !== device ? ` · from ${DEVICE_LABEL[source].toLowerCase()}` : ''}
+              {source && source !== device
+                ? ` · from ${DEVICE_LABEL[source].toLowerCase()}`
+                : ''}
             </span>
           )}
           {own && device !== 'desktop' && (
-            <button type="button" style={{ ...smallButton, marginLeft: 'auto' }}
+            <Button
+              size="sm"
+              variant="ghost"
+              style={{ marginInlineStart: 'auto' }}
               aria-label={`Reset ${field.label} on ${DEVICE_LABEL[device].toLowerCase()}`}
-              onClick={() => onChange(resetDeviceValue(value, device))}>
+              onClick={() => onChange(resetDeviceValue(value, device))}
+            >
               Reset
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -301,7 +586,9 @@ export function FieldControl({
         value={shown}
         props={props}
         readOnly={readOnly || field.readOnly}
-        onChange={next => onChange(responsive ? withDeviceValue(value, device, next) : next)}
+        onChange={next =>
+          onChange(responsive ? withDeviceValue(value, device, next) : next)
+        }
       />
       {field.visual && !readOnly && field.type === 'number' && (
         <DraggableNumber
@@ -322,8 +609,16 @@ export function FieldControl({
           label={field.label}
         />
       )}
-      {field.description && (
-        <p style={{ margin: 0, font: '11px/1.4 system-ui, sans-serif', opacity: 0.65 }}>{field.description}</p>
+      {!bare && field.description && (
+        <p
+          style={{
+            margin: 0,
+            font: '11px/1.4 system-ui, sans-serif',
+            color: 'var(--ne-text-muted, inherit)',
+          }}
+        >
+          {field.description}
+        </p>
       )}
     </div>
   );

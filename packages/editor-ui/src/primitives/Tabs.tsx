@@ -84,7 +84,7 @@ export const Tabs: React.FC<TabsProps> = ({
               tabIndex={isActive ? 0 : -1}
               onClick={() => onChange(tab.id)}
               className={`flex items-center justify-center gap-1.5 px-2.5 transition-all text-xs font-sans rounded-[var(--ne-radius-sm)] cursor-pointer select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--ne-focus-ring)] ${
-                fullWidth ? 'flex-1' : ''
+                fullWidth ? 'min-w-0 flex-1' : ''
               } ${size === 'sm' ? 'h-5 text-[11px]' : 'h-6'} ${
                 isActive
                   ? 'bg-[var(--ne-surface)] text-[var(--ne-text)] font-medium shadow-xs border border-[var(--ne-border)]'
@@ -130,7 +130,7 @@ export const Tabs: React.FC<TabsProps> = ({
             tabIndex={isActive ? 0 : -1}
             onClick={() => onChange(tab.id)}
             className={`flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-sans border-b-2 cursor-pointer select-none transition-colors -mb-[1px] focus-visible:outline-none ${
-              fullWidth ? 'flex-1' : ''
+              fullWidth ? 'min-w-0 flex-1' : ''
             } ${
               isActive
                 ? 'border-[var(--ne-primary)] text-[var(--ne-primary)] font-medium'

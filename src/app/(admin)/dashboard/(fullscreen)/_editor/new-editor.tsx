@@ -74,6 +74,7 @@ import { PreferencesPanel } from '@nextcms/builder-react';
 import {
   Button as ChromeButton,
   IconButton as ChromeIconButton,
+  Tabs as ChromeTabs,
 } from '@nextcms/editor-ui';
 import {
   ArrowLeft,
@@ -959,23 +960,24 @@ export function NewEditor({
   const rightPanelContent = (
     <section aria-label="Settings" className="p-4">
       <NewEditorBridge themeTokens={themeTokens}>
+        {/* Nine tabs do not fit a side panel; they scroll sideways (B15 E4). */}
         <div
-          role="tablist"
-          aria-label="Right panel tabs"
-          className="mb-3 grid grid-cols-9 gap-1 rounded-md bg-steel-100 p-1 dark:bg-dark-200"
+          style={{ overflowX: 'auto', marginBottom: 12 }}
+          className="ne-scrollbar"
         >
-          {RIGHT_PANEL_TABS.map(tab => (
-            <button
-              key={tab.key}
-              type="button"
-              role="tab"
-              aria-selected={rightPanel === tab.key}
-              onClick={() => setRightPanel(tab.key as typeof rightPanel)}
-              className={`rounded px-2 py-1 text-xs font-medium capitalize ${rightPanel === tab.key ? 'bg-white shadow-sm dark:bg-dark-100' : 'text-steel-500'}`}
-            >
-              {tab.label}
-            </button>
-          ))}
+          <div style={{ width: 'max-content', minWidth: '100%' }}>
+            <ChromeTabs
+              variant="line"
+              fullWidth={false}
+              ariaLabel="Right panel tabs"
+              activeId={rightPanel}
+              onChange={key => setRightPanel(key as typeof rightPanel)}
+              items={RIGHT_PANEL_TABS.map(tab => ({
+                id: tab.key,
+                label: tab.label,
+              }))}
+            />
+          </div>
         </div>
         {rightPanel === 'settings' && (
           <Inspector

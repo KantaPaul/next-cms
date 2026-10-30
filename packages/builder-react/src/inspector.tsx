@@ -5,11 +5,30 @@
  * and can be reset per field or per device (R722, R694).
  */
 
-import { DEVICES, type Device, type FieldDef, inheritedFrom, resetDeviceValue, valueForDevice, withDeviceValue } from '@nextcms/builder-core';
+import {
+  DEVICES,
+  type Device,
+  type FieldDef,
+  inheritedFrom,
+  resetDeviceValue,
+  valueForDevice,
+} from '@nextcms/builder-core';
+import {
+  FieldRow as FieldRowFrame,
+  IconButton,
+  InspectorTabs as InspectorTabsBar,
+} from '@nextcms/editor-ui';
+import { Monitor, Smartphone, Tablet } from 'lucide-react';
 import type { CSSProperties, ReactNode } from 'react';
 import { useState } from 'react';
 import { useEditor, useEditorStore } from './context';
-import { DeviceProvider, type FieldComponent, FieldControl, FieldTypesProvider } from './fields';
+import {
+  DeviceProvider,
+  type FieldComponent,
+  FieldControl,
+  FieldTypesProvider,
+  fieldControlId,
+} from './fields';
 
 export type InspectorBlock = {
   label: string;
@@ -18,55 +37,68 @@ export type InspectorBlock = {
   defaultProps?: Record<string, unknown>;
 };
 
-const DEVICE_ICONS: Record<Device, string> = { desktop: '🖥', tablet: '▭', mobile: '▯' };
+const DEVICE_ICONS: Record<Device, typeof Monitor> = {
+  desktop: Monitor,
+  tablet: Tablet,
+  mobile: Smartphone,
+};
 
-const TAB_LABELS: Record<string, string> = { content: 'Content', style: 'Style', advanced: 'Advanced' };
+const TAB_LABELS: Record<string, string> = {
+  content: 'Content',
+  style: 'Style',
+  advanced: 'Advanced',
+};
 
 /** Desktop, tablet, and mobile buttons; switches the canvas and per-device fields. */
 export function DeviceSwitch({ style }: { style?: CSSProperties }) {
   const store = useEditorStore();
   const device = useEditor(state => state.device);
   return (
-    <fieldset aria-label="Edit for device" style={{ display: 'inline-flex', gap: 2, border: 0, margin: 0, padding: 0, ...style }}>
-      {DEVICES.map(d => (
-        <button
-          key={d}
-          type="button"
-          aria-pressed={device === d}
-          aria-label={d[0].toUpperCase() + d.slice(1)}
-          title={d[0].toUpperCase() + d.slice(1)}
-          onClick={() => store.setDevice(d)}
-          style={{
-            padding: '4px 8px',
-            borderRadius: 6,
-            border: '1px solid rgba(127,127,127,.3)',
-            background: device === d ? 'rgba(79,70,229,.15)' : 'transparent',
-            color: 'inherit',
-            cursor: 'pointer',
-            font: '13px/1 system-ui, sans-serif',
-          }}
-        >
-          {DEVICE_ICONS[d]}
-        </button>
-      ))}
+    <fieldset
+      aria-label="Edit for device"
+      style={{
+        display: 'inline-flex',
+        gap: 2,
+        border: 0,
+        margin: 0,
+        padding: 0,
+        ...style,
+      }}
+    >
+      {DEVICES.map(d => {
+        const Icon = DEVICE_ICONS[d];
+        const label = d[0].toUpperCase() + d.slice(1);
+        return (
+          <IconButton
+            key={d}
+            size="sm"
+            active={device === d}
+            aria-pressed={device === d}
+            aria-label={label}
+            tooltip={label}
+            onClick={() => store.setDevice(d)}
+          >
+            <Icon style={{ width: 14, height: 14 }} />
+          </IconButton>
+        );
+      })}
     </fieldset>
   );
-}
-
-function groupFields(fields: Record<string, FieldDef>): [string, [string, FieldDef][]][] {
-  const groups = new Map<string, [string, FieldDef][]>();
-  for (const entry of Object.entries(fields)) {
-    const group = entry[1].group ?? 'Settings';
-    groups.set(group, [...(groups.get(group) ?? []), entry]);
-  }
-  return [...groups.entries()];
 }
 
 /** Which tab a field belongs to: Content, Style, or Advanced. */
 function fieldTab(field: FieldDef): 'content' | 'style' | 'advanced' {
   const group = (field.group ?? '').toLowerCase();
   if (group === 'content' || group === 'contents') return 'content';
-  if (group === 'style' || group === 'style & layout' || group === 'layout' || group === 'spacing' || group === 'typography' || group === 'color') return 'style';
+  if (
+    group === 'style' ||
+    group === 'style & layout' ||
+    group === 'layout' ||
+    group === 'spacing' ||
+    group === 'typography' ||
+    group === 'color'
+  )
+    return 'style';
   // Infer from field type when no group is set.
   switch (field.type) {
     case 'text':
@@ -88,14 +120,21 @@ function fieldTab(field: FieldDef): 'content' | 'style' | 'advanced' {
 }
 
 /** Whether a field's shown value differs from its default. */
-function fieldChanged(field: FieldDef, value: unknown, defaultValue: unknown, device: Device): boolean {
+function fieldChanged(
+  field: FieldDef,
+  value: unknown,
+  defaultValue: unknown,
+  device: Device
+): boolean {
   const shown = field.responsive ? valueForDevice(value, device) : value;
-  const defaultShown = field.responsive ? valueForDevice(defaultValue, device) : defaultValue;
+  const defaultShown = field.responsive
+    ? valueForDevice(defaultValue, device)
+    : defaultValue;
   if (shown === undefined && defaultShown === undefined) return false;
   return JSON.stringify(shown) !== JSON.stringify(defaultShown);
 }
 
-/** One field row with a changed-field dot and reset controls (R722). */
+/** One field row with a changed-field dot and reset controls (R722), drawn by editor-ui's FieldRow. */
 function FieldRow({
   name,
   field,
@@ -115,122 +154,42 @@ function FieldRow({
   onChange: (value: unknown) => void;
   readOnly?: boolean;
 }) {
+  if (field.when && !field.when(props)) return null;
   const changed = fieldChanged(field, value, defaultValue, device);
   const responsive = !!field.responsive;
-  const shown = responsive ? valueForDevice(value, device) : value;
   const source = responsive ? inheritedFrom(value, device) : null;
+  const isContainer = field.type === 'list' || field.type === 'object';
 
   return (
-    <div style={{ display: 'grid', gap: 4 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        {field.label && (
-          <label
-            htmlFor={`field-${name.replace(/[^\w-]/g, '-')}`}
-            style={{ font: '600 12px/1.4 system-ui, sans-serif', flex: 1 }}
-          >
-            {field.label}
-          </label>
-        )}
-        {responsive && (
-          <span style={{ font: '11px/1 system-ui, sans-serif', opacity: 0.6 }}>
-            {device[0].toUpperCase() + device.slice(1)}
-            {source && source !== device ? ` · from ${source[0].toUpperCase() + source.slice(1).slice(1)}` : ''}
-          </span>
-        )}
-        {changed && (
-          <span
-            title="Changed from default"
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              background: '#4f46e5',
-              flexShrink: 0,
-            }}
-          />
-        )}
-        {!readOnly && changed && (
-          <button
-            type="button"
-            aria-label={`Reset ${field.label}`}
-            title="Reset to default"
-            onClick={() => {
-              const next = responsive ? resetDeviceValue(value, device) : undefined;
-              onChange(next);
-            }}
-            style={{
-              all: 'unset',
-              cursor: 'pointer',
-              padding: '1px 6px',
-              borderRadius: 4,
-              border: '1px solid rgba(127,127,127,.35)',
-              background: 'transparent',
-              color: 'inherit',
-              font: '11px/1.4 system-ui, sans-serif',
-            }}
-          >
-            Reset
-          </button>
-        )}
-      </div>
+    <FieldRowFrame
+      layout="vertical"
+      label={field.label ?? ''}
+      htmlFor={isContainer ? undefined : fieldControlId(name)}
+      description={field.description}
+      changed={changed}
+      onReset={
+        readOnly
+          ? undefined
+          : // Back to the block's default, which is what the changed dot compares against.
+            () =>
+              onChange(
+                responsive ? resetDeviceValue(value, device) : defaultValue
+              )
+      }
+      device={responsive ? device : undefined}
+      isInherited={!!source && source !== device}
+      inheritedFrom={source ?? undefined}
+    >
       <FieldControl
+        bare
         name={name}
         field={field}
         value={value}
         props={props}
-        onChange={next => onChange(responsive ? withDeviceValue(value, device, next) : next)}
+        onChange={onChange}
         readOnly={readOnly || field.readOnly}
       />
-      {field.description && (
-        <p style={{ margin: 0, font: '11px/1.4 system-ui, sans-serif', opacity: 0.65 }}>{field.description}</p>
-      )}
-    </div>
-  );
-}
-
-function FieldGroups({
-  fields,
-  props,
-  defaultProps,
-  scope,
-  device,
-  onChange,
-  readOnly,
-}: {
-  fields: Record<string, FieldDef>;
-  props: Record<string, unknown>;
-  defaultProps?: Record<string, unknown>;
-  scope: string;
-  device: Device;
-  onChange: (name: string, value: unknown) => void;
-  readOnly?: boolean;
-}) {
-  const groups = groupFields(fields);
-  return (
-    <>
-      {groups.map(([group, entries]) => (
-        <details key={group} open style={{ borderTop: '1px solid rgba(127,127,127,.2)', padding: '10px 0' }}>
-          <summary style={{ cursor: 'pointer', font: '600 11px/1.4 system-ui, sans-serif', textTransform: 'uppercase', letterSpacing: '.04em', opacity: 0.7 }}>
-            {group}
-          </summary>
-          <div style={{ display: 'grid', gap: 12, marginTop: 10 }}>
-            {entries.map(([name, field]) => (
-              <FieldRow
-                key={name}
-                name={`${scope}.${name}`}
-                field={field}
-                value={props[name]}
-                defaultValue={defaultProps?.[name]}
-                props={props}
-                device={device}
-                onChange={value => onChange(name, value)}
-                readOnly={readOnly}
-              />
-            ))}
-          </div>
-        </details>
-      ))}
-    </>
+    </FieldRowFrame>
   );
 }
 
@@ -252,24 +211,56 @@ export function Inspector({
 }) {
   const store = useEditorStore();
   const device = useEditor(state => state.device);
-  const selectedId = useEditor(state => (state.selection.length === 1 ? state.selection[0] : null));
+  const selectedId = useEditor(state =>
+    state.selection.length === 1 ? state.selection[0] : null
+  );
   const count = useEditor(state => state.selection.length);
-  const node = useEditor(state => (selectedId ? state.doc.nodes[selectedId] : undefined));
+  const node = useEditor(state =>
+    selectedId ? state.doc.nodes[selectedId] : undefined
+  );
   const rootProps = useEditor(state => state.doc.root.props);
   const block = node ? blocks[node.type] : undefined;
-  const responsive = Object.values(node ? (block?.fields ?? {}) : rootFields).some(field => field.responsive);
+  const responsive = Object.values(
+    node ? (block?.fields ?? {}) : rootFields
+  ).some(field => field.responsive);
 
   return (
     <FieldTypesProvider types={fieldTypes}>
       <DeviceProvider value={device}>
-        <div style={{ display: 'grid', gap: 4, font: '13px/1.4 system-ui, sans-serif' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingBottom: 8 }}>
-            <h2 style={{ margin: 0, font: '600 14px/1.3 system-ui, sans-serif' }}>
-              {count > 1 ? `${count} blocks selected` : node ? (block?.label ?? node.type) : 'Page'}
+        <div
+          style={{
+            display: 'grid',
+            gap: 4,
+            gridTemplateColumns: 'minmax(0, 1fr)',
+            font: '13px/1.4 system-ui, sans-serif',
+            color: 'var(--ne-text, inherit)',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 8,
+              paddingBottom: 8,
+            }}
+          >
+            <h2
+              style={{ margin: 0, font: '600 14px/1.3 system-ui, sans-serif' }}
+            >
+              {count > 1
+                ? `${count} blocks selected`
+                : node
+                  ? (block?.label ?? node.type)
+                  : 'Page'}
             </h2>
             {responsive && <DeviceSwitch />}
           </div>
-          {count > 1 && <p style={{ margin: 0, opacity: 0.7 }}>Select one block to edit its settings.</p>}
+          {count > 1 && (
+            <p style={{ margin: 0, color: 'var(--ne-text-muted, inherit)' }}>
+              Select one block to edit its settings.
+            </p>
+          )}
           {node && block && (
             <InspectorTabs
               block={block}
@@ -280,12 +271,20 @@ export function Inspector({
               readOnly={!!node.meta?.locked}
             />
           )}
-          {node && !block && <p style={{ margin: 0, opacity: 0.7 }}>No settings for this block.</p>}
+          {node && !block && (
+            <p style={{ margin: 0, color: 'var(--ne-text-muted, inherit)' }}>
+              No settings for this block.
+            </p>
+          )}
           {!node && count === 0 && (
             <>
               {empty}
               <InspectorTabs
-                block={{ label: 'Page', fields: rootFields, defaultProps: rootDefaultProps }}
+                block={{
+                  label: 'Page',
+                  fields: rootFields,
+                  defaultProps: rootDefaultProps,
+                }}
                 node={null as any}
                 props={rootProps}
                 defaultProps={rootDefaultProps}
@@ -322,7 +321,9 @@ function InspectorTabs({
 }: InspectorTabsProps) {
   const store = useEditorStore();
   const [query, setQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'content' | 'style' | 'advanced'>('content');
+  const [activeTab, setActiveTab] = useState<'content' | 'style' | 'advanced'>(
+    'content'
+  );
 
   const tabFields = (tab: 'content' | 'style' | 'advanced') =>
     Object.entries(block.fields).filter(([, field]) => fieldTab(field) === tab);
@@ -330,103 +331,67 @@ function InspectorTabs({
   const filtered = (tab: 'content' | 'style' | 'advanced') => {
     const q = query.toLowerCase().trim();
     if (!q) return tabFields(tab);
-    return tabFields(tab).filter(([name, field]) =>
-      (field.label ?? name).toLowerCase().includes(q) || name.toLowerCase().includes(q)
+    return tabFields(tab).filter(
+      ([name, field]) =>
+        (field.label ?? name).toLowerCase().includes(q) ||
+        name.toLowerCase().includes(q)
     );
   };
 
-  const changedCount = Object.entries(block.fields).filter(
-    ([name, field]) => fieldChanged(field, props[name], defaultProps?.[name], device)
+  const changedCount = Object.entries(block.fields).filter(([name, field]) =>
+    fieldChanged(field, props[name], defaultProps?.[name], device)
   ).length;
 
+  const tabs = (['content', 'style', 'advanced'] as const).map(tab => {
+    const fields = tabFields(tab);
+    const hasChanged = fields.some(([name, field]) =>
+      fieldChanged(field, props[name], defaultProps?.[name], device)
+    );
+    return {
+      id: tab,
+      label: TAB_LABELS[tab],
+      badge: fields.length || undefined,
+      changed: hasChanged,
+      ariaLabel: `${TAB_LABELS[tab]} (${fields.length}${hasChanged ? ', changed' : ''})`,
+    };
+  });
+  const shown = filtered(activeTab);
+
   return (
-    <div style={{ display: 'grid', gap: 6 }}>
-      <div
-        role="tablist"
-        aria-label="Inspector tabs"
-        style={{ display: 'flex', gap: 0, borderBottom: '1px solid rgba(127,127,127,.2)', marginBottom: 6 }}
-      >
-        {(['content', 'style', 'advanced'] as const).map(tab => {
-          const fields = tabFields(tab);
-          const hasChanged = fields.some(([name, field]) =>
-            fieldChanged(field, props[name], defaultProps?.[name], device)
-          );
-          return (
-            <button
-              key={tab}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === tab}
-              aria-label={`${TAB_LABELS[tab]} (${fields.length}${hasChanged ? ', changed' : ''})`}
-              onClick={() => setActiveTab(tab)}
-              style={{
-                flex: 1,
-                border: 0,
-                borderBottom: activeTab === tab ? '2px solid #4f46e5' : '2px solid transparent',
-                background: activeTab === tab ? 'rgba(79,70,229,.08)' : 'transparent',
-                color: activeTab === tab ? '#4f46e5' : 'rgba(127,127,127,.8)',
-                font: '600 11px/1.4 system-ui, sans-serif',
-                textTransform: 'uppercase',
-                letterSpacing: '.04em',
-                padding: '6px 0',
-                cursor: 'pointer',
-              }}
-            >
-              {TAB_LABELS[tab]}
-              {fields.length > 0 && (
-                <span
-                  style={{
-                    marginLeft: 6,
-                    font: '10px/1 system-ui, sans-serif',
-                    opacity: 0.6,
-                    background: hasChanged ? 'rgba(79,70,229,.15)' : 'rgba(127,127,127,.15)',
-                    padding: '1px 5px',
-                    borderRadius: 9,
-                    color: hasChanged ? '#4f46e5' : 'inherit',
-                  }}
-                >
-                  {fields.length}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-        <input
-          type="search"
-          value={query}
-          onChange={event => setQuery(event.target.value)}
-          placeholder="Search settings…"
-          aria-label="Search inspector settings"
-          style={{
-            boxSizing: 'border-box',
-            flex: 1,
-            padding: '6px 10px',
-            borderRadius: 6,
-            border: '1px solid rgba(127,127,127,.35)',
-            background: 'transparent',
-            color: 'inherit',
-            font: '13px/1.4 system-ui, sans-serif',
-          }}
-        />
-      </div>
-
+    <div
+      style={{ display: 'grid', gap: 8, gridTemplateColumns: 'minmax(0, 1fr)' }}
+    >
+      <InspectorTabsBar
+        tabs={tabs}
+        activeTab={activeTab}
+        onTabChange={id => setActiveTab(id as typeof activeTab)}
+        searchQuery={query}
+        onSearchChange={setQuery}
+      />
       <div
         role="tabpanel"
-        aria-labelledby={`tab-${activeTab}`}
-        style={{ display: 'grid', gap: 12 }}
+        aria-label={TAB_LABELS[activeTab]}
+        style={{
+          display: 'grid',
+          gap: 4,
+          gridTemplateColumns: 'minmax(0, 1fr)',
+        }}
       >
-        {filtered(activeTab).length === 0 && (
-          <p style={{ margin: 0, opacity: 0.6, font: '13px/1.4 system-ui, sans-serif' }}>
+        {shown.length === 0 && (
+          <p
+            style={{
+              margin: 0,
+              color: 'var(--ne-text-muted, inherit)',
+              font: '12px/1.4 system-ui, sans-serif',
+            }}
+          >
             No {activeTab} settings{query ? ` matching “${query}”` : ''}.
           </p>
         )}
-        {filtered(activeTab).map(([name, field]) => (
+        {shown.map(([name, field]) => (
           <FieldRow
             key={name}
-            name={`${isRoot ? 'root' : node?.id ?? 'root'}.${name}`}
+            name={`${isRoot ? 'root' : (node?.id ?? 'root')}.${name}`}
             field={field}
             value={props[name]}
             defaultValue={defaultProps?.[name]}
@@ -436,7 +401,11 @@ function InspectorTabs({
               if (isRoot) {
                 store.updateRootProps({ [name]: value }, `root.${name}`);
               } else if (node) {
-                store.updateProps(node.id, { [name]: value }, `${node.id}.${name}`);
+                store.updateProps(
+                  node.id,
+                  { [name]: value },
+                  `${node.id}.${name}`
+                );
               }
             }}
             readOnly={readOnly}
