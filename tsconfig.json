@@ -19,11 +19,7 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@nextcms/editor-ui": ["./packages/editor-ui/src/index.ts"],
-      "@nextcms/editor-ui/gallery": [
-        "./packages/editor-ui/src/gallery/index.tsx"
-      ]
+      "@/*": ["./src/*"]
     }
   },
   "include": [

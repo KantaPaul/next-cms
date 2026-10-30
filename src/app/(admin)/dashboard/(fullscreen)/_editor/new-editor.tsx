@@ -115,8 +115,7 @@ import { editorSetup } from '@/builder/definitions';
 import { cmsInlineProps, cmsResizeHandles } from '@/builder/editor-handles';
 import { SAMPLE_POST } from '@/builder/post-template';
 // Shared editor chrome styles (B15 E1), built by `pnpm --filter @nextcms/editor-ui build:css`.
-// Relative until the app depends on @nextcms/editor-ui and can import '@nextcms/editor-ui/editor-ui.css'.
-import '../../../../../../packages/editor-ui/dist/editor-ui.css';
+import '@nextcms/editor-ui/editor-ui.css';
 import {
   cmsTransformProps,
   rendererComponents,
