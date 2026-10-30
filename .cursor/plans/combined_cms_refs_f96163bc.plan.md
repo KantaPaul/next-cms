@@ -2110,7 +2110,7 @@ todos:
     status: in_progress
   - id: R703
     content: "ENG-24 One-time migration of page_contents, post_contents, revisions, templates, and global blocks to the new format, with a backup and a tested rollback script"
-    status: pending
+    status: in_progress
   - id: R704
     content: "ENG-25 Unit tests for the converter, commands and undo, nesting rules, responsive inheritance, and renderer output"
     status: completed
@@ -2446,25 +2446,25 @@ isProject: false
 
 Updated 2026-10-30 by `scripts/plan-progress.mjs`. Do not edit this block by hand.
 
-**180 of 812 completed (22.2%)** · 14 in progress · 618 pending
+**180 of 812 completed (22.2%)** · 15 in progress · 617 pending
 
 `███████░░░░░░░░░░░░░░░░░░░░░░░` 22.2%
 
 | Section | Refs | Total | Done | In progress | Pending | % done | Bar |
 |---|---|---|---|---|---|---|---|
-| Engine (ENG) | R680–R710 | 31 | 20 | 5 | 6 | 64.5% | `██████░░░░` |
+| Engine (ENG) | R680–R710 | 31 | 20 | 6 | 5 | 64.5% | `██████░░░░` |
 | Editor UX (UXE) | R711–R736 | 26 | 22 | 1 | 3 | 84.6% | `████████░░` |
 | Data saving (DAT) | R737–R754 | 18 | 6 | 2 | 10 | 33.3% | `███░░░░░░░` |
 | Packages (PKG) | R755–R772 | 18 | 4 | 2 | 12 | 22.2% | `██░░░░░░░░` |
 | Extension API (EXT) | R773–R795 | 23 | 11 | 1 | 11 | 47.8% | `█████░░░░░` |
 | Robustness (ROB) | R796–R812 | 17 | 8 | 1 | 8 | 47.1% | `█████░░░░░` |
-| **Total** | | **812** | **180** | **14** | **618** | **22.2%** | `██░░░░░░░░` |
+| **Total** | | **812** | **180** | **15** | **617** | **22.2%** | `██░░░░░░░░` |
 
 ```mermaid
 pie showData title Todos by status
   "Completed" : 180
-  "In progress" : 14
-  "Pending" : 618
+  "In progress" : 15
+  "Pending" : 617
 ```
 <!-- progress:end -->
 
