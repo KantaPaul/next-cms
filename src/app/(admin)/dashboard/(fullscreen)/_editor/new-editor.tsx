@@ -72,6 +72,10 @@ import {
 } from '@nextcms/builder-react';
 import { PreferencesPanel } from '@nextcms/builder-react';
 import {
+  Button as ChromeButton,
+  IconButton as ChromeIconButton,
+} from '@nextcms/editor-ui';
+import {
   ArrowLeft,
   CommandIcon,
   Eye,
@@ -138,6 +142,7 @@ import {
   SaveGlobalDialogView,
 } from '../pages/[id]/builder/_components/save-global-dialog';
 import { SaveTemplateDialogView } from '../pages/[id]/builder/_components/save-template-dialog';
+import { type PrimaryAction, SharedChrome } from './shared-chrome';
 
 export type NewEditorProps = BuilderPageProps & {
   document: BuilderDocument;
@@ -146,6 +151,8 @@ export type NewEditorProps = BuilderPageProps & {
   draftVersion?: number;
   /** Problems found in the stored document (R797). */
   issues?: string[];
+  /** Editor chrome: the current one, or the shared @nextcms/editor-ui shell (B15 E6). */
+  shell?: 'legacy' | 'shared';
 };
 
 /** Errors come back from actions as values; turn them into thrown errors so the queue retries. */
@@ -294,6 +301,7 @@ function ConflictBanner({ queue }: { queue: SaveQueue }) {
   return (
     <div
       role="alert"
+      data-editor-notice="conflict"
       className="border-b border-red-200 bg-red-50 px-4 py-2 text-sm text-red-900"
     >
       <div className="flex flex-wrap items-center gap-3">
@@ -580,6 +588,7 @@ export function NewEditor({
   loaded,
   draftVersion = 0,
   issues = [],
+  shell = 'legacy',
 }: NewEditorProps) {
   const setup = useMemo(() => editorSetup(kind), [kind]);
   const adapter = useMemo(
@@ -868,6 +877,415 @@ export function NewEditor({
     [focusMode, hasRevisions]
   );
 
+  const notices = (
+    <>
+      {lockedBy && (
+        <div
+          role="alert"
+          className="flex items-center gap-3 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900"
+        >
+          {lockedBy.userName ?? 'Another editor'} is editing this page. Changes
+          here are not saved until you take over.
+          <Button size="sm" onClick={() => void takeOver()}>
+            Take over
+          </Button>
+        </div>
+      )}
+      <OfflineBanner queue={queue} />
+      <ConflictBanner queue={queue} />
+      <LocalCopyBanner queue={queue} version={draftVersion} />
+      <IssuesBanner issues={issues} />
+    </>
+  );
+  const leftPanelContent = (
+    <div className="p-3">
+      <div
+        role="tablist"
+        aria-label="Left panel"
+        className="mb-3 grid grid-cols-2 gap-1 rounded-md bg-steel-100 p-1 dark:bg-dark-200"
+      >
+        {(['blocks', 'layers'] as const).map(tab => (
+          <button
+            key={tab}
+            type="button"
+            role="tab"
+            aria-selected={panel === tab}
+            onClick={() => setPanel(tab)}
+            className={`rounded px-2 py-1 text-xs font-medium capitalize ${panel === tab ? 'bg-white shadow-sm dark:bg-dark-100' : 'text-steel-500'}`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+      {panel === 'blocks' ? (
+        <BlockList groups={setup.groups} drag={drag} />
+      ) : (
+        <LayersPanel />
+      )}
+      <details className="mt-6 text-xs text-steel-500">
+        <summary className="cursor-pointer font-medium">
+          Keyboard shortcuts
+        </summary>
+        <dl className="mt-2 grid grid-cols-[1fr_auto] gap-x-2 gap-y-1">
+          {SHORTCUTS.map(([action, keys]) => (
+            <div key={action} className="contents">
+              <dt>{action.replace('-', ' ')}</dt>
+              <dd className="font-mono">{keys}</dd>
+            </div>
+          ))}
+        </dl>
+      </details>
+    </div>
+  );
+  const canvas = (
+    <EditorCanvas
+      components={components}
+      drag={drag}
+      transformProps={transformProps}
+      loaded={loaded}
+      renderRoot={renderRoot}
+      onFrame={onFrame}
+      resizeHandles={cmsResizeHandles}
+      inlineProps={cmsInlineProps}
+      blockActions={blockActions}
+      insertGroups={setup.groups}
+      stateStyle={stateStyle}
+    />
+  );
+  const rightPanelContent = (
+    <section aria-label="Settings" className="p-4">
+      <NewEditorBridge themeTokens={themeTokens}>
+        <div
+          role="tablist"
+          aria-label="Right panel tabs"
+          className="mb-3 grid grid-cols-9 gap-1 rounded-md bg-steel-100 p-1 dark:bg-dark-200"
+        >
+          {RIGHT_PANEL_TABS.map(tab => (
+            <button
+              key={tab.key}
+              type="button"
+              role="tab"
+              aria-selected={rightPanel === tab.key}
+              onClick={() => setRightPanel(tab.key as typeof rightPanel)}
+              className={`rounded px-2 py-1 text-xs font-medium capitalize ${rightPanel === tab.key ? 'bg-white shadow-sm dark:bg-dark-100' : 'text-steel-500'}`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        {rightPanel === 'settings' && (
+          <Inspector
+            blocks={setup.inspectorBlocks}
+            rootFields={setup.rootFields}
+            empty={
+              <p className="mb-2 text-xs text-steel-500">
+                Select a block to edit it.
+                {Object.keys(setup.rootFields).length ? ' Page settings:' : ''}
+              </p>
+            }
+          />
+        )}
+        {rightPanel === 'style-classes' && (
+          <div className="p-3">
+            {store.getState().selection.length === 1 && (
+              <StyleClassControl
+                nodeId={store.getState().selection[0]}
+                styles={captureStyles(
+                  store.getState().doc.nodes[
+                    store.getState().selection[0] as never as string
+                  ]
+                )}
+              />
+            )}
+            <StyleClassesList
+              onApply={(blockId: string, className: string) => {
+                const sc = getStyleClassStore();
+                if (sc) sc.applyClass(blockId as never as string, className);
+              }}
+              onDetach={(blockId: string) => {
+                const sc = getStyleClassStore();
+                if (sc) sc.detachClass(blockId as never as string);
+              }}
+            />
+          </div>
+        )}
+        {rightPanel === 'presence' && (
+          <PresencePanel
+            users={[]}
+            blockLocks={[]}
+            me=""
+            onSelectionChange={() => {}}
+            onEditingChange={() => {}}
+          />
+        )}
+        {rightPanel === 'checks' && (
+          <LiveChecksPanel issues={[]} onIssueClick={id => store.select(id)} />
+        )}
+        {rightPanel === 'preferences' && <PreferencesPanel />}
+        {rightPanel === 'history' && <HistoryPanel queue={queue} />}
+        {rightPanel === 'comments' && (
+          <CommentsPanel
+            threads={commentThreads}
+            onAdd={(blockId, text, parentId) => {
+              setCommentThreads(prev => {
+                const rest = prev.filter(t => t.blockId !== blockId);
+                const mine = prev.find(t => t.blockId === blockId);
+                const comments = mine
+                  ? [
+                      ...mine.comments,
+                      {
+                        id: `c-${Date.now()}`,
+                        blockId,
+                        author: { name: 'You' },
+                        createdAt: Date.now(),
+                        updatedAt: Date.now(),
+                        text,
+                        resolved: false,
+                        parentId,
+                      },
+                    ]
+                  : [
+                      {
+                        id: `c-${Date.now()}`,
+                        blockId,
+                        author: { name: 'You' },
+                        createdAt: Date.now(),
+                        updatedAt: Date.now(),
+                        text,
+                        resolved: false,
+                      },
+                    ];
+                return [...rest, { blockId, comments }];
+              });
+            }}
+            onResolve={(blockId, resolved) => {
+              setCommentThreads(prev =>
+                prev.map(t =>
+                  t.blockId === blockId
+                    ? {
+                        ...t,
+                        comments: t.comments.map(c => ({ ...c, resolved })),
+                      }
+                    : t
+                )
+              );
+            }}
+            onDelete={commentId => {
+              setCommentThreads(prev =>
+                prev.map(t => ({
+                  ...t,
+                  comments: t.comments.filter(c => c.id !== commentId),
+                }))
+              );
+            }}
+            selectedBlock={
+              store.getState().selection.length === 1
+                ? store.getState().selection[0]
+                : null
+            }
+            canEdit={true}
+            onClose={() => {}}
+          />
+        )}
+        {rightPanel === 'blocks' && (
+          <BlockList groups={setup.groups} drag={drag} />
+        )}
+        {rightPanel === 'layers' && <LayersPanel />}
+      </NewEditorBridge>
+    </section>
+  );
+  const commandPalette = (
+    <CommandPalette
+      open={paletteOpen}
+      onOpenChange={setPaletteOpen}
+      groups={setup.groups}
+      extraCommands={extraCommands}
+    />
+  );
+  const dialogs = (
+    <>
+      <AiGenerateDialogView
+        open={generateOpen}
+        onOpenChange={setGenerateOpen}
+        onApply={(data, mode) => applyGenerated(store, data, mode)}
+      />
+      <AiRewriteDialogView
+        target={rewriteTarget}
+        onClose={() => setRewriteTarget(null)}
+        onApply={(target, props) =>
+          store.updateProps(target.id, props) ||
+          !!store.getState().doc.nodes[target.id]
+        }
+      />
+      <SaveGlobalDialogView
+        target={globalTarget}
+        onClose={() => setGlobalTarget(null)}
+        getSection={target => sectionOf(store, target.id)}
+        linkGlobal={(target, saved, section) =>
+          linkGlobal(store, target.id, saved, section)
+        }
+      />
+      <SaveTemplateDialogView
+        open={templateOpen}
+        onOpenChange={setTemplateOpen}
+        pageTitle={page.title}
+        getContent={() => documentToPuck(store.getState().doc)}
+      />
+      {hasRevisions && (
+        <RevisionsDrawer
+          open={revisionsOpen}
+          onOpenChange={setRevisionsOpen}
+          pageId={page.id}
+          actions={kind === 'post' ? POST_REVISION_ACTIONS : undefined}
+          onRestored={() => {
+            void queue.discardLocalCopy();
+            window.location.reload();
+          }}
+        />
+      )}
+      {versionCompareOpen && (
+        <VersionCompare
+          revisions={[]}
+          onRestoreBlock={() => {}}
+          onClose={() => setVersionCompareOpen(false)}
+        />
+      )}
+      {onboardingOpen && (
+        <StartScreen
+          options={[
+            {
+              id: 'blank',
+              label: 'Blank page',
+              description: 'Start with an empty canvas.',
+              icon: '📄',
+              run: () => setOnboardingOpen(false),
+            },
+            {
+              id: 'template',
+              label: 'Template',
+              description: 'Start from a pre-built layout.',
+              icon: '📐',
+              run: () => setOnboardingOpen(false),
+            },
+            {
+              id: 'ai',
+              label: 'Generate with AI',
+              description: 'Describe what you want and let AI build it.',
+              icon: '✦',
+              run: () => setOnboardingOpen(false),
+            },
+          ]}
+          onComplete={() => setOnboardingOpen(false)}
+        />
+      )}
+    </>
+  );
+
+  if (shell === 'shared') {
+    const primaryAction: PrimaryAction | null = savesGoLive
+      ? { label: adapter.liveLabel, disabled: busy !== null, run: saveSnapshot }
+      : canPublish
+        ? { label: adapter.liveLabel, disabled: busy !== null, run: publish }
+        : adapter.submitForReview
+          ? {
+              label: 'Submit for review',
+              disabled: busy !== null || status === 'review',
+              run: submitForReview,
+            }
+          : null;
+    const selection = store.getState().selection;
+    return (
+      <EditorProvider store={store}>
+        <SharedChrome
+          queue={queue}
+          title={page.title}
+          kindLabel={adapter.label}
+          backHref={adapter.backHref}
+          backLabel={adapter.backLabel}
+          status={savesGoLive ? null : status}
+          previewHref={adapter.previewHref}
+          primaryAction={primaryAction}
+          focusMode={focusMode}
+          onToggleFocusMode={() => setFocusMode(value => !value)}
+          onOpenCommandPalette={() => setPaletteOpen(true)}
+          actions={
+            <>
+              <ChromeIconButton
+                size="sm"
+                active={motionPreview}
+                aria-pressed={motionPreview}
+                aria-label="Preview motion"
+                tooltip="Preview animations"
+                onClick={() => setMotionPreview(value => !value)}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+              </ChromeIconButton>
+              {aiEnabled && (
+                <ChromeButton
+                  size="sm"
+                  variant="secondary"
+                  leftIcon={<Wand2 className="h-3.5 w-3.5" />}
+                  onClick={() => setGenerateOpen(true)}
+                >
+                  Generate
+                </ChromeButton>
+              )}
+              {kind === 'page' && (
+                <ChromeIconButton
+                  size="sm"
+                  aria-label="Save as template"
+                  tooltip="Save as template"
+                  onClick={() => setTemplateOpen(true)}
+                >
+                  <LayoutTemplate className="h-3.5 w-3.5" />
+                </ChromeIconButton>
+              )}
+              {hasRevisions && (
+                <ChromeIconButton
+                  size="sm"
+                  aria-label="Revisions"
+                  tooltip="Revisions"
+                  onClick={() => setRevisionsOpen(true)}
+                >
+                  <History className="h-3.5 w-3.5" />
+                </ChromeIconButton>
+              )}
+              {!savesGoLive && (
+                <ChromeButton
+                  size="sm"
+                  variant="secondary"
+                  disabled={busy !== null}
+                  onClick={saveSnapshot}
+                >
+                  Save draft
+                </ChromeButton>
+              )}
+            </>
+          }
+          notices={notices}
+          library={leftPanelContent}
+          canvas={<div className="min-h-0 flex-1">{canvas}</div>}
+          inspector={
+            <>
+              {/* State styles edit the selected block, so they sit with its settings. */}
+              <div className="border-b border-[var(--ne-border)] px-4 py-2">
+                <StateStyleSwitch
+                  nodeId={selection.length === 1 ? selection[0] : ''}
+                  onChange={(s: 'hover' | 'focus' | 'active' | null) =>
+                    setStateStyle(s)
+                  }
+                />
+              </div>
+              {rightPanelContent}
+            </>
+          }
+        />
+        {commandPalette}
+        {dialogs}
+      </EditorProvider>
+    );
+  }
+
   return (
     <EditorProvider store={store}>
       <div className="flex h-screen flex-col bg-steel-50 dark:bg-dark-50">
@@ -1018,22 +1436,7 @@ export function NewEditor({
             ) : null}
           </div>
         </header>
-        {lockedBy && (
-          <div
-            role="alert"
-            className="flex items-center gap-3 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900"
-          >
-            {lockedBy.userName ?? 'Another editor'} is editing this page.
-            Changes here are not saved until you take over.
-            <Button size="sm" onClick={() => void takeOver()}>
-              Take over
-            </Button>
-          </div>
-        )}
-        <OfflineBanner queue={queue} />
-        <ConflictBanner queue={queue} />
-        <LocalCopyBanner queue={queue} version={draftVersion} />
-        <IssuesBanner issues={issues} />
+        {notices}
         <div className="flex min-h-0 flex-1">
           {!focusMode && (
             <ResizablePanel
@@ -1045,65 +1448,14 @@ export function NewEditor({
                 background: 'var(--panel-bg, #fff)',
               }}
             >
-              <div className="p-3">
-                <div
-                  role="tablist"
-                  aria-label="Left panel"
-                  className="mb-3 grid grid-cols-2 gap-1 rounded-md bg-steel-100 p-1 dark:bg-dark-200"
-                >
-                  {(['blocks', 'layers'] as const).map(tab => (
-                    <button
-                      key={tab}
-                      type="button"
-                      role="tab"
-                      aria-selected={panel === tab}
-                      onClick={() => setPanel(tab)}
-                      className={`rounded px-2 py-1 text-xs font-medium capitalize ${panel === tab ? 'bg-white shadow-sm dark:bg-dark-100' : 'text-steel-500'}`}
-                    >
-                      {tab}
-                    </button>
-                  ))}
-                </div>
-                {panel === 'blocks' ? (
-                  <BlockList groups={setup.groups} drag={drag} />
-                ) : (
-                  <LayersPanel />
-                )}
-                <details className="mt-6 text-xs text-steel-500">
-                  <summary className="cursor-pointer font-medium">
-                    Keyboard shortcuts
-                  </summary>
-                  <dl className="mt-2 grid grid-cols-[1fr_auto] gap-x-2 gap-y-1">
-                    {SHORTCUTS.map(([action, keys]) => (
-                      <div key={action} className="contents">
-                        <dt>{action.replace('-', ' ')}</dt>
-                        <dd className="font-mono">{keys}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                </details>
-              </div>
+              {leftPanelContent}
             </ResizablePanel>
           )}
           <main className="flex min-w-0 flex-1 flex-col">
             <div className="flex h-9 shrink-0 items-center border-b border-steel-200 bg-white px-3 dark:border-dark-300 dark:bg-dark-100">
               <Breadcrumb />
             </div>
-            <div className="min-h-0 flex-1">
-              <EditorCanvas
-                components={components}
-                drag={drag}
-                transformProps={transformProps}
-                loaded={loaded}
-                renderRoot={renderRoot}
-                onFrame={onFrame}
-                resizeHandles={cmsResizeHandles}
-                inlineProps={cmsInlineProps}
-                blockActions={blockActions}
-                insertGroups={setup.groups}
-                stateStyle={stateStyle}
-              />
-            </div>
+            <div className="min-h-0 flex-1">{canvas}</div>
           </main>
           {!focusMode && (
             <ResizablePanel
@@ -1115,246 +1467,13 @@ export function NewEditor({
                 background: 'var(--panel-bg, #fff)',
               }}
             >
-              <section aria-label="Settings" className="p-4">
-                <NewEditorBridge themeTokens={themeTokens}>
-                  <div
-                    role="tablist"
-                    aria-label="Right panel tabs"
-                    className="mb-3 grid grid-cols-9 gap-1 rounded-md bg-steel-100 p-1 dark:bg-dark-200"
-                  >
-                    {RIGHT_PANEL_TABS.map(tab => (
-                      <button
-                        key={tab.key}
-                        type="button"
-                        role="tab"
-                        aria-selected={rightPanel === tab.key}
-                        onClick={() =>
-                          setRightPanel(tab.key as typeof rightPanel)
-                        }
-                        className={`rounded px-2 py-1 text-xs font-medium capitalize ${rightPanel === tab.key ? 'bg-white shadow-sm dark:bg-dark-100' : 'text-steel-500'}`}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
-                  </div>
-                  {rightPanel === 'settings' && (
-                    <Inspector
-                      blocks={setup.inspectorBlocks}
-                      rootFields={setup.rootFields}
-                      empty={
-                        <p className="mb-2 text-xs text-steel-500">
-                          Select a block to edit it.
-                          {Object.keys(setup.rootFields).length
-                            ? ' Page settings:'
-                            : ''}
-                        </p>
-                      }
-                    />
-                  )}
-                  {rightPanel === 'style-classes' && (
-                    <div className="p-3">
-                      {store.getState().selection.length === 1 && (
-                        <StyleClassControl
-                          nodeId={store.getState().selection[0]}
-                          styles={captureStyles(
-                            store.getState().doc.nodes[
-                              store.getState().selection[0] as never as string
-                            ]
-                          )}
-                        />
-                      )}
-                      <StyleClassesList
-                        onApply={(blockId: string, className: string) => {
-                          const sc = getStyleClassStore();
-                          if (sc)
-                            sc.applyClass(
-                              blockId as never as string,
-                              className
-                            );
-                        }}
-                        onDetach={(blockId: string) => {
-                          const sc = getStyleClassStore();
-                          if (sc) sc.detachClass(blockId as never as string);
-                        }}
-                      />
-                    </div>
-                  )}
-                  {rightPanel === 'presence' && (
-                    <PresencePanel
-                      users={[]}
-                      blockLocks={[]}
-                      me=""
-                      onSelectionChange={() => {}}
-                      onEditingChange={() => {}}
-                    />
-                  )}
-                  {rightPanel === 'checks' && (
-                    <LiveChecksPanel
-                      issues={[]}
-                      onIssueClick={id => store.select(id)}
-                    />
-                  )}
-                  {rightPanel === 'preferences' && <PreferencesPanel />}
-                  {rightPanel === 'history' && <HistoryPanel queue={queue} />}
-                  {rightPanel === 'comments' && (
-                    <CommentsPanel
-                      threads={commentThreads}
-                      onAdd={(blockId, text, parentId) => {
-                        setCommentThreads(prev => {
-                          const rest = prev.filter(t => t.blockId !== blockId);
-                          const mine = prev.find(t => t.blockId === blockId);
-                          const comments = mine
-                            ? [
-                                ...mine.comments,
-                                {
-                                  id: `c-${Date.now()}`,
-                                  blockId,
-                                  author: { name: 'You' },
-                                  createdAt: Date.now(),
-                                  updatedAt: Date.now(),
-                                  text,
-                                  resolved: false,
-                                  parentId,
-                                },
-                              ]
-                            : [
-                                {
-                                  id: `c-${Date.now()}`,
-                                  blockId,
-                                  author: { name: 'You' },
-                                  createdAt: Date.now(),
-                                  updatedAt: Date.now(),
-                                  text,
-                                  resolved: false,
-                                },
-                              ];
-                          return [...rest, { blockId, comments }];
-                        });
-                      }}
-                      onResolve={(blockId, resolved) => {
-                        setCommentThreads(prev =>
-                          prev.map(t =>
-                            t.blockId === blockId
-                              ? {
-                                  ...t,
-                                  comments: t.comments.map(c => ({
-                                    ...c,
-                                    resolved,
-                                  })),
-                                }
-                              : t
-                          )
-                        );
-                      }}
-                      onDelete={commentId => {
-                        setCommentThreads(prev =>
-                          prev.map(t => ({
-                            ...t,
-                            comments: t.comments.filter(
-                              c => c.id !== commentId
-                            ),
-                          }))
-                        );
-                      }}
-                      selectedBlock={
-                        store.getState().selection.length === 1
-                          ? store.getState().selection[0]
-                          : null
-                      }
-                      canEdit={true}
-                      onClose={() => {}}
-                    />
-                  )}
-                  {rightPanel === 'blocks' && (
-                    <BlockList groups={setup.groups} drag={drag} />
-                  )}
-                  {rightPanel === 'layers' && <LayersPanel />}
-                </NewEditorBridge>
-              </section>
+              {rightPanelContent}
             </ResizablePanel>
           )}
         </div>
       </div>
-      <CommandPalette
-        open={paletteOpen}
-        onOpenChange={setPaletteOpen}
-        groups={setup.groups}
-        extraCommands={extraCommands}
-      />
-      <AiGenerateDialogView
-        open={generateOpen}
-        onOpenChange={setGenerateOpen}
-        onApply={(data, mode) => applyGenerated(store, data, mode)}
-      />
-      <AiRewriteDialogView
-        target={rewriteTarget}
-        onClose={() => setRewriteTarget(null)}
-        onApply={(target, props) =>
-          store.updateProps(target.id, props) ||
-          !!store.getState().doc.nodes[target.id]
-        }
-      />
-      <SaveGlobalDialogView
-        target={globalTarget}
-        onClose={() => setGlobalTarget(null)}
-        getSection={target => sectionOf(store, target.id)}
-        linkGlobal={(target, saved, section) =>
-          linkGlobal(store, target.id, saved, section)
-        }
-      />
-      <SaveTemplateDialogView
-        open={templateOpen}
-        onOpenChange={setTemplateOpen}
-        pageTitle={page.title}
-        getContent={() => documentToPuck(store.getState().doc)}
-      />
-      {hasRevisions && (
-        <RevisionsDrawer
-          open={revisionsOpen}
-          onOpenChange={setRevisionsOpen}
-          pageId={page.id}
-          actions={kind === 'post' ? POST_REVISION_ACTIONS : undefined}
-          onRestored={() => {
-            void queue.discardLocalCopy();
-            window.location.reload();
-          }}
-        />
-      )}
-      {versionCompareOpen && (
-        <VersionCompare
-          revisions={[]}
-          onRestoreBlock={() => {}}
-          onClose={() => setVersionCompareOpen(false)}
-        />
-      )}
-      {onboardingOpen && (
-        <StartScreen
-          options={[
-            {
-              id: 'blank',
-              label: 'Blank page',
-              description: 'Start with an empty canvas.',
-              icon: '📄',
-              run: () => setOnboardingOpen(false),
-            },
-            {
-              id: 'template',
-              label: 'Template',
-              description: 'Start from a pre-built layout.',
-              icon: '📐',
-              run: () => setOnboardingOpen(false),
-            },
-            {
-              id: 'ai',
-              label: 'Generate with AI',
-              description: 'Describe what you want and let AI build it.',
-              icon: '✦',
-              run: () => setOnboardingOpen(false),
-            },
-          ]}
-          onComplete={() => setOnboardingOpen(false)}
-        />
-      )}
+      {commandPalette}
+      {dialogs}
     </EditorProvider>
   );
 }

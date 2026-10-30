@@ -103,10 +103,12 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   return (
     <header className="h-11 px-3 bg-[var(--ne-surface)] border-b border-[var(--ne-border)] flex items-center justify-between gap-4 select-none shrink-0 z-40">
-      {/* Zone 1: Brand & Document Name & Save Status */}
-      <div className="flex items-center gap-3 min-w-0">
+      {/* Zone 1: Brand & Document Name & Save Status (takes the leftover width) */}
+      <div className="flex flex-1 items-center gap-3 min-w-[8rem]">
         <div className="flex items-center gap-2 min-w-0">
-          {brand}
+          {brand && (
+            <div className="flex shrink-0 items-center gap-2">{brand}</div>
+          )}
           {editingTitle && onRenameDocument ? (
             <input
               type="text"
@@ -120,26 +122,33 @@ export const TopBar: React.FC<TopBarProps> = ({
               autoFocus
               className="h-6 px-1.5 text-xs font-semibold bg-[var(--ne-surface-subtle)] border border-[var(--ne-primary)] rounded-[var(--ne-radius-sm)] text-[var(--ne-text)] focus:outline-none w-44 font-sans"
             />
-          ) : (
+          ) : onRenameDocument ? (
             <button
               type="button"
               onClick={() => {
-                if (!onRenameDocument) return;
                 setTempTitle(title);
                 setEditingTitle(true);
               }}
-              title={onRenameDocument ? 'Click to rename' : undefined}
-              className="group flex items-center gap-1.5 text-xs font-semibold text-[var(--ne-text)] hover:text-[var(--ne-primary)] cursor-pointer truncate font-sans"
+              title="Click to rename"
+              className="group flex min-w-0 items-center gap-1.5 text-xs font-semibold text-[var(--ne-text)] hover:text-[var(--ne-primary)] cursor-pointer font-sans"
             >
               <span className="truncate">{title}</span>
               <Edit3 className="w-3 h-3 opacity-0 group-hover:opacity-60 shrink-0" />
             </button>
+          ) : (
+            <h1
+              title={title}
+              className="min-w-0 truncate text-xs font-semibold text-[var(--ne-text)]"
+            >
+              {title}
+            </h1>
           )}
         </div>
 
         <div className="h-3.5 w-[1px] bg-[var(--ne-border)] shrink-0" />
 
         <SaveStatus
+          className="shrink-0 whitespace-nowrap"
           status={saveStatus}
           lastSavedAt={lastSavedAt}
           onRetry={onRetrySave}
@@ -148,7 +157,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       </div>
 
       {/* Zone 2: Undo/Redo & Device Switcher & Zoom */}
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-3">
         {/* Undo / Redo */}
         <div className="flex items-center gap-0.5">
           <IconButton
@@ -229,7 +238,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       </div>
 
       {/* Zone 3: Command palette, Theme, Focus, Preview & Publish */}
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         {extraActions}
 
         {onOpenCommandPalette && (
