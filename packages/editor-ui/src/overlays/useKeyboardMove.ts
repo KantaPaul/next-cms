@@ -17,14 +17,29 @@ export interface UseKeyboardMoveOptions {
 }
 
 export function useKeyboardMove(options: UseKeyboardMoveOptions = {}) {
-  const { onMove, onResize, onConfirm, onCancel, step = 1, resizeStep = 1 } = options;
+  const {
+    onMove,
+    onResize,
+    onConfirm,
+    onCancel,
+    step = 1,
+    resizeStep = 1,
+  } = options;
   const [active, setActive] = React.useState(false);
-  const stateRef = React.useRef<KeyboardMoveState>({ x: 0, y: 0, width: 1, height: 1 });
+  const stateRef = React.useRef<KeyboardMoveState>({
+    x: 0,
+    y: 0,
+    width: 1,
+    height: 1,
+  });
 
-  const setState = React.useCallback((next: KeyboardMoveState) => {
-    stateRef.current = next;
-    onMove?.(next);
-  }, [onMove]);
+  const setState = React.useCallback(
+    (next: KeyboardMoveState) => {
+      stateRef.current = next;
+      onMove?.(next);
+    },
+    [onMove]
+  );
 
   const handleKeyDown = React.useCallback(
     (e: KeyboardEvent) => {
@@ -33,7 +48,8 @@ export function useKeyboardMove(options: UseKeyboardMoveOptions = {}) {
       switch (e.key) {
         case 'ArrowUp':
           e.preventDefault();
-          if (e.shiftKey) onResize?.({ ...s, height: Math.max(1, s.height - resizeStep) });
+          if (e.shiftKey)
+            onResize?.({ ...s, height: Math.max(1, s.height - resizeStep) });
           else setState({ ...s, y: s.y - step });
           break;
         case 'ArrowDown':
@@ -43,7 +59,8 @@ export function useKeyboardMove(options: UseKeyboardMoveOptions = {}) {
           break;
         case 'ArrowLeft':
           e.preventDefault();
-          if (e.shiftKey) onResize?.({ ...s, width: Math.max(1, s.width - resizeStep) });
+          if (e.shiftKey)
+            onResize?.({ ...s, width: Math.max(1, s.width - resizeStep) });
           else setState({ ...s, x: s.x - step });
           break;
         case 'ArrowRight':
