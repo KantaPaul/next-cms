@@ -1,111 +1,280 @@
-import * as React from 'react';
-import { Button } from '../primitives/Button';
-import { cn } from '../lib/cn';
-
-export type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error';
+import React, { useState } from 'react';
+import {
+  Monitor,
+  Tablet,
+  Smartphone,
+  Undo2,
+  Redo2,
+  Eye,
+  Send,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  Minimize2,
+  Sun,
+  Moon,
+  Command,
+  Edit3,
+} from 'lucide-react';
+import { Button } from '../primitives/Button.tsx';
+import { IconButton } from '../primitives/IconButton.tsx';
+import { SaveStatus, SaveState } from '../feedback/SaveStatus.tsx';
+import { DeviceType } from '../inspector/DeviceValueBadge.tsx';
 
 export interface TopBarProps {
-  title: string;
-  onTitleChange?: (title: string) => void;
-  saveStatus?: SaveStatus;
+  documentName: string;
+  onRenameDocument?: (name: string) => void;
+  saveStatus: SaveState;
+  lastSavedAt?: string | Date;
+  onRetrySave?: () => void;
+  onResolveConflict?: () => void;
   canUndo?: boolean;
   canRedo?: boolean;
   onUndo?: () => void;
   onRedo?: () => void;
-  device?: 'desktop' | 'tablet' | 'mobile';
-  onDeviceChange?: (device: 'desktop' | 'tablet' | 'mobile') => void;
-  onPreview?: () => void;
+  device: DeviceType;
+  onDeviceChange: (device: DeviceType) => void;
+  zoom: number;
+  onZoomChange: (zoom: number) => void;
+  isPreview?: boolean;
+  onTogglePreview: () => void;
   onPublish?: () => void;
-  extra?: React.ReactNode;
-  className?: string;
+  focusMode?: boolean;
+  onToggleFocusMode?: () => void;
+  isDark?: boolean;
+  onToggleTheme?: () => void;
+  onOpenCommandPalette?: () => void;
+  extraActions?: React.ReactNode;
 }
 
-const saveStatusLabels: Record<SaveStatus, string> = {
-  saved: 'Saved',
-  saving: 'Saving…',
-  unsaved: 'Unsaved',
-  error: 'Save failed',
-};
-
-export function TopBar({
-  title,
-  onTitleChange,
-  saveStatus = 'saved',
+export const TopBar: React.FC<TopBarProps> = ({
+  documentName,
+  onRenameDocument,
+  saveStatus,
+  lastSavedAt,
+  onRetrySave,
+  onResolveConflict,
   canUndo = false,
   canRedo = false,
   onUndo,
   onRedo,
-  device = 'desktop',
+  device,
   onDeviceChange,
-  onPreview,
+  zoom,
+  onZoomChange,
+  isPreview = false,
+  onTogglePreview,
   onPublish,
-  extra,
-  className,
-}: TopBarProps) {
+  focusMode = false,
+  onToggleFocusMode,
+  isDark = false,
+  onToggleTheme,
+  onOpenCommandPalette,
+  extraActions,
+}) => {
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [tempTitle, setTempTitle] = useState(documentName);
+
+  const handleCommitTitle = () => {
+    if (tempTitle.trim() && onRenameDocument) {
+      onRenameDocument(tempTitle.trim());
+    }
+    setEditingTitle(false);
+  };
+
   return (
-    <div className={cn('flex h-10 items-center justify-between gap-2 px-3', className)}>
-      <div className="flex items-center gap-2">
-        {onTitleChange ? (
-          <input
-            value={title}
-            onChange={e => onTitleChange(e.target.value)}
-            className="h-7 w-48 rounded-[var(--ne-radius-sm)] border border-transparent bg-transparent px-1 text-sm font-medium text-[var(--ne-text)] focus:border-[var(--ne-border)] focus:outline-none"
-          />
-        ) : (
-          <span className="text-sm font-medium text-[var(--ne-text)]">{title}</span>
-        )}
-        <span
-          className={cn(
-            'text-xs',
-            saveStatus === 'saved' && 'text-[var(--ne-text-muted)]',
-            saveStatus === 'saving' && 'text-[var(--ne-primary)]',
-            saveStatus === 'unsaved' && 'text-[var(--ne-warning)]',
-            saveStatus === 'error' && 'text-[var(--ne-danger)]'
-          )}
-        >
-          {saveStatusLabels[saveStatus]}
-        </span>
-      </div>
-      <div className="flex items-center gap-1">
-        {extra}
-        <div className="flex items-center gap-0.5">
-          <Button variant="ghost" size="icon" onClick={onUndo} disabled={!canUndo} aria-label="Undo">
-            ↶
-          </Button>
-          <Button variant="ghost" size="icon" onClick={onRedo} disabled={!canRedo} aria-label="Redo">
-            ↷
-          </Button>
-        </div>
-        {onDeviceChange && (
-          <div className="flex items-center gap-0.5 rounded-[var(--ne-radius-sm)] border border-[var(--ne-border)] bg-[var(--ne-bg)] p-0.5">
-            {(['desktop', 'tablet', 'mobile'] as const).map(d => (
-              <button
-                key={d}
-                type="button"
-                onClick={() => onDeviceChange(d)}
-                className={cn(
-                  'rounded-[var(--ne-radius-sm)] px-2 py-0.5 text-xs transition-colors',
-                  device === d
-                    ? 'bg-[var(--ne-surface)] text-[var(--ne-text)] shadow-sm'
-                    : 'text-[var(--ne-text-muted)] hover:text-[var(--ne-text)]'
-                )}
-              >
-                {d === 'desktop' ? 'D' : d === 'tablet' ? 'T' : 'M'}
-              </button>
-            ))}
+    <header className="h-11 px-3 bg-[var(--ne-surface)] border-b border-[var(--ne-border)] flex items-center justify-between gap-4 select-none shrink-0 z-40">
+      {/* Zone 1: Brand & Document Name & Save Status */}
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-5 h-5 rounded-[var(--ne-radius-sm)] bg-[var(--ne-primary)] text-white flex items-center justify-center font-bold text-xs shrink-0 tracking-tighter">
+            NX
           </div>
+          {editingTitle ? (
+            <input
+              type="text"
+              value={tempTitle}
+              onChange={(e) => setTempTitle(e.target.value)}
+              onBlur={handleCommitTitle}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleCommitTitle();
+                if (e.key === 'Escape') setEditingTitle(false);
+              }}
+              autoFocus
+              className="h-6 px-1.5 text-xs font-semibold bg-[var(--ne-surface-subtle)] border border-[var(--ne-primary)] rounded-[var(--ne-radius-sm)] text-[var(--ne-text)] focus:outline-none w-44 font-sans"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setTempTitle(documentName);
+                setEditingTitle(true);
+              }}
+              title="Click to rename"
+              className="group flex items-center gap-1.5 text-xs font-semibold text-[var(--ne-text)] hover:text-[var(--ne-primary)] cursor-pointer truncate font-sans"
+            >
+              <span className="truncate">{documentName}</span>
+              <Edit3 className="w-3 h-3 opacity-0 group-hover:opacity-60 shrink-0" />
+            </button>
+          )}
+        </div>
+
+        <div className="h-3.5 w-[1px] bg-[var(--ne-border)] shrink-0" />
+
+        <SaveStatus
+          status={saveStatus}
+          lastSavedAt={lastSavedAt}
+          onRetry={onRetrySave}
+          onResolveConflict={onResolveConflict}
+        />
+      </div>
+
+      {/* Zone 2: Undo/Redo & Device Switcher & Zoom */}
+      <div className="flex items-center gap-3">
+        {/* Undo / Redo */}
+        <div className="flex items-center gap-0.5">
+          <IconButton
+            size="sm"
+            disabled={!canUndo}
+            tooltip="Undo (Cmd+Z)"
+            onClick={onUndo}
+          >
+            <Undo2 className="w-3.5 h-3.5" />
+          </IconButton>
+          <IconButton
+            size="sm"
+            disabled={!canRedo}
+            tooltip="Redo (Cmd+Shift+Z)"
+            onClick={onRedo}
+          >
+            <Redo2 className="w-3.5 h-3.5" />
+          </IconButton>
+        </div>
+
+        <div className="h-3.5 w-[1px] bg-[var(--ne-border)] shrink-0" />
+
+        {/* Device Switcher */}
+        <div className="flex items-center p-0.5 bg-[var(--ne-surface-subtle)] border border-[var(--ne-border)] rounded-[var(--ne-radius-md)]">
+          <button
+            type="button"
+            onClick={() => onDeviceChange('desktop')}
+            title="Desktop view (1280px / 12 cols)"
+            className={`p-1 rounded-[var(--ne-radius-sm)] transition-colors cursor-pointer ${
+              device === 'desktop'
+                ? 'bg-[var(--ne-surface)] text-[var(--ne-primary)] shadow-2xs font-medium'
+                : 'text-[var(--ne-text-muted)] hover:text-[var(--ne-text)]'
+            }`}
+          >
+            <Monitor className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onDeviceChange('tablet')}
+            title="Tablet view (768px / 6 cols)"
+            className={`p-1 rounded-[var(--ne-radius-sm)] transition-colors cursor-pointer ${
+              device === 'tablet'
+                ? 'bg-[var(--ne-surface)] text-[var(--ne-primary)] shadow-2xs font-medium'
+                : 'text-[var(--ne-text-muted)] hover:text-[var(--ne-text)]'
+            }`}
+          >
+            <Tablet className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onDeviceChange('mobile')}
+            title="Mobile view (390px / 1 col)"
+            className={`p-1 rounded-[var(--ne-radius-sm)] transition-colors cursor-pointer ${
+              device === 'mobile'
+                ? 'bg-[var(--ne-surface)] text-[var(--ne-primary)] shadow-2xs font-medium'
+                : 'text-[var(--ne-text-muted)] hover:text-[var(--ne-text)]'
+            }`}
+          >
+            <Smartphone className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <div className="h-3.5 w-[1px] bg-[var(--ne-border)] shrink-0" />
+
+        {/* Zoom */}
+        <div className="flex items-center gap-1 text-[11px] font-mono text-[var(--ne-text-muted)]">
+          <button
+            type="button"
+            onClick={() => onZoomChange(Math.max(50, zoom - 10))}
+            className="p-1 hover:text-[var(--ne-text)] cursor-pointer"
+            title="Zoom out"
+          >
+            <ZoomOut className="w-3 h-3" />
+          </button>
+          <span className="w-8 text-center tabular-nums">{zoom}%</span>
+          <button
+            type="button"
+            onClick={() => onZoomChange(Math.min(150, zoom + 10))}
+            className="p-1 hover:text-[var(--ne-text)] cursor-pointer"
+            title="Zoom in"
+          >
+            <ZoomIn className="w-3 h-3" />
+          </button>
+        </div>
+      </div>
+
+      {/* Zone 3: Command palette, Theme, Focus, Preview & Publish */}
+      <div className="flex items-center gap-2">
+        {extraActions}
+
+        {onOpenCommandPalette && (
+          <button
+            type="button"
+            onClick={onOpenCommandPalette}
+            title="Command Palette (Cmd+K)"
+            className="hidden sm:flex items-center gap-1.5 px-2 py-1 text-[11px] font-sans text-[var(--ne-text-muted)] hover:text-[var(--ne-text)] bg-[var(--ne-surface-subtle)] border border-[var(--ne-border)] rounded-[var(--ne-radius-md)] cursor-pointer hover:border-[var(--ne-border-strong)] transition-colors"
+          >
+            <Command className="w-3 h-3 text-[var(--ne-text-subtle)]" />
+            <span>Search</span>
+            <kbd className="font-mono text-[9px] bg-[var(--ne-surface)] px-1 py-0.5 rounded border border-[var(--ne-border)]">⌘K</kbd>
+          </button>
         )}
-        {onPreview && (
-          <Button variant="outline" size="sm" onClick={onPreview}>
-            Preview
-          </Button>
+
+        {onToggleTheme && (
+          <IconButton
+            size="sm"
+            tooltip={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            onClick={onToggleTheme}
+          >
+            {isDark ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5" />}
+          </IconButton>
         )}
+
+        {onToggleFocusMode && (
+          <IconButton
+            size="sm"
+            tooltip={focusMode ? 'Exit Focus Mode' : 'Focus Mode (Hide all panels)'}
+            active={focusMode}
+            onClick={onToggleFocusMode}
+          >
+            {focusMode ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+          </IconButton>
+        )}
+
+        <Button
+          variant={isPreview ? 'primary' : 'secondary'}
+          size="sm"
+          leftIcon={<Eye className="w-3.5 h-3.5" />}
+          onClick={onTogglePreview}
+        >
+          {isPreview ? 'Editing' : 'Preview'}
+        </Button>
+
         {onPublish && (
-          <Button variant="default" size="sm" onClick={onPublish}>
+          <Button
+            variant="primary"
+            size="sm"
+            leftIcon={<Send className="w-3.5 h-3.5" />}
+            onClick={onPublish}
+          >
             Publish
           </Button>
         )}
       </div>
-    </div>
+    </header>
   );
-}
+};

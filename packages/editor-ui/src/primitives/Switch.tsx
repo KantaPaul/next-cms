@@ -1,26 +1,39 @@
-import * as React from 'react';
-import * as SwitchPrimitives from '@radix-ui/react-switch';
-import { cn } from '../lib/cn';
+import React from 'react';
 
-const Switch = React.forwardRef<
-  React.ElementRef<typeof SwitchPrimitives.Root>,
-  React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>
->(({ className, ...props }, ref) => (
-  <SwitchPrimitives.Root
-    ref={ref}
-    className={cn(
-      'peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ne-primary)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-[var(--ne-primary)] data-[state=unchecked]:bg-[var(--ne-border)]',
-      className
-    )}
-    {...props}
-  >
-    <SwitchPrimitives.Thumb
-      className={cn(
-        'pointer-events-none block h-4 w-4 rounded-full bg-[var(--ne-surface)] shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0'
-      )}
-    />
-  </SwitchPrimitives.Root>
-));
-Switch.displayName = SwitchPrimitives.Root.displayName;
+export interface SwitchProps {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
+  label?: string;
+  className?: string;
+}
 
-export { Switch };
+export const Switch: React.FC<SwitchProps> = ({
+  checked,
+  onChange,
+  disabled = false,
+  label,
+  className = '',
+}) => {
+  return (
+    <label className={`inline-flex items-center gap-2 cursor-pointer select-none ${disabled ? 'opacity-40 cursor-not-allowed' : ''} ${className}`}>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        disabled={disabled}
+        onClick={() => !disabled && onChange(!checked)}
+        className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ne-focus-ring)] disabled:cursor-not-allowed ${
+          checked ? 'bg-[var(--ne-primary)]' : 'bg-[var(--ne-border-strong)]'
+        }`}
+      >
+        <span
+          className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-xs transition duration-200 ease-in-out mt-0.5 ${
+            checked ? 'translate-x-3.5' : 'translate-x-0.5'
+          }`}
+        />
+      </button>
+      {label && <span className="text-xs text-[var(--ne-text)] font-sans">{label}</span>}
+    </label>
+  );
+};

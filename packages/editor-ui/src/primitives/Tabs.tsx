@@ -1,49 +1,90 @@
-import * as React from 'react';
-import * as TabsPrimitives from '@radix-ui/react-tabs';
-import { cn } from '../lib/cn';
+import React from 'react';
 
-const Tabs = TabsPrimitives.Root;
+export interface TabItem {
+  id: string;
+  label: string;
+  icon?: React.ReactNode;
+  badge?: string | number;
+}
 
-const TabsList = React.forwardRef<
-  React.ElementRef<typeof TabsPrimitives.List>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitives.List>
->(({ className, ...props }, ref) => (
-  <TabsPrimitives.List
-    ref={ref}
-    className={cn(
-      'inline-flex h-8 items-center justify-center gap-1 rounded-[var(--ne-radius-sm)] bg-[var(--ne-bg)] p-1 text-[var(--ne-text-muted)]',
-      className
-    )}
-    {...props}
-  />
-));
-TabsList.displayName = TabsPrimitives.List.displayName;
+export interface TabsProps {
+  items: TabItem[];
+  activeId: string;
+  onChange: (id: string) => void;
+  variant?: 'segmented' | 'line';
+  size?: 'sm' | 'md';
+  fullWidth?: boolean;
+  className?: string;
+}
 
-const TabsTrigger = React.forwardRef<
-  React.ElementRef<typeof TabsPrimitives.Trigger>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitives.Trigger>
->(({ className, ...props }, ref) => (
-  <TabsPrimitives.Trigger
-    ref={ref}
-    className={cn(
-      'inline-flex items-center justify-center whitespace-nowrap rounded-[var(--ne-radius-sm)] px-2.5 py-1 text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ne-primary)] disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-[var(--ne-surface)] data-[state=active]:text-[var(--ne-text)] data-[state=active]:shadow-sm',
-      className
-    )}
-    {...props}
-  />
-));
-TabsTrigger.displayName = TabsPrimitives.Trigger.displayName;
+export const Tabs: React.FC<TabsProps> = ({
+  items,
+  activeId,
+  onChange,
+  variant = 'segmented',
+  size = 'md',
+  fullWidth = true,
+  className = '',
+}) => {
+  if (variant === 'segmented') {
+    return (
+      <div className={`inline-flex items-center p-0.5 bg-[var(--ne-surface-subtle)] border border-[var(--ne-border)] rounded-[var(--ne-radius-md)] ${fullWidth ? 'w-full' : ''} ${className}`}>
+        {items.map((tab) => {
+          const isActive = tab.id === activeId;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => onChange(tab.id)}
+              className={`flex items-center justify-center gap-1.5 px-2.5 transition-all text-xs font-sans rounded-[var(--ne-radius-sm)] cursor-pointer select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--ne-focus-ring)] ${
+                fullWidth ? 'flex-1' : ''
+              } ${size === 'sm' ? 'h-5 text-[11px]' : 'h-6'} ${
+                isActive
+                  ? 'bg-[var(--ne-surface)] text-[var(--ne-text)] font-medium shadow-xs border border-[var(--ne-border)]'
+                  : 'text-[var(--ne-text-muted)] hover:text-[var(--ne-text)] border border-transparent'
+              }`}
+            >
+              {tab.icon && <span className="shrink-0">{tab.icon}</span>}
+              <span className="truncate">{tab.label}</span>
+              {tab.badge !== undefined && (
+                <span className="ml-1 text-[10px] tabular-nums font-mono opacity-70">
+                  {tab.badge}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
 
-const TabsContent = React.forwardRef<
-  React.ElementRef<typeof TabsPrimitives.Content>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitives.Content>
->(({ className, ...props }, ref) => (
-  <TabsPrimitives.Content
-    ref={ref}
-    className={cn('mt-2 focus-visible:outline-none', className)}
-    {...props}
-  />
-));
-TabsContent.displayName = TabsPrimitives.Content.displayName;
-
-export { Tabs, TabsList, TabsTrigger, TabsContent };
+  return (
+    <div className={`flex items-center border-b border-[var(--ne-border)] ${fullWidth ? 'w-full' : ''} ${className}`}>
+      {items.map((tab) => {
+        const isActive = tab.id === activeId;
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => onChange(tab.id)}
+            className={`flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-sans border-b-2 cursor-pointer select-none transition-colors -mb-[1px] focus-visible:outline-none ${
+              fullWidth ? 'flex-1' : ''
+            } ${
+              isActive
+                ? 'border-[var(--ne-primary)] text-[var(--ne-primary)] font-medium'
+                : 'border-transparent text-[var(--ne-text-muted)] hover:text-[var(--ne-text)] hover:border-[var(--ne-border-strong)]'
+            }`}
+          >
+            {tab.icon && <span className="shrink-0">{tab.icon}</span>}
+            <span className="truncate">{tab.label}</span>
+            {tab.badge !== undefined && (
+              <span className="ml-1 text-[10px] tabular-nums font-mono opacity-70">
+                {tab.badge}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+};

@@ -1,44 +1,50 @@
-import * as React from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../lib/cn';
+import React, { forwardRef } from 'react';
 
-const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--ne-radius-sm)] text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ne-primary)] focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
-  {
-    variants: {
-      variant: {
-        default: 'bg-[var(--ne-primary)] text-white hover:opacity-90',
-        outline: 'border border-[var(--ne-border)] bg-[var(--ne-surface)] text-[var(--ne-text)] hover:bg-[var(--ne-bg)]',
-        ghost: 'text-[var(--ne-text)] hover:bg-[var(--ne-bg)]',
-        danger: 'bg-[var(--ne-danger)] text-white hover:opacity-90',
-      },
-      size: {
-        sm: 'h-7 px-2.5 text-xs',
-        default: 'h-8 px-3',
-        lg: 'h-10 px-4',
-        icon: 'h-8 w-8',
-      },
-    },
-    defaultVariants: {
-      variant: 'default',
-      size: 'default',
-    },
-  }
-);
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline';
+  size?: 'sm' | 'md' | 'lg';
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
+  fullWidth?: boolean;
+}
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {}
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
+  variant = 'secondary',
+  size = 'md',
+  leftIcon,
+  rightIcon,
+  fullWidth = false,
+  className = '',
+  children,
+  disabled,
+  ...props
+}, ref) => {
+  const sizeClasses = {
+    sm: 'h-6 px-2 text-xs gap-1 rounded-[var(--ne-radius-sm)]',
+    md: 'h-7 px-2.5 text-xs gap-1.5 rounded-[var(--ne-radius-md)]', // 28px standard compact
+    lg: 'h-8 px-3 text-sm gap-2 rounded-[var(--ne-radius-md)]',
+  }[size];
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, ...props }, ref) => (
+  const variantClasses = {
+    primary: 'bg-[var(--ne-primary)] text-white hover:bg-[var(--ne-primary-hover)] border border-transparent shadow-xs font-medium',
+    secondary: 'bg-[var(--ne-surface)] text-[var(--ne-text)] hover:bg-[var(--ne-surface-hover)] border border-[var(--ne-border)] font-normal',
+    ghost: 'bg-transparent text-[var(--ne-text)] hover:bg-[var(--ne-surface-hover)] border border-transparent font-normal',
+    outline: 'bg-transparent text-[var(--ne-text)] hover:bg-[var(--ne-surface-hover)] border border-[var(--ne-border)] font-normal',
+    danger: 'bg-[var(--ne-danger)] text-white hover:opacity-90 border border-transparent shadow-xs font-medium',
+  }[variant];
+
+  return (
     <button
       ref={ref}
-      className={cn(buttonVariants({ variant, size }), className)}
+      disabled={disabled}
+      className={`inline-flex items-center justify-center font-sans tracking-tight transition-all duration-150 select-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-inherit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ne-focus-ring)] focus-visible:ring-offset-1 shrink-0 ${sizeClasses} ${variantClasses} ${fullWidth ? 'w-full' : ''} ${className}`}
       {...props}
-    />
-  )
-);
-Button.displayName = 'Button';
+    >
+      {leftIcon && <span className="shrink-0 flex items-center justify-center">{leftIcon}</span>}
+      {children && <span className="truncate leading-none">{children}</span>}
+      {rightIcon && <span className="shrink-0 flex items-center justify-center">{rightIcon}</span>}
+    </button>
+  );
+});
 
-export { Button, buttonVariants };
+Button.displayName = 'Button';

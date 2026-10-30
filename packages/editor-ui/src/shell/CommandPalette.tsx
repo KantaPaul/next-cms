@@ -1,83 +1,156 @@
-import * as React from 'react';
-import { Command } from 'cmdk';
-import { cn } from '../lib/cn';
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, Command, ArrowRight } from 'lucide-react';
+import { Kbd } from '../primitives/Kbd.tsx';
 
-export interface CommandPaletteItem {
+export interface CommandAction {
   id: string;
-  label: string;
+  title: string;
+  category: string;
+  icon?: React.ReactNode;
   shortcut?: string;
-  onSelect?: () => void;
-  group?: string;
+  onExecute: () => void;
 }
 
 export interface CommandPaletteProps {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
-  items: CommandPaletteItem[];
-  placeholder?: string;
-  className?: string;
+  onClose: () => void;
+  actions: CommandAction[];
 }
 
-export function CommandPalette({ open, onOpenChange, items, placeholder = 'Type a command or search…', className }: CommandPaletteProps) {
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        onOpenChange(!open);
+export const CommandPalette: React.FC<CommandPaletteProps> = ({
+  open,
+  onClose,
+  actions,
+}) => {
+  const [query, setQuery] = useState('');
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      setQuery('');
+      setSelectedIndex(0);
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [open]);
+
+  const filtered = actions.filter((act) => {
+    if (!query) return true;
+    const q = query.toLowerCase();
+    return (
+      act.title.toLowerCase().includes(q) ||
+      act.category.toLowerCase().includes(q)
+    );
+  });
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev + 1) % Math.max(1, filtered.length));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev - 1 + filtered.length) % Math.max(1, filtered.length));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (filtered[selectedIndex]) {
+        filtered[selectedIndex].onExecute();
+        onClose();
       }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, onOpenChange]);
+    } else if (e.key === 'Escape') {
+      onClose();
+    }
+  };
 
   if (!open) return null;
 
-  const groups = new Map<string, CommandPaletteItem[]>();
-  for (const item of items) {
-    const group = item.group ?? 'Actions';
-    if (!groups.has(group)) groups.set(group, []);
-    groups.get(group)!.push(item);
-  }
-
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh]">
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => onOpenChange(false)} aria-hidden />
-      <Command
-        className={cn(
-          'relative w-full max-w-lg overflow-hidden rounded-[var(--ne-radius-md)] border border-[var(--ne-border)] bg-[var(--ne-surface)] shadow-lg',
-          className
-        )}
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4">
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity duration-150"
+        onClick={onClose}
+      />
+
+      {/* Palette box */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="relative z-10 w-full max-w-lg bg-[var(--ne-surface)] border border-[var(--ne-border)] rounded-[var(--ne-radius-lg)] shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-100"
+        onKeyDown={handleKeyDown}
       >
-        <Command.Input
-          placeholder={placeholder}
-          className="w-full border-b border-[var(--ne-border)] bg-transparent px-4 py-3 text-sm text-[var(--ne-text)] outline-none placeholder:text-[var(--ne-text-muted)]"
-        />
-        <Command.List className="max-h-[300px] overflow-y-auto p-2">
-          <Command.Empty className="py-6 text-center text-sm text-[var(--ne-text-muted)]">
-            No results found.
-          </Command.Empty>
-          {Array.from(groups.entries()).map(([group, items]) => (
-            <Command.Group key={group} heading={group} className="mb-2 px-2 text-xs font-medium text-[var(--ne-text-muted)]">
-              {items.map(item => (
-                <Command.Item
-                  key={item.id}
-                  value={item.label}
-                  onSelect={() => {
-                    item.onSelect?.();
-                    onOpenChange(false);
+        <div className="flex items-center px-3 border-b border-[var(--ne-border)] h-11 gap-2">
+          <Search className="w-4 h-4 text-[var(--ne-text-muted)] shrink-0" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setSelectedIndex(0);
+            }}
+            placeholder="Type a command or search actions..."
+            className="w-full text-xs bg-transparent text-[var(--ne-text)] placeholder-[var(--ne-text-subtle)] focus:outline-none font-sans"
+          />
+          <Kbd>ESC</Kbd>
+        </div>
+
+        <div className="max-h-72 overflow-y-auto p-1.5 space-y-0.5 ne-scrollbar">
+          {filtered.length === 0 ? (
+            <div className="py-6 text-center text-xs text-[var(--ne-text-muted)]">
+              No matching commands
+            </div>
+          ) : (
+            filtered.map((act, index) => {
+              const isSelected = index === selectedIndex;
+              return (
+                <button
+                  key={act.id}
+                  type="button"
+                  onClick={() => {
+                    act.onExecute();
+                    onClose();
                   }}
-                  className="flex cursor-pointer items-center justify-between rounded-[var(--ne-radius-sm)] px-2 py-1.5 text-sm text-[var(--ne-text)] aria-selected:bg-[var(--ne-bg)]"
+                  onMouseEnter={() => setSelectedIndex(index)}
+                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-[var(--ne-radius-sm)] text-xs text-left cursor-pointer transition-colors ${
+                    isSelected
+                      ? 'bg-[var(--ne-primary)] text-white'
+                      : 'text-[var(--ne-text)] hover:bg-[var(--ne-surface-hover)]'
+                  }`}
                 >
-                  <span>{item.label}</span>
-                  {item.shortcut && (
-                    <kbd className="ml-auto text-xs text-[var(--ne-text-muted)]">{item.shortcut}</kbd>
+                  <div className="flex items-center gap-2 truncate">
+                    {act.icon && (
+                      <span className={`w-4 h-4 flex items-center justify-center shrink-0 ${
+                        isSelected ? 'text-white' : 'text-[var(--ne-text-muted)]'
+                      }`}>
+                        {act.icon}
+                      </span>
+                    )}
+                    <span className="font-medium truncate font-sans">{act.title}</span>
+                    <span className={`text-[10px] font-sans px-1 rounded ${
+                      isSelected ? 'bg-white/20 text-white' : 'text-[var(--ne-text-muted)]'
+                    }`}>
+                      {act.category}
+                    </span>
+                  </div>
+
+                  {act.shortcut && (
+                    <span className={`font-mono text-[10px] tracking-wider ml-3 ${
+                      isSelected ? 'text-white/80' : 'text-[var(--ne-text-muted)]'
+                    }`}>
+                      {act.shortcut}
+                    </span>
                   )}
-                </Command.Item>
-              ))}
-            </Command.Group>
-          ))}
-        </Command.List>
-      </Command>
+                </button>
+              );
+            })
+          )}
+        </div>
+
+        <div className="px-3 py-1.5 border-t border-[var(--ne-border)] bg-[var(--ne-surface-subtle)] flex items-center justify-between text-[10px] text-[var(--ne-text-muted)] font-sans">
+          <span>Navigate with <Kbd>↑</Kbd> <Kbd>↓</Kbd></span>
+          <span>Select with <Kbd>↵</Kbd></span>
+        </div>
+      </div>
     </div>
   );
-}
+};

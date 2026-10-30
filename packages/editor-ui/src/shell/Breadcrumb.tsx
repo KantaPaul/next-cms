@@ -1,35 +1,50 @@
-import * as React from 'react';
-import { cn } from '../lib/cn';
+import React from 'react';
+import { ChevronRight } from 'lucide-react';
 
 export interface BreadcrumbItem {
+  id: string;
   label: string;
-  onSelect?: () => void;
+  type?: string;
 }
 
 export interface BreadcrumbProps {
   items: BreadcrumbItem[];
+  onSelect: (id: string) => void;
   className?: string;
 }
 
-export function Breadcrumb({ items, className }: BreadcrumbProps) {
+export const Breadcrumb: React.FC<BreadcrumbProps> = ({
+  items,
+  onSelect,
+  className = '',
+}) => {
+  if (!items || items.length === 0) {
+    return <span className="text-[11px] text-[var(--ne-text-muted)] font-sans">No selection</span>;
+  }
+
   return (
-    <nav aria-label="Breadcrumb" className={cn('flex items-center gap-1 text-xs text-[var(--ne-text-muted)]', className)}>
-      {items.map((item, i) => (
-        <React.Fragment key={i}>
-          {i > 0 && <span aria-hidden className="opacity-50">/</span>}
-          {item.onSelect ? (
+    <nav className={`flex items-center gap-1 text-[11px] font-sans truncate select-none ${className}`}>
+      {items.map((item, idx) => {
+        const isLast = idx === items.length - 1;
+        return (
+          <React.Fragment key={item.id}>
+            {idx > 0 && (
+              <ChevronRight className="w-3 h-3 text-[var(--ne-text-subtle)] shrink-0" />
+            )}
             <button
               type="button"
-              onClick={item.onSelect}
-              className="rounded-[var(--ne-radius-sm)] px-1 py-0.5 hover:bg-[var(--ne-bg)] hover:text-[var(--ne-text)]"
+              onClick={() => onSelect(item.id)}
+              className={`truncate max-w-[140px] px-1 py-0.5 rounded-[var(--ne-radius-sm)] transition-colors cursor-pointer ${
+                isLast
+                  ? 'text-[var(--ne-primary)] font-medium bg-[var(--ne-primary-soft)]'
+                  : 'text-[var(--ne-text-muted)] hover:text-[var(--ne-text)] hover:bg-[var(--ne-surface-hover)]'
+              }`}
             >
               {item.label}
             </button>
-          ) : (
-            <span className="px-1 py-0.5 text-[var(--ne-text)]">{item.label}</span>
-          )}
-        </React.Fragment>
-      ))}
+          </React.Fragment>
+        );
+      })}
     </nav>
   );
-}
+};

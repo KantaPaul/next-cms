@@ -1,103 +1,161 @@
-import * as React from 'react';
-import { cn } from '../lib/cn';
-import { Input } from '../primitives/Input';
-
-export interface LibraryItem {
-  id: string;
-  label: string;
-  icon?: React.ReactNode;
-  category?: string;
-  description?: string;
-  onDragStart?: (e: React.DragEvent) => void;
-  onClick?: () => void;
-}
+import React, { useState, useMemo } from 'react';
+import { Search, Star, Clock, Layers, X } from 'lucide-react';
+import { LibraryItem, LibraryItemDef } from './LibraryItem.tsx';
 
 export interface LibraryPanelProps {
-  items: LibraryItem[];
-  searchPlaceholder?: string;
-  categories?: string[];
-  selectedCategory?: string;
-  onCategoryChange?: (category: string) => void;
+  items: LibraryItemDef[];
+  onSelectItem: (item: LibraryItemDef) => void;
+  favorites?: string[];
+  onToggleFavorite?: (type: string) => void;
+  recentTypes?: string[];
   className?: string;
 }
 
-export function LibraryPanel({
+export const LibraryPanel: React.FC<LibraryPanelProps> = ({
   items,
-  searchPlaceholder = 'Search widgets…',
-  categories,
-  selectedCategory,
-  onCategoryChange,
-  className,
-}: LibraryPanelProps) {
-  const [search, setSearch] = React.useState('');
+  onSelectItem,
+  favorites = [],
+  onToggleFavorite,
+  recentTypes = [],
+  className = '',
+}) => {
+  const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [filterView, setFilterView] = useState<'all' | 'favorites' | 'recent'>('all');
 
-  const filtered = items.filter(item => {
-    if (search && !item.label.toLowerCase().includes(search.toLowerCase())) return false;
-    if (selectedCategory && selectedCategory !== 'All' && item.category !== selectedCategory) return false;
-    return true;
-  });
+  const categories = useMemo(() => {
+    const cats = new Set<string>();
+    items.forEach((item) => cats.add(item.category));
+    return ['all', ...Array.from(cats)];
+  }, [items]);
 
-  const grouped = new Map<string, LibraryItem[]>();
-  for (const item of filtered) {
-    const cat = item.category ?? 'Other';
-    if (!grouped.has(cat)) grouped.set(cat, []);
-    grouped.get(cat)!.push(item);
-  }
+  const filteredItems = useMemo(() => {
+    return items.filter((item) => {
+      // View filter
+      if (filterView === 'favorites' && !favorites.includes(item.type)) return false;
+      if (filterView === 'recent' && !recentTypes.includes(item.type)) return false;
+
+      // Category filter
+      if (selectedCategory !== 'all' && item.category !== selectedCategory) return false;
+
+      // Text search
+      if (search) {
+        const query = search.toLowerCase();
+        const matchLabel = item.label.toLowerCase().includes(query);
+        const matchDesc = item.description?.toLowerCase().includes(query) ?? false;
+        const matchCat = item.category.toLowerCase().includes(query);
+        return matchLabel || matchDesc || matchCat;
+      }
+      return true;
+    });
+  }, [items, search, selectedCategory, filterView, favorites, recentTypes]);
 
   return (
-    <div className={cn('flex h-full flex-col gap-2 p-2', className)}>
-      <Input
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        placeholder={searchPlaceholder}
-        aria-label="Search library"
-      />
-      {categories && categories.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {categories.map(cat => (
+    <div className={`flex flex-col h-full bg-[var(--ne-surface)] select-none ${className}`}>
+      {/* Header Search & Filter */}
+      <div className="p-3 border-b border-[var(--ne-border)] space-y-2">
+        <div className="relative flex items-center">
+          <Search className="w-3.5 h-3.5 absolute left-2 text-[var(--ne-text-subtle)] pointer-events-none" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search components (or / on canvas)..."
+            className="w-full h-7 pl-7 pr-7 text-xs bg-[var(--ne-surface-subtle)] border border-[var(--ne-border)] rounded-[var(--ne-radius-md)] text-[var(--ne-text)] placeholder-[var(--ne-text-subtle)] focus:outline-none focus:border-[var(--ne-primary)] focus:bg-[var(--ne-surface)] transition-all font-sans"
+          />
+          {search && (
             <button
-              key={cat}
               type="button"
-              onClick={() => onCategoryChange?.(cat)}
-              className={cn(
-                'rounded-[var(--ne-radius-sm)] px-2 py-0.5 text-xs transition-colors',
-                selectedCategory === cat
-                  ? 'bg-[var(--ne-primary-soft)] text-[var(--ne-primary)]'
-                  : 'text-[var(--ne-text-muted)] hover:bg-[var(--ne-bg)] hover:text-[var(--ne-text)]'
-              )}
+              onClick={() => setSearch('')}
+              className="absolute right-2 text-[var(--ne-text-muted)] hover:text-[var(--ne-text)] cursor-pointer"
             >
-              {cat}
+              <X className="w-3.5 h-3.5" />
             </button>
-          ))}
+          )}
         </div>
-      )}
-      <div className="flex-1 overflow-y-auto ne-scrollbar">
-        {Array.from(grouped.entries()).map(([category, items]) => (
-          <div key={category} className="mb-3">
-            <h3 className="mb-1 px-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--ne-text-muted)]">
-              {category}
-            </h3>
-            <div className="grid grid-cols-2 gap-1.5">
-              {items.map(item => (
-                <button
-                  key={item.id}
-                  type="button"
-                  draggable
-                  onDragStart={item.onDragStart}
-                  onClick={item.onClick}
-                  className="flex flex-col items-center gap-1 rounded-[var(--ne-radius-sm)] border border-[var(--ne-border)] bg-[var(--ne-surface)] p-2 text-center transition-colors hover:border-[var(--ne-primary)] hover:bg-[var(--ne-primary-soft)]"
-                >
-                  {item.icon && <span className="text-[var(--ne-text-muted)]">{item.icon}</span>}
-                  <span className="text-xs font-medium text-[var(--ne-text)]">{item.label}</span>
-                  {item.description && (
-                    <span className="text-[10px] text-[var(--ne-text-muted)]">{item.description}</span>
-                  )}
-                </button>
-              ))}
-            </div>
+
+        {/* View toggle chips */}
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setFilterView('all')}
+            className={`px-2 py-0.5 text-[11px] rounded-[var(--ne-radius-sm)] transition-colors cursor-pointer ${
+              filterView === 'all'
+                ? 'bg-[var(--ne-primary-soft)] text-[var(--ne-primary)] font-medium'
+                : 'text-[var(--ne-text-muted)] hover:bg-[var(--ne-surface-hover)]'
+            }`}
+          >
+            All
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterView('favorites')}
+            className={`flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-[var(--ne-radius-sm)] transition-colors cursor-pointer ${
+              filterView === 'favorites'
+                ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-600 font-medium'
+                : 'text-[var(--ne-text-muted)] hover:bg-[var(--ne-surface-hover)]'
+            }`}
+          >
+            <Star className="w-2.5 h-2.5" />
+            <span>Favorites</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterView('recent')}
+            className={`flex items-center gap-1 px-2 py-0.5 text-[11px] rounded-[var(--ne-radius-sm)] transition-colors cursor-pointer ${
+              filterView === 'recent'
+                ? 'bg-[var(--ne-primary-soft)] text-[var(--ne-primary)] font-medium'
+                : 'text-[var(--ne-text-muted)] hover:bg-[var(--ne-surface-hover)]'
+            }`}
+          >
+            <Clock className="w-2.5 h-2.5" />
+            <span>Recent</span>
+          </button>
+        </div>
+
+        {/* Category Pills */}
+        {filterView === 'all' && (
+          <div className="flex items-center gap-1 overflow-x-auto ne-scrollbar pb-1 pt-0.5 text-[11px]">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-2 py-0.5 rounded-[var(--ne-radius-sm)] whitespace-nowrap capitalize transition-colors cursor-pointer ${
+                  selectedCategory === cat
+                    ? 'bg-[var(--ne-surface-hover)] text-[var(--ne-text)] font-medium'
+                    : 'text-[var(--ne-text-muted)] hover:text-[var(--ne-text)]'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
-        ))}
+        )}
+      </div>
+
+      {/* Items list */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-1.5 ne-scrollbar">
+        {filteredItems.length === 0 ? (
+          <div className="text-center py-8 text-xs text-[var(--ne-text-muted)]">
+            No items matching "{search}"
+          </div>
+        ) : (
+          filteredItems.map((item) => (
+            <LibraryItem
+              key={item.type}
+              item={item}
+              onSelect={onSelectItem}
+              onToggleFavorite={onToggleFavorite}
+              isFavorite={favorites.includes(item.type)}
+            />
+          ))
+        )}
+      </div>
+
+      <div className="p-2 border-t border-[var(--ne-border)] bg-[var(--ne-surface-subtle)] text-[10px] text-[var(--ne-text-subtle)] text-center font-mono">
+        Click to insert · Drag onto canvas
       </div>
     </div>
   );
-}
+};

@@ -1,13 +1,27 @@
-import * as React from 'react';
-import { cn } from '../lib/cn';
+import React from 'react';
 
-function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn('animate-pulse rounded-[var(--ne-radius-sm)] bg-[var(--ne-border)]', className)}
-      {...props}
-    />
-  );
+export interface SkeletonProps {
+  className?: string;
+  width?: string | number;
+  height?: string | number;
+  circle?: boolean;
 }
 
-export { Skeleton };
+export const Skeleton: React.FC<SkeletonProps> = ({
+  className = '',
+  width,
+  height,
+  circle = false,
+}) => {
+  return (
+    <div
+      style={{
+        width,
+        height,
+      }}
+      className={`animate-pulse bg-[var(--ne-surface-hover)] ${
+        circle ? 'rounded-full' : 'rounded-[var(--ne-radius-sm)]'
+      } ${className}`}
+    />
+  );
+};

@@ -1,22 +1,49 @@
-import * as React from 'react';
-import { cn } from '../lib/cn';
+import React, { forwardRef } from 'react';
+import { ChevronDown } from 'lucide-react';
 
-export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {}
+export interface SelectOption {
+  value: string;
+  label: string;
+  disabled?: boolean;
+}
 
-const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, children, ...props }, ref) => (
-    <select
-      ref={ref}
-      className={cn(
-        'flex h-8 w-full appearance-none rounded-[var(--ne-radius-sm)] border border-[var(--ne-border)] bg-[var(--ne-surface)] bg-[url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2364748B\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpath d=\'m6 9 6 6 6-6\'/%3E%3C/svg%3E")] bg-[length:16px] bg-[right_8px_center] bg-no-repeat px-2.5 py-1.5 pr-8 text-sm text-[var(--ne-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ne-primary)] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50',
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </select>
-  )
-);
+export interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'size'> {
+  options: SelectOption[];
+  size?: 'sm' | 'md' | 'lg';
+  fullWidth?: boolean;
+}
+
+export const Select = forwardRef<HTMLSelectElement, SelectProps>(({
+  options,
+  size = 'md',
+  fullWidth = true,
+  className = '',
+  disabled,
+  ...props
+}, ref) => {
+  const heightClass = {
+    sm: 'h-6 text-xs pl-2 pr-6',
+    md: 'h-7 text-xs pl-2.5 pr-7', // 28px standard compact
+    lg: 'h-8 text-sm pl-3 pr-8',
+  }[size];
+
+  return (
+    <div className={`relative inline-block ${fullWidth ? 'w-full' : ''}`}>
+      <select
+        ref={ref}
+        disabled={disabled}
+        className={`w-full appearance-none rounded-[var(--ne-radius-md)] border border-[var(--ne-border)] bg-[var(--ne-surface)] text-[var(--ne-text)] font-sans transition-all focus:border-[var(--ne-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--ne-primary)] disabled:cursor-not-allowed disabled:opacity-50 ${heightClass} ${className}`}
+        {...props}
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value} disabled={opt.disabled} className="bg-[var(--ne-surface)] text-[var(--ne-text)]">
+            {opt.label}
+          </option>
+        ))}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--ne-text-muted)]" />
+    </div>
+  );
+});
+
 Select.displayName = 'Select';
-
-export { Select };
