@@ -6,14 +6,8 @@
  */
 
 import type { SlotPosition } from '@nextcms/builder-core';
-import {
-  type CSSProperties,
-  type KeyboardEvent,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { CommandPopover, type CommandPaletteItem } from '@nextcms/editor-ui';
+import { useEffect, useMemo, useState } from 'react';
 import type { BlockGroup } from './block-list';
 import { useEditorStore } from './context';
 
@@ -34,138 +28,43 @@ export function QuickInsertPopover({
   groups: BlockGroup[];
 }) {
   const store = useEditorStore();
-  const [query, setQuery] = useState('');
-  const [active, setActive] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
-
+  // Client only: server-rendered, Radix's generated ids would not match.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  // Freeze the target so the popover keeps its place while it animates out.
+  const [shown, setShown] = useState<QuickInsertTarget | null>(null);
   useEffect(() => {
-    if (target) {
-      setQuery('');
-      setActive(0);
-      requestAnimationFrame(() => inputRef.current?.focus());
-    }
+    if (target) setShown(target);
   }, [target]);
 
-  const types = useMemo(() => {
-    const all = groups.flatMap(group => group.types);
-    const q = query.toLowerCase();
-    return q
-      ? all.filter(type =>
-          (store.schemas[type]?.label ?? type).toLowerCase().includes(q)
-        )
-      : all;
-  }, [groups, query, store]);
+  const items = useMemo<CommandPaletteItem[]>(() => {
+    const seen = new Set<string>();
+    return groups.flatMap(group =>
+      group.types
+        .filter(type => !seen.has(type) && seen.add(type))
+        .map(type => ({
+          id: type,
+          label: store.schemas[type]?.label ?? type,
+          group: group.title,
+          onSelect: () => {
+            store.insertBlock(type, shown?.position);
+          },
+        }))
+    );
+  }, [groups, store, shown]);
 
-  useEffect(() => setActive(0), [types.length === 0]);
-
-  if (!target) return null;
-
-  const insert = (type: string | undefined) => {
-    if (!type) return;
-    store.insertBlock(type, target.position);
-    onClose();
-  };
-
-  const onKeyDown = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      onClose();
-    } else if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      setActive(i => Math.min(i + 1, types.length - 1));
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      setActive(i => Math.max(i - 1, 0));
-    } else if (event.key === 'Enter') {
-      event.preventDefault();
-      insert(types[active]);
-    }
-  };
-
-  // Clamp so the popover stays on screen near the click point.
-  const left = Math.min(target.point.x, window.innerWidth - 240);
-  const top = Math.min(target.point.y, window.innerHeight - 300);
-
-  const style: CSSProperties = {
-    position: 'fixed',
-    left,
-    top,
-    width: 220,
-    maxHeight: 260,
-    display: 'flex',
-    flexDirection: 'column',
-    background: '#1c1c1f',
-    color: '#fff',
-    borderRadius: 8,
-    boxShadow: '0 12px 32px rgba(0,0,0,.35)',
-    zIndex: 2147483647,
-    font: '13px/1.4 system-ui, sans-serif',
-    overflow: 'hidden',
-  };
-
+  if (!mounted) return null;
   return (
-    <>
-      {/** biome-ignore lint/a11y/useKeyWithClickEvents: closes on outside click; Escape is the keyboard path */}
-      {/** biome-ignore lint/a11y/noStaticElementInteractions: same as above */}
-      <div
-        style={{ position: 'fixed', inset: 0, zIndex: 2147483646 }}
-        onClick={onClose}
-      />
-      <div
-        role="dialog"
-        aria-label="Insert a block"
-        style={style}
-        onKeyDown={onKeyDown}
-      >
-        <input
-          ref={inputRef}
-          value={query}
-          onChange={event => setQuery(event.target.value)}
-          placeholder="Insert a block…"
-          aria-label="Search blocks"
-          style={{
-            all: 'unset',
-            boxSizing: 'border-box',
-            width: '100%',
-            padding: '8px 10px',
-            borderBottom: '1px solid rgba(255,255,255,.1)',
-          }}
-        />
-        <div
-          role="listbox"
-          aria-label="Blocks"
-          style={{ overflowY: 'auto', padding: 4 }}
-        >
-          {types.length === 0 && (
-            <p style={{ margin: 0, padding: '8px 8px', opacity: 0.6 }}>
-              No matches.
-            </p>
-          )}
-          {types.map((type, index) => (
-            <button
-              key={type}
-              type="button"
-              role="option"
-              aria-selected={index === active}
-              onMouseEnter={() => setActive(index)}
-              onClick={() => insert(type)}
-              style={{
-                all: 'unset',
-                boxSizing: 'border-box',
-                display: 'block',
-                width: '100%',
-                padding: '6px 8px',
-                borderRadius: 5,
-                cursor: 'pointer',
-                background:
-                  index === active ? 'rgba(79,70,229,.3)' : 'transparent',
-              }}
-            >
-              {store.schemas[type]?.label ?? type}
-            </button>
-          ))}
-        </div>
-      </div>
-    </>
+    <CommandPopover
+      open={!!target}
+      onOpenChange={open => {
+        if (!open) onClose();
+      }}
+      x={shown?.point.x ?? 0}
+      y={shown?.point.y ?? 0}
+      items={items}
+      label="Insert a block"
+      placeholder="Insert a block…"
+    />
   );
 }

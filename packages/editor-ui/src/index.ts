@@ -32,6 +32,7 @@ export * from './overlays/ContextMenu';
 export * from './overlays/DropLine';
 export * from './overlays/FloatingToolbar';
 export * from './overlays/HoverBox';
+export * from './overlays/InsertPoint';
 export * from './overlays/ResizeHandle';
 export * from './overlays/ResizeHandles';
 // Overlays
@@ -57,6 +58,7 @@ export * from './primitives/Toast';
 export * from './primitives/Tooltip';
 export * from './shell/Breadcrumb';
 export * from './shell/CommandPalette';
+export * from './shell/CommandPopover';
 export * from './shell/EditorShell';
 export * from './shell/Panel';
 export * from './shell/StatusBar';

@@ -32,6 +32,7 @@ import {
   DropZone,
   FloatingToolbar,
   HoverBox,
+  InsertPoint,
   MarqueeBox,
   OverlayNotice,
   SelectionBox,
@@ -79,7 +80,8 @@ import { propsForState } from './state-styles';
 import { QuickInsertPopover, type QuickInsertTarget } from './quick-insert';
 import { ResizeHandles, type ResizeHandlesFor } from './resize';
 
-const ACCENT = '#4f46e5';
+// Used inside the canvas iframe, where editor-ui's CSS is not loaded; matches --ne-primary.
+const ACCENT = '#2563eb';
 
 export type BlockAction = {
   id: string;
@@ -997,38 +999,21 @@ export function EditorCanvas({
           />
         )}
         {hoverInsert && !dragState.active && !marquee && (
-          <button
-            type="button"
-            aria-label="Insert a block here"
-            title="Insert a block here"
-            onClick={event => {
-              setQuickInsert({
-                point: { x: event.clientX, y: event.clientY },
-                position: hoverInsert.position,
-              });
-              setHoverInsert(null);
-            }}
-            style={{
-              all: 'unset',
-              position: 'absolute',
-              left: hoverInsert.point.x - 11,
-              top: hoverInsert.point.y - 11,
-              width: 22,
-              height: 22,
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: '50%',
-              background: ACCENT,
-              color: '#fff',
-              font: '600 14px/1 system-ui, sans-serif',
-              cursor: 'pointer',
-              zIndex: 3,
-              boxShadow: '0 1px 4px rgba(0,0,0,.3)',
-            }}
-          >
-            +
-          </button>
+          // `.ne-ui`: styled by editor-ui in the old chrome too.
+          <span className="ne-ui" style={{ display: 'contents' }}>
+            <InsertPoint
+              x={hoverInsert.point.x}
+              y={hoverInsert.point.y}
+              label="Insert a block here"
+              onClick={event => {
+                setQuickInsert({
+                  point: { x: event.clientX, y: event.clientY },
+                  position: hoverInsert.position,
+                });
+                setHoverInsert(null);
+              }}
+            />
+          </span>
         )}
       </div>
       {dragState.active && (
