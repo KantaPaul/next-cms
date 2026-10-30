@@ -616,6 +616,7 @@ This batch adds no new refs. Its phases deliver parts of refs that stay owned by
 | E0 | Audit the prototype (no code) | small | — |
 | E1 | `editor-ui` package skeleton | small | R755, R757, R766 |
 | E2 | Tokens and primitives | medium | R723, R733, R763 |
+| E2b | shadcn primitives and motion (Radix bases, shared animations, reduced motion) | medium | R723, R733, R763, R706 |
 | E3 | Shell, panels, and feedback | medium | R711, R797, R798 |
 | E4 | Library, layers tree, inspector parts | medium | R692, R693, R714, R722 |
 | E5 | Overlays and accessibility helpers | medium | R689, R695, R706, R717, R720, R807 |
@@ -624,9 +625,9 @@ This batch adds no new refs. Its phases deliver parts of refs that stay owned by
 | E7 | Dashboard builder on the same package (if in this repo) | large | R761, R767 |
 | E9 | Quality, docs, and release | medium | R704, R705, R769–R771, R802 |
 
-Phases run in the order listed (E8 before E7).
+Phases run in the order listed (E8 before E7). E2b was added on 2026-10-30 and runs next.
 
-**Status (2026-10-30):** about 64%. E1–E3 gaps are closed. E6 step 1 is done (every builder renders in `EditorShell` with `?shell=new`). E4 is mostly done: the block list, layers and inspector render through the package parts in both chromes. E0 is still open; E5 and E7–E9 are partial. The table for each phase is in the Status section of [editor_ui_package_implementation.md](editor_ui_package_implementation.md). No refs change state.
+**Status (2026-10-30):** about 64%. E1–E3 gaps are closed. E6 step 1 is done (every builder renders in `EditorShell` with `?shell=new`). E4 is mostly done: the block list, layers and inspector render through the package parts in both chromes. E0 is still open; E5 and E7–E9 are partial. The table for each phase is in the Status section of [editor_ui_package_implementation.md](editor_ui_package_implementation.md). No refs change state. Dark mode is deferred: build and check in light mode only until further notice (see the decision in the guide's status section).
 
 ## Gate order
 

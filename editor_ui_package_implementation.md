@@ -19,6 +19,7 @@ Use this after the prototype from `builder-editor-prototype-design-guideline.md`
 | E0 Audit | small | 0% | `docs/editor-ui-audit.md` does not exist. |
 | E1 Skeleton | small | ~85% | **Done:** Tailwind v4 CSS build (`pnpm --filter @nextcms/editor-ui build:css` → `dist/editor-ui.css`, no preflight). It runs before `pnpm dev` and `pnpm build`. Utilities are scoped to `.ne-editor-root` / `.ne-ui` and adjusted where Tailwind 3 and 4 differ (transforms, `space-y`), so the app's Tailwind 3 output is unchanged. Also done: dev gallery at `/dashboard/dev/editor-ui`, size budget (`check:size`, 16 kB gzip; now 8.5 kB), `transpilePackages`, Biome `@/` rule. **Missing (needs `pnpm install`, blocked while `node_modules` is owned by root):** `lucide-react` as a peer dependency, `tailwind-merge` listed as a dependency, the app depending on `@nextcms/editor-ui`. Until then the CSS import uses a relative path and `tsconfig.json` maps the package. `components.json` aliases point at folders that don't exist. The package still depends on `@nextcms/builder-core`. |
 | E2 Tokens and primitives | medium | ~75% | **Done:** full prototype token set plus motion, typography and spacing variables (G4); dark mode from `.dark` or `[data-ne-theme="dark"]`, with reduced motion respected; `EditorUIProvider` and `useEditorUI` (theme and direction, G2); gallery in light, dark, LTR and RTL. **Missing:** Radix `DirectionProvider` (not installed); 68 physical classes left in 21 ported files (G3); primitives are the prototype's own markup, not shadcn/ui bases (section 2a). |
+| E2b shadcn primitives and motion | medium | 0% | **Planned** (see phase E2b): rebuild Tooltip, Popover, Dialog, ConflictDialog, Menu, ContextMenu, Select, Switch, Tabs, Toast and FieldGroup on shadcn/Radix; a shared motion layer that respects reduced motion; Radix `DirectionProvider`; finish the E1 dependency items. |
 | E3 Shell and feedback | medium | ~90% | **Done:** `EditorShell` with `topBar` / `library` / `canvas` / `inspector` / `statusBar` / `commandPalette` slots, `focusMode`, `theme`, `dir`, and no palette state of its own (G6). `Panel`: pointer resize, arrow / Shift / Home / End keys, sizes saved under `storageKey`, logical sides (G5). `CommandPalette`: cmdk inside the package's Radix dialog (focus trap, title, follows the editor's theme and direction). `TopBar` controls are optional; `StatusBar` has left / center / right slots; `Breadcrumb` uses `aria-current`; gallery shell demo. **Missing:** `builder-react/resizable-panel.tsx` does not render through `Panel` yet. |
 | E4 Library, tree, inspector | medium | ~85% | **Done:** `builder-react` renders through the package in both chromes. The block list uses `LibraryPanel` (pointer drag, click and keyboard insert, presets as `Chip`s). The layers panel uses `LayersTree` (multi-select, hover highlight, rename, hide, lock, drag with the builder's own drop logic, slot headings, arrow keys). The inspector uses `FieldRow`, `InspectorTabs` and `IconButton`. Built-in fields use `Input`, `Textarea`, `Select`, `Switch`, `Chip`, `Button`. Generic package additions back all of this; none of them name blocks or documents. Fixed on the way: duplicate field labels, double device-wrapping of responsive edits, reset blanking a field instead of restoring its default, panels widened by long rows, the overlapping nine-tab Settings bar, and unreadable old-chrome panels in dark mode. **Missing:** `quick-insert.tsx` still uses its own markup; the CMS's own field controls (passed in as `fieldTypes`) keep their look; segmented inspector tabs truncate in narrow panels.
 | E5 Overlays and a11y | medium | ~60% | **Done:** SelectionBox, HoverBox, DropLine, FloatingToolbar, ContextMenu, ResizeHandles, useKeyboardMove, LiveAnnouncer (the duplicate in `feedback/` is removed). **Not checked:** whether the canvas renders through them. |
@@ -27,9 +28,11 @@ Use this after the prototype from `builder-editor-prototype-design-guideline.md`
 | E7 Dashboard builder | large | ~60% | **Done:** `builder-react/src/dashboard-shell.tsx` typechecks on the package API; the library adds widgets. **Missing:** not used by any app route; widget state is local. |
 | E9 Quality and release | medium | ~35% | **Done:** README; tests for shell slots, focus mode, Panel, Breadcrumb, palette, tree semantics (15 in the package); size-budget script. **Missing:** CI wiring for the budget, gallery screenshot tests, axe check, a check that the public renderer does not import editor-ui, changesets. |
 
+**Decision (2026-10-30): dark mode is deferred.** Build and check the editor in light mode only for now. Dark-mode work and dark-mode checks are out of scope until this note is lifted: no new dark tokens or fixes, and no dark screenshots or contrast passes as a "done" requirement. What already exists stays as it is (the `--ne-*` dark values, `.dark` / `[data-ne-theme="dark"]` support, and the new shell following the admin's theme), but it is not maintained or verified. When dark mode comes back, it is one task across the phases below: E2 (tokens and the gallery), E6 (the shell's theme wiring), E9 (dark screenshots and contrast), plus the per-PR checklist.
+
 **Fixed (`3d1a9eb`):** undoing an insert before its autosave landed made the next save fail with "node … is not on the page". The cause was that page drafts were stored without the IDs of editor-made blocks; the page save now keeps every block ID.
 
-**Next:** E5. Move the canvas overlays (selection, hover, drop line, resize handles, floating toolbar) onto the package components, and announce moves with `LiveAnnouncer`. Also finish the E1 dependency items with `pnpm install` (`node_modules` is writable again).
+**Next:** E2b (shadcn primitives and motion), then E5. E5 moves the canvas overlays (selection, hover, drop line, resize handles, floating toolbar) onto the package components, and announce moves with `LiveAnnouncer`. Also finish the E1 dependency items with `pnpm install` (`node_modules` is writable again).
 
 ---
 
@@ -214,10 +217,10 @@ Done when: the package builds, the app imports from it, the app's own Tailwind o
 **Goal:** the visual foundation. Plan refs: PKG-09, R723 (R763, R733).
 
 Steps:
-1. Port `tokens.css` from `prototype/src/index.css` (the `--ne-*` blocks, `.ne-editor-root`, `.ne-scrollbar`) and `tokens.ts` from `prototype/src/editor-ui/tokens/tokens.ts`. Add the motion and typography tokens as CSS variables too (gap G4). Make dark mode work from both `.dark` and `[data-ne-theme="dark"]` on the editor root.
+1. Port `tokens.css` from `prototype/src/index.css` (the `--ne-*` blocks, `.ne-editor-root`, `.ne-scrollbar`) and `tokens.ts` from `prototype/src/editor-ui/tokens/tokens.ts`. Add the motion and typography tokens as CSS variables too (gap G4). Make dark mode work from both `.dark` and `[data-ne-theme="dark"]` on the editor root (*deferred: see the dark-mode decision in the status section*).
 2. Build the 14 primitives on shadcn/ui (section 2a) with the prototype's look: Button, IconButton, Input, NumberInput (drag to scrub), Select, Switch, Tabs, Tooltip, Popover, Dialog, Menu, Toast, Skeleton, Kbd. Add each shadcn component with the package's own `components.json`, then restyle it to match `prototype/src/editor-ui/primitives` using `--ne-*` classes. NumberInput, IconButton, and Kbd have no shadcn version, so port those from the prototype.
 3. Switch physical classes to logical ones (`pl-`→`ps-`, `ml-`→`ms-`, `left-`→`start-`, …) so RTL works (gap G3).
-4. Show each primitive in the gallery with all states (default, hover, focus, disabled, error) in light and dark, LTR and RTL.
+4. Show each primitive in the gallery with all states (default, hover, focus, disabled, error) in light, LTR and RTL (dark deferred).
 5. Add a theme provider and a direction provider (LTR and RTL). The page editor feeds them from `builder-react/preferences.ts` (gap G2), so one setting controls both. Wrap Radix's `DirectionProvider` so Radix menus and popovers flip in RTL too.
 
 Prompt:
@@ -234,7 +237,54 @@ DirectionProvider. Add every primitive and state to the gallery in light,
 dark, LTR and RTL. Do primitives in groups of 3-4 and commit after each.
 ```
 
-Done when: the gallery shows all primitives in both themes, focus rings are visible, and a keyboard-only pass works.
+Done when: the gallery shows all primitives in light mode, focus rings are visible, and a keyboard-only pass works. (Dark mode is deferred; see the status section.)
+
+---
+
+### E2b: shadcn primitives and motion (added 2026-10-30)
+
+**Goal:** finish E2's "built on shadcn/ui" step and give the whole editor smooth, consistent motion. Plan refs: R723, R733, R763 (same as E2), R706 (accessibility).
+
+**Why shadcn, not Chakra:** section 2a already chose shadcn/ui, and the admin app uses it. It is copy-in source styled with the same Tailwind and `--ne-*` tokens. Chakra would add a runtime styling engine (Emotion) and its own theme system, competing with `--ne-*` and Tailwind and adding weight to every editor page.
+
+**Starting point (checked 2026-10-30):** only `Label` is built on Radix. Tooltip, Popover, Dialog, Menu, Select, Switch, Tabs and Toast are the prototype's hand-rolled markup, with no shared motion. Every Radix package below, and `sonner`, is already in the local pnpm store.
+
+Steps (one commit each):
+1. **Dependencies.** Install the Radix packages (`alert-dialog`, `context-menu`, `select`, `collapsible`, `direction`) and `sonner` into `editor-ui`. Finish the open E1 items at the same time: `lucide-react` as a peer dependency, `tailwind-merge` listed, and the app linked to `@nextcms/editor-ui`, so the relative CSS import and the `tsconfig` path mapping go away.
+2. **Shared motion layer.** Keyframes in the package CSS: fade, zoom, slide from each side, expand/collapse height. They are keyed to Radix's `data-state` / `data-side` attributes, so components animate open and close without JavaScript. Timing comes from `--ne-duration-*` and `--ne-easing`; `prefers-reduced-motion` turns all motion off. Hand-written rather than `tw-animate-css`, which is not in the local store.
+3. **Primitives rebuilt on shadcn/Radix**, keeping their current props and the prototype's look:
+
+| Part | Radix base | What it gains |
+| --- | --- | --- |
+| Tooltip, Popover | tooltip, popover | Collision handling, keyboard support, animated by side |
+| Dialog, ConflictDialog | dialog, alert-dialog | Focus trap and return, fade and zoom |
+| Menu, ContextMenu | dropdown-menu, context-menu | Arrow keys, typeahead, submenus, animated |
+| Select | select | Animated list; keeps the `options` API the builder uses |
+| Switch, Tabs | switch, tabs | Smooth knob, Radix roving focus |
+| Toast | sonner | Stacked toasts with enter and exit animation |
+| FieldGroup, tree branches | collapsible | Animated expand and collapse |
+
+   Add Radix's `DirectionProvider` here too, so portalled menus and popovers flip in RTL (open E2 item, gap G3).
+4. **Motion beyond the primitives:** side panels collapsing and expanding, focus mode, layers branches, library items on hover and press, the active-tab indicator, save-status changes, changed dots and reset buttons appearing, canvas selection and hover boxes following smoothly, the drop line. Keep durations short (150–200ms) so editing never feels slow.
+5. **Gallery and tests.** Every rebuilt part in the gallery; tests for roles, focus and open state. Light mode only (dark mode is deferred).
+
+Not changed: the builder's drag engine, the canvas drop logic, and every component's props, so the page and dashboard shells compile without edits.
+
+Prompt:
+```
+Plan first. Read sections 2a and E2b of editor_ui_package_implementation.md.
+Install the listed Radix packages and sonner into packages/editor-ui and
+finish the E1 dependency items. Add a shared motion layer (keyframes keyed
+to Radix data-state/data-side, --ne-duration/--ne-easing tokens, off under
+prefers-reduced-motion). Rebuild Tooltip, Popover, Dialog, ConflictDialog,
+Menu, ContextMenu, Select, Switch, Tabs, Toast and FieldGroup on
+shadcn/Radix without changing their props, restyled with --ne-* classes.
+Add DirectionProvider. Add motion to panels, tree, library, tabs, save
+status and canvas overlays. Update the gallery and tests. Light mode only.
+Commit per step.
+```
+
+Done when: every listed part is built on Radix (or sonner) with unchanged props; open and close animate and respect reduced motion; keyboard and focus behavior pass in the gallery and in both builder chromes; `pnpm test`, typecheck and the CSS size budget pass.
 
 ---
 
@@ -389,7 +439,7 @@ Done when: no mock data is imported by production code and adapter contract test
 **Goal:** make the package safe to depend on. Plan refs: R704, R705, R706, R766, R769, R770, R802.
 
 Steps:
-1. Unit tests for primitives and shell; visual regression on the gallery in light, dark, and RTL.
+1. Unit tests for primitives and shell; visual regression on the gallery in light and RTL (dark deferred).
 2. Accessibility checks: keyboard-only pass, contrast, focus ring, announcements.
 3. Bundle size budgets in CI; confirm the public renderer bundle has no `editor-ui`.
 4. Docs: how to install, theme with `--ne-*`, add a primitive, and add a new builder on top.
@@ -398,7 +448,7 @@ Steps:
 Prompt:
 ```
 Add tests and checks for editor-ui: component tests, a gallery screenshot
-test in light, dark and RTL, an axe accessibility check, and a CI size
+test in light and RTL (dark mode is deferred), an axe accessibility check, and a CI size
 budget. Add a CI check that fails if the public renderer entry imports
 editor-ui. Write packages/editor-ui/README.md with install, theming,
 adding a primitive, and building a new editor on top.
@@ -413,7 +463,7 @@ Done when: CI is green and a developer can follow the README to render a shell i
 - [ ] `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm builder:check-documents` pass.
 - [ ] No `@/` import inside `packages/*`.
 - [ ] No `any`. No raw CSS strings stored in documents.
-- [ ] Light and dark checked. RTL checked for shell changes.
+- [ ] Light mode checked (dark mode deferred for now). RTL checked for shell changes.
 - [ ] Keyboard path works for every new interaction; focus ring visible.
 - [ ] Gallery updated for every new component and state.
 - [ ] Public site bundle unchanged (no editor code added).
@@ -445,6 +495,7 @@ Done when: CI is green and a developer can follow the README to render a shell i
 | --- | --- |
 | E1 | R755, R757, R766 |
 | E2 | R723, R733, R763 |
+| E2b | R723, R733, R763, R706 |
 | E3 | R711, R797, R798 |
 | E4 | R692, R693, R714, R722 |
 | E5 | R689, R695, R706, R717, R720, R807 |
@@ -464,6 +515,7 @@ If you want these tracked in your plan file, add them as a new batch (for exampl
 | 1 | E0 audit | small |
 | 2 | E1 skeleton | small |
 | 3 | E2 tokens and primitives | medium |
+| 3b | E2b shadcn primitives and motion | medium |
 | 4 | E3 shell and feedback | medium |
 | 5 | E4 library, tree, inspector parts | medium |
 | 6 | E5 overlays and a11y | medium |
