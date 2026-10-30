@@ -13,3 +13,15 @@ export { Dialog, DialogPortal, DialogOverlay, DialogClose, DialogTrigger, Dialog
 export { Skeleton } from './primitives/Skeleton';
 export { Label } from './primitives/Label';
 export { Select } from './primitives/Select';
+export { EditorShell } from './shell/EditorShell';
+export { Panel } from './shell/Panel';
+export { TopBar } from './shell/TopBar';
+export type { SaveStatus, TopBarProps } from './shell/TopBar';
+export { Breadcrumb } from './shell/Breadcrumb';
+export type { BreadcrumbItem, BreadcrumbProps } from './shell/Breadcrumb';
+export { StatusBar } from './shell/StatusBar';
+export type { StatusBarProps } from './shell/StatusBar';
+export { CommandPalette } from './shell/CommandPalette';
+export type { CommandPaletteItem, CommandPaletteProps } from './shell/CommandPalette';
+export { LiveAnnouncer } from './feedback/LiveAnnouncer';
+export type { LiveAnnouncerProps } from './feedback/LiveAnnouncer';
