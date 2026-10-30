@@ -655,11 +655,23 @@ export function NewEditor({
   const [focusMode, setFocusMode] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   // B9: right panel tabs (R722-R733)
-  const [rightPanel, setRightPanel] = useState<'blocks' | 'layers' | 'settings' | 'style-classes' | 'presence' | 'checks' | 'preferences' | 'history' | 'comments'>('settings');
+  const [rightPanel, setRightPanel] = useState<
+    | 'blocks'
+    | 'layers'
+    | 'settings'
+    | 'style-classes'
+    | 'presence'
+    | 'checks'
+    | 'preferences'
+    | 'history'
+    | 'comments'
+  >('settings');
   // B9: comments state (R728)
   const [commentThreads, setCommentThreads] = useState<CommentThread[]>([]);
   // B9: state style editing (R725)
-  const [stateStyle, setStateStyle] = useState<'hover' | 'focus' | 'active' | null>(null);
+  const [stateStyle, setStateStyle] = useState<
+    'hover' | 'focus' | 'active' | null
+  >(null);
   // B9: version compare (R727)
   const [versionCompareOpen, setVersionCompareOpen] = useState(false);
   // B9: first-run onboarding (R732)
@@ -886,8 +898,14 @@ export function NewEditor({
             <SaveIndicator queue={queue} />
             <DeviceSwitch />
             <StateStyleSwitch
-              nodeId={store.getState().selection.length === 1 ? store.getState().selection[0] : ''}
-              onChange={(s: 'hover' | 'focus' | 'active' | null) => setStateStyle(s)}
+              nodeId={
+                store.getState().selection.length === 1
+                  ? store.getState().selection[0]
+                  : ''
+              }
+              onChange={(s: 'hover' | 'focus' | 'active' | null) =>
+                setStateStyle(s)
+              }
             />
             <HistoryButtons />
             <Button
@@ -1099,31 +1117,83 @@ export function NewEditor({
             >
               <section aria-label="Settings" className="p-4">
                 <NewEditorBridge themeTokens={themeTokens}>
-                  <div role="tablist" aria-label="Right panel tabs" className="mb-3 grid grid-cols-9 gap-1 rounded-md bg-steel-100 p-1 dark:bg-dark-200">
+                  <div
+                    role="tablist"
+                    aria-label="Right panel tabs"
+                    className="mb-3 grid grid-cols-9 gap-1 rounded-md bg-steel-100 p-1 dark:bg-dark-200"
+                  >
                     {RIGHT_PANEL_TABS.map(tab => (
-                      <button key={tab.key} type="button" role="tab" aria-selected={rightPanel === tab.key} onClick={() => setRightPanel(tab.key as typeof rightPanel)} className={`rounded px-2 py-1 text-xs font-medium capitalize ${rightPanel === tab.key ? 'bg-white shadow-sm dark:bg-dark-100' : 'text-steel-500'}`}>{tab.label}</button>
+                      <button
+                        key={tab.key}
+                        type="button"
+                        role="tab"
+                        aria-selected={rightPanel === tab.key}
+                        onClick={() =>
+                          setRightPanel(tab.key as typeof rightPanel)
+                        }
+                        className={`rounded px-2 py-1 text-xs font-medium capitalize ${rightPanel === tab.key ? 'bg-white shadow-sm dark:bg-dark-100' : 'text-steel-500'}`}
+                      >
+                        {tab.label}
+                      </button>
                     ))}
                   </div>
                   {rightPanel === 'settings' && (
-                    <Inspector blocks={setup.inspectorBlocks} rootFields={setup.rootFields} empty={
-                      <p className="mb-2 text-xs text-steel-500">
-                        Select a block to edit it.
-                        {Object.keys(setup.rootFields).length
-                          ? ' Page settings:'
-                          : ''}
-                      </p>
-                    } />
+                    <Inspector
+                      blocks={setup.inspectorBlocks}
+                      rootFields={setup.rootFields}
+                      empty={
+                        <p className="mb-2 text-xs text-steel-500">
+                          Select a block to edit it.
+                          {Object.keys(setup.rootFields).length
+                            ? ' Page settings:'
+                            : ''}
+                        </p>
+                      }
+                    />
                   )}
                   {rightPanel === 'style-classes' && (
                     <div className="p-3">
                       {store.getState().selection.length === 1 && (
-                        <StyleClassControl nodeId={store.getState().selection[0]} styles={captureStyles(store.getState().doc.nodes[store.getState().selection[0] as never as string])} />
+                        <StyleClassControl
+                          nodeId={store.getState().selection[0]}
+                          styles={captureStyles(
+                            store.getState().doc.nodes[
+                              store.getState().selection[0] as never as string
+                            ]
+                          )}
+                        />
                       )}
-                      <StyleClassesList onApply={(blockId: string, className: string) => { const sc = getStyleClassStore(); if (sc) sc.applyClass(blockId as never as string, className); }} onDetach={(blockId: string) => { const sc = getStyleClassStore(); if (sc) sc.detachClass(blockId as never as string); }} />
+                      <StyleClassesList
+                        onApply={(blockId: string, className: string) => {
+                          const sc = getStyleClassStore();
+                          if (sc)
+                            sc.applyClass(
+                              blockId as never as string,
+                              className
+                            );
+                        }}
+                        onDetach={(blockId: string) => {
+                          const sc = getStyleClassStore();
+                          if (sc) sc.detachClass(blockId as never as string);
+                        }}
+                      />
                     </div>
                   )}
-                  {rightPanel === 'presence' && <PresencePanel users={[]} blockLocks={[]} me="" onSelectionChange={() => {}} onEditingChange={() => {}} />}
-                  {rightPanel === 'checks' && <LiveChecksPanel issues={[]} onIssueClick={id => store.select(id)} />}
+                  {rightPanel === 'presence' && (
+                    <PresencePanel
+                      users={[]}
+                      blockLocks={[]}
+                      me=""
+                      onSelectionChange={() => {}}
+                      onEditingChange={() => {}}
+                    />
+                  )}
+                  {rightPanel === 'checks' && (
+                    <LiveChecksPanel
+                      issues={[]}
+                      onIssueClick={id => store.select(id)}
+                    />
+                  )}
                   {rightPanel === 'preferences' && <PreferencesPanel />}
                   {rightPanel === 'history' && <HistoryPanel queue={queue} />}
                   {rightPanel === 'comments' && (
@@ -1134,23 +1204,70 @@ export function NewEditor({
                           const rest = prev.filter(t => t.blockId !== blockId);
                           const mine = prev.find(t => t.blockId === blockId);
                           const comments = mine
-                            ? [...mine.comments, { id: `c-${Date.now()}`, blockId, author: { name: 'You' }, createdAt: Date.now(), updatedAt: Date.now(), text, resolved: false, parentId }]
-                            : [{ id: `c-${Date.now()}`, blockId, author: { name: 'You' }, createdAt: Date.now(), updatedAt: Date.now(), text, resolved: false }];
+                            ? [
+                                ...mine.comments,
+                                {
+                                  id: `c-${Date.now()}`,
+                                  blockId,
+                                  author: { name: 'You' },
+                                  createdAt: Date.now(),
+                                  updatedAt: Date.now(),
+                                  text,
+                                  resolved: false,
+                                  parentId,
+                                },
+                              ]
+                            : [
+                                {
+                                  id: `c-${Date.now()}`,
+                                  blockId,
+                                  author: { name: 'You' },
+                                  createdAt: Date.now(),
+                                  updatedAt: Date.now(),
+                                  text,
+                                  resolved: false,
+                                },
+                              ];
                           return [...rest, { blockId, comments }];
                         });
                       }}
                       onResolve={(blockId, resolved) => {
-                        setCommentThreads(prev => prev.map(t => (t.blockId === blockId ? { ...t, comments: t.comments.map(c => ({ ...c, resolved })) } : t)));
+                        setCommentThreads(prev =>
+                          prev.map(t =>
+                            t.blockId === blockId
+                              ? {
+                                  ...t,
+                                  comments: t.comments.map(c => ({
+                                    ...c,
+                                    resolved,
+                                  })),
+                                }
+                              : t
+                          )
+                        );
                       }}
-                      onDelete={(commentId) => {
-                        setCommentThreads(prev => prev.map(t => ({ ...t, comments: t.comments.filter(c => c.id !== commentId) })));
+                      onDelete={commentId => {
+                        setCommentThreads(prev =>
+                          prev.map(t => ({
+                            ...t,
+                            comments: t.comments.filter(
+                              c => c.id !== commentId
+                            ),
+                          }))
+                        );
                       }}
-                      selectedBlock={store.getState().selection.length === 1 ? store.getState().selection[0] : null}
+                      selectedBlock={
+                        store.getState().selection.length === 1
+                          ? store.getState().selection[0]
+                          : null
+                      }
                       canEdit={true}
                       onClose={() => {}}
                     />
                   )}
-                  {rightPanel === 'blocks' && <BlockList groups={setup.groups} drag={drag} />}
+                  {rightPanel === 'blocks' && (
+                    <BlockList groups={setup.groups} drag={drag} />
+                  )}
                   {rightPanel === 'layers' && <LayersPanel />}
                 </NewEditorBridge>
               </section>
