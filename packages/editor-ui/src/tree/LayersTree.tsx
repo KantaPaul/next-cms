@@ -450,7 +450,10 @@ export const LayersTree: React.FC<LayersTreeProps> = ({
         </div>
 
         {hasChildren && isExpanded && (
-          <div role="group" className="ms-3 border-s border-[var(--ne-border)]">
+          <div
+            role="group"
+            className="ne-motion-enter ms-3 border-s border-[var(--ne-border)]"
+          >
             {(node.children ?? []).map((child, i, list) =>
               renderNode(child, depth + 1, list.length, i + 1)
             )}

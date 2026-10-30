@@ -44,12 +44,12 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
         width: `${bounds.width}px`,
         height: `${bounds.height}px`,
       }}
-      className={`absolute pointer-events-none z-30 transition-all duration-75 border-2 ${
+      className={`absolute pointer-events-none z-30 ne-motion-follow border-2 ${
         locked
           ? 'border-[var(--ne-locked)] ring-2 ring-[var(--ne-locked)]/20'
           : isMoveMode
-          ? 'border-[var(--ne-success)] ring-4 ring-[var(--ne-success)]/20 animate-pulse'
-          : 'border-[var(--ne-select)] ring-2 ring-[var(--ne-primary)]/10'
+            ? 'border-[var(--ne-success)] ring-4 ring-[var(--ne-success)]/20 animate-pulse'
+            : 'border-[var(--ne-select)] ring-2 ring-[var(--ne-primary)]/10'
       } ${className}`}
     >
       {/* Label Badge */}
@@ -59,8 +59,8 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
             locked
               ? 'bg-[var(--ne-warning)]'
               : isMoveMode
-              ? 'bg-[var(--ne-success)]'
-              : 'bg-[var(--ne-primary)]'
+                ? 'bg-[var(--ne-success)]'
+                : 'bg-[var(--ne-primary)]'
           }`}
         >
           {locked ? (
@@ -80,10 +80,10 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
       {/* Resize Handles outside component markup */}
       {showHandles && !locked && !isMoveMode && (
         <>
-          {handles.map((h) => (
+          {handles.map(h => (
             <div
               key={h.id}
-              onMouseDown={(e) => {
+              onMouseDown={e => {
                 e.stopPropagation();
                 onResizeStart?.(h.id, e);
               }}

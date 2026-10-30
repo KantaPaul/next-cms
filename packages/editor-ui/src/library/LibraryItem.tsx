@@ -73,7 +73,7 @@ export const LibraryItem: React.FC<LibraryItemProps> = ({
             onSelect(item);
           }
         }}
-        className="group relative flex cursor-grab touch-none select-none items-center gap-2.5 rounded-[var(--ne-radius-md)] border border-[var(--ne-border)] bg-[var(--ne-surface)] p-2 transition-all hover:border-[var(--ne-primary)] hover:shadow-xs focus-visible:outline-2 focus-visible:outline-[var(--ne-focus-ring)] active:cursor-grabbing"
+        className="group relative flex cursor-grab touch-none select-none items-center gap-2.5 rounded-[var(--ne-radius-md)] border border-[var(--ne-border)] bg-[var(--ne-surface)] p-2 transition-[border-color,box-shadow,scale] duration-[var(--ne-duration-fast)] hover:border-[var(--ne-primary)] hover:shadow-xs active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-[var(--ne-focus-ring)] active:cursor-grabbing"
       >
         <div
           aria-hidden

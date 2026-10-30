@@ -1,7 +1,20 @@
 import React from 'react';
-import { Check, Loader2, CloudOff, AlertTriangle, AlertCircle, RefreshCw } from 'lucide-react';
+import {
+  Check,
+  Loader2,
+  CloudOff,
+  AlertTriangle,
+  AlertCircle,
+  RefreshCw,
+} from 'lucide-react';
 
-export type SaveState = 'saved' | 'saving' | 'unsaved' | 'offline' | 'conflict' | 'failed';
+export type SaveState =
+  | 'saved'
+  | 'saving'
+  | 'unsaved'
+  | 'offline'
+  | 'conflict'
+  | 'failed';
 
 export interface SaveStatusProps {
   status: SaveState;
@@ -11,7 +24,7 @@ export interface SaveStatusProps {
   className?: string;
 }
 
-export const SaveStatus: React.FC<SaveStatusProps> = ({
+const SaveStatusContent: React.FC<SaveStatusProps> = ({
   status,
   lastSavedAt,
   onRetry,
@@ -21,27 +34,36 @@ export const SaveStatus: React.FC<SaveStatusProps> = ({
   const formattedTime = lastSavedAt
     ? typeof lastSavedAt === 'string'
       ? lastSavedAt
-      : lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : lastSavedAt.toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        })
     : '';
 
   switch (status) {
     case 'saving':
       return (
-        <div className={`inline-flex items-center gap-1.5 text-xs text-[var(--ne-text-muted)] ${className}`}>
+        <div
+          className={`inline-flex items-center gap-1.5 text-xs text-[var(--ne-text-muted)] ${className}`}
+        >
           <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--ne-primary)]" />
           <span>Saving...</span>
         </div>
       );
     case 'unsaved':
       return (
-        <div className={`inline-flex items-center gap-1.5 text-xs text-[var(--ne-warning)] ${className}`}>
+        <div
+          className={`inline-flex items-center gap-1.5 text-xs text-[var(--ne-warning)] ${className}`}
+        >
           <span className="w-2 h-2 rounded-full bg-[var(--ne-warning)]" />
           <span>Unsaved changes</span>
         </div>
       );
     case 'offline':
       return (
-        <div className={`inline-flex items-center gap-1.5 text-xs text-[var(--ne-text-muted)] ${className}`}>
+        <div
+          className={`inline-flex items-center gap-1.5 text-xs text-[var(--ne-text-muted)] ${className}`}
+        >
           <CloudOff className="w-3.5 h-3.5 text-[var(--ne-text-muted)]" />
           <span>Offline (cached locally)</span>
         </div>
@@ -59,7 +81,9 @@ export const SaveStatus: React.FC<SaveStatusProps> = ({
       );
     case 'failed':
       return (
-        <div className={`inline-flex items-center gap-1.5 text-xs text-[var(--ne-danger)] ${className}`}>
+        <div
+          className={`inline-flex items-center gap-1.5 text-xs text-[var(--ne-danger)] ${className}`}
+        >
           <AlertCircle className="w-3.5 h-3.5" />
           <span>Save failed</span>
           {onRetry && (
@@ -76,10 +100,24 @@ export const SaveStatus: React.FC<SaveStatusProps> = ({
     case 'saved':
     default:
       return (
-        <div className={`inline-flex items-center gap-1.5 text-xs text-[var(--ne-text-muted)] ${className}`}>
+        <div
+          className={`inline-flex items-center gap-1.5 text-xs text-[var(--ne-text-muted)] ${className}`}
+        >
           <Check className="w-3.5 h-3.5 text-[var(--ne-success)]" />
           <span>Saved {formattedTime ? `at ${formattedTime}` : ''}</span>
         </div>
       );
   }
 };
+
+/** Save state indicator; each change of state fades in (B15 E2b). */
+export const SaveStatus: React.FC<SaveStatusProps> = props => (
+  <span
+    key={props.status}
+    role="status"
+    aria-live="polite"
+    className="ne-motion-enter inline-flex"
+  >
+    <SaveStatusContent {...props} />
+  </span>
+);

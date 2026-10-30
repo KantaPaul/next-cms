@@ -157,7 +157,7 @@ export const Panel: React.FC<PanelProps> = ({
     return (
       <div
         className={cn(
-          'relative flex w-9 shrink-0 select-none flex-col items-center justify-start border-[var(--ne-border)] bg-[var(--ne-surface)] py-2',
+          'ne-motion-enter relative flex w-9 shrink-0 select-none flex-col items-center justify-start border-[var(--ne-border)] bg-[var(--ne-surface)] py-2',
           isStart ? 'border-e' : 'border-s',
           className
         )}
@@ -186,7 +186,7 @@ export const Panel: React.FC<PanelProps> = ({
       aria-label={label}
       style={{ width }}
       className={cn(
-        'relative flex h-full shrink-0 flex-col border-[var(--ne-border)] bg-[var(--ne-surface)]',
+        'ne-motion-enter relative flex h-full shrink-0 flex-col border-[var(--ne-border)] bg-[var(--ne-surface)]',
         isStart ? 'border-e' : 'border-s',
         !resizing && 'transition-[width] duration-[var(--ne-duration-fast)]',
         className

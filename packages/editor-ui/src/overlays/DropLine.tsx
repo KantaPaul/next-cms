@@ -29,8 +29,10 @@ export const DropLine: React.FC<DropLineProps> = ({
         width: isHorizontal ? `${position.length}px` : '2px',
         height: isHorizontal ? '2px' : `${position.length}px`,
       }}
-      className={`absolute z-40 pointer-events-none transition-all duration-75 ${
-        allowed ? 'bg-[var(--ne-drop)] shadow-xs' : 'bg-[var(--ne-danger)] shadow-xs'
+      className={`absolute z-40 pointer-events-none ne-motion-follow ${
+        allowed
+          ? 'bg-[var(--ne-drop)] shadow-xs'
+          : 'bg-[var(--ne-danger)] shadow-xs'
       } ${className}`}
     >
       {/* Bead indicator on edge */}

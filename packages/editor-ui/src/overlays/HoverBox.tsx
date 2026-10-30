@@ -24,7 +24,7 @@ export const HoverBox: React.FC<HoverBoxProps> = ({
         width: `${bounds.width}px`,
         height: `${bounds.height}px`,
       }}
-      className={`absolute pointer-events-none z-20 border border-dashed border-[var(--ne-hover)] bg-[var(--ne-primary)]/5 transition-all duration-75 ${className}`}
+      className={`absolute pointer-events-none z-20 border border-dashed border-[var(--ne-hover)] bg-[var(--ne-primary)]/5 ne-motion-follow ${className}`}
     >
       {label && (
         <div className="absolute -top-5 left-0 px-1 py-0.5 text-[9px] font-sans font-medium text-[var(--ne-primary)] bg-[var(--ne-surface)] border border-[var(--ne-border)] rounded-[var(--ne-radius-sm)] shadow-2xs">

@@ -16,7 +16,7 @@ export const ChangedDot: React.FC<ChangedDotProps> = ({
   return (
     <span
       title={tooltip}
-      className={`inline-block w-1.5 h-1.5 rounded-full bg-[var(--ne-primary)] shrink-0 ${className}`}
+      className={`ne-motion-pop-in inline-block w-1.5 h-1.5 rounded-full bg-[var(--ne-primary)] shrink-0 ${className}`}
     />
   );
 };
