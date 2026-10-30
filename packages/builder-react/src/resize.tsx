@@ -7,7 +7,8 @@
  */
 
 import type { BuilderNode, Device, NodeId } from '@nextcms/builder-core';
-import { type CSSProperties, type KeyboardEvent, type PointerEvent, useState } from 'react';
+import { ResizeHandle as ResizeHandleView } from '@nextcms/editor-ui';
+import { type KeyboardEvent, type PointerEvent, useState } from 'react';
 import { useEditor, useEditorStore } from './context';
 import { nodeElement } from './dom';
 import type { Rect } from './drop';
@@ -31,17 +32,23 @@ export type ResizeHandle = {
     context: { start: number }
   ) => Record<string, unknown>;
   /** Starting value when nothing is set, from the block's measured size and first element. */
-  fallback?: (size: { width: number; height: number; parentWidth: number; element: Element | null }) => number;
+  fallback?: (size: {
+    width: number;
+    height: number;
+    parentWidth: number;
+    element: Element | null;
+  }) => number;
 };
 
 export type ResizeHandlesFor = (node: BuilderNode) => ResizeHandle[];
 
-const ACCENT = '#4f46e5';
-
 function clamp(value: number, handle: ResizeHandle) {
   const step = handle.step ?? 1;
   const rounded = Math.round(value / step) * step;
-  return Math.min(handle.max ?? Number.POSITIVE_INFINITY, Math.max(handle.min ?? 0, rounded));
+  return Math.min(
+    handle.max ?? Number.POSITIVE_INFINITY,
+    Math.max(handle.min ?? 0, rounded)
+  );
 }
 
 function Handle({
@@ -62,13 +69,22 @@ function Handle({
   if (!props) return null;
 
   const measure = () => {
-    const wrapper = frame.contentDocument ? nodeElement(frame.contentDocument, id) : null;
-    const parentWidth = wrapper?.parentElement?.getBoundingClientRect().width || rect.width || 1;
-    return { width: rect.width, height: rect.height, parentWidth, element: wrapper?.firstElementChild ?? null };
+    const wrapper = frame.contentDocument
+      ? nodeElement(frame.contentDocument, id)
+      : null;
+    const parentWidth =
+      wrapper?.parentElement?.getBoundingClientRect().width || rect.width || 1;
+    return {
+      width: rect.width,
+      height: rect.height,
+      parentWidth,
+      element: wrapper?.firstElementChild ?? null,
+    };
   };
   // Read props from the store, not the render, so fast key repeats each count.
   const latest = () => store.getState().doc.nodes[id]?.props ?? props;
-  const current = () => handle.read(latest(), device) ?? handle.fallback?.(measure()) ?? 0;
+  const current = () =>
+    handle.read(latest(), device) ?? handle.fallback?.(measure()) ?? 0;
   const value = live ?? handle.read(props, device);
 
   const onPointerDown = (event: PointerEvent<HTMLButtonElement>) => {
@@ -82,7 +98,8 @@ function Handle({
     const target = event.currentTarget;
 
     const onMove = (move: globalThis.PointerEvent) => {
-      const delta = (handle.edge === 'right' ? move.clientX : move.clientY) - origin;
+      const delta =
+        (handle.edge === 'right' ? move.clientX : move.clientY) - origin;
       const change = handle.unit === '%' ? (delta / parentWidth) * 100 : delta;
       const next = clamp(start + change, handle);
       setLive(next);
@@ -111,70 +128,43 @@ function Handle({
   };
 
   const onKeyDown = (event: KeyboardEvent) => {
-    const keys: Record<string, number> = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 };
+    const keys: Record<string, number> = {
+      ArrowRight: 1,
+      ArrowUp: 1,
+      ArrowLeft: -1,
+      ArrowDown: -1,
+    };
     if (!(event.key in keys)) return;
     event.preventDefault();
     event.stopPropagation();
     const step = (handle.step ?? 1) * (event.shiftKey ? 10 : 1);
     const start = current();
     const next = clamp(start + keys[event.key] * step, handle);
-    store.updateProps(id, handle.write(latest(), device, next, { start }), `resize:${id}:${handle.id}`);
+    store.updateProps(
+      id,
+      handle.write(latest(), device, next, { start }),
+      `resize:${id}:${handle.id}`
+    );
   };
 
-  const right = handle.edge === 'right';
-  const style: CSSProperties = {
-    all: 'unset',
-    position: 'absolute',
-    // Inside the block's edge, so a full-width block's handle is not clipped by the canvas.
-    left: right ? rect.left + rect.width - 12 : rect.left + rect.width / 2 - 14,
-    top: right ? rect.top + rect.height / 2 - 14 : rect.top + rect.height - 12,
-    width: right ? 10 : 28,
-    height: right ? 28 : 10,
-    borderRadius: 5,
-    background: '#fff',
-    border: `2px solid ${ACCENT}`,
-    boxSizing: 'border-box',
-    cursor: right ? 'ew-resize' : 'ns-resize',
-    pointerEvents: 'auto',
-    touchAction: 'none',
-    zIndex: 3,
-  };
-  const shown = value === undefined ? 'auto' : `${Math.round(value * 10) / 10}${handle.unit}`;
+  const shown =
+    value === undefined
+      ? 'auto'
+      : `${Math.round(value * 10) / 10}${handle.unit}`;
 
   return (
-    <>
-      <button
-        type="button"
-        role="slider"
-        aria-label={handle.label}
-        aria-valuenow={value}
-        aria-valuemin={handle.min}
-        aria-valuemax={handle.max}
-        aria-valuetext={shown}
-        title={`${handle.label}: ${shown}. Drag, or use the arrow keys.`}
-        style={style}
-        onPointerDown={onPointerDown}
-        onKeyDown={onKeyDown}
-      />
-      {live !== null && (
-        <div
-          style={{
-            position: 'absolute',
-            left: right ? rect.left + rect.width - 70 : rect.left + rect.width / 2 + 18,
-            top: right ? rect.top + rect.height / 2 - 11 : rect.top + rect.height - 11,
-            padding: '2px 6px',
-            borderRadius: 4,
-            background: ACCENT,
-            color: '#fff',
-            font: '600 11px/1.6 system-ui, sans-serif',
-            pointerEvents: 'none',
-            zIndex: 3,
-          }}
-        >
-          {shown}
-        </div>
-      )}
-    </>
+    <ResizeHandleView
+      edge={handle.edge}
+      rect={rect}
+      label={handle.label}
+      value={value}
+      min={handle.min}
+      max={handle.max}
+      valueText={shown}
+      active={live !== null}
+      onPointerDown={onPointerDown}
+      onKeyDown={onKeyDown}
+    />
   );
 }
 
@@ -194,7 +184,13 @@ export function ResizeHandles({
   return (
     <>
       {handlesFor(node).map(handle => (
-        <Handle key={handle.id} id={id} handle={handle} rect={rect} frame={frame} />
+        <Handle
+          key={handle.id}
+          id={id}
+          handle={handle}
+          rect={rect}
+          frame={frame}
+        />
       ))}
     </>
   );
