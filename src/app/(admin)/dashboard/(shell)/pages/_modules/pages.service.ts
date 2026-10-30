@@ -15,14 +15,11 @@ import {
   sql,
 } from 'drizzle-orm';
 import {
-  applyPatch,
   type BuilderDocument,
   type DocumentPatch,
-  documentToPuck,
-  toDocument,
 } from '@nextcms/builder-core';
 import { emptyContentFor, normalizeContent } from '@/builder/data';
-import { documentIssues } from '@/builder/validate-document';
+import { planEditorSave } from '@/builder/editor-save';
 import { PERMISSIONS } from '@/config/permissions';
 import { offerForPublishedPath } from '@/server/services/redirects.service';
 import { searchIndex } from '@/server/services/search.service';
@@ -679,25 +676,18 @@ export const pagesServices = {
         .limit(1);
       const stored = row ?? (await getContent(page.id, 'published', tx));
       const current = row?.version ?? 0;
-      const base = toDocument(stored?.content);
-      if (input.baseVersion !== current) {
-        return { ok: false as const, conflict: true as const, version: current, document: base };
+      const plan = planEditorSave(stored?.content, current, input);
+      if (plan.kind === 'conflict') {
+        return { ok: false as const, conflict: true as const, version: plan.version, document: plan.document };
+      }
+      if (plan.kind === 'empty') throw new ApplicationException('Nothing to save.');
+      if (plan.kind === 'invalid') {
+        throw new ApplicationException(`The page could not be saved: ${plan.problems.slice(0, 3).join('; ')}`);
       }
 
-      const next = input.patch
-        ? applyPatch(base, input.patch)
-        : input.document;
-      if (!next) throw new ApplicationException('Nothing to save.');
-      const problems = documentIssues(next);
-      if (problems.length) {
-        throw new ApplicationException(`The page could not be saved: ${problems.slice(0, 3).join('; ')}`);
-      }
-
-      // Store every block id: the next save reads this back and applies a
-      // patch by id, so blocks added in the editor must keep theirs.
       const saved = await writeDraft(
         page,
-        documentToPuck(next, { ids: 'always' }),
+        plan.content,
         { autosave: true },
         access,
         tx
