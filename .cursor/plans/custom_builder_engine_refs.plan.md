@@ -625,9 +625,9 @@ This batch adds no new refs. Its phases deliver parts of refs that stay owned by
 | E7 | Dashboard builder on the same package (if in this repo) | large | R761, R767 |
 | E9 | Quality, docs, and release | medium | R704, R705, R769–R771, R802 |
 
-Phases run in the order listed (E8 before E7). E2b was added on 2026-10-30 and runs next.
+Phases run in the order listed (E8 before E7). E2b was added on 2026-10-30 and is done.
 
-**Status (2026-10-30):** about 64%. E1–E3 gaps are closed. E6 step 1 is done (every builder renders in `EditorShell` with `?shell=new`). E4 is mostly done: the block list, layers and inspector render through the package parts in both chromes. E0 is still open; E5 and E7–E9 are partial. The table for each phase is in the Status section of [editor_ui_package_implementation.md](editor_ui_package_implementation.md). No refs change state. Dark mode is deferred: build and check in light mode only until further notice (see the decision in the guide's status section).
+**Status (2026-10-30):** about 67%. E1–E3 gaps are closed; E2b is done (primitives on shadcn/Radix, Toast on sonner, shared motion that respects reduced motion, Radix DirectionProvider, E1 dependency items). E4 is mostly done and E6 step 1 is done (every builder renders in `EditorShell` with `?shell=new`). E0 is still open; E5 and E7–E9 are partial. Dark mode is deferred: build and check in light mode only until further notice. The table for each phase is in the Status section of [editor_ui_package_implementation.md](editor_ui_package_implementation.md). No refs change state.
 
 ## Gate order
 
