@@ -1,5 +1,13 @@
-import React, { useState, useRef, useEffect } from 'react';
+import * as MenuPrimitive from '@radix-ui/react-dropdown-menu';
+import type React from 'react';
+import { cn } from '../lib/cn';
+import { useLayerScope } from '../theme/EditorUIProvider';
 
+/**
+ * Dropdown menu on Radix (B15 E2b): arrow keys, Home/End and typeahead move
+ * between items, Escape closes and returns focus, and it grows out of its
+ * trigger. Same props as before.
+ */
 export interface MenuItem {
   id: string;
   label: string;
@@ -17,72 +25,85 @@ export interface MenuProps {
   align?: 'start' | 'end';
 }
 
+/** Shared item look for Menu and ContextMenu. */
+export const menuContentClass =
+  'ne-motion-pop z-50 min-w-[180px] rounded-[var(--ne-radius-md)] border border-[var(--ne-border)] bg-[var(--ne-surface)] p-1 text-[var(--ne-text)] shadow-lg focus:outline-none';
+
+export function menuItemClass(danger?: boolean) {
+  return cn(
+    'flex w-full cursor-pointer select-none items-center justify-between gap-3 rounded-[var(--ne-radius-sm)] px-2.5 py-1.5 text-xs outline-none transition-colors data-[disabled]:cursor-not-allowed data-[disabled]:opacity-40',
+    danger
+      ? 'text-[var(--ne-danger)] data-[highlighted]:bg-[var(--ne-danger-soft)]'
+      : 'text-[var(--ne-text)] data-[highlighted]:bg-[var(--ne-surface-hover)]'
+  );
+}
+
+export function MenuItemBody({
+  icon,
+  label,
+  shortcut,
+}: Pick<MenuItem, 'icon' | 'label' | 'shortcut'>) {
+  return (
+    <>
+      <span className="flex min-w-0 items-center gap-2">
+        {icon && (
+          <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center text-[var(--ne-text-muted)]">
+            {icon}
+          </span>
+        )}
+        <span className="truncate">{label}</span>
+      </span>
+      {shortcut && (
+        <span className="font-mono text-[10px] tracking-wider text-[var(--ne-text-muted)]">
+          {shortcut}
+        </span>
+      )}
+    </>
+  );
+}
+
 export const Menu: React.FC<MenuProps> = ({
   trigger,
   items,
   align = 'start',
 }) => {
-  const [open, setOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    if (open) {
-      document.addEventListener('mousedown', handleOutsideClick);
-    }
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
-  }, [open]);
-
+  const layer = useLayerScope();
   return (
-    <div ref={menuRef} className="relative inline-block">
-      <div onClick={() => setOpen(!open)} className="cursor-pointer">
-        {trigger}
-      </div>
-
-      {open && (
-        <div
-          role="menu"
-          className={`absolute z-50 mt-1 min-w-[180px] p-1 bg-[var(--ne-surface)] border border-[var(--ne-border)] rounded-[var(--ne-radius-md)] shadow-lg animate-in fade-in zoom-in-95 duration-100 ${
-            align === 'end' ? 'right-0' : 'left-0'
-          }`}
+    <MenuPrimitive.Root modal={false}>
+      <MenuPrimitive.Trigger asChild>
+        <span className="inline-flex cursor-pointer">{trigger}</span>
+      </MenuPrimitive.Trigger>
+      <MenuPrimitive.Portal>
+        <MenuPrimitive.Content
+          align={align}
+          sideOffset={4}
+          collisionPadding={8}
+          {...layer}
+          className={cn(layer.className, menuContentClass)}
         >
-          {items.map((item, index) => {
-            if (item.divider) {
-              return <div key={`div-${index}`} className="my-1 border-t border-[var(--ne-border)]" />;
-            }
-            return (
-              <button
+          {items.map(item =>
+            item.divider ? (
+              <MenuPrimitive.Separator
                 key={item.id}
-                role="menuitem"
+                className="my-1 h-px bg-[var(--ne-border)]"
+              />
+            ) : (
+              <MenuPrimitive.Item
+                key={item.id}
                 disabled={item.disabled}
-                onClick={() => {
-                  item.onClick?.();
-                  setOpen(false);
-                }}
-                className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs font-sans rounded-[var(--ne-radius-sm)] transition-colors select-none text-left cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-                  item.danger
-                    ? 'text-[var(--ne-danger)] hover:bg-[var(--ne-danger-soft)]'
-                    : 'text-[var(--ne-text)] hover:bg-[var(--ne-surface-hover)]'
-                }`}
+                onSelect={() => item.onClick?.()}
+                className={menuItemClass(item.danger)}
               >
-                <div className="flex items-center gap-2 truncate">
-                  {item.icon && <span className="w-3.5 h-3.5 shrink-0 flex items-center justify-center">{item.icon}</span>}
-                  <span className="truncate">{item.label}</span>
-                </div>
-                {item.shortcut && (
-                  <span className="ml-3 font-mono text-[10px] text-[var(--ne-text-muted)] tracking-wider">
-                    {item.shortcut}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
+                <MenuItemBody
+                  icon={item.icon}
+                  label={item.label}
+                  shortcut={item.shortcut}
+                />
+              </MenuPrimitive.Item>
+            )
+          )}
+        </MenuPrimitive.Content>
+      </MenuPrimitive.Portal>
+    </MenuPrimitive.Root>
   );
 };

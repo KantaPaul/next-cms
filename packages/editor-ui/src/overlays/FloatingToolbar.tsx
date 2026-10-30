@@ -47,7 +47,7 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
         top: `${Math.max(10, top - 36)}px`,
         left: `${left}px`,
       }}
-      className={`absolute z-40 flex items-center gap-0.5 p-1 bg-[var(--ne-surface)] border border-[var(--ne-border)] rounded-[var(--ne-radius-md)] shadow-md animate-in fade-in zoom-in-95 duration-100 ${className}`}
+      className={`absolute z-40 flex items-center gap-0.5 p-1 bg-[var(--ne-surface)] border border-[var(--ne-border)] rounded-[var(--ne-radius-md)] shadow-md ne-motion-enter-up ${className}`}
     >
       {onEnterMoveMode && !isLocked && (
         <IconButton
@@ -84,11 +84,7 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
       <div className="w-[1px] h-3.5 bg-[var(--ne-border)] mx-0.5" />
 
       {onDuplicate && !isLocked && (
-        <IconButton
-          size="sm"
-          tooltip="Duplicate (Cmd+D)"
-          onClick={onDuplicate}
-        >
+        <IconButton size="sm" tooltip="Duplicate (Cmd+D)" onClick={onDuplicate}>
           <Copy className="w-3.5 h-3.5" />
         </IconButton>
       )}
@@ -100,7 +96,11 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
           onClick={onToggleLock}
           className={isLocked ? 'text-[var(--ne-warning)]' : ''}
         >
-          {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+          {isLocked ? (
+            <Lock className="w-3.5 h-3.5" />
+          ) : (
+            <Unlock className="w-3.5 h-3.5" />
+          )}
         </IconButton>
       )}
 

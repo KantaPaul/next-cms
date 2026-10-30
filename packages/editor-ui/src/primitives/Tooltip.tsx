@@ -1,5 +1,12 @@
-import React, { useState } from 'react';
+import * as TooltipPrimitive from '@radix-ui/react-tooltip';
+import type React from 'react';
+import { cn } from '../lib/cn';
+import { useLayerScope } from '../theme/EditorUIProvider';
 
+/**
+ * Tooltip on Radix (B15 E2b): shows on hover and keyboard focus, flips to
+ * stay on screen, and grows out of its side. Same props as before.
+ */
 export interface TooltipProps {
   content: React.ReactNode;
   children: React.ReactNode;
@@ -13,37 +20,32 @@ export const Tooltip: React.FC<TooltipProps> = ({
   side = 'top',
   shortcut,
 }) => {
-  const [isVisible, setIsVisible] = useState(false);
-
-  const positionStyles = {
-    top: 'bottom-full left-1/2 -translate-x-1/2 mb-1.5',
-    bottom: 'top-full left-1/2 -translate-x-1/2 mt-1.5',
-    left: 'right-full top-1/2 -translate-y-1/2 mr-1.5',
-    right: 'left-full top-1/2 -translate-y-1/2 ml-1.5',
-  }[side];
-
+  const layer = useLayerScope();
+  if (!content) return <>{children}</>;
   return (
-    <div
-      className="relative inline-flex"
-      onMouseEnter={() => setIsVisible(true)}
-      onMouseLeave={() => setIsVisible(false)}
-      onFocus={() => setIsVisible(true)}
-      onBlur={() => setIsVisible(false)}
-    >
-      {children}
-      {isVisible && content && (
-        <div
-          role="tooltip"
-          className={`absolute z-50 pointer-events-none px-2 py-1 text-[11px] leading-tight font-sans text-white bg-slate-900 dark:bg-slate-800 rounded-[var(--ne-radius-sm)] shadow-md whitespace-nowrap flex items-center gap-1.5 border border-slate-700/50 ${positionStyles}`}
-        >
-          <span>{content}</span>
-          {shortcut && (
-            <kbd className="font-mono text-[9px] bg-slate-800 dark:bg-slate-700 px-1 py-0.5 rounded text-slate-300">
-              {shortcut}
-            </kbd>
-          )}
-        </div>
-      )}
-    </div>
+    <TooltipPrimitive.Provider delayDuration={400} skipDelayDuration={200}>
+      <TooltipPrimitive.Root>
+        <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>
+        <TooltipPrimitive.Portal>
+          <TooltipPrimitive.Content
+            side={side}
+            sideOffset={6}
+            collisionPadding={8}
+            {...layer}
+            className={cn(
+              layer.className,
+              'ne-motion-pop z-50 flex select-none items-center gap-1.5 whitespace-nowrap rounded-[var(--ne-radius-sm)] border border-slate-700/50 bg-slate-900 px-2 py-1 text-[11px] leading-tight text-white shadow-md'
+            )}
+          >
+            <span>{content}</span>
+            {shortcut && (
+              <kbd className="rounded bg-slate-800 px-1 py-0.5 font-mono text-[9px] text-slate-300">
+                {shortcut}
+              </kbd>
+            )}
+          </TooltipPrimitive.Content>
+        </TooltipPrimitive.Portal>
+      </TooltipPrimitive.Root>
+    </TooltipPrimitive.Provider>
   );
 };

@@ -54,12 +54,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="ne-ui fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs" />
+        <DialogPrimitive.Overlay className="ne-ui ne-motion-overlay fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs" />
         <DialogPrimitive.Content
           data-ne-theme={theme}
           dir={dir}
           aria-describedby={undefined}
-          className="ne-ui fixed left-1/2 top-20 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 overflow-hidden rounded-[var(--ne-radius-lg)] border border-[var(--ne-border)] bg-[var(--ne-surface)] font-[family-name:var(--ne-font-ui)] text-[13px] text-[var(--ne-text)] shadow-2xl focus:outline-none"
+          className="ne-ui ne-motion-pop fixed left-1/2 top-20 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 overflow-hidden rounded-[var(--ne-radius-lg)] border border-[var(--ne-border)] bg-[var(--ne-surface)] font-[family-name:var(--ne-font-ui)] text-[13px] text-[var(--ne-text)] shadow-2xl focus:outline-none"
         >
           <DialogPrimitive.Title className="sr-only">
             Command palette

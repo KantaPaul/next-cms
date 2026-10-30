@@ -58,7 +58,7 @@ export const InspectorTabs: React.FC<InspectorTabsProps> = ({
       </div>
 
       {(searchOpen || !!searchQuery) && onSearchChange && (
-        <div className="px-2 pb-2 pt-1 flex items-center gap-1.5 animate-in slide-in-from-top-1 duration-150">
+        <div className="px-2 pb-2 pt-1 flex items-center gap-1.5 ne-motion-enter">
           <div className="relative flex-1 flex items-center">
             <Search className="w-3 h-3 absolute start-2 text-[var(--ne-text-subtle)] pointer-events-none" />
             <input

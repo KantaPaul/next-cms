@@ -1,4 +1,5 @@
 import type React from 'react';
+import { DirectionProvider } from '@radix-ui/react-direction';
 import { createContext, useContext, useMemo } from 'react';
 
 /**
@@ -34,7 +35,10 @@ export function EditorUIScope({
   );
   return (
     <EditorUIContext.Provider value={value}>
-      {children}
+      {/* Radix menus, popovers and selects read direction from here (gap G3). */}
+      <DirectionProvider dir={resolvedDir ?? 'ltr'}>
+        {children}
+      </DirectionProvider>
     </EditorUIContext.Provider>
   );
 }
@@ -62,4 +66,18 @@ export const EditorUIProvider: React.FC<EditorUIProviderProps> = ({
 /** The current editor theme and direction, for portalled content that must match. */
 export function useEditorUI(): EditorUIContextValue {
   return useContext(EditorUIContext);
+}
+
+/**
+ * Props for a layer Radix portals to <body> (menus, popovers, tooltips,
+ * dialogs): the `.ne-ui` styling scope plus the editor's theme and
+ * direction, which the portal would otherwise lose.
+ */
+export function useLayerScope(): {
+  className: string;
+  'data-ne-theme'?: EditorTheme;
+  dir?: EditorDirection;
+} {
+  const { theme, dir } = useContext(EditorUIContext);
+  return { className: 'ne-ui', 'data-ne-theme': theme, dir };
 }
