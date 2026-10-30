@@ -511,6 +511,7 @@ Updated 2026-10-29 after batch B0. Details in [builder_engine_b0_audit.md](build
 | B12 | Publish and public performance | after Gate 34 and B6, parallel with B11 | 9 | R747 … R754 (see list) |
 | B13 | Quality and operations | after B9 to B12 | 9 | R701 … R812 (see list) |
 | B14 | Migration and Puck removal | last | 3 | R703, R707, R710 |
+| B15 | Shared editor UI package | after B9, parallel with B10 to B12 | 10 phases | E0–E9 (refs already in other batches, see list) |
 
 ### B0 — Finish the foundations (now)
 
@@ -602,9 +603,30 @@ Migrate stored content with backup and rollback, remove @measured/puck, then Gat
 
 Steps: R703, R707, R710.
 
+### B15 — Shared editor UI package (after B9, parallel with B10 to B12)
+
+Turn the AI Studio prototype into `@nextcms/editor-ui`: generic editor chrome (`--ne-*` tokens, primitives, shell, library, layers tree, inspector parts, overlays, feedback states) shared by the page builder and the dashboard builder. Full phase guide with prompts and checks: [editor_ui_package_implementation.md](editor_ui_package_implementation.md).
+
+This batch adds no new refs. Its phases deliver parts of refs that stay owned by their own batch; mark a ref done only when its owning batch's definition is met. Stop and review after E3 and after E6.
+
+| Phase | Name | Size | Refs touched |
+|---|---|---|---|
+| E0 | Audit the prototype (no code) | small | — |
+| E1 | `editor-ui` package skeleton | small | R755, R757, R766 |
+| E2 | Tokens and primitives | medium | R723, R733, R763 |
+| E3 | Shell, panels, and feedback | medium | R711, R797, R798 |
+| E4 | Library, layers tree, inspector parts | medium | R692, R693, R714, R722 |
+| E5 | Overlays and accessibility helpers | medium | R689, R695, R706, R717, R720, R807 |
+| E6 | Adopt the shell in the page builder (behind a flag) | large | R698, R709, R711–R722 |
+| E8 | Dynamic wiring (adapters replace mocks) | large | R685, R738–R744, R788 |
+| E7 | Dashboard builder on the same package (if in this repo) | large | R761, R767 |
+| E9 | Quality, docs, and release | medium | R704, R705, R769–R771, R802 |
+
+Phases run in the order listed (E8 before E7).
+
 ## Gate order
 
-Gate 34 (R708, end of B2) → Gate 35 (R709, end of B7) → Gates 37, 40, 39, 38 (B9, B10, B11, B12) → Gate 41 (R812, B13) → Gate 36 (R710, B14).
+Gate 34 (R708, end of B2) → Gate 35 (R709, end of B7) → Gates 37, 40, 39, 38 (B9, B10, B11, B12) → Gate 41 (R812, B13) → Gate 36 (R710, B14). B15 has no gate of its own; its review points are after E3 and E6.
 
 <!-- END: engine-implementation-batches -->
 

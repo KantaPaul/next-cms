@@ -4806,7 +4806,7 @@ PKG-04, PKG-06, PKG-07 (public API, custom blocks, plugins), RFB-02, RFB-04, RFB
 
 <!-- BEGIN: builder-robustness -->
 
-Also tracked in [custom_builder_engine_refs.plan.md](custom_builder_engine_refs.plan.md), which also has the implementation batches (B0–B14) for R680–R812.
+Also tracked in [custom_builder_engine_refs.plan.md](custom_builder_engine_refs.plan.md), which also has the implementation batches (B0–B14) for R680–R812 and B15, the shared editor UI package ([editor_ui_package_implementation.md](editor_ui_package_implementation.md)).
 
 - **R796 (ROB-01):** Non-goals document for the whole builder rewrite: full OT/CRDT co-editing, native mobile editor, non-React hosts, visual page builder for non-developers, and headless-only usage without the React editor stay out of scope for Gates 34–41.
 - **R797 (ROB-02):** Editor error surfaces: what the user sees when a block loader fails, schema validation fails on load, a global block is missing, or the document is corrupt; include quarantine mode, open-as-read-only, and guided repair.
