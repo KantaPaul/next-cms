@@ -295,22 +295,22 @@ todos:
     status: completed
   - id: R777
     content: "EXT-05 Prop traits: reusable prop groups such as withStyle, withLayout, withAnimation, withVisibility, withDynamic, and withA11y that any block opts into with traits: [...], each bringing its schema, fields, defaults, and render wrapper"
-    status: in_progress
+    status: completed
   - id: R778
     content: "EXT-06 Schema helpers that wrap any field type: responsive(...) for per-device values, token(...) for design tokens, dynamic(...) for data bindings, and translatable(...) for per-locale text"
-    status: pending
+    status: completed
   - id: R779
     content: "EXT-07 extendBlock to customize an existing block (built-in or third party): add or hide fields, change defaults, add presets, and wrap or replace render while receiving the original as Base"
-    status: pending
+    status: completed
   - id: R780
     content: "EXT-08 Extend every block at once from a plugin (for example a tracking id or test id prop), with a clear order when several plugins extend the same block"
-    status: pending
+    status: completed
   - id: R781
     content: "EXT-09 Presets and variants per block: named prop sets (for example Hero Split and Hero Centered) shown in the insert panel; the host can add presets to built-in blocks"
-    status: pending
+    status: completed
   - id: R782
     content: "EXT-10 Safe escape hatches: allowlisted class names, data attributes, and token-based style overrides; never raw CSS strings or arbitrary HTML attributes"
-    status: pending
+    status: completed
   - id: R783
     content: "EXT-11 defineField for custom field types: schema, input component, compact preview, and validation message, usable inside object, list, and responsive fields"
     status: completed
@@ -410,9 +410,9 @@ isProject: false
 
 Updated 2026-10-30 by `scripts/plan-progress.mjs`. Do not edit this block by hand.
 
-**58 of 133 completed (43.6%)** · 13 in progress · 62 pending
+**64 of 133 completed (48.1%)** · 12 in progress · 57 pending
 
-`█████████████░░░░░░░░░░░░░░░░░` 43.6%
+`██████████████░░░░░░░░░░░░░░░░` 48.1%
 
 | Section | Refs | Total | Done | In progress | Pending | % done | Bar |
 |---|---|---|---|---|---|---|---|
@@ -420,15 +420,15 @@ Updated 2026-10-30 by `scripts/plan-progress.mjs`. Do not edit this block by han
 | Editor UX (UXE) | R711–R736 | 26 | 22 | 1 | 3 | 84.6% | `████████░░` |
 | Data saving (DAT) | R737–R754 | 18 | 4 | 2 | 12 | 22.2% | `██░░░░░░░░` |
 | Packages (PKG) | R755–R772 | 18 | 1 | 2 | 15 | 5.6% | `█░░░░░░░░░` |
-| Extension API (EXT) | R773–R795 | 23 | 5 | 2 | 16 | 21.7% | `██░░░░░░░░` |
+| Extension API (EXT) | R773–R795 | 23 | 11 | 1 | 11 | 47.8% | `█████░░░░░` |
 | Robustness (ROB) | R796–R812 | 17 | 7 | 1 | 9 | 41.2% | `████░░░░░░` |
-| **Total** | | **133** | **58** | **13** | **62** | **43.6%** | `████░░░░░░` |
+| **Total** | | **133** | **64** | **12** | **57** | **48.1%** | `█████░░░░░` |
 
 ```mermaid
 pie showData title Todos by status
-  "Completed" : 58
-  "In progress" : 13
-  "Pending" : 62
+  "Completed" : 64
+  "In progress" : 12
+  "Pending" : 57
 ```
 <!-- progress:end -->
 

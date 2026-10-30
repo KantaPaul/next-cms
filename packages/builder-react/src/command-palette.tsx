@@ -90,14 +90,29 @@ export function CommandPalette({
 
   const commands = useMemo<Command[]>(() => {
     const insertCommands: Command[] = groups.flatMap(group =>
-      group.types.map(type => ({
-        id: `insert:${type}`,
-        section: 'Insert a block',
-        label: store.schemas[type]?.label ?? type,
-        hint: group.title,
-        icon: '＋',
-        run: () => store.insertBlock(type),
-      }))
+      group.types.flatMap(type => {
+        const label = store.schemas[type]?.label ?? type;
+        const presets = store.schemas[type]?.presets;
+        const base: Command = {
+          id: `insert:${type}`,
+          section: 'Insert a block',
+          label,
+          hint: group.title,
+          icon: '＋',
+          run: () => store.insertBlock(type),
+        };
+        const presetCommands: Command[] = Object.entries(presets ?? {}).map(
+          ([name, props]) => ({
+            id: `insert:${type}:${name}`,
+            section: 'Insert a block',
+            label: `${label} — ${name}`,
+            hint: group.title,
+            icon: '＋',
+            run: () => store.insertBlock(type, undefined, props),
+          })
+        );
+        return [base, ...presetCommands];
+      })
     );
     const nodeCommands: Command[] = Object.values(doc.nodes).map(node => ({
       id: `jump:${node.id}`,

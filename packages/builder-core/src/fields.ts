@@ -29,7 +29,10 @@ export function isResponsive<T>(value: unknown): value is Responsive<T> {
 }
 
 /** The value a device shows, following the fallback order. Plain values apply to every device. */
-export function valueForDevice<T>(value: T | Responsive<T> | undefined, device: Device): T | undefined {
+export function valueForDevice<T>(
+  value: T | Responsive<T> | undefined,
+  device: Device
+): T | undefined {
   if (!isResponsive<T>(value)) return value as T | undefined;
   for (const candidate of DEVICE_FALLBACK[device]) {
     if (value[candidate] !== undefined) return value[candidate];
@@ -38,14 +41,24 @@ export function valueForDevice<T>(value: T | Responsive<T> | undefined, device: 
 }
 
 /** Which device the shown value comes from, or null when nothing is set. */
-export function inheritedFrom<T>(value: T | Responsive<T> | undefined, device: Device): Device | null {
+export function inheritedFrom<T>(
+  value: T | Responsive<T> | undefined,
+  device: Device
+): Device | null {
   if (value === undefined) return null;
   if (!isResponsive<T>(value)) return 'desktop';
-  return DEVICE_FALLBACK[device].find(candidate => value[candidate] !== undefined) ?? null;
+  return (
+    DEVICE_FALLBACK[device].find(candidate => value[candidate] !== undefined) ??
+    null
+  );
 }
 
 /** Sets one device's value, turning a plain value into a per-device one (the plain value becomes desktop). */
-export function withDeviceValue<T>(value: T | Responsive<T> | undefined, device: Device, next: T): Responsive<T> {
+export function withDeviceValue<T>(
+  value: T | Responsive<T> | undefined,
+  device: Device,
+  next: T
+): Responsive<T> {
   const base: Responsive<T> = isResponsive<T>(value)
     ? { ...value }
     : value === undefined
@@ -55,8 +68,12 @@ export function withDeviceValue<T>(value: T | Responsive<T> | undefined, device:
 }
 
 /** Clears one device's value so it inherits again; returns undefined when nothing is left. */
-export function resetDeviceValue<T>(value: T | Responsive<T> | undefined, device: Device): Responsive<T> | undefined {
-  if (!isResponsive<T>(value)) return device === 'desktop' ? undefined : (value as Responsive<T>);
+export function resetDeviceValue<T>(
+  value: T | Responsive<T> | undefined,
+  device: Device
+): Responsive<T> | undefined {
+  if (!isResponsive<T>(value))
+    return device === 'desktop' ? undefined : (value as Responsive<T>);
   const next = { ...value };
   delete next[device];
   return Object.keys(next).length ? next : undefined;
@@ -76,6 +93,8 @@ type BaseField<P> = {
   readOnly?: boolean;
   /** Edit one value per device, with inheritance and reset (R694). */
   responsive?: boolean;
+  /** Edit one value per locale; the field came from a `translatable()` schema (R778). */
+  translatable?: boolean;
   /** Render the R723 visual style control row (draggable number, token picker) for this field. */
   visual?: boolean;
   /** Design token units for the R723 visual controls (draggable number unit, token values). */
@@ -85,10 +104,21 @@ type BaseField<P> = {
 };
 
 export type FieldDef<P = Record<string, unknown>> =
-  | (BaseField<P> & { type: 'text' | 'textarea' | 'url' | 'color' | 'image'; placeholder?: string })
-  | (BaseField<P> & { type: 'number'; min?: number; max?: number; step?: number; unit?: string })
+  | (BaseField<P> & {
+      type: 'text' | 'textarea' | 'url' | 'color' | 'image';
+      placeholder?: string;
+    })
+  | (BaseField<P> & {
+      type: 'number';
+      min?: number;
+      max?: number;
+      step?: number;
+      unit?: string;
+    })
   | (BaseField<P> & { type: 'toggle' })
   | (BaseField<P> & { type: 'select' | 'radio'; options: FieldOption[] })
+  /** Any subset of an allowlisted set of class names, never a raw class string (R782). */
+  | (BaseField<P> & { type: 'class-list'; options: FieldOption[] })
   | (BaseField<P> & {
       type: 'list';
       item: Record<string, FieldDef>;
@@ -101,6 +131,11 @@ export type FieldDef<P = Record<string, unknown>> =
   /** Read-only value worked out from the block's props. */
   | (BaseField<P> & { type: 'computed'; compute: (props: P) => string })
   /** Any other type is a custom field registered by the host. */
-  | (BaseField<P> & { type: `custom:${string}` | 'custom'; [option: string]: unknown });
+  | (BaseField<P> & {
+      type: `custom:${string}` | 'custom';
+      [option: string]: unknown;
+    });
 
-export type Fields<P = Record<string, unknown>> = { [K in keyof P]?: FieldDef<P> };
+export type Fields<P = Record<string, unknown>> = {
+  [K in keyof P]?: FieldDef<P>;
+};

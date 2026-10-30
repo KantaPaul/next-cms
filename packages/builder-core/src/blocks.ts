@@ -14,6 +14,8 @@ export type BlockSchema = {
   type: string;
   label?: string;
   defaultProps?: Record<string, unknown>;
+  /** Named prop sets shown in the insert panel alongside the plain block (R781). */
+  presets?: Record<string, Record<string, unknown>>;
   /** Slots stored directly on the block, such as `content` or `column1`. */
   slots?: Record<string, SlotRules>;
   /**
@@ -67,9 +69,13 @@ export function canPlace(
     target.parentId === null ? undefined : doc.nodes[target.parentId];
   if (target.parentId !== null && !parent) return false;
   if (options.movingId && target.parentId !== null) {
-    if (subtreeIds(doc, options.movingId).includes(target.parentId)) return false;
+    if (subtreeIds(doc, options.movingId).includes(target.parentId))
+      return false;
   }
-  return allowed(rulesFor(schemas, parent, target.slot, options.rules?.root), type);
+  return allowed(
+    rulesFor(schemas, parent, target.slot, options.rules?.root),
+    type
+  );
 }
 
 /** A new node with the block's default props and an empty list per slot. */
@@ -79,7 +85,12 @@ export function createNode(
   props: Record<string, unknown> = {}
 ): BuilderNode {
   return normalizeNode(
-    { id, type: schema.type, props: { ...schema.defaultProps, ...props }, slots: {} },
+    {
+      id,
+      type: schema.type,
+      props: { ...schema.defaultProps, ...props },
+      slots: {},
+    },
     schema
   );
 }
@@ -89,7 +100,10 @@ export function createNode(
  * arrays left in props (Puck stores empty slots that way) become slots, and
  * array items get one slot per item.
  */
-export function normalizeNode(node: BuilderNode, schema?: BlockSchema): BuilderNode {
+export function normalizeNode(
+  node: BuilderNode,
+  schema?: BlockSchema
+): BuilderNode {
   if (!schema) return node;
   const props = { ...node.props };
   const slots = { ...node.slots };

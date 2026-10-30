@@ -99,28 +99,72 @@ export function BlockList({
                 gap: 4,
               }}
             >
-              {group.types.map(type => (
-                <li key={type}>
-                  <button
-                    type="button"
-                    title="Click to add, or drag onto the page"
-                    onPointerDown={event =>
-                      drag.start({ kind: 'new', type }, event, () =>
-                        store.insertBlock(type)
-                      )
-                    }
-                    onKeyDown={event => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        store.insertBlock(type);
+              {group.types.map(type => {
+                const presets = store.schemas[type]?.presets;
+                const presetNames = presets ? Object.keys(presets) : [];
+                return (
+                  <li key={type}>
+                    <button
+                      type="button"
+                      title="Click to add, or drag onto the page"
+                      onPointerDown={event =>
+                        drag.start({ kind: 'new', type }, event, () =>
+                          store.insertBlock(type)
+                        )
                       }
-                    }}
-                    style={itemStyle}
-                  >
-                    {store.schemas[type]?.label ?? type}
-                  </button>
-                </li>
-              ))}
+                      onKeyDown={event => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          store.insertBlock(type);
+                        }
+                      }}
+                      style={itemStyle}
+                    >
+                      {store.schemas[type]?.label ?? type}
+                    </button>
+                    {presetNames.length > 0 && (
+                      <ul
+                        aria-label={`${store.schemas[type]?.label ?? type} presets`}
+                        style={{
+                          listStyle: 'none',
+                          margin: '4px 0 0',
+                          padding: '0 0 0 10px',
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: 4,
+                        }}
+                      >
+                        {presetNames.map(name => (
+                          <li key={name}>
+                            <button
+                              type="button"
+                              title={`Add the ${name} preset`}
+                              onClick={() =>
+                                store.insertBlock(
+                                  type,
+                                  undefined,
+                                  presets?.[name]
+                                )
+                              }
+                              style={{
+                                padding: '3px 8px',
+                                borderRadius: 999,
+                                border: '1px solid rgba(127,127,127,.3)',
+                                background: 'transparent',
+                                color: 'inherit',
+                                font: '500 11px/1.4 system-ui, sans-serif',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              {name}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </section>
         ))}

@@ -147,11 +147,15 @@ export function createEditorStore({
       return allowed(type, { ...slot, index: 0 }, movingId);
     },
 
-    /** Inserts a new block; returns its id, or null where the block is not allowed. */
-    insertBlock(type: string, at: SlotPosition = defaultPosition()) {
+    /**
+     * Inserts a new block; returns its id, or null where the block is not
+     * allowed. `props` overrides the block's defaults, for inserting a named
+     * preset (R781) rather than the plain block.
+     */
+    insertBlock(type: string, at: SlotPosition = defaultPosition(), props?: Record<string, unknown>) {
       const schema = schemas[type];
       if (!schema || !allowed(type, at)) return null;
-      const node = createNode(schema, createId(type));
+      const node = createNode(schema, createId(type), props);
       apply(
         insertSubtree(state.doc, { rootId: node.id, nodes: { [node.id]: node } }, at),
         `Add ${schema.label ?? type}`,

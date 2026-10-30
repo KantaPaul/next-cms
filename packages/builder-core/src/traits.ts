@@ -7,13 +7,17 @@
  */
 
 import type { ComponentType } from 'react';
-import type { z } from 'zod';
+import { z } from 'zod';
 import type { BlockDefinition, DefaultsContext } from './define';
 import type { FieldDef } from './fields';
 
-export type BlockRender<P extends Record<string, unknown> = Record<string, unknown>> = ComponentType<P & { editing?: boolean }>;
+export type BlockRender<
+  P extends Record<string, unknown> = Record<string, unknown>,
+> = ComponentType<P & { editing?: boolean }>;
 
-export type PropTrait<P extends Record<string, unknown> = Record<string, unknown>> = {
+export type PropTrait<
+  P extends Record<string, unknown> = Record<string, unknown>,
+> = {
   /** Stable trait name used in logs, metadata, and editor surfaces. */
   name: string;
   /** Optional schema fragment the trait adds to the block's props. */
@@ -21,9 +25,15 @@ export type PropTrait<P extends Record<string, unknown> = Record<string, unknown
   /** Inspector fields the trait contributes. */
   fields?: Record<string, FieldDef<P>>;
   /** Defaults the trait contributes; a value or a function of context (R775). */
-  defaults?: Record<string, unknown> | ((ctx: DefaultsContext) => Record<string, unknown>);
-  /** Wraps the block render, for behaviour that has to wrap the rendered element. */
-  wrap?: (base: BlockRender<P>) => BlockRender<P>;
+  defaults?:
+    | Record<string, unknown>
+    | ((ctx: DefaultsContext) => Record<string, unknown>);
+  /**
+   * Wraps the block render, for behaviour that has to wrap the rendered
+   * element. Untyped: a trait is reusable across blocks with different
+   * props, so its wrapper can't be pinned to one block's P.
+   */
+  wrap?: (base: BlockRender) => BlockRender;
 };
 
 const makeTrait = (
@@ -39,11 +49,13 @@ export const withStyle = (): PropTrait =>
   makeTrait(
     'style',
     z.object({
-      style: z.object({
-        padding: z.string().optional(),
-        margin: z.string().optional(),
-        gap: z.number().optional(),
-      }).optional(),
+      style: z
+        .object({
+          padding: z.string().optional(),
+          margin: z.string().optional(),
+          gap: z.number().optional(),
+        })
+        .optional(),
     }),
     {
       style: {
@@ -64,12 +76,16 @@ export const withLayout = (): PropTrait =>
   makeTrait(
     'layout',
     z.object({
-      layout: z.object({
-        direction: z.enum(['row', 'column']).optional(),
-        gap: z.number().optional(),
-        align: z.enum(['start', 'center', 'end', 'stretch']).optional(),
-        justify: z.enum(['start', 'center', 'end', 'between', 'around', 'evenly']).optional(),
-      }).optional(),
+      layout: z
+        .object({
+          direction: z.enum(['row', 'column']).optional(),
+          gap: z.number().optional(),
+          align: z.enum(['start', 'center', 'end', 'stretch']).optional(),
+          justify: z
+            .enum(['start', 'center', 'end', 'between', 'around', 'evenly'])
+            .optional(),
+        })
+        .optional(),
     }),
     {
       layout: {
@@ -118,10 +134,12 @@ export const withAnimation = (): PropTrait =>
   makeTrait(
     'animation',
     z.object({
-      animation: z.object({
-        preset: z.string().optional(),
-        duration: z.number().optional(),
-      }).optional(),
+      animation: z
+        .object({
+          preset: z.string().optional(),
+          duration: z.number().optional(),
+        })
+        .optional(),
     }),
     {
       animation: {
@@ -141,10 +159,12 @@ export const withVisibility = (): PropTrait =>
   makeTrait(
     'visibility',
     z.object({
-      visibility: z.object({
-        hidden: z.boolean().optional(),
-        hideOnMobile: z.boolean().optional(),
-      }).optional(),
+      visibility: z
+        .object({
+          hidden: z.boolean().optional(),
+          hideOnMobile: z.boolean().optional(),
+        })
+        .optional(),
     }),
     {
       visibility: {
@@ -164,9 +184,11 @@ export const withDynamic = (): PropTrait =>
   makeTrait(
     'dynamic',
     z.object({
-      dynamic: z.object({
-        source: z.string().optional(),
-      }).optional(),
+      dynamic: z
+        .object({
+          source: z.string().optional(),
+        })
+        .optional(),
     }),
     {
       dynamic: {
@@ -185,9 +207,11 @@ export const withA11y = (): PropTrait =>
   makeTrait(
     'a11y',
     z.object({
-      a11y: z.object({
-        skipLink: z.boolean().optional(),
-      }).optional(),
+      a11y: z
+        .object({
+          skipLink: z.boolean().optional(),
+        })
+        .optional(),
     }),
     {
       a11y: {
@@ -206,9 +230,9 @@ export function composeRender<P extends Record<string, unknown>>(
   definition: BlockDefinition<P>,
   traits: PropTrait<P>[]
 ): BlockRender<P> {
-  let render = definition.render;
+  let render: BlockRender = definition.render as unknown as BlockRender;
   for (const trait of traits) {
     if (trait.wrap) render = trait.wrap(render);
   }
-  return render;
+  return render as unknown as BlockRender<P>;
 }

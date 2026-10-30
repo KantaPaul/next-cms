@@ -6,7 +6,12 @@ import { keyAction, runKeyAction } from '../keyboard';
 import { createEditorStore } from '../store';
 
 const schemas: BlockSchemas = {
-  Text: { type: 'Text', label: 'Text', defaultProps: { text: 'Hello' } },
+  Text: {
+    type: 'Text',
+    label: 'Text',
+    defaultProps: { text: 'Hello' },
+    presets: { Shout: { text: 'HELLO!' } },
+  },
   Box: { type: 'Box', label: 'Box', slots: { content: { disallow: ['Box'] } } },
 };
 
@@ -36,6 +41,13 @@ describe('editor store', () => {
     assert.deepEqual(store.getState().selection, ['Text-1']);
     assert.equal(store.getState().doc.nodes['Text-1'].props.text, 'Hello');
     assert.ok(store.isDirty());
+  });
+
+  it('inserts a preset with its own props on top of the block defaults (R781)', () => {
+    const store = setup();
+    store.select('a');
+    const id = store.insertBlock('Text', undefined, schemas.Text.presets?.Shout);
+    assert.equal(store.getState().doc.nodes[id as string].props.text, 'HELLO!');
   });
 
   it('refuses inserts and moves the nesting rules forbid', () => {
