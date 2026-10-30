@@ -6,7 +6,6 @@ import {
   Eye,
   EyeOff,
   Folder,
-  GripVertical,
   Lock,
   Trash2,
   Unlock,
@@ -22,23 +21,47 @@ export interface LayerNode {
   children?: LayerNode[];
   locked?: boolean;
   hidden?: boolean;
+  /**
+   * A heading row that only groups its children (e.g. a slot of a block with
+   * several slots). It is not selectable and its children keep its depth.
+   */
+  group?: boolean;
+  /** Starting value for rename, when it differs from the shown name. */
+  renameValue?: string;
 }
 
 export interface LayersTreeProps {
   nodes: LayerNode[];
   selectedId?: string;
-  onSelect: (id: string) => void;
+  /** Several selected rows; takes precedence over `selectedId`. */
+  selectedIds?: string[];
+  onSelect: (id: string, options?: { additive: boolean }) => void;
+  /** Row the canvas highlights; set with `onHover`. */
+  hoveredId?: string | null;
+  onHover?: (id: string | null) => void;
+  /** Host-driven drag start on a row (buttons and inputs are ignored). */
+  onRowPointerDown?: (
+    id: string,
+    event: React.PointerEvent<HTMLDivElement>
+  ) => void;
   onToggleHide?: (id: string) => void;
   onToggleLock?: (id: string) => void;
+  /** Called with the trimmed name, which may be empty (meaning "use the default"). */
   onRename?: (id: string, newName: string) => void;
   onDelete?: (id: string) => void;
   onDuplicate?: (id: string) => void;
   onMoveUp?: (id: string) => void;
   onMoveDown?: (id: string) => void;
+  /** Drawn inside the tree's positioned container, e.g. a drop line. */
+  overlay?: React.ReactNode;
+  emptyLabel?: string;
   /** Accessible name for the tree. */
   label?: string;
   className?: string;
 }
+
+/** Attribute on every row (and group heading) with its id, for host hit-testing. */
+export const LAYER_ROW_ATTRIBUTE = 'data-layer-row';
 
 type VisibleRow = { node: LayerNode; depth: number; parentId: string | null };
 
@@ -49,6 +72,10 @@ function visibleRows(
   const rows: VisibleRow[] = [];
   const walk = (list: LayerNode[], depth: number, parentId: string | null) => {
     for (const node of list) {
+      if (node.group) {
+        walk(node.children ?? [], depth, parentId);
+        continue;
+      }
       rows.push({ node, depth, parentId });
       if (node.children?.length && (expanded[node.id] ?? true))
         walk(node.children, depth + 1, node.id);
@@ -58,17 +85,30 @@ function visibleRows(
   return rows;
 }
 
+const firstRow = (node: LayerNode): LayerNode | undefined => {
+  for (const child of node.children ?? []) {
+    const found = child.group ? firstRow(child) : child;
+    if (found) return found;
+  }
+  return undefined;
+};
+
 /**
  * Generic layers tree (B15 E4, gap G8). WAI-ARIA tree with one tab stop:
  * arrows move focus (Right/Left expand, collapse, or step in and out),
- * Home/End jump, Enter or Space selects, F2 renames, Alt+Up/Down call the
- * move callbacks. Drag behavior stays in the builder that renders it.
+ * Home/End jump, Enter or Space selects (Shift adds), F2 renames, Alt+Up/Down
+ * call the move callbacks. Drag behavior stays with the host: it gets
+ * `onRowPointerDown`, finds rows by `LAYER_ROW_ATTRIBUTE`, and draws its
+ * drop line through `overlay`.
  */
-
 export const LayersTree: React.FC<LayersTreeProps> = ({
   nodes,
   selectedId,
+  selectedIds,
   onSelect,
+  hoveredId,
+  onHover,
+  onRowPointerDown,
   onToggleHide,
   onToggleLock,
   onRename,
@@ -76,6 +116,8 @@ export const LayersTree: React.FC<LayersTreeProps> = ({
   onDuplicate,
   onMoveUp,
   onMoveDown,
+  overlay,
+  emptyLabel = 'No layers yet.',
   label = 'Layers',
   className = '',
 }) => {
@@ -85,14 +127,18 @@ export const LayersTree: React.FC<LayersTreeProps> = ({
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const treeRef = useRef<HTMLDivElement>(null);
 
+  const selected = useMemo(
+    () => new Set(selectedIds ?? (selectedId ? [selectedId] : [])),
+    [selectedIds, selectedId]
+  );
   const rows = useMemo(
     () => visibleRows(nodes, expandedIds),
     [nodes, expandedIds]
   );
-  // One tab stop: the focused row, else the selected one, else the first.
+  // One tab stop: the focused row, else the first selected one, else the first.
   const tabStopId =
     (focusedId && rows.some(r => r.node.id === focusedId) && focusedId) ||
-    (selectedId && rows.some(r => r.node.id === selectedId) && selectedId) ||
+    rows.find(r => selected.has(r.node.id))?.node.id ||
     rows[0]?.node.id;
 
   const toggleExpand = (id: string) => {
@@ -107,13 +153,25 @@ export const LayersTree: React.FC<LayersTreeProps> = ({
     el?.focus();
   }, []);
 
+  const startRename = (node: LayerNode) => {
+    setEditingId(node.id);
+    setEditName(node.renameValue ?? node.name);
+  };
+
+  const commitRename = (node: LayerNode) => {
+    const next = editName.trim();
+    if (onRename && next !== (node.renameValue ?? node.name))
+      onRename(node.id, next);
+    setEditingId(null);
+  };
+
   const onTreeKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (editingId) return;
     const index = rows.findIndex(r => r.node.id === tabStopId);
     const row = rows[index];
     if (!row) return;
     const { node } = row;
-    const hasChildren = !!node.children?.length;
+    const child = firstRow(node);
     const expanded = expandedIds[node.id] ?? true;
     const rtl = getComputedStyle(event.currentTarget).direction === 'rtl';
     const key =
@@ -135,38 +193,47 @@ export const LayersTree: React.FC<LayersTreeProps> = ({
       const last = rows.at(-1);
       if (last) focusRow(last.node.id);
     } else if (key === 'ArrowRight') {
-      if (hasChildren && !expanded) toggleExpand(node.id);
-      else if (node.children?.[0]) focusRow(node.children[0].id);
+      if (node.children?.length && !expanded) toggleExpand(node.id);
+      else if (child) focusRow(child.id);
       else return;
     } else if (key === 'ArrowLeft') {
-      if (hasChildren && expanded) toggleExpand(node.id);
+      if (node.children?.length && expanded) toggleExpand(node.id);
       else if (row.parentId) focusRow(row.parentId);
       else return;
-    } else if (key === 'Enter' || key === ' ') onSelect(node.id);
+    } else if (key === 'Enter' || key === ' ')
+      onSelect(node.id, { additive: event.shiftKey });
     else if (key === 'F2' && onRename) startRename(node);
     else return;
     event.preventDefault();
   };
 
-  const startRename = (node: LayerNode) => {
-    setEditingId(node.id);
-    setEditName(node.name);
-  };
+  const actionClass = (active: boolean, tone = 'hover:text-[var(--ne-text)]') =>
+    `p-0.5 ${active ? 'opacity-100' : ''} text-[var(--ne-text-muted)] ${tone}`;
 
-  const commitRename = (id: string) => {
-    if (editName.trim() && onRename) {
-      onRename(id, editName.trim());
-    }
-    setEditingId(null);
-  };
+  const renderGroup = (node: LayerNode, depth: number) => (
+    <div key={node.id} role="group" aria-label={node.name}>
+      <div
+        {...{ [LAYER_ROW_ATTRIBUTE]: node.id }}
+        style={{ paddingInlineStart: `${depth * 14 + 26}px` }}
+        className="py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--ne-text-subtle)]"
+      >
+        {node.name}
+      </div>
+      {(node.children ?? []).map((child, i, list) =>
+        renderNode(child, depth, list.length, i + 1)
+      )}
+    </div>
+  );
 
   const renderNode = (
     node: LayerNode,
     depth = 0,
     setSize = 1,
     posInSet = 1
-  ) => {
-    const isSelected = selectedId === node.id;
+  ): React.ReactNode => {
+    if (node.group) return renderGroup(node, depth);
+    const isSelected = selected.has(node.id);
+    const isHovered = hoveredId === node.id;
     const hasChildren = !!node.children && node.children.length > 0;
     const isExpanded = expandedIds[node.id] ?? true;
     const isEditing = editingId === node.id;
@@ -188,20 +255,40 @@ export const LayersTree: React.FC<LayersTreeProps> = ({
           if (e.target === e.currentTarget) setFocusedId(node.id);
         }}
       >
+        {/* biome-ignore lint/a11y/useKeyWithClickEvents: the treeitem handles keys for the whole tree */}
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: visual row of a treeitem */}
         <div
-          onClick={() => {
+          {...{ [LAYER_ROW_ATTRIBUTE]: node.id }}
+          onClick={e => {
             setFocusedId(node.id);
-            onSelect(node.id);
+            onSelect(node.id, {
+              additive: e.shiftKey || e.metaKey || e.ctrlKey,
+            });
           }}
+          onDoubleClick={() => onRename && startRename(node)}
+          onPointerEnter={onHover ? () => onHover(node.id) : undefined}
+          onPointerLeave={onHover ? () => onHover(null) : undefined}
+          onPointerDown={
+            onRowPointerDown
+              ? e => {
+                  if ((e.target as HTMLElement).closest('button, input'))
+                    return;
+                  onRowPointerDown(node.id, e);
+                }
+              : undefined
+          }
           style={{ paddingInlineStart: `${depth * 14 + 6}px` }}
-          className={`group flex items-center justify-between h-7 pe-2 rounded-[var(--ne-radius-sm)] text-xs cursor-pointer transition-colors ${
+          className={`group flex h-7 cursor-pointer items-center justify-between rounded-[var(--ne-radius-sm)] pe-2 text-xs transition-colors ${
+            onRowPointerDown ? 'touch-none' : ''
+          } ${
             isSelected
-              ? 'bg-[var(--ne-primary-soft)] text-[var(--ne-primary)] font-medium'
-              : 'hover:bg-[var(--ne-surface-hover)] text-[var(--ne-text)]'
+              ? 'bg-[var(--ne-primary-soft)] font-medium text-[var(--ne-primary)]'
+              : isHovered
+                ? 'bg-[var(--ne-surface-hover)] text-[var(--ne-text)]'
+                : 'text-[var(--ne-text)] hover:bg-[var(--ne-surface-hover)]'
           } ${node.hidden ? 'opacity-40' : ''}`}
         >
-          {/* Left: Expand, Icon, Name */}
-          <div className="flex items-center gap-1 min-w-0 flex-1">
+          <div className="flex min-w-0 flex-1 items-center gap-1">
             {hasChildren ? (
               <button
                 type="button"
@@ -211,58 +298,59 @@ export const LayersTree: React.FC<LayersTreeProps> = ({
                   e.stopPropagation();
                   toggleExpand(node.id);
                 }}
-                className="w-4 h-4 flex items-center justify-center p-0 text-[var(--ne-text-muted)] hover:text-[var(--ne-text)] cursor-pointer"
+                className="flex h-4 w-4 cursor-pointer items-center justify-center p-0 text-[var(--ne-text-muted)] hover:text-[var(--ne-text)]"
               >
                 <ChevronRight
-                  className={`w-3 h-3 transition-transform duration-150 ${
-                    isExpanded ? 'rotate-90' : 'rtl:-scale-x-100'
-                  }`}
+                  className={`h-3 w-3 transition-transform duration-150 ${isExpanded ? 'rotate-90' : 'rtl:-scale-x-100'}`}
                 />
               </button>
             ) : (
               <span className="w-4" />
             )}
 
-            <span className="w-3.5 h-3.5 shrink-0 flex items-center justify-center text-[var(--ne-text-muted)]">
-              {node.icon || <Folder className="w-3 h-3" />}
+            <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center text-[var(--ne-text-muted)]">
+              {node.icon || <Folder className="h-3 w-3" />}
             </span>
 
             {isEditing ? (
+              // biome-ignore lint/a11y/noStaticElementInteractions: stops row clicks while renaming
+              // biome-ignore lint/a11y/useKeyWithClickEvents: keys go to the input
               <div
-                className="flex items-center gap-1 flex-1"
+                className="flex flex-1 items-center gap-1"
                 onClick={e => e.stopPropagation()}
               >
                 <input
                   type="text"
                   value={editName}
+                  placeholder={node.name}
                   onChange={e => setEditName(e.target.value)}
+                  onBlur={() => commitRename(node)}
                   aria-label={`Rename ${node.name}`}
                   onKeyDown={e => {
                     e.stopPropagation();
-                    if (e.key === 'Enter') commitRename(node.id);
+                    if (e.key === 'Enter') commitRename(node);
                     if (e.key === 'Escape') {
                       setEditingId(null);
                       focusRow(node.id);
                     }
                   }}
+                  // biome-ignore lint/a11y/noAutofocus: rename starts from an explicit double-click or F2
                   autoFocus
-                  className="h-5 px-1 text-xs bg-[var(--ne-surface)] border border-[var(--ne-primary)] rounded-[var(--ne-radius-sm)] text-[var(--ne-text)] w-full"
+                  className="h-5 w-full rounded-[var(--ne-radius-sm)] border border-[var(--ne-primary)] bg-[var(--ne-surface)] px-1 text-xs text-[var(--ne-text)] shadow-none focus:shadow-none focus:outline-none focus:ring-0"
                 />
                 <button
                   type="button"
-                  onClick={() => commitRename(node.id)}
+                  aria-label="Save name"
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={() => commitRename(node)}
                   className="p-0.5 text-[var(--ne-success)] hover:opacity-80"
                 >
-                  <Check className="w-3 h-3" />
+                  <Check className="h-3 w-3" />
                 </button>
               </div>
             ) : (
               <span
-                onDoubleClick={e => {
-                  e.stopPropagation();
-                  startRename(node);
-                }}
-                className="truncate font-sans select-none"
+                className="select-none truncate"
                 title={`${node.name} (${node.type})`}
               >
                 {node.name}
@@ -270,20 +358,24 @@ export const LayersTree: React.FC<LayersTreeProps> = ({
             )}
           </div>
 
-          {/* Right: Actions (Hide, Lock, Menu) */}
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: keeps action clicks from selecting the row */}
+          {/* biome-ignore lint/a11y/useKeyWithClickEvents: the buttons inside handle keys */}
           <div
-            className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
+            className={`flex items-center gap-1 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 ${
+              node.hidden || node.locked ? '' : 'opacity-0'
+            }`}
             onClick={e => e.stopPropagation()}
           >
             {onRename && !isEditing && (
               <button
                 type="button"
                 tabIndex={-1}
-                title="Rename (Double-click)"
+                aria-label={`Rename ${node.name}`}
+                title="Rename (double-click or F2)"
                 onClick={() => startRename(node)}
-                className="p-0.5 text-[var(--ne-text-muted)] hover:text-[var(--ne-text)]"
+                className={`${actionClass(false)} opacity-0 group-hover:opacity-100`}
               >
-                <Edit2 className="w-2.5 h-2.5" />
+                <Edit2 className="h-2.5 w-2.5" />
               </button>
             )}
 
@@ -291,14 +383,20 @@ export const LayersTree: React.FC<LayersTreeProps> = ({
               <button
                 type="button"
                 tabIndex={-1}
-                title={node.hidden ? 'Show' : 'Hide'}
+                aria-label={
+                  node.hidden
+                    ? `Show ${node.name}`
+                    : `Hide ${node.name} in the editor`
+                }
+                aria-pressed={!!node.hidden}
+                title={node.hidden ? 'Show' : 'Hide in the editor'}
                 onClick={() => onToggleHide(node.id)}
-                className={`p-0.5 ${node.hidden ? 'opacity-100 text-[var(--ne-text-subtle)]' : 'text-[var(--ne-text-muted)] hover:text-[var(--ne-text)]'}`}
+                className={`${actionClass(!!node.hidden)} ${node.locked && !node.hidden ? 'opacity-0 group-hover:opacity-100' : ''}`}
               >
                 {node.hidden ? (
-                  <EyeOff className="w-3 h-3" />
+                  <EyeOff className="h-3 w-3" />
                 ) : (
-                  <Eye className="w-3 h-3" />
+                  <Eye className="h-3 w-3" />
                 )}
               </button>
             )}
@@ -307,14 +405,18 @@ export const LayersTree: React.FC<LayersTreeProps> = ({
               <button
                 type="button"
                 tabIndex={-1}
+                aria-label={
+                  node.locked ? `Unlock ${node.name}` : `Lock ${node.name}`
+                }
+                aria-pressed={!!node.locked}
                 title={node.locked ? 'Unlock' : 'Lock'}
                 onClick={() => onToggleLock(node.id)}
-                className={`p-0.5 ${node.locked ? 'opacity-100 text-[var(--ne-warning)]' : 'text-[var(--ne-text-muted)] hover:text-[var(--ne-text)]'}`}
+                className={`${actionClass(!!node.locked)} ${node.locked ? 'text-[var(--ne-warning)]' : ''} ${node.hidden && !node.locked ? 'opacity-0 group-hover:opacity-100' : ''}`}
               >
                 {node.locked ? (
-                  <Lock className="w-3 h-3" />
+                  <Lock className="h-3 w-3" />
                 ) : (
-                  <Unlock className="w-3 h-3" />
+                  <Unlock className="h-3 w-3" />
                 )}
               </button>
             )}
@@ -323,11 +425,12 @@ export const LayersTree: React.FC<LayersTreeProps> = ({
               <button
                 type="button"
                 tabIndex={-1}
+                aria-label={`Duplicate ${node.name}`}
                 title="Duplicate"
                 onClick={() => onDuplicate(node.id)}
-                className="p-0.5 text-[var(--ne-text-muted)] hover:text-[var(--ne-text)]"
+                className={actionClass(false)}
               >
-                <Copy className="w-2.5 h-2.5" />
+                <Copy className="h-2.5 w-2.5" />
               </button>
             )}
 
@@ -335,19 +438,19 @@ export const LayersTree: React.FC<LayersTreeProps> = ({
               <button
                 type="button"
                 tabIndex={-1}
+                aria-label={`Delete ${node.name}`}
                 title="Delete"
                 onClick={() => onDelete(node.id)}
-                className="p-0.5 text-[var(--ne-text-muted)] hover:text-[var(--ne-danger)]"
+                className={actionClass(false, 'hover:text-[var(--ne-danger)]')}
               >
-                <Trash2 className="w-2.5 h-2.5" />
+                <Trash2 className="h-2.5 w-2.5" />
               </button>
             )}
           </div>
         </div>
 
-        {/* Children */}
         {hasChildren && isExpanded && (
-          <div role="group" className="border-s border-[var(--ne-border)] ms-3">
+          <div role="group" className="ms-3 border-s border-[var(--ne-border)]">
             {(node.children ?? []).map((child, i, list) =>
               renderNode(child, depth + 1, list.length, i + 1)
             )}
@@ -362,10 +465,17 @@ export const LayersTree: React.FC<LayersTreeProps> = ({
       ref={treeRef}
       role="tree"
       aria-label={label}
+      aria-multiselectable={selectedIds ? true : undefined}
       onKeyDown={onTreeKeyDown}
-      className={`p-2 space-y-0.5 overflow-y-auto ne-scrollbar h-full ${className}`}
+      className={`ne-scrollbar relative h-full space-y-0.5 overflow-y-auto p-2 ${className}`}
     >
+      {nodes.length === 0 && (
+        <p className="m-0 px-1 text-xs text-[var(--ne-text-muted)]">
+          {emptyLabel}
+        </p>
+      )}
       {nodes.map((node, i, list) => renderNode(node, 0, list.length, i + 1))}
+      {overlay}
     </div>
   );
 };

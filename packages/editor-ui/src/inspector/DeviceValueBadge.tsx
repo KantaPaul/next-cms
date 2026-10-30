@@ -24,10 +24,11 @@ export const DeviceValueBadge: React.FC<DeviceValueBadgeProps> = ({
     mobile: <Smartphone className="w-2.5 h-2.5" />,
   }[device];
 
+  // A button only when it does something; otherwise a plain label.
+  const Tag = onClick ? 'button' : 'span';
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <Tag
+      {...(onClick ? { type: 'button' as const, onClick } : {})}
       title={
         isInherited
           ? `Inherited from ${inheritedFrom} breakpoint`
@@ -40,7 +41,7 @@ export const DeviceValueBadge: React.FC<DeviceValueBadgeProps> = ({
       } ${className}`}
     >
       {icon}
-      <span>{isInherited ? 'inherited' : device}</span>
-    </button>
+      <span>{isInherited ? `from ${inheritedFrom}` : device}</span>
+    </Tag>
   );
 };

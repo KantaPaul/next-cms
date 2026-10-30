@@ -1,12 +1,13 @@
-import React from 'react';
-import { Star, GripVertical } from 'lucide-react';
+import { GripVertical, Star } from 'lucide-react';
+import type React from 'react';
 
 export interface LibraryItemDef {
   type: string;
   label: string;
   description?: string;
   category: string;
-  icon: React.ReactNode;
+  /** Falls back to the label's first letter. */
+  icon?: React.ReactNode;
   isFavorite?: boolean;
   isRecent?: boolean;
 }
@@ -14,68 +15,116 @@ export interface LibraryItemDef {
 export interface LibraryItemProps {
   item: LibraryItemDef;
   onSelect: (item: LibraryItemDef) => void;
+  /**
+   * Host-driven pointer drag (B15 E4). When set, the item is not an HTML5
+   * drag source and a click does not call `onSelect`: the host decides
+   * between click and drag from the pointer events. Enter/Space still select.
+   */
+  onPointerDown?: (
+    item: LibraryItemDef,
+    event: React.PointerEvent<HTMLDivElement>
+  ) => void;
   onToggleFavorite?: (type: string) => void;
   isFavorite?: boolean;
+  /** Shown under the item, outside its button (e.g. preset chips). */
+  extra?: React.ReactNode;
+  /** Tooltip for the item. */
+  hint?: string;
 }
 
 export const LibraryItem: React.FC<LibraryItemProps> = ({
   item,
   onSelect,
+  onPointerDown,
   onToggleFavorite,
   isFavorite = false,
+  extra,
+  hint,
 }) => {
+  const hostDrag = !!onPointerDown;
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      draggable
-      onDragStart={(e) => {
-        e.dataTransfer.setData('text/plain', item.type);
-        e.dataTransfer.effectAllowed = 'copy';
-      }}
-      onClick={() => onSelect(item)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onSelect(item);
+    <div>
+      {/* biome-ignore lint/a11y/useSemanticElements: holds a nested favorite button, so it cannot be a <button> */}
+      <div
+        role="button"
+        tabIndex={0}
+        title={hint}
+        draggable={!hostDrag}
+        onDragStart={
+          hostDrag
+            ? undefined
+            : e => {
+                e.dataTransfer.setData('text/plain', item.type);
+                e.dataTransfer.effectAllowed = 'copy';
+              }
         }
-      }}
-      className="group relative flex items-center gap-2.5 p-2 rounded-[var(--ne-radius-md)] border border-[var(--ne-border)] bg-[var(--ne-surface)] hover:border-[var(--ne-primary)] hover:shadow-xs transition-all cursor-grab active:cursor-grabbing select-none"
-    >
-      <div className="w-7 h-7 rounded-[var(--ne-radius-sm)] bg-[var(--ne-surface-subtle)] border border-[var(--ne-border)] text-[var(--ne-primary)] flex items-center justify-center shrink-0 group-hover:bg-[var(--ne-primary-soft)] transition-colors">
-        {item.icon}
-      </div>
-
-      <div className="flex-1 min-w-0 text-left">
-        <div className="text-xs font-medium text-[var(--ne-text)] truncate font-sans">
-          {item.label}
-        </div>
-        {item.description && (
-          <div className="text-[11px] text-[var(--ne-text-muted)] truncate font-sans">
-            {item.description}
-          </div>
-        )}
-      </div>
-
-      {onToggleFavorite && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleFavorite(item.type);
-          }}
-          title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-          className={`opacity-0 group-hover:opacity-100 p-1 text-[var(--ne-text-muted)] hover:text-amber-500 cursor-pointer transition-opacity ${
-            isFavorite ? 'opacity-100 text-amber-500' : ''
-          }`}
+        onPointerDown={
+          hostDrag
+            ? e => {
+                if ((e.target as HTMLElement).closest('button')) return;
+                onPointerDown(item, e);
+              }
+            : undefined
+        }
+        onClick={hostDrag ? undefined : () => onSelect(item)}
+        onKeyDown={e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onSelect(item);
+          }
+        }}
+        className="group relative flex cursor-grab touch-none select-none items-center gap-2.5 rounded-[var(--ne-radius-md)] border border-[var(--ne-border)] bg-[var(--ne-surface)] p-2 transition-all hover:border-[var(--ne-primary)] hover:shadow-xs focus-visible:outline-2 focus-visible:outline-[var(--ne-focus-ring)] active:cursor-grabbing"
+      >
+        <div
+          aria-hidden
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--ne-radius-sm)] border border-[var(--ne-border)] bg-[var(--ne-surface-subtle)] text-xs font-semibold text-[var(--ne-primary)] transition-colors group-hover:bg-[var(--ne-primary-soft)]"
         >
-          <Star className={`w-3.5 h-3.5 ${isFavorite ? 'fill-amber-400 text-amber-500' : ''}`} />
-        </button>
-      )}
+          {item.icon ?? item.label.charAt(0).toUpperCase()}
+        </div>
 
-      <div className="opacity-0 group-hover:opacity-50 text-[var(--ne-text-muted)] cursor-grab">
-        <GripVertical className="w-3.5 h-3.5" />
+        <div className="min-w-0 flex-1 text-start">
+          <div className="truncate text-xs font-medium text-[var(--ne-text)]">
+            {item.label}
+          </div>
+          {item.description && (
+            <div className="truncate text-[11px] text-[var(--ne-text-muted)]">
+              {item.description}
+            </div>
+          )}
+        </div>
+
+        {onToggleFavorite && (
+          <button
+            type="button"
+            onClick={e => {
+              e.stopPropagation();
+              onToggleFavorite(item.type);
+            }}
+            aria-label={
+              isFavorite
+                ? `Remove ${item.label} from favorites`
+                : `Add ${item.label} to favorites`
+            }
+            aria-pressed={isFavorite}
+            title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+            className={`cursor-pointer p-1 text-[var(--ne-text-muted)] opacity-0 transition-opacity hover:text-amber-500 group-hover:opacity-100 focus-visible:opacity-100 ${
+              isFavorite ? 'text-amber-500 opacity-100' : ''
+            }`}
+          >
+            <Star
+              className={`h-3.5 w-3.5 ${isFavorite ? 'fill-amber-400 text-amber-500' : ''}`}
+            />
+          </button>
+        )}
+
+        <div
+          aria-hidden
+          className="cursor-grab text-[var(--ne-text-muted)] opacity-0 group-hover:opacity-50"
+        >
+          <GripVertical className="h-3.5 w-3.5" />
+        </div>
       </div>
+      {extra}
     </div>
   );
 };
