@@ -32,7 +32,15 @@ export const pageSchemas: BlockSchemas = Object.fromEntries(
 export const pageInspectorBlocks: Record<string, InspectorBlock> = Object.fromEntries(
   Object.values(pageDefinitions).map(definition => [
     definition.type,
-    { label: definition.label, fields: fieldsOf(definition) },
+    {
+      label: definition.label,
+      fields: fieldsOf(definition),
+      defaultProps: definition.defaults
+        ? typeof definition.defaults === 'function'
+          ? definition.defaults({})
+          : definition.defaults
+        : undefined,
+    },
   ])
 );
 
@@ -64,7 +72,15 @@ const inspectorOf = (definitions: Record<string, BlockDefinition>): Record<strin
   Object.fromEntries(
     Object.values(definitions).map(definition => [
       definition.type,
-      { label: definition.label, fields: fieldsOf(definition) },
+      {
+        label: definition.label,
+        fields: fieldsOf(definition),
+        defaultProps: definition.defaults
+          ? typeof definition.defaults === 'function'
+            ? definition.defaults({})
+            : definition.defaults
+          : undefined,
+      },
     ])
   );
 

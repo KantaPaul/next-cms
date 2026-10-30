@@ -14,6 +14,7 @@ import {
   withDeviceValue,
 } from '@nextcms/builder-core';
 import { type ComponentType, type CSSProperties, createContext, type ReactNode, useContext, useState } from 'react';
+import { DraggableNumber, TokenPicker, type Unit } from './style-controls';
 
 export type FieldProps<V = unknown> = {
   field: FieldDef & Record<string, unknown>;
@@ -302,6 +303,25 @@ export function FieldControl({
         readOnly={readOnly || field.readOnly}
         onChange={next => onChange(responsive ? withDeviceValue(value, device, next) : next)}
       />
+      {field.visual && !readOnly && field.type === 'number' && (
+        <DraggableNumber
+          value={typeof shown === 'number' ? shown : undefined}
+          onChange={next => onChange(next)}
+          unit={(field.unit ?? 'px') as Unit}
+          step={field.step ?? 1}
+          min={field.min}
+          max={field.max}
+          label={field.label}
+        />
+      )}
+      {field.visual && !readOnly && field.type === 'color' && field.tokens && (
+        <TokenPicker
+          value={typeof shown === 'string' ? shown : undefined}
+          onChange={next => onChange(next)}
+          tokens={field.tokens}
+          label={field.label}
+        />
+      )}
       {field.description && (
         <p style={{ margin: 0, font: '11px/1.4 system-ui, sans-serif', opacity: 0.65 }}>{field.description}</p>
       )}

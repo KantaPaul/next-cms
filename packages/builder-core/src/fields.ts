@@ -76,11 +76,17 @@ type BaseField<P> = {
   readOnly?: boolean;
   /** Edit one value per device, with inheritance and reset (R694). */
   responsive?: boolean;
+  /** Render the R723 visual style control row (draggable number, token picker) for this field. */
+  visual?: boolean;
+  /** Design token units for the R723 visual controls (draggable number unit, token values). */
+  unit?: string;
+  /** Design tokens for R723 token pickers. */
+  tokens?: { value: string; label: string; color?: string }[];
 };
 
 export type FieldDef<P = Record<string, unknown>> =
   | (BaseField<P> & { type: 'text' | 'textarea' | 'url' | 'color' | 'image'; placeholder?: string })
-  | (BaseField<P> & { type: 'number'; min?: number; max?: number; step?: number })
+  | (BaseField<P> & { type: 'number'; min?: number; max?: number; step?: number; unit?: string })
   | (BaseField<P> & { type: 'toggle' })
   | (BaseField<P> & { type: 'select' | 'radio'; options: FieldOption[] })
   | (BaseField<P> & {

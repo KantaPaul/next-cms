@@ -12,7 +12,6 @@ import {
   type PointerEvent as ReactPointerEvent,
   useCallback,
   useEffect,
-  useRef,
   useState,
 } from 'react';
 
@@ -56,20 +55,27 @@ export function ResizablePanel({
   storageKey,
   style,
 }: ResizablePanelProps) {
-  const initial = useRef(
-    readStored(storageKey, { width: defaultWidth, collapsed: false })
-  ).current;
-  const [width, setWidth] = useState(initial.width);
-  const [collapsed, setCollapsed] = useState(initial.collapsed);
+  const [width, setWidth] = useState(defaultWidth);
+  const [collapsed, setCollapsed] = useState(false);
+  // Read localStorage after mount so the server-rendered HTML and the first
+  // client render agree (R711) — reading it during render causes hydration
+  // attribute mismatches.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    const stored = readStored(storageKey, { width: defaultWidth, collapsed: false });
+    setWidth(stored.width);
+    setCollapsed(stored.collapsed);
+    setHydrated(true);
+  }, [storageKey, defaultWidth]);
 
   useEffect(() => {
-    if (!storageKey || typeof localStorage === 'undefined') return;
+    if (!storageKey || !hydrated) return;
     try {
       localStorage.setItem(storageKey, JSON.stringify({ width, collapsed }));
     } catch {
       // Private browsing or a full quota; the panel still works this session.
     }
-  }, [storageKey, width, collapsed]);
+  }, [storageKey, width, collapsed, hydrated]);
 
   const onHandleDown = useCallback(
     (event: ReactPointerEvent) => {

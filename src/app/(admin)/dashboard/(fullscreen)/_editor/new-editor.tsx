@@ -32,28 +32,45 @@ import {
   Breadcrumb,
   type Command,
   CommandPalette,
+  CommentsPanel,
+  type CommentThread,
   createEditorStore,
   DeviceSwitch,
   EditorCanvas,
   EditorProvider,
   type EditorStore,
   Inspector,
+  HistoryPanel,
   indexedDbStorage,
+  initStyleClassStore,
   isTypingTarget,
   LayersPanel,
   type LocalCopy,
+  LiveChecksPanel,
+  PresencePanel,
   ResizablePanel,
+  StyleClassControl,
+  StyleClassList,
+  StateStyleSwitch,
   type SaveInput,
   type SaveQueue,
   type SaveResult,
   SHORTCUTS,
+  StyleClassList as StyleClassesList,
   useDragController,
   useEditor,
   useEditorKeyboard,
   useEditorStore,
   useSaveQueue,
   useSaveState,
+  VersionCompare,
+  StartScreen,
+  createPreferencesStore,
+  setPreferencesStore,
+  getStyleClassStore,
+  captureStyles,
 } from '@nextcms/builder-react';
+import { PreferencesPanel } from '@nextcms/builder-react';
 import {
   ArrowLeft,
   CommandIcon,
@@ -197,6 +214,18 @@ const STATUS_TEXT: Record<string, string> = {
   error: 'Save failed · retrying',
   conflict: 'Someone else saved this page',
 };
+
+const RIGHT_PANEL_TABS: { key: string; label: string }[] = [
+  { key: 'blocks', label: 'Blocks' },
+  { key: 'layers', label: 'Layers' },
+  { key: 'settings', label: 'Settings' },
+  { key: 'style-classes', label: 'Classes' },
+  { key: 'presence', label: 'Presence' },
+  { key: 'checks', label: 'Checks' },
+  { key: 'preferences', label: 'Preferences' },
+  { key: 'history', label: 'History' },
+  { key: 'comments', label: 'Comments' },
+];
 
 /** Save state, with Retry now after a failure (R740, R798). */
 function SaveIndicator({ queue }: { queue: SaveQueue }) {
@@ -572,6 +601,11 @@ export function NewEditor({
     () => createEditorStore({ document, schemas: setup.schemas }),
     [document, setup]
   );
+  // Initialize B9 stores: style classes (R724) and preferences (R733).
+  useMemo(() => initStyleClassStore(), []);
+  useMemo(() => {
+    setPreferencesStore(createPreferencesStore());
+  }, []);
   const drag = useDragController(store);
 
   const save = useCallback(
@@ -617,6 +651,16 @@ export function NewEditor({
   const [panel, setPanel] = useState<'blocks' | 'layers'>('blocks');
   const [focusMode, setFocusMode] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  // B9: right panel tabs (R722-R733)
+  const [rightPanel, setRightPanel] = useState<'blocks' | 'layers' | 'settings' | 'style-classes' | 'presence' | 'checks' | 'preferences' | 'history' | 'comments'>('settings');
+  // B9: comments state (R728)
+  const [commentThreads, setCommentThreads] = useState<CommentThread[]>([]);
+  // B9: state style editing (R725)
+  const [stateStyle, setStateStyle] = useState<'hover' | 'focus' | 'active' | null>(null);
+  // B9: version compare (R727)
+  const [versionCompareOpen, setVersionCompareOpen] = useState(false);
+  // B9: first-run onboarding (R732)
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
   useEditorKeyboard(store, [
     typeof window === 'undefined' ? null : window,
     frameWindow,
@@ -838,6 +882,10 @@ export function NewEditor({
           <div className="ml-auto flex items-center gap-2">
             <SaveIndicator queue={queue} />
             <DeviceSwitch />
+            <StateStyleSwitch
+              nodeId={store.getState().selection.length === 1 ? store.getState().selection[0] : ''}
+              onChange={(s: 'hover' | 'focus' | 'active' | null) => setStateStyle(s)}
+            />
             <HistoryButtons />
             <Button
               size="icon"
@@ -1032,6 +1080,7 @@ export function NewEditor({
                 inlineProps={cmsInlineProps}
                 blockActions={blockActions}
                 insertGroups={setup.groups}
+                stateStyle={stateStyle}
               />
             </div>
           </main>
@@ -1047,18 +1096,59 @@ export function NewEditor({
             >
               <section aria-label="Settings" className="p-4">
                 <NewEditorBridge themeTokens={themeTokens}>
-                  <Inspector
-                    blocks={setup.inspectorBlocks}
-                    rootFields={setup.rootFields}
-                    empty={
+                  <div role="tablist" aria-label="Right panel tabs" className="mb-3 grid grid-cols-9 gap-1 rounded-md bg-steel-100 p-1 dark:bg-dark-200">
+                    {RIGHT_PANEL_TABS.map(tab => (
+                      <button key={tab.key} type="button" role="tab" aria-selected={rightPanel === tab.key} onClick={() => setRightPanel(tab.key as typeof rightPanel)} className={`rounded px-2 py-1 text-xs font-medium capitalize ${rightPanel === tab.key ? 'bg-white shadow-sm dark:bg-dark-100' : 'text-steel-500'}`}>{tab.label}</button>
+                    ))}
+                  </div>
+                  {rightPanel === 'settings' && (
+                    <Inspector blocks={setup.inspectorBlocks} rootFields={setup.rootFields} empty={
                       <p className="mb-2 text-xs text-steel-500">
                         Select a block to edit it.
                         {Object.keys(setup.rootFields).length
                           ? ' Page settings:'
                           : ''}
                       </p>
-                    }
-                  />
+                    } />
+                  )}
+                  {rightPanel === 'style-classes' && (
+                    <div className="p-3">
+                      {store.getState().selection.length === 1 && (
+                        <StyleClassControl nodeId={store.getState().selection[0]} styles={captureStyles(store.getState().doc.nodes[store.getState().selection[0] as never as string])} />
+                      )}
+                      <StyleClassesList onApply={(blockId: string, className: string) => { const sc = getStyleClassStore(); if (sc) sc.applyClass(blockId as never as string, className); }} onDetach={(blockId: string) => { const sc = getStyleClassStore(); if (sc) sc.detachClass(blockId as never as string); }} />
+                    </div>
+                  )}
+                  {rightPanel === 'presence' && <PresencePanel users={[]} blockLocks={[]} me="" onSelectionChange={() => {}} onEditingChange={() => {}} />}
+                  {rightPanel === 'checks' && <LiveChecksPanel issues={[]} onIssueClick={id => store.select(id)} />}
+                  {rightPanel === 'preferences' && <PreferencesPanel />}
+                  {rightPanel === 'history' && <HistoryPanel queue={queue} />}
+                  {rightPanel === 'comments' && (
+                    <CommentsPanel
+                      threads={commentThreads}
+                      onAdd={(blockId, text, parentId) => {
+                        setCommentThreads(prev => {
+                          const rest = prev.filter(t => t.blockId !== blockId);
+                          const mine = prev.find(t => t.blockId === blockId);
+                          const comments = mine
+                            ? [...mine.comments, { id: `c-${Date.now()}`, blockId, author: { name: 'You' }, createdAt: Date.now(), updatedAt: Date.now(), text, resolved: false, parentId }]
+                            : [{ id: `c-${Date.now()}`, blockId, author: { name: 'You' }, createdAt: Date.now(), updatedAt: Date.now(), text, resolved: false }];
+                          return [...rest, { blockId, comments }];
+                        });
+                      }}
+                      onResolve={(blockId, resolved) => {
+                        setCommentThreads(prev => prev.map(t => (t.blockId === blockId ? { ...t, comments: t.comments.map(c => ({ ...c, resolved })) } : t)));
+                      }}
+                      onDelete={(commentId) => {
+                        setCommentThreads(prev => prev.map(t => ({ ...t, comments: t.comments.filter(c => c.id !== commentId) })));
+                      }}
+                      selectedBlock={store.getState().selection.length === 1 ? store.getState().selection[0] : null}
+                      canEdit={true}
+                      onClose={() => {}}
+                    />
+                  )}
+                  {rightPanel === 'blocks' && <BlockList groups={setup.groups} drag={drag} />}
+                  {rightPanel === 'layers' && <LayersPanel />}
                 </NewEditorBridge>
               </section>
             </ResizablePanel>
@@ -1108,6 +1198,41 @@ export function NewEditor({
             void queue.discardLocalCopy();
             window.location.reload();
           }}
+        />
+      )}
+      {versionCompareOpen && (
+        <VersionCompare
+          revisions={[]}
+          onRestoreBlock={() => {}}
+          onClose={() => setVersionCompareOpen(false)}
+        />
+      )}
+      {onboardingOpen && (
+        <StartScreen
+          options={[
+            {
+              id: 'blank',
+              label: 'Blank page',
+              description: 'Start with an empty canvas.',
+              icon: '📄',
+              run: () => setOnboardingOpen(false),
+            },
+            {
+              id: 'template',
+              label: 'Template',
+              description: 'Start from a pre-built layout.',
+              icon: '📐',
+              run: () => setOnboardingOpen(false),
+            },
+            {
+              id: 'ai',
+              label: 'Generate with AI',
+              description: 'Describe what you want and let AI build it.',
+              icon: '✦',
+              run: () => setOnboardingOpen(false),
+            },
+          ]}
+          onComplete={() => setOnboardingOpen(false)}
         />
       )}
     </EditorProvider>

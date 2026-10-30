@@ -54,6 +54,7 @@ import {
 import { CanvasFrame } from './frame';
 import { type InlinePropsFor, useInlineEditing } from './inline';
 import { isTypingTarget } from './keyboard';
+import { propsForState } from './state-styles';
 import { QuickInsertPopover, type QuickInsertTarget } from './quick-insert';
 import { ResizeHandles, type ResizeHandlesFor } from './resize';
 
@@ -101,6 +102,8 @@ export type EditorCanvasProps = {
   blockActions?: BlockActionsFor;
   /** Block groups for the quick-insert popover's search (R713); omit to disable quick insert. */
   insertGroups?: BlockGroup[];
+  /** Current state style being edited (hover/focus/active) for preview (R725). */
+  stateStyle?: 'hover' | 'focus' | 'active' | null;
   style?: CSSProperties;
 };
 
@@ -269,6 +272,7 @@ function CanvasDocument({
   renderRoot,
   remount,
   onInsertHere,
+  stateStyle,
 }: Pick<
   EditorCanvasProps,
   'components' | 'transformProps' | 'loaded' | 'renderRoot'
@@ -280,6 +284,8 @@ function CanvasDocument({
     position: { parentId: NodeId | null; slot: string },
     event: ReactMouseEvent
   ) => void;
+  /** Current state style being edited (hover/focus/active) for preview (R725). */
+  stateStyle?: 'hover' | 'focus' | 'active' | null;
 }) {
   const doc = useEditor(state => state.doc);
   // Hidden blocks are hidden on the canvas only; the wrapper adds no box.
@@ -302,6 +308,11 @@ function CanvasDocument({
       const merged = loaded?.[node.id]
         ? { ...props, ...loaded[node.id] }
         : props;
+      // Apply state style overrides for preview (R725).
+      if (stateStyle) {
+        const stateOverrides = propsForState(node, stateStyle);
+        return transformProps ? transformProps(node, { ...merged, ...stateOverrides }) : { ...merged, ...stateOverrides };
+      }
       return transformProps ? transformProps(node, merged) : merged;
     },
   });
@@ -668,6 +679,7 @@ export function EditorCanvas({
   inlineProps,
   blockActions,
   insertGroups,
+  stateStyle,
   style,
 }: EditorCanvasProps) {
   const store = useEditorStore();
@@ -980,6 +992,7 @@ export function EditorCanvas({
             renderRoot={renderRoot}
             remount={remount}
             onInsertHere={insertGroups ? onInsertHere : undefined}
+            stateStyle={stateStyle}
           />
         </CanvasFrame>
         {frame && (
