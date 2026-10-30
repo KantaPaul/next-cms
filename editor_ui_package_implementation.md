@@ -27,7 +27,7 @@ Use this after the prototype from `builder-editor-prototype-design-guideline.md`
 | E7 Dashboard builder | large | ~60% | **Done:** `builder-react/src/dashboard-shell.tsx` typechecks on the package API; the library adds widgets. **Missing:** not used by any app route; widget state is local. |
 | E9 Quality and release | medium | ~35% | **Done:** README; tests for shell slots, focus mode, Panel, Breadcrumb, palette, tree semantics (15 in the package); size-budget script. **Missing:** CI wiring for the budget, gallery screenshot tests, axe check, a check that the public renderer does not import editor-ui, changesets. |
 
-**Known bug, already there before this work (both chromes):** undoing an insert before its autosave lands makes the next save fail with "node … is not on the page". The patch asks the server to remove a block it never received. To fix in the save queue or the server patch step.
+**Fixed (`3d1a9eb`):** undoing an insert before its autosave landed made the next save fail with "node … is not on the page". The cause was that page drafts were stored without the IDs of editor-made blocks; the page save now keeps every block ID.
 
 **Next:** E4. Make `builder-react`'s layers, inspector tabs and block list render through `LayersTree`, `InspectorTabs` and `LibraryPanel`, so the panel contents match the new chrome. Also finish the E1 dependency items with `pnpm install` (`node_modules` is writable again).
 
