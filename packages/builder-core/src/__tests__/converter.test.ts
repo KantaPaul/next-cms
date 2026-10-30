@@ -221,3 +221,26 @@ describe('toDocument / toPuckData adapters', () => {
       ));
     });
 });
+
+describe('known limitation: inline format cannot carry an empty slot (R803)', () => {
+  it('drops an empty slot key when stored inline, but zones mode keeps it', () => {
+    const doc = {
+      version: DOCUMENT_VERSION,
+      root: { props: {} },
+      nodes: { a: { id: 'a', type: 'Box', props: { id: 'a' }, slots: { content: [] as string[] } } },
+      rootSlot: ['a'],
+    };
+    // An empty array stored inline is indistinguishable from "no slot key at
+    // all" once read back — puckToDocument has no schema to tell a genuine
+    // empty slot apart from a plain empty-array prop, so it leaves it as a
+    // prop instead of restoring the slot. A host that needs empty slots to
+    // round-trip exactly should save with `{ slots: 'zones' }`, where each
+    // slot gets its own explicit zone key regardless of length.
+    const backInline = puckToDocument(documentToPuck(doc));
+    assert.deepEqual(backInline.nodes.a.slots, {});
+    assert.deepEqual(backInline.nodes.a.props.content, []);
+
+    const backZones = puckToDocument(documentToPuck(doc, { slots: 'zones' }));
+    assert.deepEqual(backZones.nodes.a.slots, { content: [] });
+  });
+});

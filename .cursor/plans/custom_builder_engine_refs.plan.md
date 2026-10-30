@@ -76,7 +76,7 @@ todos:
     status: pending
   - id: R704
     content: "ENG-25 Unit tests for the converter, commands and undo, nesting rules, responsive inheritance, and renderer output"
-    status: pending
+    status: completed
   - id: R705
     content: "ENG-26 End-to-end tests: add, nest, drag between containers, resize, undo, save, publish, and public render on two sites"
     status: pending
@@ -374,7 +374,7 @@ todos:
     status: pending
   - id: R803
     content: "ROB-08 Property-based and fuzz tests on the converter, command layer, nesting rules, and responsive inheritance"
-    status: pending
+    status: completed
   - id: R804
     content: "ROB-09 Dual-engine operational playbook: expected dual-mode duration, criteria to flip a site permanently, rollback after publish, monitoring, and a kill-switch if the new renderer produces bad public pages"
     status: completed
@@ -410,25 +410,25 @@ isProject: false
 
 Updated 2026-10-30 by `scripts/plan-progress.mjs`. Do not edit this block by hand.
 
-**69 of 133 completed (51.9%)** · 12 in progress · 52 pending
+**71 of 133 completed (53.4%)** · 12 in progress · 50 pending
 
-`████████████████░░░░░░░░░░░░░░` 51.9%
+`████████████████░░░░░░░░░░░░░░` 53.4%
 
 | Section | Refs | Total | Done | In progress | Pending | % done | Bar |
 |---|---|---|---|---|---|---|---|
-| Engine (ENG) | R680–R710 | 31 | 19 | 5 | 7 | 61.3% | `██████░░░░` |
+| Engine (ENG) | R680–R710 | 31 | 20 | 5 | 6 | 64.5% | `██████░░░░` |
 | Editor UX (UXE) | R711–R736 | 26 | 22 | 1 | 3 | 84.6% | `████████░░` |
 | Data saving (DAT) | R737–R754 | 18 | 6 | 2 | 10 | 33.3% | `███░░░░░░░` |
 | Packages (PKG) | R755–R772 | 18 | 4 | 2 | 12 | 22.2% | `██░░░░░░░░` |
 | Extension API (EXT) | R773–R795 | 23 | 11 | 1 | 11 | 47.8% | `█████░░░░░` |
-| Robustness (ROB) | R796–R812 | 17 | 7 | 1 | 9 | 41.2% | `████░░░░░░` |
-| **Total** | | **133** | **69** | **12** | **52** | **51.9%** | `█████░░░░░` |
+| Robustness (ROB) | R796–R812 | 17 | 8 | 1 | 8 | 47.1% | `█████░░░░░` |
+| **Total** | | **133** | **71** | **12** | **50** | **53.4%** | `█████░░░░░` |
 
 ```mermaid
 pie showData title Todos by status
-  "Completed" : 69
+  "Completed" : 71
   "In progress" : 12
-  "Pending" : 52
+  "Pending" : 50
 ```
 <!-- progress:end -->
 

@@ -11,7 +11,7 @@ import {
   wrapNodes,
 } from '../commands';
 import { DOCUMENT_VERSION, type BuilderDocument, type BuilderNode } from '../document';
-import { canRedo, canUndo, commit, createHistory, redo, undo } from '../history';
+import { canRedo, canUndo, commit, createHistory, HISTORY_LIMIT, redo, undo } from '../history';
 import {
   ancestorIds,
   cloneSubtree,
@@ -125,6 +125,30 @@ describe('history', () => {
     assert.equal(h.past.length, 1);
     h = commit(h, updateProps(h.present.doc, 'a', { label: 'Hi!' }), { label: 'Edit', mergeKey: 'a.label', now: 2000 });
     assert.equal(h.past.length, 2, 'a pause starts a new step');
+  });
+
+  it('undo and redo are no-ops with nothing to undo or redo', () => {
+    const h = createHistory(doc);
+    assert.equal(canUndo(h), false);
+    assert.equal(canRedo(h), false);
+    assert.equal(undo(h), h);
+    assert.equal(redo(h), h);
+  });
+
+  it('a new commit after undo drops the redo future', () => {
+    let h = commit(createHistory(doc), moveNode(doc, 'a', root(3)), { label: 'Move' });
+    h = undo(h);
+    assert.ok(canRedo(h));
+    h = commit(h, updateProps(doc, 'a', { label: 'New branch' }), { label: 'Edit' });
+    assert.equal(canRedo(h), false, 'the abandoned future is gone once a new step is committed');
+  });
+
+  it('caps past entries at HISTORY_LIMIT', () => {
+    let h = createHistory(doc);
+    for (let i = 0; i < HISTORY_LIMIT + 10; i++) {
+      h = commit(h, updateProps(h.present.doc, 'a', { label: `Step ${i}` }), { label: 'Edit' });
+    }
+    assert.equal(h.past.length, HISTORY_LIMIT);
   });
 });
 
