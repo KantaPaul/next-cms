@@ -627,7 +627,7 @@ This batch adds no new refs. Its phases deliver parts of refs that stay owned by
 
 Phases run in the order listed (E8 before E7). E2b was added on 2026-10-30 and is done.
 
-**Status (2026-10-30):** about 67%. E1–E3 gaps are closed; E2b is done (primitives on shadcn/Radix, Toast on sonner, shared motion that respects reduced motion, Radix DirectionProvider, E1 dependency items). E4 is mostly done and E6 step 1 is done (every builder renders in `EditorShell` with `?shell=new`). E0 is still open; E5 and E7–E9 are partial. Dark mode is deferred: build and check in light mode only until further notice. The table for each phase is in the Status section of [editor_ui_package_implementation.md](editor_ui_package_implementation.md). No refs change state.
+**Status (2026-10-31):** about 70%. E5 is mostly done: the canvas overlays (outlines, drag visuals, toolbars, resize handles, right-click menu) render through editor-ui, and structural edits are announced. E1–E3 gaps are closed; E2b is done (primitives on shadcn/Radix, Toast on sonner, shared motion that respects reduced motion, Radix DirectionProvider, E1 dependency items). E4 is mostly done and E6 step 1 is done (every builder renders in `EditorShell` with `?shell=new`). E0 is still open; E7–E9 are partial. Dark mode is deferred: build and check in light mode only until further notice. The table for each phase is in the Status section of [editor_ui_package_implementation.md](editor_ui_package_implementation.md). No refs change state.
 
 ## Gate order
 
