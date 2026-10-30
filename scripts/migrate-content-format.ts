@@ -32,7 +32,7 @@ import {
 
 /** Every jsonb cell R703 names: page_contents, post_contents, revisions, templates, and global blocks. */
 async function loadCells(): Promise<ContentCell[]> {
-  const [pages, posts, revisions, postRevs, globals, pageTpl, postTpl] =
+  const [pages, posts, revisions, postRevs, globals, pageTpl, postTpl, postTplDraft] =
     await Promise.all([
       db
         .select({ id: pageContents.id, content: pageContents.content })
@@ -59,6 +59,10 @@ async function loadCells(): Promise<ContentCell[]> {
       db
         .select({ id: postTemplates.id, content: postTemplates.content })
         .from(postTemplates),
+      db
+        .select({ id: postTemplates.id, content: postTemplates.draftContent })
+        .from(postTemplates)
+        .where(isNotNull(postTemplates.draftContent)),
     ]);
   return [
     ...pages.map(r => ({
@@ -103,6 +107,12 @@ async function loadCells(): Promise<ContentCell[]> {
       column: 'content',
       content: r.content,
     })),
+    ...postTplDraft.map(r => ({
+      table: 'post_templates_draft',
+      id: r.id,
+      column: 'draft_content',
+      content: r.content,
+    })),
   ];
 }
 
@@ -113,7 +123,8 @@ type TableName =
   | 'post_revisions'
   | 'global_blocks'
   | 'page_templates'
-  | 'post_templates';
+  | 'post_templates'
+  | 'post_templates_draft';
 
 /** Writes one cell back, in the one column each table actually stores its document in. */
 async function writeCell(
@@ -157,6 +168,11 @@ async function writeCell(
       return tx
         .update(postTemplates)
         .set({ content })
+        .where(eq(postTemplates.id, id));
+    case 'post_templates_draft':
+      return tx
+        .update(postTemplates)
+        .set({ draftContent: content })
         .where(eq(postTemplates.id, id));
   }
 }

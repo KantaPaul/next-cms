@@ -1,6 +1,5 @@
 'use client';
 
-import { useGetPuck } from '@measured/puck';
 import { Component, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -143,85 +142,5 @@ export function SaveGlobalDialogView({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-}
-
-/** The save-as-global dialog in the Puck builder. */
-export function SaveGlobalDialog(props: {
-  target: BuilderTarget | null;
-  onClose: () => void;
-}) {
-  const getPuck = useGetPuck();
-  return (
-    <SaveGlobalDialogView
-      {...props}
-      getSection={target => {
-        const { appState } = getPuck();
-        const allZones = (appState?.data?.zones ?? {}) as Record<
-          string,
-          BuilderItem[]
-        >;
-
-        // BFS to find all child block ids and their nested zones
-        const collectedIds = new Set<string>([target.id]);
-        let added = true;
-        while (added) {
-          added = false;
-          for (const [zoneKey, items] of Object.entries(allZones)) {
-            const colonIdx = zoneKey.indexOf(':');
-            const ownerId =
-              colonIdx !== -1 ? zoneKey.slice(0, colonIdx) : zoneKey;
-            if (collectedIds.has(ownerId)) {
-              for (const childItem of items ?? []) {
-                if (
-                  childItem?.props?.id &&
-                  !collectedIds.has(childItem.props.id)
-                ) {
-                  collectedIds.add(childItem.props.id);
-                  added = true;
-                }
-              }
-            }
-          }
-        }
-
-        // Collect all zones belonging to target or any child block
-        const relevantZones: Record<string, BuilderItem[]> = {};
-        for (const [zoneKey, items] of Object.entries(allZones)) {
-          const colonIdx = zoneKey.indexOf(':');
-          const ownerId =
-            colonIdx !== -1 ? zoneKey.slice(0, colonIdx) : zoneKey;
-          if (collectedIds.has(ownerId)) {
-            relevantZones[zoneKey] = items;
-          }
-        }
-
-        return {
-          item: { type: target.type, props: target.props },
-          zones: relevantZones,
-        };
-      }}
-      linkGlobal={(target, saved, section) => {
-        const { dispatch, getSelectorForId } = getPuck();
-        const selector = getSelectorForId(target.id);
-        if (!selector) return;
-        dispatch({
-          type: 'replace',
-          destinationIndex: selector.index,
-          destinationZone: selector.zone,
-          data: {
-            type: 'GlobalRef',
-            // Puck's replace action requires the node to keep its id.
-            props: {
-              id: target.id,
-              globalBlockId: saved.id,
-              globalBlockName: saved.name,
-              blocks: [section.item],
-              zones: section.zones,
-            },
-          },
-        });
-      }}
-    />
   );
 }

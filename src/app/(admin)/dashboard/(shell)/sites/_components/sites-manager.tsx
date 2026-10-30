@@ -10,10 +10,7 @@ import { Button } from '@/components/ui/button';
 import {
   DEFAULT_SITE_LOCALES,
 } from '@/db/schemas/sites.schema';
-import {
-  createSite,
-  setSiteRenderEngine,
-} from '@/server/actions/site.actions';
+import { createSite } from '@/server/actions/site.actions';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import { createSiteSchema } from '@/app/(admin)/dashboard/(shell)/sites/_modules/sites.schemas';
 import type { CreateSiteInput } from '@/app/(admin)/dashboard/(shell)/sites/_modules/sites.schemas';
@@ -42,52 +39,12 @@ interface SitesManagerProps {
     slug: string | null;
     primaryHost: string | null;
     roleName: string;
-    renderEngine: 'puck' | 'core';
   }[];
   current: string;
 }
 
 type Locale = { code: string; label: string };
-type RenderEngine = 'puck' | 'core';
 
-/** Chooses which engine renders this site's pages during the move off Puck (R702). */
-function RenderEngineSelect({
-  siteId,
-  value,
-}: {
-  siteId: string;
-  value: RenderEngine;
-}) {
-  const [engine, setEngine] = useState(value);
-  const [pending, startTransition] = useTransition();
-  const change = (next: string) => {
-    const nextEngine = next as RenderEngine;
-    startTransition(async () => {
-      await handleActionResponse(
-        setSiteRenderEngine({ siteId, engine: nextEngine }),
-        () => {
-          setEngine(nextEngine);
-          toast.success(
-            nextEngine === 'core'
-              ? 'Pages now render with the new engine'
-              : 'Pages now render with Puck'
-          );
-        }
-      );
-    });
-  };
-  return (
-    <Select value={engine} onValueChange={change} disabled={pending}>
-      <SelectTrigger aria-label="Render engine" className="h-8 w-40 text-xs">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="puck">Puck renderer</SelectItem>
-        <SelectItem value="core">New renderer</SelectItem>
-      </SelectContent>
-    </Select>
-  );
-}
 
 export function SitesManager({
   sites,
@@ -168,10 +125,6 @@ export function SitesManager({
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <RenderEngineSelect
-                  siteId={site.siteId}
-                  value={site.renderEngine}
-                />
                 {site.slug && (
                   <a
                     href={`/${site.slug}`}

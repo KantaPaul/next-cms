@@ -68,13 +68,4 @@ export const createSite = permissionProcedure(PERMISSIONS.SETTINGS_MANAGE)
     return site;
   });
 
-export const setSiteRenderEngine = permissionProcedure(
-  PERMISSIONS.SETTINGS_MANAGE
-)
-  .input(z.object({ siteId: z.string().min(1), engine: z.enum(['puck', 'core']) }))
-  .action(async ({ input, ctx }) => {
-    await sitesService.setRenderEngine(input, ctx.access);
-    revalidatePublicSite(input.siteId);
-    revalidatePath(PAGES.DASHBOARD.ROOT, 'layout');
-    return { engine: input.engine };
-  });
+

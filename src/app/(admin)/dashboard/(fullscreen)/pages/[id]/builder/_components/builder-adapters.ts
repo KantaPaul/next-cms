@@ -4,7 +4,7 @@
  * the Puck builder and the new editor so both behave the same.
  */
 
-import type { Config, Data } from '@measured/puck';
+import type { BuilderData } from '@/builder/data';
 import { toast } from 'sonner';
 import {
   publishPage,
@@ -22,8 +22,8 @@ import {
   saveGlobalBlock,
   updateTemplate,
 } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
-import { builderConfig, postBuilderConfig } from '@/builder/config';
-import type { BuilderItem } from '@/builder/data';
+
+import type { BuilderData, BuilderItem } from '@/builder/data';
 import type { PostView } from '@/builder/post-template';
 import { PAGES } from '@/config/pages';
 import type { ThemeTokens } from '@/db/schemas/pages.schema';
@@ -50,28 +50,18 @@ export type BuilderPageProps = {
 };
 
 /** Config for global blocks: no GlobalRef and no Global category so a global cannot nest another. */
-function globalBuilderConfig(): Config {
-  const { GlobalRef: _globalRef, ...components } = builderConfig.components;
-  const { global: _global, ...categories } = builderConfig.categories ?? {};
-  return {
-    ...builderConfig,
-    components,
-    categories,
-    // Global blocks do not store page root fields (width, theme, padding, transition).
-    // Keep the site-root canvas wrapper so inputs pick up site.css (.s-input, PhoneInput).
-    root: { fields: {}, render: builderConfig.root?.render },
-  } as Config;
+function globalBuilderConfig(): any {
+  return {};
 }
 
 export type Adapter = {
-  config: Config;
   label: string;
   backHref: string;
   backLabel: string;
   headerPath: string;
   previewHref: string | null;
   liveLabel: string;
-  saveDraft: (content: Data, autosave: boolean) => Promise<unknown>;
+  saveDraft: (content: BuilderData, autosave: boolean) => Promise<unknown>;
   publish: () => Promise<unknown>;
   submitForReview: (() => Promise<unknown>) | null;
 };
@@ -84,7 +74,6 @@ export function adapterFor(
   if (kind === 'global' || kind === 'contact-form') {
     const isContactForm = kind === 'contact-form';
     return {
-      config: globalBuilderConfig(),
       label: isContactForm ? 'Contact form' : 'Global block',
       backHref: isContactForm
         ? PAGES.DASHBOARD.CONTACT_FORMS
@@ -118,7 +107,6 @@ export function adapterFor(
 
   if (kind === 'post') {
     return {
-      config: postBuilderConfig as Config,
       label: 'Post layout',
       backHref: PAGES.DASHBOARD.POSTS.EDIT(page.id),
       backLabel: 'Post settings',
@@ -134,7 +122,6 @@ export function adapterFor(
 
   if (kind === 'post-template') {
     return {
-      config: postBuilderConfig as Config,
       label: `Post template: ${page.title}`,
       backHref: PAGES.DASHBOARD.POSTS.TEMPLATES,
       backLabel: 'Post templates',
@@ -149,7 +136,6 @@ export function adapterFor(
 
   if (kind === 'page-template') {
     return {
-      config: builderConfig as Config,
       label: `Page template: ${page.title}`,
       backHref: PAGES.DASHBOARD.TEMPLATES,
       backLabel: 'Templates & Globals',
@@ -163,7 +149,6 @@ export function adapterFor(
   }
 
   return {
-    config: builderConfig as Config,
     label: 'Page builder',
     backHref: PAGES.DASHBOARD.PAGES.EDIT(page.id),
     backLabel: 'Page settings',

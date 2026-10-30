@@ -50,15 +50,6 @@ export const sites = pgTable(
       .$type<SiteLocale[]>()
       .notNull()
       .default(DEFAULT_SITE_LOCALES),
-    /**
-     * Which engine renders this site's builder content during the move off
-     * Puck (R702): `puck` or `core` (@nextcms/builder-core). The
-     * BUILDER_RENDER_ENGINE env var overrides it for every site.
-     */
-    renderEngine: varchar('render_engine', { length: 16 })
-      .$type<'puck' | 'core'>()
-      .notNull()
-      .default('puck'),
     ...timestampColumns,
   },
   t => [

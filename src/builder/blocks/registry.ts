@@ -1,5 +1,6 @@
 import { VideoLibrary } from '@/components/video/video-library';
-import { customBlocks } from '../custom';
+import { Example } from '../custom/example';
+
 import { BlogPosts } from './blog';
 import {
   Code,
@@ -68,7 +69,7 @@ const builtInComponents = {
 
 export const getBlockComponents = () => ({
   ...builtInComponents,
-  ...Object.fromEntries(customBlocks.map(block => [block.key, block.render])),
+  example: Example,
 });
 
 export type BlockType = keyof ReturnType<typeof getBlockComponents>;

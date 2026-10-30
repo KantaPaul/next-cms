@@ -1,7 +1,5 @@
 /**
- * Every page block for the new editor: native definitions first, the rest
- * from the Puck config, with the derived editor schemas, inspector fields,
- * and insert groups.
+ * Every page block for the new editor: native definitions only.
  */
 
 import {
@@ -12,16 +10,11 @@ import {
   toBlockSchema,
 } from '@nextcms/builder-core';
 import type { BlockGroup, InspectorBlock } from '@nextcms/builder-react';
-import type { Config } from '@measured/puck';
-import { builderConfig, postBuilderConfig } from '../config';
-import { rendererComponents } from '../renderer';
-import { definitionsFromPuck, rootFieldsFromPuck } from './from-puck';
-import { NATIVE_BLOCKS } from './native';
+import { CATEGORIES, NATIVE_BLOCKS, PAGE_ROOT_FIELDS } from './native';
 
-export const pageDefinitions: Record<string, BlockDefinition> = {
-  ...definitionsFromPuck(builderConfig, rendererComponents('page')),
-  ...Object.fromEntries(NATIVE_BLOCKS.map(block => [block.type, block])),
-};
+export const pageDefinitions: Record<string, BlockDefinition> = Object.fromEntries(
+  NATIVE_BLOCKS.map(block => [block.type, block])
+);
 
 export const nativeBlockTypes = NATIVE_BLOCKS.map(block => block.type);
 
@@ -44,21 +37,23 @@ export const pageInspectorBlocks: Record<string, InspectorBlock> = Object.fromEn
   ])
 );
 
-export const pageRootFields = rootFieldsFromPuck(builderConfig);
+export const pageRootFields = PAGE_ROOT_FIELDS as Record<string, FieldDef>;
 
-export const pageBlockGroups: BlockGroup[] = Object.values(builderConfig.categories ?? {}).map(
-  category => ({ title: category.title ?? '', types: (category.components ?? []).map(String) })
+export const pageBlockGroups: BlockGroup[] = Object.entries(CATEGORIES)
+  .filter(([key]) => key !== 'post')
+  .map(([, category]: any) => ({
+    title: category.title ?? '',
+    types: (category.components ?? []).map(String),
+  }));
+
+const postDefinitions: Record<string, BlockDefinition> = Object.fromEntries(
+  NATIVE_BLOCKS.map(block => [block.type, block])
 );
 
-const postDefinitions: Record<string, BlockDefinition> = {
-  ...definitionsFromPuck(postBuilderConfig, rendererComponents('post')),
-  ...Object.fromEntries(NATIVE_BLOCKS.map(block => [block.type, block])),
-};
-
-const groupsOf = (config: Config, skip: string[] = []): BlockGroup[] =>
-  Object.entries(config.categories ?? {})
+const groupsOf = (skip: string[] = []): BlockGroup[] =>
+  Object.entries(CATEGORIES)
     .filter(([key]) => !skip.includes(key))
-    .map(([, category]) => ({
+    .map(([, category]: any) => ({
       title: category.title ?? '',
       types: (category.components ?? []).map(String),
     }));
@@ -90,23 +85,17 @@ export type EditorSetup = {
   inspectorBlocks: Record<string, InspectorBlock>;
   rootFields: Record<string, FieldDef>;
   groups: BlockGroup[];
-  /** Renderer components and post blocks follow this. */
   renderKind: 'page' | 'post';
 };
 
-/**
- * Blocks and settings per builder kind, matching the Puck configs: posts and
- * post templates add the post blocks; global blocks and contact forms cannot
- * hold another global block and have no page settings.
- */
 export function editorSetup(kind: string): EditorSetup {
   if (kind === 'post' || kind === 'post-template') {
     return {
       definitions: postDefinitions,
       schemas: schemasOf(postDefinitions),
       inspectorBlocks: inspectorOf(postDefinitions),
-      rootFields: rootFieldsFromPuck(postBuilderConfig),
-      groups: groupsOf(postBuilderConfig),
+      rootFields: PAGE_ROOT_FIELDS as Record<string, FieldDef>,
+      groups: groupsOf([]),
       renderKind: 'post',
     };
   }
@@ -117,7 +106,7 @@ export function editorSetup(kind: string): EditorSetup {
       schemas: schemasOf(definitions),
       inspectorBlocks: inspectorOf(definitions),
       rootFields: {},
-      groups: groupsOf(builderConfig, ['global']),
+      groups: groupsOf(['global', 'post']),
       renderKind: 'page',
     };
   }

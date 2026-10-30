@@ -1,6 +1,7 @@
 import 'server-only';
 import { z } from 'zod';
-import { builderConfig } from '@/builder/config';
+import { pageDefinitions } from '@/builder/definitions';
+import { defaultProps } from '@nextcms/builder-core';
 import { type BuilderData, createBlockId } from '@/builder/data';
 import { BLOCK_PROMPT_GUIDE, generatedPageSchema } from '@/builder/schema';
 import { SUPPORTED_LANGUAGES } from '@/db/schemas/shared.schema';
@@ -50,8 +51,9 @@ ${input.prompt}`,
   const data: BuilderData = {
     root: { props: { maxWidth: 'xl', theme: 'site', paddingY: 'none' } },
     content: page.blocks.map(block => {
-      const defaults = (builderConfig.components[block.type]?.defaultProps ??
-        {}) as Record<string, unknown>;
+      const defaults = (pageDefinitions[block.type]
+        ? defaultProps(pageDefinitions[block.type])
+        : {}) as Record<string, unknown>;
       return {
         type: block.type,
         props: { ...defaults, ...block.props, id: createBlockId(block.type) },

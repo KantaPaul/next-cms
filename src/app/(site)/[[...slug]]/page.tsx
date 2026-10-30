@@ -2,10 +2,7 @@ import { and, eq, isNull } from 'drizzle-orm';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
-import {
-  renderBuilderContent,
-  renderEngineFor,
-} from '@/builder/render-content';
+import { renderBuilderContent } from '@/builder/render-content';
 import { sanitizeRichText } from '@/builder/sanitize';
 import {
   type CollectionEntryWithFields,
@@ -283,12 +280,10 @@ async function PostRoute({
   post,
   settings,
   siteSlug,
-  engine,
 }: {
   post: PublicPost;
   settings: Settings;
   siteSlug: string;
-  engine: ReturnType<typeof renderEngineFor>;
 }) {
   const { view, seo } = post;
   const base = settings.siteUrl || env.SITE_URL;
@@ -303,7 +298,6 @@ async function PostRoute({
     language: view.language,
   };
   const rendered = await renderBuilderContent({
-    engine,
     content: layout,
     kind: 'post',
     metadata,
@@ -366,7 +360,6 @@ export default async function SitePage({ params, searchParams }: Params) {
         post={post}
         settings={settings}
         siteSlug={siteSlug ?? ''}
-        engine={renderEngineFor(site)}
       />
     );
 
@@ -428,7 +421,6 @@ export default async function SitePage({ params, searchParams }: Params) {
               language: templatePage.language,
             };
             const rendered = await renderBuilderContent({
-              engine: renderEngineFor(site),
               content: contentRow?.content,
               metadata,
             });
@@ -503,7 +495,6 @@ export default async function SitePage({ params, searchParams }: Params) {
     };
     // Variant B content goes through the same data loading as the page.
     const rendered = await renderBuilderContent({
-      engine: renderEngineFor(site),
       content: variant === 'b' ? experimentContent : page.content,
       metadata,
     });

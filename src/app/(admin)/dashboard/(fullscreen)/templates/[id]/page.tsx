@@ -1,4 +1,4 @@
-import type { Data } from '@measured/puck';
+import type { BuilderData as Data } from '@/builder/data';
 import { notFound, redirect } from 'next/navigation';
 import { BuilderOrNewEditor } from '@/app/(admin)/dashboard/(fullscreen)/_editor/builder-or-new-editor';
 import { templatesService } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.service';

@@ -1,9 +1,6 @@
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
-import {
-  renderEngineFor,
-  resolveBuilderData,
-} from '@/builder/render-content';
+import { resolveBuilderData } from '@/builder/render-content';
 import { sanitizeRichText } from '@/builder/sanitize';
 import { PAGES } from '@/config/pages';
 import {
@@ -50,7 +47,6 @@ export const GET = apiHandler<{ slug: string }>(
     const content =
       page.editorType === 'builder'
         ? await resolveBuilderData({
-            engine: renderEngineFor(site),
             content: page.content,
             metadata: { themeTokens: settings.themeTokens },
           })

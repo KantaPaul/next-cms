@@ -1,9 +1,6 @@
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
-import {
-  renderEngineFor,
-  resolveBuilderData,
-} from '@/builder/render-content';
+import { resolveBuilderData } from '@/builder/render-content';
 import { sanitizeRichText } from '@/builder/sanitize';
 import { PAGES } from '@/config/pages';
 import {
@@ -46,7 +43,6 @@ export const GET = apiHandler<{ slug: string }>(
     const { view, seo } = post;
     const tree = await blogService.layoutFor(post);
     const layout = await resolveBuilderData({
-      engine: renderEngineFor(site),
       content: tree,
       kind: 'post',
       metadata: {

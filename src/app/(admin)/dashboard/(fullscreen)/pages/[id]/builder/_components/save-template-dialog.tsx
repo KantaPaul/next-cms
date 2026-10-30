@@ -1,6 +1,5 @@
 'use client';
 
-import { useGetPuck } from '@measured/puck';
 import { LayoutTemplate, Loader2 } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
@@ -118,14 +117,4 @@ export function SaveTemplateDialogView({
       </DialogContent>
     </Dialog>
   );
-}
-
-/** The save-as-template dialog in the Puck builder. */
-export function SaveTemplateDialog(props: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  pageTitle: string;
-}) {
-  const getPuck = useGetPuck();
-  return <SaveTemplateDialogView {...props} getContent={() => getPuck().appState.data} />;
 }

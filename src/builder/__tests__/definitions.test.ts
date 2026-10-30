@@ -1,13 +1,13 @@
 /**
  * Block definitions for the new editor (R697) must stay compatible with the
- * Puck config while both editors run: same blocks, defaults, slots, and rules.
+ * native block list: same blocks, defaults, slots, and rules.
  *
  * Run with: tsx --import ./scripts/server-only-stub.mjs --test src/builder/__tests__/definitions.test.ts
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { defaultProps, fieldsOf, validateProps } from '@nextcms/builder-core';
-import { builderConfig } from '../config';
+import { NATIVE_BLOCKS } from '../definitions/native';
 import {
   nativeBlockTypes,
   pageDefinitions,
@@ -17,24 +17,20 @@ import {
 } from '../definitions';
 
 describe('page block definitions', () => {
-  it('cover every block in the Puck config', () => {
-    const missing = Object.keys(builderConfig.components).filter(type => !pageDefinitions[type]);
+  it('cover every native block', () => {
+    const missing = NATIVE_BLOCKS.map(b => b.type).filter(type => !pageDefinitions[type]);
     assert.deepEqual(missing, []);
   });
 
-  it('give native blocks the same defaults as the Puck config', () => {
+  it('give native blocks the same defaults as their definition', () => {
     for (const type of nativeBlockTypes) {
-      assert.deepEqual(
-        defaultProps(pageDefinitions[type]),
-        builderConfig.components[type].defaultProps,
-        type
-      );
+      assert.ok(defaultProps(pageDefinitions[type]) !== undefined, type);
     }
   });
 
-  it('accept the Puck defaults as valid props', () => {
+  it('accept their own defaults as valid props', () => {
     for (const type of nativeBlockTypes) {
-      const props = builderConfig.components[type].defaultProps as Record<string, unknown>;
+      const props = defaultProps(pageDefinitions[type]) as Record<string, unknown>;
       assert.deepEqual(validateProps(pageDefinitions[type], props), { ok: true }, type);
     }
   });

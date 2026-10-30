@@ -1,6 +1,6 @@
 'use client';
 
-import { type Data, useGetPuck } from '@measured/puck';
+
 import { Loader2, Sparkles } from 'lucide-react';
 import { useEffect, useState, useTransition } from 'react';
 import { toast } from 'sonner';
@@ -418,56 +418,5 @@ export function AiRewriteDialogView({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-}
-
-/** The generate dialog in the Puck builder. */
-export function AiGenerateDialog(props: { open: boolean; onOpenChange: (open: boolean) => void }) {
-  const getPuck = useGetPuck();
-  return (
-    <AiGenerateDialogView
-      {...props}
-      onApply={(data, mode) =>
-        getPuck().dispatch({
-          type: 'setData',
-          data: (previous: Data) =>
-            mode === 'replace'
-              ? {
-                  ...previous,
-                  root: {
-                    ...previous.root,
-                    props: { ...(previous.root?.props ?? {}), ...data.root.props },
-                  },
-                  content: data.content as Data['content'],
-                }
-              : {
-                  ...previous,
-                  content: [...previous.content, ...(data.content as Data['content'])],
-                },
-        })
-      }
-    />
-  );
-}
-
-/** The rewrite dialog in the Puck builder. */
-export function AiRewriteDialog(props: { target: BuilderTarget | null; onClose: () => void }) {
-  const getPuck = useGetPuck();
-  return (
-    <AiRewriteDialogView
-      {...props}
-      onApply={(target, nextProps) => {
-        const { dispatch, getSelectorForId } = getPuck();
-        const selector = getSelectorForId(target.id);
-        if (!selector) return false;
-        dispatch({
-          type: 'replace',
-          destinationIndex: selector.index,
-          destinationZone: selector.zone,
-          data: { type: target.type, props: { ...nextProps, id: target.id } },
-        });
-        return true;
-      }}
-    />
   );
 }
