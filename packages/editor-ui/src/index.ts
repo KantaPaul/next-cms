@@ -41,6 +41,7 @@ export * from './primitives/Dialog';
 export * from './primitives/IconButton';
 export * from './primitives/Input';
 export * from './primitives/Kbd';
+export * from './primitives/Chip';
 export * from './primitives/Label';
 export * from './primitives/Menu';
 export * from './primitives/NumberInput';

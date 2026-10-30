@@ -84,6 +84,25 @@ function useEditorChromePreferences(): {
   };
 }
 
+/**
+ * Styling scope for editor-ui parts rendered outside EditorShell (the old
+ * chrome's panels): the `.ne-ui` scope the package CSS targets, plus the
+ * same theme and direction the new shell would use (B15 E4).
+ */
+export function EditorUIScopeBox({ children }: { children: ReactNode }) {
+  const { theme, dir } = useEditorChromePreferences();
+  return (
+    <div
+      className="ne-ui"
+      data-ne-theme={theme}
+      dir={dir}
+      style={{ color: 'var(--ne-text)' }}
+    >
+      {children}
+    </div>
+  );
+}
+
 export type PrimaryAction = {
   label: string;
   disabled: boolean;

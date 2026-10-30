@@ -142,7 +142,11 @@ import {
   SaveGlobalDialogView,
 } from '../pages/[id]/builder/_components/save-global-dialog';
 import { SaveTemplateDialogView } from '../pages/[id]/builder/_components/save-template-dialog';
-import { type PrimaryAction, SharedChrome } from './shared-chrome';
+import {
+  EditorUIScopeBox,
+  type PrimaryAction,
+  SharedChrome,
+} from './shared-chrome';
 
 export type NewEditorProps = BuilderPageProps & {
   document: BuilderDocument;
@@ -1448,7 +1452,7 @@ export function NewEditor({
                 background: 'var(--panel-bg, #fff)',
               }}
             >
-              {leftPanelContent}
+              <EditorUIScopeBox>{leftPanelContent}</EditorUIScopeBox>
             </ResizablePanel>
           )}
           <main className="flex min-w-0 flex-1 flex-col">
@@ -1467,7 +1471,7 @@ export function NewEditor({
                 background: 'var(--panel-bg, #fff)',
               }}
             >
-              {rightPanelContent}
+              <EditorUIScopeBox>{rightPanelContent}</EditorUIScopeBox>
             </ResizablePanel>
           )}
         </div>
