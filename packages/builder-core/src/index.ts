@@ -9,4 +9,5 @@ export * from './loaders';
 export * from './patch';
 export * from './puck-data';
 export * from './renderer';
+export * from './traits';
 export * from './tree';

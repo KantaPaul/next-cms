@@ -10,6 +10,7 @@ import type { z } from 'zod';
 import type { BlockSchema, SlotRules } from './blocks';
 import type { FieldDef, Fields } from './fields';
 import type { BlockLoader, LoaderContext } from './loaders';
+import type { PropTrait } from './traits';
 
 /** A named slot and the blocks it accepts (R776). */
 export type SlotDef = SlotRules & { label?: string; min?: number; max?: number };
@@ -48,10 +49,28 @@ export type BlockDefinition<P extends Record<string, unknown> = Record<string, u
   /** Slots inside each item of an array prop: `{ items: { content: slot() } }`. */
   arraySlots?: Record<string, Record<string, SlotDef>>;
   loader?: BlockLoader<LoaderContext>;
+  /** Opt-in prop groups that add props, fields, defaults, and render behaviour (R777). */
+  traits?: PropTrait<P>[];
   render: ComponentType<P & { editing?: boolean }>;
 };
 
 type Shape = Record<string, z.ZodType>;
+
+/** The schema a block validates and defaults against: its own schema plus opted-in traits (R777). */
+function effectiveSchema<P extends Record<string, unknown>>(
+  definition: BlockDefinition<P>
+): z.ZodType | undefined {
+  const traits = definition.traits ?? [];
+  if (traits.length === 0) return definition.schema;
+  const shape: Record<string, z.ZodType> = { ...shapeOf(definition.schema) };
+  for (const trait of traits) {
+    const traitShape = trait.schema ? shapeOf(trait.schema) : {};
+    for (const [key, prop] of Object.entries(traitShape)) {
+      shape[key] = prop;
+    }
+  }
+  return z.object(shape);
+}
 
 /**
  * Defines a block (R773). Props are inferred from `schema`, so `render`,
@@ -123,13 +142,19 @@ export function schemaDefaults(schema: z.ZodType | undefined): Record<string, un
   return defaults;
 }
 
-/** The block's default props for a context: schema defaults, then `defaults`. */
+/** The block's default props for a context: trait defaults, schema defaults, then `defaults`. */
 export function defaultProps(
   definition: BlockDefinition,
   ctx: DefaultsContext = {}
 ): Record<string, unknown> {
+  const schema = effectiveSchema(definition);
+  const fromSchema = schema ? schemaDefaults(schema) : {};
+  const fromTraits = (definition.traits ?? []).flatMap(trait => {
+    const d = typeof trait.defaults === 'function' ? trait.defaults(ctx) : trait.defaults;
+    return d ? [d] : [];
+  });
   const extra = typeof definition.defaults === 'function' ? definition.defaults(ctx) : definition.defaults;
-  return { ...schemaDefaults(definition.schema), ...extra };
+  return { ...fromSchema, ...fromTraits, ...extra };
 }
 
 /** Fields to show: the explicit ones, plus generated ones for schema props without a field. */
@@ -144,7 +169,11 @@ export function fieldsOf(definition: BlockDefinition): Record<string, FieldDef> 
     const field = fieldFromZod(key, prop);
     if (field) fields[key] = field;
   }
-  return { ...(definition.fields as Record<string, FieldDef> | undefined), ...fields };
+  const merged = { ...(definition.fields as Record<string, FieldDef> | undefined), ...fields };
+  for (const trait of definition.traits ?? []) {
+    if (trait.fields) Object.assign(merged, trait.fields);
+  }
+  return merged;
 }
 
 /** The editor's view of a block: defaults, slots, and nesting rules. */
@@ -158,13 +187,14 @@ export function toBlockSchema(definition: BlockDefinition, ctx?: DefaultsContext
   };
 }
 
-/** Checks props against the block's schema; blocks without a schema always pass. */
+/** Checks props against the block's schema, including opted-in traits (R777); blocks without a schema always pass. */
 export function validateProps(
   definition: BlockDefinition,
   props: Record<string, unknown>
 ): { ok: true } | { ok: false; issues: string[] } {
-  if (!definition.schema) return { ok: true };
-  const result = definition.schema.safeParse(props);
+  const schema = effectiveSchema(definition);
+  if (!schema) return { ok: true };
+  const result = schema.safeParse(props);
   if (result.success) return { ok: true };
   return {
     ok: false,
