@@ -217,10 +217,10 @@ todos:
     status: pending
   - id: R751
     content: "DAT-15 Indexes for the editor and public reads: page_contents (page_id, kind), page_revisions (page_id, kind, created_at), pages (site_id, language, slug, status), and the post equivalents, checked with EXPLAIN on seeded data"
-    status: pending
+    status: completed
   - id: R752
     content: "DAT-16 Batch block data loads per request with React cache so N blocks of the same type make one query, select only the needed columns, and cap document size"
-    status: pending
+    status: completed
   - id: R753
     content: "DAT-17 Performance tests in CI on a seeded 500-block page: save under 300 ms at p95, editor ready under 2 s, cached public TTFB under 100 ms, plus slow-query logging in development"
     status: pending
@@ -410,25 +410,25 @@ isProject: false
 
 Updated 2026-10-30 by `scripts/plan-progress.mjs`. Do not edit this block by hand.
 
-**67 of 133 completed (50.4%)** · 12 in progress · 54 pending
+**69 of 133 completed (51.9%)** · 12 in progress · 52 pending
 
-`███████████████░░░░░░░░░░░░░░░` 50.4%
+`████████████████░░░░░░░░░░░░░░` 51.9%
 
 | Section | Refs | Total | Done | In progress | Pending | % done | Bar |
 |---|---|---|---|---|---|---|---|
 | Engine (ENG) | R680–R710 | 31 | 19 | 5 | 7 | 61.3% | `██████░░░░` |
 | Editor UX (UXE) | R711–R736 | 26 | 22 | 1 | 3 | 84.6% | `████████░░` |
-| Data saving (DAT) | R737–R754 | 18 | 4 | 2 | 12 | 22.2% | `██░░░░░░░░` |
+| Data saving (DAT) | R737–R754 | 18 | 6 | 2 | 10 | 33.3% | `███░░░░░░░` |
 | Packages (PKG) | R755–R772 | 18 | 4 | 2 | 12 | 22.2% | `██░░░░░░░░` |
 | Extension API (EXT) | R773–R795 | 23 | 11 | 1 | 11 | 47.8% | `█████░░░░░` |
 | Robustness (ROB) | R796–R812 | 17 | 7 | 1 | 9 | 41.2% | `████░░░░░░` |
-| **Total** | | **133** | **67** | **12** | **54** | **50.4%** | `█████░░░░░` |
+| **Total** | | **133** | **69** | **12** | **52** | **51.9%** | `█████░░░░░` |
 
 ```mermaid
 pie showData title Todos by status
-  "Completed" : 67
+  "Completed" : 69
   "In progress" : 12
-  "Pending" : 54
+  "Pending" : 52
 ```
 <!-- progress:end -->
 

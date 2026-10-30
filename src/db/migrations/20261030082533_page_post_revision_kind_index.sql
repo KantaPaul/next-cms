@@ -1,0 +1,2 @@
+CREATE INDEX "page_revisions_page_kind_index" ON "page_revisions" USING btree ("page_id","kind","created_at");--> statement-breakpoint
+CREATE INDEX "post_revisions_post_kind_index" ON "post_revisions" USING btree ("post_id","kind","created_at");

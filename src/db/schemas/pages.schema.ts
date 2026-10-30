@@ -106,7 +106,10 @@ export const pageRevisions = pgTable(
     authorId: text('author_id').references(() => users.id, setNull),
     createdAt: baseColumns.createdAt,
   },
-  t => [index('page_revisions_page_index').on(t.pageId, t.createdAt)]
+  t => [
+    index('page_revisions_page_index').on(t.pageId, t.createdAt),
+    index('page_revisions_page_kind_index').on(t.pageId, t.kind, t.createdAt),
+  ]
 );
 
 /** A token previews exactly one page or one post. */
@@ -577,7 +580,10 @@ export const postRevisions = pgTable(
     authorId: text('author_id').references(() => users.id, setNull),
     createdAt: baseColumns.createdAt,
   },
-  t => [index('post_revisions_post_index').on(t.postId, t.createdAt)]
+  t => [
+    index('post_revisions_post_index').on(t.postId, t.createdAt),
+    index('post_revisions_post_kind_index').on(t.postId, t.kind, t.createdAt),
+  ]
 );
 
 export const postSeo = pgTable('post_seo', {

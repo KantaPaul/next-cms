@@ -10,8 +10,8 @@
  */
 
 import {
-  type BlockLoader as CoreBlockLoader,
   type BuilderDocument,
+  type BlockLoader as CoreBlockLoader,
   createLoaderRegistry,
   documentToPuck,
   puckToDocument,
@@ -73,8 +73,7 @@ const loadBlogPosts: BlockLoader = async (props, ctx) => {
     sort,
     page,
   };
-  const language =
-    typeof ctx.language === 'string' ? ctx.language : undefined;
+  const language = typeof ctx.language === 'string' ? ctx.language : undefined;
 
   const { getBlogFilterOptions, queryBlogPosts } = await import(
     '@/server/actions/blog.actions'
@@ -117,18 +116,46 @@ const loadRelatedPosts: BlockLoader = async (props, ctx) => {
   return { posts };
 };
 
-const loadGlobalRef: BlockLoader = async props => {
-  const id =
-    typeof props.globalBlockId === 'string' ? props.globalBlockId : '';
-  if (!id) return { blocks: [], globalBlockName: '' };
+/**
+ * Loads every GlobalRef node in one pass (R752 / DAT-16): a page can embed
+ * the same global block many times (e.g. a footer CTA repeated per section),
+ * so this fetches each distinct `globalBlockId` once and fans the result out
+ * to every node that referenced it, instead of one query per node.
+ */
+const loadGlobalRefs: import('@nextcms/builder-core').BatchBlockLoader<
+  LoaderContext
+> = async nodes => {
+  const ids = [
+    ...new Set(
+      nodes
+        .map(n => n.props.globalBlockId)
+        .filter((id): id is string => typeof id === 'string' && !!id)
+    ),
+  ];
+  if (ids.length === 0) return {};
+
   const { getGlobalBlockContent } = await import(
     '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions'
   );
-  const result = await getGlobalBlockContent(id);
-  return {
-    blocks: result?.blocks ?? [],
-    globalBlockName: result?.name ?? '',
-  };
+  const byId = Object.fromEntries(
+    await Promise.all(
+      ids.map(async id => [id, await getGlobalBlockContent(id)] as const)
+    )
+  );
+
+  const patches: Record<string, Record<string, unknown>> = {};
+  for (const node of nodes) {
+    const id =
+      typeof node.props.globalBlockId === 'string'
+        ? node.props.globalBlockId
+        : '';
+    const result = id ? byId[id] : null;
+    patches[node.id] = {
+      blocks: result?.blocks ?? [],
+      globalBlockName: result?.name ?? '',
+    };
+  }
+  return patches;
 };
 
 const loadVideoLibrary: BlockLoader = async props => {
@@ -170,7 +197,6 @@ const registry = createLoaderRegistry<LoaderContext>(
   {
     BlogPosts: loadBlogPosts,
     RelatedPosts: loadRelatedPosts,
-    GlobalRef: loadGlobalRef,
     VideoLibrary: loadVideoLibrary,
   },
   {
@@ -178,6 +204,7 @@ const registry = createLoaderRegistry<LoaderContext>(
       console.error(`[builder/loaders] ${node.type} (${node.id}) failed:`, err),
   }
 );
+registry.registerBatch('GlobalRef', loadGlobalRefs);
 
 export const registerBlockLoader = registry.register;
 export const getBlockLoader = registry.get;
