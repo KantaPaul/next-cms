@@ -607,6 +607,8 @@ Steps: R703, R707, R710.
 
 Turn the AI Studio prototype into `@nextcms/editor-ui`: generic editor chrome (`--ne-*` tokens, primitives, shell, library, layers tree, inspector parts, overlays, feedback states) shared by the page builder and the dashboard builder. Full phase guide with prompts and checks: [editor_ui_package_implementation.md](editor_ui_package_implementation.md).
 
+Prototype finished: [KantaPaul/NextCMS-Shared-Editor-UI-Builder-Prototypes](https://github.com/KantaPaul/NextCMS-Shared-Editor-UI-Builder-Prototypes) (commit `921e6be`). Its `src/editor-ui` already holds about 53 components with no page or dashboard imports, so E1–E5 port and adapt them. Checked on 2026-10-30, the main gaps are: Tailwind v4 classes while the app uses Tailwind 3.4 (the package ships its own compiled CSS); no RTL; panel sizes not persisted; `EditorShell` slots and command-palette state need reshaping; no `ResizeHandles` or `useKeyboardMove`. Details are in section 0 of the guide. Primitives are built on shadcn/ui, with the package's own copies restyled to `--ne-*` tokens (section 2a).
+
 This batch adds no new refs. Its phases deliver parts of refs that stay owned by their own batch; mark a ref done only when its owning batch's definition is met. Stop and review after E3 and after E6.
 
 | Phase | Name | Size | Refs touched |

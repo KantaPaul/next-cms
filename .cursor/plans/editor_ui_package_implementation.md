@@ -4,6 +4,46 @@ Tracked as batch B15 (Shared editor UI package) in [custom_builder_engine_refs.p
 
 Use this after the prototype from `builder-editor-prototype-design-guideline.md` is finished. It turns the prototype into small, safe pull requests in your `next-cms` repo (pnpm workspace, `packages/*`, Next.js app).
 
+**Prototype (finished):** [KantaPaul/NextCMS-Shared-Editor-UI-Builder-Prototypes](https://github.com/KantaPaul/NextCMS-Shared-Editor-UI-Builder-Prototypes), commit `921e6be`. Section 0 records what it contains, checked on 2026-10-30.
+
+---
+
+## 0. What the prototype contains (checked 2026-10-30)
+
+Vite + React 19 + Tailwind v4 app, about 7,600 lines. Its layout is very close to the target package, so most phases **port and adapt** code instead of building it from scratch.
+
+| Prototype path | Contents | Fate |
+| --- | --- | --- |
+| `src/editor-ui/` (53 files, barrel `index.ts`) | tokens, 14 primitives, 5 feedback, `LiveAnnouncer`, 8 inspector parts, `LibraryPanel` + `LibraryItem`, `LayersTree`, 5 overlays, shell (`EditorShell`, `TopBar`, `Panel`, `Breadcrumb`, `StatusBar`, `CommandPalette`) | Port into `packages/editor-ui` (E1–E5) |
+| `src/index.css` | `--ne-*` variables, light on `:root`, dark on `.dark`; `.ne-editor-root`, `.ne-scrollbar` | Becomes `tokens.css` (E2) |
+| `src/gallery/DesignSystemGallery.tsx` | Every component in one page | Starting point for the dev gallery route (E1) |
+| `src/page-builder/*` (`documentStore.ts`, `registry.ts`, `PageCanvas`, `PageInspector`) | Mock document, mock block registry | Visual reference only. Never copy; behavior already lives in `builder-core` / `builder-react` |
+| `src/dashboard-builder/*` (`widgetRegistry.ts`, `DashboardCanvas`, `DashboardInspector`) | Mock widgets and data, 12-column grid | Visual reference for E7; data is mock-only (E8) |
+| `src/App.tsx` | Mode switch, `useState` history and undo, selection | Mock-only, throw away |
+| `@google/genai`, `express`, `dotenv`, `.env.example` (`GEMINI_API_KEY`), `metadata.json` | AI Studio scaffolding | Throw away; never add to the app |
+
+Good news:
+
+- `src/editor-ui` imports only `react`, `lucide-react`, and its own files. No page, block, dashboard, or widget imports leak into it.
+- No `any` inside `src/editor-ui` (the 8 in the prototype are all in page-builder, dashboard-builder, and `App.tsx`).
+- Token values match the guideline and are already in both CSS (`--ne-*`) and a typed `tokens.ts`.
+
+Gaps and conflicts each phase has to handle:
+
+| # | Finding | Handled in |
+| --- | --- | --- |
+| G1 | **Styling engine.** Components use Tailwind v4 classes with arbitrary values (`text-[var(--ne-text)]`, `bg-[var(--ne-surface)]`, …). The app runs Tailwind **3.4** and only scans `./src/**`; `builder-react` uses inline styles. The package must ship its own compiled CSS, not depend on the app's Tailwind. | E1 |
+| G2 | Dark mode is a `.dark` class on an ancestor; `builder-react/preferences.ts` already stores theme and direction. One theme switch must drive both. | E2 |
+| G3 | No RTL anywhere (no `dir`, no logical properties such as `ps-`/`ms-`/`start-`). | E2, E3 |
+| G4 | Motion and typography tokens exist only in `tokens.ts`, not as CSS variables. | E2 |
+| G5 | `Panel` resizes with mouse events only, does not persist sizes, and has no keyboard resize. `builder-react/resizable-panel.tsx` already does part of this. | E3 |
+| G6 | `EditorShell` takes `leftPanelContent` / `rightPanelContent` / `topBarProps`, not the `topBar` / `library` / `canvas` / `inspector` / `statusBar` slots in this plan, and it owns command-palette state and the Cmd+K listener. `builder-react` already has `command-palette.tsx` (R712 done). | E3, E6 |
+| G7 | Already built in `builder-react` with real behavior: `breadcrumb`, `command-palette`, `context-menu`, `layers`, `quick-insert`, `resizable-panel`, `preferences`, `inspector`, `fields`. The prototype versions replace their **markup only**. | E3–E6 |
+| G8 | `LayersTree` has no `role="tree"` / `treeitem` semantics; `Menu` and `Dialog` have roles but focus trapping and return focus need checking. | E4, E9 |
+| G9 | No `ResizeHandles` overlay and no `useKeyboardMove` hook in the prototype. | E5 |
+| G10 | Dashboard canvas and widgets use mock data. The app already has analytics boards using dnd-kit (see [analytics_dashboard_builder_86671e4d.plan.md](analytics_dashboard_builder_86671e4d.plan.md)). | E7, E8 |
+| G11 | Prototype is pinned to newer tool versions than the app (Vite 8, TypeScript 7, lucide-react 0.546 vs app 0.552). Only `react` and `lucide-react` become package dependencies, both as peer dependencies. | E1 |
+
 ---
 
 ## 1. How to work (Claude Pro setup)
@@ -28,11 +68,39 @@ Working rules:
 
 ## 2. Before you start (one-time setup)
 
-- [ ] Export the AI Studio prototype and commit it to a throwaway branch or a `prototype/` folder. It is a reference, not production code.
+- [x] Export the AI Studio prototype. Done: it is its own repo (link at the top). It is a reference, not production code.
+- [ ] Clone it, pinned, into a git-ignored `prototype/` folder so Claude Code can read it without committing it:
+  `git clone https://github.com/KantaPaul/NextCMS-Shared-Editor-UI-Builder-Prototypes prototype && git -C prototype checkout 921e6be`, and add `prototype/` to `.gitignore`.
 - [ ] Run `pnpm test` and `pnpm builder:check-documents` and note that they pass.
 - [ ] Add a `CLAUDE.md` at the repo root (template below).
-- [ ] Add the two guideline files to `.cursor/plans/` or `docs/` so Claude Code can read them.
-- [ ] Decide the open questions from the guideline: package name, headless primitives (for example Radix) or custom, and where the dashboard builder lives.
+- [ ] Add `builder-editor-prototype-design-guideline.md` to `docs/` so Claude Code can read it (not in either repo yet).
+- [ ] Decide the open questions:
+  - Package name: `@nextcms/editor-ui` (matches `@nextcms/builder-core`).
+  - Primitives: decided: shadcn/ui (section 2a).
+  - Dashboard builder: the app's analytics boards already exist, so E7 builds on them (in this repo).
+
+### 2a. shadcn/ui in `editor-ui` (decided 2026-10-30)
+
+The app already uses shadcn/ui (`components.json`, style `new-york`, 28 components in `src/components/ui`, plus `cmdk`, `sonner`, `class-variance-authority`, and Radix). shadcn/ui is copy-in source, not a runtime library, so the package can use it too, with these rules:
+
+- **Its own copy.** `packages/editor-ui` gets its own `components.json` with aliases inside the package (for example `components/ui`, `lib/cn`). It never imports `@/components/ui` (the Biome rule blocks it), so it stays usable outside this app.
+- **Tailwind v4 flavor.** Add components with the current shadcn CLI for Tailwind v4, which matches the package's own CSS build (E1). The app's admin keeps its Tailwind 3 copies; the two sets never import each other.
+- **`--ne-*` tokens only.** After adding a component, replace shadcn's token classes (`bg-background`, `text-primary`, `border-input`, …) with `--ne-*` classes in the prototype's style. Do not define shadcn's `--background` / `--primary` variables in the package, because the app's admin already uses those names for site and admin colors.
+- **Look from the prototype, behavior from shadcn.** Radix supplies focus trapping, keyboard support, and ARIA (gap G8); the prototype supplies sizes, spacing, and colors (28px controls, 13px text, small radii).
+- **Mapping:**
+
+| `editor-ui` part | shadcn/ui base |
+| --- | --- |
+| Button | `button` |
+| Input, Select, Switch, Tabs, Tooltip, Popover, Dialog, Skeleton | same-name component |
+| Menu, ContextMenu | `dropdown-menu`, `context-menu` |
+| Toast | `sonner` |
+| CommandPalette | `command` (cmdk) |
+| ConflictDialog | `alert-dialog` |
+| Panel resize | `resizable` (react-resizable-panels) only if it supports per-user persistence and keyboard resize; otherwise keep `builder-react/resizable-panel.tsx` logic |
+| NumberInput, IconButton, Kbd, overlays, LayersTree, BoxModelWidget, TokenPicker | none; port from the prototype |
+
+- **Peer dependencies:** `react`, `lucide-react`. Dependencies: the Radix packages used, `class-variance-authority`, `clsx`, `tailwind-merge`, `cmdk`, `sonner`. All are already in the app, so the app installs no new libraries.
 
 ### `CLAUDE.md` template
 
@@ -64,19 +132,23 @@ Each phase has a goal, steps, a prompt for Claude Code, and a "done when" check.
 **Goal:** know what to keep, what to rebuild, and what to throw away.
 
 Steps:
-1. Ask Claude Code to list every prototype component and sort it into: tokens, primitives, shell, library, tree, inspector, overlays, feedback, page-canvas-only, dashboard-canvas-only, mock-only.
+1. Ask Claude Code to list every prototype component and sort it into: tokens, primitives, shell, library, tree, inspector, overlays, feedback, page-canvas-only, dashboard-canvas-only, mock-only. Section 0 already has the first cut; E0 confirms it file by file.
 2. Extract the final token values (colors, type, spacing, radius, motion) into one table.
 3. List behaviors that must be rebuilt on real commands (undo, move, insert).
+4. For each `src/editor-ui` component, name the `builder-react` file it replaces or feeds (gap G7), and whether it is "port as is", "port and adapt", or "new".
 
 Prompt:
 ```
 Read CLAUDE.md and docs/builder-editor-prototype-design-guideline.md.
+Read section 0 of .cursor/plans/editor_ui_package_implementation.md.
 Do NOT edit files. Inspect /prototype and produce docs/editor-ui-audit.md:
 1) every component sorted into: tokens, primitives, shell, library, tree,
    inspector, overlays, feedback, page-only, dashboard-only, mock-only;
 2) the final token values as a table;
 3) behaviors that depend on prototype state and must be rebuilt on
-   packages/builder-core commands.
+   packages/builder-core commands;
+4) for each prototype/src/editor-ui component, the packages/builder-react
+   file it replaces or feeds, and "port as is", "port and adapt", or "new".
 ```
 
 Done when: `docs/editor-ui-audit.md` exists and you agree with the sorting.
@@ -90,21 +162,25 @@ Done when: `docs/editor-ui-audit.md` exists and you agree with the sorting.
 Steps:
 1. Create `packages/editor-ui` with `package.json` (`@nextcms/editor-ui`), `tsconfig`, and entry points: `tokens.css`, `primitives`, `shell`, `inspector`, `overlays`, `feedback`.
 2. Add the Biome rule that blocks `@/` imports (copy the one used for `builder-core`).
-3. Add a build step that outputs compiled, prefixed (`ne-`) CSS.
-4. Add a dev-only gallery route in the app (for example `/dashboard/dev/editor-ui`) that will show every component.
-5. Add a size-budget check script (can start with a placeholder limit).
+3. Add a build step that outputs compiled CSS (gap G1). Recommended: the package runs its own Tailwind v4 CLI over `packages/editor-ui/src` only, with utilities and no preflight, and writes `dist/editor-ui.css`. The app imports that file once in the editor layout. The app's Tailwind 3 config never scans the package, so the two versions never meet. Keep the `ne-` prefix on hand-written classes (`ne-editor-root`, `ne-scrollbar`).
+4. `react` and `lucide-react` as peer dependencies (gap G11); nothing else from the prototype's `package.json`. Add `packages/editor-ui/components.json` for shadcn/ui (section 2a).
+5. Add a dev-only gallery route in the app (for example `/dashboard/dev/editor-ui`) that will show every component, starting from `prototype/src/gallery/DesignSystemGallery.tsx`.
+6. Add a size-budget check script (can start with a placeholder limit).
 
 Prompt:
 ```
-Plan first, then implement after I approve. Create packages/editor-ui
-following the layout in the guideline (section 2). Match how
+Plan first, then implement after I approve. Read section 0 of
+.cursor/plans/editor_ui_package_implementation.md. Create packages/editor-ui
+mirroring the folders in prototype/src/editor-ui. Match how
 packages/builder-core is configured (tsconfig, exports, lint). Add the
-Biome rule that blocks "@/" imports, a build that outputs prefixed
-compiled CSS, and a dev-only gallery route. No components yet except a
-placeholder. Run pnpm install, typecheck, lint, and test.
+Biome rule that blocks "@/" imports. Add a build that compiles the
+package's Tailwind v4 classes into dist/editor-ui.css without preflight,
+independent of the app's Tailwind 3. react and lucide-react are peer
+dependencies only. Add a dev-only gallery route. No components yet except
+a placeholder. Run pnpm install, typecheck, lint, and test.
 ```
 
-Done when: the package builds, the app imports from it, and a deliberate `@/` import inside it fails lint.
+Done when: the package builds, the app imports from it, the app's own Tailwind output is unchanged, and a deliberate `@/` import inside it fails lint.
 
 ---
 
@@ -113,18 +189,24 @@ Done when: the package builds, the app imports from it, and a deliberate `@/` im
 **Goal:** the visual foundation. Plan refs: PKG-09, R723 (R763, R733).
 
 Steps:
-1. Write `tokens.css` with `--ne-*` variables for light and dark (values from the guideline, section 4) and a typed `tokens.ts`.
-2. Build primitives one by one: Button, IconButton, Input, NumberInput (drag to scrub), Select, Switch, Tabs, Tooltip, Popover, Dialog, Menu, Toast, Skeleton, Kbd.
-3. Show each primitive in the gallery with all states (default, hover, focus, disabled, error) in light and dark.
-4. Add a theme provider and a direction provider (LTR and RTL).
+1. Port `tokens.css` from `prototype/src/index.css` (the `--ne-*` blocks, `.ne-editor-root`, `.ne-scrollbar`) and `tokens.ts` from `prototype/src/editor-ui/tokens/tokens.ts`. Add the motion and typography tokens as CSS variables too (gap G4). Make dark mode work from both `.dark` and `[data-ne-theme="dark"]` on the editor root.
+2. Build the 14 primitives on shadcn/ui (section 2a) with the prototype's look: Button, IconButton, Input, NumberInput (drag to scrub), Select, Switch, Tabs, Tooltip, Popover, Dialog, Menu, Toast, Skeleton, Kbd. Add each shadcn component with the package's own `components.json`, then restyle it to match `prototype/src/editor-ui/primitives` using `--ne-*` classes. NumberInput, IconButton, and Kbd have no shadcn version, so port those from the prototype.
+3. Switch physical classes to logical ones (`pl-`→`ps-`, `ml-`→`ms-`, `left-`→`start-`, …) so RTL works (gap G3).
+4. Show each primitive in the gallery with all states (default, hover, focus, disabled, error) in light and dark, LTR and RTL.
+5. Add a theme provider and a direction provider (LTR and RTL). The page editor feeds them from `builder-react/preferences.ts` (gap G2), so one setting controls both. Wrap Radix's `DirectionProvider` so Radix menus and popovers flip in RTL too.
 
 Prompt:
 ```
-Using /prototype as visual reference only, implement tokens.css and the
-primitives listed in the guideline in packages/editor-ui. Use --ne-*
-variables and the "ne-" class prefix. No imports from the app. Do not copy
-prototype state code. Add every primitive and state to the gallery route.
-Do primitives in groups of 3-4 and commit after each group.
+Read sections 0 and 2a of .cursor/plans/editor_ui_package_implementation.md.
+Port tokens (prototype/src/index.css, prototype/src/editor-ui/tokens) into
+packages/editor-ui and add motion and typography CSS variables. Build the
+primitives on shadcn/ui using packages/editor-ui/components.json (aliases
+inside the package, never "@/"), restyled to match
+prototype/src/editor-ui/primitives with --ne-* classes only (no shadcn
+--background/--primary variables). Port NumberInput, IconButton and Kbd
+from the prototype. Use logical (RTL-safe) classes. Add ThemeProvider and
+DirectionProvider. Add every primitive and state to the gallery in light,
+dark, LTR and RTL. Do primitives in groups of 3-4 and commit after each.
 ```
 
 Done when: the gallery shows all primitives in both themes, focus rings are visible, and a keyboard-only pass works.
@@ -136,20 +218,24 @@ Done when: the gallery shows all primitives in both themes, focus rings are visi
 **Goal:** the frame that both builders sit in. Plan refs: R711, R797, R798.
 
 Steps:
-1. `EditorShell` with slots: `topBar`, `library`, `canvas`, `inspector`, `statusBar`.
-2. Resizable, collapsible `Panel` with sizes remembered per user (localStorage in the editor shell is fine; it is not the public site) and a focus mode.
-3. `TopBar`, `Breadcrumb`, and `SaveStatus` (Saved, Saving, Unsaved, Offline, Conflict, Failed).
-4. `EmptyState`, `ErrorState`, `StaleNotice`, and `ConflictDialog` (Keep mine or Use saved).
+1. `EditorShell` with slots: `topBar`, `library`, `canvas`, `inspector`, `statusBar`. Port from `prototype/src/editor-ui/shell/EditorShell.tsx` but change its API (gap G6): slots instead of `leftPanelContent` / `rightPanelContent` / `topBarProps`, and the command palette becomes an optional `commandPalette` slot with open state passed in, so `builder-react`'s existing palette and shortcut keep working.
+2. Resizable, collapsible `Panel` with sizes remembered per user (localStorage in the editor shell is fine; it is not the public site), a focus mode, pointer events, and arrow-key resizing on the handle (gap G5). Reuse what `builder-react/resizable-panel.tsx` already does; then that file renders through `Panel`.
+3. `TopBar`, `Breadcrumb`, `StatusBar`, and `SaveStatus` (Saved, Saving, Unsaved, Offline, Conflict, Failed — already the prototype's `SaveState`).
+4. `EmptyState`, `ErrorState`, `StaleNotice`, and `ConflictDialog` (Keep mine or Use saved), ported from `prototype/src/editor-ui/feedback`.
 5. Gallery demo with a dummy canvas.
 
 Prompt:
 ```
-Implement EditorShell, Panel, ResizeHandle, TopBar, Breadcrumb, SaveStatus,
-EmptyState, ErrorState, StaleNotice and ConflictDialog in editor-ui.
-EditorShell receives topBar, library, canvas, inspector and statusBar as
-props. It must not know about pages, blocks, dashboards or widgets. Panel
-sizes persist per user. Add a gallery demo with a dummy canvas. Panels
-opening must not shift layout.
+Read section 0 of .cursor/plans/editor_ui_package_implementation.md.
+Port EditorShell, Panel, TopBar, Breadcrumb, StatusBar, CommandPalette
+(markup only), SaveStatus, EmptyState, ErrorState, StaleNotice and
+ConflictDialog from prototype/src/editor-ui into editor-ui. Change
+EditorShell to take topBar, library, canvas, inspector, statusBar and an
+optional commandPalette as slots, with no internal command-palette state.
+It must not know about pages, blocks, dashboards or widgets. Panel uses
+pointer events, resizes with arrow keys, and persists sizes per user;
+reuse builder-react/resizable-panel.tsx logic. Add a gallery demo with a
+dummy canvas. Panels opening must not shift layout.
 ```
 
 Done when: you can resize and collapse panels, focus mode works, and every save state renders.
@@ -161,19 +247,21 @@ Done when: you can resize and collapse panels, focus mode works, and every save 
 **Goal:** the reusable editing panels. Plan refs: R692, R693, R714, R722, R723 (done or in progress in your plan, so adopt rather than rebuild logic).
 
 Steps:
-1. `LibraryPanel` (search, categories, recent, favorites, hover preview) taking generic items.
-2. `LayersTree` taking a generic tree and callbacks (select, rename, hide, lock, move). Reuse the logic that already exists in `builder-react`; move only the markup and styles.
-3. Inspector parts: `InspectorTabs`, `FieldRow`, `FieldGroup`, `ChangedDot`, `ResetButton`, `DeviceValueBadge`, `BoxModelWidget`, `TokenPicker`.
+1. `LibraryPanel` + `LibraryItem` (search, categories, recent, favorites, hover preview) taking generic items, ported from `prototype/src/editor-ui/library`. `builder-react/block-list.tsx` and `quick-insert.tsx` feed it.
+2. `LayersTree` taking a generic tree and callbacks (select, rename, hide, lock, move), with the prototype's look. Keep the logic in `builder-react/layers.tsx` (pointer drag, F2 rename, meta); move only markup and styles. Add `role="tree"` / `treeitem`, `aria-expanded`, and arrow-key navigation (gap G8).
+3. Inspector parts from `prototype/src/editor-ui/inspector`: `InspectorTabs`, `FieldRow`, `FieldGroup`, `ChangedDot`, `ResetButton`, `DeviceValueBadge`, `BoxModelWidget`, `TokenPicker`.
 4. Do not move the field registry or `defineField`; those stay in `builder-react` and use these parts for their markup.
 
 Prompt:
 ```
-Move the presentational parts of the layers panel and inspector from
-packages/builder-react into packages/editor-ui as generic components with
-props and callbacks (no document or store imports). Keep behavior and
-tests working in builder-react by importing from editor-ui. Add
-LibraryPanel, BoxModelWidget, TokenPicker, ChangedDot, ResetButton and
-DeviceValueBadge. Do this in small commits and run tests after each.
+Read section 0 of .cursor/plans/editor_ui_package_implementation.md.
+Port LibraryPanel, LibraryItem, LayersTree and the 8 inspector parts from
+prototype/src/editor-ui into packages/editor-ui as generic components with
+props and callbacks (no document or store imports). Then make
+packages/builder-react (layers.tsx, inspector.tsx, fields.tsx,
+block-list.tsx) render through them, keeping its behavior and tests.
+Add tree roles and arrow-key navigation to LayersTree. Do this in small
+commits and run tests after each.
 ```
 
 Done when: `builder-react` renders through `editor-ui` parts and existing tests still pass.
@@ -185,8 +273,8 @@ Done when: `builder-react` renders through `editor-ui` parts and existing tests 
 **Goal:** selection, hover, drop lines, handles, toolbar. Plan refs: R689, R695, R717, R720, R706, R807.
 
 Steps:
-1. `SelectionBox`, `HoverBox`, `DropLine`, `ResizeHandles`, `FloatingToolbar`, `ContextMenu`. They take rectangles and callbacks; they never read the document.
-2. `LiveAnnouncer` and a `useKeyboardMove` hook for move mode.
+1. Port `SelectionBox`, `HoverBox`, `DropLine`, `FloatingToolbar`, `ContextMenu` from `prototype/src/editor-ui/overlays`; add `ResizeHandles`, which the prototype lacks (gap G9). They take rectangles and callbacks; they never read the document. `builder-react/context-menu.tsx` and `resize.tsx` keep their behavior and render through them.
+2. Port `LiveAnnouncer` from `prototype/src/editor-ui/a11y`; add a `useKeyboardMove` hook for move mode (gap G9).
 3. Keep the pointer drag engine in `builder-react` (it follows the pointer into the iframe). Only the visuals move.
 
 Prompt:
@@ -211,7 +299,8 @@ Steps:
 1. Put the new shell behind a flag (for example per user or an env flag), like your render-engine flag.
 2. Wire the top bar to existing save, publish, and undo/redo actions.
 3. Wire save status to the existing save queue and version conflict states (R738, R740).
-4. Add features in order of value: command palette (R712), quick insert (R713), breadcrumb (R718), Content/Style/Advanced tabs (R722).
+4. These features already exist in `builder-react` (B8/B9). Re-skin them with `editor-ui` parts in order of value: command palette (R712, into the shell's `commandPalette` slot), quick insert (R713), breadcrumb (R718), Content/Style/Advanced tabs (R722).
+5. Use `prototype/src/App.tsx` and `prototype/src/page-builder/*` only to compare the look. Their state, history, and document store are mock-only.
 
 Prompt:
 ```
@@ -228,10 +317,10 @@ Done when: both the old and new chrome work with the flag, and e2e checks (add, 
 
 ### E7: Dashboard builder on the same package
 
-**Goal:** prove the package is really shared. Skip or defer if the dashboard lives in another project.
+**Goal:** prove the package is really shared. The app's analytics boards already exist in this repo (gap G10), so this phase builds on them.
 
 Steps:
-1. Build the grid canvas (12/6/1 columns) as its own component; it is not part of `editor-ui`.
+1. Build the grid canvas (12/6/1 columns) as its own component; it is not part of `editor-ui`. Use `prototype/src/dashboard-builder/DashboardCanvas.tsx` for the look only; reuse the app's analytics board drag (dnd-kit) and data, not the prototype's `widgetRegistry.ts` mocks.
 2. Use `EditorShell`, `LibraryPanel`, inspector parts, overlays, and states unchanged.
 3. Note any change you had to make to `editor-ui` to make it work, and fix the package rather than forking.
 
@@ -313,6 +402,10 @@ Done when: CI is green and a developer can follow the README to render a shell i
 | --- | --- |
 | Copying prototype state logic into the app | Use the prototype for look only; rebuild behavior on `builder-core` commands |
 | Two token systems (prototype and app) | Make `--ne-*` the only source for editor chrome from E2 on |
+| Two Tailwind versions fighting | The package compiles its own Tailwind v4 CSS without preflight; the app's Tailwind 3 never scans `packages/editor-ui` |
+| Importing the app's `@/components/ui` shadcn copies into the package | The package has its own shadcn copies and `components.json`; Biome blocks `@/` |
+| Two command palettes or two Cmd+K listeners | `EditorShell` has no palette state; `builder-react` owns it and passes it into the slot |
+| Pulling AI Studio scaffolding into the app | Never add `@google/genai`, `express`, `dotenv`, or `GEMINI_API_KEY` from the prototype |
 | `editor-ui` slowly learning about blocks or widgets | Review every new prop; if it names a page or dashboard concept, it belongs in the builder package |
 | One huge pull request | Follow the phases; commit per component group |
 | Breaking the working editor | Use a flag in E6 and keep the old chrome until parity is checked |
