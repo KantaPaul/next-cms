@@ -693,9 +693,11 @@ export const pagesServices = {
         throw new ApplicationException(`The page could not be saved: ${problems.slice(0, 3).join('; ')}`);
       }
 
+      // Store every block id: the next save reads this back and applies a
+      // patch by id, so blocks added in the editor must keep theirs.
       const saved = await writeDraft(
         page,
-        documentToPuck(next),
+        documentToPuck(next, { ids: 'always' }),
         { autosave: true },
         access,
         tx

@@ -14,7 +14,12 @@ import {
   toDocument,
   toPuckData,
 } from '../converter';
-import { DOCUMENT_VERSION, emptyDocument, isBuilderDocument } from '../document';
+import {
+  DOCUMENT_VERSION,
+  emptyDocument,
+  isBuilderDocument,
+} from '../document';
+import { applyPatch, diffDocuments, documentProblems } from '../patch';
 
 const flatPage: PuckData = {
   root: { props: { maxWidth: 'xl', theme: 'site', paddingY: 'none' } },
@@ -78,7 +83,10 @@ const columnsPage: PuckData = {
       { type: 'Image', props: { id: 'img-1', url: '/a.jpg', section: {} } },
     ],
     'cols-1:column2': [
-      { type: 'RichText', props: { id: 'rt-2', content: '<p>B</p>', section: {} } },
+      {
+        type: 'RichText',
+        props: { id: 'rt-2', content: '<p>B</p>', section: {} },
+      },
     ],
   },
 };
@@ -97,86 +105,93 @@ const tabsPage: PuckData = {
   ],
   zones: {
     'tabs-1:items[0].content': [
-      { type: 'RichText', props: { id: 'rt-t0', content: '<p>Tab 1</p>', section: {} } },
+      {
+        type: 'RichText',
+        props: { id: 'rt-t0', content: '<p>Tab 1</p>', section: {} },
+      },
     ],
     'tabs-1:items[1].content': [
-      { type: 'RichText', props: { id: 'rt-t1', content: '<p>Tab 2</p>', section: {} } },
+      {
+        type: 'RichText',
+        props: { id: 'rt-t1', content: '<p>Tab 2</p>', section: {} },
+      },
     ],
   },
 };
 
 describe('puckToDocument', () => {
-  it('converts a flat page',
-    () => {
-      const doc = puckToDocument(flatPage);
-      assert.equal(doc.version, DOCUMENT_VERSION);
-      assert.deepEqual(doc.root.props, flatPage.root.props);
-      assert.deepEqual(doc.rootSlot, ['hero-1', 'cta-1']);
-      assert.equal(doc.nodes['hero-1'].type, 'Hero');
-      assert.equal(doc.nodes['hero-1'].props.title, 'Hello');
-      assert.deepEqual(doc.nodes['hero-1'].slots, {});
-    });
+  it('converts a flat page', () => {
+    const doc = puckToDocument(flatPage);
+    assert.equal(doc.version, DOCUMENT_VERSION);
+    assert.deepEqual(doc.root.props, flatPage.root.props);
+    assert.deepEqual(doc.rootSlot, ['hero-1', 'cta-1']);
+    assert.equal(doc.nodes['hero-1'].type, 'Hero');
+    assert.equal(doc.nodes['hero-1'].props.title, 'Hello');
+    assert.deepEqual(doc.nodes['hero-1'].slots, {});
+  });
 
-  it('converts Container content zones into slots.content',
-    () => {
-      const doc = puckToDocument(containerPage);
-      assert.deepEqual(doc.rootSlot, ['ctr-1']);
-      assert.deepEqual(doc.nodes['ctr-1'].slots.content, ['rt-1', 'btn-1']);
-      assert.equal(doc.nodes['rt-1'].type, 'RichText');
-      assert.equal(doc.nodes['btn-1'].props.label, 'Go');
-    });
+  it('converts Container content zones into slots.content', () => {
+    const doc = puckToDocument(containerPage);
+    assert.deepEqual(doc.rootSlot, ['ctr-1']);
+    assert.deepEqual(doc.nodes['ctr-1'].slots.content, ['rt-1', 'btn-1']);
+    assert.equal(doc.nodes['rt-1'].type, 'RichText');
+    assert.equal(doc.nodes['btn-1'].props.label, 'Go');
+  });
 
-  it('converts Columns columnN zones',
-    () => {
-      const doc = puckToDocument(columnsPage);
-      assert.deepEqual(doc.nodes['cols-1'].slots.column1, ['img-1']);
-      assert.deepEqual(doc.nodes['cols-1'].slots.column2, ['rt-2']);
-    });
+  it('converts Columns columnN zones', () => {
+    const doc = puckToDocument(columnsPage);
+    assert.deepEqual(doc.nodes['cols-1'].slots.column1, ['img-1']);
+    assert.deepEqual(doc.nodes['cols-1'].slots.column2, ['rt-2']);
+  });
 
-  it('converts Tabs items[i].content zone paths',
-    () => {
-      const doc = puckToDocument(tabsPage);
-      assert.deepEqual(doc.nodes['tabs-1'].slots['items[0].content'], ['rt-t0']);
-      assert.deepEqual(doc.nodes['tabs-1'].slots['items[1].content'], ['rt-t1']);
-      assert.deepEqual(
-        (doc.nodes['tabs-1'].props.items as { label: string }[]).map(i => i.label),
-        ['One', 'Two']
-      );
-    });
+  it('converts Tabs items[i].content zone paths', () => {
+    const doc = puckToDocument(tabsPage);
+    assert.deepEqual(doc.nodes['tabs-1'].slots['items[0].content'], ['rt-t0']);
+    assert.deepEqual(doc.nodes['tabs-1'].slots['items[1].content'], ['rt-t1']);
+    assert.deepEqual(
+      (doc.nodes['tabs-1'].props.items as { label: string }[]).map(
+        i => i.label
+      ),
+      ['One', 'Two']
+    );
+  });
 });
 
 describe('documentToPuck', () => {
-  it('round-trips a flat page',
-    () => {
-      const doc = puckToDocument(flatPage);
-      const back = documentToPuck(doc);
-      assert.ok(puckDataEqual(flatPage, back));
-    });
+  it('round-trips a flat page', () => {
+    const doc = puckToDocument(flatPage);
+    const back = documentToPuck(doc);
+    assert.ok(puckDataEqual(flatPage, back));
+  });
 
-  it('round-trips Container zones',
-    () => {
-      const doc = puckToDocument(containerPage);
-      const back = documentToPuck(doc, { slots: 'zones' });
-      assert.ok(puckDataEqual(containerPage, back));
-      assert.deepEqual(
-        back.zones?.['ctr-1:content']?.map(i => i.props.id),
-        ['rt-1', 'btn-1']
-      );
-    });
+  it('round-trips Container zones', () => {
+    const doc = puckToDocument(containerPage);
+    const back = documentToPuck(doc, { slots: 'zones' });
+    assert.ok(puckDataEqual(containerPage, back));
+    assert.deepEqual(
+      back.zones?.['ctr-1:content']?.map(i => i.props.id),
+      ['rt-1', 'btn-1']
+    );
+  });
 
-  it('round-trips Columns and Tabs',
-    () => {
-      const zones = { slots: 'zones' } as const;
-      assert.ok(puckDataEqual(columnsPage, documentToPuck(puckToDocument(columnsPage), zones)));
-      assert.ok(puckDataEqual(tabsPage, documentToPuck(puckToDocument(tabsPage), zones)));
-    });
+  it('round-trips Columns and Tabs', () => {
+    const zones = { slots: 'zones' } as const;
+    assert.ok(
+      puckDataEqual(
+        columnsPage,
+        documentToPuck(puckToDocument(columnsPage), zones)
+      )
+    );
+    assert.ok(
+      puckDataEqual(tabsPage, documentToPuck(puckToDocument(tabsPage), zones))
+    );
+  });
 
-  it('document → puck → document preserves the node map',
-    () => {
-      const doc = puckToDocument(containerPage);
-      const again = puckToDocument(documentToPuck(doc));
-      assert.ok(documentsEqual(doc, again));
-    });
+  it('document → puck → document preserves the node map', () => {
+    const doc = puckToDocument(containerPage);
+    const again = puckToDocument(documentToPuck(doc));
+    assert.ok(documentsEqual(doc, again));
+  });
 });
 
 describe('items saved without an id', () => {
@@ -190,7 +205,10 @@ describe('items saved without an id', () => {
   } as unknown as PuckData;
 
   it('get the same generated ids every time', () => {
-    assert.deepEqual(puckToDocument(noIds).rootSlot, ['Hero-auto-1', 'Hero-auto-2']);
+    assert.deepEqual(puckToDocument(noIds).rootSlot, [
+      'Hero-auto-1',
+      'Hero-auto-2',
+    ]);
     assert.ok(documentsEqual(puckToDocument(noIds), puckToDocument(noIds)));
   });
 
@@ -199,27 +217,99 @@ describe('items saved without an id', () => {
   });
 });
 
-describe('toDocument / toPuckData adapters', () => {
-  it('detects each format',
-    () => {
-      const doc = puckToDocument(flatPage);
-      assert.ok(isBuilderDocument(toDocument(doc)));
-      assert.ok(isBuilderDocument(toDocument(flatPage)));
-      assert.equal(toDocument(null).rootSlot.length, 0);
-      assert.ok(puckDataEqual(flatPage, toPuckData(flatPage)));
-      assert.ok(puckDataEqual(flatPage, toPuckData(doc)));
-    });
+describe('ids: always (patch-based saves)', () => {
+  // The page save reads the stored Puck data back with toDocument and applies
+  // the editor's patch to it, so every block must come back with the id the
+  // editor gave it. A block inserted in the editor has no `props.id`.
+  const stored = {
+    root: { props: {} },
+    content: [{ type: 'Hero', props: { id: 'a', title: 'Kept' } }],
+    zones: {},
+  } as unknown as PuckData;
+  const opened = toDocument(stored);
+  const inserted = {
+    ...opened,
+    nodes: {
+      ...opened.nodes,
+      b1: { id: 'b1', type: 'Hero', props: { title: 'New' }, slots: {} },
+    },
+    rootSlot: [...opened.rootSlot, 'b1'],
+  };
 
-  it('emptyDocument is a valid starting point',
-    () => {
-      const empty = emptyDocument();
-      assert.equal(empty.version, DOCUMENT_VERSION);
-      assert.deepEqual(empty.rootSlot, []);
-      assert.ok(puckDataEqual(
+  /** One save as the server does it: read stored data, apply the patch, write it back. */
+  const serverSave = (
+    data: PuckData,
+    from: typeof opened,
+    to: typeof opened,
+    ids?: 'always'
+  ) => {
+    const next = applyPatch(toDocument(data), diffDocuments(from, to));
+    return { next, data: documentToPuck(next, ids ? { ids } : {}) };
+  };
+
+  it('keeps editor-made ids, so undoing an insert saves cleanly', () => {
+    const first = serverSave(stored, opened, inserted, 'always');
+    const second = serverSave(first.data, inserted, opened, 'always');
+    assert.deepEqual(documentProblems(second.next), []);
+    assert.deepEqual(second.next.rootSlot, ['a']);
+  });
+
+  it('keeps editor-made ids, so editing a new block saves cleanly', () => {
+    const first = serverSave(stored, opened, inserted, 'always');
+    const edited = {
+      ...inserted,
+      nodes: {
+        ...inserted.nodes,
+        b1: { ...inserted.nodes.b1, props: { title: 'Edited' } },
+      },
+    };
+    const second = serverSave(first.data, inserted, edited, 'always');
+    assert.deepEqual(documentProblems(second.next), []);
+    assert.equal(second.next.nodes.b1?.props.title, 'Edited');
+  });
+
+  it('pins generated ids too, so they survive deleting an earlier id-less block', () => {
+    const legacy = toDocument({
+      root: { props: {} },
+      content: [
+        { type: 'Hero', props: { title: 'A' } },
+        { type: 'Hero', props: { title: 'B' } },
+      ],
+      zones: {},
+    });
+    const [first, second] = legacy.rootSlot;
+    const { [first]: _gone, ...rest } = legacy.nodes;
+    const deleted = { ...legacy, nodes: rest, rootSlot: [second] };
+    const saved = serverSave(documentToPuck(legacy), legacy, deleted, 'always');
+    assert.deepEqual(toDocument(saved.data).rootSlot, [second]);
+  });
+
+  it('leaves the default unchanged: id-less items still round-trip without one', () => {
+    assert.equal(documentToPuck(inserted).content[1]?.props.id, undefined);
+  });
+});
+
+describe('toDocument / toPuckData adapters', () => {
+  it('detects each format', () => {
+    const doc = puckToDocument(flatPage);
+    assert.ok(isBuilderDocument(toDocument(doc)));
+    assert.ok(isBuilderDocument(toDocument(flatPage)));
+    assert.equal(toDocument(null).rootSlot.length, 0);
+    assert.ok(puckDataEqual(flatPage, toPuckData(flatPage)));
+    assert.ok(puckDataEqual(flatPage, toPuckData(doc)));
+  });
+
+  it('emptyDocument is a valid starting point', () => {
+    const empty = emptyDocument();
+    assert.equal(empty.version, DOCUMENT_VERSION);
+    assert.deepEqual(empty.rootSlot, []);
+    assert.ok(
+      puckDataEqual(
         { root: { props: {} }, content: [], zones: {} },
         documentToPuck(empty)
-      ));
-    });
+      )
+    );
+  });
 });
 
 describe('known limitation: inline format cannot carry an empty slot (R803)', () => {
@@ -227,7 +317,14 @@ describe('known limitation: inline format cannot carry an empty slot (R803)', ()
     const doc = {
       version: DOCUMENT_VERSION,
       root: { props: {} },
-      nodes: { a: { id: 'a', type: 'Box', props: { id: 'a' }, slots: { content: [] as string[] } } },
+      nodes: {
+        a: {
+          id: 'a',
+          type: 'Box',
+          props: { id: 'a' },
+          slots: { content: [] as string[] },
+        },
+      },
       rootSlot: ['a'],
     };
     // An empty array stored inline is indistinguishable from "no slot key at

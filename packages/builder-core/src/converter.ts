@@ -176,6 +176,15 @@ export type DocumentToPuckOptions = {
    * `{id}:{slotPath}` zone entries, for data saved with the older DropZone API.
    */
   slots?: 'inline' | 'zones';
+  /**
+   * Which items carry `props.id`. `stored` (default) writes it only where the
+   * block already had one, so data saved without ids round-trips unchanged.
+   * `always` writes every block's id. Use it wherever stored data is read back
+   * and patched by id, such as versioned page saves: otherwise a block made in
+   * the editor (no `props.id`) comes back as `Type-auto-N`, and the next patch
+   * that touches it misses and leaves it orphaned.
+   */
+  ids?: 'stored' | 'always';
 };
 
 /**
@@ -186,15 +195,17 @@ export function documentToPuck(
   options: DocumentToPuckOptions = {}
 ): PuckData {
   const useZones = options.slots === 'zones';
+  const writeIds = useZones || options.ids === 'always';
   const zones: Record<string, PuckItem[]> = {};
 
   function nodeToItem(id: NodeId): PuckItem | null {
     const node = doc.nodes[id];
     if (!node) return null;
 
-    // Zone keys need the id; inline items only carry one if it was stored.
+    // Zone keys need the id; inline items only carry one if it was stored,
+    // unless the caller asked for every id (see `ids`).
     const props: Record<string, unknown> = { ...node.props };
-    if (useZones || node.props.id !== undefined) props.id = node.id;
+    if (writeIds || node.props.id !== undefined) props.id = node.id;
     if (node.meta && Object.keys(node.meta).length) props[META_PROP] = node.meta;
 
     for (const [slotPath, childIds] of Object.entries(node.slots)) {
