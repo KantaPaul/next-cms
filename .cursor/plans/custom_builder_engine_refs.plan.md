@@ -626,7 +626,7 @@ This batch adds no new refs. Its phases deliver parts of refs that stay owned by
 
 Phases run in the order listed (E8 before E7).
 
-**Status (2026-10-30):** about 62%. E1–E3 gaps are closed. E6 step 1 is done: every builder renders in `EditorShell` with `?shell=new` (or `NEXT_PUBLIC_EDITOR_UI_SHELL=1`), wired to the real save queue, banners, primary action and palette; the old chrome stays the default. E0 is still open; E4, E5 and E7–E9 are partial. The table for each phase is in the Status section of [editor_ui_package_implementation.md](editor_ui_package_implementation.md). No refs change state.
+**Status (2026-10-30):** about 64%. E1–E3 gaps are closed. E6 step 1 is done (every builder renders in `EditorShell` with `?shell=new`). E4 is mostly done: the block list, layers and inspector render through the package parts in both chromes. E0 is still open; E5 and E7–E9 are partial. The table for each phase is in the Status section of [editor_ui_package_implementation.md](editor_ui_package_implementation.md). No refs change state.
 
 ## Gate order
 
