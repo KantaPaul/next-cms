@@ -13,6 +13,8 @@ export interface BreadcrumbProps {
   items: BreadcrumbItem[];
   onSelect?: (id: string) => void;
   emptyLabel?: string;
+  /** Accessible name for the trail, e.g. "Block path". */
+  ariaLabel?: string;
   className?: string;
 }
 
@@ -20,6 +22,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({
   items,
   onSelect,
   emptyLabel = 'No selection',
+  ariaLabel = 'Breadcrumb',
   className,
 }) => {
   if (items.length === 0) {
@@ -32,7 +35,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({
 
   return (
     <nav
-      aria-label="Breadcrumb"
+      aria-label={ariaLabel}
       className={cn(
         'flex min-w-0 select-none items-center gap-1 text-[11px]',
         className
