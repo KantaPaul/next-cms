@@ -27,10 +27,12 @@ export { cn } from './lib/cn';
 // Library
 export * from './library/LibraryItem';
 export * from './library/LibraryPanel';
+export * from './overlays/CanvasMarks';
 export * from './overlays/ContextMenu';
 export * from './overlays/DropLine';
 export * from './overlays/FloatingToolbar';
 export * from './overlays/HoverBox';
+export * from './overlays/ResizeHandle';
 export * from './overlays/ResizeHandles';
 // Overlays
 export * from './overlays/SelectionBox';

@@ -1,5 +1,6 @@
 import * as MenuPrimitive from '@radix-ui/react-dropdown-menu';
 import type React from 'react';
+import { Fragment } from 'react';
 import { cn } from '../lib/cn';
 import {
   MenuItemBody,
@@ -22,6 +23,8 @@ export interface ContextMenuAction {
   shortcut?: string;
   danger?: boolean;
   disabled?: boolean;
+  /** Draws a separator above this item. */
+  separator?: boolean;
   onClick: () => void;
 }
 
@@ -31,6 +34,13 @@ export interface ContextMenuProps {
   open: boolean;
   onClose: () => void;
   actions: ContextMenuAction[];
+  /**
+   * Block the rest of the page while open, so a click anywhere (even inside
+   * an iframe, whose clicks never reach this document) closes it.
+   */
+  modal?: boolean;
+  /** Accessible name for the menu. */
+  label?: string;
 }
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -39,6 +49,8 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   open,
   onClose,
   actions,
+  modal = false,
+  label,
 }) => {
   const layer = useLayerScope();
   const returnFocus = useReturnFocus(open);
@@ -46,7 +58,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
     <MenuPrimitive.Root
       open={open}
       onOpenChange={next => !next && onClose()}
-      modal={false}
+      modal={modal}
     >
       <MenuPrimitive.Trigger asChild>
         <span
@@ -68,6 +80,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
           sideOffset={2}
           collisionPadding={8}
           {...layer}
+          aria-label={label}
           onCloseAutoFocus={returnFocus}
           className={cn(
             layer.className,
@@ -76,18 +89,22 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
           )}
         >
           {actions.map(act => (
-            <MenuPrimitive.Item
-              key={act.id}
-              disabled={act.disabled}
-              onSelect={() => act.onClick()}
-              className={menuItemClass(act.danger)}
-            >
-              <MenuItemBody
-                icon={act.icon}
-                label={act.label}
-                shortcut={act.shortcut}
-              />
-            </MenuPrimitive.Item>
+            <Fragment key={act.id}>
+              {act.separator && (
+                <MenuPrimitive.Separator className="my-1 h-px bg-[var(--ne-border)]" />
+              )}
+              <MenuPrimitive.Item
+                disabled={act.disabled}
+                onSelect={() => act.onClick()}
+                className={menuItemClass(act.danger)}
+              >
+                <MenuItemBody
+                  icon={act.icon}
+                  label={act.label}
+                  shortcut={act.shortcut}
+                />
+              </MenuPrimitive.Item>
+            </Fragment>
           ))}
         </MenuPrimitive.Content>
       </MenuPrimitive.Portal>

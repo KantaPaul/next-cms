@@ -6,17 +6,23 @@ import {
   Button,
   CommandPalette,
   ContextMenu,
+  DropZone,
   type EditorDirection,
   EditorShell,
   type EditorTheme,
   EditorUIProvider,
   FieldGroup,
+  FloatingToolbar,
+  HoverBox,
   Input,
   IconButton,
   Kbd,
   type LayerNode,
   LayersTree,
+  OverlayNotice,
   Panel,
+  ResizeHandle,
+  SelectionBox,
   type SaveState,
   SaveStatus,
   Switch,
@@ -222,6 +228,80 @@ function ShellDemo({
   );
 }
 
+/** E5: canvas overlays as the page builder draws them, on a dummy canvas. */
+function CanvasOverlayDemo() {
+  const [width, setWidth] = useState(60);
+  const [notice, setNotice] = useState(false);
+  const [last, setLast] = useState<string | null>(null);
+  const block = {
+    top: 70,
+    left: 24,
+    width: Math.round(4.2 * width),
+    height: 70,
+  };
+  return (
+    <div className="relative h-60 overflow-hidden rounded-[var(--ne-radius-lg)] border border-[var(--ne-border)] bg-white">
+      <DropZone bounds={{ top: 16, left: 12, width: 440, height: 210 }} />
+      <HoverBox
+        bounds={{ top: 156, left: 24, width: 260, height: 50 }}
+        label="Stats"
+      />
+      <SelectionBox bounds={block} showHandles={false} />
+      <FloatingToolbar
+        top={block.top}
+        left={block.left}
+        label="Hero"
+        dragHandle={{
+          label: 'Drag Hero',
+          onPointerDown: () => setLast('Drag'),
+        }}
+        actions={['Move up', 'Duplicate', 'Delete'].map(label => ({
+          id: label,
+          label,
+          icon: <span className="text-[11px]">{label[0]}</span>,
+          danger: label === 'Delete',
+          onClick: () => setLast(label),
+        }))}
+      />
+      <ResizeHandle
+        edge="right"
+        rect={block}
+        label="Width"
+        value={width}
+        min={20}
+        max={100}
+        valueText={`${width}%`}
+        onKeyDown={event => {
+          const step =
+            event.key === 'ArrowRight' ? 5 : event.key === 'ArrowLeft' ? -5 : 0;
+          if (!step) return;
+          event.preventDefault();
+          setWidth(w => Math.min(100, Math.max(20, w + step)));
+        }}
+      />
+      <div className="absolute end-3 top-3 flex gap-2">
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => setNotice(n => !n)}
+        >
+          {notice ? 'Hide' : 'Show'} blocked drop
+        </Button>
+      </div>
+      {last && (
+        <span className="absolute bottom-3 end-3 text-xs text-[var(--ne-text-muted)]">
+          Last: {last}
+        </span>
+      )}
+      {notice && (
+        <OverlayNotice tone="danger">
+          A Hero can’t go inside a Column
+        </OverlayNotice>
+      )}
+    </div>
+  );
+}
+
 /** E2b: overlays opened from code, collapsible groups, and toasts. */
 function MotionDemo() {
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
@@ -348,6 +428,16 @@ export const EditorUIGallery: React.FC = () => {
             0b. Motion and overlays (E2b)
           </h2>
           <MotionDemo />
+        </section>
+
+        <section className="mx-auto w-full max-w-6xl space-y-3 px-6 pb-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--ne-text-muted)]">
+            0c. Canvas overlays (E5)
+          </h2>
+          <p className="text-xs text-[var(--ne-text-muted)]">
+            Focus the Width handle and use ← → to resize.
+          </p>
+          <CanvasOverlayDemo />
         </section>
 
         <DesignSystemGallery
