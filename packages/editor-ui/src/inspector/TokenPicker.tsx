@@ -1,5 +1,5 @@
 import React from 'react';
-import { Popover } from '../primitives/Popover.tsx';
+import { Popover } from '../primitives/Popover';
 import { Check } from 'lucide-react';
 
 export interface DesignTokenOption {

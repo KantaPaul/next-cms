@@ -1,0 +1,17 @@
+{
+  "$schema": "https://ui.shadcn.cn/schema/components.json",
+  "style": "new-york",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "tailwind.config.ts",
+    "css": "src/tokens.css",
+    "module": "tokens",
+    "iconLibrary": "lucide-react"
+  },
+  "aliases": {
+    "components/ui": "./src/lib/components-ui",
+    "lib/utils": "./src/lib/utils",
+    "lib/cn": "./src/lib/cn"
+  }
+}

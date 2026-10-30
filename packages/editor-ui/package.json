@@ -4,14 +4,22 @@
   "private": true,
   "description": "Shared editor UI primitives for NextCMS page builder and dashboard builder: tokens, shell, panels, inspector parts, overlays, and feedback states.",
   "type": "module",
-  "sideEffects": ["*.css"],
+  "sideEffects": [
+    "*.css"
+  ],
   "exports": {
     ".": "./src/index.ts",
-    "./tokens.css": "./src/tokens.css"
+    "./gallery": "./src/gallery/index.tsx",
+    "./tokens.css": "./src/tokens.css",
+    "./editor-ui.css": "./dist/editor-ui.css"
   },
   "scripts": {
     "test": "tsx --test \"src/**/*.test.ts\" \"src/**/*.test.tsx\"",
-    "typecheck": "tsc --noEmit -p ."
+    "typecheck": "tsc --noEmit -p .",
+    "build:css": "node scripts/build-css.mjs",
+    "watch:css": "node scripts/build-css.mjs --watch",
+    "check:size": "node scripts/check-size.mjs",
+    "build": "pnpm build:css && pnpm check:size"
   },
   "dependencies": {
     "@nextcms/builder-core": "workspace:*",

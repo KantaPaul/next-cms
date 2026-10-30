@@ -1,28 +1,35 @@
-import React, { useState } from 'react';
 import {
-  Monitor,
-  Tablet,
-  Smartphone,
-  Undo2,
-  Redo2,
-  Eye,
-  Send,
-  ZoomIn,
-  ZoomOut,
-  Maximize2,
-  Minimize2,
-  Sun,
-  Moon,
   Command,
   Edit3,
+  Eye,
+  Maximize2,
+  Minimize2,
+  Monitor,
+  Moon,
+  Redo2,
+  Send,
+  Smartphone,
+  Sun,
+  Tablet,
+  Undo2,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
-import { Button } from '../primitives/Button.tsx';
-import { IconButton } from '../primitives/IconButton.tsx';
-import { SaveStatus, SaveState } from '../feedback/SaveStatus.tsx';
-import { DeviceType } from '../inspector/DeviceValueBadge.tsx';
+import type React from 'react';
+import { useState } from 'react';
+import { type SaveState, SaveStatus } from '../feedback/SaveStatus';
+import type { DeviceType } from '../inspector/DeviceValueBadge';
+import { Button } from '../primitives/Button';
+import { IconButton } from '../primitives/IconButton';
 
+/**
+ * Editor top bar (B15 E3). Every control is optional and shows only when its
+ * callback is passed, so the page and dashboard builders share it.
+ */
 export interface TopBarProps {
-  documentName: string;
+  title: string;
+  /** Logo or product mark at the inline start. */
+  brand?: React.ReactNode;
   onRenameDocument?: (name: string) => void;
   saveStatus: SaveState;
   lastSavedAt?: string | Date;
@@ -32,12 +39,12 @@ export interface TopBarProps {
   canRedo?: boolean;
   onUndo?: () => void;
   onRedo?: () => void;
-  device: DeviceType;
-  onDeviceChange: (device: DeviceType) => void;
-  zoom: number;
-  onZoomChange: (zoom: number) => void;
+  device?: DeviceType;
+  onDeviceChange?: (device: DeviceType) => void;
+  zoom?: number;
+  onZoomChange?: (zoom: number) => void;
   isPreview?: boolean;
-  onTogglePreview: () => void;
+  onPreview?: () => void;
   onPublish?: () => void;
   focusMode?: boolean;
   onToggleFocusMode?: () => void;
@@ -47,8 +54,15 @@ export interface TopBarProps {
   extraActions?: React.ReactNode;
 }
 
+const DEVICES: { id: DeviceType; label: string; Icon: typeof Monitor }[] = [
+  { id: 'desktop', label: 'Desktop view', Icon: Monitor },
+  { id: 'tablet', label: 'Tablet view', Icon: Tablet },
+  { id: 'mobile', label: 'Mobile view', Icon: Smartphone },
+];
+
 export const TopBar: React.FC<TopBarProps> = ({
-  documentName,
+  title,
+  brand,
   onRenameDocument,
   saveStatus,
   lastSavedAt,
@@ -58,12 +72,12 @@ export const TopBar: React.FC<TopBarProps> = ({
   canRedo = false,
   onUndo,
   onRedo,
-  device,
+  device = 'desktop',
   onDeviceChange,
   zoom,
   onZoomChange,
   isPreview = false,
-  onTogglePreview,
+  onPreview,
   onPublish,
   focusMode = false,
   onToggleFocusMode,
@@ -73,7 +87,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   extraActions,
 }) => {
   const [editingTitle, setEditingTitle] = useState(false);
-  const [tempTitle, setTempTitle] = useState(documentName);
+  const [tempTitle, setTempTitle] = useState(title);
 
   const handleCommitTitle = () => {
     if (tempTitle.trim() && onRenameDocument) {
@@ -87,16 +101,14 @@ export const TopBar: React.FC<TopBarProps> = ({
       {/* Zone 1: Brand & Document Name & Save Status */}
       <div className="flex items-center gap-3 min-w-0">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-5 h-5 rounded-[var(--ne-radius-sm)] bg-[var(--ne-primary)] text-white flex items-center justify-center font-bold text-xs shrink-0 tracking-tighter">
-            NX
-          </div>
-          {editingTitle ? (
+          {brand}
+          {editingTitle && onRenameDocument ? (
             <input
               type="text"
               value={tempTitle}
-              onChange={(e) => setTempTitle(e.target.value)}
+              onChange={e => setTempTitle(e.target.value)}
               onBlur={handleCommitTitle}
-              onKeyDown={(e) => {
+              onKeyDown={e => {
                 if (e.key === 'Enter') handleCommitTitle();
                 if (e.key === 'Escape') setEditingTitle(false);
               }}
@@ -107,13 +119,14 @@ export const TopBar: React.FC<TopBarProps> = ({
             <button
               type="button"
               onClick={() => {
-                setTempTitle(documentName);
+                if (!onRenameDocument) return;
+                setTempTitle(title);
                 setEditingTitle(true);
               }}
-              title="Click to rename"
+              title={onRenameDocument ? 'Click to rename' : undefined}
               className="group flex items-center gap-1.5 text-xs font-semibold text-[var(--ne-text)] hover:text-[var(--ne-primary)] cursor-pointer truncate font-sans"
             >
-              <span className="truncate">{documentName}</span>
+              <span className="truncate">{title}</span>
               <Edit3 className="w-3 h-3 opacity-0 group-hover:opacity-60 shrink-0" />
             </button>
           )}
@@ -151,70 +164,63 @@ export const TopBar: React.FC<TopBarProps> = ({
           </IconButton>
         </div>
 
-        <div className="h-3.5 w-[1px] bg-[var(--ne-border)] shrink-0" />
+        {onDeviceChange && (
+          <>
+            <div className="h-3.5 w-[1px] bg-[var(--ne-border)] shrink-0" />
+            <div
+              role="group"
+              aria-label="Device preview"
+              className="flex items-center p-0.5 bg-[var(--ne-surface-subtle)] border border-[var(--ne-border)] rounded-[var(--ne-radius-md)]"
+            >
+              {DEVICES.map(({ id, label, Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => onDeviceChange(id)}
+                  aria-label={label}
+                  aria-pressed={device === id}
+                  title={label}
+                  className={`p-1 rounded-[var(--ne-radius-sm)] transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--ne-focus-ring)] ${
+                    device === id
+                      ? 'bg-[var(--ne-surface)] text-[var(--ne-primary)] shadow-2xs font-medium'
+                      : 'text-[var(--ne-text-muted)] hover:text-[var(--ne-text)]'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
-        {/* Device Switcher */}
-        <div className="flex items-center p-0.5 bg-[var(--ne-surface-subtle)] border border-[var(--ne-border)] rounded-[var(--ne-radius-md)]">
-          <button
-            type="button"
-            onClick={() => onDeviceChange('desktop')}
-            title="Desktop view (1280px / 12 cols)"
-            className={`p-1 rounded-[var(--ne-radius-sm)] transition-colors cursor-pointer ${
-              device === 'desktop'
-                ? 'bg-[var(--ne-surface)] text-[var(--ne-primary)] shadow-2xs font-medium'
-                : 'text-[var(--ne-text-muted)] hover:text-[var(--ne-text)]'
-            }`}
-          >
-            <Monitor className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onDeviceChange('tablet')}
-            title="Tablet view (768px / 6 cols)"
-            className={`p-1 rounded-[var(--ne-radius-sm)] transition-colors cursor-pointer ${
-              device === 'tablet'
-                ? 'bg-[var(--ne-surface)] text-[var(--ne-primary)] shadow-2xs font-medium'
-                : 'text-[var(--ne-text-muted)] hover:text-[var(--ne-text)]'
-            }`}
-          >
-            <Tablet className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onDeviceChange('mobile')}
-            title="Mobile view (390px / 1 col)"
-            className={`p-1 rounded-[var(--ne-radius-sm)] transition-colors cursor-pointer ${
-              device === 'mobile'
-                ? 'bg-[var(--ne-surface)] text-[var(--ne-primary)] shadow-2xs font-medium'
-                : 'text-[var(--ne-text-muted)] hover:text-[var(--ne-text)]'
-            }`}
-          >
-            <Smartphone className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <div className="h-3.5 w-[1px] bg-[var(--ne-border)] shrink-0" />
-
-        {/* Zoom */}
-        <div className="flex items-center gap-1 text-[11px] font-mono text-[var(--ne-text-muted)]">
-          <button
-            type="button"
-            onClick={() => onZoomChange(Math.max(50, zoom - 10))}
-            className="p-1 hover:text-[var(--ne-text)] cursor-pointer"
-            title="Zoom out"
-          >
-            <ZoomOut className="w-3 h-3" />
-          </button>
-          <span className="w-8 text-center tabular-nums">{zoom}%</span>
-          <button
-            type="button"
-            onClick={() => onZoomChange(Math.min(150, zoom + 10))}
-            className="p-1 hover:text-[var(--ne-text)] cursor-pointer"
-            title="Zoom in"
-          >
-            <ZoomIn className="w-3 h-3" />
-          </button>
-        </div>
+        {zoom !== undefined && onZoomChange && (
+          <>
+            <div className="h-3.5 w-[1px] bg-[var(--ne-border)] shrink-0" />
+            <div className="flex items-center gap-1 text-[11px] font-mono text-[var(--ne-text-muted)]">
+              <button
+                type="button"
+                onClick={() => onZoomChange(Math.max(50, zoom - 10))}
+                className="p-1 hover:text-[var(--ne-text)] cursor-pointer"
+                aria-label="Zoom out"
+                title="Zoom out"
+              >
+                <ZoomOut className="w-3 h-3" />
+              </button>
+              <span className="w-8 text-center tabular-nums" aria-live="polite">
+                {zoom}%
+              </span>
+              <button
+                type="button"
+                onClick={() => onZoomChange(Math.min(150, zoom + 10))}
+                className="p-1 hover:text-[var(--ne-text)] cursor-pointer"
+                aria-label="Zoom in"
+                title="Zoom in"
+              >
+                <ZoomIn className="w-3 h-3" />
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Zone 3: Command palette, Theme, Focus, Preview & Publish */}
@@ -230,7 +236,9 @@ export const TopBar: React.FC<TopBarProps> = ({
           >
             <Command className="w-3 h-3 text-[var(--ne-text-subtle)]" />
             <span>Search</span>
-            <kbd className="font-mono text-[9px] bg-[var(--ne-surface)] px-1 py-0.5 rounded border border-[var(--ne-border)]">⌘K</kbd>
+            <kbd className="font-mono text-[9px] bg-[var(--ne-surface)] px-1 py-0.5 rounded border border-[var(--ne-border)]">
+              ⌘K
+            </kbd>
           </button>
         )}
 
@@ -240,29 +248,41 @@ export const TopBar: React.FC<TopBarProps> = ({
             tooltip={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             onClick={onToggleTheme}
           >
-            {isDark ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5" />}
+            {isDark ? (
+              <Sun className="w-3.5 h-3.5 text-amber-400" />
+            ) : (
+              <Moon className="w-3.5 h-3.5" />
+            )}
           </IconButton>
         )}
 
         {onToggleFocusMode && (
           <IconButton
             size="sm"
-            tooltip={focusMode ? 'Exit Focus Mode' : 'Focus Mode (Hide all panels)'}
+            tooltip={
+              focusMode ? 'Exit Focus Mode' : 'Focus Mode (Hide all panels)'
+            }
             active={focusMode}
             onClick={onToggleFocusMode}
           >
-            {focusMode ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+            {focusMode ? (
+              <Minimize2 className="w-3.5 h-3.5" />
+            ) : (
+              <Maximize2 className="w-3.5 h-3.5" />
+            )}
           </IconButton>
         )}
 
-        <Button
-          variant={isPreview ? 'primary' : 'secondary'}
-          size="sm"
-          leftIcon={<Eye className="w-3.5 h-3.5" />}
-          onClick={onTogglePreview}
-        >
-          {isPreview ? 'Editing' : 'Preview'}
-        </Button>
+        {onPreview && (
+          <Button
+            variant={isPreview ? 'primary' : 'secondary'}
+            size="sm"
+            leftIcon={<Eye className="w-3.5 h-3.5" />}
+            onClick={onPreview}
+          >
+            {isPreview ? 'Editing' : 'Preview'}
+          </Button>
+        )}
 
         {onPublish && (
           <Button

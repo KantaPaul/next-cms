@@ -1,7 +1,7 @@
 import React from 'react';
-import { ChangedDot } from './ChangedDot.tsx';
-import { ResetButton } from './ResetButton.tsx';
-import { DeviceValueBadge, DeviceType } from './DeviceValueBadge.tsx';
+import { ChangedDot } from './ChangedDot';
+import { ResetButton } from './ResetButton';
+import { DeviceValueBadge, DeviceType } from './DeviceValueBadge';
 
 export interface FieldRowProps {
   label: string;

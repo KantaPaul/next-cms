@@ -1,18 +1,47 @@
-/* Shared editor UI tokens (E2). Light theme on :root, dark on .dark.
-   Values mirror builder-editor-prototype-design-guideline.md section 4. */
+/* Shared editor UI tokens (B15 E2). Ported from the prototype's index.css.
+   Light on :root (or [data-ne-theme="light"]); dark from a .dark ancestor or
+   [data-ne-theme="dark"] on the editor root, so one theme switch drives both
+   (gap G2). Motion and typography live here too, not only in tokens.ts (G4). */
 
-:root {
-  --ne-bg: #F8FAFC;
-  --ne-surface: #FFFFFF;
-  --ne-border: #E2E8F0;
-  --ne-text: #0F172A;
-  --ne-text-muted: #64748B;
-  --ne-primary: #2563EB;
-  --ne-primary-soft: #DBEAFE;
+:root,
+[data-ne-theme='light'] {
+  --ne-bg: #f8fafc;
+  --ne-surface: #ffffff;
+  --ne-surface-subtle: #f1f5f9;
+  --ne-surface-hover: #e2e8f0;
+  --ne-border: #e2e8f0;
+  --ne-border-strong: #cbd5e1;
+  --ne-text: #0f172a;
+  --ne-text-muted: #64748b;
+  --ne-text-subtle: #94a3b8;
+  --ne-primary: #2563eb;
+  --ne-primary-hover: #1d4ed8;
+  --ne-primary-soft: #dbeafe;
+  --ne-primary-soft-hover: #bfdbfe;
   --ne-success: #059669;
-  --ne-warning: #D97706;
-  --ne-danger: #DC2626;
+  --ne-success-soft: #d1fae5;
+  --ne-warning: #d97706;
+  --ne-warning-soft: #fef3c7;
+  --ne-danger: #dc2626;
+  --ne-danger-soft: #fee2e2;
 
+  /* Overlays */
+  --ne-select: var(--ne-primary);
+  --ne-hover: rgba(37, 99, 235, 0.4);
+  --ne-drop: var(--ne-primary);
+  --ne-locked: var(--ne-warning);
+  --ne-focus-ring: var(--ne-primary);
+
+  /* Geometry */
+  --ne-radius-sm: 4px;
+  --ne-radius-md: 6px;
+  --ne-radius-lg: 8px;
+  --ne-control-h: 28px;
+  --ne-row-h: 32px;
+  --ne-panel-left-w: 260px;
+  --ne-inspector-w: 320px;
+
+  /* Spacing (4px base) */
   --ne-spacing-1: 4px;
   --ne-spacing-2: 8px;
   --ne-spacing-3: 12px;
@@ -20,46 +49,79 @@
   --ne-spacing-6: 24px;
   --ne-spacing-8: 32px;
 
-  --ne-radius-sm: 6px;
-  --ne-radius-md: 8px;
-  --ne-radius-lg: 12px;
-
+  /* Typography */
   --ne-font-ui: Inter, system-ui, -apple-system, sans-serif;
-  --ne-font-mono: "SF Mono", ui-monospace, monospace;
+  --ne-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --ne-text-title: 24px;
+  --ne-text-panel-title: 14px;
+  --ne-text-kpi: 28px;
+  --ne-text-body: 13px;
+  --ne-text-caption: 12px;
 
+  /* Elevation */
   --ne-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --ne-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 
-  --ne-transition-fast: 150ms ease-out;
-  --ne-transition-base: 200ms ease-out;
+  /* Motion */
+  --ne-duration-fast: 150ms;
+  --ne-duration-normal: 200ms;
+  --ne-easing: cubic-bezier(0.16, 1, 0.3, 1);
+  --ne-transition-fast: var(--ne-duration-fast) var(--ne-easing);
+  --ne-transition-base: var(--ne-duration-normal) var(--ne-easing);
 }
 
-.dark {
-  --ne-bg: #0B1220;
-  --ne-surface: #111A2E;
-  --ne-border: #24314D;
-  --ne-text: #E5EAF3;
-  --ne-text-muted: #94A3B8;
-  --ne-primary: #60A5FA;
-  --ne-primary-soft: #1E3A5F;
-  --ne-success: #10B981;
-  --ne-warning: #F59E0B;
-  --ne-danger: #EF4444;
+.dark,
+[data-ne-theme='dark'] {
+  --ne-bg: #0b1220;
+  --ne-surface: #111a2e;
+  --ne-surface-subtle: #192540;
+  --ne-surface-hover: #223254;
+  --ne-border: #24314d;
+  --ne-border-strong: #334468;
+  --ne-text: #e5eaf3;
+  --ne-text-muted: #94a3b8;
+  --ne-text-subtle: #64748b;
+  --ne-primary: #60a5fa;
+  --ne-primary-hover: #3b82f6;
+  --ne-primary-soft: #1e2a4a;
+  --ne-primary-soft-hover: #283966;
+  --ne-success: #34d399;
+  --ne-success-soft: #064e3b;
+  --ne-warning: #fbbf24;
+  --ne-warning-soft: #78350f;
+  --ne-danger: #f87171;
+  --ne-danger-soft: #7f1d1d;
+
+  --ne-hover: rgba(96, 165, 250, 0.45);
+  --ne-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --ne-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ne-duration-fast: 0ms;
+    --ne-duration-normal: 0ms;
+  }
 }
 
 .ne-editor-root {
   font-family: var(--ne-font-ui);
-  font-size: 13px;
+  font-size: var(--ne-text-body);
   line-height: 1.5;
   color: var(--ne-text);
   background-color: var(--ne-bg);
+  font-feature-settings: 'tnum' 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+.ne-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
 .ne-scrollbar::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 5px;
+  height: 5px;
 }
 
 .ne-scrollbar::-webkit-scrollbar-track {

@@ -1,50 +1,93 @@
-import React from 'react';
 import { ChevronRight } from 'lucide-react';
+import type React from 'react';
+import { cn } from '../lib/cn';
 
 export interface BreadcrumbItem {
-  id: string;
+  id?: string;
   label: string;
-  type?: string;
+  /** Called when this crumb is chosen; falls back to the list's `onSelect`. */
+  onSelect?: () => void;
 }
 
 export interface BreadcrumbProps {
   items: BreadcrumbItem[];
-  onSelect: (id: string) => void;
+  onSelect?: (id: string) => void;
+  emptyLabel?: string;
   className?: string;
 }
 
 export const Breadcrumb: React.FC<BreadcrumbProps> = ({
   items,
   onSelect,
-  className = '',
+  emptyLabel = 'No selection',
+  className,
 }) => {
-  if (!items || items.length === 0) {
-    return <span className="text-[11px] text-[var(--ne-text-muted)] font-sans">No selection</span>;
+  if (items.length === 0) {
+    return (
+      <span className="text-[11px] text-[var(--ne-text-muted)]">
+        {emptyLabel}
+      </span>
+    );
   }
 
   return (
-    <nav className={`flex items-center gap-1 text-[11px] font-sans truncate select-none ${className}`}>
-      {items.map((item, idx) => {
-        const isLast = idx === items.length - 1;
-        return (
-          <React.Fragment key={item.id}>
-            {idx > 0 && (
-              <ChevronRight className="w-3 h-3 text-[var(--ne-text-subtle)] shrink-0" />
-            )}
-            <button
-              type="button"
-              onClick={() => onSelect(item.id)}
-              className={`truncate max-w-[140px] px-1 py-0.5 rounded-[var(--ne-radius-sm)] transition-colors cursor-pointer ${
-                isLast
-                  ? 'text-[var(--ne-primary)] font-medium bg-[var(--ne-primary-soft)]'
-                  : 'text-[var(--ne-text-muted)] hover:text-[var(--ne-text)] hover:bg-[var(--ne-surface-hover)]'
-              }`}
+    <nav
+      aria-label="Breadcrumb"
+      className={cn(
+        'flex min-w-0 select-none items-center gap-1 text-[11px]',
+        className
+      )}
+    >
+      <ol className="flex min-w-0 items-center gap-1">
+        {items.map((item, index) => {
+          const isLast = index === items.length - 1;
+          const select =
+            item.onSelect ??
+            (item.id && onSelect
+              ? () => onSelect(item.id as string)
+              : undefined);
+          return (
+            <li
+              key={item.id ?? index}
+              className="flex min-w-0 items-center gap-1"
             >
-              {item.label}
-            </button>
-          </React.Fragment>
-        );
-      })}
+              {index > 0 && (
+                <ChevronRight
+                  aria-hidden
+                  className="h-3 w-3 shrink-0 text-[var(--ne-text-subtle)] rtl:-scale-x-100"
+                />
+              )}
+              {select ? (
+                <button
+                  type="button"
+                  onClick={select}
+                  aria-current={isLast ? 'location' : undefined}
+                  className={cn(
+                    'max-w-[140px] cursor-pointer truncate rounded-[var(--ne-radius-sm)] px-1 py-0.5 transition-colors focus-visible:outline-2 focus-visible:outline-[var(--ne-focus-ring)]',
+                    isLast
+                      ? 'bg-[var(--ne-primary-soft)] font-medium text-[var(--ne-primary)]'
+                      : 'text-[var(--ne-text-muted)] hover:bg-[var(--ne-surface-hover)] hover:text-[var(--ne-text)]'
+                  )}
+                >
+                  {item.label}
+                </button>
+              ) : (
+                <span
+                  aria-current={isLast ? 'location' : undefined}
+                  className={cn(
+                    'max-w-[140px] truncate px-1 py-0.5',
+                    isLast
+                      ? 'font-medium text-[var(--ne-text)]'
+                      : 'text-[var(--ne-text-muted)]'
+                  )}
+                >
+                  {item.label}
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ol>
     </nav>
   );
 };

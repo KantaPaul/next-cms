@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
-import { IconButton } from './IconButton.tsx';
+import { IconButton } from './IconButton';
 
 export interface DialogProps {
   open: boolean;

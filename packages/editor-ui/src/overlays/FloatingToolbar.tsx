@@ -10,7 +10,7 @@ import {
   MoreHorizontal,
   BoxSelect,
 } from 'lucide-react';
-import { IconButton } from '../primitives/IconButton.tsx';
+import { IconButton } from '../primitives/IconButton';
 
 export interface FloatingToolbarProps {
   top: number;

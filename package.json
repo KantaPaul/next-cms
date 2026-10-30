@@ -5,9 +5,9 @@
   "scripts": {
     "clean": "rimraf -g \"{node_modules,.next,.cache,email-templates/node_modules}\"",
     "clean:cache": "rimraf -g \".next,.cache\"",
-    "dev": "next dev -p 3001 -H 0.0.0.0",
+    "dev": "pnpm --filter @nextcms/editor-ui build:css && next dev -p 3001 -H 0.0.0.0",
     "dev:only": "next dev -p 3001 -H 0.0.0.0",
-    "build": "next build",
+    "build": "pnpm --filter @nextcms/editor-ui build && next build",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Star, Clock, Layers, X } from 'lucide-react';
-import { LibraryItem, LibraryItemDef } from './LibraryItem.tsx';
+import { LibraryItem, LibraryItemDef } from './LibraryItem';
 
 export interface LibraryPanelProps {
   items: LibraryItemDef[];

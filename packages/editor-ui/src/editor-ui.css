@@ -1,0 +1,13 @@
+/* Build entry for dist/editor-ui.css (B15 E1, gap G1). Compiled by the
+   package's own Tailwind v4 over src/ only: theme and utilities, no
+   preflight, so the app's Tailwind 3 never sees these classes.
+   scripts/build-css.mjs scopes every utility to `.ne-editor-root` / `.ne-ui`
+   subtrees (portalled layers add `.ne-ui`), so same-named Tailwind 3
+   classes elsewhere on the page keep their own values. tokens.css is
+   appended after compilation. */
+@import 'tailwindcss/theme.css';
+@import 'tailwindcss/utilities.css';
+
+@source './';
+
+@custom-variant dark (&:where(.dark, .dark *, [data-ne-theme='dark'], [data-ne-theme='dark'] *));

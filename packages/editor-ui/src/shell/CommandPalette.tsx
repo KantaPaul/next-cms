@@ -1,156 +1,136 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, Command, ArrowRight } from 'lucide-react';
-import { Kbd } from '../primitives/Kbd.tsx';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { Command } from 'cmdk';
+import { Search } from 'lucide-react';
+import type React from 'react';
+import { Kbd } from '../primitives/Kbd';
+import { useEditorUI } from '../theme/EditorUIProvider';
 
-export interface CommandAction {
+/**
+ * Command palette markup (B15 E3, R712): cmdk's list inside a Radix dialog,
+ * so focus is trapped while open and returns to the trigger on close. It
+ * owns no open state and no shortcut; the builder passes both in, so there
+ * is only ever one palette and one Cmd+K listener. The dialog is portalled
+ * to <body>, so it re-applies the editor's theme and direction itself.
+ */
+export interface CommandPaletteItem {
   id: string;
-  title: string;
-  category: string;
+  label: string;
+  group?: string;
   icon?: React.ReactNode;
   shortcut?: string;
-  onExecute: () => void;
+  /** Extra words that should match this item in search. */
+  keywords?: string[];
+  disabled?: boolean;
+  onSelect: () => void;
 }
 
 export interface CommandPaletteProps {
   open: boolean;
-  onClose: () => void;
-  actions: CommandAction[];
+  onOpenChange: (open: boolean) => void;
+  items: CommandPaletteItem[];
+  placeholder?: string;
+  emptyLabel?: string;
+}
+
+function groupItems(items: CommandPaletteItem[]) {
+  const groups = new Map<string, CommandPaletteItem[]>();
+  for (const item of items) {
+    const key = item.group ?? '';
+    const list = groups.get(key);
+    if (list) list.push(item);
+    else groups.set(key, [item]);
+  }
+  return [...groups.entries()];
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
   open,
-  onClose,
-  actions,
+  onOpenChange,
+  items,
+  placeholder = 'Type a command or search actions…',
+  emptyLabel = 'No matching commands',
 }) => {
-  const [query, setQuery] = useState('');
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (open) {
-      setQuery('');
-      setSelectedIndex(0);
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
-  }, [open]);
-
-  const filtered = actions.filter((act) => {
-    if (!query) return true;
-    const q = query.toLowerCase();
-    return (
-      act.title.toLowerCase().includes(q) ||
-      act.category.toLowerCase().includes(q)
-    );
-  });
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setSelectedIndex((prev) => (prev + 1) % Math.max(1, filtered.length));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setSelectedIndex((prev) => (prev - 1 + filtered.length) % Math.max(1, filtered.length));
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (filtered[selectedIndex]) {
-        filtered[selectedIndex].onExecute();
-        onClose();
-      }
-    } else if (e.key === 'Escape') {
-      onClose();
-    }
-  };
-
-  if (!open) return null;
-
+  const { theme, dir } = useEditorUI();
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4">
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity duration-150"
-        onClick={onClose}
-      />
-
-      {/* Palette box */}
-      <div
-        role="dialog"
-        aria-modal="true"
-        className="relative z-10 w-full max-w-lg bg-[var(--ne-surface)] border border-[var(--ne-border)] rounded-[var(--ne-radius-lg)] shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-100"
-        onKeyDown={handleKeyDown}
-      >
-        <div className="flex items-center px-3 border-b border-[var(--ne-border)] h-11 gap-2">
-          <Search className="w-4 h-4 text-[var(--ne-text-muted)] shrink-0" />
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setSelectedIndex(0);
-            }}
-            placeholder="Type a command or search actions..."
-            className="w-full text-xs bg-transparent text-[var(--ne-text)] placeholder-[var(--ne-text-subtle)] focus:outline-none font-sans"
-          />
-          <Kbd>ESC</Kbd>
-        </div>
-
-        <div className="max-h-72 overflow-y-auto p-1.5 space-y-0.5 ne-scrollbar">
-          {filtered.length === 0 ? (
-            <div className="py-6 text-center text-xs text-[var(--ne-text-muted)]">
-              No matching commands
+    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="ne-ui fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs" />
+        <DialogPrimitive.Content
+          data-ne-theme={theme}
+          dir={dir}
+          aria-describedby={undefined}
+          className="ne-ui fixed left-1/2 top-20 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 overflow-hidden rounded-[var(--ne-radius-lg)] border border-[var(--ne-border)] bg-[var(--ne-surface)] font-[family-name:var(--ne-font-ui)] text-[13px] text-[var(--ne-text)] shadow-2xl focus:outline-none"
+        >
+          <DialogPrimitive.Title className="sr-only">
+            Command palette
+          </DialogPrimitive.Title>
+          <Command label="Command palette">
+            <div className="flex h-11 items-center gap-2 border-b border-[var(--ne-border)] px-3">
+              <Search
+                aria-hidden
+                className="h-4 w-4 shrink-0 text-[var(--ne-text-muted)]"
+              />
+              <Command.Input
+                placeholder={placeholder}
+                className="w-full border-0 bg-transparent p-0 text-xs text-[var(--ne-text)] shadow-none placeholder:text-[var(--ne-text-subtle)] focus:shadow-none focus:ring-0 focus:outline-none"
+              />
+              <Kbd>ESC</Kbd>
             </div>
-          ) : (
-            filtered.map((act, index) => {
-              const isSelected = index === selectedIndex;
-              return (
-                <button
-                  key={act.id}
-                  type="button"
-                  onClick={() => {
-                    act.onExecute();
-                    onClose();
-                  }}
-                  onMouseEnter={() => setSelectedIndex(index)}
-                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-[var(--ne-radius-sm)] text-xs text-left cursor-pointer transition-colors ${
-                    isSelected
-                      ? 'bg-[var(--ne-primary)] text-white'
-                      : 'text-[var(--ne-text)] hover:bg-[var(--ne-surface-hover)]'
-                  }`}
+
+            <Command.List className="ne-scrollbar max-h-72 overflow-y-auto p-1.5">
+              <Command.Empty className="py-6 text-center text-xs text-[var(--ne-text-muted)]">
+                {emptyLabel}
+              </Command.Empty>
+              {groupItems(items).map(([group, groupItems]) => (
+                <Command.Group
+                  key={group || 'ungrouped'}
+                  heading={group || undefined}
+                  className="[&_[cmdk-group-heading]]:px-2.5 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-2 [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-[var(--ne-text-subtle)]"
                 >
-                  <div className="flex items-center gap-2 truncate">
-                    {act.icon && (
-                      <span className={`w-4 h-4 flex items-center justify-center shrink-0 ${
-                        isSelected ? 'text-white' : 'text-[var(--ne-text-muted)]'
-                      }`}>
-                        {act.icon}
+                  {groupItems.map(item => (
+                    <Command.Item
+                      key={item.id}
+                      value={`${item.label} ${item.id}`}
+                      keywords={item.keywords}
+                      disabled={item.disabled}
+                      onSelect={() => {
+                        item.onSelect();
+                        onOpenChange(false);
+                      }}
+                      className="group flex cursor-pointer items-center justify-between gap-3 rounded-[var(--ne-radius-sm)] px-2.5 py-1.5 text-xs text-[var(--ne-text)] data-[disabled=true]:cursor-not-allowed data-[disabled=true]:opacity-50 data-[selected=true]:bg-[var(--ne-primary)] data-[selected=true]:text-white"
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        {item.icon && (
+                          <span className="flex h-4 w-4 shrink-0 items-center justify-center text-[var(--ne-text-muted)] group-data-[selected=true]:text-white">
+                            {item.icon}
+                          </span>
+                        )}
+                        <span className="truncate font-medium">
+                          {item.label}
+                        </span>
                       </span>
-                    )}
-                    <span className="font-medium truncate font-sans">{act.title}</span>
-                    <span className={`text-[10px] font-sans px-1 rounded ${
-                      isSelected ? 'bg-white/20 text-white' : 'text-[var(--ne-text-muted)]'
-                    }`}>
-                      {act.category}
-                    </span>
-                  </div>
+                      {item.shortcut && (
+                        <span className="shrink-0 font-mono text-[10px] tracking-wider text-[var(--ne-text-muted)] group-data-[selected=true]:text-white/80">
+                          {item.shortcut}
+                        </span>
+                      )}
+                    </Command.Item>
+                  ))}
+                </Command.Group>
+              ))}
+            </Command.List>
 
-                  {act.shortcut && (
-                    <span className={`font-mono text-[10px] tracking-wider ml-3 ${
-                      isSelected ? 'text-white/80' : 'text-[var(--ne-text-muted)]'
-                    }`}>
-                      {act.shortcut}
-                    </span>
-                  )}
-                </button>
-              );
-            })
-          )}
-        </div>
-
-        <div className="px-3 py-1.5 border-t border-[var(--ne-border)] bg-[var(--ne-surface-subtle)] flex items-center justify-between text-[10px] text-[var(--ne-text-muted)] font-sans">
-          <span>Navigate with <Kbd>↑</Kbd> <Kbd>↓</Kbd></span>
-          <span>Select with <Kbd>↵</Kbd></span>
-        </div>
-      </div>
-    </div>
+            <div className="flex items-center justify-between border-t border-[var(--ne-border)] bg-[var(--ne-surface-subtle)] px-3 py-1.5 text-[10px] text-[var(--ne-text-muted)]">
+              <span>
+                Navigate with <Kbd>↑</Kbd> <Kbd>↓</Kbd>
+              </span>
+              <span>
+                Select with <Kbd>↵</Kbd>
+              </span>
+            </div>
+          </Command>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 };

@@ -1,131 +1,67 @@
-import React, { useState, useEffect } from 'react';
-import { TopBar, TopBarProps } from './TopBar.tsx';
-import { Panel } from './Panel.tsx';
-import { StatusBar } from './StatusBar.tsx';
-import { CommandPalette, CommandAction } from './CommandPalette.tsx';
-import { LiveAnnouncerProvider } from '../a11y/LiveAnnouncer.tsx';
-import { ToastProvider } from '../primitives/Toast.tsx';
-import { BreadcrumbItem } from './Breadcrumb.tsx';
+import type React from 'react';
+import { LiveAnnouncerProvider } from '../a11y/LiveAnnouncer';
+import { cn } from '../lib/cn';
+import { ToastProvider } from '../primitives/Toast';
+import { EditorUIScope } from '../theme/EditorUIProvider';
 
+/**
+ * The frame both builders sit in (B15 E3, gap G6). Every region is a slot:
+ * the shell owns layout only, never palette, focus, or document state.
+ * Builders pass their own command palette (with its open state and shortcut)
+ * into `commandPalette`, so there is one palette and one Cmd+K listener.
+ */
 export interface EditorShellProps {
-  topBarProps: Omit<TopBarProps, 'focusMode' | 'onToggleFocusMode' | 'onOpenCommandPalette'>;
-  leftPanelTitle?: string;
-  leftPanelContent?: React.ReactNode;
-  leftPanelDefaultWidth?: number;
-  rightPanelTitle?: string;
-  rightPanelContent?: React.ReactNode;
-  rightPanelDefaultWidth?: number;
+  topBar?: React.ReactNode;
+  library?: React.ReactNode;
   canvas: React.ReactNode;
-  breadcrumbs?: BreadcrumbItem[];
-  onSelectBreadcrumb?: (id: string) => void;
-  selectionSummary?: string;
-  nodeCount?: number;
-  commandActions?: CommandAction[];
-  modeLabel?: string;
+  inspector?: React.ReactNode;
+  statusBar?: React.ReactNode;
+  commandPalette?: React.ReactNode;
+  /** Hides the library and inspector slots without unmounting the canvas. */
+  focusMode?: boolean;
+  theme?: 'light' | 'dark';
+  dir?: 'ltr' | 'rtl';
   className?: string;
+  style?: React.CSSProperties;
 }
 
 export const EditorShell: React.FC<EditorShellProps> = ({
-  topBarProps,
-  leftPanelTitle = 'Components',
-  leftPanelContent,
-  leftPanelDefaultWidth = 260,
-  rightPanelTitle = 'Inspector',
-  rightPanelContent,
-  rightPanelDefaultWidth = 320,
+  topBar,
+  library,
   canvas,
-  breadcrumbs = [],
-  onSelectBreadcrumb,
-  selectionSummary,
-  nodeCount,
-  commandActions = [],
-  modeLabel,
-  className = '',
-}) => {
-  const [focusMode, setFocusMode] = useState(false);
-  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd+K or Ctrl+K for command palette
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setCommandPaletteOpen((prev) => !prev);
-      }
-      // Esc to exit focus mode if active
-      if (e.key === 'Escape' && focusMode) {
-        setFocusMode(false);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [focusMode]);
-
-  return (
+  inspector,
+  statusBar,
+  commandPalette,
+  focusMode = false,
+  theme,
+  dir,
+  className,
+  style,
+}) => (
+  <EditorUIScope theme={theme} dir={dir}>
     <LiveAnnouncerProvider>
       <ToastProvider>
-        <div className={`ne-editor-root flex flex-col h-screen w-screen overflow-hidden bg-[var(--ne-bg)] select-none text-[var(--ne-text)] ${className}`}>
-          {/* Top Bar */}
-          <TopBar
-            {...topBarProps}
-            focusMode={focusMode}
-            onToggleFocusMode={() => setFocusMode(!focusMode)}
-            onOpenCommandPalette={() => setCommandPaletteOpen(true)}
-          />
-
-          {/* Main workspace container */}
-          <div className="flex-1 flex overflow-hidden relative">
-            {/* Left Library/Layers Panel (hidden in focus mode) */}
-            {!focusMode && leftPanelContent && (
-              <Panel
-                side="left"
-                title={leftPanelTitle}
-                defaultWidth={leftPanelDefaultWidth}
-                minWidth={220}
-                maxWidth={400}
-              >
-                {leftPanelContent}
-              </Panel>
-            )}
-
-            {/* Central Canvas Slot */}
-            <main className="flex-1 relative overflow-auto bg-[var(--ne-bg)] flex flex-col items-center justify-start ne-scrollbar">
+        <div
+          data-ne-theme={theme}
+          dir={dir}
+          className={cn(
+            'ne-editor-root flex h-screen w-full flex-col overflow-hidden bg-[var(--ne-bg)] text-[var(--ne-text)]',
+            className
+          )}
+          style={style}
+        >
+          {topBar}
+          <div className="relative flex flex-1 overflow-hidden">
+            {!focusMode && library}
+            <main className="ne-scrollbar relative flex min-w-0 flex-1 flex-col overflow-auto bg-[var(--ne-bg)]">
               {canvas}
             </main>
-
-            {/* Right Inspector Panel (hidden in focus mode) */}
-            {!focusMode && rightPanelContent && (
-              <Panel
-                side="right"
-                title={rightPanelTitle}
-                defaultWidth={rightPanelDefaultWidth}
-                minWidth={280}
-                maxWidth={460}
-              >
-                {rightPanelContent}
-              </Panel>
-            )}
+            {!focusMode && inspector}
           </div>
-
-          {/* Bottom Status Bar */}
-          <StatusBar
-            breadcrumbs={breadcrumbs}
-            onSelectBreadcrumb={onSelectBreadcrumb}
-            selectionSummary={selectionSummary}
-            nodeCount={nodeCount}
-            zoom={topBarProps.zoom}
-            modeLabel={modeLabel}
-          />
-
-          {/* Global Command Palette */}
-          <CommandPalette
-            open={commandPaletteOpen}
-            onClose={() => setCommandPaletteOpen(false)}
-            actions={commandActions}
-          />
+          {statusBar}
+          {commandPalette}
         </div>
       </ToastProvider>
     </LiveAnnouncerProvider>
-  );
-};
+  </EditorUIScope>
+);

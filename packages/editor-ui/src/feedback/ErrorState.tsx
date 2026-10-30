@@ -1,6 +1,6 @@
 import React from 'react';
 import { AlertCircle, RotateCcw } from 'lucide-react';
-import { Button } from '../primitives/Button.tsx';
+import { Button } from '../primitives/Button';
 
 export interface ErrorStateProps {
   title?: string;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Plus, LayoutTemplate } from 'lucide-react';
-import { Button } from '../primitives/Button.tsx';
+import { Button } from '../primitives/Button';
 
 export interface EmptyStatePreset {
   id: string;

@@ -19,7 +19,11 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@nextcms/editor-ui": ["./packages/editor-ui/src/index.ts"],
+      "@nextcms/editor-ui/gallery": [
+        "./packages/editor-ui/src/gallery/index.tsx"
+      ]
     }
   },
   "include": [
@@ -30,5 +34,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "prototype"]
 }

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Dialog } from '../primitives/Dialog.tsx';
-import { Button } from '../primitives/Button.tsx';
+import { Dialog } from '../primitives/Dialog';
+import { Button } from '../primitives/Button';
 import { GitCompare, Clock, ShieldAlert } from 'lucide-react';
 
 export interface ConflictDialogProps {

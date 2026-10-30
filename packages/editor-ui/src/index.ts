@@ -1,39 +1,67 @@
+// @nextcms/editor-ui: generic editor chrome shared by the page builder and
+// the dashboard builder (B15). Knows nothing about pages, blocks, dashboards
+// or widgets. Styles ship in dist/editor-ui.css (import once per editor).
+
+// A11y
+export * from './a11y/LiveAnnouncer';
+export * from './feedback/ConflictDialog';
+export * from './feedback/EmptyState';
+export * from './feedback/ErrorState';
+export type { LoadingSkeletonProps } from './feedback/FeedbackStates';
+export { LoadingSkeleton } from './feedback/FeedbackStates';
+// Feedback
+export * from './feedback/SaveStatus';
+export * from './feedback/StaleNotice';
+export * from './inspector/BoxModelWidget';
+// Inspector
+export * from './inspector/ChangedDot';
+export * from './inspector/DeviceValueBadge';
+export * from './inspector/FieldGroup';
+export * from './inspector/FieldRow';
+export * from './inspector/InspectorField';
+export * from './inspector/InspectorTabs';
+export * from './inspector/ResetButton';
+export * from './inspector/TokenPicker';
+// Utilities
 export { cn } from './lib/cn';
-export { Button, buttonVariants } from './primitives/Button';
-export type { ButtonProps } from './primitives/Button';
-export { Input } from './primitives/Input';
-export type { InputProps } from './primitives/Input';
-export { Textarea } from './primitives/Textarea';
-export type { TextareaProps } from './primitives/Textarea';
-export { Switch } from './primitives/Switch';
-export { Tabs, TabsList, TabsTrigger, TabsContent } from './primitives/Tabs';
-export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './primitives/Tooltip';
-export { Popover, PopoverTrigger, PopoverContent } from './primitives/Popover';
-export { Dialog, DialogPortal, DialogOverlay, DialogClose, DialogTrigger, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from './primitives/Dialog';
-export { Skeleton } from './primitives/Skeleton';
-export { Label } from './primitives/Label';
-export { Select } from './primitives/Select';
-export { EditorShell } from './shell/EditorShell';
-export { Panel } from './shell/Panel';
-export { TopBar } from './shell/TopBar';
-export type { SaveStatus, TopBarProps } from './shell/TopBar';
-export { Breadcrumb } from './shell/Breadcrumb';
-export type { BreadcrumbItem, BreadcrumbProps } from './shell/Breadcrumb';
-export { StatusBar } from './shell/StatusBar';
-export type { StatusBarProps } from './shell/StatusBar';
-export { CommandPalette } from './shell/CommandPalette';
-export type { CommandPaletteItem, CommandPaletteProps } from './shell/CommandPalette';
-export { LiveAnnouncer } from './feedback/LiveAnnouncer';
-export type { LiveAnnouncerProps } from './feedback/LiveAnnouncer';
-export { EmptyState, ErrorState, LoadingSkeleton } from './feedback/FeedbackStates';
-export type { EmptyStateProps, ErrorStateProps, LoadingSkeletonProps } from './feedback/FeedbackStates';
-export { LibraryPanel } from './library/LibraryPanel';
-export type { LibraryItem, LibraryPanelProps } from './library/LibraryPanel';
-export { LayersTree } from './layers/LayersTree';
-export type { LayerNode, LayersTreeProps } from './layers/LayersTree';
-export { InspectorField } from './inspector/InspectorField';
-export type { InspectorFieldProps } from './inspector/InspectorField';
-export { ResizeHandles } from './overlays/ResizeHandles';
-export type { ResizeHandlesProps } from './overlays/ResizeHandles';
-export { useKeyboardMove } from './overlays/useKeyboardMove';
-export type { KeyboardMoveState, UseKeyboardMoveOptions } from './overlays/useKeyboardMove';
+// Library
+export * from './library/LibraryItem';
+export * from './library/LibraryPanel';
+export * from './overlays/ContextMenu';
+export * from './overlays/DropLine';
+export * from './overlays/FloatingToolbar';
+export * from './overlays/HoverBox';
+export * from './overlays/ResizeHandles';
+// Overlays
+export * from './overlays/SelectionBox';
+export * from './overlays/useKeyboardMove';
+// Primitives
+export * from './primitives/Button';
+export * from './primitives/Dialog';
+export * from './primitives/IconButton';
+export * from './primitives/Input';
+export * from './primitives/Kbd';
+export * from './primitives/Label';
+export * from './primitives/Menu';
+export * from './primitives/NumberInput';
+export * from './primitives/Popover';
+export * from './primitives/Select';
+export * from './primitives/Skeleton';
+export * from './primitives/Switch';
+export * from './primitives/Tabs';
+export * from './primitives/Textarea';
+export * from './primitives/Toast';
+export * from './primitives/Tooltip';
+export * from './shell/Breadcrumb';
+export * from './shell/CommandPalette';
+export * from './shell/EditorShell';
+export * from './shell/Panel';
+export * from './shell/StatusBar';
+// Shell
+export * from './shell/TopBar';
+// Theme and direction
+export * from './theme/EditorUIProvider';
+// Tokens
+export * from './tokens/tokens';
+// Tree
+export * from './tree/LayersTree';

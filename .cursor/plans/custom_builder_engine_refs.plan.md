@@ -626,6 +626,8 @@ This batch adds no new refs. Its phases deliver parts of refs that stay owned by
 
 Phases run in the order listed (E8 before E7).
 
+**Status (2026-10-30):** about 58%. The E1–E3 gaps are closed: Tailwind v4 CSS build, slot-based shell, Panel persistence and keyboard resize, tree roles, theme and direction provider, dev gallery at `/dashboard/dev/editor-ui`. This is the first review point. E0 is still open, and E4–E9 are partial. The table for each phase is in the Status section of [editor_ui_package_implementation.md](editor_ui_package_implementation.md). No refs change state.
+
 ## Gate order
 
 Gate 34 (R708, end of B2) → Gate 35 (R709, end of B7) → Gates 37, 40, 39, 38 (B9, B10, B11, B12) → Gate 41 (R812, B13) → Gate 36 (R710, B14). B15 has no gate of its own; its review points are after E3 and E6.

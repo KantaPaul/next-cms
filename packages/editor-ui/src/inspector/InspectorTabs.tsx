@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Search, X } from 'lucide-react';
-import { Tabs, TabItem } from '../primitives/Tabs.tsx';
+import { Tabs, TabItem } from '../primitives/Tabs';
 
 export interface InspectorTabsProps {
   tabs: TabItem[];
