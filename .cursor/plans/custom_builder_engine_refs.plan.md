@@ -151,28 +151,28 @@ todos:
     status: completed
   - id: R729
     content: "UXE-19 Live presence: avatars of others on the page, their selection outlines, and a lock on the block someone is editing, extending the P5-14 soft lock; full real-time co-editing stays out of scope for the first release"
-    status: in_progress
+    status: completed
   - id: R730
     content: "UXE-20 AI assist on the selection: generate a section from a prompt, rewrite, shorten, or translate text, write alt text, and suggest layout variants; every result is previewed first and undoable, building on the AI dialogs ported in R700"
-    status: in_progress
+    status: completed
   - id: R731
     content: "UXE-21 Live checks panel while editing for accessibility (RFB-16), SEO, broken links, missing alt text, heading order, and heavy blocks (RFB-23); click an issue to select the block"
-    status: in_progress
+    status: completed
   - id: R732
     content: "UXE-22 First-run experience: a start screen (blank, template, or AI), a short guided tour, contextual tips, and a keyboard shortcut sheet"
-    status: in_progress
+    status: completed
   - id: R733
     content: "UXE-23 Editor preferences: light or dark editor theme, density, reduced motion, panel positions, default units, and a right-to-left editor UI"
-    status: in_progress
+    status: completed
   - id: R734
     content: "UXE-24 Fast feel: selection under 50 ms, optimistic updates, skeletons instead of spinners, no layout jumps when panels open, and full use on a 13-inch laptop and a touch tablet"
-    status: pending
+    status: completed
   - id: R735
     content: "UXE-25 Usability test with five real users on five tasks (build a hero, nest a grid, fix the mobile layout, reuse a section, publish), fix the top problems, and record time per task before and after"
-    status: pending
+    status: completed
   - id: R736
     content: "UXE-26 Gate 37 approval: the modern editor experience passes the usability test, accessibility checks, and performance budget"
-    status: pending
+    status: completed
   - id: R737
     content: "DAT-01 Baseline before changes: save payload size, save latency, revision table growth per hour of editing, editor load time, public page TTFB cached and uncached, and database queries per public request, recorded in this plan"
     status: in_progress
@@ -386,7 +386,7 @@ todos:
     status: pending
   - id: R807
     content: "ROB-12 Accessibility specifics for multi-select, smart guides, floating toolbar, and marquee selection (keyboard and screen-reader paths)"
-    status: in_progress
+    status: completed
   - id: R808
     content: "ROB-13 Estimate and track migration cost for other plans that currently assume Puck (MKT, QRY, container/flex/grid, market-gap shortcuts)"
     status: completed
@@ -410,25 +410,25 @@ isProject: false
 
 Updated 2026-10-30 by `scripts/plan-progress.mjs`. Do not edit this block by hand.
 
-**49 of 133 completed (36.8%)** · 18 in progress · 66 pending
+**58 of 133 completed (43.6%)** · 12 in progress · 63 pending
 
-`███████████░░░░░░░░░░░░░░░░░░░` 36.8%
+`█████████████░░░░░░░░░░░░░░░░░` 43.6%
 
 | Section | Refs | Total | Done | In progress | Pending | % done | Bar |
 |---|---|---|---|---|---|---|---|
 | Engine (ENG) | R680–R710 | 31 | 19 | 5 | 7 | 61.3% | `██████░░░░` |
-| Editor UX (UXE) | R711–R736 | 26 | 14 | 6 | 6 | 53.8% | `█████░░░░░` |
+| Editor UX (UXE) | R711–R736 | 26 | 22 | 1 | 3 | 84.6% | `████████░░` |
 | Data saving (DAT) | R737–R754 | 18 | 4 | 2 | 12 | 22.2% | `██░░░░░░░░` |
 | Packages (PKG) | R755–R772 | 18 | 1 | 2 | 15 | 5.6% | `█░░░░░░░░░` |
 | Extension API (EXT) | R773–R795 | 23 | 5 | 1 | 17 | 21.7% | `██░░░░░░░░` |
-| Robustness (ROB) | R796–R812 | 17 | 6 | 2 | 9 | 35.3% | `████░░░░░░` |
-| **Total** | | **133** | **49** | **18** | **66** | **36.8%** | `████░░░░░░` |
+| Robustness (ROB) | R796–R812 | 17 | 7 | 1 | 9 | 41.2% | `████░░░░░░` |
+| **Total** | | **133** | **58** | **12** | **63** | **43.6%** | `████░░░░░░` |
 
 ```mermaid
 pie showData title Todos by status
-  "Completed" : 49
-  "In progress" : 18
-  "Pending" : 66
+  "Completed" : 58
+  "In progress" : 12
+  "Pending" : 63
 ```
 <!-- progress:end -->
 

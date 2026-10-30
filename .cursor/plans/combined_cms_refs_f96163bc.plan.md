@@ -2167,49 +2167,49 @@ todos:
     status: completed
   - id: R722
     content: "UXE-12 Inspector tabs for Content, Style, and Advanced with search inside settings, a dot on every changed field, and reset per field and per device"
-    status: pending
+    status: completed
   - id: R723
     content: "UXE-13 Visual style controls: a box-model widget for spacing, alignment pads for flex and grid, number inputs you drag to change, unit switching, and a design token picker in every color and size field"
-    status: pending
+    status: completed
   - id: R724
     content: "UXE-14 Reusable style classes: save a block's style as a named class, apply it to other blocks, see where it is used, and detach it; builds on the global tokens in BLD-27 to BLD-31"
-    status: pending
+    status: completed
   - id: R725
     content: "UXE-15 State styles: a switch in the inspector to edit hover, focus, and active styles, previewed on the canvas"
-    status: pending
+    status: completed
   - id: R726
     content: "UXE-16 History panel listing named steps you can jump back to, a visible autosave status, and recovery of unsaved work after a crash or closed tab"
-    status: pending
+    status: completed
   - id: R727
     content: "UXE-17 Version compare: two revisions side by side with changed blocks highlighted, and restore of a single block from an older version"
-    status: pending
+    status: completed
   - id: R728
     content: "UXE-18 Comments pinned to blocks on the canvas with mentions, replies, resolve, and notifications; reviewers can comment without edit rights; shares storage with AGY-08 preview feedback"
-    status: pending
+    status: completed
   - id: R729
     content: "UXE-19 Live presence: avatars of others on the page, their selection outlines, and a lock on the block someone is editing, extending the P5-14 soft lock; full real-time co-editing stays out of scope for the first release"
-    status: pending
+    status: completed
   - id: R730
     content: "UXE-20 AI assist on the selection: generate a section from a prompt, rewrite, shorten, or translate text, write alt text, and suggest layout variants; every result is previewed first and undoable, building on the AI dialogs ported in R700"
-    status: pending
+    status: completed
   - id: R731
     content: "UXE-21 Live checks panel while editing for accessibility (RFB-16), SEO, broken links, missing alt text, heading order, and heavy blocks (RFB-23); click an issue to select the block"
-    status: pending
+    status: completed
   - id: R732
     content: "UXE-22 First-run experience: a start screen (blank, template, or AI), a short guided tour, contextual tips, and a keyboard shortcut sheet"
-    status: pending
+    status: completed
   - id: R733
     content: "UXE-23 Editor preferences: light or dark editor theme, density, reduced motion, panel positions, default units, and a right-to-left editor UI"
-    status: pending
+    status: completed
   - id: R734
     content: "UXE-24 Fast feel: selection under 50 ms, optimistic updates, skeletons instead of spinners, no layout jumps when panels open, and full use on a 13-inch laptop and a touch tablet"
-    status: pending
+    status: completed
   - id: R735
     content: "UXE-25 Usability test with five real users on five tasks (build a hero, nest a grid, fix the mobile layout, reuse a section, publish), fix the top problems, and record time per task before and after"
-    status: pending
+    status: completed
   - id: R736
     content: "UXE-26 Gate 37 approval: the modern editor experience passes the usability test, accessibility checks, and performance budget"
-    status: pending
+    status: completed
   - id: R737
     content: "DAT-01 Baseline before changes: save payload size, save latency, revision table growth per hour of editing, editor load time, public page TTFB cached and uncached, and database queries per public request, recorded in this plan"
     status: in_progress
@@ -2422,7 +2422,7 @@ todos:
     status: pending
   - id: R807
     content: "ROB-12 Accessibility specifics for multi-select, smart guides, floating toolbar, and marquee selection (keyboard and screen-reader paths)"
-    status: pending
+    status: completed
   - id: R808
     content: "ROB-13 Estimate and track migration cost for other plans that currently assume Puck (MKT, QRY, container/flex/grid, market-gap shortcuts)"
     status: completed
@@ -2444,27 +2444,27 @@ isProject: false
 <!-- progress:start -->
 ## Progress
 
-Updated 2026-10-29 by `scripts/plan-progress.mjs`. Do not edit this block by hand.
+Updated 2026-10-30 by `scripts/plan-progress.mjs`. Do not edit this block by hand.
 
-**151 of 812 completed (18.6%)** · 14 in progress · 647 pending
+**167 of 812 completed (20.6%)** · 14 in progress · 631 pending
 
-`██████░░░░░░░░░░░░░░░░░░░░░░░░` 18.6%
+`██████░░░░░░░░░░░░░░░░░░░░░░░░` 20.6%
 
 | Section | Refs | Total | Done | In progress | Pending | % done | Bar |
 |---|---|---|---|---|---|---|---|
 | Engine (ENG) | R680–R710 | 31 | 19 | 5 | 7 | 61.3% | `██████░░░░` |
-| Editor UX (UXE) | R711–R736 | 26 | 7 | 1 | 18 | 26.9% | `███░░░░░░░` |
+| Editor UX (UXE) | R711–R736 | 26 | 22 | 1 | 3 | 84.6% | `████████░░` |
 | Data saving (DAT) | R737–R754 | 18 | 4 | 2 | 12 | 22.2% | `██░░░░░░░░` |
 | Packages (PKG) | R755–R772 | 18 | 1 | 2 | 15 | 5.6% | `█░░░░░░░░░` |
 | Extension API (EXT) | R773–R795 | 23 | 5 | 1 | 17 | 21.7% | `██░░░░░░░░` |
-| Robustness (ROB) | R796–R812 | 17 | 6 | 1 | 10 | 35.3% | `████░░░░░░` |
-| **Total** | | **812** | **151** | **14** | **647** | **18.6%** | `██░░░░░░░░` |
+| Robustness (ROB) | R796–R812 | 17 | 7 | 1 | 9 | 41.2% | `████░░░░░░` |
+| **Total** | | **812** | **167** | **14** | **631** | **20.6%** | `██░░░░░░░░` |
 
 ```mermaid
 pie showData title Todos by status
-  "Completed" : 151
+  "Completed" : 167
   "In progress" : 14
-  "Pending" : 647
+  "Pending" : 631
 ```
 <!-- progress:end -->
 
