@@ -12,6 +12,8 @@ import { EditorUIScope } from '../theme/EditorUIProvider';
  */
 export interface EditorShellProps {
   topBar?: React.ReactNode;
+  /** Full-width banners under the top bar (lock, conflict, offline, problems). */
+  notices?: React.ReactNode;
   library?: React.ReactNode;
   canvas: React.ReactNode;
   inspector?: React.ReactNode;
@@ -27,6 +29,7 @@ export interface EditorShellProps {
 
 export const EditorShell: React.FC<EditorShellProps> = ({
   topBar,
+  notices,
   library,
   canvas,
   inspector,
@@ -51,6 +54,7 @@ export const EditorShell: React.FC<EditorShellProps> = ({
           style={style}
         >
           {topBar}
+          {notices}
           <div className="relative flex flex-1 overflow-hidden">
             {!focusMode && library}
             <main className="ne-scrollbar relative flex min-w-0 flex-1 flex-col overflow-auto bg-[var(--ne-bg)]">

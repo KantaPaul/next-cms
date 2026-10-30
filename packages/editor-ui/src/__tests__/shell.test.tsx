@@ -6,6 +6,7 @@ import { CommandPalette } from '../shell/CommandPalette';
 import { EditorShell } from '../shell/EditorShell';
 import { Panel, readPanelState } from '../shell/Panel';
 import { StatusBar } from '../shell/StatusBar';
+import { TopBar } from '../shell/TopBar';
 import { LayersTree } from '../tree/LayersTree';
 
 describe('EditorShell slots (B15 E3, G6)', () => {
@@ -13,6 +14,7 @@ describe('EditorShell slots (B15 E3, G6)', () => {
     const html = renderToStaticMarkup(
       <EditorShell
         topBar={<div>TOP</div>}
+        notices={<div>NOTICE</div>}
         library={<div>LIB</div>}
         canvas={<div>CANVAS</div>}
         inspector={<div>INSPECT</div>}
@@ -88,6 +90,34 @@ describe('Panel (B15 E3, G5)', () => {
     const end = renderToStaticMarkup(<Panel side="right">x</Panel>);
     assert.match(start, /border-e/);
     assert.match(end, /border-s/);
+  });
+});
+
+describe('TopBar primary action', () => {
+  it('uses the given label and disabled state', () => {
+    const html = renderToStaticMarkup(
+      <TopBar
+        title="Home"
+        saveStatus="saved"
+        onPublish={() => {}}
+        publishLabel="Update live page"
+        publishDisabled
+      />
+    );
+    assert.match(html, /<button[^>]*disabled[^>]*>.*Update live page/);
+  });
+
+  it('defaults to Publish and hides it without a handler', () => {
+    assert.match(
+      renderToStaticMarkup(
+        <TopBar title="Home" saveStatus="saved" onPublish={() => {}} />
+      ),
+      /Publish/
+    );
+    assert.doesNotMatch(
+      renderToStaticMarkup(<TopBar title="Home" saveStatus="saved" />),
+      /Publish/
+    );
   });
 });
 

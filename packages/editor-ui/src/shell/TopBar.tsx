@@ -46,6 +46,9 @@ export interface TopBarProps {
   isPreview?: boolean;
   onPreview?: () => void;
   onPublish?: () => void;
+  /** Label for the primary action, e.g. "Update live page" or "Submit for review". */
+  publishLabel?: string;
+  publishDisabled?: boolean;
   focusMode?: boolean;
   onToggleFocusMode?: () => void;
   isDark?: boolean;
@@ -79,6 +82,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   isPreview = false,
   onPreview,
   onPublish,
+  publishLabel = 'Publish',
+  publishDisabled = false,
   focusMode = false,
   onToggleFocusMode,
   isDark = false,
@@ -289,9 +294,10 @@ export const TopBar: React.FC<TopBarProps> = ({
             variant="primary"
             size="sm"
             leftIcon={<Send className="w-3.5 h-3.5" />}
+            disabled={publishDisabled}
             onClick={onPublish}
           >
-            Publish
+            {publishLabel}
           </Button>
         )}
       </div>
