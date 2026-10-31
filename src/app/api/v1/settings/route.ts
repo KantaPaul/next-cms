@@ -16,6 +16,8 @@ export const GET = apiHandler(
         defaultOgImage: settings.defaultOgImage,
         headerMenuId: settings.headerMenuId,
         footerMenuId: settings.footerMenuId,
+        headerTemplateId: settings.headerTemplateId ?? null,
+        footerTemplateId: settings.footerTemplateId ?? null,
         themeTokens: settings.themeTokens,
         updatedAt: settings.updatedAt,
       },

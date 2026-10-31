@@ -19,6 +19,7 @@ import {
   type CommandPaletteItem,
   EditorShell,
   Panel,
+  ShortcutHelpDialog,
   StatusBar,
   TopBar,
 } from '@nextcms/editor-ui';
@@ -29,6 +30,7 @@ import { EditorCanvas } from './canvas';
 import { EditorProvider, useEditorStore } from './context';
 import { useDragController } from './drag';
 import { Inspector } from './inspector';
+import { useEditorKeyboard } from './keyboard';
 import { LayersPanel } from './layers';
 import { createEditorStore } from './store';
 
@@ -91,6 +93,18 @@ function SharedShellEditor({
   );
   const [panel, setPanel] = useState<'blocks' | 'layers'>('blocks');
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+
+  useEditorKeyboard(
+    store,
+    [typeof window === 'undefined' ? null : window],
+    {
+      onSave: () => {
+        if (onChange) onChange(store.getState().doc);
+      },
+      onHelp: () => setShortcutsOpen(true),
+    }
+  );
 
   // The shell owns no shortcut; this editor opens its own palette (R712).
   useEffect(() => {
@@ -155,6 +169,7 @@ function SharedShellEditor({
           onUndo={() => store.undo()}
           onRedo={() => store.redo()}
           onOpenCommandPalette={() => setPaletteOpen(true)}
+          onOpenShortcuts={() => setShortcutsOpen(true)}
         />
       }
       library={
@@ -236,11 +251,17 @@ function SharedShellEditor({
         />
       }
       commandPalette={
-        <CommandPalette
-          open={paletteOpen}
-          onOpenChange={setPaletteOpen}
-          items={paletteItems}
-        />
+        <>
+          <CommandPalette
+            open={paletteOpen}
+            onOpenChange={setPaletteOpen}
+            items={paletteItems}
+          />
+          <ShortcutHelpDialog
+            open={shortcutsOpen}
+            onClose={() => setShortcutsOpen(false)}
+          />
+        </>
       }
       style={style}
     />

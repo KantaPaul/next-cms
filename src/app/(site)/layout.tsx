@@ -1,6 +1,8 @@
 import { headers } from 'next/headers';
 import Link from 'next/link';
 import Script from 'next/script';
+import { getGlobalBlockContent } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
+import { renderBuilderContent } from '@/builder/render-content';
 import { fontStylesheetUrl, themeStyle } from '@/builder/theme';
 import { LanguageSwitcher } from '@/components/site/language-switcher';
 import { PAGES } from '@/config/pages';
@@ -93,11 +95,88 @@ export default async function SiteLayout({
   const pathname = headerStore.get('x-pathname') ?? '/';
   const segments = sitePathSegments(pathname, site);
   const siteSlug = siteSlugPrefix(site);
+  const postRoute = resolvePostRoute(segments, site);
+  const pageRoute = resolveRoute(segments, site);
   const language =
-    resolvePostRoute(segments, site)?.language ??
-    resolveRoute(segments, site)?.language ??
+    postRoute?.language ??
+    pageRoute?.language ??
     site.defaultLocale;
   const copy = localizedSettings(settings, language, site.defaultLocale);
+
+  // Header and footer resolution per page -> per locale -> site default (R484, R485)
+  let currentPage: {
+    headerTemplateId?: string | null;
+    footerTemplateId?: string | null;
+  } | null = null;
+  if (!postRoute && pageRoute) {
+    if (preview && preview.pageId) {
+      currentPage = await publicSiteService.getDraft(
+        pageRoute.language,
+        pageRoute.slug,
+        preview.pageId
+      );
+    } else {
+      currentPage = await publicSiteService.getPublished(
+        pageRoute.language,
+        pageRoute.slug
+      );
+    }
+  }
+
+  const headerTemplateId =
+    currentPage?.headerTemplateId ||
+    copy.headerTemplateId ||
+    settings.headerTemplateId ||
+    null;
+
+  const footerTemplateId =
+    currentPage?.footerTemplateId ||
+    copy.footerTemplateId ||
+    settings.footerTemplateId ||
+    null;
+
+  let customHeader: React.ReactNode = null;
+  if (headerTemplateId) {
+    try {
+      const headerBlock = await getGlobalBlockContent(headerTemplateId);
+      if (
+        headerBlock &&
+        (headerBlock.blocks?.length ||
+          (headerBlock.content &&
+            typeof headerBlock.content === 'object' &&
+            Object.keys(headerBlock.content).length > 0))
+      ) {
+        customHeader = await renderBuilderContent({
+          content: headerBlock.content,
+          metadata: { themeTokens: settings.themeTokens, language },
+        });
+      }
+    } catch {
+      customHeader = null;
+    }
+  }
+
+  let customFooter: React.ReactNode = null;
+  if (footerTemplateId) {
+    try {
+      const footerBlock = await getGlobalBlockContent(footerTemplateId);
+      if (
+        footerBlock &&
+        (footerBlock.blocks?.length ||
+          (footerBlock.content &&
+            typeof footerBlock.content === 'object' &&
+            Object.keys(footerBlock.content).length > 0))
+      ) {
+        customFooter = await renderBuilderContent({
+          content: footerBlock.content,
+          metadata: { themeTokens: settings.themeTokens, language },
+        });
+      }
+    } catch {
+      customFooter = null;
+    }
+  }
+
   const [header, footer] = await Promise.all([
     publicSiteService.menuFor('header', language, site),
     publicSiteService.menuFor('footer', language, site),
@@ -132,53 +211,61 @@ export default async function SiteLayout({
           </a>
         </div>
       )}
-      <header className="s-border border-b">
-        <nav
-          aria-label="Main"
-          className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-4 md:px-8"
-        >
-          <Link href={siteHref('/', siteSlug)} className="flex items-center gap-2 text-lg font-bold">
-            {settings.logo && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={settings.logo}
-                alt=""
-                className="size-8 rounded object-cover"
+      {customHeader ? (
+        <header className="site-header">{customHeader}</header>
+      ) : (
+        <header className="s-border border-b">
+          <nav
+            aria-label="Main"
+            className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-4 md:px-8"
+          >
+            <Link href={siteHref('/', siteSlug)} className="flex items-center gap-2 text-lg font-bold">
+              {settings.logo && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={settings.logo}
+                  alt=""
+                  className="size-8 rounded object-cover"
+                />
+              )}
+              {copy.siteName}
+            </Link>
+            <div className="flex flex-wrap items-center gap-5">
+              <MenuLinks
+                menu={header ?? undefined}
+                siteSlug={siteSlug}
+                className="flex flex-wrap items-center gap-5 text-sm font-medium"
               />
-            )}
-            {copy.siteName}
-          </Link>
-          <div className="flex flex-wrap items-center gap-5">
-            <MenuLinks
-              menu={header ?? undefined}
-              siteSlug={siteSlug}
-              className="flex flex-wrap items-center gap-5 text-sm font-medium"
-            />
-            <LanguageSwitcher />
-          </div>
-        </nav>
-      </header>
+              <LanguageSwitcher />
+            </div>
+          </nav>
+        </header>
+      )}
       <main className="flex-1">{children}</main>
-      <footer className="s-border s-surface border-t">
-        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-5 py-10 md:flex-row md:items-start md:justify-between md:px-8">
-          <div>
-            <p className="font-semibold">{copy.siteName}</p>
-            {copy.siteDescription && (
-              <p className="s-muted mt-1 max-w-sm text-sm">
-                {copy.siteDescription}
-              </p>
-            )}
+      {customFooter ? (
+        <footer className="site-footer">{customFooter}</footer>
+      ) : (
+        <footer className="s-border s-surface border-t">
+          <div className="mx-auto flex max-w-6xl flex-col gap-6 px-5 py-10 md:flex-row md:items-start md:justify-between md:px-8">
+            <div>
+              <p className="font-semibold">{copy.siteName}</p>
+              {copy.siteDescription && (
+                <p className="s-muted mt-1 max-w-sm text-sm">
+                  {copy.siteDescription}
+                </p>
+              )}
+            </div>
+            <MenuLinks
+              menu={footer ?? undefined}
+              siteSlug={siteSlug}
+              className="s-muted flex flex-wrap gap-x-6 gap-y-2 text-sm"
+            />
           </div>
-          <MenuLinks
-            menu={footer ?? undefined}
-            siteSlug={siteSlug}
-            className="s-muted flex flex-wrap gap-x-6 gap-y-2 text-sm"
-          />
-        </div>
-        <p className="s-muted pb-8 text-center text-xs">
-          © {new Date().getFullYear()} {copy.siteName}
-        </p>
-      </footer>
+          <p className="s-muted pb-8 text-center text-xs">
+            © {new Date().getFullYear()} {copy.siteName}
+          </p>
+        </footer>
+      )}
       {settings.googleAnalyticsId &&
         /^G-[A-Z0-9]+$/i.test(settings.googleAnalyticsId) && (
           <>

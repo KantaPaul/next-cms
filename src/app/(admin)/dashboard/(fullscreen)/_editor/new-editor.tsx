@@ -74,12 +74,14 @@ import { PreferencesPanel } from '@nextcms/builder-react';
 import {
   Button as ChromeButton,
   IconButton as ChromeIconButton,
+  ShortcutHelpDialog,
   Tabs as ChromeTabs,
 } from '@nextcms/editor-ui';
 import {
   ArrowLeft,
   CommandIcon,
   Eye,
+  HelpCircle,
   History,
   LayoutTemplate,
   Maximize2,
@@ -689,10 +691,16 @@ export function NewEditor({
   const [versionCompareOpen, setVersionCompareOpen] = useState(false);
   // B9: first-run onboarding (R732)
   const [onboardingOpen, setOnboardingOpen] = useState(false);
-  useEditorKeyboard(store, [
-    typeof window === 'undefined' ? null : window,
-    frameWindow,
-  ]);
+  // Shortcut help dialog (R477 / MKT-02)
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  useEditorKeyboard(
+    store,
+    [typeof window === 'undefined' ? null : window, frameWindow],
+    {
+      onSave: () => void saveSnapshot(),
+      onHelp: () => setShortcutsOpen(true),
+    }
+  );
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -1183,6 +1191,10 @@ export function NewEditor({
           onComplete={() => setOnboardingOpen(false)}
         />
       )}
+      <ShortcutHelpDialog
+        open={shortcutsOpen}
+        onClose={() => setShortcutsOpen(false)}
+      />
     </>
   );
 
@@ -1213,6 +1225,7 @@ export function NewEditor({
           focusMode={focusMode}
           onToggleFocusMode={() => setFocusMode(value => !value)}
           onOpenCommandPalette={() => setPaletteOpen(true)}
+          onOpenShortcuts={() => setShortcutsOpen(true)}
           actions={
             <>
               <ChromeIconButton
@@ -1339,6 +1352,15 @@ export function NewEditor({
               onClick={() => setPaletteOpen(true)}
             >
               <CommandIcon />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label="Keyboard shortcuts"
+              title="Keyboard shortcuts (?)"
+              onClick={() => setShortcutsOpen(true)}
+            >
+              <HelpCircle className="size-4" />
             </Button>
             <Button
               size="icon"

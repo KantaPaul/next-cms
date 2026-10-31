@@ -772,19 +772,19 @@ todos:
     status: completed
   - id: R476
     content: "MKT-01 Visible undo and redo buttons in the builder header, wired to Puck history with disabled states"
-    status: pending
+    status: completed
   - id: R477
     content: "MKT-02 Builder keyboard shortcuts for undo, redo, duplicate, delete, and save, plus a shortcut help dialog"
-    status: pending
+    status: completed
   - id: R483
     content: "MKT-08 Header and footer templates edited in the Puck builder and stored like global blocks"
-    status: pending
+    status: completed
   - id: R484
     content: "MKT-09 Assign header and footer templates per site, locale, or page with a site default"
-    status: pending
+    status: completed
   - id: R485
     content: "MKT-10 Public layout renders the assigned header and footer, falling back to the current menu header"
-    status: pending
+    status: completed
   - id: R571
     content: "QRY-01 Typed listing query schema: source (posts, pages, collection entries, videos), filters, sort, limit, offset, and exclude-current, validated against allowlisted fields"
     status: pending

@@ -2,6 +2,7 @@ import {
   Command,
   Edit3,
   Eye,
+  HelpCircle,
   Maximize2,
   Minimize2,
   Monitor,
@@ -54,6 +55,7 @@ export interface TopBarProps {
   isDark?: boolean;
   onToggleTheme?: () => void;
   onOpenCommandPalette?: () => void;
+  onOpenShortcuts?: () => void;
   extraActions?: React.ReactNode;
 }
 
@@ -89,6 +91,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   isDark = false,
   onToggleTheme,
   onOpenCommandPalette,
+  onOpenShortcuts,
   extraActions,
 }) => {
   const [editingTitle, setEditingTitle] = useState(false);
@@ -254,6 +257,16 @@ export const TopBar: React.FC<TopBarProps> = ({
               ⌘K
             </kbd>
           </button>
+        )}
+
+        {onOpenShortcuts && (
+          <IconButton
+            size="sm"
+            tooltip="Keyboard shortcuts (?)"
+            onClick={onOpenShortcuts}
+          >
+            <HelpCircle className="w-3.5 h-3.5" />
+          </IconButton>
         )}
 
         {onToggleTheme && (

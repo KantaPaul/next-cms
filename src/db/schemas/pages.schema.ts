@@ -56,6 +56,14 @@ export const pages = pgTable(
     /** The page that lists posts for its language; post pages link back to it. */
     isBlogIndex: boolean('is_blog_index').default(false).notNull(),
     language: text('language').default('en').notNull(),
+    headerTemplateId: text('header_template_id').references(
+      () => globalBlocks.id,
+      setNull
+    ),
+    footerTemplateId: text('footer_template_id').references(
+      () => globalBlocks.id,
+      setNull
+    ),
     translationGroupId: text('translation_group_id'),
     publishedAt: timestamp('published_at', { withTimezone: true }),
     scheduledAt: timestamp('scheduled_at', { withTimezone: true }),
@@ -412,6 +420,14 @@ export const siteSettings = pgTable('site_settings', {
   defaultOgImage: text('default_og_image'),
   headerMenuId: text('header_menu_id').references(() => menus.id, setNull),
   footerMenuId: text('footer_menu_id').references(() => menus.id, setNull),
+  headerTemplateId: text('header_template_id').references(
+    () => globalBlocks.id,
+    setNull
+  ),
+  footerTemplateId: text('footer_template_id').references(
+    () => globalBlocks.id,
+    setNull
+  ),
   themeTokens: jsonb('theme_tokens')
     .$type<ThemeTokens>()
     .default(DEFAULT_THEME_TOKENS)
@@ -628,6 +644,14 @@ export const posts = pgTable(
     /** Null uses the default template. */
     templateId: text('template_id').references(() => postTemplates.id, setNull),
     language: text('language').default('en').notNull(),
+    headerTemplateId: text('header_template_id').references(
+      () => globalBlocks.id,
+      setNull
+    ),
+    footerTemplateId: text('footer_template_id').references(
+      () => globalBlocks.id,
+      setNull
+    ),
     translationGroupId: text('translation_group_id'),
     publishedAt: timestamp('published_at', { withTimezone: true }),
     scheduledAt: timestamp('scheduled_at', { withTimezone: true }),

@@ -24,6 +24,8 @@ export const settingsSchema = z.object({
   defaultOgImage: optionalText(1000),
   headerMenuId: optionalText(50),
   footerMenuId: optionalText(50),
+  headerTemplateId: optionalText(50),
+  footerTemplateId: optionalText(50),
   robotsTxt: optionalText(5000),
   seoTitle: optionalText(160),
   seoDescription: optionalText(300),
@@ -35,6 +37,8 @@ export const settingsSchema = z.object({
         siteDescription: z.string().trim().max(500).optional(),
         seoTitle: z.string().trim().max(160).optional(),
         seoDescription: z.string().trim().max(300).optional(),
+        headerTemplateId: optionalText(50),
+        footerTemplateId: optionalText(50),
       })
     )
     .nullish(),

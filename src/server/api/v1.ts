@@ -332,6 +332,8 @@ export const settingsResponseSchema = z.object({
     defaultOgImage: z.string().nullable(),
     headerMenuId: z.string().nullable(),
     footerMenuId: z.string().nullable(),
+    headerTemplateId: z.string().nullable().optional(),
+    footerTemplateId: z.string().nullable().optional(),
     themeTokens: z.unknown(),
     updatedAt: z.string().nullable(),
   }),

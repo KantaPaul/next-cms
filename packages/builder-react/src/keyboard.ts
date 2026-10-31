@@ -20,7 +20,9 @@ export type KeyAction =
   | 'cut'
   | 'paste'
   | 'undo'
-  | 'redo';
+  | 'redo'
+  | 'save'
+  | 'help';
 
 type KeyInput = {
   key: string;
@@ -45,6 +47,8 @@ export const SHORTCUTS: [KeyAction, string][] = [
   ['delete', 'Delete or Backspace'],
   ['undo', 'Mod + Z'],
   ['redo', 'Mod + Shift + Z or Mod + Y'],
+  ['save', 'Mod + S'],
+  ['help', '? or Mod + /'],
   ['deselect', 'Escape'],
 ];
 
@@ -59,8 +63,11 @@ export function keyAction(input: KeyInput): KeyAction | null {
     if (key === 'c') return 'copy';
     if (key === 'x') return 'cut';
     if (key === 'v') return 'paste';
+    if (key === 's') return 'save';
+    if (key === '/') return 'help';
     return null;
   }
+  if (key === '?' || (input.shiftKey && key === '/')) return 'help';
   if (key === 'Escape') return 'deselect';
   if (key === 'Delete' || key === 'Backspace') return 'delete';
   if (key === 'Enter') return input.shiftKey ? 'select-parent' : 'select-child';
@@ -76,7 +83,30 @@ export function isTypingTarget(target: EventTarget | null): boolean {
   return !!element.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])');
 }
 
-export function runKeyAction(store: EditorStore, action: KeyAction): boolean {
+export type KeyActionHandlers = {
+  onSave?: () => void | Promise<void>;
+  onHelp?: () => void;
+};
+
+export function runKeyAction(
+  store: EditorStore,
+  action: KeyAction,
+  handlers?: KeyActionHandlers
+): boolean {
+  if (action === 'save') {
+    if (handlers?.onSave) {
+      void handlers.onSave();
+      return true;
+    }
+    return false;
+  }
+  if (action === 'help') {
+    if (handlers?.onHelp) {
+      handlers.onHelp();
+      return true;
+    }
+    return false;
+  }
   const selected = store.getState().selection;
   const id = selected[0];
   // Clipboard and undo work without a selection; the rest need one, except
@@ -128,18 +158,19 @@ export function runKeyAction(store: EditorStore, action: KeyAction): boolean {
 /** Listens on each given window (the editor page and the canvas iframe). */
 export function useEditorKeyboard(
   store: EditorStore,
-  windows: (Window | null | undefined)[]
+  windows: (Window | null | undefined)[],
+  handlers?: KeyActionHandlers
 ) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented || isTypingTarget(event.target)) return;
       const action = keyAction(event);
-      if (action && runKeyAction(store, action)) event.preventDefault();
+      if (action && runKeyAction(store, action, handlers)) event.preventDefault();
     };
     const targets = windows.filter((w): w is Window => !!w);
     for (const target of targets) target.addEventListener('keydown', onKeyDown);
     return () => {
       for (const target of targets) target.removeEventListener('keydown', onKeyDown);
     };
-  }, [store, ...windows]);
+  }, [store, handlers, ...windows]);
 }

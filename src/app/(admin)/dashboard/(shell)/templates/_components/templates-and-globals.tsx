@@ -288,7 +288,13 @@ function NewTemplateDialog({
               value={category}
               onChange={e => setCategory(e.target.value)}
               maxLength={50}
+              list="global-block-categories"
             />
+            <datalist id="global-block-categories">
+              <option value="Header" />
+              <option value="Footer" />
+              <option value="General" />
+            </datalist>
           </label>
           <label className="flex flex-col gap-1 text-xs font-medium">
             Description
@@ -505,7 +511,13 @@ function NewGlobalBlockDialog({
               value={category}
               onChange={e => setCategory(e.target.value)}
               maxLength={50}
+              list="global-block-categories"
             />
+            <datalist id="global-block-categories">
+              <option value="Header" />
+              <option value="Footer" />
+              <option value="General" />
+            </datalist>
           </label>
           <DialogFooter>
             <Button

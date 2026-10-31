@@ -21,10 +21,12 @@ export type TaxonomyOptions = {
 export const SidebarEditor = ({
   className,
   taxonomy,
+  globalBlocks = [],
   currentStatus,
 }: {
   className?: string;
   taxonomy: TaxonomyOptions;
+  globalBlocks?: { id: string; name: string; category: string }[];
   currentStatus?: string;
 }) => {
   const { locales } = useSiteLocales();
@@ -37,6 +39,28 @@ export const SidebarEditor = ({
     : pageStatusOptions.filter(
         o => ['draft', 'review'].includes(o.value) || o.value === currentStatus
       );
+
+  const headerOptions = [
+    { label: 'Site Default', value: '' },
+    ...globalBlocks
+      .filter(
+        g =>
+          g.category.toLowerCase() === 'header' ||
+          g.category.toLowerCase() === 'general'
+      )
+      .map(g => ({ label: `${g.name} (${g.category})`, value: g.id })),
+  ];
+
+  const footerOptions = [
+    { label: 'Site Default', value: '' },
+    ...globalBlocks
+      .filter(
+        g =>
+          g.category.toLowerCase() === 'footer' ||
+          g.category.toLowerCase() === 'general'
+      )
+      .map(g => ({ label: `${g.name} (${g.category})`, value: g.id })),
+  ];
 
   return (
     <div className={cn('pb-4', className)}>
@@ -102,6 +126,20 @@ export const SidebarEditor = ({
               type: 'multiselect',
               placeholder: taxonomy.tags.length ? 'Select tags' : 'No tags yet',
               options: taxonomy.tags,
+            },
+            {
+              name: 'headerTemplateId',
+              label: 'Header template',
+              type: 'select',
+              options: headerOptions,
+              isClearable: true,
+            },
+            {
+              name: 'footerTemplateId',
+              label: 'Footer template',
+              type: 'select',
+              options: footerOptions,
+              isClearable: true,
             },
           ],
         ]}

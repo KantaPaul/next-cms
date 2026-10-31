@@ -46,6 +46,8 @@ const pageSelect = {
   editorType: pages.editorType,
   language: pages.language,
   isHome: pages.isHome,
+  headerTemplateId: pages.headerTemplateId,
+  footerTemplateId: pages.footerTemplateId,
   translationGroupId: pages.translationGroupId,
   publishedAt: pages.publishedAt,
   updatedAt: pages.updatedAt,

@@ -61,6 +61,7 @@ type PageFormData = {
   initialValues?: PageDetail | null;
   taxonomy: TaxonomyOptions;
   templates: TemplateOption[];
+  globalBlocks?: { id: string; name: string; category: string }[];
   previewTokens?: PreviewTokenRow[];
   translations?: TranslationRow[];
 };
@@ -83,7 +84,7 @@ export default function CreateOrUpdateForm({ id }: { id: string }) {
 function PageForm({ id }: { id: string }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const { initialValues, taxonomy, templates } =
+  const { initialValues, taxonomy, templates, globalBlocks } =
     useDataProvider<PageFormData>();
   const isCreate = !initialValues;
   const markSavedRef = useRef<(snapshot: string) => void>(() => {});
@@ -115,6 +116,8 @@ function PageForm({ id }: { id: string }) {
       categories: initialValues?.categories ?? [],
       tags: initialValues?.tags ?? [],
       templateId: presetTemplate?.id ?? null,
+      headerTemplateId: initialValues?.headerTemplateId ?? null,
+      footerTemplateId: initialValues?.footerTemplateId ?? null,
       seo: {
         title: initialValues?.seo?.title ?? '',
         description: initialValues?.seo?.description ?? '',
@@ -214,6 +217,7 @@ function PageForm({ id }: { id: string }) {
             <TabsContent value="page">
               <SidebarEditor
                 taxonomy={taxonomy}
+                globalBlocks={globalBlocks ?? []}
                 currentStatus={initialValues?.status}
               />
             </TabsContent>

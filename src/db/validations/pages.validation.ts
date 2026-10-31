@@ -89,6 +89,8 @@ const pageFields = {
   tags: z.array(z.string()).nullish(),
   seo: seoSchema.partial().optional(),
   templateId: z.string().nullish(),
+  headerTemplateId: optionalText(50),
+  footerTemplateId: optionalText(50),
 };
 
 export const createPagesSchema = z.object({

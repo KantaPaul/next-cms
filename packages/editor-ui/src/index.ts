@@ -64,6 +64,7 @@ export * from './shell/Panel';
 export * from './shell/StatusBar';
 // Shell
 export * from './shell/TopBar';
+export * from './shell/ShortcutHelpDialog';
 // Theme and direction
 export * from './theme/EditorUIProvider';
 // Tokens

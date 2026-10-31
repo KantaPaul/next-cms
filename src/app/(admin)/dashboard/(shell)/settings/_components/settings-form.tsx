@@ -98,6 +98,7 @@ function Field({
 export function SettingsForm({
   settings,
   menus,
+  templates = [],
   fallbackSiteUrl,
   locales,
   defaultLocale,
@@ -111,6 +112,8 @@ export function SettingsForm({
     defaultOgImage: string | null;
     headerMenuId: string | null;
     footerMenuId: string | null;
+    headerTemplateId?: string | null;
+    footerTemplateId?: string | null;
     robotsTxt: string | null;
     googleAnalyticsId: string | null;
     seoTitle: string | null;
@@ -122,12 +125,15 @@ export function SettingsForm({
         siteDescription?: string;
         seoTitle?: string;
         seoDescription?: string;
+        headerTemplateId?: string | null;
+        footerTemplateId?: string | null;
       }
     > | null;
     themeTokens: ThemeTokens;
     videoSettings: { providers: Record<string, boolean> } | null;
   };
   menus: { id: string; title: string; location: string; language: string }[];
+  templates?: { id: string; name: string; category: string }[];
   fallbackSiteUrl: string;
   locales: { code: string; label: string }[];
   defaultLocale: string;
@@ -241,6 +247,51 @@ export function SettingsForm({
       }}
     />
   );
+
+  const templateSelect = (
+    key: 'headerTemplateId' | 'footerTemplateId',
+    filterCategory?: 'header' | 'footer'
+  ) => {
+    const relevant = templates.filter(
+      t =>
+        !filterCategory ||
+        t.category.toLowerCase() === filterCategory.toLowerCase() ||
+        t.category.toLowerCase() === 'general'
+    );
+    return (
+      <Controller
+        name={key}
+        render={({ field, fieldState }) => {
+          const id = useId();
+          return (
+            <FormItem>
+              <Select
+                id={id}
+                value={field.value ?? ''}
+                onChange={e => field.onChange(e.target.value || null)}
+                className={inputClass}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="None (use menu layout)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">None (use menu layout)</SelectItem>
+                  {relevant.map(t => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name} ({t.category})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {fieldState.error && (
+                <FormMessage>{fieldState.error.message}</FormMessage>
+              )}
+            </FormItem>
+          );
+        }}
+      />
+    );
+  };
 
   const setToken = (key: keyof ThemeTokens, value: string | number) => {
     form.setValue('themeTokens', {
@@ -385,18 +436,36 @@ export function SettingsForm({
         </Section>
 
         <Section
-          title="Navigation"
-          description="Pick which menus render in the public header and footer."
+          title="Navigation & Templates"
+          description="Pick which menus or visual builder templates render in the public header and footer."
         >
-          {menuSelect('headerMenuId')}
-          {menuSelect('footerMenuId')}
+          <div className="space-y-1">
+            <span className="text-xs font-semibold text-steel-700">Header Menu</span>
+            {menuSelect('headerMenuId')}
+          </div>
+          <div className="space-y-1">
+            <span className="text-xs font-semibold text-steel-700">Footer Menu</span>
+            {menuSelect('footerMenuId')}
+          </div>
+          <div className="space-y-1">
+            <span className="text-xs font-semibold text-steel-700">
+              Header Template (visual builder)
+            </span>
+            {templateSelect('headerTemplateId', 'header')}
+          </div>
+          <div className="space-y-1">
+            <span className="text-xs font-semibold text-steel-700">
+              Footer Template (visual builder)
+            </span>
+            {templateSelect('footerTemplateId', 'footer')}
+          </div>
           <p className="text-xs text-steel-500 sm:col-span-2">
-            Edit menu links in{' '}
+            Header and footer templates override the default menu navigation. Manage templates in{' '}
             <Link
-              href={PAGES.DASHBOARD.MENUS}
+              href={PAGES.DASHBOARD.TEMPLATES}
               className="font-medium text-indigo-600 hover:underline"
             >
-              Menus
+              Templates
             </Link>
             .
           </p>
@@ -877,6 +946,64 @@ export function SettingsForm({
                               <FormMessage>{fieldState.error.message}</FormMessage>
                             )}
                           </>
+                        );
+                      }}
+                    />
+                    <Controller
+                      name={`translations.${locale.code}.headerTemplateId`}
+                      render={({ field: f }) => {
+                        const id = useId();
+                        return (
+                          <div>
+                            <Label htmlFor={id}>Header Template ({locale.label})</Label>
+                            <Select
+                              id={id}
+                              value={f.value ?? ''}
+                              onChange={e => f.onChange(e.target.value || null)}
+                              className={inputClass}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Default (Inherit site setting)" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="">Default (Inherit site setting)</SelectItem>
+                                {templates.map(t => (
+                                  <SelectItem key={t.id} value={t.id}>
+                                    {t.name} ({t.category})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        );
+                      }}
+                    />
+                    <Controller
+                      name={`translations.${locale.code}.footerTemplateId`}
+                      render={({ field: f }) => {
+                        const id = useId();
+                        return (
+                          <div>
+                            <Label htmlFor={id}>Footer Template ({locale.label})</Label>
+                            <Select
+                              id={id}
+                              value={f.value ?? ''}
+                              onChange={e => f.onChange(e.target.value || null)}
+                              className={inputClass}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Default (Inherit site setting)" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="">Default (Inherit site setting)</SelectItem>
+                                {templates.map(t => (
+                                  <SelectItem key={t.id} value={t.id}>
+                                    {t.name} ({t.category})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         );
                       }}
                     />

@@ -31,6 +31,8 @@ export type SiteSettingsInput = {
   defaultOgImage?: string | null;
   headerMenuId?: string | null;
   footerMenuId?: string | null;
+  headerTemplateId?: string | null;
+  footerTemplateId?: string | null;
   themeTokens: ThemeTokens;
   videoSettings?: VideoSettings;
   robotsTxt?: string | null;
@@ -46,6 +48,8 @@ export function localizedSettings(
     siteDescription?: string | null;
     seoTitle?: string | null;
     seoDescription?: string | null;
+    headerTemplateId?: string | null;
+    footerTemplateId?: string | null;
     translations?: Record<string, SiteCopy> | null;
   },
   locale: string,
@@ -62,6 +66,10 @@ export function localizedSettings(
       settings.seoDescription ||
       settings.siteDescription ||
       null,
+    headerTemplateId:
+      translated?.headerTemplateId ?? settings.headerTemplateId ?? null,
+    footerTemplateId:
+      translated?.footerTemplateId ?? settings.footerTemplateId ?? null,
   };
 }
 

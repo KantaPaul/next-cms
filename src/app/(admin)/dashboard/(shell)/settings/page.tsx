@@ -9,6 +9,7 @@ import { siteContext } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { menusService } from '../menus/_modules/menus.service';
+import { templatesService } from '../templates/_modules/templates.service';
 import { SettingsForm } from './_components/settings-form';
 
 const TITLE = 'Settings & Theme';
@@ -34,10 +35,11 @@ export default async function SettingsPage() {
   }
 
   const { userId } = await getCurrentUserAndTeamId();
-  const [settings, menus, site] = await Promise.all([
+  const [settings, menus, site, globalBlocks] = await Promise.all([
     siteSettingsService.get(),
     menusService.list(),
     siteContext.adminSite(userId),
+    templatesService.listGlobalBlocks(),
   ]);
 
   return (
@@ -53,6 +55,8 @@ export default async function SettingsPage() {
           defaultOgImage: settings.defaultOgImage,
           headerMenuId: settings.headerMenuId,
           footerMenuId: settings.footerMenuId,
+          headerTemplateId: settings.headerTemplateId ?? null,
+          footerTemplateId: settings.footerTemplateId ?? null,
           robotsTxt: settings.robotsTxt,
           googleAnalyticsId: settings.googleAnalyticsId,
           seoTitle: settings.seoTitle ?? null,
@@ -66,6 +70,11 @@ export default async function SettingsPage() {
           title: m.title,
           location: m.location,
           language: m.language,
+        }))}
+        templates={globalBlocks.map(g => ({
+          id: g.id,
+          name: g.name,
+          category: g.category,
         }))}
         locales={site.locales}
         defaultLocale={site.defaultLocale}

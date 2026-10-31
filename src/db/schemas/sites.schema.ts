@@ -30,6 +30,8 @@ export type SiteCopy = {
   siteDescription?: string;
   seoTitle?: string;
   seoDescription?: string;
+  headerTemplateId?: string | null;
+  footerTemplateId?: string | null;
 };
 
 export const sites = pgTable(

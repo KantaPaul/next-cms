@@ -120,6 +120,10 @@ describe('keyboard', () => {
   it('maps keys to actions', () => {
     assert.equal(keyAction({ key: 'z', metaKey: true }), 'undo');
     assert.equal(keyAction({ key: 'Z', ctrlKey: true, shiftKey: true }), 'redo');
+    assert.equal(keyAction({ key: 's', metaKey: true }), 'save');
+    assert.equal(keyAction({ key: 's', ctrlKey: true }), 'save');
+    assert.equal(keyAction({ key: '?' }), 'help');
+    assert.equal(keyAction({ key: '/', metaKey: true }), 'help');
     assert.equal(keyAction({ key: 'ArrowUp', altKey: true }), 'move-up');
     assert.equal(keyAction({ key: 'ArrowDown' }), 'select-next');
     assert.equal(keyAction({ key: 'Enter', shiftKey: true }), 'select-parent');
@@ -136,6 +140,13 @@ describe('keyboard', () => {
     assert.equal(store.getState().doc.rootSlot.length, 3);
     runKeyAction(store, 'undo');
     assert.equal(store.getState().doc.rootSlot.length, 2);
+
+    let saved = false;
+    let helped = false;
+    assert.ok(runKeyAction(store, 'save', { onSave: () => { saved = true; } }));
+    assert.equal(saved, true);
+    assert.ok(runKeyAction(store, 'help', { onHelp: () => { helped = true; } }));
+    assert.equal(helped, true);
   });
 });
 

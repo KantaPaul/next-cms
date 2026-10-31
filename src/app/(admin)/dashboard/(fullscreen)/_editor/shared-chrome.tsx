@@ -130,6 +130,7 @@ export type SharedChromeProps = {
   focusMode: boolean;
   onToggleFocusMode: () => void;
   onOpenCommandPalette: () => void;
+  onOpenShortcuts?: () => void;
   notices: ReactNode;
   library: ReactNode;
   canvas: ReactNode;
@@ -150,6 +151,7 @@ export function SharedChrome({
   focusMode,
   onToggleFocusMode,
   onOpenCommandPalette,
+  onOpenShortcuts,
   notices,
   library,
   canvas,
@@ -214,6 +216,7 @@ export function SharedChrome({
           focusMode={focusMode}
           onToggleFocusMode={onToggleFocusMode}
           onOpenCommandPalette={onOpenCommandPalette}
+          onOpenShortcuts={onOpenShortcuts}
           extraActions={actions}
           onPublish={primaryAction?.run}
           publishLabel={primaryAction?.label}
