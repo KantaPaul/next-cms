@@ -11,12 +11,40 @@ import { createPortal } from 'react-dom';
 const COPIED = 'data-builder-copied';
 const FRAME_DOC = '<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0"></body></html>';
 
+/** Editor sheet → its copy in the frame. */
+const copies = new WeakMap<Element, Element>();
+
+/**
+ * Brings the frame's sheets in line with the editor's, touching only what
+ * changed. Re-cloning everything made linked sheets reload, so the canvas lost
+ * its styles for a frame and jumped to the top whenever the editor head changed
+ * (e.g. the scroll-lock style a select or popover adds while open).
+ */
 function syncStyles(from: Document, to: Document) {
-  for (const old of Array.from(to.head.querySelectorAll(`[${COPIED}]`))) old.remove();
+  const keep = new Set<Element>();
+  let next: ChildNode | null = to.head.querySelector(`[${COPIED}]`);
   for (const sheet of Array.from(from.querySelectorAll('link[rel="stylesheet"], style'))) {
-    const copy = sheet.cloneNode(true) as Element;
-    copy.setAttribute(COPIED, '');
-    to.head.appendChild(copy);
+    let copy = copies.get(sheet);
+    const stale =
+      !copy ||
+      copy.ownerDocument !== to ||
+      !copy.isConnected ||
+      (sheet.tagName === 'LINK' && copy.getAttribute('href') !== sheet.getAttribute('href'));
+    if (stale) {
+      copy = sheet.cloneNode(true) as Element;
+      copy.setAttribute(COPIED, '');
+      copies.set(sheet, copy);
+      to.head.insertBefore(copy, next);
+    } else if (copy && sheet.tagName === 'STYLE' && copy.textContent !== sheet.textContent) {
+      copy.textContent = sheet.textContent;
+    }
+    if (copy) {
+      keep.add(copy);
+      if (copy === next) next = copy.nextSibling;
+    }
+  }
+  for (const old of Array.from(to.head.querySelectorAll(`[${COPIED}]`))) {
+    if (!keep.has(old)) old.remove();
   }
 }
 
