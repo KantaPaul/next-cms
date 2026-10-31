@@ -34,18 +34,20 @@ export function findTextElement(
 
 export function useInlineEditing({
   frame,
+  frameDoc,
   store,
   inlineProps,
   onDone,
 }: {
   frame: HTMLIFrameElement | null;
+  frameDoc?: Document | null;
   store: EditorStore;
   inlineProps?: InlinePropsFor;
   /** Called after an edit ends, so the canvas can re-mount the block. */
   onDone: (id: NodeId) => void;
 }) {
   useEffect(() => {
-    const doc = frame?.contentDocument;
+    const doc = frameDoc ?? frame?.contentDocument;
     if (!doc || !inlineProps) return;
 
     const onDoubleClick = (event: MouseEvent) => {
@@ -111,5 +113,5 @@ export function useInlineEditing({
 
     doc.addEventListener('dblclick', onDoubleClick);
     return () => doc.removeEventListener('dblclick', onDoubleClick);
-  }, [frame, store, inlineProps, onDone]);
+  }, [frame, frameDoc, store, inlineProps, onDone]);
 }

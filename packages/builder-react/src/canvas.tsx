@@ -345,11 +345,15 @@ function CanvasDocument({
 }
 
 /** Re-renders when the frame scrolls, resizes, or its content changes size. */
-function useFrameLayoutTick(frame: HTMLIFrameElement | null) {
+function useFrameLayoutTick(
+  frame: HTMLIFrameElement | null,
+  frameDoc?: Document | null
+) {
   const [tick, setTick] = useState(0);
   useEffect(() => {
     const win = frame?.contentWindow;
-    const body = frame?.contentDocument?.body;
+    const doc = frameDoc ?? frame?.contentDocument;
+    const body = doc?.body;
     if (!win || !body) return;
     let pending = 0;
     const bump = () => {
@@ -366,7 +370,7 @@ function useFrameLayoutTick(frame: HTMLIFrameElement | null) {
       win.removeEventListener('resize', bump);
       observer.disconnect();
     };
-  }, [frame]);
+  }, [frame, frameDoc]);
   return tick;
 }
 
@@ -522,12 +526,14 @@ function dropLineProps(line: Rect) {
 
 function CanvasOverlay({
   frame,
+  frameDoc,
   drag,
   resizeHandles,
   blockActions,
   marquee,
 }: {
   frame: HTMLIFrameElement;
+  frameDoc?: Document | null;
   drag: DragController;
   resizeHandles?: ResizeHandlesFor;
   blockActions?: BlockActionsFor;
@@ -538,7 +544,7 @@ function CanvasOverlay({
   const selection = useEditor(state => state.selection);
   const hovered = useEditor(state => state.hovered);
   const dragState = useDragState(drag);
-  const tick = useFrameLayoutTick(frame);
+  const tick = useFrameLayoutTick(frame, frameDoc);
   const store = useEditorStore();
   const labelOf = (id: NodeId) => {
     const node = doc.nodes[id];
@@ -565,15 +571,15 @@ function CanvasOverlay({
 
   // Measure after each commit, once the frame shows the new document.
   useLayoutEffect(() => {
-    const frameDoc = frame.contentDocument;
-    if (!frameDoc) return;
+    const activeDoc = frameDoc ?? frame.contentDocument;
+    if (!activeDoc) return;
     setRects({
       hovered:
         hovered && !selection.includes(hovered)
-          ? nodeRect(frameDoc, hovered)
+          ? nodeRect(activeDoc, hovered)
           : null,
       selected: selection.flatMap(id => {
-        const rect = nodeRect(frameDoc, id);
+        const rect = nodeRect(activeDoc, id);
         return rect ? [[id, rect] as [NodeId, Rect]] : [];
       }),
     });
@@ -592,7 +598,7 @@ function CanvasOverlay({
         )
       );
     }
-  }, [frame, doc, selection, hovered, tick]);
+  }, [frame, frameDoc, doc, selection, hovered, tick]);
 
   const primary = rects.selected[0];
   const multi = rects.selected.length > 1;
@@ -682,6 +688,7 @@ export function EditorCanvas({
   const device = useEditor(state => state.device);
   const width = { ...DEVICE_WIDTHS, ...deviceWidths }[device];
   const [frame, setFrame] = useState<HTMLIFrameElement | null>(null);
+  const [frameDoc, setFrameDoc] = useState<Document | null>(null);
   const [marquee, setMarquee] = useState<Rect | null>(null);
   const [hoverInsert, setHoverInsert] = useState<{
     point: Point;
@@ -695,8 +702,9 @@ export function EditorCanvas({
   );
 
   const onReady = useCallback(
-    (next: HTMLIFrameElement) => {
+    (next: HTMLIFrameElement, nextDoc?: Document) => {
       setFrame(next);
+      setFrameDoc(nextDoc ?? next.contentDocument);
       drag.setFrame(next);
       onFrame?.(next);
     },
@@ -708,7 +716,7 @@ export function EditorCanvas({
       setRemount(current => ({ ...current, [id]: (current[id] ?? 0) + 1 })),
     []
   );
-  useInlineEditing({ frame, store, inlineProps, onDone: onInlineDone });
+  useInlineEditing({ frame, frameDoc, store, inlineProps, onDone: onInlineDone });
 
   /** Viewport point (fixed-position coordinates) for a point relative to the iframe. */
   const toViewportPoint = useCallback(
@@ -734,7 +742,7 @@ export function EditorCanvas({
   );
 
   useEffect(() => {
-    const doc = frame?.contentDocument;
+    const doc = frameDoc ?? frame?.contentDocument;
     if (!doc) return;
     const nodeAt = (target: EventTarget | null) =>
       (target as Element | null)
@@ -923,10 +931,10 @@ export function EditorCanvas({
       doc.removeEventListener('pointermove', onMarqueeMove);
       doc.removeEventListener('pointerup', onPointerUp);
       doc.removeEventListener('contextmenu', onContextMenu);
-      doc.documentElement.removeEventListener('pointerleave', onLeave);
+      doc.documentElement?.removeEventListener('pointerleave', onLeave);
       doc.removeEventListener('submit', onSubmit, true);
     };
-  }, [frame, store, insertGroups, dragState.active]);
+  }, [frame, frameDoc, store, insertGroups, dragState.active]);
 
   // "/" opens quick insert at the default position (after the selection, or
   // at the end of the page), matching where a click on the insert panel goes.
@@ -936,22 +944,23 @@ export function EditorCanvas({
       if (event.key !== '/' || isTypingTarget(event.target)) return;
       event.preventDefault();
       const selectedId = store.getState().selection[0];
+      const activeDoc = frameDoc ?? frame?.contentDocument ?? document;
       const rect = selectedId
-        ? nodeRect(frame?.contentDocument ?? document, selectedId)
+        ? nodeRect(activeDoc, selectedId)
         : null;
       const point = rect
         ? toViewportPoint({ x: rect.left, y: rect.top + rect.height })
         : { x: window.innerWidth / 2 - 110, y: 120 };
       setQuickInsert({ point });
     };
-    const doc = frame?.contentDocument;
+    const doc = frameDoc ?? frame?.contentDocument;
     window.addEventListener('keydown', onKeyDown);
     doc?.addEventListener('keydown', onKeyDown);
     return () => {
       window.removeEventListener('keydown', onKeyDown);
       doc?.removeEventListener('keydown', onKeyDown);
     };
-  }, [frame, store, insertGroups, toViewportPoint]);
+  }, [frame, frameDoc, store, insertGroups, toViewportPoint]);
 
   return (
     <div
@@ -992,6 +1001,7 @@ export function EditorCanvas({
         {frame && (
           <CanvasOverlay
             frame={frame}
+            frameDoc={frameDoc}
             drag={drag}
             resizeHandles={resizeHandles}
             blockActions={blockActions}

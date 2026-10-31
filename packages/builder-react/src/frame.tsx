@@ -30,7 +30,7 @@ export function CanvasFrame({
   title?: string;
   style?: CSSProperties;
   /** Called with the iframe once its document is ready. */
-  onReady?: (frame: HTMLIFrameElement) => void;
+  onReady?: (frame: HTMLIFrameElement, doc: Document) => void;
 }) {
   const ref = useRef<HTMLIFrameElement>(null);
   const [body, setBody] = useState<HTMLElement | null>(null);
@@ -38,14 +38,33 @@ export function CanvasFrame({
   const setup = () => {
     const frame = ref.current;
     const doc = frame?.contentDocument;
-    if (!frame || !doc?.body || doc.body === body) return;
+    if (!frame || !doc?.body) return;
     syncStyles(document, doc);
     setBody(doc.body);
-    onReady?.(frame);
+    onReady?.(frame, doc);
   };
 
-  // srcdoc may finish loading before React attaches onLoad.
-  useEffect(setup, []);
+  useEffect(() => {
+    const frame = ref.current;
+    if (!frame) return;
+
+    const onFrameLoad = () => {
+      const doc = frame.contentDocument;
+      if (!doc?.body) return;
+      syncStyles(document, doc);
+      setBody(doc.body);
+      onReady?.(frame, doc);
+    };
+
+    frame.addEventListener('load', onFrameLoad);
+    onFrameLoad();
+    const raf = requestAnimationFrame(onFrameLoad);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      frame.removeEventListener('load', onFrameLoad);
+    };
+  }, [onReady]);
 
   useEffect(() => {
     const doc = ref.current?.contentDocument;
