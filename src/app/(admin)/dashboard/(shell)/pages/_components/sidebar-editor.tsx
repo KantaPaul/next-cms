@@ -18,17 +18,21 @@ export type TaxonomyOptions = {
   tags: { label: string; value: string }[];
 };
 
+export type SidebarEditorProps = {
+  className?: string;
+  taxonomy: TaxonomyOptions;
+  templates?: { id: string; name: string; category: string }[];
+  globalBlocks?: { id: string; name: string; category: string }[];
+  currentStatus?: string;
+};
+
 export const SidebarEditor = ({
   className,
   taxonomy,
+  templates = [],
   globalBlocks = [],
   currentStatus,
-}: {
-  className?: string;
-  taxonomy: TaxonomyOptions;
-  globalBlocks?: { id: string; name: string; category: string }[];
-  currentStatus?: string;
-}) => {
+}: SidebarEditorProps) => {
   const { locales } = useSiteLocales();
   const canPublish = useCan(PERMISSIONS.PAGES_PUBLISH);
   const { register, control, formState } = useFormContext<CreatePagesInput>();
@@ -40,26 +44,64 @@ export const SidebarEditor = ({
         o => ['draft', 'review'].includes(o.value) || o.value === currentStatus
       );
 
+  const isHeader = (item: { name: string; category: string }) => {
+    const cat = item.category?.toLowerCase() ?? '';
+    const name = item.name?.toLowerCase() ?? '';
+    return cat === 'header' || cat === 'general' || name.includes('header');
+  };
+
+  const isFooter = (item: { name: string; category: string }) => {
+    const cat = item.category?.toLowerCase() ?? '';
+    const name = item.name?.toLowerCase() ?? '';
+    return cat === 'footer' || cat === 'general' || name.includes('footer');
+  };
+
+  const headerCandidates = [
+    ...globalBlocks.filter(isHeader).map(g => ({
+      label: `${g.name} (${g.category})`,
+      value: g.id,
+    })),
+    ...templates.filter(isHeader).map(t => ({
+      label: `${t.name} (${t.category})`,
+      value: t.id,
+    })),
+  ];
+  const seenHeaderIds = new Set<string>();
+  const uniqueHeaders: { label: string; value: string }[] = [];
+  for (const h of headerCandidates) {
+    if (!seenHeaderIds.has(h.value)) {
+      seenHeaderIds.add(h.value);
+      uniqueHeaders.push(h);
+    }
+  }
+
+  const footerCandidates = [
+    ...globalBlocks.filter(isFooter).map(g => ({
+      label: `${g.name} (${g.category})`,
+      value: g.id,
+    })),
+    ...templates.filter(isFooter).map(t => ({
+      label: `${t.name} (${t.category})`,
+      value: t.id,
+    })),
+  ];
+  const seenFooterIds = new Set<string>();
+  const uniqueFooters: { label: string; value: string }[] = [];
+  for (const f of footerCandidates) {
+    if (!seenFooterIds.has(f.value)) {
+      seenFooterIds.add(f.value);
+      uniqueFooters.push(f);
+    }
+  }
+
   const headerOptions = [
     { label: 'Site Default', value: '' },
-    ...globalBlocks
-      .filter(
-        g =>
-          g.category.toLowerCase() === 'header' ||
-          g.category.toLowerCase() === 'general'
-      )
-      .map(g => ({ label: `${g.name} (${g.category})`, value: g.id })),
+    ...uniqueHeaders,
   ];
 
   const footerOptions = [
     { label: 'Site Default', value: '' },
-    ...globalBlocks
-      .filter(
-        g =>
-          g.category.toLowerCase() === 'footer' ||
-          g.category.toLowerCase() === 'general'
-      )
-      .map(g => ({ label: `${g.name} (${g.category})`, value: g.id })),
+    ...uniqueFooters,
   ];
 
   return (

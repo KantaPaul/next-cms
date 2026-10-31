@@ -35,11 +35,12 @@ export default async function SettingsPage() {
   }
 
   const { userId } = await getCurrentUserAndTeamId();
-  const [settings, menus, site, globalBlocks] = await Promise.all([
+  const [settings, menus, site, globalBlocks, pageTemplatesList] = await Promise.all([
     siteSettingsService.get(),
     menusService.list(),
     siteContext.adminSite(userId),
     templatesService.listGlobalBlocks(),
+    templatesService.listTemplates(),
   ]);
 
   return (
@@ -71,11 +72,18 @@ export default async function SettingsPage() {
           location: m.location,
           language: m.language,
         }))}
-        templates={globalBlocks.map(g => ({
-          id: g.id,
-          name: g.name,
-          category: g.category,
-        }))}
+        templates={[
+          ...globalBlocks.map(g => ({
+            id: g.id,
+            name: `${g.name} (${g.category})`,
+            category: g.category,
+          })),
+          ...pageTemplatesList.map(t => ({
+            id: t.id,
+            name: `${t.name} (${t.category})`,
+            category: t.category,
+          })),
+        ]}
         locales={site.locales}
         defaultLocale={site.defaultLocale}
         fallbackSiteUrl={env.SITE_URL}

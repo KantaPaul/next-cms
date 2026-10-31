@@ -6,7 +6,7 @@ import { templatesService } from '@/app/(admin)/dashboard/(shell)/templates/_mod
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import { db } from '@/db';
-import { globalBlocks } from '@/db/schema';
+import { globalBlocks, pageTemplates } from '@/db/schema';
 import { EDITOR_TYPE } from '@/db/schemas/shared.schema';
 import {
   accessProcedure,
@@ -60,15 +60,51 @@ export async function getGlobalBlockContent(id: string) {
     .from(globalBlocks)
     .where(eq(globalBlocks.id, id))
     .limit(1);
-  if (!row) return null;
+
+  if (row) {
+    let blocks: unknown[] = [];
+    let zones: Record<string, unknown[]> = {};
+
+    if (Array.isArray(row.content)) {
+      blocks = row.content;
+    } else if (row.content && typeof row.content === 'object') {
+      const obj = row.content as {
+        content?: unknown[];
+        zones?: Record<string, unknown[]>;
+      };
+      blocks = Array.isArray(obj.content) ? obj.content : [];
+      zones = obj.zones && typeof obj.zones === 'object' ? obj.zones : {};
+    }
+
+    return {
+      id: row.id,
+      name: row.name,
+      content: row.content,
+      blocks,
+      zones,
+    };
+  }
+
+  // Fallback: check pageTemplates
+  const [templateRow] = await db
+    .select({
+      id: pageTemplates.id,
+      name: pageTemplates.name,
+      content: pageTemplates.content,
+    })
+    .from(pageTemplates)
+    .where(eq(pageTemplates.id, id))
+    .limit(1);
+
+  if (!templateRow) return null;
 
   let blocks: unknown[] = [];
   let zones: Record<string, unknown[]> = {};
 
-  if (Array.isArray(row.content)) {
-    blocks = row.content;
-  } else if (row.content && typeof row.content === 'object') {
-    const obj = row.content as {
+  if (Array.isArray(templateRow.content)) {
+    blocks = templateRow.content;
+  } else if (templateRow.content && typeof templateRow.content === 'object') {
+    const obj = templateRow.content as {
       content?: unknown[];
       zones?: Record<string, unknown[]>;
     };
@@ -77,9 +113,9 @@ export async function getGlobalBlockContent(id: string) {
   }
 
   return {
-    id: row.id,
-    name: row.name,
-    content: row.content,
+    id: templateRow.id,
+    name: templateRow.name,
+    content: templateRow.content,
     blocks,
     zones,
   };

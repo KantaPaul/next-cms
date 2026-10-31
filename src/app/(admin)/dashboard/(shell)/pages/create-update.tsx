@@ -33,9 +33,7 @@ export async function CreateOrUpdate({
         promises={{
           initialValues: Promise.resolve(page),
           taxonomy,
-          templates: page
-            ? Promise.resolve([])
-            : templatesService.listTemplates(),
+          templates: templatesService.listTemplates(),
           globalBlocks: templatesService.listGlobalBlocks(),
           previewTokens: page
             ? previewService.listForPage(page.id)

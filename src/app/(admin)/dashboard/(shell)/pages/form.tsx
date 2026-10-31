@@ -217,6 +217,7 @@ function PageForm({ id }: { id: string }) {
             <TabsContent value="page">
               <SidebarEditor
                 taxonomy={taxonomy}
+                templates={templates ?? []}
                 globalBlocks={globalBlocks ?? []}
                 currentStatus={initialValues?.status}
               />
