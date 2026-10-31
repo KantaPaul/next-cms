@@ -282,12 +282,108 @@ export const menuItems = pgTable(
   t => [index('menu_items_menu_index').on(t.menuId, t.order)]
 );
 
+export type GlobalColorTokens = {
+  primary?: string;
+  secondary?: string;
+  text?: string;
+  textMuted?: string;
+  accent?: string;
+  background?: string;
+  surface?: string;
+  border?: string;
+  custom?: Array<{ id: string; name: string; value: string }>;
+};
+
+export type TypographyPreset = {
+  id: string;
+  name: string;
+  fontFamily?: string;
+  fontSize?:
+    | string
+    | number
+    | {
+        desktop?: string | number;
+        tablet?: string | number;
+        mobile?: string | number;
+      };
+  fontWeight?: string | number;
+  lineHeight?: string | number;
+  letterSpacing?: string;
+};
+
+export const DEFAULT_GLOBAL_COLORS: GlobalColorTokens = {
+  primary: '#4f46e5',
+  secondary: '#64748b',
+  text: '#0f172a',
+  textMuted: '#64748b',
+  accent: '#0ea5e9',
+  background: '#ffffff',
+  surface: '#f8fafc',
+  border: '#e2e8f0',
+  custom: [],
+};
+
+export const DEFAULT_TYPOGRAPHY_PRESETS: TypographyPreset[] = [
+  {
+    id: 'h1',
+    name: 'Heading 1',
+    fontFamily: 'Inter',
+    fontSize: { desktop: '2.5rem', tablet: '2rem', mobile: '1.75rem' },
+    fontWeight: '700',
+    lineHeight: '1.2',
+    letterSpacing: '-0.02em',
+  },
+  {
+    id: 'h2',
+    name: 'Heading 2',
+    fontFamily: 'Inter',
+    fontSize: { desktop: '2rem', tablet: '1.75rem', mobile: '1.5rem' },
+    fontWeight: '600',
+    lineHeight: '1.25',
+    letterSpacing: '-0.01em',
+  },
+  {
+    id: 'h3',
+    name: 'Heading 3',
+    fontFamily: 'Inter',
+    fontSize: { desktop: '1.5rem', tablet: '1.35rem', mobile: '1.25rem' },
+    fontWeight: '600',
+    lineHeight: '1.3',
+  },
+  {
+    id: 'body',
+    name: 'Body',
+    fontFamily: 'Inter',
+    fontSize: '1rem',
+    fontWeight: '400',
+    lineHeight: '1.5',
+  },
+  {
+    id: 'caption',
+    name: 'Caption',
+    fontFamily: 'Inter',
+    fontSize: '0.875rem',
+    fontWeight: '400',
+    lineHeight: '1.4',
+  },
+  {
+    id: 'button',
+    name: 'Button',
+    fontFamily: 'Inter',
+    fontSize: '0.875rem',
+    fontWeight: '500',
+    lineHeight: '1',
+  },
+];
+
 export type ThemeTokens = {
   primaryColor: string;
   accentColor: string;
   fontFamily: 'Inter' | 'Plus Jakarta Sans' | 'JetBrains Mono' | 'System';
   borderRadius: 'none' | 'sm' | 'md' | 'lg' | 'full';
   colorMode: 'light' | 'dark' | 'system';
+  colors?: GlobalColorTokens;
+  typography?: TypographyPreset[];
 };
 
 export const DEFAULT_THEME_TOKENS: ThemeTokens = {
@@ -296,6 +392,8 @@ export const DEFAULT_THEME_TOKENS: ThemeTokens = {
   fontFamily: 'Inter',
   borderRadius: 'md',
   colorMode: 'light',
+  colors: DEFAULT_GLOBAL_COLORS,
+  typography: DEFAULT_TYPOGRAPHY_PRESETS,
 };
 
 export const SITE_SETTINGS_ID = 'default';

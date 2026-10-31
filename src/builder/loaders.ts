@@ -15,6 +15,7 @@ import {
   createLoaderRegistry,
   documentToPuck,
   puckToDocument,
+  resolveDynamicDocument,
 } from '@nextcms/builder-core';
 import type { VideoLibraryVideoItem } from '@/components/video/video-library';
 import type { BlogActiveFilters, BlogPostsProps } from './blocks/blog';
@@ -216,11 +217,12 @@ export const loadDocumentData = registry.load;
  * Run loaders for every registered block type and return a new document with
  * resolved props. Failures are logged and the original props kept.
  */
-export function resolveDocumentData(
+export async function resolveDocumentData(
   doc: BuilderDocument,
   ctx: LoaderContext = {}
 ): Promise<BuilderDocument> {
-  return registry.resolve(doc, ctx);
+  const resolved = await registry.resolve(doc, ctx);
+  return resolveDynamicDocument(resolved, ctx);
 }
 
 /**

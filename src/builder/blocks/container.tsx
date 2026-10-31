@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { cn } from '@/lib/utils/cn';
 import type { BuilderItem } from '../data';
 import {
@@ -72,13 +72,45 @@ export function hasNestedInteractive(
   return false;
 }
 
+/** Classes that lay out the container's children (the rest size the box). */
+const LAYOUT_CLASSES = new Set([
+  's-c-d',
+  's-c-fd',
+  's-c-fw',
+  's-c-jc',
+  's-c-ai',
+  's-c-ac',
+  's-c-ga',
+  's-c-cga',
+  's-c-rga',
+  's-c-gtc',
+  's-c-gtr',
+  's-c-gaf',
+]);
+
+/** The editor's slot wrapper fills the container and takes over its layout. */
+const SLOT_FILL: CSSProperties = {
+  flex: '1 1 auto',
+  alignSelf: 'stretch',
+  gridColumn: '1 / -1',
+  width: '100%',
+  minWidth: 0,
+};
+
 function renderContainerChildren(
   content: SlotValue | undefined,
   zones: Record<string, BuilderItem[]> | undefined,
-  device: Device
+  device: Device,
+  classes: string[]
 ): ReactNode {
   if (typeof content === 'function') {
-    return content({ minEmptyHeight: 80 });
+    // The editor wraps children in one slot element, so give it the
+    // container's flex/grid classes; their CSS variables inherit from the tag.
+    return content({
+      className: classes.filter(cls => LAYOUT_CLASSES.has(cls)).join(' '),
+      style: SLOT_FILL,
+      minEmptyHeight: 80,
+    });
   }
 
   const items = Array.isArray(content) ? content : content ? [content] : [];
@@ -129,7 +161,12 @@ function renderContainerBody({
   const tag = pick(c.tag, CONTAINER_TAGS);
   const Tag: ContainerTag | 'div' = tag ?? 'div';
   const linkProps = c.link ? resolveLinkProps(c.link) : null;
-  const children = renderContainerChildren(p.content, p.zones, device);
+  const children = renderContainerChildren(
+    p.content,
+    p.zones,
+    device,
+    resolved.classes
+  );
   const empty = p.editing && !children;
 
   const body = (

@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { cn } from '@/lib/utils/cn';
 import { useEntry } from '@/components/analytics/entry-context';
 import type { BuilderItem } from '../data';
@@ -427,6 +427,8 @@ export function Code(p: CodeProps) {
 
 export type SlotRender = (props: {
   minEmptyHeight?: number | string;
+  className?: string;
+  style?: CSSProperties;
 }) => ReactNode;
 export type SlotValue = ReactNode | BuilderItem[] | SlotRender | undefined;
 

@@ -1,11 +1,11 @@
 'use client';
 
-import { useId, useTransition, type FormEvent } from 'react';
+import { useId, useState, useTransition, type FormEvent } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Loader2, RotateCcw, Save } from 'lucide-react';
+import { Loader2, Plus, RotateCcw, Save, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { themeStyle } from '@/builder/theme';
@@ -136,8 +136,8 @@ export function SettingsForm({
   const [pending, startTransition] = useTransition();
 
   const form = useForm<SettingsInput>({
-    resolver: zodResolver(settingsSchema),
-    defaultValues: settings as SettingsInput,
+    resolver: zodResolver(settingsSchema) as any,
+    defaultValues: settings as unknown as SettingsInput,
   });
 
   const { submit, isPending, error } = useFormAction(
@@ -152,6 +152,48 @@ export function SettingsForm({
       },
     }
   );
+
+  const [customName, setCustomName] = useState('');
+  const [customColor, setCustomColor] = useState('#8b5cf6');
+
+  const addCustomToken = () => {
+    if (!customName.trim()) {
+      toast.error('Please enter a token name');
+      return;
+    }
+    const currentTokens = form.getValues('themeTokens');
+    const colors = currentTokens.colors ?? {};
+    const custom = [...(colors.custom ?? [])];
+    const id = customName.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+    if (custom.some(c => c.id === id)) {
+      toast.error('A token with this name already exists');
+      return;
+    }
+    custom.push({ id, name: customName.trim(), value: customColor });
+    form.setValue('themeTokens', {
+      ...currentTokens,
+      colors: {
+        ...colors,
+        custom,
+      },
+    }, { shouldDirty: true });
+    setCustomName('');
+    toast.success(`Token "${customName.trim()}" added`);
+  };
+
+  const removeCustomToken = (id: string, name: string) => {
+    const currentTokens = form.getValues('themeTokens');
+    const colors = currentTokens.colors ?? {};
+    const custom = (colors.custom ?? []).filter(c => c.id !== id);
+    form.setValue('themeTokens', {
+      ...currentTokens,
+      colors: {
+        ...colors,
+        custom,
+      },
+    }, { shouldDirty: true });
+    toast.info(`Token "${name}" removed. References will fall back to default.`);
+  };
 
   const { submit: submitVideoSettings, isPending: videoSettingsPending } =
     useFormAction(
@@ -401,6 +443,66 @@ export function SettingsForm({
             }}
           />
           <Controller
+            name="themeTokens.colors.secondary"
+            render={({ field }) => (
+              <FormItem group label="Secondary colour">
+                <ColorInput
+                  label="Secondary colour"
+                  value={field.value ?? '#64748b'}
+                  onChange={v => field.onChange(v)}
+                />
+              </FormItem>
+            )}
+          />
+          <Controller
+            name="themeTokens.colors.text"
+            render={({ field }) => (
+              <FormItem group label="Text colour">
+                <ColorInput
+                  label="Text colour"
+                  value={field.value ?? '#0f172a'}
+                  onChange={v => field.onChange(v)}
+                />
+              </FormItem>
+            )}
+          />
+          <Controller
+            name="themeTokens.colors.background"
+            render={({ field }) => (
+              <FormItem group label="Background colour">
+                <ColorInput
+                  label="Background colour"
+                  value={field.value ?? '#ffffff'}
+                  onChange={v => field.onChange(v)}
+                />
+              </FormItem>
+            )}
+          />
+          <Controller
+            name="themeTokens.colors.surface"
+            render={({ field }) => (
+              <FormItem group label="Surface colour">
+                <ColorInput
+                  label="Surface colour"
+                  value={field.value ?? '#f8fafc'}
+                  onChange={v => field.onChange(v)}
+                />
+              </FormItem>
+            )}
+          />
+          <Controller
+            name="themeTokens.colors.border"
+            render={({ field }) => (
+              <FormItem group label="Border colour">
+                <ColorInput
+                  label="Border colour"
+                  value={field.value ?? '#e2e8f0'}
+                  onChange={v => field.onChange(v)}
+                />
+              </FormItem>
+            )}
+          />
+          <Controller
             name="themeTokens.fontFamily"
             render={({ field, fieldState }) => {
               const id = useId();
@@ -479,6 +581,76 @@ export function SettingsForm({
               );
             }}
           />
+          <div className="sm:col-span-2 rounded-lg border border-steel-200 dark:border-dark-300 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-semibold">Custom Design Tokens</h4>
+                <p className="text-xs text-steel-500">
+                  Reusable custom design tokens accessible across builder blocks.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {(form.watch('themeTokens.colors.custom') ?? []).map(token => (
+                <div
+                  key={token.id}
+                  className="flex items-center justify-between gap-3 p-2 rounded-md border border-steel-100 dark:border-dark-400 bg-steel-50/50 dark:bg-dark-200/50 text-xs"
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="w-4 h-4 rounded-full border border-black/10 shrink-0"
+                      style={{ backgroundColor: token.value }}
+                    />
+                    <span className="font-medium">{token.name}</span>
+                    <span className="font-mono text-steel-400">({token.value})</span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 text-red-500 hover:text-red-700"
+                    onClick={() => removeCustomToken(token.id, token.name)}
+                    title="Delete token"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ))}
+              {(form.watch('themeTokens.colors.custom') ?? []).length === 0 && (
+                <p className="text-xs text-steel-400 italic">No custom tokens defined yet.</p>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-end gap-2 pt-2 border-t border-steel-100 dark:border-dark-400">
+              <div className="flex-1 min-w-[120px]">
+                <Label className="text-xs">Token Name</Label>
+                <Input
+                  value={customName}
+                  placeholder="e.g. Brand Highlight"
+                  onChange={e => setCustomName(e.target.value)}
+                  className="h-8 text-xs"
+                />
+              </div>
+              <div className="w-32">
+                <ColorInput
+                  label="Color"
+                  value={customColor}
+                  onChange={setCustomColor}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addCustomToken}
+                className="h-8 gap-1 text-xs"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Token
+              </Button>
+            </div>
+          </div>
+
           <div className="flex items-end">
             <Button
               type="button"
@@ -747,38 +919,89 @@ function ThemePreview({
   siteName: string;
 }) {
   const dark = tokens.colorMode === 'dark';
+  const customTokens = tokens.colors?.custom ?? [];
+
   return (
     <div className="sm:col-span-2">
-      <span className="mb-1 block text-sm font-medium">Preview</span>
+      <span className="mb-1 block text-sm font-medium">Design System Preview</span>
       <div
         style={{ ...themeStyle(tokens), fontFamily: 'var(--site-font)' }}
         className={cn(
-          'rounded-lg border p-6',
+          'rounded-lg border p-6 space-y-6',
           dark
             ? 'border-slate-700 bg-slate-900 text-slate-100'
             : 'border-steel-200 bg-white text-slate-900'
         )}
       >
-        <p
-          className="text-xs font-semibold uppercase tracking-wider"
-          style={{ color: 'var(--site-accent)' }}
-        >
-          {siteName || 'Your site'}
-        </p>
-        <p className="mt-1 text-2xl font-bold">
-          Ship pages your team is proud of.
-        </p>
-        <p
-          className={cn(
-            'mt-1 text-sm',
-            dark ? 'text-slate-400' : 'text-slate-500'
-          )}
-        >
-          Buttons, cards, and links follow these tokens.
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div>
+          <p
+            className="text-xs font-semibold uppercase tracking-wider"
+            style={{ color: 'var(--site-accent)' }}
+          >
+            {siteName || 'Your site'} · Global Tokens
+          </p>
+          <h2 className="mt-1 text-2xl font-bold" style={{ fontSize: 'var(--site-type-h2-size, 1.75rem)' }}>
+            Ship pages your team is proud of.
+          </h2>
+          <p
+            className={cn(
+              'mt-1 text-sm',
+              dark ? 'text-slate-400' : 'text-slate-500'
+            )}
+            style={{ fontSize: 'var(--site-type-body-size, 1rem)' }}
+          >
+            Design tokens provide site-wide consistency for colors, typography, and dynamic data bindings.
+          </p>
+        </div>
+
+        {/* Global Color Swatches */}
+        <div>
+          <span className="text-xs font-medium text-steel-500 block mb-2">Token Palette</span>
+          <div className="flex flex-wrap gap-2 text-xs">
+            <span
+              className="px-3 py-1.5 rounded font-medium text-white shadow-sm"
+              style={{ backgroundColor: 'var(--site-color-primary, #4f46e5)' }}
+            >
+              Primary
+            </span>
+            <span
+              className="px-3 py-1.5 rounded font-medium text-white shadow-sm"
+              style={{ backgroundColor: 'var(--site-color-accent, #0ea5e9)' }}
+            >
+              Accent
+            </span>
+            <span
+              className="px-3 py-1.5 rounded font-medium text-white shadow-sm"
+              style={{ backgroundColor: 'var(--site-color-secondary, #64748b)' }}
+            >
+              Secondary
+            </span>
+            <span
+              className="px-3 py-1.5 rounded font-medium border"
+              style={{
+                backgroundColor: 'var(--site-color-surface, #f8fafc)',
+                color: 'var(--site-color-text, #0f172a)',
+                borderColor: 'var(--site-color-border, #e2e8f0)',
+              }}
+            >
+              Surface
+            </span>
+            {customTokens.map(c => (
+              <span
+                key={c.id}
+                className="px-3 py-1.5 rounded font-medium text-white shadow-sm"
+                style={{ backgroundColor: `var(--site-token-${c.id.toLowerCase().replace(/[^a-z0-9_-]/g, '-')}, ${c.value})` }}
+              >
+                {c.name}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Interactive Components Demo */}
+        <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
           <span
-            className="px-4 py-2 text-sm font-semibold text-white"
+            className="px-4 py-2 text-sm font-semibold text-white cursor-pointer"
             style={{
               background: 'var(--site-primary)',
               borderRadius: 'var(--site-radius)',
@@ -787,7 +1010,7 @@ function ThemePreview({
             Primary action
           </span>
           <span
-            className="border px-4 py-2 text-sm font-semibold"
+            className="border px-4 py-2 text-sm font-semibold cursor-pointer"
             style={{
               borderColor: 'var(--site-primary)',
               color: 'var(--site-primary)',

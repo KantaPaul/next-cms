@@ -53,6 +53,50 @@ export const settingsSchema = z.object({
     ]),
     borderRadius: z.enum(['none', 'sm', 'md', 'lg', 'full']),
     colorMode: z.enum(['light', 'dark', 'system']),
+    colors: z
+      .object({
+        primary: hex.optional(),
+        secondary: hex.optional(),
+        text: hex.optional(),
+        textMuted: hex.optional(),
+        accent: hex.optional(),
+        background: hex.optional(),
+        surface: hex.optional(),
+        border: hex.optional(),
+        custom: z
+          .array(
+            z.object({
+              id: z.string().max(50),
+              name: z.string().max(50),
+              value: hex,
+            })
+          )
+          .optional(),
+      })
+      .optional(),
+    typography: z
+      .array(
+        z.object({
+          id: z.string().max(50),
+          name: z.string().max(50),
+          fontFamily: z.string().max(100).optional(),
+          fontSize: z
+            .union([
+              z.string().max(50),
+              z.number(),
+              z.object({
+                desktop: z.union([z.string().max(50), z.number()]).optional(),
+                tablet: z.union([z.string().max(50), z.number()]).optional(),
+                mobile: z.union([z.string().max(50), z.number()]).optional(),
+              }),
+            ])
+            .optional(),
+          fontWeight: z.union([z.string().max(20), z.number()]).optional(),
+          lineHeight: z.union([z.string().max(20), z.number()]).optional(),
+          letterSpacing: z.string().max(20).optional(),
+        })
+      )
+      .optional(),
   }),
   videoSettings: z
     .object({

@@ -372,17 +372,29 @@ export function AlignmentPads({
 /** A design token picker: choose from the site's theme tokens. */
 export type TokenOption = { value: string; label: string; color?: string };
 
+export const DEFAULT_COLOR_TOKENS: TokenOption[] = [
+  { value: 'token:primary', label: 'Primary Brand', color: '#4f46e5' },
+  { value: 'token:secondary', label: 'Secondary', color: '#64748b' },
+  { value: 'token:accent', label: 'Accent', color: '#0ea5e9' },
+  { value: 'token:text', label: 'Text', color: '#0f172a' },
+  { value: 'token:textMuted', label: 'Text Muted', color: '#64748b' },
+  { value: 'token:background', label: 'Background', color: '#ffffff' },
+  { value: 'token:surface', label: 'Surface', color: '#f8fafc' },
+  { value: 'token:border', label: 'Border', color: '#e2e8f0' },
+];
+
 export function TokenPicker({
   value,
   onChange,
-  tokens,
+  tokens = DEFAULT_COLOR_TOKENS,
   label = 'Token',
 }: {
   value: string | undefined;
   onChange: (next: string | undefined) => void;
-  tokens: TokenOption[];
+  tokens?: TokenOption[];
   label?: string;
 }) {
+  const options = tokens && tokens.length > 0 ? tokens : DEFAULT_COLOR_TOKENS;
   return (
     <div style={{ display: 'grid', gap: 6, font: '13px/1.4 system-ui, sans-serif' }}>
       <label style={{ font: '600 12px/1.4 system-ui, sans-serif' }}>{label}</label>
@@ -400,7 +412,7 @@ export function TokenPicker({
         }}
       >
         <option value="">Inherit token</option>
-        {tokens.map(token => (
+        {options.map(token => (
           <option key={token.value} value={token.value} style={{ color: token.color ?? 'inherit' }}>
             {token.label}
           </option>

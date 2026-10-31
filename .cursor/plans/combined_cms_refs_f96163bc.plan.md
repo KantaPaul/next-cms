@@ -721,55 +721,55 @@ todos:
     status: pending
   - id: R413
     content: "BLD-21 Audit current CMS entities, custom fields, public data access, cache boundaries, and Puck field/rendering APIs for safe dynamic content bindings"
-    status: pending
+    status: completed
   - id: R414
     content: "BLD-22 Define a typed dynamic-value schema that distinguishes static values from approved dynamic source references"
-    status: pending
+    status: completed
   - id: R415
     content: "BLD-23 Implement a dynamic-content picker for supported text, rich text, image, URL, date, author, taxonomy, and custom-field sources where available"
-    status: pending
+    status: completed
   - id: R416
     content: "BLD-24 Resolve dynamic bindings on the server or through approved data loaders with tenant/site authorization, draft-preview rules, and cache-safe behavior"
-    status: pending
+    status: completed
   - id: R417
     content: "BLD-25 Add safe fallback values, missing-data states, escaping, URL validation, and cycle/depth limits for dynamic bindings"
-    status: pending
+    status: completed
   - id: R418
     content: "BLD-26 Support dynamic values consistently in editor preview, preview routes, published pages, and export paths where supported"
-    status: pending
+    status: completed
   - id: R419
     content: "BLD-27 Add site-wide global design tokens for primary, secondary, text, accent, background, border, and custom colors"
-    status: pending
+    status: completed
   - id: R420
     content: "BLD-28 Add global typography presets with font family, size, weight, line height, letter spacing, and responsive values"
-    status: pending
+    status: completed
   - id: R421
     content: "BLD-29 Add global style references and per-element custom overrides with predictable inheritance and reset-to-global behavior"
-    status: pending
+    status: completed
   - id: R422
     content: "BLD-30 Build a site settings/design-system interface for creating, editing, renaming, deleting, and previewing global tokens safely"
-    status: pending
+    status: completed
   - id: R423
     content: "BLD-31 Resolve global style references consistently in editor and published CSS, including missing/deleted-token fallback behavior"
-    status: pending
+    status: completed
   - id: R428
     content: "BLD-36 Add migration/normalization for static legacy values and graceful fallbacks for absent dynamic/global/conditional settings"
-    status: pending
+    status: completed
   - id: R429
     content: "BLD-37 Add tests for dynamic binding resolution, global-token updates, condition logic, missing references, authorization, and cache isolation"
-    status: pending
+    status: completed
   - id: R430
     content: "BLD-38 Add editor-to-published end-to-end tests for dynamic fields, global styles, conditional controls, and frontend visibility"
-    status: pending
+    status: completed
   - id: R431
     content: "BLD-39 Document supported dynamic sources, global design tokens, condition operators, security boundaries, and unsupported cases"
-    status: pending
+    status: completed
   - id: R432
     content: "BLD-40 Gate 16 approval: dynamic data sources and safe resolution verified"
-    status: pending
+    status: completed
   - id: R433
     content: "BLD-41 Gate 17 approval: global style inheritance, overrides, and responsive typography verified"
-    status: pending
+    status: completed
   - id: R476
     content: "MKT-01 Visible undo and redo buttons in the builder header, wired to Puck history with disabled states"
     status: pending

@@ -15,6 +15,13 @@
 
 import { z } from 'zod';
 import { DEVICES } from './fields';
+import {
+  type DynamicBinding,
+  dynamicBindingSchema,
+  isDynamicBinding,
+} from './dynamic';
+
+export type { DynamicBinding } from './dynamic';
 
 /* ---------- responsive() ---------- */
 
@@ -65,18 +72,10 @@ export function tokenKind(schema: z.ZodType): string | undefined {
 
 const dynamicRegistry = new WeakMap<z.ZodType, z.ZodType>();
 
-/** A binding to a dynamic data source instead of a literal value. */
-export type DynamicBinding = { $dynamic: string; path?: string };
-
-const dynamicBindingSchema = z.object({
-  $dynamic: z.string(),
-  path: z.string().optional(),
-});
-
 /**
  * A value that may be a literal (validated by `inner`) or bound to dynamic
  * data: `dynamic(z.string())` validates either a plain string or
- * `{ $dynamic: 'source', path?: 'field' }`.
+ * `{ $dynamic: 'source', path?: 'field', fallback?: 'default' }`.
  */
 export function dynamic<T extends z.ZodType>(inner: T): z.ZodType {
   const schema = z.union([inner, dynamicBindingSchema]);
@@ -90,14 +89,7 @@ export function dynamicInner(schema: z.ZodType): z.ZodType | undefined {
 }
 
 /** Whether a stored value is a dynamic binding rather than a literal. */
-export function isDynamicValue(value: unknown): value is DynamicBinding {
-  return (
-    !!value &&
-    typeof value === 'object' &&
-    !Array.isArray(value) &&
-    typeof (value as Record<string, unknown>).$dynamic === 'string'
-  );
-}
+export const isDynamicValue = isDynamicBinding;
 
 /* ---------- translatable() ---------- */
 

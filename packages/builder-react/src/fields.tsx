@@ -6,7 +6,11 @@
  */
 
 import {
+  APPROVED_DYNAMIC_SOURCES,
+  createDynamicBinding,
+  isDynamicBinding,
   type Device,
+  type DynamicBinding,
   type FieldDef,
   inheritedFrom,
   resetDeviceValue,
@@ -22,7 +26,7 @@ import {
   Switch,
   Textarea,
 } from '@nextcms/editor-ui';
-import { ArrowDown, ArrowUp, ChevronDown, Plus, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronDown, Database, Plus, X } from 'lucide-react';
 import {
   type ComponentType,
   type CSSProperties,
@@ -506,6 +510,129 @@ export function fieldControlId(name: string): string {
   return `field-${name.replace(/[^\w-]/g, '-')}`;
 }
 
+/** Dynamic content source and field picker (R415 / BLD-23). */
+export function DynamicBindingField({
+  value,
+  onChange,
+  onSwitchToStatic,
+}: {
+  value: DynamicBinding;
+  onChange: (next: DynamicBinding) => void;
+  onSwitchToStatic: () => void;
+}) {
+  const currentSource = value.$dynamic || 'page';
+  const currentPath = value.path || '';
+  const sourceDef = APPROVED_DYNAMIC_SOURCES[currentSource];
+  const availableFields = sourceDef?.fields ?? [];
+
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gap: 6,
+        padding: '8px',
+        borderRadius: 'var(--ne-radius-md, 6px)',
+        border: '1px dashed var(--ne-primary, #4f46e5)',
+        background: 'rgba(79, 70, 229, 0.05)',
+        fontSize: '12px',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span
+          style={{
+            fontWeight: 600,
+            color: 'var(--ne-primary, #4f46e5)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+          }}
+        >
+          <Database style={{ width: 12, height: 12 }} /> Dynamic Binding
+        </span>
+        <button
+          type="button"
+          onClick={onSwitchToStatic}
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            color: 'var(--ne-text-muted, #64748b)',
+            cursor: 'pointer',
+            fontSize: '11px',
+            textDecoration: 'underline',
+          }}
+        >
+          Use static value
+        </button>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+        <div>
+          <label style={{ display: 'block', fontSize: '11px', color: 'var(--ne-text-muted, #64748b)', marginBottom: 2 }}>
+            Source
+          </label>
+          <select
+            value={currentSource}
+            onChange={e => {
+              const newSource = e.target.value;
+              const def = APPROVED_DYNAMIC_SOURCES[newSource];
+              const firstField = def?.fields[0]?.key ?? '';
+              onChange({ ...value, $dynamic: newSource, path: firstField });
+            }}
+            style={inputStyle}
+          >
+            {Object.values(APPROVED_DYNAMIC_SOURCES).map(src => (
+              <option key={src.id} value={src.id}>
+                {src.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label style={{ display: 'block', fontSize: '11px', color: 'var(--ne-text-muted, #64748b)', marginBottom: 2 }}>
+            Field
+          </label>
+          {availableFields.length > 0 ? (
+            <select
+              value={currentPath}
+              onChange={e => onChange({ ...value, path: e.target.value })}
+              style={inputStyle}
+            >
+              {availableFields.map(f => (
+                <option key={f.key} value={f.key}>
+                  {f.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              type="text"
+              value={currentPath}
+              placeholder="e.g. price, author"
+              onChange={e => onChange({ ...value, path: e.target.value })}
+              style={inputStyle}
+            />
+          )}
+        </div>
+      </div>
+
+      <div>
+        <label style={{ display: 'block', fontSize: '11px', color: 'var(--ne-text-muted, #64748b)', marginBottom: 2 }}>
+          Fallback value (optional)
+        </label>
+        <input
+          type="text"
+          value={value.fallback ?? ''}
+          placeholder="Value if empty"
+          onChange={e => onChange({ ...value, fallback: e.target.value || undefined })}
+          style={inputStyle}
+        />
+      </div>
+    </div>
+  );
+}
+
 /**
  * One field with its label, per-device handling, and conditional visibility.
  * `bare` drops the label, device hint, reset and description, for callers
@@ -539,6 +666,13 @@ export function FieldControl({
   const source = responsive ? inheritedFrom(value, device) : null;
   const own = responsive && source === device;
   const isContainer = field.type === 'list' || field.type === 'object';
+  const isDynamic = isDynamicBinding(shown);
+  const allowsDynamic =
+    field.dynamic ||
+    field.type === 'text' ||
+    field.type === 'textarea' ||
+    field.type === 'url' ||
+    field.type === 'image';
 
   return (
     <div style={stack(4)}>
@@ -553,6 +687,38 @@ export function FieldControl({
           >
             {field.label}
           </label>
+          {allowsDynamic && !isDynamic && !readOnly && (
+            <button
+              type="button"
+              title="Bind to dynamic content"
+              onClick={() =>
+                onChange(
+                  responsive
+                    ? withDeviceValue(
+                        value,
+                        device,
+                        createDynamicBinding('page', 'title', '')
+                      )
+                    : createDynamicBinding('page', 'title', '')
+                )
+              }
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 3,
+                background: 'none',
+                border: 'none',
+                padding: '2px 4px',
+                cursor: 'pointer',
+                color: 'var(--ne-text-muted, inherit)',
+                fontSize: '11px',
+                borderRadius: 4,
+              }}
+            >
+              <Database style={{ width: 11, height: 11 }} />
+              Dynamic
+            </button>
+          )}
           {responsive && (
             <span
               style={{
@@ -579,17 +745,29 @@ export function FieldControl({
           )}
         </div>
       )}
-      <Component
-        field={field as FieldDef & Record<string, unknown>}
-        name={name}
-        id={id}
-        value={shown}
-        props={props}
-        readOnly={readOnly || field.readOnly}
-        onChange={next =>
-          onChange(responsive ? withDeviceValue(value, device, next) : next)
-        }
-      />
+      {isDynamic ? (
+        <DynamicBindingField
+          value={shown}
+          onChange={next =>
+            onChange(responsive ? withDeviceValue(value, device, next) : next)
+          }
+          onSwitchToStatic={() =>
+            onChange(responsive ? withDeviceValue(value, device, '') : '')
+          }
+        />
+      ) : (
+        <Component
+          field={field as FieldDef & Record<string, unknown>}
+          name={name}
+          id={id}
+          value={shown}
+          props={props}
+          readOnly={readOnly || field.readOnly}
+          onChange={next =>
+            onChange(responsive ? withDeviceValue(value, device, next) : next)
+          }
+        />
+      )}
       {field.visual && !readOnly && field.type === 'number' && (
         <DraggableNumber
           value={typeof shown === 'number' ? shown : undefined}

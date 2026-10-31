@@ -146,6 +146,10 @@ function EmptySlot({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 8,
+        // Fill the slot even when it lays out as a flex row or a grid.
+        flex: '1 1 auto',
+        alignSelf: 'stretch',
+        gridColumn: '1 / -1',
         minHeight: root ? 240 : 72,
         font: '500 12px/1.4 system-ui, sans-serif',
         color: '#6b7280',

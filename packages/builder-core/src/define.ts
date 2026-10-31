@@ -10,7 +10,12 @@ import { z } from 'zod';
 import type { BlockSchema, SlotRules } from './blocks';
 import type { FieldDef, Fields } from './fields';
 import type { BlockLoader, LoaderContext } from './loaders';
-import { allowedClassList, responsiveInner, tokenKind } from './schema-helpers';
+import {
+  allowedClassList,
+  dynamicInner,
+  responsiveInner,
+  tokenKind,
+} from './schema-helpers';
 import type { PropTrait } from './traits';
 
 /** A named slot and the blocks it accepts (R776). */
@@ -132,6 +137,11 @@ export function fieldFromZod(key: string, schema: z.ZodType): FieldDef | null {
   if (responsiveOf) {
     const inner = fieldFromZod(key, responsiveOf);
     return inner ? { ...inner, responsive: true } : null;
+  }
+  const dynamicOf = dynamicInner(plain);
+  if (dynamicOf) {
+    const inner = fieldFromZod(key, dynamicOf);
+    return inner ? { ...inner, dynamic: true } : null;
   }
   const classes = allowedClassList(plain);
   if (classes) {

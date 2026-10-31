@@ -95,6 +95,8 @@ type BaseField<P> = {
   responsive?: boolean;
   /** Edit one value per locale; the field came from a `translatable()` schema (R778). */
   translatable?: boolean;
+  /** Allows dynamic data source bindings (R415 / BLD-23). */
+  dynamic?: boolean;
   /** Render the R723 visual style control row (draggable number, token picker) for this field. */
   visual?: boolean;
   /** Design token units for the R723 visual controls (draggable number unit, token values). */

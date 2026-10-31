@@ -296,6 +296,15 @@ async function PostRoute({
     themeTokens: settings.themeTokens,
     post: view,
     language: view.language,
+    site: {
+      name: settings.siteName,
+      description: settings.siteDescription,
+      url: settings.siteUrl,
+      logo: settings.logo,
+    },
+    author: {
+      name: view.authorName,
+    },
   };
   const rendered = await renderBuilderContent({
     content: layout,
@@ -419,6 +428,13 @@ export default async function SitePage({ params, searchParams }: Params) {
               themeTokens: settings.themeTokens,
               searchParams: await searchParams,
               language: templatePage.language,
+              custom: entry?.data,
+              site: {
+                name: settings.siteName,
+                description: settings.siteDescription,
+                url: settings.siteUrl,
+                logo: settings.logo,
+              },
             };
             const rendered = await renderBuilderContent({
               content: contentRow?.content,
@@ -492,6 +508,22 @@ export default async function SitePage({ params, searchParams }: Params) {
       themeTokens: settings.themeTokens,
       searchParams: await searchParams,
       language: page.language,
+      page: {
+        id: page.id,
+        title: page.title,
+        slug: page.slug,
+        seoTitle: page.seo?.title,
+        seoDescription: page.seo?.description,
+        publishedAt: page.publishedAt,
+        createdAt: page.createdAt,
+        updatedAt: page.updatedAt,
+      },
+      site: {
+        name: settings.siteName,
+        description: settings.siteDescription,
+        url: settings.siteUrl,
+        logo: settings.logo,
+      },
     };
     // Variant B content goes through the same data loading as the page.
     const rendered = await renderBuilderContent({

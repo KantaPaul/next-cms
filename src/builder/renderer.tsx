@@ -222,15 +222,16 @@ export async function renderDocumentWithLoaders(
   metadata: RenderMetadata = {},
   kind: RenderKind = 'page'
 ): Promise<ReactNode> {
-  const resolved = await resolveDocumentData(doc, ctx);
+  const mergedCtx: LoaderContext = { ...metadata, ...ctx };
+  const resolved = await resolveDocumentData(doc, mergedCtx);
   return (
     <BuilderRenderer
       kind={kind}
       document={resolved}
       metadata={{
         ...metadata,
-        language: metadata.language ?? ctx.language,
-        themeTokens: metadata.themeTokens ?? ctx.themeTokens,
+        language: metadata.language ?? mergedCtx.language,
+        themeTokens: metadata.themeTokens ?? mergedCtx.themeTokens,
       }}
     />
   );
