@@ -17,7 +17,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
+
+const TEMPLATE_CATEGORIES = [
+  'Custom',
+  'Landing',
+  'Sales',
+  'Company',
+  'Blog',
+  'Header',
+  'Footer',
+  'General',
+] as const;
+const NEW_CATEGORY_VALUE = '__new_category__';
 
 /** The save-as-template dialog without Puck; `getContent` returns the page as Puck data. */
 export function SaveTemplateDialogView({
@@ -34,7 +53,13 @@ export function SaveTemplateDialogView({
   const [name, setName] = useState(pageTitle);
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('Custom');
+  const [customCategory, setCustomCategory] = useState('');
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  const resolvedCategory = isCustomCategory
+    ? customCategory.trim() || 'Custom'
+    : category;
 
   const save = () =>
     startTransition(async () => {
@@ -42,7 +67,7 @@ export function SaveTemplateDialogView({
         await saveTemplate({
           name,
           description,
-          category,
+          category: resolvedCategory,
           editorType: 'builder',
           content: getContent(),
         }),
@@ -54,6 +79,15 @@ export function SaveTemplateDialogView({
         }
       );
     });
+
+  const handleCategoryChange = (val: string) => {
+    if (val === NEW_CATEGORY_VALUE) {
+      setIsCustomCategory(true);
+    } else {
+      setIsCustomCategory(false);
+      setCategory(val);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -79,13 +113,35 @@ export function SaveTemplateDialogView({
             />
           </FieldShell>
           <FieldShell label="Category" htmlFor="template-category">
-            <input
-              id="template-category"
-              value={category}
-              onChange={e => setCategory(e.target.value)}
-              className={inputClass}
-              maxLength={50}
-            />
+            <Select
+              value={isCustomCategory ? NEW_CATEGORY_VALUE : category}
+              onValueChange={handleCategoryChange}
+            >
+              <SelectTrigger id="template-category" className="w-full">
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                {TEMPLATE_CATEGORIES.map(cat => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+                <SelectItem value={NEW_CATEGORY_VALUE}>
+                  + New category...
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            {isCustomCategory && (
+              <input
+                className={`${inputClass} mt-1.5`}
+                placeholder="Enter custom category name"
+                value={customCategory}
+                onChange={e => setCustomCategory(e.target.value)}
+                maxLength={50}
+                required
+                autoFocus
+              />
+            )}
           </FieldShell>
           <FieldShell label="Description" htmlFor="template-description">
             <textarea

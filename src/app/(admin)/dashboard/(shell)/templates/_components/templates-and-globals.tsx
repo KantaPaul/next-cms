@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type FormEvent, useState, useTransition } from 'react';
+import { type FormEvent, useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { emptyBuilderData } from '@/builder/data';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PAGES } from '@/config/pages';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
@@ -47,6 +54,28 @@ type GlobalRow = {
   sectionTypes: string[];
   pages: number;
 };
+
+const DEFAULT_TEMPLATE_CATEGORIES = [
+  'Custom',
+  'Landing',
+  'Sales',
+  'Company',
+  'Blog',
+  'Header',
+  'Footer',
+  'General',
+] as const;
+
+const DEFAULT_GLOBAL_CATEGORIES = [
+  'General',
+  'Header',
+  'Footer',
+  'Hero',
+  'Features',
+  'CTA',
+] as const;
+
+const NEW_CATEGORY_VALUE = '__new_category__';
 
 const inputClass =
   'h-9 w-full rounded-md border border-steel-200 bg-white px-3 text-sm dark:border-dark-300 dark:bg-dark-100';
@@ -209,7 +238,11 @@ function TemplatesGrid({
           );
         })}
       </ul>
-      <NewTemplateDialog open={createOpen} onOpenChange={setCreateOpen} />
+      <NewTemplateDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        existingCategories={templates.map(t => t.category)}
+      />
     </div>
   );
 }
@@ -217,15 +250,31 @@ function TemplatesGrid({
 function NewTemplateDialog({
   open,
   onOpenChange,
+  existingCategories = [],
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  existingCategories?: string[];
 }) {
   const router = useRouter();
   const [name, setName] = useState('');
   const [category, setCategory] = useState('Custom');
+  const [customCategory, setCustomCategory] = useState('');
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [description, setDescription] = useState('');
   const [isPending, startTransition] = useTransition();
+
+  const categories = useMemo(() => {
+    const set = new Set([
+      ...DEFAULT_TEMPLATE_CATEGORIES,
+      ...existingCategories.filter(Boolean),
+    ]);
+    return Array.from(set);
+  }, [existingCategories]);
+
+  const resolvedCategory = isCustomCategory
+    ? customCategory.trim() || 'Custom'
+    : category;
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -234,7 +283,7 @@ function NewTemplateDialog({
         saveTemplate({
           name,
           description: description || null,
-          category: category || 'Custom',
+          category: resolvedCategory,
           editorType: 'builder',
           content: emptyBuilderData(),
         }),
@@ -247,6 +296,15 @@ function NewTemplateDialog({
     });
   };
 
+  const handleCategoryChange = (val: string) => {
+    if (val === NEW_CATEGORY_VALUE) {
+      setIsCustomCategory(true);
+    } else {
+      setIsCustomCategory(false);
+      setCategory(val);
+    }
+  };
+
   return (
     <Dialog
       open={open}
@@ -254,6 +312,8 @@ function NewTemplateDialog({
         if (!next) {
           setName('');
           setCategory('Custom');
+          setCustomCategory('');
+          setIsCustomCategory(false);
           setDescription('');
         }
         onOpenChange(next);
@@ -281,21 +341,38 @@ function NewTemplateDialog({
               autoFocus
             />
           </label>
-          <label className="flex flex-col gap-1 text-xs font-medium">
-            Category
-            <input
-              className={inputClass}
-              value={category}
-              onChange={e => setCategory(e.target.value)}
-              maxLength={50}
-              list="global-block-categories"
-            />
-            <datalist id="global-block-categories">
-              <option value="Header" />
-              <option value="Footer" />
-              <option value="General" />
-            </datalist>
-          </label>
+          <div className="flex flex-col gap-1.5 text-xs font-medium">
+            <span>Category</span>
+            <Select
+              value={isCustomCategory ? NEW_CATEGORY_VALUE : category}
+              onValueChange={handleCategoryChange}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map(cat => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+                <SelectItem value={NEW_CATEGORY_VALUE}>
+                  + New category...
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            {isCustomCategory && (
+              <input
+                className={inputClass}
+                placeholder="Enter custom category name"
+                value={customCategory}
+                onChange={e => setCustomCategory(e.target.value)}
+                maxLength={50}
+                required
+                autoFocus
+              />
+            )}
+          </div>
           <label className="flex flex-col gap-1 text-xs font-medium">
             Description
             <textarea
@@ -314,7 +391,14 @@ function NewTemplateDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending || !name.trim()}>
+            <Button
+              type="submit"
+              disabled={
+                isPending ||
+                !name.trim() ||
+                (isCustomCategory && !customCategory.trim())
+              }
+            >
               {isPending && <Loader2 className="animate-spin" />} Create &amp;
               edit
             </Button>
@@ -379,7 +463,11 @@ function GlobalsList({
               className="flex flex-col gap-3 p-4 md:flex-row md:items-center"
             >
               {renaming === block.id ? (
-                <RenameForm block={block} onDone={() => setRenaming(null)} />
+                <RenameForm
+                  block={block}
+                  onDone={() => setRenaming(null)}
+                  existingCategories={globals.map(g => g.category)}
+                />
               ) : (
                 <>
                   <div className="min-w-0 flex-1">
@@ -436,7 +524,11 @@ function GlobalsList({
           ))}
         </ul>
       )}
-      <NewGlobalBlockDialog open={createOpen} onOpenChange={setCreateOpen} />
+      <NewGlobalBlockDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        existingCategories={globals.map(g => g.category)}
+      />
     </div>
   );
 }
@@ -444,14 +536,30 @@ function GlobalsList({
 function NewGlobalBlockDialog({
   open,
   onOpenChange,
+  existingCategories = [],
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  existingCategories?: string[];
 }) {
   const router = useRouter();
   const [name, setName] = useState('');
   const [category, setCategory] = useState('General');
+  const [customCategory, setCustomCategory] = useState('');
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  const categories = useMemo(() => {
+    const set = new Set([
+      ...DEFAULT_GLOBAL_CATEGORIES,
+      ...existingCategories.filter(Boolean),
+    ]);
+    return Array.from(set);
+  }, [existingCategories]);
+
+  const resolvedCategory = isCustomCategory
+    ? customCategory.trim() || 'General'
+    : category;
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -459,7 +567,7 @@ function NewGlobalBlockDialog({
       await handleActionResponse(
         saveGlobalBlock({
           name,
-          category: category || 'General',
+          category: resolvedCategory,
           content: { content: [], zones: {} },
         }),
         row => {
@@ -471,6 +579,15 @@ function NewGlobalBlockDialog({
     });
   };
 
+  const handleCategoryChange = (val: string) => {
+    if (val === NEW_CATEGORY_VALUE) {
+      setIsCustomCategory(true);
+    } else {
+      setIsCustomCategory(false);
+      setCategory(val);
+    }
+  };
+
   return (
     <Dialog
       open={open}
@@ -478,6 +595,8 @@ function NewGlobalBlockDialog({
         if (!next) {
           setName('');
           setCategory('General');
+          setCustomCategory('');
+          setIsCustomCategory(false);
         }
         onOpenChange(next);
       }}
@@ -504,21 +623,38 @@ function NewGlobalBlockDialog({
               autoFocus
             />
           </label>
-          <label className="flex flex-col gap-1 text-xs font-medium">
-            Category
-            <input
-              className={inputClass}
-              value={category}
-              onChange={e => setCategory(e.target.value)}
-              maxLength={50}
-              list="global-block-categories"
-            />
-            <datalist id="global-block-categories">
-              <option value="Header" />
-              <option value="Footer" />
-              <option value="General" />
-            </datalist>
-          </label>
+          <div className="flex flex-col gap-1.5 text-xs font-medium">
+            <span>Category</span>
+            <Select
+              value={isCustomCategory ? NEW_CATEGORY_VALUE : category}
+              onValueChange={handleCategoryChange}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map(cat => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+                <SelectItem value={NEW_CATEGORY_VALUE}>
+                  + New category...
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            {isCustomCategory && (
+              <input
+                className={inputClass}
+                placeholder="Enter custom category name"
+                value={customCategory}
+                onChange={e => setCustomCategory(e.target.value)}
+                maxLength={50}
+                required
+                autoFocus
+              />
+            )}
+          </div>
           <DialogFooter>
             <Button
               type="button"
@@ -527,7 +663,14 @@ function NewGlobalBlockDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending || !name.trim()}>
+            <Button
+              type="submit"
+              disabled={
+                isPending ||
+                !name.trim() ||
+                (isCustomCategory && !customCategory.trim())
+              }
+            >
               {isPending && <Loader2 className="animate-spin" />} Create &amp;
               edit
             </Button>
@@ -541,20 +684,37 @@ function NewGlobalBlockDialog({
 function RenameForm({
   block,
   onDone,
+  existingCategories = [],
 }: {
   block: GlobalRow;
   onDone: () => void;
+  existingCategories?: string[];
 }) {
   const router = useRouter();
   const [name, setName] = useState(block.name);
   const [category, setCategory] = useState(block.category);
+  const [customCategory, setCustomCategory] = useState('');
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  const categories = useMemo(() => {
+    const set = new Set([
+      ...DEFAULT_GLOBAL_CATEGORIES,
+      ...existingCategories.filter(Boolean),
+      block.category,
+    ]);
+    return Array.from(set);
+  }, [existingCategories, block.category]);
+
+  const resolvedCategory = isCustomCategory
+    ? customCategory.trim() || 'General'
+    : category;
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
     startTransition(async () => {
       await handleActionResponse(
-        renameGlobalBlock({ id: block.id, name, category }),
+        renameGlobalBlock({ id: block.id, name, category: resolvedCategory }),
         () => {
           toast.success('Global block updated');
           router.refresh();
@@ -562,6 +722,15 @@ function RenameForm({
         }
       );
     });
+  };
+
+  const handleCategoryChange = (val: string) => {
+    if (val === NEW_CATEGORY_VALUE) {
+      setIsCustomCategory(true);
+    } else {
+      setIsCustomCategory(false);
+      setCategory(val);
+    }
   };
 
   return (
@@ -577,16 +746,43 @@ function RenameForm({
           autoFocus
         />
       </label>
-      <label className="flex w-40 flex-col gap-1 text-xs font-medium">
-        Category
-        <input
-          className={inputClass}
-          value={category}
-          onChange={e => setCategory(e.target.value)}
-          maxLength={50}
-        />
-      </label>
-      <Button type="submit" size="sm" disabled={isPending}>
+      <div className="flex w-44 flex-col gap-1 text-xs font-medium">
+        <span>Category</span>
+        <Select
+          value={isCustomCategory ? NEW_CATEGORY_VALUE : category}
+          onValueChange={handleCategoryChange}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map(cat => (
+              <SelectItem key={cat} value={cat}>
+                {cat}
+              </SelectItem>
+            ))}
+            <SelectItem value={NEW_CATEGORY_VALUE}>
+              + New category...
+            </SelectItem>
+          </SelectContent>
+        </Select>
+        {isCustomCategory && (
+          <input
+            className={inputClass}
+            placeholder="Category name"
+            value={customCategory}
+            onChange={e => setCustomCategory(e.target.value)}
+            maxLength={50}
+            required
+            autoFocus
+          />
+        )}
+      </div>
+      <Button
+        type="submit"
+        size="sm"
+        disabled={isPending || (isCustomCategory && !customCategory.trim())}
+      >
         {isPending && <Loader2 className="animate-spin" />} Save
       </Button>
       <Button type="button" size="sm" variant="ghost" onClick={onDone}>
