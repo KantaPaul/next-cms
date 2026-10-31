@@ -13,6 +13,7 @@ export * from './normalize';
 export * from './patch';
 export * from './public-api';
 export * from './puck-data';
+export * from './query';
 export * from './renderer';
 export * from './schema-helpers';
 export * from './theme';

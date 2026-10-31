@@ -78,6 +78,13 @@ export const pages = pgTable(
       .where(sql`${t.deletedAt} is null`),
     index('pages_site_id_index').on(t.siteId),
     index('pages_status_index').on(t.status),
+    index('pages_site_lang_status_pub_idx').on(
+      t.siteId,
+      t.language,
+      t.status,
+      t.publishedAt
+    ),
+    index('pages_created_by_idx').on(t.createdBy),
     index('pages_translation_group_index').on(t.translationGroupId),
     index('pages_deleted_at_index').on(t.deletedAt),
   ]
@@ -211,7 +218,10 @@ export const pageCategories = pgTable(
       .references(() => categories.id, cascade)
       .notNull(),
   },
-  t => [primaryKey({ columns: [t.pageId, t.categoryId] })]
+  t => [
+    primaryKey({ columns: [t.pageId, t.categoryId] }),
+    index('page_categories_category_id_idx').on(t.categoryId),
+  ]
 );
 
 export const pageTags = pgTable(
@@ -224,7 +234,10 @@ export const pageTags = pgTable(
       .references(() => tags.id, cascade)
       .notNull(),
   },
-  t => [primaryKey({ columns: [t.pageId, t.tagId] })]
+  t => [
+    primaryKey({ columns: [t.pageId, t.tagId] }),
+    index('page_tags_tag_id_idx').on(t.tagId),
+  ]
 );
 
 export const media = pgTable(
@@ -666,6 +679,13 @@ export const posts = pgTable(
       .where(sql`${t.deletedAt} is null`),
     index('posts_site_id_index').on(t.siteId),
     index('posts_status_published_index').on(t.status, t.publishedAt),
+    index('posts_site_lang_status_pub_idx').on(
+      t.siteId,
+      t.language,
+      t.status,
+      t.publishedAt
+    ),
+    index('posts_created_by_idx').on(t.createdBy),
     index('posts_deleted_at_index').on(t.deletedAt),
   ]
 );

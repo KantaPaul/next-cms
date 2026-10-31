@@ -787,16 +787,16 @@ todos:
     status: completed
   - id: R571
     content: "QRY-01 Typed listing query schema: source (posts, pages, collection entries, videos), filters, sort, limit, offset, and exclude-current, validated against allowlisted fields"
-    status: pending
+    status: completed
   - id: R572
     content: "QRY-02 Server query resolver per source that only returns published, site-scoped, locale-scoped, access-checked items, with a hard maximum page size"
-    status: pending
+    status: completed
   - id: R573
     content: "QRY-03 Namespaced URL parameters per listing block so two listings and their filters on one page never clash"
-    status: pending
+    status: completed
   - id: R574
     content: "QRY-04 Database indexes for the filter and sort columns each source allows"
-    status: pending
+    status: completed
   - id: R575
     content: "QRY-05 Query Loop block whose card is a slot designed in the builder, with item fields (title, image, excerpt, date, author, terms, collection field) read from the loop item"
     status: pending

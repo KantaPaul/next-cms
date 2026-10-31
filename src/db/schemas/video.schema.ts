@@ -124,6 +124,7 @@ export const videos = pgTable(
     index('videos_site_id_index').on(t.siteId),
     index('videos_playlist_index').on(t.playlistId),
     index('videos_status_index').on(t.status),
+    index('videos_site_status_pub_idx').on(t.siteId, t.status, t.publishedAt),
     index('videos_deleted_at_index').on(t.deletedAt),
   ]
 );
