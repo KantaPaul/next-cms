@@ -1,7 +1,7 @@
 import * as SelectPrimitive from '@radix-ui/react-select';
 import { Check, ChevronDown } from 'lucide-react';
 import type React from 'react';
-import { forwardRef } from 'react';
+import { forwardRef, useCallback, useRef } from 'react';
 import { cn } from '../lib/cn';
 import { useLayerScope } from '../theme/EditorUIProvider';
 
@@ -68,9 +68,24 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     },
     ref
   ) => {
+    const triggerRef = useRef<HTMLButtonElement | null>(null);
     const layer = useLayerScope();
     const empty = options.find(option => option.value === '');
     const items = options.filter(option => option.value !== '');
+
+    const handleRef = useCallback(
+      (node: HTMLButtonElement | null) => {
+        triggerRef.current = node;
+        if (typeof ref === 'function') {
+          ref(node);
+        } else if (ref) {
+          (ref as React.MutableRefObject<HTMLButtonElement | null>).current =
+            node;
+        }
+      },
+      [ref]
+    );
+
     return (
       <SelectPrimitive.Root
         value={value === '' ? undefined : value}
@@ -83,7 +98,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
         name={name}
       >
         <SelectPrimitive.Trigger
-          ref={ref}
+          ref={handleRef}
           id={id}
           aria-label={ariaLabel}
           className={cn(
@@ -107,6 +122,10 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
             position="popper"
             sideOffset={4}
             collisionPadding={8}
+            onCloseAutoFocus={event => {
+              event.preventDefault();
+              triggerRef.current?.focus({ preventScroll: true });
+            }}
             {...layer}
             className={cn(
               layer.className,

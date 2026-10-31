@@ -132,7 +132,7 @@ describe('Radix-based primitives (B15 E2b)', () => {
 });
 
 describe('Motion layer (B15 E2b)', () => {
-  const css = readFileSync(join(import.meta.dirname, '../motion.css'), 'utf8');
+  const css = readFileSync(join(new URL('.', import.meta.url).pathname, '../motion.css'), 'utf8');
 
   it('animates Radix open and closed states', () => {
     for (const cls of [

@@ -631,6 +631,7 @@ function CanvasOverlay({
       ))}
       {primary && !multi && !dragState.active && (
         <Toolbar
+          key={primary[0]}
           id={primary[0]}
           rect={inView(primary[1])}
           drag={drag}

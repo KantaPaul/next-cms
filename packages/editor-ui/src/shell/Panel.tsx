@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type React from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '../lib/cn';
 
 /**
@@ -69,6 +69,21 @@ export const Panel: React.FC<PanelProps> = ({
   const [resizing, setResizing] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const asideRef = useRef<HTMLElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollPosRef = useRef(0);
+
+  const handleScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
+    scrollPosRef.current = event.currentTarget.scrollTop;
+  }, []);
+
+  useLayoutEffect(() => {
+    if (scrollRef.current && scrollPosRef.current > 0) {
+      if (scrollRef.current.scrollTop !== scrollPosRef.current) {
+        scrollRef.current.scrollTop = scrollPosRef.current;
+      }
+    }
+  });
+
   const isStart = side === 'left';
   const label =
     typeof title === 'string' ? title : isStart ? 'side panel' : 'inspector';
@@ -214,7 +229,11 @@ export const Panel: React.FC<PanelProps> = ({
         </div>
       )}
 
-      <div className="ne-scrollbar relative flex flex-1 flex-col overflow-auto">
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="ne-scrollbar relative flex flex-1 flex-col overflow-auto"
+      >
         {children}
       </div>
 

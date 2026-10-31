@@ -263,6 +263,7 @@ export function Inspector({
           )}
           {node && block && (
             <InspectorTabs
+              key={node.id}
               block={block}
               node={node}
               props={node.props}
