@@ -48,6 +48,7 @@ export function RedirectsManager({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [csv, setCsv] = useState('');
+  const formId = useId();
 
   const form = useForm<z.infer<typeof createRedirectSchema>>({
     resolver: zodResolver(createRedirectSchema),
@@ -98,70 +99,53 @@ export function RedirectsManager({
         onSubmit={form.handleSubmit(onCreate)}
         className="flex flex-wrap items-end gap-3"
       >
-        <label className="grid gap-1 text-sm">
-          From
-          <Controller
-            name="fromPath"
-            render={({ field, fieldState }) => {
-              const id = useId();
-              return (
-                <FormItem>
-                  <Label htmlFor={id}>From</Label>
-                  <Input id={id} {...field} required placeholder="/old-path" />
-                  {fieldState.error && (
-                    <FormMessage>{fieldState.error.message}</FormMessage>
-                  )}
-                </FormItem>
-              );
-            }}
-          />
-        </label>
-        <label className="grid gap-1 text-sm">
-          To
-          <Controller
-            name="toPath"
-            render={({ field, fieldState }) => {
-              const id = useId();
-              return (
-                <FormItem>
-                  <Label htmlFor={id}>To</Label>
-                  <Input id={id} {...field} required placeholder="/new-path" />
-                  {fieldState.error && (
-                    <FormMessage>{fieldState.error.message}</FormMessage>
-                  )}
-                </FormItem>
-              );
-            }}
-          />
-        </label>
-        <label className="grid gap-1 text-sm">
-          Status
-          <Controller
-            name="statusCode"
-            render={({ field, fieldState }) => {
-              const id = useId();
-              return (
-                <FormItem>
-                  <Label htmlFor={id}>Status</Label>
-                  <Select
-                    {...field}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="301">301</SelectItem>
-                      <SelectItem value="302">302</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {fieldState.error && (
-                    <FormMessage>{fieldState.error.message}</FormMessage>
-                  )}
-                </FormItem>
-              );
-            }}
-          />
-        </label>
+        <Controller
+          control={form.control}
+          name="fromPath"
+          render={({ field, fieldState }) => (
+            <FormItem className="gap-1">
+              <Label htmlFor={`${formId}-from`}>From</Label>
+              <Input id={`${formId}-from`} {...field} required placeholder="/old-path" />
+              {fieldState.error && (
+                <FormMessage>{fieldState.error.message}</FormMessage>
+              )}
+            </FormItem>
+          )}
+        />
+        <Controller
+          control={form.control}
+          name="toPath"
+          render={({ field, fieldState }) => (
+            <FormItem className="gap-1">
+              <Label htmlFor={`${formId}-to`}>To</Label>
+              <Input id={`${formId}-to`} {...field} required placeholder="/new-path" />
+              {fieldState.error && (
+                <FormMessage>{fieldState.error.message}</FormMessage>
+              )}
+            </FormItem>
+          )}
+        />
+        <Controller
+          control={form.control}
+          name="statusCode"
+          render={({ field, fieldState }) => (
+            <FormItem className="gap-1">
+              <Label htmlFor={`${formId}-status`}>Status</Label>
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger id={`${formId}-status`} className="w-24">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="301">301</SelectItem>
+                  <SelectItem value="302">302</SelectItem>
+                </SelectContent>
+              </Select>
+              {fieldState.error && (
+                <FormMessage>{fieldState.error.message}</FormMessage>
+              )}
+            </FormItem>
+          )}
+        />
         <Button type="submit" disabled={createPending}>
           Add
         </Button>

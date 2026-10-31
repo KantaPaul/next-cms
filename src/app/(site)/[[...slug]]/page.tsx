@@ -515,7 +515,7 @@ export default async function SitePage({ params, searchParams }: Params) {
         seoTitle: page.seo?.title,
         seoDescription: page.seo?.description,
         publishedAt: page.publishedAt,
-        createdAt: page.createdAt,
+        createdAt: page.seo?.createdAt,
         updatedAt: page.updatedAt,
       },
       site: {

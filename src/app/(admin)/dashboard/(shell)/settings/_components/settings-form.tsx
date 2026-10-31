@@ -95,6 +95,42 @@ function Field({
   );
 }
 
+/** Radix Select reserves the empty string, so "none" uses a sentinel and maps back to null. */
+const NONE = '__none__';
+
+function NullableSelect({
+  id,
+  value,
+  onChange,
+  noneLabel,
+  options,
+}: {
+  id?: string;
+  value: string | null | undefined;
+  onChange: (value: string | null) => void;
+  noneLabel: string;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <Select
+      value={value || NONE}
+      onValueChange={next => onChange(next === NONE ? null : next)}
+    >
+      <SelectTrigger id={id} className="w-full">
+        <SelectValue placeholder={noneLabel} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value={NONE}>{noneLabel}</SelectItem>
+        {options.map(option => (
+          <SelectItem key={option.value} value={option.value}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 export function SettingsForm({
   settings,
   menus,
@@ -222,23 +258,16 @@ export function SettingsForm({
         const id = useId();
         return (
           <FormItem>
-            <Select
+            <NullableSelect
               id={id}
-              {...field}
-              className={inputClass}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="None" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">None</SelectItem>
-                {menus.map(menu => (
-                  <SelectItem key={menu.id} value={menu.id}>
-                    {menu.title} ({menu.location})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              value={field.value}
+              onChange={field.onChange}
+              noneLabel="None"
+              options={menus.map(menu => ({
+                value: menu.id,
+                label: `${menu.title} (${menu.location})`,
+              }))}
+            />
             {fieldState.error && (
               <FormMessage>{fieldState.error.message}</FormMessage>
             )}
@@ -265,24 +294,13 @@ export function SettingsForm({
           const id = useId();
           return (
             <FormItem>
-              <Select
+              <NullableSelect
                 id={id}
-                value={field.value ?? ''}
-                onChange={e => field.onChange(e.target.value || null)}
-                className={inputClass}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="None (use menu layout)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">None (use menu layout)</SelectItem>
-                  {relevant.map(t => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.name} ({t.category})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                value={field.value}
+                onChange={field.onChange}
+                noneLabel="None (use menu layout)"
+                options={relevant.map(t => ({ value: t.id, label: t.name }))}
+              />
               {fieldState.error && (
                 <FormMessage>{fieldState.error.message}</FormMessage>
               )}
@@ -314,7 +332,7 @@ export function SettingsForm({
               return (
                 <FormItem>
                   <Label htmlFor={id}>Site name</Label>
-                  <Input id={id} {...field} required maxLength={100} />
+                  <Input id={id} {...field} value={field.value ?? ''} required maxLength={100} />
                   {fieldState.error && (
                     <FormMessage>{fieldState.error.message}</FormMessage>
                   )}
@@ -332,6 +350,7 @@ export function SettingsForm({
                   <Input
                     id={id}
                     {...field}
+                    value={field.value ?? ''}
                     type="url"
                     placeholder={fallbackSiteUrl}
                     maxLength={255}
@@ -350,7 +369,7 @@ export function SettingsForm({
               return (
                 <FormItem>
                   <Label htmlFor={id}>Default SEO title</Label>
-                  <Input id={id} {...field} maxLength={160} />
+                  <Input id={id} {...field} value={field.value ?? ''} maxLength={160} />
                   {fieldState.error && (
                     <FormMessage>{fieldState.error.message}</FormMessage>
                   )}
@@ -363,11 +382,12 @@ export function SettingsForm({
             render={({ field, fieldState }) => {
               const id = useId();
               return (
-                <FormItem wide>
+                <FormItem className="sm:col-span-2">
                   <Label htmlFor={id}>Default SEO description</Label>
                   <textarea
                     id={id}
                     {...field}
+                    value={field.value ?? ''}
                     rows={2}
                     maxLength={300}
                     className={cn(inputClass, 'h-auto py-2')}
@@ -384,11 +404,12 @@ export function SettingsForm({
             render={({ field, fieldState }) => {
               const id = useId();
               return (
-                <FormItem wide>
+                <FormItem className="sm:col-span-2">
                   <Label htmlFor={id}>Description</Label>
                   <textarea
                     id={id}
                     {...field}
+                    value={field.value ?? ''}
                     rows={2}
                     maxLength={500}
                     className={cn(inputClass, 'h-auto py-2')}
@@ -409,28 +430,28 @@ export function SettingsForm({
           <Controller
             name="logo"
             render={({ field }) => (
-              <FormItem group label="Logo">
+              <Field group label="Logo">
                 <MediaField
                   value={field.value}
                   onChange={url => field.onChange(url)}
                 />
-              </FormItem>
+              </Field>
             )}
           />
           <Controller
             name="favicon"
             render={({ field }) => (
-              <FormItem group label="Favicon">
+              <Field group label="Favicon">
                 <MediaField value={field.value} onChange={url => field.onChange(url)} />
-              </FormItem>
+              </Field>
             )}
           />
           <Controller
             name="defaultOgImage"
             render={({ field }) => (
-              <FormItem wide group label="Default share image">
+              <Field wide group label="Default share image">
                 <MediaField value={field.value} onChange={url => field.onChange(url)} />
-              </FormItem>
+              </Field>
             )}
           />
         </Section>
@@ -480,7 +501,7 @@ export function SettingsForm({
             render={({ field, fieldState }) => {
               const id = useId();
               return (
-                <FormItem group label="Primary colour">
+                <Field group label="Primary colour">
                   <ColorInput
                     label="Primary colour"
                     value={field.value}
@@ -489,7 +510,7 @@ export function SettingsForm({
                   {fieldState.error && (
                     <FormMessage>{fieldState.error.message}</FormMessage>
                   )}
-                </FormItem>
+                </Field>
               );
             }}
           />
@@ -498,7 +519,7 @@ export function SettingsForm({
             render={({ field, fieldState }) => {
               const id = useId();
               return (
-                <FormItem group label="Accent colour">
+                <Field group label="Accent colour">
                   <ColorInput
                     label="Accent colour"
                     value={field.value}
@@ -507,68 +528,68 @@ export function SettingsForm({
                   {fieldState.error && (
                     <FormMessage>{fieldState.error.message}</FormMessage>
                   )}
-                </FormItem>
+                </Field>
               );
             }}
           />
           <Controller
             name="themeTokens.colors.secondary"
             render={({ field }) => (
-              <FormItem group label="Secondary colour">
+              <Field group label="Secondary colour">
                 <ColorInput
                   label="Secondary colour"
                   value={field.value ?? '#64748b'}
                   onChange={v => field.onChange(v)}
                 />
-              </FormItem>
+              </Field>
             )}
           />
           <Controller
             name="themeTokens.colors.text"
             render={({ field }) => (
-              <FormItem group label="Text colour">
+              <Field group label="Text colour">
                 <ColorInput
                   label="Text colour"
                   value={field.value ?? '#0f172a'}
                   onChange={v => field.onChange(v)}
                 />
-              </FormItem>
+              </Field>
             )}
           />
           <Controller
             name="themeTokens.colors.background"
             render={({ field }) => (
-              <FormItem group label="Background colour">
+              <Field group label="Background colour">
                 <ColorInput
                   label="Background colour"
                   value={field.value ?? '#ffffff'}
                   onChange={v => field.onChange(v)}
                 />
-              </FormItem>
+              </Field>
             )}
           />
           <Controller
             name="themeTokens.colors.surface"
             render={({ field }) => (
-              <FormItem group label="Surface colour">
+              <Field group label="Surface colour">
                 <ColorInput
                   label="Surface colour"
                   value={field.value ?? '#f8fafc'}
                   onChange={v => field.onChange(v)}
                 />
-              </FormItem>
+              </Field>
             )}
           />
           <Controller
             name="themeTokens.colors.border"
             render={({ field }) => (
-              <FormItem group label="Border colour">
+              <Field group label="Border colour">
                 <ColorInput
                   label="Border colour"
                   value={field.value ?? '#e2e8f0'}
                   onChange={v => field.onChange(v)}
                 />
-              </FormItem>
+              </Field>
             )}
           />
           <Controller
@@ -578,16 +599,17 @@ export function SettingsForm({
               return (
                 <FormItem>
                   <Label htmlFor={id}>Font</Label>
-                  <Select
-                    id={id}
-                    {...field}
-                    className={inputClass}
-                  >
-                    {FONTS.map(f => (
-                      <SelectItem key={f} value={f}>
-                        {f}
-                      </SelectItem>
-                    ))}
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id={id} className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FONTS.map(f => (
+                        <SelectItem key={f} value={f}>
+                          {f}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                   {fieldState.error && (
                     <FormMessage>{fieldState.error.message}</FormMessage>
@@ -601,7 +623,7 @@ export function SettingsForm({
             render={({ field }) => {
               const id = useId();
               return (
-                <FormItem group label="Corner radius">
+                <Field group label="Corner radius">
                   <div role="radiogroup" aria-label="Corner radius" className="flex gap-1">
                     {RADII.map(r => (
                       <button
@@ -621,7 +643,7 @@ export function SettingsForm({
                       </button>
                     ))}
                   </div>
-                </FormItem>
+                </Field>
               );
             }}
           />
@@ -632,16 +654,17 @@ export function SettingsForm({
               return (
                 <FormItem>
                   <Label htmlFor={id}>Colour mode</Label>
-                  <Select
-                    id={id}
-                    {...field}
-                    className={inputClass}
-                  >
-                    {MODES.map(m => (
-                      <SelectItem key={m} value={m}>
-                        {m[0].toUpperCase() + m.slice(1)}
-                      </SelectItem>
-                    ))}
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id={id} className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MODES.map(m => (
+                        <SelectItem key={m} value={m}>
+                          {m[0].toUpperCase() + m.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                   {fieldState.error && (
                     <FormMessage>{fieldState.error.message}</FormMessage>
@@ -705,7 +728,7 @@ export function SettingsForm({
                 <ColorInput
                   label="Color"
                   value={customColor}
-                  onChange={setCustomColor}
+                  onChange={value => setCustomColor(value ?? '#8b5cf6')}
                 />
               </div>
               <Button
@@ -748,7 +771,7 @@ export function SettingsForm({
           <Controller
             name="videoSettings.providers.youtube"
             render={({ field }) => (
-              <FormItem group label="YouTube">
+              <Field group label="YouTube">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -761,13 +784,13 @@ export function SettingsForm({
                 <p className="text-xs text-steel-500">
                   Embeds use www.youtube-nocookie.com. Duration is a manual field.
                 </p>
-              </FormItem>
+              </Field>
             )}
           />
           <Controller
             name="videoSettings.providers.vimeo"
             render={({ field }) => (
-              <FormItem group label="Vimeo">
+              <Field group label="Vimeo">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -777,13 +800,13 @@ export function SettingsForm({
                   />
                   <span>Vimeo</span>
                 </label>
-              </FormItem>
+              </Field>
             )}
           />
           <Controller
             name="videoSettings.providers.direct"
             render={({ field }) => (
-              <FormItem group label="Direct MP4 / WebM">
+              <Field group label="Direct MP4 / WebM">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -796,7 +819,7 @@ export function SettingsForm({
                 <p className="text-xs text-steel-500">
                   HTTPS .mp4 / .webm URLs only. Native player, no uploads.
                 </p>
-              </FormItem>
+              </Field>
             )}
           />
           <div className="flex items-end">
@@ -816,12 +839,6 @@ export function SettingsForm({
               Enable all
             </Button>
           </div>
-          <Controller
-            name="videoSettings"
-            render={({ field }) => (
-              <input type="hidden" {...field} />
-            )}
-          />
         </Section>
 
         <Section
@@ -833,8 +850,10 @@ export function SettingsForm({
             render={({ field, fieldState }) => {
               const id = useId();
               return (
-                <FormItem label="Google Analytics ID" hint="GA4 measurement ID, for example G-ABC123XYZ.">
-                  <Input id={id} {...field} placeholder="G-XXXXXXXXXX" maxLength={50} />
+                <FormItem>
+                  <Label htmlFor={id}>Google Analytics ID</Label>
+                  <Input id={id} {...field} value={field.value ?? ''} placeholder="G-XXXXXXXXXX" maxLength={50} />
+                  <span className="text-xs text-steel-500">GA4 measurement ID, for example G-ABC123XYZ.</span>
                   {fieldState.error && (
                     <FormMessage>{fieldState.error.message}</FormMessage>
                   )}
@@ -848,10 +867,12 @@ export function SettingsForm({
             render={({ field, fieldState }) => {
               const id = useId();
               return (
-                <FormItem wide label="Custom robots.txt">
+                <FormItem className="sm:col-span-2">
+                  <Label htmlFor={id}>Custom robots.txt</Label>
                   <textarea
                     id={id}
                     {...field}
+                    value={field.value ?? ''}
                     rows={5}
                     className={cn(inputClass, 'h-auto py-2 font-mono text-xs')}
                     placeholder="User-agent: *\nAllow: /\nDisallow: /dashboard"
@@ -873,17 +894,6 @@ export function SettingsForm({
             {locales
               .filter(locale => locale.code !== defaultLocale)
               .map(locale => {
-                const copy =
-                  form.getValues('translations')?.[locale.code] ?? {};
-                const setCopy = (
-                  key: 'siteName' | 'siteDescription' | 'seoTitle' | 'seoDescription',
-                  value: string
-                ) => {
-                  form.setValue('translations', {
-                    ...(form.getValues('translations') ?? {}),
-                    [locale.code]: { ...copy, [key]: value },
-                  });
-                };
                 return (
                   <div key={locale.code} className="grid gap-3 sm:col-span-2 sm:grid-cols-2">
                     <p className="sm:col-span-2 text-sm font-medium">
@@ -896,7 +906,7 @@ export function SettingsForm({
                         return (
                           <>
                             <Label htmlFor={id}>Site name</Label>
-                            <Input id={id} {...f} />
+                            <Input id={id} {...f} value={f.value ?? ''} />
                             {fieldState.error && (
                               <FormMessage>{fieldState.error.message}</FormMessage>
                             )}
@@ -911,7 +921,7 @@ export function SettingsForm({
                         return (
                           <>
                             <Label htmlFor={id}>SEO title</Label>
-                            <Input id={id} {...f} />
+                            <Input id={id} {...f} value={f.value ?? ''} />
                             {fieldState.error && (
                               <FormMessage>{fieldState.error.message}</FormMessage>
                             )}
@@ -926,7 +936,7 @@ export function SettingsForm({
                         return (
                           <>
                             <Label htmlFor={id}>Description</Label>
-                            <Input id={id} {...f} className="w-full" />
+                            <Input id={id} {...f} value={f.value ?? ''} className="w-full" />
                             {fieldState.error && (
                               <FormMessage>{fieldState.error.message}</FormMessage>
                             )}
@@ -941,7 +951,7 @@ export function SettingsForm({
                         return (
                           <>
                             <Label htmlFor={id}>SEO description</Label>
-                            <Input id={id} {...f} className="w-full" />
+                            <Input id={id} {...f} value={f.value ?? ''} className="w-full" />
                             {fieldState.error && (
                               <FormMessage>{fieldState.error.message}</FormMessage>
                             )}
@@ -956,24 +966,13 @@ export function SettingsForm({
                         return (
                           <div>
                             <Label htmlFor={id}>Header Template ({locale.label})</Label>
-                            <Select
+                            <NullableSelect
                               id={id}
-                              value={f.value ?? ''}
-                              onChange={e => f.onChange(e.target.value || null)}
-                              className={inputClass}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Default (Inherit site setting)" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="">Default (Inherit site setting)</SelectItem>
-                                {templates.map(t => (
-                                  <SelectItem key={t.id} value={t.id}>
-                                    {t.name} ({t.category})
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                              value={f.value}
+                              onChange={f.onChange}
+                              noneLabel="Default (inherit site setting)"
+                              options={templates.map(t => ({ value: t.id, label: t.name }))}
+                            />
                           </div>
                         );
                       }}
@@ -985,24 +984,13 @@ export function SettingsForm({
                         return (
                           <div>
                             <Label htmlFor={id}>Footer Template ({locale.label})</Label>
-                            <Select
+                            <NullableSelect
                               id={id}
-                              value={f.value ?? ''}
-                              onChange={e => f.onChange(e.target.value || null)}
-                              className={inputClass}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Default (Inherit site setting)" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="">Default (Inherit site setting)</SelectItem>
-                                {templates.map(t => (
-                                  <SelectItem key={t.id} value={t.id}>
-                                    {t.name} ({t.category})
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                              value={f.value}
+                              onChange={f.onChange}
+                              noneLabel="Default (inherit site setting)"
+                              options={templates.map(t => ({ value: t.id, label: t.name }))}
+                            />
                           </div>
                         );
                       }}

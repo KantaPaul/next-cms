@@ -1,6 +1,4 @@
-'use client';
-
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { cn } from '@/lib/utils/cn';
 import type { BuilderItem } from '../data';
 import {
@@ -24,6 +22,7 @@ import { rehydrateItem } from './block-list';
 import { BlockList } from './block-list';
 import { MotionItem } from '../motion';
 import { Section, type SectionSettings } from './section';
+import { ContainerEditor } from './container-editor-client';
 
 type WithSection = { section?: SectionSettings; editing?: boolean };
 type PropsItem = { props: Record<string, unknown> & { id: string } };
@@ -131,22 +130,7 @@ function renderContainerChildren(
   });
 }
 
-/** Device detection that does not depend on Puck store context, so Container
- * renders safely both inside the Puck canvas (where `useCanvasDevice` is
- * available) and inside `Puck.Preview`'s iframe (where store context may not
- * flow through the portal boundary). */
-function useContainerDevice(): Device {
-  const [device, setDevice] = useState<Device>('desktop');
-  useEffect(() => {
-    const update = () => setDevice(deviceForWidth(window.innerWidth));
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
-  }, []);
-  return device;
-}
-
-function renderContainerBody({
+export function renderContainerBody({
   p,
   c,
   device,
@@ -187,33 +171,6 @@ function renderContainerBody({
       {linkProps ? <a {...linkProps}>{body}</a> : body}
     </Section>
   );
-}
-
-function ContainerEditor({
-  p,
-  c,
-}: {
-  p: ContainerProps;
-  c: ContainerSettings;
-}): ReactNode {
-  const device = useContainerDevice();
-  const linkProps = c.link ? resolveLinkProps(c.link) : null;
-  const nestedWarning = !!linkProps && hasNestedInteractive(p.content, p.zones);
-
-  const editorNotes: ReactNode[] = [];
-
-  if (nestedWarning) {
-    editorNotes.push(
-      <div
-        key="nested-link"
-        className="rounded-md border border-red-200 bg-red-50 p-2 text-[11px] text-red-700"
-      >
-        Whole-container link: do not nest links or buttons inside.
-      </div>
-    );
-  }
-
-  return renderContainerBody({ p, c, device, editorNotes });
 }
 
 function ContainerPublic({
