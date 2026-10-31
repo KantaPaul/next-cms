@@ -6,7 +6,8 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./dashboard": "./src/dashboard-adapters.ts"
   },
   "scripts": {
     "test": "tsx --test \"src/**/*.test.ts\" \"src/**/*.test.tsx\"",
@@ -14,7 +15,8 @@
   },
   "dependencies": {
     "@nextcms/builder-core": "workspace:*",
-    "@nextcms/editor-ui": "workspace:*"
+    "@nextcms/editor-ui": "workspace:*",
+    "zod": "^4.1.13"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",

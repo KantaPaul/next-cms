@@ -27,6 +27,8 @@ export const analyticsDashboards = pgTable(
     name: varchar('name', { length: 120 }).notNull(),
     createdBy: text('created_by').references(() => users.id, setNull),
     layout: jsonb('layout').notNull(),
+    /** Bumped on every save; editors send the version they started from (B15 E8). */
+    version: integer('version').default(0).notNull(),
     ...timestampColumns,
   },
   t => [

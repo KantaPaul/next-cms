@@ -2,7 +2,9 @@
  * Adapter contracts (R759 / PKG-05, R788 / EXT-16): the host provides these
  * to the editor and renderer. Each is optional with a working default, so a
  * standalone host can run with mock/localStorage adapters while the CMS uses
- * real database, media, and permission adapters.
+ * real database, media, and permission adapters. Production code never
+ * imports the mocks (checked by src/builder/__tests__/dashboard-adapters.test.ts).
+ * The dashboard builder's adapters live in dashboard-adapters.ts.
  */
 
 import type { BuilderDocument } from '@nextcms/builder-core';

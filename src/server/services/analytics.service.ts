@@ -506,7 +506,9 @@ export const analyticsService = {
    */
   widget: async (
     query: WidgetQuery,
-    boardRange: 7 | 30
+    boardRange: 7 | 30,
+    /** Resolved by the caller when it runs outside the request (cached loaders). */
+    forSiteId?: string
   ): Promise<WidgetResult> => {
     const rangeDays =
       query.range === 'inherit' ? boardRange : (query.range as 7 | 30);
@@ -520,7 +522,7 @@ export const analyticsService = {
       : query.postId && query.postId.trim().length > 0
         ? query.postId.trim()
         : null;
-    const siteId = await adminSiteId();
+    const siteId = forSiteId ?? (await adminSiteId());
     const scope = and(
       contentScope(pageId, postId),
       eq(pageViews.siteId, siteId)

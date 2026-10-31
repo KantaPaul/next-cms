@@ -1,0 +1,1 @@
+ALTER TABLE "analytics_dashboards" ADD COLUMN "version" integer DEFAULT 0 NOT NULL;

@@ -1,6 +1,6 @@
 import 'server-only';
 import { createId } from '@paralleldrive/cuid2';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { analyticsDashboards } from '@/db/schema';
 import {
@@ -23,6 +23,8 @@ export type BoardDetail = {
   id: string;
   name: string;
   layout: BoardLayout;
+  /** Bumped by every save (B15 E8). */
+  version: number;
   createdBy: string | null;
   createdAt: Date;
   updatedAt: Date | null;
@@ -67,6 +69,7 @@ export const analyticsBoardsService = {
       id: row.id,
       name: row.name,
       layout: parseBoardLayout(row.layout),
+      version: row.version,
       createdBy: row.createdBy,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
@@ -95,6 +98,7 @@ export const analyticsBoardsService = {
       id,
       name: input.name.slice(0, 120),
       layout,
+      version: 0,
       createdBy: input.createdBy,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -115,17 +119,64 @@ export const analyticsBoardsService = {
         ? boardLayoutSchema.parse(input.layout)
         : existing.layout;
 
-    await db
+    const updatedAt = new Date();
+    const [row] = await db
       .update(analyticsDashboards)
-      .set({ name, layout, updatedAt: new Date() })
-      .where(and(eq(analyticsDashboards.id, id), eq(analyticsDashboards.siteId, await adminSiteId())));
+      .set({
+        name,
+        layout,
+        version: sql`${analyticsDashboards.version} + 1`,
+        updatedAt,
+      })
+      .where(and(eq(analyticsDashboards.id, id), eq(analyticsDashboards.siteId, await adminSiteId())))
+      .returning({ version: analyticsDashboards.version });
 
     return {
       ...existing,
       name,
       layout,
-      updatedAt: new Date(),
+      version: row?.version ?? existing.version + 1,
+      updatedAt,
     };
+  },
+
+  /**
+   * Save only if nobody saved since `expectedVersion` (B15 E8). One
+   * conditional UPDATE, so two editors cannot both win. Returns the stored
+   * board on a conflict, `null` when the board does not exist on this site.
+   */
+  saveVersioned: async (
+    id: string,
+    input: { name: string; layout: BoardLayout },
+    expectedVersion: number
+  ): Promise<
+    | { status: 'saved'; version: number; updatedAt: Date }
+    | { status: 'conflict'; current: BoardDetail }
+    | null
+  > => {
+    const siteId = await adminSiteId();
+    const layout = boardLayoutSchema.parse(input.layout);
+    const updatedAt = new Date();
+    const [row] = await db
+      .update(analyticsDashboards)
+      .set({
+        name: input.name.slice(0, 120),
+        layout,
+        version: sql`${analyticsDashboards.version} + 1`,
+        updatedAt,
+      })
+      .where(
+        and(
+          eq(analyticsDashboards.id, id),
+          eq(analyticsDashboards.siteId, siteId),
+          eq(analyticsDashboards.version, expectedVersion)
+        )
+      )
+      .returning({ version: analyticsDashboards.version });
+
+    if (row) return { status: 'saved', version: row.version, updatedAt };
+    const current = await analyticsBoardsService.get(id);
+    return current ? { status: 'conflict', current } : null;
   },
 
   delete: async (id: string): Promise<boolean> => {

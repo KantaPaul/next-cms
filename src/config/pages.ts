@@ -9,6 +9,9 @@ export const PAGES = {
     ANALYTICS_BOARD: (id: string) => `/dashboard/analytics/boards/${id}`,
     ANALYTICS_BOARD_EDIT: (id: string) =>
       `/dashboard/analytics/boards/${id}/edit`,
+    /** Board editor on the shared editor-ui shell (B15 E8). */
+    ANALYTICS_BOARD_BUILDER: (id: string) =>
+      `/dashboard/analytics/boards/${id}/builder`,
     PAGES: {
       CREATE: '/dashboard/pages/create',
       INDEX: '/dashboard/pages',
