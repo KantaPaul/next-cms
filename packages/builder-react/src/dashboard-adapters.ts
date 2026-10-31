@@ -36,6 +36,7 @@ export const dashboardWidgetSchema = z.object({
   span: z.number().int().min(1).max(12),
   title: z.string().max(80).optional(),
   query: dashboardQuerySchema,
+  height: z.number().int().min(1).max(6).optional(),
 });
 export type DashboardWidget = z.infer<typeof dashboardWidgetSchema>;
 

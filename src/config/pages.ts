@@ -8,8 +8,8 @@ export const PAGES = {
     ANALYTICS_BOARDS: '/dashboard/analytics/boards',
     ANALYTICS_BOARD: (id: string) => `/dashboard/analytics/boards/${id}`,
     ANALYTICS_BOARD_EDIT: (id: string) =>
-      `/dashboard/analytics/boards/${id}/edit`,
-    /** Board editor on the shared editor-ui shell (B15 E8). */
+      `/dashboard/analytics/boards/${id}/builder`,
+    /** Board editor on the shared editor-ui shell (B15 E7/E8). */
     ANALYTICS_BOARD_BUILDER: (id: string) =>
       `/dashboard/analytics/boards/${id}/builder`,
     PAGES: {

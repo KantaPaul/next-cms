@@ -1,5 +1,6 @@
 import { and, eq, isNull } from 'drizzle-orm';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { PAGES } from '@/config/pages';
 import { db } from '@/db';
 import { pages, posts } from '@/db/schema';
 import { PageStatus } from '@/db/schemas/shared.schema';
@@ -8,10 +9,16 @@ import { BoardBuilder } from '../../_components/board-builder';
 
 export default async function BoardEditPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ legacy?: string }>;
 }) {
   const { id } = await params;
+  const sp = await searchParams;
+  if (sp?.legacy !== '1') {
+    redirect(PAGES.DASHBOARD.ANALYTICS_BOARD_BUILDER(id));
+  }
   const board = await analyticsBoardsService.get(id);
   if (!board) notFound();
 
