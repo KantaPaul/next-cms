@@ -32,6 +32,14 @@ import {
   Timeline,
 } from './marketing';
 import { Newsletter } from './newsletter';
+import {
+  HeaderBar,
+  FooterColumns,
+  Logo,
+  NavMenu,
+  Copyright,
+  FooterLinks,
+} from './site-chrome';
 
 const builtInComponents = {
   Hero,
@@ -65,6 +73,12 @@ const builtInComponents = {
   Spacer,
   Button,
   ImageMorph,
+  HeaderBar,
+  FooterColumns,
+  Logo,
+  NavMenu,
+  Copyright,
+  FooterLinks,
 };
 
 export const getBlockComponents = () => ({

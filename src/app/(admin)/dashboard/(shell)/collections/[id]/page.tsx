@@ -5,6 +5,7 @@ import { PERMISSIONS } from '@/config/permissions';
 import { metaObject } from '@/lib/utils/metadata';
 import { notFound } from 'next/navigation';
 import { requirePermission } from '@/server/services/require-permission';
+import { pagesServices } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
 import { collectionsService } from '@/server/services/collections.service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CollectionSettingsForm } from '../components/collection-settings-form';
@@ -37,7 +38,10 @@ export default async function CollectionPage({
     );
   }
 
-  const fields = await collectionsService.getFields(id);
+  const [fields, templatePages] = await Promise.all([
+    collectionsService.getFields(id),
+    pagesServices.listTemplateOptions(),
+  ]);
 
   return (
     <>
@@ -48,17 +52,29 @@ export default async function CollectionPage({
             <CardTitle>Settings</CardTitle>
           </CardHeader>
           <CardContent>
-            <CollectionSettingsForm collection={collection} />
+            <CollectionSettingsForm
+              collection={collection}
+              templatePages={templatePages}
+            />
           </CardContent>
         </Card>
-        <div className="lg:col-span-8">
-          <div>
-            <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-muted-foreground">
-              Fields
-            </h2>
-            <AddFieldForm collectionId={collection.id} />
-          </div>
-          <FieldList fields={fields} collectionId={collection.id} />
+        <div className="grid gap-6 lg:col-span-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Add field</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AddFieldForm collectionId={collection.id} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Fields</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FieldList fields={fields} collectionId={collection.id} />
+            </CardContent>
+          </Card>
         </div>
       </div>
     </>

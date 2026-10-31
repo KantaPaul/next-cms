@@ -1,18 +1,24 @@
 'use client';
 
-import { useId } from 'react';
 import { z } from 'zod';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Controller } from 'react-hook-form';
 import { FormInput as Input } from '@/components/ui/input';
-import { FormItem, FormMessage } from '@/components/ui/form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { updateCollection } from '../_modules/collections.actions';
 import { updateCollectionSchema } from '../_modules/collections.schemas';
 import { objectToFormData } from '../_modules/form-helpers';
 import { useFormAction } from '@/hooks/use-form-action';
+import type { TemplatePageOption } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
+import { TemplatePageSelect } from './template-page-select';
 
 type CollectionSettingsInput = z.infer<typeof updateCollectionSchema>;
 
@@ -23,10 +29,12 @@ interface CollectionSettingsFormProps {
     slug: string;
     templatePageId: string | null;
   };
+  templatePages: TemplatePageOption[];
 }
 
 export function CollectionSettingsForm({
   collection,
+  templatePages,
 }: CollectionSettingsFormProps) {
   const form = useForm<CollectionSettingsInput>({
     resolver: zodResolver(updateCollectionSchema),
@@ -39,7 +47,8 @@ export function CollectionSettingsForm({
 
   const { submit, isPending, error } = useFormAction(updateCollection, {
     onSuccess: () => {
-      form.reset();
+      // Keep the saved values as the new baseline.
+      form.reset(form.getValues());
     },
   });
 
@@ -48,54 +57,40 @@ export function CollectionSettingsForm({
   };
 
   return (
-    <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-3">
-        <input type="hidden" name="id" value={collection.id} />
-        <Controller
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+        <FormField
+          control={form.control}
           name="name"
-          render={({ field, fieldState }) => {
-            const id = useId();
-            return (
-              <FormItem>
-                <Label htmlFor={id}>Name</Label>
-                <Input id={id} {...field} required />
-                {fieldState.error && (
-                  <FormMessage>{fieldState.error.message}</FormMessage>
-                )}
-              </FormItem>
-            );
-          }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input {...field} value={field.value ?? ''} required />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        <Controller
+        <FormField
+          control={form.control}
           name="slug"
-          render={({ field, fieldState }) => {
-            const id = useId();
-            return (
-              <FormItem>
-                <Label htmlFor={id}>Slug</Label>
-                <Input id={id} {...field} required />
-                {fieldState.error && (
-                  <FormMessage>{fieldState.error.message}</FormMessage>
-                )}
-              </FormItem>
-            );
-          }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Slug</FormLabel>
+              <FormControl>
+                <Input {...field} value={field.value ?? ''} required />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        <div>
-          <Label htmlFor="templatePageId">Template page (optional)</Label>
-          <select
-            id="templatePageId"
-            {...form.register('templatePageId')}
-            className="rounded-md border border-input bg-transparent p-2 text-sm w-full"
-          >
-            <option value="">None</option>
-          </select>
-        </div>
+        <TemplatePageSelect templatePages={templatePages} />
         <Button type="submit" disabled={isPending}>
           {isPending ? 'Saving…' : 'Save'}
         </Button>
         {error && <p className="text-sm text-destructive">{error}</p>}
       </form>
-    </FormProvider>
+    </Form>
   );
 }

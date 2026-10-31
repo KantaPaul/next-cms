@@ -10,7 +10,13 @@ import {
   toBlockSchema,
 } from '@nextcms/builder-core';
 import type { BlockGroup, InspectorBlock } from '@nextcms/builder-react';
-import { CATEGORIES, NATIVE_BLOCKS, PAGE_ROOT_FIELDS } from './native';
+import {
+  CATEGORIES,
+  FOOTER_ROOT_FIELDS,
+  HEADER_ROOT_FIELDS,
+  NATIVE_BLOCKS,
+  PAGE_ROOT_FIELDS,
+} from './native';
 
 export const pageDefinitions: Record<string, BlockDefinition> = Object.fromEntries(
   NATIVE_BLOCKS.map(block => [block.type, block])
@@ -40,7 +46,7 @@ export const pageInspectorBlocks: Record<string, InspectorBlock> = Object.fromEn
 export const pageRootFields = PAGE_ROOT_FIELDS as Record<string, FieldDef>;
 
 export const pageBlockGroups: BlockGroup[] = Object.entries(CATEGORIES)
-  .filter(([key]) => key !== 'post')
+  .filter(([key]) => key !== 'post' && key !== 'header' && key !== 'footer')
   .map(([, category]: any) => ({
     title: category.title ?? '',
     types: (category.components ?? []).map(String),
@@ -50,13 +56,15 @@ const postDefinitions: Record<string, BlockDefinition> = Object.fromEntries(
   NATIVE_BLOCKS.map(block => [block.type, block])
 );
 
-const groupsOf = (skip: string[] = []): BlockGroup[] =>
-  Object.entries(CATEGORIES)
-    .filter(([key]) => !skip.includes(key))
+const groupsOf = (skip: string[] = ['header', 'footer']): BlockGroup[] => {
+  const skipSet = new Set([...skip, 'header', 'footer']);
+  return Object.entries(CATEGORIES)
+    .filter(([key]) => !skipSet.has(key))
     .map(([, category]: any) => ({
       title: category.title ?? '',
       types: (category.components ?? []).map(String),
     }));
+};
 
 const schemasOf = (definitions: Record<string, BlockDefinition>): BlockSchemas =>
   Object.fromEntries(
@@ -89,6 +97,29 @@ export type EditorSetup = {
 };
 
 export function editorSetup(kind: string): EditorSetup {
+  if (kind === 'header' || kind === 'footer') {
+    const { GlobalRef: _globalRef, ...definitions } = pageDefinitions;
+    const headerGroup: BlockGroup = {
+      title: CATEGORIES.header?.title ?? 'Header',
+      types: (CATEGORIES.header?.components ?? []).map(String),
+    };
+    const footerGroup: BlockGroup = {
+      title: CATEGORIES.footer?.title ?? 'Footer',
+      types: (CATEGORIES.footer?.components ?? []).map(String),
+    };
+
+    const isHeader = kind === 'header';
+    return {
+      definitions,
+      schemas: schemasOf(definitions),
+      inspectorBlocks: inspectorOf(definitions),
+      rootFields: (isHeader
+        ? HEADER_ROOT_FIELDS
+        : FOOTER_ROOT_FIELDS) as Record<string, FieldDef>,
+      groups: isHeader ? [headerGroup, footerGroup] : [footerGroup, headerGroup],
+      renderKind: 'page',
+    };
+  }
   if (kind === 'post' || kind === 'post-template') {
     return {
       definitions: postDefinitions,

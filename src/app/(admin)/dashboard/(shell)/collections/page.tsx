@@ -4,6 +4,7 @@ import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import { metaObject } from '@/lib/utils/metadata';
 import { requirePermission } from '@/server/services/require-permission';
+import { pagesServices } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
 import { collectionsService } from '@/server/services/collections.service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CollectionList } from './components/collection-list';
@@ -29,7 +30,10 @@ export default async function CollectionsPage() {
     );
   }
 
-  const rows = await collectionsService.list();
+  const [rows, templatePages] = await Promise.all([
+    collectionsService.list(),
+    pagesServices.listTemplateOptions(),
+  ]);
 
   return (
     <>
@@ -40,7 +44,7 @@ export default async function CollectionsPage() {
             <CardTitle>Create collection</CardTitle>
           </CardHeader>
           <CardContent>
-            <CreateCollectionForm />
+            <CreateCollectionForm templatePages={templatePages} />
           </CardContent>
         </Card>
         <div className="lg:col-span-8">

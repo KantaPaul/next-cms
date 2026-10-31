@@ -1,7 +1,7 @@
-import type { BuilderData as Data } from '@/builder/data';
 import { notFound, redirect } from 'next/navigation';
 import { BuilderOrNewEditor } from '@/app/(admin)/dashboard/(fullscreen)/_editor/builder-or-new-editor';
 import { templatesService } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.service';
+import { normalizeGlobalContent } from '@/builder/normalize-global-content';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import { metaObject } from '@/lib/utils/metadata';
@@ -9,25 +9,6 @@ import { requirePermission } from '@/server/services/require-permission';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 
 export const metadata = metaObject('Edit global block');
-
-function normalizeGlobalContent(raw: unknown): Data {
-  let content: Data['content'] = [];
-  let zones: Data['zones'] = {};
-
-  if (Array.isArray(raw)) {
-    content = raw as Data['content'];
-  } else if (raw && typeof raw === 'object') {
-    const obj = raw as { content?: Data['content']; zones?: Data['zones'] };
-    content = Array.isArray(obj.content) ? obj.content : [];
-    zones = obj.zones && typeof obj.zones === 'object' ? obj.zones : {};
-  }
-
-  return {
-    root: { props: {} },
-    content,
-    zones,
-  };
-}
 
 export default async function GlobalBlockPage({
   params,
@@ -47,6 +28,9 @@ export default async function GlobalBlockPage({
   if (!block) notFound();
   if (block.category === 'contact-form') {
     redirect(PAGES.DASHBOARD.CONTACT_FORM(id));
+  }
+  if (block.category === 'Header' || block.category === 'Footer') {
+    redirect(PAGES.DASHBOARD.HEADER_FOOTER_EDIT(id));
   }
 
   return (

@@ -244,7 +244,11 @@ export const templatesService = {
       category?: string;
       content:
         | BuilderItem[]
-        | { content: BuilderItem[]; zones?: Record<string, BuilderItem[]> };
+        | {
+            root?: { props?: Record<string, unknown> };
+            content: BuilderItem[];
+            zones?: Record<string, BuilderItem[]>;
+          };
     },
     access: UserAccess
   ) => {

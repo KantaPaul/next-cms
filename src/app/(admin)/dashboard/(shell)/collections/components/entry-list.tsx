@@ -1,15 +1,14 @@
+import Link from 'next/link';
 import {
+  Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
-  TableHeaderCell,
-  TableRoot,
+  TableHeader,
   TableRow,
-} from '@/components/atoms/table';
+} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 import { PAGES } from '@/config/pages';
 import {
   publishCollectionEntry,
@@ -24,6 +23,21 @@ export type EntryRow = {
   data: Record<string, unknown> | undefined;
 };
 
+export function EntryStatusBadge({ status }: { status: string }) {
+  return (
+    <Badge
+      variant={status === 'published' ? 'default' : 'outline'}
+      className={
+        status === 'published'
+          ? 'bg-emerald-100 capitalize text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+          : 'capitalize'
+      }
+    >
+      {status}
+    </Badge>
+  );
+}
+
 export function EntryList({
   entries,
   textFields,
@@ -36,100 +50,90 @@ export function EntryList({
   collectionId: string;
 }) {
   return (
-    <TableContainer>
-      <TableRoot>
-        <TableHead>
+    <div className="rounded-lg border">
+      <Table>
+        <TableHeader>
           <TableRow>
-            <TableHeaderCell>Slug</TableHeaderCell>
-            <TableHeaderCell>Status</TableHeaderCell>
+            <TableHead>Slug</TableHead>
+            <TableHead>Status</TableHead>
             {textFields.map(f => (
-              <TableHeaderCell key={f}>
+              <TableHead key={f}>
                 {fields.find(x => x.key === f)?.label || f}
-              </TableHeaderCell>
+              </TableHead>
             ))}
-            <TableHeaderCell>Updated</TableHeaderCell>
-            <TableHeaderCell className="text-right">Actions</TableHeaderCell>
+            <TableHead>Updated</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
-        </TableHead>
+        </TableHeader>
         <TableBody>
           {entries.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6}>No entries yet.</TableCell>
+              <TableCell
+                colSpan={textFields.length + 3}
+                className="h-24 text-center text-muted-foreground"
+              >
+                No entries yet.
+              </TableCell>
             </TableRow>
           ) : (
             entries.map(entry => (
               <TableRow key={entry.id}>
-                <TableCell>{entry.slug}</TableCell>
+                <TableCell className="font-medium">{entry.slug}</TableCell>
                 <TableCell>
-                  <Badge
-                    variant={
-                      entry.status === 'published'
-                        ? 'default'
-                        : 'outline'
-                    }
-                    className={
-                      entry.status === 'published'
-                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                        : ''
-                    }
-                  >
-                    {entry.status}
-                  </Badge>
+                  <EntryStatusBadge status={entry.status} />
                 </TableCell>
                 {textFields.map(key => (
                   <TableCell key={key}>
                     {String(entry.data?.[key] ?? '').slice(0, 50)}
                   </TableCell>
                 ))}
-                <TableCell>
+                <TableCell className="text-muted-foreground">
                   {entry.updatedAt
                     ? new Date(entry.updatedAt).toLocaleString()
                     : ''}
                 </TableCell>
-                <TableCell className="text-right">
-                  <Link
-                    href={PAGES.DASHBOARD.COLLECTION_ENTRY(
-                      collectionId,
-                      entry.id
-                    )}
-                  >
-                    <Button size="sm">Edit</Button>
-                  </Link>{' '}
-                  {entry.status === 'published' ? (
-                    <form action={unpublishCollectionEntry}>
-                      <input type="hidden" name="entryId" value={entry.id} />
-                      <input
-                        type="hidden"
-                        name="collectionId"
-                        value={collectionId}
-                      />
-                      <Button
-                        type="submit"
-                        variant="destructive"
-                        size="sm"
+                <TableCell>
+                  <div className="flex justify-end gap-2">
+                    <Button size="sm" variant="outline" asChild>
+                      <Link
+                        href={PAGES.DASHBOARD.COLLECTION_ENTRY(
+                          collectionId,
+                          entry.id
+                        )}
                       >
-                        Unpublish
-                      </Button>
-                    </form>
-                  ) : (
-                    <form action={publishCollectionEntry}>
+                        Edit
+                      </Link>
+                    </Button>
+                    <form
+                      action={
+                        entry.status === 'published'
+                          ? unpublishCollectionEntry
+                          : publishCollectionEntry
+                      }
+                    >
                       <input type="hidden" name="entryId" value={entry.id} />
                       <input
                         type="hidden"
                         name="collectionId"
                         value={collectionId}
                       />
-                      <Button type="submit" size="sm">
-                        Publish
-                      </Button>
+                      {entry.status === 'published' ? (
+                        <Button type="submit" variant="destructive" size="sm">
+                          Unpublish
+                        </Button>
+                      ) : (
+                        <Button type="submit" size="sm">
+                          Publish
+                        </Button>
+                      )}
                     </form>
-                  )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))
           )}
         </TableBody>
-      </TableRoot>
-    </TableContainer>
+      </Table>
+    </div>
   );
 }

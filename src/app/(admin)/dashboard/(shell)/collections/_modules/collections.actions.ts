@@ -38,7 +38,10 @@ export async function updateCollection(formData: FormData) {
   const id = formData.get('id');
   const name = formData.get('name') || undefined;
   const slug = formData.get('slug') || undefined;
-  const templatePageId = formData.get('templatePageId') || undefined;
+  // An empty selection ("None") clears the template; a missing key leaves it unchanged.
+  const rawTemplatePageId = formData.get('templatePageId');
+  const templatePageId =
+    rawTemplatePageId === null ? undefined : rawTemplatePageId || null;
 
   const parsed = updateCollectionSchema.safeParse({
     id: id ?? undefined,
@@ -89,12 +92,16 @@ const addFieldSchema = z.object({
   config: z.string().default('{}'),
 });
 
+function isChecked(value: FormDataEntryValue | null) {
+  return value === 'on' || value === 'true';
+}
+
 export async function addCollectionField(formData: FormData) {
   const collectionId = formData.get('collectionId');
   const key = formData.get('key');
   const label = formData.get('label');
   const type = formData.get('type');
-  const required = formData.get('required') === 'on';
+  const required = isChecked(formData.get('required'));
   const configRaw = formData.get('config') || '{}';
   let config: Record<string, unknown> = {};
   try {
@@ -139,7 +146,9 @@ export async function updateCollectionField(formData: FormData) {
   const collectionId = formData.get('collectionId');
   const label = formData.get('label') || undefined;
   const type = formData.get('type') || undefined;
-  const required = formData.get('required') === 'on' || undefined;
+  // A missing key leaves `required` unchanged; any sent value sets it.
+  const rawRequired = formData.get('required');
+  const required = rawRequired === null ? undefined : isChecked(rawRequired);
 
   if (!fieldId || !collectionId) {
     return { ok: false, error: 'Missing field or collection id.' };

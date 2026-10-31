@@ -5,7 +5,9 @@ import { PERMISSIONS } from '@/config/permissions';
 import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { metaObject } from '@/lib/utils/metadata';
 import { accessService } from '@/server/services/access.service';
+import { siteContext } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
+import { OtherSiteNotice } from '@/components/organisms/other-site-notice';
 import { BuilderOrNewEditor } from '@/app/(admin)/dashboard/(fullscreen)/_editor/builder-or-new-editor';
 
 export const metadata = metaObject('Visual builder');
@@ -27,7 +29,23 @@ export default async function BuilderPage({
     pagesServices.getById({ id }),
     siteSettingsService.get(),
   ]);
-  if (!page) notFound();
+  if (!page) {
+    // The page may exist in another site this user can open.
+    const owningSiteId = await pagesServices.findOwningSite({ id });
+    const membership = owningSiteId
+      ? (await siteContext.memberships(userId)).find(
+          row => row.siteId === owningSiteId
+        )
+      : undefined;
+    if (!membership) notFound();
+    return (
+      <OtherSiteNotice
+        siteId={membership.siteId}
+        siteName={membership.siteName}
+        backHref={PAGES.DASHBOARD.PAGES.INDEX}
+      />
+    );
+  }
   if (page.editorType !== 'builder') redirect(PAGES.DASHBOARD.PAGES.EDIT(id));
 
   return (

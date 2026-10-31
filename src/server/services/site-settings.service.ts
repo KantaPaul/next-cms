@@ -115,6 +115,8 @@ async function loadSettings(siteId: string) {
       defaultOgImage: null,
       headerMenuId: null,
       footerMenuId: null,
+      headerTemplateId: null,
+      footerTemplateId: null,
       seoTitle: null,
       seoDescription: null,
       translations: null,

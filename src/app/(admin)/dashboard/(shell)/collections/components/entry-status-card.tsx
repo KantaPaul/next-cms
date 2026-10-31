@@ -1,12 +1,19 @@
 'use client';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import {
   publishCollectionEntry,
   unpublishCollectionEntry,
   deleteCollectionEntry,
 } from '../_modules/collections.actions';
+import { EntryStatusBadge } from './entry-list';
 
 export function EntryStatusCard({
   entryId,
@@ -20,39 +27,27 @@ export function EntryStatusCard({
   const isPublished = status === 'published';
 
   return (
-    <div className="rounded-lg border p-4">
-      <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-muted-foreground">
-        Status
-      </h2>
-      <p className="text-sm">
-        <span className={`font-semibold capitalize ${isPublished ? 'text-emerald-600' : 'text-amber-600'}`}>
-          {status}
-        </span>
-      </p>
-      {isPublished ? (
-        <form action={unpublishCollectionEntry}>
+    <Card>
+      <CardHeader>
+        <CardTitle>Status</CardTitle>
+      </CardHeader>
+      <CardContent className="flex items-center justify-between gap-3">
+        <EntryStatusBadge status={status} />
+        <form
+          action={isPublished ? unpublishCollectionEntry : publishCollectionEntry}
+        >
           <input type="hidden" name="entryId" value={entryId} />
           <input type="hidden" name="collectionId" value={collectionId} />
-          <button
+          <Button
             type="submit"
-            className="mt-2 text-red-600 hover:text-red-800 text-sm"
+            size="sm"
+            variant={isPublished ? 'outline' : 'default'}
           >
-            Unpublish
-          </button>
+            {isPublished ? 'Unpublish' : 'Publish'}
+          </Button>
         </form>
-      ) : (
-        <form action={publishCollectionEntry}>
-          <input type="hidden" name="entryId" value={entryId} />
-          <input type="hidden" name="collectionId" value={collectionId} />
-          <button
-            type="submit"
-            className="mt-2 text-emerald-600 hover:text-emerald-800 text-sm"
-          >
-            Publish
-          </button>
-        </form>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -66,29 +61,33 @@ export function DeleteEntryForm({
   entrySlug: string;
 }) {
   return (
-    <div className="mt-4 rounded-lg border p-4">
-      <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-muted-foreground">
-        Danger zone
-      </h2>
-      <form action={deleteCollectionEntry}>
-        <input type="hidden" name="entryId" value={entryId} />
-        <input type="hidden" name="collectionId" value={collectionId} />
-        <button
-          type="submit"
-          className="text-red-600 hover:text-red-800 text-sm"
-          onClick={e => {
-            if (
-              !window.confirm(
-                `Delete entry "${entrySlug}"? This cannot be undone.`
-              )
-            ) {
-              e.preventDefault();
-            }
-          }}
-        >
-          Delete entry
-        </button>
-      </form>
-    </div>
+    <Card className="mt-4 border-destructive/40">
+      <CardHeader>
+        <CardTitle>Danger zone</CardTitle>
+        <CardDescription>Deleting an entry cannot be undone.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form action={deleteCollectionEntry}>
+          <input type="hidden" name="entryId" value={entryId} />
+          <input type="hidden" name="collectionId" value={collectionId} />
+          <Button
+            type="submit"
+            variant="destructive"
+            size="sm"
+            onClick={e => {
+              if (
+                !window.confirm(
+                  `Delete entry "${entrySlug}"? This cannot be undone.`
+                )
+              ) {
+                e.preventDefault();
+              }
+            }}
+          >
+            Delete entry
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

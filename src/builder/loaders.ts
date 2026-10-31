@@ -189,6 +189,56 @@ const loadVideoLibrary: BlockLoader = async props => {
   };
 };
 
+const loadNavMenu: BlockLoader = async (props, ctx) => {
+  const location = (props.location === 'footer' ? 'footer' : 'header') as
+    | 'header'
+    | 'footer';
+  try {
+    const { getSiteMenu } = await import('@/server/actions/site-chrome.actions');
+    const menu = await getSiteMenu({ location, language: ctx.language });
+    return { menu };
+  } catch {
+    return {};
+  }
+};
+
+const loadFooterLinks: BlockLoader = async (props, ctx) => {
+  if (props.source !== 'menu') return {};
+  const location = (props.menuLocation === 'header' ? 'header' : 'footer') as
+    | 'header'
+    | 'footer';
+  try {
+    const { getSiteMenu } = await import('@/server/actions/site-chrome.actions');
+    const menu = await getSiteMenu({ location, language: ctx.language });
+    return { menu };
+  } catch {
+    return {};
+  }
+};
+
+const loadLogo: BlockLoader = async (_props, _ctx) => {
+  try {
+    const { getSiteBranding } = await import(
+      '@/server/actions/site-chrome.actions'
+    );
+    return await getSiteBranding();
+  } catch {
+    return {};
+  }
+};
+
+const loadCopyright: BlockLoader = async (_props, _ctx) => {
+  try {
+    const { getSiteBranding } = await import(
+      '@/server/actions/site-chrome.actions'
+    );
+    const { siteName } = await getSiteBranding();
+    return { siteName };
+  } catch {
+    return {};
+  }
+};
+
 /**
  * Registry of block type → loader.
  * ContactForm stores fields inline today; query-loop blocks will register here
@@ -199,6 +249,10 @@ const registry = createLoaderRegistry<LoaderContext>(
     BlogPosts: loadBlogPosts,
     RelatedPosts: loadRelatedPosts,
     VideoLibrary: loadVideoLibrary,
+    NavMenu: loadNavMenu,
+    FooterLinks: loadFooterLinks,
+    Logo: loadLogo,
+    Copyright: loadCopyright,
   },
   {
     onError: (err, node) =>

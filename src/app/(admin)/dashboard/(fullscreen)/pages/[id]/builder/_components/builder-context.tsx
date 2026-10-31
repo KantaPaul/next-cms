@@ -18,7 +18,9 @@ export type BuilderKind =
   | 'post-template'
   | 'page-template'
   | 'global'
-  | 'contact-form';
+  | 'contact-form'
+  | 'header'
+  | 'footer';
 
 export type BuilderContextValue = {
   kind: BuilderKind;

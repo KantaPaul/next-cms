@@ -41,7 +41,12 @@ export default async function TemplatesPage() {
       <TemplatesAndGlobals
         templates={templates}
         globals={globals
-          .filter(g => g.category !== 'contact-form')
+          .filter(
+            g =>
+              g.category !== 'contact-form' &&
+              g.category !== 'Header' &&
+              g.category !== 'Footer'
+          )
           .map(({ content, ...g }) => ({
             ...g,
             sectionTypes: templatesService

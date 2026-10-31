@@ -1,19 +1,31 @@
 'use client';
 
-import { useId } from 'react';
-import { useForm as useRHFForm } from 'react-hook-form';
-import { FormProvider } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Controller } from 'react-hook-form';
+import { Checkbox } from '@/components/ui/checkbox';
 import { FormInput as Input } from '@/components/ui/input';
-import { FormItem, FormMessage } from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import {
   updateCollectionField,
   deleteCollectionField,
 } from '../_modules/collections.actions';
+import { FIELD_TYPES } from '../_modules/collections.schemas';
 import { objectToFormData } from '../_modules/form-helpers';
 import { useFormAction } from '@/hooks/use-form-action';
 
@@ -27,18 +39,11 @@ export type FieldRow = {
 
 const updateFieldSchema = z.object({
   label: z.string().min(1, 'Label is required').max(150),
-  type: z.enum([
-    'text',
-    'richtext',
-    'number',
-    'boolean',
-    'date',
-    'select',
-    'media',
-    'relation',
-  ]),
-  required: z.boolean().default(false),
+  type: z.enum(FIELD_TYPES.map(t => t.value) as [string, ...string[]]),
+  required: z.boolean(),
 });
+
+type UpdateFieldInput = z.infer<typeof updateFieldSchema>;
 
 export function FieldList({
   fields,
@@ -57,132 +62,128 @@ export function FieldList({
 
   return (
     <div className="space-y-2">
-      {fields.map(field => {
-        const fieldForm = useRHFForm({
-          resolver: zodResolver(updateFieldSchema) as any,
-          defaultValues: {
-            label: field.label,
-            type: field.type,
-            required: field.required,
-          },
-        });
+      {fields.map(field => (
+        <FieldRowForm key={field.id} field={field} collectionId={collectionId} />
+      ))}
+    </div>
+  );
+}
 
-        const { submit, isPending } = useFormAction(
-          (data: any) =>
-            updateCollectionField(
-              objectToFormData({
-                collectionId,
-                fieldId: field.id,
-                label: data.label,
-                type: data.type,
-                ...(data.required ? { required: 'on' } : {}),
-              })
-            ),
-          {
-            onSuccess: () => {
-              fieldForm.reset();
-            },
-          }
-        );
+function FieldRowForm({
+  field,
+  collectionId,
+}: {
+  field: FieldRow;
+  collectionId: string;
+}) {
+  const form = useForm<UpdateFieldInput>({
+    resolver: zodResolver(updateFieldSchema),
+    defaultValues: {
+      label: field.label,
+      type: field.type,
+      required: field.required,
+    },
+  });
 
-        const onSubmit = (data: any) => {
-          submit(data);
-        };
+  const { submit, isPending, error } = useFormAction(updateCollectionField, {
+    onSuccess: () => {
+      form.reset(form.getValues());
+    },
+  });
 
-        return (
-          <div
-            key={field.id}
-            className="flex items-center gap-3 border border-input p-3 rounded-lg"
-          >
-            <FormProvider {...fieldForm}>
-              <form
-                onSubmit={fieldForm.handleSubmit(onSubmit)}
-                className="flex-1"
-              >
-                <input type="hidden" name="fieldId" value={field.id} />
-                <input
-                  type="hidden"
-                  name="collectionId"
-                  value={collectionId}
-                />
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                  <Controller
-                    name="label"
-                    render={({ field: f, fieldState }) => {
-                      const id = useId();
-                      return (
-                        <>
-                          <Label htmlFor={id}>{field.label}</Label>
-                          <Input id={id} {...f} required />
-                          {fieldState.error && (
-                            <FormMessage>{fieldState.error.message}</FormMessage>
-                          )}
-                        </>
-                      );
-                    }}
+  const onSubmit = (data: UpdateFieldInput) => {
+    submit(
+      objectToFormData({
+        collectionId,
+        fieldId: field.id,
+        label: data.label,
+        type: data.type,
+        required: data.required ? 'on' : 'off',
+      })
+    );
+  };
+
+  return (
+    <div className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-end">
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end"
+        >
+          <FormField
+            control={form.control}
+            name="label"
+            render={({ field: f }) => (
+              <FormItem className="flex-1">
+                <FormLabel>
+                  Label{' '}
+                  <code className="text-xs font-normal text-muted-foreground">
+                    {field.key}
+                  </code>
+                </FormLabel>
+                <FormControl>
+                  <Input {...f} required />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="type"
+            render={({ field: f }) => (
+              <FormItem>
+                <FormLabel>Type</FormLabel>
+                <Select value={f.value} onValueChange={f.onChange}>
+                  <FormControl>
+                    <SelectTrigger className="w-36">
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {FIELD_TYPES.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="required"
+            render={({ field: f }) => (
+              <FormItem className="flex h-9 items-center gap-2">
+                <FormControl>
+                  <Checkbox
+                    checked={f.value}
+                    onCheckedChange={value => f.onChange(value === true)}
                   />
-                  <Controller
-                    name="type"
-                    render={({ field: f }) => {
-                      const id = useId();
-                      return (
-                        <select
-                          id={id}
-                          {...f}
-                          className="rounded-md border border-input bg-transparent p-2 text-sm w-auto"
-                        >
-                          <option value="text">Text</option>
-                          <option value="richtext">Rich text</option>
-                          <option value="number">Number</option>
-                          <option value="boolean">Boolean</option>
-                          <option value="date">Date</option>
-                          <option value="select">Select</option>
-                          <option value="media">Media</option>
-                          <option value="relation">Relation</option>
-                        </select>
-                      );
-                    }}
-                  />
-                  <Controller
-                    name="required"
-                    render={({ field: f }) => {
-                      const id = useId();
-                      return (
-                        <div className="flex items-center gap-1">
-                          <input
-                            id={id}
-                            {...f}
-                            type="checkbox"
-                          />
-                          <Label htmlFor={id} className="text-xs">
-                            Required
-                          </Label>
-                        </div>
-                      );
-                    }}
-                  />
-                  <Button type="submit" size="sm" disabled={isPending}>
-                    Save
-                  </Button>
-                </div>
-              </form>
-            </FormProvider>
-            <form
-              action={async () => {
-                const fd = new FormData();
-                fd.append('fieldId', field.id);
-                fd.append('collectionId', collectionId);
-                await deleteCollectionField(fd);
-              }}
-              className="ml-2"
-            >
-              <Button type="submit" variant="destructive" size="sm">
-                Delete
-              </Button>
-            </form>
-          </div>
-        );
-      })}
+                </FormControl>
+                <FormLabel className="text-xs font-normal">Required</FormLabel>
+              </FormItem>
+            )}
+          />
+          <Button type="submit" size="sm" disabled={isPending}>
+            {isPending ? 'Saving…' : 'Save'}
+          </Button>
+        </form>
+      </Form>
+      <form
+        action={async () => {
+          const fd = new FormData();
+          fd.append('fieldId', field.id);
+          fd.append('collectionId', collectionId);
+          await deleteCollectionField(fd);
+        }}
+      >
+        <Button type="submit" variant="destructive" size="sm">
+          Delete
+        </Button>
+      </form>
+      {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
   );
 }

@@ -4,7 +4,6 @@
  * the Puck builder and the new editor so both behave the same.
  */
 
-import type { BuilderData } from '@/builder/data';
 import { toast } from 'sonner';
 import {
   publishPage,
@@ -71,6 +70,41 @@ export function adapterFor(
   page: BuilderPageProps['page'],
   category?: string
 ): Adapter {
+  if (kind === 'header' || kind === 'footer') {
+    const isHeader = kind === 'header';
+    return {
+      label: isHeader ? 'Header' : 'Footer',
+      backHref: PAGES.DASHBOARD.HEADER_FOOTER,
+      backLabel: 'Header & Footer',
+      headerPath: '',
+      previewHref: null,
+      liveLabel: 'Save',
+      saveDraft: async content => {
+        const blocks = (content.content ?? []) as BuilderItem[];
+        const zones = (content.zones ?? {}) as Record<string, BuilderItem[]>;
+        const root = (content.root ?? { props: {} }) as {
+          props?: Record<string, unknown>;
+        };
+        if (!blocks.length) {
+          toast.error(
+            isHeader
+              ? 'A header needs at least one block.'
+              : 'A footer needs at least one block.'
+          );
+          return { error: 'empty' };
+        }
+        return saveGlobalBlock({
+          id: page.id,
+          name: page.title,
+          category: isHeader ? 'Header' : 'Footer',
+          content: { root, content: blocks, zones },
+        });
+      },
+      publish: async () => null,
+      submitForReview: null,
+    };
+  }
+
   if (kind === 'global' || kind === 'contact-form') {
     const isContactForm = kind === 'contact-form';
     return {
@@ -85,6 +119,9 @@ export function adapterFor(
       saveDraft: async content => {
         const blocks = (content.content ?? []) as BuilderItem[];
         const zones = (content.zones ?? {}) as Record<string, BuilderItem[]>;
+        const root = (content.root ?? { props: {} }) as {
+          props?: Record<string, unknown>;
+        };
         if (!blocks.length) {
           toast.error(
             isContactForm
@@ -97,7 +134,7 @@ export function adapterFor(
           id: page.id,
           name: page.title,
           category: category ?? (isContactForm ? 'contact-form' : 'general'),
-          content: { content: blocks, zones },
+          content: { root, content: blocks, zones },
         });
       },
       publish: async () => null,

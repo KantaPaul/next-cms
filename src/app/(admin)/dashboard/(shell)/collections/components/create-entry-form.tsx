@@ -1,51 +1,43 @@
 'use client';
 
-import { useId } from 'react';
-import { z } from 'zod';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Controller } from 'react-hook-form';
 import { FormInput as Input } from '@/components/ui/input';
-import { FormItem, FormMessage } from '@/components/ui/form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { createCollectionEntry } from '../_modules/collections.actions';
 import { objectToFormData } from '../_modules/form-helpers';
 import { useFormAction } from '@/hooks/use-form-action';
-
-type FieldConfig = {
-  key: string;
-  label: string;
-  type: string;
-  required: boolean;
-};
+import {
+  EntryDataFields,
+  entryFormSchema,
+  type EntryFieldConfig,
+  type EntryFormValues,
+} from './entry-data-fields';
 
 interface CreateEntryFormProps {
   collectionId: string;
-  fields: FieldConfig[];
+  fields: EntryFieldConfig[];
 }
 
 export function CreateEntryForm({
   collectionId,
   fields,
 }: CreateEntryFormProps) {
-  const defaultValues: Record<string, unknown> = { slug: '' };
+  const defaultValues: EntryFormValues = { slug: '' };
   fields.forEach(f => {
-    defaultValues[`data-${f.key}`] = '';
+    defaultValues[`data-${f.key}`] = f.type === 'boolean' ? false : '';
   });
 
-  const form = useForm({
-    resolver: zodResolver(
-      z.object({
-        slug: z.string().min(1, 'Slug is required'),
-        ...Object.fromEntries(
-          fields.map(f => [
-            `data-${f.key}`,
-            z.any().optional(),
-          ])
-        ),
-      })
-    ) as any,
+  const form = useForm<EntryFormValues>({
+    resolver: zodResolver(entryFormSchema),
     defaultValues,
   });
 
@@ -55,68 +47,39 @@ export function CreateEntryForm({
     },
   });
 
-  const onSubmit = (data: any) => {
-    submit(objectToFormData(data));
+  const onSubmit = (data: EntryFormValues) => {
+    submit(objectToFormData({ collectionId, ...data }));
   };
 
   return (
-    <FormProvider {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-3">
-        <input type="hidden" name="collectionId" value={collectionId} />
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+        <FormField
+          control={form.control}
+          name="slug"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Slug</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  value={String(field.value ?? '')}
+                  required
+                  placeholder="my-entry"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <EntryDataFields fields={fields} richtextRows={4} />
         <div>
-          <Controller
-            name="slug"
-            render={({ field, fieldState }) => {
-              const id = useId();
-              return (
-                <FormItem>
-                  <Label htmlFor={id}>Slug</Label>
-                  <Input id={id} {...field} required />
-                  {fieldState.error && (
-                    <FormMessage>{fieldState.error.message}</FormMessage>
-                  )}
-                </FormItem>
-              );
-            }}
-          />
+          <Button type="submit" disabled={isPending}>
+            {isPending ? 'Creating…' : 'Create entry'}
+          </Button>
         </div>
-        {fields.map(field => (
-          <div key={field.key} className="grid gap-1">
-            <Label htmlFor={`data-${field.key}`}>
-              {field.label}{field.required ? ' *' : ''}
-            </Label>
-            <Controller
-              name={`data-${field.key}`}
-              render={({ field: f, fieldState }) => {
-                const id = useId();
-                const isTextarea =
-                  field.type === 'text' || field.type === 'richtext';
-                return (
-                  <>
-                    {isTextarea ? (
-                      <textarea
-                        id={id}
-                        {...f}
-                        rows={field.type === 'richtext' ? 4 : 2}
-                        className="rounded-md border border-input bg-transparent p-2 text-sm w-full"
-                      />
-                    ) : (
-                      <Input id={id} {...f} />
-                    )}
-                    {fieldState.error && (
-                      <FormMessage>{fieldState.error.message}</FormMessage>
-                    )}
-                  </>
-                );
-              }}
-            />
-          </div>
-        ))}
-        <Button type="submit" disabled={isPending}>
-          {isPending ? 'Creating…' : 'Create entry'}
-        </Button>
         {error && <p className="text-sm text-destructive">{error}</p>}
       </form>
-    </FormProvider>
+    </Form>
   );
 }

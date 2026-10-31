@@ -7,6 +7,7 @@ import {
   ImageIcon,
   KeyRound,
   LayoutTemplate,
+  PanelTop,
   CornerDownRight,
   ClipboardCheck,
   Mail,
@@ -57,6 +58,11 @@ export function getMenuItems(): {
       name: 'Templates & Globals',
       href: PAGES.DASHBOARD.TEMPLATES,
       icon: <LayoutTemplate className="w-[18px]" />,
+    },
+    {
+      name: 'Header & Footer',
+      href: PAGES.DASHBOARD.HEADER_FOOTER,
+      icon: <PanelTop className="w-[18px]" />,
     },
     {
       name: 'Contact forms',

@@ -294,13 +294,26 @@ export function SettingsForm({
           const id = useId();
           return (
             <FormItem>
-              <NullableSelect
-                id={id}
-                value={field.value}
-                onChange={field.onChange}
-                noneLabel="None (use menu layout)"
-                options={relevant.map(t => ({ value: t.id, label: t.name }))}
-              />
+              <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <NullableSelect
+                    id={id}
+                    value={field.value}
+                    onChange={field.onChange}
+                    noneLabel="None (use menu layout)"
+                    options={relevant.map(t => ({ value: t.id, label: t.name }))}
+                  />
+                </div>
+                {field.value && (
+                  <Link
+                    href={PAGES.DASHBOARD.HEADER_FOOTER_EDIT(field.value)}
+                    target="_blank"
+                    className="text-xs font-medium text-indigo-600 hover:underline shrink-0"
+                  >
+                    Edit
+                  </Link>
+                )}
+              </div>
               {fieldState.error && (
                 <FormMessage>{fieldState.error.message}</FormMessage>
               )}
@@ -483,10 +496,10 @@ export function SettingsForm({
           <p className="text-xs text-steel-500 sm:col-span-2">
             Header and footer templates override the default menu navigation. Manage templates in{' '}
             <Link
-              href={PAGES.DASHBOARD.TEMPLATES}
+              href={PAGES.DASHBOARD.HEADER_FOOTER}
               className="font-medium text-indigo-600 hover:underline"
             >
-              Templates
+              Header & Footer
             </Link>
             .
           </p>

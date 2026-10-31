@@ -12,6 +12,14 @@ import { Map as MapBlock } from '../blocks/map';
 import { Newsletter } from '../blocks/newsletter';
 import { ImageMorph } from '../blocks/image-morph';
 import { Button, Spacer } from '../blocks/layout';
+import {
+  HeaderBar,
+  FooterColumns,
+  Logo,
+  NavMenu,
+  Copyright,
+  FooterLinks,
+} from '../blocks/site-chrome';
 import { BlogPosts, PostTitle, PostFeaturedImage, PostMeta, PostContent, RelatedPosts } from '../blocks/blog';
 import { Slider, Tabs, Accordion } from '../blocks/interactive';
 import { Example } from '../custom/example';
@@ -440,7 +448,470 @@ export const RelatedPostsBlock = defineBlock({
   defaults: {"title":"Related posts","limit":3,"columns":3,"showImage":true,"showExcerpt":true,"showAuthor":false,"showDate":true,"section":{"paddingY":"md","background":"default","hideOnMobile":false,"hideOnTablet":false,"hideOnDesktop":false,"anchor":""}},
 });
 
-export const NATIVE_BLOCKS = [exampleBlock, HeroBlock, FeaturesBlock, StatsBlock, PricingBlock, TestimonialsBlock, FAQBlock, CTABlock, ColumnsBlock, ContainerBlock, VideoBlock, VideoLibraryNativeBlock, EmbedBlock, MapNativeBlock, CodeBlock, NewsletterBlock, ImageMorphBlock, RichTextBlock, ImageNativeBlock, GalleryBlock, ContactFormBlock, ButtonBlock, SpacerBlock, CollectionItemBlock, GlobalRefBlock, LogoCloudBlock, TeamBlock, TimelineBlock, BlogPostsBlock, SliderBlock, TabsBlock, AccordionBlock, PostTitleBlock, PostFeaturedImageBlock, PostMetaBlock, PostContentBlock, RelatedPostsBlock];
+export const HeaderBarBlock = defineBlock({
+  type: 'HeaderBar',
+  label: 'Header bar',
+  category: 'header',
+  icon: 'layout',
+  schema: z.object({
+    width: z.enum(['boxed', 'full']).default('boxed'),
+    background: z
+      .enum(['default', 'muted', 'inverted', 'primary', 'transparent'])
+      .default('default'),
+    paddingY: z.enum(['none', 'xs', 'sm', 'md', 'lg']).default('sm'),
+    minHeight: z.string().default(''),
+    borderBottom: z.boolean().default(false),
+    align: z.enum(['center', 'start', 'end']).default('center'),
+  }),
+  slots: {
+    left: { label: 'Left slot' },
+    center: { label: 'Center slot' },
+    right: { label: 'Right slot' },
+  },
+  render: HeaderBar,
+  fields: {
+    width: {
+      label: 'Width',
+      type: 'radio',
+      options: [
+        { label: 'Boxed', value: 'boxed' },
+        { label: 'Full', value: 'full' },
+      ],
+    },
+    background: {
+      label: 'Background',
+      type: 'select',
+      options: [
+        { label: 'Default', value: 'default' },
+        { label: 'Surface / Muted', value: 'muted' },
+        { label: 'Inverted', value: 'inverted' },
+        { label: 'Primary', value: 'primary' },
+        { label: 'Transparent', value: 'transparent' },
+      ],
+    },
+    paddingY: {
+      label: 'Vertical padding',
+      type: 'select',
+      options: [
+        { label: 'None', value: 'none' },
+        { label: 'Extra small', value: 'xs' },
+        { label: 'Small', value: 'sm' },
+        { label: 'Medium', value: 'md' },
+        { label: 'Large', value: 'lg' },
+      ],
+    },
+    minHeight: { label: 'Minimum height (CSS)', type: 'text' },
+    borderBottom: {
+      label: 'Bottom border',
+      type: 'radio',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+      ],
+    },
+    align: {
+      label: 'Vertical alignment',
+      type: 'radio',
+      options: [
+        { label: 'Center', value: 'center' },
+        { label: 'Start', value: 'start' },
+        { label: 'End', value: 'end' },
+      ],
+    },
+  },
+  defaults: {
+    width: 'boxed',
+    background: 'default',
+    paddingY: 'sm',
+    minHeight: '',
+    borderBottom: false,
+    align: 'center',
+  },
+});
+
+export const FooterColumnsBlock = defineBlock({
+  type: 'FooterColumns',
+  label: 'Footer columns',
+  category: 'footer',
+  icon: 'columns',
+  schema: z.object({
+    width: z.enum(['boxed', 'full']).default('boxed'),
+    background: z
+      .enum(['default', 'muted', 'inverted', 'primary'])
+      .default('default'),
+    paddingY: z.enum(['none', 'sm', 'md', 'lg', 'xl']).default('lg'),
+    columns: z.number().min(1).max(6).default(4),
+    gap: z.enum(['sm', 'md', 'lg', 'xl']).default('lg'),
+    stackOn: z.enum(['mobile', 'tablet']).default('mobile'),
+  }),
+  slots: {
+    col1: { label: 'Column 1' },
+    col2: { label: 'Column 2' },
+    col3: { label: 'Column 3' },
+    col4: { label: 'Column 4' },
+    col5: { label: 'Column 5' },
+    col6: { label: 'Column 6' },
+  },
+  render: FooterColumns,
+  fields: {
+    width: {
+      label: 'Width',
+      type: 'radio',
+      options: [
+        { label: 'Boxed', value: 'boxed' },
+        { label: 'Full', value: 'full' },
+      ],
+    },
+    background: {
+      label: 'Background',
+      type: 'select',
+      options: [
+        { label: 'Default', value: 'default' },
+        { label: 'Surface / Muted', value: 'muted' },
+        { label: 'Inverted', value: 'inverted' },
+        { label: 'Primary', value: 'primary' },
+      ],
+    },
+    paddingY: {
+      label: 'Vertical padding',
+      type: 'select',
+      options: [
+        { label: 'None', value: 'none' },
+        { label: 'Small', value: 'sm' },
+        { label: 'Medium', value: 'md' },
+        { label: 'Large', value: 'lg' },
+        { label: 'Extra large', value: 'xl' },
+      ],
+    },
+    columns: {
+      label: 'Columns',
+      type: 'select',
+      options: [
+        { label: '1 Column', value: 1 },
+        { label: '2 Columns', value: 2 },
+        { label: '3 Columns', value: 3 },
+        { label: '4 Columns', value: 4 },
+        { label: '5 Columns', value: 5 },
+        { label: '6 Columns', value: 6 },
+      ],
+    },
+    gap: {
+      label: 'Gap',
+      type: 'radio',
+      options: [
+        { label: 'Small', value: 'sm' },
+        { label: 'Medium', value: 'md' },
+        { label: 'Large', value: 'lg' },
+        { label: 'Extra large', value: 'xl' },
+      ],
+    },
+    stackOn: {
+      label: 'Stack on',
+      type: 'radio',
+      options: [
+        { label: 'Mobile (< 768px)', value: 'mobile' },
+        { label: 'Tablet (< 1024px)', value: 'tablet' },
+      ],
+    },
+  },
+  defaults: {
+    width: 'boxed',
+    background: 'default',
+    paddingY: 'lg',
+    columns: 4,
+    gap: 'lg',
+    stackOn: 'mobile',
+  },
+});
+
+export const LogoBlock = defineBlock({
+  type: 'Logo',
+  label: 'Logo',
+  category: 'header',
+  icon: 'image',
+  schema: z.object({
+    source: z.enum(['site', 'media']).default('site'),
+    mediaUrl: z.string().default(''),
+    darkMediaUrl: z.string().default(''),
+    stickyMediaUrl: z.string().default(''),
+    width: z.number().default(140),
+    link: z.string().default('/'),
+    showSiteName: z.boolean().default(true),
+  }),
+  render: Logo,
+  fields: {
+    source: {
+      label: 'Source',
+      type: 'radio',
+      options: [
+        { label: 'Site settings', value: 'site' },
+        { label: 'Custom media', value: 'media' },
+      ],
+    },
+    mediaUrl: {
+      label: 'Logo image',
+      type: 'custom',
+      render: MediaUrlField,
+      when: (props: any) => props.source === 'media',
+    },
+    darkMediaUrl: {
+      label: 'Dark mode logo (optional)',
+      type: 'custom',
+      render: MediaUrlField,
+      when: (props: any) => props.source === 'media',
+    },
+    stickyMediaUrl: {
+      label: 'Sticky header logo (optional)',
+      type: 'custom',
+      render: MediaUrlField,
+    },
+    width: { label: 'Width (px)', type: 'number' },
+    link: { label: 'Link URL', type: 'custom', render: UrlField },
+    showSiteName: {
+      label: 'Show site name text',
+      type: 'radio',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+      ],
+    },
+  },
+  defaults: {
+    source: 'site',
+    mediaUrl: '',
+    darkMediaUrl: '',
+    stickyMediaUrl: '',
+    width: 140,
+    link: '/',
+    showSiteName: true,
+  },
+});
+
+export const NavMenuBlock = defineBlock({
+  type: 'NavMenu',
+  label: 'Navigation menu',
+  category: 'header',
+  icon: 'menu',
+  schema: z.object({
+    location: z.enum(['header', 'footer']).default('header'),
+    orientation: z.enum(['horizontal', 'vertical']).default('horizontal'),
+    depth: z.number().min(1).max(3).default(2),
+    dropdownTrigger: z.enum(['hover', 'click']).default('hover'),
+    gap: z.enum(['sm', 'md', 'lg']).default('md'),
+    activeStyle: z
+      .enum(['underline', 'pill', 'bold', 'none'])
+      .default('underline'),
+  }),
+  render: NavMenu,
+  fields: {
+    location: {
+      label: 'Menu location',
+      type: 'select',
+      options: [
+        { label: 'Header menu', value: 'header' },
+        { label: 'Footer menu', value: 'footer' },
+      ],
+    },
+    orientation: {
+      label: 'Orientation',
+      type: 'radio',
+      options: [
+        { label: 'Horizontal', value: 'horizontal' },
+        { label: 'Vertical', value: 'vertical' },
+      ],
+    },
+    depth: {
+      label: 'Dropdown depth',
+      type: 'select',
+      options: [
+        { label: '1 level (flat)', value: 1 },
+        { label: '2 levels (dropdowns)', value: 2 },
+        { label: '3 levels (nested)', value: 3 },
+      ],
+    },
+    dropdownTrigger: {
+      label: 'Dropdown trigger',
+      type: 'radio',
+      options: [
+        { label: 'Hover', value: 'hover' },
+        { label: 'Click', value: 'click' },
+      ],
+    },
+    gap: {
+      label: 'Spacing',
+      type: 'radio',
+      options: [
+        { label: 'Small', value: 'sm' },
+        { label: 'Medium', value: 'md' },
+        { label: 'Large', value: 'lg' },
+      ],
+    },
+    activeStyle: {
+      label: 'Active item style',
+      type: 'select',
+      options: [
+        { label: 'Underline', value: 'underline' },
+        { label: 'Pill badge', value: 'pill' },
+        { label: 'Bold font', value: 'bold' },
+        { label: 'None', value: 'none' },
+      ],
+    },
+  },
+  defaults: {
+    location: 'header',
+    orientation: 'horizontal',
+    depth: 2,
+    dropdownTrigger: 'hover',
+    gap: 'md',
+    activeStyle: 'underline',
+  },
+});
+
+export const CopyrightBlock = defineBlock({
+  type: 'Copyright',
+  label: 'Copyright notice',
+  category: 'footer',
+  icon: 'text',
+  schema: z.object({
+    text: z.string().default('© {year} {site_name}. All rights reserved.'),
+    align: z.enum(['left', 'center', 'right']).default('center'),
+  }),
+  render: Copyright,
+  fields: {
+    text: { label: 'Copyright text', type: 'text' },
+    align: {
+      label: 'Alignment',
+      type: 'radio',
+      options: [
+        { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+        { label: 'Right', value: 'right' },
+      ],
+    },
+  },
+  defaults: {
+    text: '© {year} {site_name}. All rights reserved.',
+    align: 'center',
+  },
+});
+
+export const FooterLinksBlock = defineBlock({
+  type: 'FooterLinks',
+  label: 'Footer links',
+  category: 'footer',
+  icon: 'list',
+  schema: z.object({
+    heading: z.string().default('Quick links'),
+    source: z.enum(['menu', 'manual']).default('manual'),
+    menuLocation: z.enum(['header', 'footer']).default('footer'),
+    collapseOnMobile: z.boolean().default(false),
+    links: z
+      .array(
+        z.object({
+          label: z.string(),
+          url: z.string(),
+          target: z.string().optional(),
+        })
+      )
+      .default([]),
+  }),
+  render: FooterLinks,
+  fields: {
+    heading: { label: 'Column heading', type: 'text' },
+    source: {
+      label: 'Link source',
+      type: 'radio',
+      options: [
+        { label: 'Manual list', value: 'manual' },
+        { label: 'Menu location', value: 'menu' },
+      ],
+    },
+    menuLocation: {
+      label: 'Menu location',
+      type: 'select',
+      options: [
+        { label: 'Footer menu', value: 'footer' },
+        { label: 'Header menu', value: 'header' },
+      ],
+      when: (props: any) => props.source === 'menu',
+    },
+    links: {
+      label: 'Links',
+      type: 'list',
+      when: (props: any) => props.source === 'manual',
+      item: {
+        label: { label: 'Label', type: 'text' },
+        url: { label: 'URL', type: 'custom', render: UrlField },
+      },
+      defaultItem: { label: 'Link', url: '#' },
+    },
+    collapseOnMobile: {
+      label: 'Collapse on mobile',
+      type: 'radio',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+      ],
+    },
+  },
+  defaults: {
+    heading: 'Quick links',
+    source: 'manual',
+    menuLocation: 'footer',
+    collapseOnMobile: false,
+    links: [
+      { label: 'Privacy Policy', url: '/privacy' },
+      { label: 'Terms of Service', url: '/terms' },
+      { label: 'Contact Support', url: '/contact' },
+    ],
+  },
+});
+
+export const NATIVE_BLOCKS = [
+  exampleBlock,
+  HeroBlock,
+  FeaturesBlock,
+  StatsBlock,
+  PricingBlock,
+  TestimonialsBlock,
+  FAQBlock,
+  CTABlock,
+  ColumnsBlock,
+  ContainerBlock,
+  VideoBlock,
+  VideoLibraryNativeBlock,
+  EmbedBlock,
+  MapNativeBlock,
+  CodeBlock,
+  NewsletterBlock,
+  ImageMorphBlock,
+  RichTextBlock,
+  ImageNativeBlock,
+  GalleryBlock,
+  ContactFormBlock,
+  ButtonBlock,
+  SpacerBlock,
+  CollectionItemBlock,
+  GlobalRefBlock,
+  LogoCloudBlock,
+  TeamBlock,
+  TimelineBlock,
+  BlogPostsBlock,
+  SliderBlock,
+  TabsBlock,
+  AccordionBlock,
+  PostTitleBlock,
+  PostFeaturedImageBlock,
+  PostMetaBlock,
+  PostContentBlock,
+  RelatedPostsBlock,
+  HeaderBarBlock,
+  FooterColumnsBlock,
+  LogoBlock,
+  NavMenuBlock,
+  CopyrightBlock,
+  FooterLinksBlock,
+];
 export const PAGE_ROOT_FIELDS = {
   maxWidth: {
     type: 'select',
@@ -477,7 +948,104 @@ export const PAGE_ROOT_FIELDS = {
   pageTransition: { type: 'custom', label: 'Page transition', group: 'Page', render: PageTransitionField },
 } as any;
 
+export const HEADER_ROOT_FIELDS = {
+  sticky: {
+    type: 'select',
+    label: 'Sticky header',
+    group: 'Header Behaviour',
+    options: [
+      { label: 'Off', value: 'off' },
+      { label: 'Always sticky', value: 'always' },
+      { label: 'Reveal on scroll up', value: 'scroll-up' },
+    ],
+  },
+  transparent: {
+    type: 'radio',
+    label: 'Transparent on load',
+    group: 'Header Behaviour',
+    options: [
+      { label: 'Solid', value: false },
+      { label: 'Transparent', value: true },
+    ],
+  },
+  shrinkOnScroll: {
+    type: 'radio',
+    label: 'Shrink logo on scroll',
+    group: 'Header Behaviour',
+    options: [
+      { label: 'No', value: false },
+      { label: 'Yes', value: true },
+    ],
+  },
+  hideOnScrollDown: {
+    type: 'radio',
+    label: 'Hide on scroll down',
+    group: 'Header Behaviour',
+    options: [
+      { label: 'No', value: false },
+      { label: 'Yes', value: true },
+    ],
+  },
+  shadow: {
+    type: 'select',
+    label: 'Shadow',
+    group: 'Header Behaviour',
+    options: [
+      { label: 'None', value: 'none' },
+      { label: 'Show on scroll', value: 'on-scroll' },
+      { label: 'Always', value: 'always' },
+    ],
+  },
+  zIndex: {
+    type: 'number',
+    label: 'Z-Index layer',
+    group: 'Header Behaviour',
+  },
+} as any;
+
+export const FOOTER_ROOT_FIELDS = {
+  background: {
+    type: 'select',
+    label: 'Background style',
+    group: 'Footer Style',
+    options: [
+      { label: 'Default', value: 'default' },
+      { label: 'Surface / Muted', value: 'muted' },
+      { label: 'Inverted', value: 'inverted' },
+      { label: 'Primary', value: 'primary' },
+    ],
+  },
+  paddingY: {
+    type: 'select',
+    label: 'Vertical padding',
+    group: 'Footer Style',
+    options: [
+      { label: 'None', value: 'none' },
+      { label: 'Small', value: 'sm' },
+      { label: 'Medium', value: 'md' },
+      { label: 'Large', value: 'lg' },
+      { label: 'Extra large', value: 'xl' },
+    ],
+  },
+} as any;
+
 export const CATEGORIES = {
+  header: {
+    title: 'Header',
+    components: ['HeaderBar', 'Logo', 'NavMenu', 'Button', 'Spacer'],
+  },
+  footer: {
+    title: 'Footer',
+    components: [
+      'FooterColumns',
+      'FooterLinks',
+      'Logo',
+      'Copyright',
+      'RichText',
+      'Newsletter',
+      'Spacer',
+    ],
+  },
   heroes: { title: 'Heroes & calls to action', components: ['Hero', 'CTA'] },
   marketing: {
     title: 'Marketing',

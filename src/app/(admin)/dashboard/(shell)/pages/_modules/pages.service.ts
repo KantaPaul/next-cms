@@ -1131,7 +1131,35 @@ export const pagesServices = {
       .from(pages)
       .where(and(await alive(), ids?.length ? inArray(pages.id, ids) : undefined))
       .orderBy(asc(pages.title)),
+
+  // Site that owns a page, ignoring the active admin site. Used to offer a
+  // site switch when a link points at a page from another site.
+  findOwningSite: async ({ id }: { id: string }) => {
+    const [row] = await db
+      .select({ siteId: pages.siteId })
+      .from(pages)
+      .where(and(eq(pages.id, id), isNull(pages.deletedAt)))
+      .limit(1);
+    return row?.siteId ?? null;
+  },
+
+  // Builder pages usable as a collection entry template (site-scoped).
+  listTemplateOptions: async () =>
+    db
+      .select({
+        id: pages.id,
+        title: pages.title,
+        slug: pages.slug,
+        status: pages.status,
+      })
+      .from(pages)
+      .where(and(await alive(), eq(pages.editorType, 'builder')))
+      .orderBy(asc(pages.title)),
 };
+
+export type TemplatePageOption = Awaited<
+  ReturnType<typeof pagesServices.listTemplateOptions>
+>[number];
 
 export type PageDetail = NonNullable<
   Awaited<ReturnType<typeof pagesServices.getById>>

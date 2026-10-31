@@ -62,12 +62,12 @@ export default async function CollectionEntriesPage({
             {entries.length} entry{entries.length !== 1 ? 's' : ''}
           </p>
         </div>
-        <Link href={PAGES.DASHBOARD.COLLECTION_ENTRY(id, 'new')}>
-          <Button>New entry</Button>
-        </Link>
+        <Button asChild>
+          <Link href="#new-entry">New entry</Link>
+        </Button>
       </div>
 
-      <Card>
+      <Card id="new-entry" className="mb-6 scroll-mt-20">
         <CardHeader>
           <CardTitle>New entry</CardTitle>
         </CardHeader>

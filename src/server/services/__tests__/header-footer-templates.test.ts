@@ -101,4 +101,28 @@ describe('Header & Footer Templates Resolution (R484, R485)', () => {
     assert.equal(res4.headerTemplateId, null);
     assert.equal(res4.footerTemplateId, null);
   });
+
+  it('resolves precedence hierarchy for posts: post override > locale override > site default', () => {
+    const resolveEffectiveTemplates = (
+      post: { headerTemplateId?: string | null; footerTemplateId?: string | null } | null,
+      localeCopy: { headerTemplateId?: string | null; footerTemplateId?: string | null },
+      site: { headerTemplateId?: string | null; footerTemplateId?: string | null }
+    ) => ({
+      headerTemplateId:
+        post?.headerTemplateId || localeCopy.headerTemplateId || site.headerTemplateId || null,
+      footerTemplateId:
+        post?.footerTemplateId || localeCopy.footerTemplateId || site.footerTemplateId || null,
+    });
+
+    const site = { headerTemplateId: 'site-h', footerTemplateId: 'site-f' };
+    const localeCopy = { headerTemplateId: 'locale-h', footerTemplateId: 'locale-f' };
+
+    const res = resolveEffectiveTemplates(
+      { headerTemplateId: 'post-h', footerTemplateId: 'post-f' },
+      localeCopy,
+      site
+    );
+    assert.equal(res.headerTemplateId, 'post-h');
+    assert.equal(res.footerTemplateId, 'post-f');
+  });
 });

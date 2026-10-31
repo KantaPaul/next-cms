@@ -68,8 +68,6 @@ const DEFAULT_TEMPLATE_CATEGORIES = [
 
 const DEFAULT_GLOBAL_CATEGORIES = [
   'General',
-  'Header',
-  'Footer',
   'Hero',
   'Features',
   'CTA',

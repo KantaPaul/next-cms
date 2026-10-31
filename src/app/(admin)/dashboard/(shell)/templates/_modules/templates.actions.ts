@@ -1,5 +1,5 @@
 'use server';
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { templatesService } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.service';
@@ -22,6 +22,9 @@ const blockItemSchema = z.object({
 const globalBlockContentSchema = z.union([
   z.array(blockItemSchema),
   z.object({
+    root: z
+      .object({ props: z.record(z.string(), z.unknown()).optional() })
+      .optional(),
     content: z.array(blockItemSchema),
     zones: z.record(z.string(), z.array(blockItemSchema)).optional(),
   }),
@@ -49,8 +52,12 @@ export const listGlobalBlockOptions = permissionProcedure(
  * Public read of a global block's sections. Used by the GlobalRef block's `resolveData`
  * in the editor and during public rendering; global blocks hold only published copy.
  */
-export async function getGlobalBlockContent(id: string) {
+export async function getGlobalBlockContent(id: string, siteId?: string) {
   if (typeof id !== 'string' || !id) return null;
+  const conditions = [eq(globalBlocks.id, id)];
+  if (siteId) {
+    conditions.push(eq(globalBlocks.siteId, siteId));
+  }
   const [row] = await db
     .select({
       id: globalBlocks.id,
@@ -58,7 +65,7 @@ export async function getGlobalBlockContent(id: string) {
       content: globalBlocks.content,
     })
     .from(globalBlocks)
-    .where(eq(globalBlocks.id, id))
+    .where(and(...conditions))
     .limit(1);
 
   if (row) {
@@ -137,6 +144,7 @@ export const saveGlobalBlock = accessProcedure
     );
     revalidatePath(PAGES.DASHBOARD.TEMPLATES);
     revalidatePath(PAGES.DASHBOARD.CONTACT_FORMS);
+    revalidatePath(PAGES.DASHBOARD.HEADER_FOOTER);
     return row;
   });
 
@@ -152,6 +160,7 @@ export const renameGlobalBlock = accessProcedure
     const row = await templatesService.renameGlobalBlock(input, ctx.access);
     revalidatePath(PAGES.DASHBOARD.TEMPLATES);
     revalidatePath(PAGES.DASHBOARD.CONTACT_FORMS);
+    revalidatePath(PAGES.DASHBOARD.HEADER_FOOTER);
     return row;
   });
 
@@ -161,6 +170,7 @@ export const deleteGlobalBlock = accessProcedure
     const row = await templatesService.deleteGlobalBlock(input, ctx.access);
     revalidatePath(PAGES.DASHBOARD.TEMPLATES);
     revalidatePath(PAGES.DASHBOARD.CONTACT_FORMS);
+    revalidatePath(PAGES.DASHBOARD.HEADER_FOOTER);
     return row;
   });
 
@@ -178,6 +188,7 @@ export const saveTemplate = accessProcedure
     const row = await templatesService.saveTemplate(input, ctx.access);
     revalidatePath(PAGES.DASHBOARD.TEMPLATES);
     revalidatePath(PAGES.DASHBOARD.CONTACT_FORMS);
+    revalidatePath(PAGES.DASHBOARD.HEADER_FOOTER);
     return row;
   });
 
@@ -187,6 +198,7 @@ export const deleteTemplate = accessProcedure
     const row = await templatesService.deleteTemplate(input, ctx.access);
     revalidatePath(PAGES.DASHBOARD.TEMPLATES);
     revalidatePath(PAGES.DASHBOARD.CONTACT_FORMS);
+    revalidatePath(PAGES.DASHBOARD.HEADER_FOOTER);
     return row;
   });
 
@@ -204,5 +216,6 @@ export const updateTemplate = accessProcedure
     const row = await templatesService.updateTemplate(input, ctx.access);
     revalidatePath(PAGES.DASHBOARD.TEMPLATES);
     revalidatePath(PAGES.DASHBOARD.CONTACT_FORMS);
+    revalidatePath(PAGES.DASHBOARD.HEADER_FOOTER);
     return row;
   });

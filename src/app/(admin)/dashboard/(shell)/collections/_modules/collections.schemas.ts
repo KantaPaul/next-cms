@@ -29,6 +29,17 @@ export const createCollectionSchema = z.object({
 
 export type CreateCollectionInput = z.infer<typeof createCollectionSchema>;
 
+export const FIELD_TYPES = [
+  { value: 'text', label: 'Text' },
+  { value: 'richtext', label: 'Rich text' },
+  { value: 'number', label: 'Number' },
+  { value: 'boolean', label: 'Boolean' },
+  { value: 'date', label: 'Date' },
+  { value: 'select', label: 'Select' },
+  { value: 'media', label: 'Media' },
+  { value: 'relation', label: 'Relation' },
+] as const;
+
 export const collectionFieldSchema = z.object({
   key: z.string().trim().min(1, 'Key is required').max(100),
   label: z.string().trim().min(1, 'Label is required').max(150),

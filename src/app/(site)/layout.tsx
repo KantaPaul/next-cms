@@ -5,6 +5,7 @@ import { getGlobalBlockContent } from '@/app/(admin)/dashboard/(shell)/templates
 import { renderBuilderContent } from '@/builder/render-content';
 import { fontStylesheetUrl, themeStyle } from '@/builder/theme';
 import { LanguageSwitcher } from '@/components/site/language-switcher';
+import { MenuLinks, menuHref } from '@/components/site/menu-links';
 import { PAGES } from '@/config/pages';
 import { siteHref } from '@/lib/utils/site-href';
 import { getPreviewSession } from '@/server/services/preview-session';
@@ -24,61 +25,6 @@ import {
   localizedSettings,
   siteSettingsService,
 } from '@/server/services/site-settings.service';
-
-/** Menu URLs may be saved with or without the site slug; prefix only once. */
-function menuHref(url: string, siteSlug?: string) {
-  if (siteSlug && (url === `/${siteSlug}` || url.startsWith(`/${siteSlug}/`)))
-    return url;
-  return siteHref(url, siteSlug);
-}
-
-function MenuLinks({
-  menu,
-  className,
-  siteSlug,
-}: {
-  menu?: MenuWithItems;
-  className?: string;
-  siteSlug?: string;
-}) {
-  if (!menu?.items.length) return null;
-  return (
-    <ul className={className}>
-      {menu.items.map(item => (
-        <li key={item.id} className="group relative">
-          <a
-            href={menuHref(item.url, siteSlug)}
-            target={item.target}
-            rel={item.target === '_blank' ? 'noopener noreferrer' : undefined}
-            className="inline-flex items-center gap-1.5 hover:opacity-80"
-          >
-            {item.label}
-            {item.badge && (
-              <span className="s-soft-primary rounded-full px-1.5 py-0.5 text-[10px] font-semibold">
-                {item.badge}
-              </span>
-            )}
-          </a>
-          {item.children.length > 0 && (
-            <ul className="s-border invisible absolute left-0 top-full z-20 min-w-44 rounded-md border bg-[var(--site-bg)] p-2 opacity-0 shadow-lg transition group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
-              {item.children.map(child => (
-                <li key={child.id}>
-                  <a
-                    href={menuHref(child.url, siteSlug)}
-                    target={child.target}
-                    className="block rounded px-2 py-1.5 text-sm hover:opacity-80"
-                  >
-                    {child.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          )}
-        </li>
-      ))}
-    </ul>
-  );
-}
 
 export default async function SiteLayout({
   children,
@@ -138,7 +84,10 @@ export default async function SiteLayout({
   let customHeader: React.ReactNode = null;
   if (headerTemplateId) {
     try {
-      const headerBlock = await getGlobalBlockContent(headerTemplateId);
+      const headerBlock = await getGlobalBlockContent(
+        headerTemplateId,
+        site.id
+      );
       if (
         headerBlock &&
         (headerBlock.blocks?.length ||
@@ -159,7 +108,10 @@ export default async function SiteLayout({
   let customFooter: React.ReactNode = null;
   if (footerTemplateId) {
     try {
-      const footerBlock = await getGlobalBlockContent(footerTemplateId);
+      const footerBlock = await getGlobalBlockContent(
+        footerTemplateId,
+        site.id
+      );
       if (
         footerBlock &&
         (footerBlock.blocks?.length ||
