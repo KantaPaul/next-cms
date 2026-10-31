@@ -1,7 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { FieldFactory } from '@/components/atoms/forms/factory/field-factory';
+import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import {
   pageStatusOptions,
@@ -37,6 +39,8 @@ export const SidebarEditor = ({
   const canPublish = useCan(PERMISSIONS.PAGES_PUBLISH);
   const { register, control, formState } = useFormContext<CreatePagesInput>();
   const status = useWatch({ control, name: 'status' });
+  const headerTemplateId = useWatch({ control, name: 'headerTemplateId' });
+  const footerTemplateId = useWatch({ control, name: 'footerTemplateId' });
 
   const statusOptions = canPublish
     ? pageStatusOptions
@@ -171,14 +175,40 @@ export const SidebarEditor = ({
             },
             {
               name: 'headerTemplateId',
-              label: 'Header template',
+              label: (
+                <span className="flex items-center justify-between w-full">
+                  <span>Header template</span>
+                  {headerTemplateId ? (
+                    <Link
+                      href={PAGES.DASHBOARD.HEADER_FOOTER_EDIT(headerTemplateId)}
+                      target="_blank"
+                      className="text-xs font-normal text-indigo-600 hover:underline"
+                    >
+                      Edit
+                    </Link>
+                  ) : null}
+                </span>
+              ),
               type: 'select',
               options: headerOptions,
               isClearable: true,
             },
             {
               name: 'footerTemplateId',
-              label: 'Footer template',
+              label: (
+                <span className="flex items-center justify-between w-full">
+                  <span>Footer template</span>
+                  {footerTemplateId ? (
+                    <Link
+                      href={PAGES.DASHBOARD.HEADER_FOOTER_EDIT(footerTemplateId)}
+                      target="_blank"
+                      className="text-xs font-normal text-indigo-600 hover:underline"
+                    >
+                      Edit
+                    </Link>
+                  ) : null}
+                </span>
+              ),
               type: 'select',
               options: footerOptions,
               isClearable: true,

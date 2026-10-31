@@ -19,6 +19,9 @@ import {
   NavMenu,
   Copyright,
   FooterLinks,
+  MobileMenu,
+  SearchBox,
+  AnnouncementBar,
 } from '../blocks/site-chrome';
 import { BlogPosts, PostTitle, PostFeaturedImage, PostMeta, PostContent, RelatedPosts } from '../blocks/blog';
 import { Slider, Tabs, Accordion } from '../blocks/interactive';
@@ -867,6 +870,149 @@ export const FooterLinksBlock = defineBlock({
   },
 });
 
+export const MobileMenuBlock = defineBlock({
+  type: 'MobileMenu',
+  label: 'Mobile menu',
+  category: 'header',
+  icon: 'menu',
+  schema: z.object({
+    breakpoint: z.enum(['mobile', 'tablet']).default('mobile'),
+    drawerSide: z.enum(['left', 'right', 'full']).default('right'),
+    menuLocation: z.enum(['header', 'footer']).default('header'),
+    icon: z.enum(['menu', 'dots']).default('menu'),
+    showSearch: z.boolean().default(false),
+  }),
+  render: MobileMenu,
+  fields: {
+    breakpoint: {
+      label: 'Visible on',
+      type: 'radio',
+      options: [
+        { label: 'Mobile only (< 768px)', value: 'mobile' },
+        { label: 'Mobile & Tablet (< 1024px)', value: 'tablet' },
+      ],
+    },
+    drawerSide: {
+      label: 'Drawer position',
+      type: 'radio',
+      options: [
+        { label: 'Right', value: 'right' },
+        { label: 'Left', value: 'left' },
+        { label: 'Full screen', value: 'full' },
+      ],
+    },
+    menuLocation: {
+      label: 'Menu location',
+      type: 'select',
+      options: [
+        { label: 'Header menu', value: 'header' },
+        { label: 'Footer menu', value: 'footer' },
+      ],
+    },
+    icon: {
+      label: 'Button icon',
+      type: 'radio',
+      options: [
+        { label: 'Hamburger', value: 'menu' },
+        { label: 'Three dots', value: 'dots' },
+      ],
+    },
+    showSearch: {
+      label: 'Show search in drawer',
+      type: 'radio',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+      ],
+    },
+  },
+  defaults: {
+    breakpoint: 'mobile',
+    drawerSide: 'right',
+    menuLocation: 'header',
+    icon: 'menu',
+    showSearch: false,
+  },
+});
+
+export const SearchBoxBlock = defineBlock({
+  type: 'SearchBox',
+  label: 'Search box',
+  category: 'header',
+  icon: 'search',
+  schema: z.object({
+    mode: z.enum(['inline', 'icon-modal']).default('inline'),
+    placeholder: z.string().default('Search...'),
+  }),
+  render: SearchBox,
+  fields: {
+    mode: {
+      label: 'Display mode',
+      type: 'radio',
+      options: [
+        { label: 'Inline input', value: 'inline' },
+        { label: 'Icon button (modal)', value: 'icon-modal' },
+      ],
+    },
+    placeholder: {
+      label: 'Placeholder text',
+      type: 'text',
+    },
+  },
+  defaults: {
+    mode: 'inline',
+    placeholder: 'Search...',
+  },
+});
+
+export const AnnouncementBarBlock = defineBlock({
+  type: 'AnnouncementBar',
+  label: 'Announcement bar',
+  category: 'header',
+  icon: 'bell',
+  schema: z.object({
+    text: z.string().default('Welcome to our newly designed website!'),
+    link: z.string().default(''),
+    dismissible: z.boolean().default(true),
+    dismissDays: z.number().default(7),
+    startsAt: z.string().default(''),
+    endsAt: z.string().default(''),
+  }),
+  render: AnnouncementBar,
+  fields: {
+    text: { label: 'Announcement text', type: 'textarea' },
+    link: { label: 'Link URL (optional)', type: 'custom', render: UrlField },
+    dismissible: {
+      label: 'Dismissible',
+      type: 'radio',
+      options: [
+        { label: 'Yes (close button)', value: true },
+        { label: 'No (always show)', value: false },
+      ],
+    },
+    dismissDays: {
+      label: 'Hide for (days after dismiss)',
+      type: 'number',
+    },
+    startsAt: {
+      label: 'Start time (optional ISO format)',
+      type: 'text',
+    },
+    endsAt: {
+      label: 'End time (optional ISO format)',
+      type: 'text',
+    },
+  },
+  defaults: {
+    text: 'Welcome to our newly designed website!',
+    link: '',
+    dismissible: true,
+    dismissDays: 7,
+    startsAt: '',
+    endsAt: '',
+  },
+});
+
 export const NATIVE_BLOCKS = [
   exampleBlock,
   HeroBlock,
@@ -911,6 +1057,9 @@ export const NATIVE_BLOCKS = [
   NavMenuBlock,
   CopyrightBlock,
   FooterLinksBlock,
+  MobileMenuBlock,
+  SearchBoxBlock,
+  AnnouncementBarBlock,
 ];
 export const PAGE_ROOT_FIELDS = {
   maxWidth: {
@@ -1032,7 +1181,16 @@ export const FOOTER_ROOT_FIELDS = {
 export const CATEGORIES = {
   header: {
     title: 'Header',
-    components: ['HeaderBar', 'Logo', 'NavMenu', 'Button', 'Spacer'],
+    components: [
+      'HeaderBar',
+      'Logo',
+      'NavMenu',
+      'MobileMenu',
+      'SearchBox',
+      'AnnouncementBar',
+      'Button',
+      'Spacer',
+    ],
   },
   footer: {
     title: 'Footer',

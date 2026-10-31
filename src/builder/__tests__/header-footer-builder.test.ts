@@ -14,6 +14,9 @@ describe('Header & Footer builder palette and editor setup', () => {
     assert.ok(setup.groups[0].types.includes('HeaderBar'));
     assert.ok(setup.groups[0].types.includes('Logo'));
     assert.ok(setup.groups[0].types.includes('NavMenu'));
+    assert.ok(setup.groups[0].types.includes('MobileMenu'));
+    assert.ok(setup.groups[0].types.includes('SearchBox'));
+    assert.ok(setup.groups[0].types.includes('AnnouncementBar'));
     assert.ok(setup.groups[1].types.includes('FooterColumns'));
     assert.ok(setup.groups[1].types.includes('Copyright'));
     assert.ok(setup.groups[1].types.includes('FooterLinks'));
@@ -70,6 +73,9 @@ describe('Header & Footer block definitions and schemas', () => {
     'NavMenu',
     'Copyright',
     'FooterLinks',
+    'MobileMenu',
+    'SearchBox',
+    'AnnouncementBar',
   ];
 
   it('defines each block in pageDefinitions with valid defaults', () => {

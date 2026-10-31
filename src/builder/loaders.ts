@@ -250,6 +250,7 @@ const registry = createLoaderRegistry<LoaderContext>(
     RelatedPosts: loadRelatedPosts,
     VideoLibrary: loadVideoLibrary,
     NavMenu: loadNavMenu,
+    MobileMenu: loadNavMenu,
     FooterLinks: loadFooterLinks,
     Logo: loadLogo,
     Copyright: loadCopyright,

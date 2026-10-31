@@ -6,6 +6,7 @@ import { renderBuilderContent } from '@/builder/render-content';
 import { fontStylesheetUrl, themeStyle } from '@/builder/theme';
 import { LanguageSwitcher } from '@/components/site/language-switcher';
 import { MenuLinks, menuHref } from '@/components/site/menu-links';
+import { HeaderShell } from '@/components/site/header-shell';
 import { PAGES } from '@/config/pages';
 import { siteHref } from '@/lib/utils/site-href';
 import { getPreviewSession } from '@/server/services/preview-session';
@@ -82,6 +83,7 @@ export default async function SiteLayout({
     null;
 
   let customHeader: React.ReactNode = null;
+  let headerRootProps: Record<string, unknown> = {};
   if (headerTemplateId) {
     try {
       const headerBlock = await getGlobalBlockContent(
@@ -95,6 +97,11 @@ export default async function SiteLayout({
             typeof headerBlock.content === 'object' &&
             Object.keys(headerBlock.content).length > 0))
       ) {
+        const root = (headerBlock.content as { root?: { props?: Record<string, unknown> } })?.root;
+        if (root?.props && typeof root.props === 'object') {
+          headerRootProps = root.props;
+        }
+
         customHeader = await renderBuilderContent({
           content: headerBlock.content,
           metadata: { themeTokens: settings.themeTokens, language },
@@ -164,7 +171,16 @@ export default async function SiteLayout({
         </div>
       )}
       {customHeader ? (
-        <header className="site-header">{customHeader}</header>
+        <HeaderShell
+          sticky={headerRootProps.sticky as any}
+          transparent={headerRootProps.transparent as any}
+          shrinkOnScroll={headerRootProps.shrinkOnScroll as any}
+          hideOnScrollDown={headerRootProps.hideOnScrollDown as any}
+          shadow={headerRootProps.shadow as any}
+          zIndex={typeof headerRootProps.zIndex === 'number' ? headerRootProps.zIndex : 50}
+        >
+          {customHeader}
+        </HeaderShell>
       ) : (
         <header className="s-border border-b">
           <nav

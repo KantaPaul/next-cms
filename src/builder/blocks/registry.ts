@@ -39,6 +39,9 @@ import {
   NavMenu,
   Copyright,
   FooterLinks,
+  MobileMenu,
+  SearchBox,
+  AnnouncementBar,
 } from './site-chrome';
 
 const builtInComponents = {
@@ -79,6 +82,9 @@ const builtInComponents = {
   NavMenu,
   Copyright,
   FooterLinks,
+  MobileMenu,
+  SearchBox,
+  AnnouncementBar,
 };
 
 export const getBlockComponents = () => ({

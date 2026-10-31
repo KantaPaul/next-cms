@@ -5,6 +5,14 @@ import type { BuilderItem } from '../data';
 import { renderSlot, type SlotValue } from './content';
 import { MenuLinks, menuHref } from '@/components/site/menu-links';
 import type { MenuWithItems } from '@/server/services/public-site.service';
+import {
+  MobileMenuClient,
+  type MobileMenuClientProps,
+  SearchBoxClient,
+  type SearchBoxClientProps,
+  AnnouncementBarClient,
+  type AnnouncementBarClientProps,
+} from './site-chrome-client';
 
 /* ---------- HeaderBar ---------- */
 
@@ -396,4 +404,30 @@ export function FooterLinks({
       </ul>
     </div>
   );
+}
+
+/* ---------- MobileMenu ---------- */
+
+export type MobileMenuProps = MobileMenuClientProps & {
+  menuLocation?: 'header' | 'footer';
+};
+
+export function MobileMenu(props: MobileMenuProps) {
+  return <MobileMenuClient {...props} />;
+}
+
+/* ---------- SearchBox ---------- */
+
+export type SearchBoxProps = SearchBoxClientProps;
+
+export function SearchBox(props: SearchBoxProps) {
+  return <SearchBoxClient {...props} />;
+}
+
+/* ---------- AnnouncementBar ---------- */
+
+export type AnnouncementBarProps = AnnouncementBarClientProps;
+
+export function AnnouncementBar(props: AnnouncementBarProps) {
+  return <AnnouncementBarClient {...props} />;
 }

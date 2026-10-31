@@ -61,8 +61,6 @@ const DEFAULT_TEMPLATE_CATEGORIES = [
   'Sales',
   'Company',
   'Blog',
-  'Header',
-  'Footer',
   'General',
 ] as const;
 
