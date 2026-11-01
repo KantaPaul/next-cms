@@ -7,7 +7,7 @@
 
 import type { ComponentType } from 'react';
 import { z } from 'zod';
-import type { BlockSchema, SlotRules } from './blocks';
+import type { BlockInfo, BlockSchema, SlotRules } from './blocks';
 import type { FieldDef, Fields } from './fields';
 import type { BlockLoader, LoaderContext } from './loaders';
 import {
@@ -37,11 +37,8 @@ export type DefaultsContext = {
   theme?: Record<string, unknown>;
 };
 
-export type BlockMeta = {
+export type BlockMeta = BlockInfo & {
   label: string;
-  category?: string;
-  /** Icon name or short text the host's insert panel understands. */
-  icon?: string;
   keywords?: string[];
   thumbnail?: string;
   /** Props edited directly on the canvas (R696). */
@@ -254,15 +251,30 @@ export function toBlockSchema(
         ])
       )
     : undefined;
+  const info: BlockInfo = {};
+  for (const key of INFO_KEYS) {
+    if (definition[key] !== undefined) Object.assign(info, { [key]: definition[key] });
+  }
   return {
     type: definition.type,
     label: definition.label,
+    ...info,
     defaultProps: base,
     presets,
     slots: definition.slots,
     arraySlots: definition.arraySlots,
   };
 }
+
+const INFO_KEYS = [
+  'category',
+  'icon',
+  'description',
+  'capabilities',
+  'semanticTag',
+  'nesting',
+  'defaultSize',
+] as const satisfies readonly (keyof BlockInfo)[];
 
 /** Checks props against the block's schema, including opted-in traits (R777); blocks without a schema always pass. */
 export function validateProps(

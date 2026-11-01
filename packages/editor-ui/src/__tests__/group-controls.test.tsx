@@ -185,7 +185,7 @@ describe('Group Controls & Visual Editors (E12f/g)', () => {
 
       assert.match(html, /Background/);
       assert.match(html, /Mode/);
-      assert.match(html, /Solid/);
+      assert.match(html, /Classic/);
       assert.match(html, /Background Color/);
       assert.match(html, /White/);
       assert.match(html, /Surface/);

@@ -67,6 +67,7 @@ import {
   VersionCompare,
   StartScreen,
   createPreferencesStore,
+  getPreferencesStore,
   setPreferencesStore,
   getStyleClassStore,
   captureStyles,
@@ -614,7 +615,7 @@ export function NewEditor({
   issues = [],
   dynamicRefs = NO_DYNAMIC_REFS,
   shell = 'legacy',
-  layout = 'single',
+  layout,
 }: NewEditorProps) {
   const setup = useMemo(() => editorSetup(kind), [kind]);
   const adapter = useMemo(
@@ -716,6 +717,24 @@ export function NewEditor({
     }
     return 'single';
   });
+  // Saved layout and dock side apply after mount (the server has no
+  // localStorage); an explicit `?layout=` or the env default still wins.
+  useEffect(() => {
+    const prefs = getPreferencesStore()?.getState();
+    if (!prefs) return;
+    setSinglePanelSide(prefs.panelDock);
+    if (!layout && process.env.NEXT_PUBLIC_USE_SINGLE_PANEL !== '0') {
+      setCurrentLayout(prefs.layout);
+    }
+  }, [layout]);
+  const changeLayout = useCallback((next: 'single' | 'split') => {
+    setCurrentLayout(next);
+    getPreferencesStore()?.set('layout', next);
+  }, []);
+  const changeDockSide = useCallback((next: 'left' | 'right') => {
+    setSinglePanelSide(next);
+    getPreferencesStore()?.set('panelDock', next);
+  }, []);
   const isSinglePanel = currentLayout === 'single';
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [customTemplates, setCustomTemplates] = useState<TemplateItem[]>(() => {
@@ -1332,17 +1351,15 @@ export function NewEditor({
     const singlePanelElement = (
       <SinglePanel
         blocks={setup.inspectorBlocks}
-        categories={setup.groups?.map(g => ({
-          name: g.name,
-          types: g.blocks,
-        }))}
+        categories={setup.groups}
         templates={customTemplates}
         onSaveTemplate={handleSaveTemplate}
         onDeleteTemplate={handleDeleteTemplate}
         drag={drag}
         queue={queue}
         dockSide={singlePanelSide}
-        onDockSideChange={setSinglePanelSide}
+        onDockSideChange={changeDockSide}
+        onOpenCommandPalette={() => setPaletteOpen(true)}
       />
     );
     return (
@@ -1367,26 +1384,11 @@ export function NewEditor({
           onZoomChange={setZoom}
           isPreview={isPreview}
           onTogglePreview={() => setIsPreview(prev => !prev)}
+          layout={currentLayout}
+          onLayoutChange={changeLayout}
+          onDockSideChange={changeDockSide}
           actions={
             <>
-              <ChromeIconButton
-                size="sm"
-                active={isSinglePanel}
-                aria-pressed={isSinglePanel}
-                aria-label={
-                  isSinglePanel
-                    ? 'Switch to split layout'
-                    : 'Switch to single-panel layout'
-                }
-                tooltip={isSinglePanel ? 'Split layout' : 'Single-panel layout'}
-                onClick={() =>
-                  setCurrentLayout(prev =>
-                    prev === 'single' ? 'split' : 'single'
-                  )
-                }
-              >
-                <Columns2 className="h-3.5 w-3.5" />
-              </ChromeIconButton>
               <ChromeIconButton
                 size="sm"
                 active={motionPreview}
@@ -1519,9 +1521,7 @@ export function NewEditor({
               }
               title={isSinglePanel ? 'Split layout' : 'Single-panel layout'}
               onClick={() =>
-                setCurrentLayout(prev =>
-                  prev === 'single' ? 'split' : 'single'
-                )
+                changeLayout(isSinglePanel ? 'split' : 'single')
               }
             >
               <Columns2 className="size-4" />
@@ -1652,14 +1652,14 @@ export function NewEditor({
               {!focusMode && singlePanelSide === 'left' && (
                 <SinglePanel
                   blocks={setup.inspectorBlocks}
-                  categories={setup.groups?.map(g => ({ name: g.name, types: g.blocks }))}
+                  categories={setup.groups}
                   templates={customTemplates}
                   onSaveTemplate={handleSaveTemplate}
                   onDeleteTemplate={handleDeleteTemplate}
                   drag={drag}
                   queue={queue}
                   dockSide="left"
-                  onDockSideChange={setSinglePanelSide}
+                  onDockSideChange={changeDockSide}
                 />
               )}
               <main className="flex min-w-0 flex-1 flex-col">
@@ -1671,14 +1671,14 @@ export function NewEditor({
               {!focusMode && singlePanelSide === 'right' && (
                 <SinglePanel
                   blocks={setup.inspectorBlocks}
-                  categories={setup.groups?.map(g => ({ name: g.name, types: g.blocks }))}
+                  categories={setup.groups}
                   templates={customTemplates}
                   onSaveTemplate={handleSaveTemplate}
                   onDeleteTemplate={handleDeleteTemplate}
                   drag={drag}
                   queue={queue}
                   dockSide="right"
-                  onDockSideChange={setSinglePanelSide}
+                  onDockSideChange={changeDockSide}
                 />
               )}
             </>

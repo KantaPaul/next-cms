@@ -18,16 +18,34 @@ export interface ToolRailProps {
   bottomItems?: ToolRailItem[];
   activeId?: string;
   ariaLabel?: string;
+  /**
+   * `vertical` is the classic side rail; `horizontal` is the single-panel
+   * footer bar (undo/redo, view routes, change count, command palette).
+   */
+  orientation?: 'vertical' | 'horizontal';
+  /** Horizontal only: content before the route buttons (e.g. undo/redo). */
+  leading?: React.ReactNode;
+  /** Horizontal only: content after the route buttons (e.g. change chip). */
+  trailing?: React.ReactNode;
   className?: string;
 }
+
+const Divider = () => (
+  <div aria-hidden className="mx-1 h-4 w-px shrink-0 bg-[var(--ne-border)]" />
+);
 
 export const ToolRail: React.FC<ToolRailProps> = ({
   items,
   bottomItems,
   activeId,
   ariaLabel = 'Editor tools',
+  orientation = 'vertical',
+  leading,
+  trailing,
   className,
 }) => {
+  const horizontal = orientation === 'horizontal';
+
   const renderItem = (item: ToolRailItem) => {
     const isActive = item.active ?? (activeId ? item.id === activeId : false);
 
@@ -43,7 +61,11 @@ export const ToolRail: React.FC<ToolRailProps> = ({
     );
 
     return (
-      <Tooltip key={item.id} content={tooltipContent} side="right">
+      <Tooltip
+        key={item.id}
+        content={tooltipContent}
+        side={horizontal ? 'top' : 'right'}
+      >
         <button
           type="button"
           aria-label={item.label}
@@ -51,7 +73,8 @@ export const ToolRail: React.FC<ToolRailProps> = ({
           disabled={item.disabled}
           onClick={item.onClick}
           className={cn(
-            'group relative flex h-9 w-9 items-center justify-center rounded-[var(--ne-radius-md)] transition-colors',
+            'group relative flex items-center justify-center rounded-[var(--ne-radius-md)] transition-colors focus-visible:outline-2 focus-visible:outline-[var(--ne-focus-ring)]',
+            horizontal ? 'h-7 w-7' : 'h-9 w-9',
             isActive
               ? 'bg-[var(--ne-primary-soft)] text-[var(--ne-primary)]'
               : 'text-[var(--ne-text-muted)] hover:bg-[var(--ne-surface-hover)] hover:text-[var(--ne-text)]',
@@ -60,14 +83,19 @@ export const ToolRail: React.FC<ToolRailProps> = ({
         >
           {item.icon}
 
-          {/* Active side indicator pill */}
-          {isActive && (
+          {/* Active side indicator pill (side rail only) */}
+          {isActive && !horizontal && (
             <div className="absolute -left-1 top-1.5 bottom-1.5 w-1 rounded-r bg-[var(--ne-primary)]" />
           )}
 
           {/* Badge */}
           {item.badge !== undefined && (
-            <span className="absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--ne-primary)] px-1 text-[9px] font-bold text-white">
+            <span
+              className={cn(
+                'absolute flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--ne-primary)] px-1 text-[9px] font-bold text-white',
+                horizontal ? '-top-1 -right-1' : 'top-1 right-1'
+              )}
+            >
               {item.badge}
             </span>
           )}
@@ -75,6 +103,35 @@ export const ToolRail: React.FC<ToolRailProps> = ({
       </Tooltip>
     );
   };
+
+  if (horizontal) {
+    return (
+      <nav
+        role="toolbar"
+        aria-label={ariaLabel}
+        aria-orientation="horizontal"
+        className={cn(
+          'flex shrink-0 items-center gap-0.5 border-t border-[var(--ne-border)] bg-[var(--ne-surface-subtle)] px-2 py-1.5 select-none',
+          className
+        )}
+      >
+        {leading && (
+          <>
+            <div className="flex shrink-0 items-center gap-0.5">{leading}</div>
+            <Divider />
+          </>
+        )}
+        <div className="flex min-w-0 items-center gap-0.5">
+          {items.map(renderItem)}
+        </div>
+        {(trailing || (bottomItems && bottomItems.length > 0)) && <Divider />}
+        <div className="ms-auto flex shrink-0 items-center gap-1">
+          {trailing}
+          {bottomItems?.map(renderItem)}
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <nav

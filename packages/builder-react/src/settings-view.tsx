@@ -1,6 +1,7 @@
 /**
- * Settings view (E12 / R693, R722): inspector with SectionAccordion,
- * SettingsSearch, ChangedFilter ("Show changed only"), and device switching.
+ * Settings view (E12 / R693, R722): inspector with Content / Style / Advanced
+ * tabs (⌥C / ⌥S / ⌥A), SettingsSearch, ChangedFilter ("Show only changed"),
+ * collapsible sections with a modified dot, and device switching.
  */
 
 import {
@@ -11,15 +12,15 @@ import {
   valueForDevice,
 } from '@nextcms/builder-core';
 import {
-  ControlRow,
+  ChangedFilter,
   FieldGroup,
   FieldRow as FieldRowFrame,
-  GroupControl,
-  type ControlState,
+  PanelTabs,
+  SettingsSearch,
 } from '@nextcms/editor-ui';
-import { Copy, Filter, RotateCcw, Search, Trash2 } from 'lucide-react';
+import { Copy, FileText, Paintbrush, Sliders, Trash2 } from 'lucide-react';
 import type React from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useEditor, useEditorStore } from './context';
 import {
   DeviceProvider,
@@ -29,14 +30,26 @@ import {
   fieldControlId,
 } from './fields';
 import { DeviceSwitch, type InspectorBlock } from './inspector';
+import { SETTINGS_TAB_EVENT, type SettingsTabId } from './keyboard';
 
 export interface SettingsViewProps {
   blocks: Record<string, InspectorBlock>;
   fieldTypes?: Record<string, FieldComponent>;
   className?: string;
+  /**
+   * "Show only changed", controlled. Pass with onChangedOnlyChange to drive
+   * the filter from outside (e.g. a footer chip); omit to keep it internal.
+   */
+  changedOnly?: boolean;
+  defaultChangedOnly?: boolean;
+  onChangedOnlyChange?: (changedOnly: boolean) => void;
+  /** Reports how many settings of the selected block differ from defaults. */
+  onChangedCountChange?: (count: number) => void;
+  /** Hides the built-in "Show only changed" button when a host drives it. */
+  hideChangedFilter?: boolean;
 }
 
-function fieldChanged(
+export function fieldChanged(
   field: FieldDef,
   value: unknown,
   defaultValue: unknown,
@@ -66,6 +79,8 @@ function fieldSection(field: FieldDef): string {
     case 'textarea':
     case 'url':
     case 'image':
+    case 'icon':
+    case 'media':
       return 'Content';
     case 'color':
     case 'shadow':
@@ -87,10 +102,86 @@ function fieldSection(field: FieldDef): string {
   }
 }
 
+const SETTINGS_TABS: { id: SettingsTabId; label: string; shortcut: string; icon: React.ReactNode }[] = [
+  { id: 'content', label: 'Content', shortcut: '⌥C', icon: <FileText size={13} /> },
+  { id: 'style', label: 'Style', shortcut: '⌥S', icon: <Paintbrush size={13} /> },
+  { id: 'advanced', label: 'Advanced', shortcut: '⌥A', icon: <Sliders size={13} /> },
+];
+
+/** Which tab a section lives in. */
+function sectionTab(section: string): SettingsTabId {
+  if (section === 'Content') return 'content';
+  if (section === 'Advanced' || section === 'Animation & Effects') return 'advanced';
+  return 'style';
+}
+
+export function settingsFieldTab(field: FieldDef): SettingsTabId {
+  return sectionTab(fieldSection(field));
+}
+
+export type SettingsSection = {
+  title: string;
+  fields: Array<[string, FieldDef]>;
+  changedCount: number;
+};
+
+/**
+ * The visible sections for a block: fields hidden by `when` are dropped, then
+ * the tab (ignored while searching), "Show only changed", and the query
+ * (name, label, or description) narrow them down.
+ */
+export function filterSettingsFields({
+  fields,
+  props,
+  defaultProps = {},
+  device,
+  query = '',
+  changedOnly = false,
+  tab,
+}: {
+  fields: Record<string, FieldDef>;
+  props: Record<string, unknown>;
+  defaultProps?: Record<string, unknown>;
+  device: Device;
+  query?: string;
+  changedOnly?: boolean;
+  tab?: SettingsTabId;
+}): SettingsSection[] {
+  const q = query.trim().toLowerCase();
+  const sections = new Map<string, SettingsSection>();
+  for (const [name, field] of Object.entries(fields)) {
+    if (field.when && !field.when(props)) continue;
+    const section = fieldSection(field);
+    if (tab && !q && sectionTab(section) !== tab) continue;
+    const changed = fieldChanged(field, props[name], defaultProps[name], device);
+    if (changedOnly && !changed) continue;
+    if (
+      q &&
+      !name.toLowerCase().includes(q) &&
+      !(field.label ?? '').toLowerCase().includes(q) &&
+      !(field.description ?? '').toLowerCase().includes(q)
+    )
+      continue;
+    let entry = sections.get(section);
+    if (!entry) {
+      entry = { title: section, fields: [], changedCount: 0 };
+      sections.set(section, entry);
+    }
+    entry.fields.push([name, field]);
+    if (changed) entry.changedCount++;
+  }
+  return [...sections.values()];
+}
+
 export function SettingsView({
   blocks,
   fieldTypes,
   className,
+  changedOnly: controlledChangedOnly,
+  defaultChangedOnly = false,
+  onChangedOnlyChange,
+  onChangedCountChange,
+  hideChangedFilter = false,
 }: SettingsViewProps) {
   const store = useEditorStore();
   const device = useEditor(state => state.device);
@@ -100,47 +191,72 @@ export function SettingsView({
   const node = useEditor(state => (selectedId ? state.doc.nodes[selectedId] : null));
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [changedOnly, setChangedOnly] = useState(false);
+  const [uncontrolledChangedOnly, setUncontrolledChangedOnly] =
+    useState(defaultChangedOnly);
+  const changedOnly = controlledChangedOnly ?? uncontrolledChangedOnly;
+  const setChangedOnly = (next: boolean) => {
+    if (controlledChangedOnly === undefined) setUncontrolledChangedOnly(next);
+    onChangedOnlyChange?.(next);
+  };
+  const [pickedTab, setPickedTab] = useState<SettingsTabId | null>(null);
 
   const block = node ? blocks[node.type] : null;
   const props = node ? node.props : {};
   const defaultProps = block?.defaultProps ?? {};
   const isLocked = !!node?.meta?.locked;
 
-  // Group fields into accordion sections
-  const sections = useMemo(() => {
-    if (!block) return {};
-    const grouped: Record<string, Array<[string, FieldDef]>> = {};
-    const q = searchQuery.trim().toLowerCase();
+  const tabsWithFields = useMemo(() => {
+    const present = new Set<SettingsTabId>();
+    for (const field of Object.values(block?.fields ?? {}))
+      present.add(settingsFieldTab(field));
+    return present;
+  }, [block]);
+  // Start on the first tab that has fields; a picked tab sticks across blocks.
+  const activeTab: SettingsTabId =
+    pickedTab ??
+    SETTINGS_TABS.find(t => tabsWithFields.has(t.id))?.id ??
+    'content';
 
-    for (const [name, field] of Object.entries(block.fields)) {
-      if (field.when && !field.when(props)) continue;
+  // ⌥C / ⌥S / ⌥A from the editor keyboard (keyboard.ts).
+  useEffect(() => {
+    const onTab = (event: Event) => {
+      const tab = (event as CustomEvent<SettingsTabId>).detail;
+      if (SETTINGS_TABS.some(t => t.id === tab)) setPickedTab(tab);
+    };
+    window.addEventListener(SETTINGS_TAB_EVENT, onTab);
+    return () => window.removeEventListener(SETTINGS_TAB_EVENT, onTab);
+  }, []);
 
-      const isChanged = fieldChanged(field, props[name], defaultProps[name], device);
-      if (changedOnly && !isChanged) continue;
+  const sections = useMemo(
+    () =>
+      block
+        ? filterSettingsFields({
+            fields: block.fields,
+            props,
+            defaultProps,
+            device,
+            query: searchQuery,
+            changedOnly,
+            tab: activeTab,
+          })
+        : [],
+    [block, props, defaultProps, device, searchQuery, changedOnly, activeTab]
+  );
 
-      if (q) {
-        const matches =
-          name.toLowerCase().includes(q) ||
-          (field.label ?? '').toLowerCase().includes(q) ||
-          (field.description ?? '').toLowerCase().includes(q);
-        if (!matches) continue;
-      }
-
-      const sec = fieldSection(field);
-      if (!grouped[sec]) grouped[sec] = [];
-      grouped[sec].push([name, field]);
+  const changedByTab = useMemo(() => {
+    const counts: Record<SettingsTabId, number> = { content: 0, style: 0, advanced: 0 };
+    for (const [name, field] of Object.entries(block?.fields ?? {})) {
+      if (fieldChanged(field, props[name], defaultProps[name], device))
+        counts[settingsFieldTab(field)]++;
     }
-
-    return grouped;
-  }, [block, props, defaultProps, device, searchQuery, changedOnly]);
-
-  const totalChangedCount = useMemo(() => {
-    if (!block) return 0;
-    return Object.entries(block.fields).filter(([name, field]) =>
-      fieldChanged(field, props[name], defaultProps[name], device)
-    ).length;
+    return counts;
   }, [block, props, defaultProps, device]);
+  const totalChangedCount =
+    changedByTab.content + changedByTab.style + changedByTab.advanced;
+
+  useEffect(() => {
+    onChangedCountChange?.(totalChangedCount);
+  }, [onChangedCountChange, totalChangedCount]);
 
   // Multiple blocks selected view
   if (count > 1) {
@@ -211,7 +327,18 @@ export function SettingsView({
           className={className}
           style={{ display: 'flex', flexDirection: 'column', height: '100%', font: 'var(--ne-text-body)' }}
         >
-          {/* Header controls: Search & Changed Filter */}
+          <PanelTabs
+            ariaLabel="Settings tabs"
+            variant="segmented"
+            activeTab={activeTab}
+            onChange={id => setPickedTab(id as SettingsTabId)}
+            tabs={SETTINGS_TABS.map(t => ({
+              ...t,
+              changed: changedByTab[t.id] > 0,
+            }))}
+          />
+
+          {/* Search & Changed Filter */}
           <div
             style={{
               display: 'flex',
@@ -222,59 +349,40 @@ export function SettingsView({
               background: 'var(--ne-surface)',
             }}
           >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                flex: 1,
-                padding: '3px 6px',
-                borderRadius: 4,
-                border: '1px solid var(--ne-border)',
-                background: 'var(--ne-surface-subtle)',
-              }}
-            >
-              <Search size={13} style={{ color: 'var(--ne-text-muted)' }} />
-              <input
-                type="search"
-                placeholder="Search settings…"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                style={{
-                  border: 'none',
-                  background: 'transparent',
-                  fontSize: 12,
-                  color: 'var(--ne-text)',
-                  width: '100%',
-                  outline: 'none',
-                }}
+            <SettingsSearch value={searchQuery} onChange={setSearchQuery} />
+            {!hideChangedFilter && (
+              <ChangedFilter
+                checked={changedOnly}
+                onChange={setChangedOnly}
+                changedTotal={totalChangedCount}
               />
-            </div>
+            )}
+          </div>
 
-            <button
-              type="button"
-              aria-label="Filter changed properties"
-              aria-pressed={changedOnly}
-              title={changedOnly ? 'Show all properties' : 'Show changed only'}
-              onClick={() => setChangedOnly(c => !c)}
+          {searchQuery.trim() && (
+            <div
+              role="status"
               style={{
-                padding: '4px 6px',
-                borderRadius: 4,
-                border: '1px solid var(--ne-border)',
-                background: changedOnly ? 'var(--ne-primary-soft)' : 'var(--ne-surface)',
-                color: changedOnly ? 'var(--ne-primary)' : 'var(--ne-text-muted)',
-                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 4,
+                justifyContent: 'space-between',
+                padding: '4px 12px',
                 fontSize: 11,
-                fontWeight: 500,
+                background: 'var(--ne-primary-soft)',
+                color: 'var(--ne-primary)',
+                borderBottom: '1px solid var(--ne-border)',
               }}
             >
-              <Filter size={12} />
-              <span>{totalChangedCount > 0 ? totalChangedCount : ''}</span>
-            </button>
-          </div>
+              <span>Searching all tabs for “{searchQuery.trim()}”</span>
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                style={{ border: 0, background: 'none', color: 'inherit', fontWeight: 600, cursor: 'pointer', fontSize: 11 }}
+              >
+                Clear
+              </button>
+            </div>
+          )}
 
           {/* Device bar if block has responsive fields */}
           <div
@@ -296,22 +404,21 @@ export function SettingsView({
 
           {/* Accordion Sections */}
           <div style={{ flex: 1, overflow: 'auto', padding: '8px 12px' }} className="ne-scrollbar">
-            {Object.keys(sections).length === 0 ? (
+            {sections.length === 0 ? (
               <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--ne-text-muted)', margin: '24px 0' }}>
                 {searchQuery || changedOnly
                   ? 'No matching settings found.'
-                  : 'No editable settings.'}
+                  : `No ${activeTab} settings for this block.`}
               </p>
             ) : (
-              Object.entries(sections).map(([sectionTitle, fields]) => {
-                const sectionChangedCount = fields.filter(([name, field]) =>
-                  fieldChanged(field, props[name], defaultProps[name], device)
-                ).length;
-
+              sections.map(({ title: sectionTitle, fields, changedCount }) => {
                 return (
                   <div key={sectionTitle} style={{ marginBottom: 8 }}>
                     <FieldGroup
                       title={sectionTitle}
+                      changedCount={changedCount}
+                      // Searching opens every matching section.
+                      expanded={searchQuery.trim() ? true : undefined}
                     >
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 6 }}>
                         {fields.map(([name, field]) => {

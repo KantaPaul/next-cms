@@ -154,6 +154,10 @@ export type FieldDef<P = Record<string, unknown>> =
   | (BaseField<P> & {
       type: 'background';
     })
+  /** A lucide icon id, picked from a searchable popover. */
+  | (BaseField<P> & { type: 'icon' })
+  /** `{ url, alt }` from the media library; `alt: false` hides alt text. */
+  | (BaseField<P> & { type: 'media'; alt?: boolean })
   | (BaseField<P> & {
       type: 'flex';
     })

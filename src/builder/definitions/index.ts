@@ -17,9 +17,10 @@ import {
   NATIVE_BLOCKS,
   PAGE_ROOT_FIELDS,
 } from './native';
+import { withInfo } from './info';
 
 export const pageDefinitions: Record<string, BlockDefinition> = Object.fromEntries(
-  NATIVE_BLOCKS.map(block => [block.type, block])
+  NATIVE_BLOCKS.map(block => [block.type, withInfo(block)])
 );
 
 export const nativeBlockTypes = NATIVE_BLOCKS.map(block => block.type);
@@ -53,7 +54,7 @@ export const pageBlockGroups: BlockGroup[] = Object.entries(CATEGORIES)
   }));
 
 const postDefinitions: Record<string, BlockDefinition> = Object.fromEntries(
-  NATIVE_BLOCKS.map(block => [block.type, block])
+  NATIVE_BLOCKS.map(block => [block.type, withInfo(block)])
 );
 
 const groupsOf = (skip: string[] = ['header', 'footer']): BlockGroup[] => {

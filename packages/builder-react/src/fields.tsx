@@ -36,6 +36,11 @@ import {
   FlexContainerGroup,
   type FlexContainerValue,
   IconButton,
+  IconField as E12IconField,
+  type MediaBrowseHandler,
+  MediaField as E12MediaField,
+  type MediaValue,
+  normalizeMedia,
   Input,
   NumberField as E12NumberField,
   Select,
@@ -294,6 +299,66 @@ function ImageField({ id, value, onChange, readOnly }: FieldProps<string>) {
   );
 }
 
+/** The host's media library, used by `media` fields and background images. */
+const MediaBrowseContext = createContext<MediaBrowseHandler | undefined>(
+  undefined
+);
+
+/**
+ * Wires the host's media library into the inspector: wrap the editor and
+ * pass a handler that opens the picker and calls `pick` with the chosen file.
+ */
+export function MediaBrowseProvider({
+  onBrowse,
+  children,
+}: {
+  onBrowse?: MediaBrowseHandler;
+  children: ReactNode;
+}) {
+  return (
+    <MediaBrowseContext.Provider value={onBrowse}>
+      {children}
+    </MediaBrowseContext.Provider>
+  );
+}
+
+export function useMediaBrowse(): MediaBrowseHandler | undefined {
+  return useContext(MediaBrowseContext);
+}
+
+/** `type: 'icon'`: a lucide icon id picked from a searchable popover. */
+function IconFieldControl({ id, value, onChange, readOnly }: FieldProps<string>) {
+  return (
+    <E12IconField
+      id={id}
+      value={str(value)}
+      onChange={onChange}
+      disabled={readOnly}
+    />
+  );
+}
+
+/** `type: 'media'`: `{ url, alt }` with a thumbnail, Browse, and alt text. */
+function MediaFieldControl({
+  field,
+  id,
+  value,
+  onChange,
+  readOnly,
+}: FieldProps<MediaValue | string | undefined>) {
+  const onBrowse = useMediaBrowse();
+  return (
+    <E12MediaField
+      id={id}
+      value={normalizeMedia(value)}
+      onChange={onChange}
+      onBrowse={readOnly ? undefined : onBrowse}
+      showAlt={(field as { alt?: boolean }).alt !== false}
+      disabled={readOnly}
+    />
+  );
+}
+
 function ComputedField({ field, id, props }: FieldProps<unknown>) {
   const text = field.type === 'computed' ? field.compute(props) : '';
   return (
@@ -500,6 +565,8 @@ export const BUILT_IN_FIELDS: Record<string, FieldComponent> = {
   radio: asField(SelectField),
   color: asField(ColorField),
   image: asField(ImageField),
+  icon: asField(IconFieldControl),
+  media: asField(MediaFieldControl),
   computed: asField(ComputedField),
   object: asField(ObjectField),
   list: asField(ListField),
@@ -722,11 +789,13 @@ function BackgroundFieldControl({
   const f = field as Extract<FieldDef, { type: 'background' }>;
   const tokens = toColorTokens(f.tokens);
   const normalized = normalizeBackground(value);
+  const onBrowse = useMediaBrowse();
   return (
     <BackgroundGroup
       value={normalized}
       onChange={onChange}
       tokens={tokens}
+      onBrowseImage={onBrowse}
     />
   );
 }

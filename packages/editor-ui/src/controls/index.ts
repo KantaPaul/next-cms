@@ -10,6 +10,8 @@ export * from './ChooseField';
 export * from './SelectField';
 export * from './DimensionsField';
 export * from './ColorField';
+export * from './IconField';
+export * from './MediaField';
 export * from './GroupControl';
 export * from './AlignmentPad';
 export * from './ShadowEditor';

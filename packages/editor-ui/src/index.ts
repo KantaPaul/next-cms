@@ -23,12 +23,18 @@ export * from './inspector/FieldRow';
 export * from './inspector/InspectorField';
 export * from './inspector/InspectorTabs';
 export * from './inspector/ResetButton';
+export * from './inspector/SettingsSearch';
 export * from './inspector/TokenPicker';
 // Utilities
 export { cn } from './lib/cn';
 // Library
+export * from './library/BlockHoverPreview';
+export * from './library/BlockIcon';
+export * from './library/BlockLibrary';
+export * from './library/BlockThumbnailPreview';
 export * from './library/LibraryItem';
 export * from './library/LibraryPanel';
+export * from './library/libraryPreferences';
 export * from './overlays/CanvasMarks';
 export * from './overlays/ContextMenu';
 export * from './overlays/DropLine';

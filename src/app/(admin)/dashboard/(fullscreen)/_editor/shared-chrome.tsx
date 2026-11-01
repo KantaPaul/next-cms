@@ -145,6 +145,9 @@ export type SharedChromeProps = {
   onTogglePreview?: () => void;
   onToggleTheme?: () => void;
   isDark?: boolean;
+  layout?: 'single' | 'split';
+  onLayoutChange?: (layout: 'single' | 'split') => void;
+  onDockSideChange?: (side: 'left' | 'right') => void;
 };
 
 export function SharedChrome({
@@ -175,6 +178,9 @@ export function SharedChrome({
   onTogglePreview,
   onToggleTheme,
   isDark,
+  layout,
+  onLayoutChange,
+  onDockSideChange,
 }: SharedChromeProps) {
   const store = useEditorStore();
   const save = useSaveState(queue);
@@ -216,11 +222,14 @@ export function SharedChrome({
               >
                 <ArrowLeft className="h-3.5 w-3.5 rtl:-scale-x-100" />
               </Link>
-              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[var(--ne-radius-sm)] bg-[var(--ne-primary)] text-[10px] font-bold text-white tracking-tighter">
-                NX
-              </div>
-              <span className="hidden text-[10px] uppercase tracking-wider text-[var(--ne-text-muted)] md:inline">
-                {kindLabel}
+              <span
+                title={kindLabel}
+                className="flex items-center gap-1.5 text-xs font-bold tracking-tight text-[var(--ne-text)]"
+              >
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--ne-radius-md)] bg-[var(--ne-primary)] text-xs font-bold text-white shadow-2xs">
+                  N
+                </span>
+                <span>NextCMS</span>
               </span>
               {status && (
                 <span className="rounded-[var(--ne-radius-sm)] bg-[var(--ne-surface-subtle)] px-1.5 py-0.5 text-[10px] capitalize text-[var(--ne-text-muted)]">
@@ -253,6 +262,10 @@ export function SharedChrome({
           onToggleFocusMode={onToggleFocusMode}
           onOpenCommandPalette={onOpenCommandPalette}
           onOpenShortcuts={onOpenShortcuts}
+          layout={layout}
+          onLayoutChange={onLayoutChange}
+          dockSide={singlePanelDockSide}
+          onDockSideChange={onDockSideChange}
           extraActions={actions}
           onPublish={primaryAction?.run}
           publishLabel={primaryAction?.label}

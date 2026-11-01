@@ -24,6 +24,43 @@
   --ne-warning-soft: #fef3c7;
   --ne-danger: #dc2626;
   --ne-danger-soft: #fee2e2;
+  --ne-accent: #7c3aed;
+  --ne-accent-soft: #ede9fe;
+
+  /* Raw scales from the single-panel prototype, for controls that pick a
+     specific step (token pickers, swatches). Prefer the semantic tokens above. */
+  --ne-ink-950: #090d16;
+  --ne-ink-900: #0f172a;
+  --ne-ink-800: #1e293b;
+  --ne-ink-700: #334155;
+  --ne-ink-600: #475569;
+  --ne-ink-500: #64748b;
+  --ne-ink-400: #94a3b8;
+  --ne-ink-300: #cbd5e1;
+  --ne-ink-200: #e2e8f0;
+  --ne-ink-100: #f1f5f9;
+  --ne-ink-50: #f8fafc;
+  --ne-cobalt-800: #1e40af;
+  --ne-cobalt-700: #1d4ed8;
+  --ne-cobalt-600: #2563eb;
+  --ne-cobalt-500: #3b82f6;
+  --ne-cobalt-100: #dbeafe;
+  --ne-cobalt-50: #eff6ff;
+  --ne-emerald-600: #059669;
+  --ne-emerald-500: #10b981;
+  --ne-emerald-100: #d1fae5;
+  --ne-amber-500: #f59e0b;
+  --ne-amber-100: #fef3c7;
+  --ne-rose-600: #e11d48;
+  --ne-rose-500: #f43f5e;
+  --ne-rose-100: #ffe4e6;
+  --ne-violet-600: #7c3aed;
+  --ne-violet-500: #8b5cf6;
+  --ne-violet-100: #ede9fe;
+
+  /* Canvas backdrop */
+  --ne-canvas-bg: #f1f5f9;
+  --ne-canvas-dot: #cbd5e1;
 
   /* Overlays */
   --ne-select: var(--ne-primary);
@@ -50,7 +87,8 @@
   --ne-spacing-8: 32px;
 
   /* Typography */
-  --ne-font-ui: Inter, system-ui, -apple-system, sans-serif;
+  --ne-font-ui: var(--font-plus-jakarta, 'Plus Jakarta Sans'), Inter, system-ui,
+    -apple-system, sans-serif;
   --ne-font-mono: 'JetBrains Mono', ui-monospace, monospace;
   --ne-text-title: 24px;
   --ne-text-panel-title: 14px;
@@ -91,6 +129,10 @@
   --ne-warning-soft: #78350f;
   --ne-danger: #f87171;
   --ne-danger-soft: #7f1d1d;
+  --ne-accent: #a78bfa;
+  --ne-accent-soft: #2e1f5e;
+  --ne-canvas-bg: #0b1220;
+  --ne-canvas-dot: #24314d;
 
   --ne-hover: rgba(96, 165, 250, 0.45);
   --ne-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
@@ -135,4 +177,11 @@
 
 .ne-scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--ne-text-muted);
+}
+
+/* Dotted canvas backdrop behind the page frame. */
+.ne-canvas-bg {
+  background-color: var(--ne-canvas-bg);
+  background-image: radial-gradient(var(--ne-canvas-dot) 1px, transparent 1px);
+  background-size: 20px 20px;
 }

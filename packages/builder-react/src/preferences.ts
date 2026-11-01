@@ -1,6 +1,6 @@
 /**
  * Editor preferences (R733 / UXE-23): light/dark editor theme, density,
- * reduced motion, panel positions, default units, and RTL editor UI.
+ * reduced motion, panel layout and dock side, default units, and RTL editor UI.
  * Stored in localStorage; the host applies the theme and direction.
  */
 
@@ -14,6 +14,10 @@ export type EditorPreferences = {
   defaultUnit: 'px' | 'rem' | 'em';
   rtl: boolean;
   fontSize: number;
+  /** Single dockable panel or the split library + inspector layout. */
+  layout: 'single' | 'split';
+  /** Side the single panel docks to. */
+  panelDock: 'left' | 'right';
 };
 
 const STORAGE_KEY = 'nextcms-editor-preferences';
@@ -25,6 +29,8 @@ const DEFAULTS: EditorPreferences = {
   defaultUnit: 'px',
   rtl: false,
   fontSize: 13,
+  layout: 'single',
+  panelDock: 'right',
 };
 
 export function createPreferencesStore(): {

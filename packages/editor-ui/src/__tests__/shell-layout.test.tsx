@@ -162,6 +162,24 @@ describe('Shell Layout & Single Panel Components (Phase 5)', () => {
     });
   });
 
+  describe('ToolRail (horizontal footer)', () => {
+    it('renders leading and trailing slots around the routes', () => {
+      const html = renderToStaticMarkup(
+        <ToolRail
+          orientation="horizontal"
+          items={[{ id: 'layers', label: 'Layers', icon: <span>L</span>, onClick: () => {} }]}
+          activeId="layers"
+          leading={<button type="button">UndoSlot</button>}
+          trailing={<span>3 changes</span>}
+        />
+      );
+
+      assert.match(html, /aria-orientation="horizontal"/);
+      assert.match(html, /UndoSlot[\s\S]*aria-label="Layers"[\s\S]*3 changes/);
+      assert.match(html, /aria-pressed="true"/);
+    });
+  });
+
   describe('FloatingLayersWindow', () => {
     it('renders dialog with title, drag handle, dock buttons, and close', () => {
       const html = renderToStaticMarkup(

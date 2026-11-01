@@ -121,6 +121,37 @@ describe('TopBar primary action', () => {
   });
 });
 
+describe('TopBar layout and dock', () => {
+  it('shows the Panel/Split switch and the dock toggle in single layout', () => {
+    const html = renderToStaticMarkup(
+      <TopBar
+        title="Home"
+        saveStatus="saved"
+        layout="single"
+        onLayoutChange={() => {}}
+        dockSide="right"
+        onDockSideChange={() => {}}
+      />
+    );
+    assert.match(html, /aria-pressed="true"[^>]*>.*Panel/);
+    assert.match(html, /Split/);
+    assert.match(html, /aria-label="Dock panel to left"/);
+  });
+
+  it('hides the dock toggle in split layout', () => {
+    const html = renderToStaticMarkup(
+      <TopBar
+        title="Home"
+        saveStatus="saved"
+        layout="split"
+        onLayoutChange={() => {}}
+        onDockSideChange={() => {}}
+      />
+    );
+    assert.doesNotMatch(html, /Dock panel to/);
+  });
+});
+
 describe('Breadcrumb and StatusBar', () => {
   it('marks the last crumb as the current location', () => {
     const html = renderToStaticMarkup(

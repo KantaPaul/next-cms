@@ -31,7 +31,12 @@ export interface EditorPanelProps {
   storageKey?: string;
   headerAction?: React.ReactNode;
   onBack?: () => void;
+  backLabel?: string;
   breadcrumbs?: React.ReactNode;
+  /** Between the header/tabs and the body, e.g. a pinned block strip. */
+  subheader?: React.ReactNode;
+  /** Pinned under the body, e.g. the single-panel footer tool rail. */
+  footer?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
 }
@@ -53,7 +58,10 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
   storageKey,
   headerAction,
   onBack,
+  backLabel,
   breadcrumbs,
+  subheader,
+  footer,
   children,
   className,
 }) => {
@@ -175,6 +183,7 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
           title={title}
           subtitle={subtitle}
           onBack={onBack}
+          backLabel={backLabel}
           breadcrumbs={breadcrumbs}
           actions={defaultActions}
         />
@@ -189,10 +198,14 @@ export const EditorPanel: React.FC<EditorPanelProps> = ({
         />
       )}
 
+      {subheader}
+
       {/* Panel Body */}
       <div className="flex-1 overflow-auto ne-scrollbar min-h-0">
         {children}
       </div>
+
+      {footer}
 
       {/* Resize Handle */}
       <div

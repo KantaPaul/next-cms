@@ -7,6 +7,10 @@ export interface PanelTabItem {
   icon?: React.ReactNode;
   badge?: number | string;
   disabled?: boolean;
+  /** Shows a modified dot: something in this tab differs from its default. */
+  changed?: boolean;
+  /** Keyboard shortcut shown in the tooltip, e.g. "⌥C". */
+  shortcut?: string;
 }
 
 export interface PanelTabsProps {
@@ -16,6 +20,11 @@ export interface PanelTabsProps {
   variant?: 'default' | 'compact' | 'segmented';
   ariaLabel?: string;
   className?: string;
+}
+
+/** "⌥C" / "Alt+C" → "Alt+C" for aria-keyshortcuts. */
+function ariaShortcut(shortcut: string): string {
+  return shortcut.replace(/^⌥\s*/, 'Alt+').replace(/^Alt\s*\+\s*/i, 'Alt+');
 }
 
 export const PanelTabs: React.FC<PanelTabsProps> = ({
@@ -72,6 +81,8 @@ export const PanelTabs: React.FC<PanelTabsProps> = ({
             id={`panel-tab-${tab.id}`}
             disabled={tab.disabled}
             tabIndex={isSelected ? 0 : -1}
+            title={tab.shortcut ? `${tab.label} (${tab.shortcut})` : undefined}
+            aria-keyshortcuts={tab.shortcut ? ariaShortcut(tab.shortcut) : undefined}
             onClick={() => onChange(tab.id)}
             className={cn(
               'relative flex h-8 items-center gap-1.5 px-2.5 text-xs font-medium transition-colors select-none',
@@ -91,6 +102,18 @@ export const PanelTabs: React.FC<PanelTabsProps> = ({
               </span>
             )}
             <span className="truncate">{tab.label}</span>
+            {tab.changed && (
+              <span
+                data-modified-dot=""
+                aria-label="Has changes"
+                className={cn(
+                  'h-1.5 w-1.5 shrink-0 rounded-full',
+                  isSelected
+                    ? 'bg-[var(--ne-primary)]'
+                    : 'bg-[var(--ne-text-muted)]'
+                )}
+              />
+            )}
             {tab.badge !== undefined && (
               <span
                 className={cn(

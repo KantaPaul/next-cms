@@ -1,18 +1,21 @@
 import {
+  Columns2,
   Command,
   Edit3,
   Eye,
-  HelpCircle,
+  Keyboard,
   Maximize2,
   Minimize2,
   Monitor,
   Moon,
+  PanelLeft,
+  PanelRight,
   Redo2,
-  Send,
   Smartphone,
   Sun,
   Tablet,
   Undo2,
+  UploadCloud,
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
@@ -56,8 +59,29 @@ export interface TopBarProps {
   onToggleTheme?: () => void;
   onOpenCommandPalette?: () => void;
   onOpenShortcuts?: () => void;
+  /** Single dockable panel vs classic split (library + inspector). */
+  layout?: 'single' | 'split';
+  onLayoutChange?: (layout: 'single' | 'split') => void;
+  /** Which side the single panel docks to; the toggle shows in single layout. */
+  dockSide?: 'left' | 'right';
+  onDockSideChange?: (side: 'left' | 'right') => void;
+  /** Export/import control (e.g. the JSON split button), before Shortcuts. */
+  exportAction?: React.ReactNode;
   extraActions?: React.ReactNode;
 }
+
+const segment = (active: boolean) =>
+  `flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--ne-radius-sm)] text-[11px] transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--ne-focus-ring)] ${
+    active
+      ? 'bg-[var(--ne-surface)] text-[var(--ne-primary)] font-semibold shadow-2xs'
+      : 'text-[var(--ne-text-muted)] font-medium hover:text-[var(--ne-text)]'
+  }`;
+
+const pill =
+  'flex items-center gap-0.5 p-0.5 bg-[var(--ne-surface-subtle)] border border-[var(--ne-border)] rounded-[var(--ne-radius-lg)]';
+
+const pillButton =
+  'p-1.5 rounded-[var(--ne-radius-md)] transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--ne-focus-ring)] text-[var(--ne-text)] hover:text-[var(--ne-primary)] hover:bg-[var(--ne-surface)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[var(--ne-text)]';
 
 const DEVICES: { id: DeviceType; label: string; Icon: typeof Monitor }[] = [
   { id: 'desktop', label: 'Desktop view', Icon: Monitor },
@@ -92,6 +116,11 @@ export const TopBar: React.FC<TopBarProps> = ({
   onToggleTheme,
   onOpenCommandPalette,
   onOpenShortcuts,
+  layout,
+  onLayoutChange,
+  dockSide = 'right',
+  onDockSideChange,
+  exportAction,
   extraActions,
 }) => {
   const [editingTitle, setEditingTitle] = useState(false);
@@ -105,12 +134,15 @@ export const TopBar: React.FC<TopBarProps> = ({
   };
 
   return (
-    <header className="h-11 px-3 bg-[var(--ne-surface)] border-b border-[var(--ne-border)] flex items-center justify-between gap-4 select-none shrink-0 z-40">
-      {/* Zone 1: Brand & Document Name & Save Status (takes the leftover width) */}
-      <div className="flex flex-1 items-center gap-3 min-w-[8rem]">
-        <div className="flex items-center gap-2 min-w-0">
+    <header className="h-12 px-3 bg-[var(--ne-surface)] border-b border-[var(--ne-border)] flex items-center justify-between gap-4 select-none shrink-0 z-40">
+      {/* Zone 1: Brand, document name, save status, undo/redo */}
+      <div className="flex flex-1 items-center gap-3 min-w-0">
+        <div className="flex items-center gap-2 min-w-[5rem]">
           {brand && (
             <div className="flex shrink-0 items-center gap-2">{brand}</div>
+          )}
+          {brand && (
+            <div className="h-4 w-[1px] bg-[var(--ne-border)] shrink-0" />
           )}
           {editingTitle && onRenameDocument ? (
             <input
@@ -133,7 +165,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                 setEditingTitle(true);
               }}
               title="Click to rename"
-              className="group flex min-w-0 items-center gap-1.5 text-xs font-semibold text-[var(--ne-text)] hover:text-[var(--ne-primary)] cursor-pointer font-sans"
+              className="group flex min-w-[3rem] items-center gap-1.5 text-xs font-semibold text-[var(--ne-text)] hover:text-[var(--ne-primary)] cursor-pointer font-sans"
             >
               <span className="truncate">{title}</span>
               <Edit3 className="w-3 h-3 opacity-0 group-hover:opacity-60 shrink-0" />
@@ -141,14 +173,12 @@ export const TopBar: React.FC<TopBarProps> = ({
           ) : (
             <h1
               title={title}
-              className="min-w-0 truncate text-xs font-semibold text-[var(--ne-text)]"
+              className="min-w-[3rem] truncate text-xs font-semibold text-[var(--ne-text)]"
             >
               {title}
             </h1>
           )}
         </div>
-
-        <div className="h-3.5 w-[1px] bg-[var(--ne-border)] shrink-0" />
 
         <SaveStatus
           className="shrink-0 whitespace-nowrap"
@@ -157,29 +187,75 @@ export const TopBar: React.FC<TopBarProps> = ({
           onRetry={onRetrySave}
           onResolveConflict={onResolveConflict}
         />
-      </div>
 
-      {/* Zone 2: Undo/Redo & Device Switcher & Zoom */}
-      <div className="flex shrink-0 items-center gap-3">
-        {/* Undo / Redo */}
-        <div className="flex items-center gap-0.5">
-          <IconButton
-            size="sm"
+        <div className="h-4 w-[1px] bg-[var(--ne-border)] shrink-0" />
+
+        <div className={pill}>
+          <button
+            type="button"
+            className={pillButton}
             disabled={!canUndo}
-            tooltip="Undo (Cmd+Z)"
             onClick={onUndo}
+            aria-label="Undo"
+            title="Undo (⌘Z)"
           >
             <Undo2 className="w-3.5 h-3.5" />
-          </IconButton>
-          <IconButton
-            size="sm"
+          </button>
+          <button
+            type="button"
+            className={pillButton}
             disabled={!canRedo}
-            tooltip="Redo (Cmd+Shift+Z)"
             onClick={onRedo}
+            aria-label="Redo"
+            title="Redo (⌘⇧Z)"
           >
             <Redo2 className="w-3.5 h-3.5" />
-          </IconButton>
+          </button>
         </div>
+      </div>
+
+      {/* Zone 2: Layout and dock, then device and zoom when the host keeps them here */}
+      <div className="flex shrink-0 items-center gap-2">
+        {layout && onLayoutChange && (
+          <div role="group" aria-label="Editor layout" className={pill}>
+            <button
+              type="button"
+              aria-pressed={layout === 'single'}
+              onClick={() => onLayoutChange('single')}
+              title="Single-panel layout"
+              className={segment(layout === 'single')}
+            >
+              <PanelLeft className="w-3.5 h-3.5" />
+              <span>Panel</span>
+            </button>
+            <button
+              type="button"
+              aria-pressed={layout === 'split'}
+              onClick={() => onLayoutChange('split')}
+              title="Split layout (library and inspector)"
+              className={segment(layout === 'split')}
+            >
+              <Columns2 className="w-3.5 h-3.5" />
+              <span>Split</span>
+            </button>
+          </div>
+        )}
+
+        {layout !== 'split' && onDockSideChange && (
+          <button
+            type="button"
+            onClick={() => onDockSideChange(dockSide === 'left' ? 'right' : 'left')}
+            aria-label={dockSide === 'left' ? 'Dock panel to right' : 'Dock panel to left'}
+            title={dockSide === 'left' ? 'Dock panel to right' : 'Dock panel to left'}
+            className="p-1.5 rounded-[var(--ne-radius-md)] border border-[var(--ne-border)] text-[var(--ne-text-muted)] hover:text-[var(--ne-text)] hover:bg-[var(--ne-surface-hover)] transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--ne-focus-ring)]"
+          >
+            {dockSide === 'left' ? (
+              <PanelRight className="w-3.5 h-3.5" />
+            ) : (
+              <PanelLeft className="w-3.5 h-3.5" />
+            )}
+          </button>
+        )}
 
         {onDeviceChange && (
           <>
@@ -246,16 +322,17 @@ export const TopBar: React.FC<TopBarProps> = ({
         )}
       </div>
 
-      {/* Zone 3: Command palette, Theme, Focus, Preview & Publish */}
-      <div className="flex shrink-0 items-center gap-2">
+      {/* Zone 3: Builder actions, export, shortcuts, preview and publish */}
+      <div className="flex shrink-0 justify-end items-center gap-2">
         {extraActions}
 
         {onOpenCommandPalette && (
           <button
             type="button"
             onClick={onOpenCommandPalette}
-            title="Command Palette (Cmd+K)"
-            className="hidden sm:flex items-center gap-1.5 px-2 py-1 text-[11px] font-sans text-[var(--ne-text-muted)] hover:text-[var(--ne-text)] bg-[var(--ne-surface-subtle)] border border-[var(--ne-border)] rounded-[var(--ne-radius-md)] cursor-pointer hover:border-[var(--ne-border-strong)] transition-colors"
+            title="Command Palette (⌘K)"
+            aria-label="Command palette"
+            className="hidden 2xl:flex items-center gap-1.5 px-2 py-1 text-[11px] font-sans text-[var(--ne-text-muted)] hover:text-[var(--ne-text)] bg-[var(--ne-surface-subtle)] border border-[var(--ne-border)] rounded-[var(--ne-radius-md)] cursor-pointer hover:border-[var(--ne-border-strong)] transition-colors"
           >
             <Command className="w-3 h-3 text-[var(--ne-text-subtle)]" />
             <span>Search</span>
@@ -265,14 +342,22 @@ export const TopBar: React.FC<TopBarProps> = ({
           </button>
         )}
 
+        {exportAction}
+
         {onOpenShortcuts && (
-          <IconButton
-            size="sm"
-            tooltip="Keyboard shortcuts (?)"
+          <button
+            type="button"
             onClick={onOpenShortcuts}
+            title="Keyboard shortcuts (?)"
+            aria-label="Keyboard shortcuts"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-[var(--ne-text-muted)] hover:text-[var(--ne-text)] border border-[var(--ne-border)] hover:bg-[var(--ne-surface-hover)] rounded-[var(--ne-radius-md)] transition-colors cursor-pointer"
           >
-            <HelpCircle className="w-3.5 h-3.5" />
-          </IconButton>
+            <Keyboard className="w-3.5 h-3.5" />
+            <span className="hidden 2xl:inline">Shortcuts</span>
+            <kbd className="hidden 2xl:inline-block font-mono text-[10px] px-1.5 bg-[var(--ne-surface-subtle)] rounded border border-[var(--ne-border)]">
+              ?
+            </kbd>
+          </button>
         )}
 
         {onToggleTheme && (
@@ -321,7 +406,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           <Button
             variant="primary"
             size="sm"
-            leftIcon={<Send className="w-3.5 h-3.5" />}
+            leftIcon={<UploadCloud className="w-3.5 h-3.5" />}
             disabled={publishDisabled}
             onClick={onPublish}
           >

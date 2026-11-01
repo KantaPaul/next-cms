@@ -22,10 +22,30 @@ export type KeyAction =
   | 'undo'
   | 'redo'
   | 'save'
-  | 'help';
+  | 'help'
+  | 'settings-content'
+  | 'settings-style'
+  | 'settings-advanced';
+
+/** Inspector tabs the ⌥C / ⌥S / ⌥A shortcuts switch to. */
+export type SettingsTabId = 'content' | 'style' | 'advanced';
+
+/**
+ * Fired on the editor window when a settings-tab shortcut runs and no
+ * `onSettingsTab` handler is given; SettingsView listens for it.
+ */
+export const SETTINGS_TAB_EVENT = 'nextcms:settings-tab';
+
+const SETTINGS_TAB_ACTIONS: Record<string, SettingsTabId> = {
+  'settings-content': 'content',
+  'settings-style': 'style',
+  'settings-advanced': 'advanced',
+};
 
 type KeyInput = {
   key: string;
+  /** Physical key; needed for Alt shortcuts, since ⌥C types "ç" on macOS. */
+  code?: string;
   metaKey?: boolean;
   ctrlKey?: boolean;
   shiftKey?: boolean;
@@ -49,6 +69,9 @@ export const SHORTCUTS: [KeyAction, string][] = [
   ['redo', 'Mod + Shift + Z or Mod + Y'],
   ['save', 'Mod + S'],
   ['help', '? or Mod + /'],
+  ['settings-content', 'Alt + C'],
+  ['settings-style', 'Alt + S'],
+  ['settings-advanced', 'Alt + A'],
   ['deselect', 'Escape'],
 ];
 
@@ -66,6 +89,14 @@ export function keyAction(input: KeyInput): KeyAction | null {
     if (key === 's') return 'save';
     if (key === '/') return 'help';
     return null;
+  }
+  if (input.altKey && !input.shiftKey) {
+    const letter = input.code?.startsWith('Key')
+      ? input.code.slice(3).toLowerCase()
+      : key;
+    if (letter === 'c') return 'settings-content';
+    if (letter === 's') return 'settings-style';
+    if (letter === 'a') return 'settings-advanced';
   }
   if (key === '?' || (input.shiftKey && key === '/')) return 'help';
   if (key === 'Escape') return 'deselect';
@@ -86,6 +117,8 @@ export function isTypingTarget(target: EventTarget | null): boolean {
 export type KeyActionHandlers = {
   onSave?: () => void | Promise<void>;
   onHelp?: () => void;
+  /** Switches the inspector tab; defaults to firing SETTINGS_TAB_EVENT. */
+  onSettingsTab?: (tab: SettingsTabId) => void;
 };
 
 export function runKeyAction(
@@ -106,6 +139,12 @@ export function runKeyAction(
       return true;
     }
     return false;
+  }
+  const settingsTab = SETTINGS_TAB_ACTIONS[action];
+  if (settingsTab) {
+    if (handlers?.onSettingsTab) handlers.onSettingsTab(settingsTab);
+    else requestSettingsTab(settingsTab);
+    return true;
   }
   const selected = store.getState().selection;
   const id = selected[0];
@@ -153,6 +192,14 @@ export function runKeyAction(
       return true;
   }
   return false;
+}
+
+/** Asks the open SettingsView to show a tab (see SETTINGS_TAB_EVENT). */
+export function requestSettingsTab(tab: SettingsTabId) {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(
+    new CustomEvent<SettingsTabId>(SETTINGS_TAB_EVENT, { detail: tab })
+  );
 }
 
 /** Listens on each given window (the editor page and the canvas iframe). */

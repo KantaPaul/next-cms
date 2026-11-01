@@ -16,17 +16,15 @@ function chromeFor(param: string | string[] | undefined): 'legacy' | 'shared' {
 }
 
 /**
- * Which layout to show: `?layout=single` or `?layout=split`.
- * Defaults to the single-panel layout unless `split` is explicitly requested.
+ * Which layout to force: `?layout=single` or `?layout=split`. Without the
+ * param the editor uses the saved preference (or the env default).
  */
-function layoutFor(param: string | string[] | undefined): 'single' | 'split' {
+function layoutFor(
+  param: string | string[] | undefined
+): 'single' | 'split' | undefined {
   const value = Array.isArray(param) ? param[0] : param;
-  if (value === 'split') return 'split';
-  if (value === 'single') return 'single';
-  if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_USE_SINGLE_PANEL === '0') {
-    return 'split';
-  }
-  return 'single';
+  if (value === 'split' || value === 'single') return value;
+  return undefined;
 }
 
 export async function BuilderOrNewEditor({

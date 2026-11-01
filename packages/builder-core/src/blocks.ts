@@ -10,7 +10,27 @@ import { ROOT_SLOT, type SlotRef, subtreeIds } from './tree';
 /** Which block types a slot accepts. Empty or missing `allow` accepts all. */
 export type SlotRules = { allow?: string[]; disallow?: string[] };
 
-export type BlockSchema = {
+/** Whether a block holds other blocks; shown in the insert panel's preview. */
+export type BlockNesting = 'children' | 'leaf';
+
+/** Descriptive metadata the insert panel shows for a block (cards, hover preview). */
+export type BlockInfo = {
+  category?: string;
+  /** Icon name or short text the host's insert panel understands. */
+  icon?: string;
+  /** One line shown on the block's card. */
+  description?: string;
+  /** Short feature list shown in the hover preview. */
+  capabilities?: string[];
+  /** Outer HTML element the block renders, such as `section` or `h2`. */
+  semanticTag?: string;
+  /** Defaults to `children` when the block has slots, otherwise `leaf`. */
+  nesting?: BlockNesting;
+  /** Typical rendered size, such as `100% × auto`. */
+  defaultSize?: string;
+};
+
+export type BlockSchema = BlockInfo & {
   type: string;
   label?: string;
   defaultProps?: Record<string, unknown>;

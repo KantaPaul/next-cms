@@ -59,10 +59,29 @@ describe('Single Panel Layout Views (Phase 6)', () => {
         </EditorProvider>
       );
 
-      assert.match(html, /Search elements…/);
+      assert.match(html, /Search blocks or components\.\.\./);
+      assert.match(html, />Blocks</);
+      assert.match(html, />Patterns</);
+      assert.match(html, />Global</);
       assert.match(html, /Heading/);
       assert.match(html, /Container/);
-      assert.match(html, /Hero/); // Preset chip
+      assert.match(html, /Hover to preview/);
+    });
+
+    it('lists block presets under Patterns', () => {
+      const store = createEditorStore({
+        document: INITIAL_DOC,
+        schemas: SCHEMAS,
+      });
+
+      const html = renderToStaticMarkup(
+        <EditorProvider store={store}>
+          <ElementsView defaultTab="patterns" />
+        </EditorProvider>
+      );
+
+      assert.match(html, /Section presets/);
+      assert.match(html, /Heading: Hero/);
     });
   });
 
@@ -101,7 +120,9 @@ describe('Single Panel Layout Views (Phase 6)', () => {
 
       assert.match(html, /Search settings…/);
       assert.match(html, /Title Text/);
-      assert.match(html, /Heading Level/);
+      // Number fields live on the Style tab; Content is shown first.
+      assert.match(html, /title="Style \(⌥S\)"/);
+      assert.doesNotMatch(html, /Heading Level/);
     });
 
     it('renders multi-selection batch action state when >1 blocks are selected', () => {
@@ -186,6 +207,44 @@ describe('Single Panel Layout Views (Phase 6)', () => {
       assert.match(html, /Page/);
       assert.match(html, /History/);
       assert.match(html, /Title Text/);
+    });
+
+    it('puts undo/redo and view routes in the footer rail, with a back button in settings', () => {
+      const store = createEditorStore({
+        document: INITIAL_DOC,
+        schemas: SCHEMAS,
+      });
+      store.select('h1');
+
+      const html = renderToStaticMarkup(
+        <EditorProvider store={store}>
+          <SinglePanel blocks={SCHEMAS as any} onOpenCommandPalette={() => {}} />
+        </EditorProvider>
+      );
+
+      assert.match(html, /aria-label="Panel footer toolbar"/);
+      assert.match(html, /aria-label="Undo"/);
+      assert.match(html, /aria-label="Templates"/);
+      assert.match(html, /aria-label="Command palette"/);
+      // A nested block's Back jumps to its parent; a top-level one returns to the library.
+      assert.match(html, /aria-label="(Back to blocks|Jump up to [^"]+)"/);
+      assert.match(html, /aria-label="Close inspector"/);
+    });
+
+    it('opens on the block library with no back button when nothing is selected', () => {
+      const store = createEditorStore({
+        document: INITIAL_DOC,
+        schemas: SCHEMAS,
+      });
+
+      const html = renderToStaticMarkup(
+        <EditorProvider store={store}>
+          <SinglePanel blocks={SCHEMAS as any} />
+        </EditorProvider>
+      );
+
+      assert.match(html, /Blocks/);
+      assert.doesNotMatch(html, /aria-label="Back to blocks"/);
     });
   });
 });

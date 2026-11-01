@@ -4,7 +4,12 @@ import { useId } from 'react';
 import { ChooseField } from '../ChooseField';
 import { ColorField, type ColorToken } from '../ColorField';
 import { ControlRow } from '../ControlRow';
-import { GradientEditor, type GradientConfig } from '../GradientEditor';
+import {
+  GRADIENT_PRESETS,
+  GradientEditor,
+  type GradientConfig,
+} from '../GradientEditor';
+import { type MediaBrowseHandler, MediaField } from '../MediaField';
 import {
   GroupControl,
   type GroupControlProps,
@@ -32,6 +37,15 @@ export interface BackgroundGroupProps extends Omit<GroupControlProps, 'title' | 
   tokens?: readonly ColorToken[] | ColorToken[];
   presets?: readonly GroupPreset[] | GroupPreset[];
   onSelectPreset?: (preset: GroupPreset) => void;
+  /** Opens the host's media library for the classic image. */
+  onBrowseImage?: MediaBrowseHandler;
+}
+
+export type BackgroundMode = 'classic' | 'gradient';
+
+/** Classic covers a solid color and an image; gradient is its own mode. */
+export function backgroundMode(value: BackgroundValue): BackgroundMode {
+  return value.type === 'gradient' ? 'gradient' : 'classic';
 }
 
 export const BACKGROUND_PRESETS: GroupPreset[] = [
@@ -48,6 +62,7 @@ export const BackgroundGroup: React.FC<BackgroundGroupProps> = ({
   tokens,
   presets = BACKGROUND_PRESETS,
   onSelectPreset,
+  onBrowseImage,
   open,
   defaultOpen,
   onOpenChange,
@@ -67,8 +82,21 @@ export const BackgroundGroup: React.FC<BackgroundGroupProps> = ({
 
   const currentType = value.type || 'color';
 
+  const mode = backgroundMode(value);
+
   const update = (patch: Partial<BackgroundValue>) => {
     onChange({ ...value, ...patch });
+  };
+
+  // Classic keeps an image when one is set; gradient keeps the classic
+  // values so switching back restores them.
+  const setMode = (next: BackgroundMode) => {
+    if (next === mode) return;
+    if (next === 'gradient') {
+      update({ type: 'gradient', gradient: value.gradient ?? GRADIENT_PRESETS[0]?.config });
+    } else {
+      update({ type: value.image?.url ? 'image' : 'color' });
+    }
   };
 
   const handleSelectPreset = (preset: GroupPreset) => {
@@ -116,11 +144,11 @@ export const BackgroundGroup: React.FC<BackgroundGroupProps> = ({
   };
 
   const summaryText =
-    currentType === 'color'
-      ? `Solid ${value.color || '#ffffff'}`
-      : currentType === 'gradient'
-        ? `${value.gradient?.type || 'Linear'} ${value.gradient?.angle ?? 90}°`
-        : 'Image';
+    currentType === 'gradient'
+      ? `${value.gradient?.type || 'Linear'} ${value.gradient?.angle ?? 90}°`
+      : currentType === 'image'
+        ? 'Image'
+        : `Solid ${value.color || '#ffffff'}`;
 
   return (
     <GroupControl
@@ -145,92 +173,86 @@ export const BackgroundGroup: React.FC<BackgroundGroupProps> = ({
       className={className}
     >
       <div className="flex flex-col gap-3">
-        {/* Mode Selector */}
+        {/* Mode: Classic (color + optional image) or Gradient */}
         <ControlRow label="Mode">
           <ChooseField
-            value={currentType}
-            onChange={val => update({ type: val as BackgroundValue['type'] })}
+            value={mode}
+            onChange={val => setMode(val as BackgroundMode)}
             options={[
-              { value: 'color', label: 'Solid' },
+              { value: 'classic', label: 'Classic' },
               { value: 'gradient', label: 'Gradient' },
-              { value: 'image', label: 'Image' },
             ]}
           />
         </ControlRow>
 
-        {/* Solid Color */}
-        {currentType === 'color' && (
-          <ColorField
-            label="Background Color"
-            value={value.color || '#ffffff'}
-            onChange={col => update({ color: col })}
-            tokens={tokens}
-          />
+        {mode === 'classic' && (
+          <>
+            <ColorField
+              label="Background Color"
+              value={value.color || '#ffffff'}
+              onChange={col => update({ color: col })}
+              tokens={tokens}
+            />
+            <MediaField
+              label="Image"
+              value={{ url: value.image?.url ?? '' }}
+              showAlt={false}
+              onBrowse={onBrowseImage}
+              onChange={media =>
+                update({
+                  type: media.url ? 'image' : 'color',
+                  image: { ...value.image, url: media.url || undefined },
+                })
+              }
+            />
+            {value.image?.url && (
+              <div className="grid grid-cols-2 gap-2">
+                <SelectField
+                  label="Size"
+                  value={value.image?.size || 'cover'}
+                  onChange={s =>
+                    update({
+                      image: {
+                        ...value.image,
+                        size: s as BackgroundImageConfig['size'],
+                      },
+                    })
+                  }
+                  options={[
+                    { value: 'cover', label: 'Cover' },
+                    { value: 'contain', label: 'Contain' },
+                    { value: 'auto', label: 'Auto' },
+                  ]}
+                />
+                <SelectField
+                  label="Repeat"
+                  value={value.image?.repeat || 'no-repeat'}
+                  onChange={r =>
+                    update({
+                      image: {
+                        ...value.image,
+                        repeat: r as BackgroundImageConfig['repeat'],
+                      },
+                    })
+                  }
+                  options={[
+                    { value: 'no-repeat', label: 'No repeat' },
+                    { value: 'repeat', label: 'Repeat' },
+                    { value: 'repeat-x', label: 'Repeat X' },
+                    { value: 'repeat-y', label: 'Repeat Y' },
+                  ]}
+                />
+              </div>
+            )}
+          </>
         )}
 
-        {/* Gradient */}
-        {currentType === 'gradient' && (
+        {mode === 'gradient' && (
           <GradientEditor
             value={value.gradient}
             onChange={grad => update({ gradient: grad })}
             tokens={tokens}
           />
-        )}
-
-        {/* Image */}
-        {currentType === 'image' && (
-          <div className="flex flex-col gap-2">
-            <ControlRow label="Image URL">
-              <input
-                type="text"
-                placeholder="https://..."
-                value={value.image?.url || ''}
-                onChange={e =>
-                  update({
-                    image: { ...value.image, url: e.target.value },
-                  })
-                }
-                className="w-full h-7 px-2 text-xs rounded border border-[var(--ne-border)] bg-[var(--ne-surface)] text-[var(--ne-text)] focus:outline-none focus:border-[var(--ne-primary)]"
-              />
-            </ControlRow>
-            <div className="grid grid-cols-2 gap-2">
-              <SelectField
-                label="Size"
-                value={value.image?.size || 'cover'}
-                onChange={s =>
-                  update({
-                    image: {
-                      ...value.image,
-                      size: s as BackgroundImageConfig['size'],
-                    },
-                  })
-                }
-                options={[
-                  { value: 'cover', label: 'Cover' },
-                  { value: 'contain', label: 'Contain' },
-                  { value: 'auto', label: 'Auto' },
-                ]}
-              />
-              <SelectField
-                label="Repeat"
-                value={value.image?.repeat || 'no-repeat'}
-                onChange={r =>
-                  update({
-                    image: {
-                      ...value.image,
-                      repeat: r as BackgroundImageConfig['repeat'],
-                    },
-                  })
-                }
-                options={[
-                  { value: 'no-repeat', label: 'No repeat' },
-                  { value: 'repeat', label: 'Repeat' },
-                  { value: 'repeat-x', label: 'Repeat X' },
-                  { value: 'repeat-y', label: 'Repeat Y' },
-                ]}
-              />
-            </div>
-          </div>
         )}
       </div>
     </GroupControl>
