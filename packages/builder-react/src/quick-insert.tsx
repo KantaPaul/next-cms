@@ -25,7 +25,7 @@ export function QuickInsertPopover({
 }: {
   target: QuickInsertTarget | null;
   onClose: () => void;
-  groups: BlockGroup[];
+  groups?: BlockGroup[];
 }) {
   const store = useEditorStore();
   // Client only: server-rendered, Radix's generated ids would not match.
@@ -37,9 +37,14 @@ export function QuickInsertPopover({
     if (target) setShown(target);
   }, [target]);
 
+  const effectiveGroups = useMemo<BlockGroup[]>(() => {
+    if (groups && groups.length > 0) return groups;
+    return [{ title: 'Blocks', types: Object.keys(store.schemas) }];
+  }, [groups, store.schemas]);
+
   const items = useMemo<CommandPaletteItem[]>(() => {
     const seen = new Set<string>();
-    return groups.flatMap(group =>
+    return effectiveGroups.flatMap(group =>
       group.types
         .filter(type => !seen.has(type) && seen.add(type))
         .map(type => ({
@@ -51,7 +56,7 @@ export function QuickInsertPopover({
           },
         }))
     );
-  }, [groups, store, shown]);
+  }, [effectiveGroups, store, shown]);
 
   if (!mounted) return null;
   return (

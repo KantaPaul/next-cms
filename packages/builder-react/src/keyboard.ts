@@ -5,6 +5,11 @@
 
 import { useEffect } from 'react';
 import type { EditorStore } from './store';
+import {
+  copyBlockStyle,
+  inspectBlock,
+  pasteBlockStyle,
+} from './style-clipboard';
 
 export type KeyAction =
   | 'deselect'
@@ -19,6 +24,9 @@ export type KeyAction =
   | 'copy'
   | 'cut'
   | 'paste'
+  | 'copy-style'
+  | 'paste-style'
+  | 'inspect'
   | 'undo'
   | 'redo'
   | 'save'
@@ -64,6 +72,9 @@ export const SHORTCUTS: [KeyAction, string][] = [
   ['copy', 'Mod + C'],
   ['cut', 'Mod + X'],
   ['paste', 'Mod + V'],
+  ['copy-style', 'Alt + Mod + C'],
+  ['paste-style', 'Alt + Mod + V'],
+  ['inspect', 'Alt + I'],
   ['delete', 'Delete or Backspace'],
   ['undo', 'Mod + Z'],
   ['redo', 'Mod + Shift + Z or Mod + Y'],
@@ -79,24 +90,32 @@ export const SHORTCUTS: [KeyAction, string][] = [
 export function keyAction(input: KeyInput): KeyAction | null {
   const mod = !!(input.metaKey || input.ctrlKey);
   const key = input.key.length === 1 ? input.key.toLowerCase() : input.key;
+  const isKey = (letter: string) => {
+    if (key === letter) return true;
+    if (input.code?.toLowerCase() === `key${letter}`) return true;
+    return false;
+  };
+
   if (mod) {
+    if (input.altKey) {
+      if (isKey('c')) return 'copy-style';
+      if (isKey('v')) return 'paste-style';
+    }
     if (key === 'z') return input.shiftKey ? 'redo' : 'undo';
     if (key === 'y') return 'redo';
-    if (key === 'd') return 'duplicate';
-    if (key === 'c') return 'copy';
-    if (key === 'x') return 'cut';
-    if (key === 'v') return 'paste';
-    if (key === 's') return 'save';
+    if (isKey('d')) return 'duplicate';
+    if (isKey('c')) return 'copy';
+    if (isKey('x')) return 'cut';
+    if (isKey('v')) return 'paste';
+    if (isKey('s')) return 'save';
     if (key === '/') return 'help';
     return null;
   }
   if (input.altKey && !input.shiftKey) {
-    const letter = input.code?.startsWith('Key')
-      ? input.code.slice(3).toLowerCase()
-      : key;
-    if (letter === 'c') return 'settings-content';
-    if (letter === 's') return 'settings-style';
-    if (letter === 'a') return 'settings-advanced';
+    if (isKey('c')) return 'settings-content';
+    if (isKey('s')) return 'settings-style';
+    if (isKey('a')) return 'settings-advanced';
+    if (isKey('i')) return 'inspect';
   }
   if (key === '?' || (input.shiftKey && key === '/')) return 'help';
   if (key === 'Escape') return 'deselect';
@@ -189,6 +208,13 @@ export function runKeyAction(
       return store.copy();
     case 'cut':
       store.cut();
+      return true;
+    case 'copy-style':
+      return copyBlockStyle(store, id) !== null;
+    case 'paste-style':
+      return pasteBlockStyle(store, id);
+    case 'inspect':
+      inspectBlock(store, id);
       return true;
   }
   return false;

@@ -88,6 +88,14 @@ import { isTypingTarget } from './keyboard';
 import { propsForState } from './state-styles';
 import { QuickInsertPopover, type QuickInsertTarget } from './quick-insert';
 import { ResizeHandles, type ResizeHandlesFor } from './resize';
+import {
+  copyBlockStyle,
+  getCopiedBlockStyles,
+  hasCopiedBlockStyles,
+  inspectBlock,
+  pasteBlockStyle,
+  resetBlockToDefaults,
+} from './style-clipboard';
 
 // Used inside the canvas iframe, where editor-ui's CSS is not loaded; matches --ne-primary.
 const ACCENT = '#2563eb';
@@ -470,6 +478,9 @@ function CanvasDocument({
       Object.keys(store.schemas).find(k => k.toLowerCase() === 'hero') || 'Hero';
     if (store.schemas[heroType]) {
       store.insertBlock(heroType);
+    } else {
+      const first = Object.keys(store.schemas)[0];
+      if (first) store.insertBlock(first);
     }
   };
   // Hidden blocks are hidden on the canvas only; the wrapper adds no box.
@@ -858,9 +869,6 @@ function CanvasOverlay({
 }
 
 /** The canvas: frame, overlay, and pointer handling. */
-// Copied block styles for Copy Style / Paste Style actions
-let copiedBlockStyles: Record<string, unknown> | null = null;
-
 export function EditorCanvas({
   components,
   drag,
@@ -1058,83 +1066,6 @@ export function EditorCanvas({
         node?.type ||
         'Block';
 
-      const copyStyle = (targetId: NodeId) => {
-        const targetNode = store.getState().doc.nodes[targetId];
-        if (!targetNode) return;
-        const schema = store.schemas[targetNode.type];
-        const schemaRecord = schema as Record<string, unknown> | undefined;
-        const schemaFields = schemaRecord?.fields as Record<string, Record<string, unknown>> | undefined;
-        const patch: Record<string, unknown> = {};
-        if (schemaFields) {
-          for (const [key, field] of Object.entries(schemaFields)) {
-            if (
-              field.tab === 'style' ||
-              field.section === 'Style' ||
-              field.section === 'Dimensions' ||
-              field.section === 'Background' ||
-              field.section === 'Typography' ||
-              field.section === 'Border'
-            ) {
-              if (key in targetNode.props) patch[key] = targetNode.props[key];
-            }
-          }
-        }
-        if (Object.keys(patch).length === 0) {
-          const commonStyleProps = [
-            'background',
-            'backgroundColor',
-            'bgTone',
-            'color',
-            'textColor',
-            'padding',
-            'paddingY',
-            'paddingX',
-            'margin',
-            'borderRadius',
-            'border',
-            'shadow',
-            'textAlign',
-            'align',
-            'maxWidth',
-            'opacity',
-          ];
-          for (const k of commonStyleProps) {
-            if (k in targetNode.props) patch[k] = targetNode.props[k];
-          }
-        }
-        copiedBlockStyles = patch;
-      };
-
-      const pasteStyle = (targetId: NodeId) => {
-        if (copiedBlockStyles && Object.keys(copiedBlockStyles).length > 0) {
-          store.updateProps(targetId, copiedBlockStyles);
-        }
-      };
-
-      const resetToDefaults = (targetId: NodeId) => {
-        const targetNode = store.getState().doc.nodes[targetId];
-        if (!targetNode) return;
-        const schema = store.schemas[targetNode.type];
-        const schemaRecord = schema as Record<string, unknown> | undefined;
-        const defaults =
-          schema?.defaultProps ??
-          (typeof schemaRecord?.defaults === 'function'
-            ? (schemaRecord.defaults as () => Record<string, unknown>)()
-            : {});
-        if (defaults && Object.keys(defaults).length > 0) {
-          store.updateProps(targetId, defaults);
-        }
-      };
-
-      const inspectBlock = (targetId: NodeId) => {
-        store.select(targetId);
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(
-            new CustomEvent('ne-inspect-block', { detail: { id: targetId } })
-          );
-        }
-      };
-
       const items: ContextMenuItem[] = locked
         ? [
             {
@@ -1170,31 +1101,42 @@ export function EditorCanvas({
               run: () => store.duplicate([id]),
             },
             {
+              id: 'move-up',
+              label: 'Move Up',
+              shortcut: '⌥↑',
+              run: () => store.nudge(id, -1),
+            },
+            {
+              id: 'move-down',
+              label: 'Move Down',
+              shortcut: '⌥↓',
+              run: () => store.nudge(id, 1),
+            },
+            {
               id: 'copy-style',
               label: 'Copy Style',
               shortcut: '⌥⌘C',
               separator: true,
-              run: () => copyStyle(id),
+              run: () => copyBlockStyle(store, id),
             },
             {
               id: 'paste-style',
               label: 'Paste Style',
               shortcut: '⌥⌘V',
-              disabled:
-                !copiedBlockStyles || Object.keys(copiedBlockStyles).length === 0,
-              run: () => pasteStyle(id),
+              disabled: !hasCopiedBlockStyles(),
+              run: () => pasteBlockStyle(store, id),
             },
             {
               id: 'reset-defaults',
               label: 'Reset to Defaults',
-              run: () => resetToDefaults(id),
+              run: () => resetBlockToDefaults(store, id),
             },
             {
               id: 'inspect',
               label: 'Inspect',
               shortcut: '⌥I',
               separator: true,
-              run: () => inspectBlock(id),
+              run: () => inspectBlock(store, id),
             },
             {
               id: 'delete',
@@ -1476,7 +1418,7 @@ export function EditorCanvas({
               loaded={loaded}
               renderRoot={renderRoot}
               remount={remount}
-              onInsertHere={insertGroups ? onInsertHere : undefined}
+              onInsertHere={onInsertHere}
               stateStyle={stateStyle}
               dynamicContext={dynamicContext}
             />
@@ -1523,7 +1465,7 @@ export function EditorCanvas({
           }}
         />
       )}
-      {insertGroups && !isPreview && (
+      {!isPreview && (
         <QuickInsertPopover
           target={quickInsert}
           onClose={() => setQuickInsert(null)}

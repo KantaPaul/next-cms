@@ -49,3 +49,4 @@ export * from './template-library-view';
 export * from './animation-view';
 export * from './json-io';
 export * from './single-panel';
+export * from './style-clipboard';
