@@ -4,7 +4,7 @@
  */
 
 import { CheckCircle2, Clock, RotateCcw, RotateCw } from 'lucide-react';
-import type React from 'react';
+import React from 'react';
 import { useEditor, useEditorStore } from './context';
 import type { SaveQueue } from './save';
 

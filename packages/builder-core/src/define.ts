@@ -9,6 +9,7 @@ import type { ComponentType } from 'react';
 import { z } from 'zod';
 import type { BlockInfo, BlockSchema, SlotRules } from './blocks';
 import type { FieldDef, Fields } from './fields';
+import type { InspectorTabDef } from './inspector-layout';
 import type { BlockLoader, LoaderContext } from './loaders';
 import {
   allowedClassList,
@@ -62,6 +63,8 @@ export type BlockDefinition<
   traits?: PropTrait<P>[];
   /** Named prop sets shown in the insert panel alongside the plain block (R781). */
   presets?: Record<string, Partial<P>>;
+  /** Custom inspector tabs for this block. */
+  tabs?: InspectorTabDef[];
   render: ComponentType<P & { editing?: boolean }>;
 };
 
@@ -222,8 +225,15 @@ export function fieldsOf(
       Object.keys(definition.arraySlots?.[array] ?? {})
     ),
   ]);
+  const explicitRoots = new Set<string>();
+  for (const field of Object.values(definition.fields ?? {})) {
+    if (field && typeof field === 'object' && (field as FieldDef).path) {
+      const rootKey = (field as FieldDef).path!.split('.')[0];
+      if (rootKey) explicitRoots.add(rootKey);
+    }
+  }
   for (const [key, prop] of Object.entries(shapeOf(definition.schema))) {
-    if (slotKeys.has(key) || definition.fields?.[key]) continue;
+    if (slotKeys.has(key) || definition.fields?.[key] || explicitRoots.has(key)) continue;
     const field = fieldFromZod(key, prop);
     if (field) fields[key] = field;
   }

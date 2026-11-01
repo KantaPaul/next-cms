@@ -4,7 +4,7 @@
  */
 
 import { ControlRow } from '@nextcms/editor-ui';
-import type React from 'react';
+import React from 'react';
 import { useEditor, useEditorStore } from './context';
 
 export interface PageSettingsViewProps {

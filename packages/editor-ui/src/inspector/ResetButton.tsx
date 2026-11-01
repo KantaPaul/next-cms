@@ -1,5 +1,5 @@
 import { RotateCcw } from 'lucide-react';
-import type React from 'react';
+import React from 'react';
 
 export interface ResetButtonProps {
   onReset: () => void;

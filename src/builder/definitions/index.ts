@@ -35,6 +35,7 @@ export const pageInspectorBlocks: Record<string, InspectorBlock> = Object.fromEn
     {
       label: definition.label,
       fields: fieldsOf(definition),
+      tabs: definition.tabs,
       defaultProps: definition.defaults
         ? typeof definition.defaults === 'function'
           ? definition.defaults({})

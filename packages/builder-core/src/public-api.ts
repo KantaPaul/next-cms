@@ -125,6 +125,35 @@ export function validateDocument(value: unknown): DocumentValidation {
   return issues.length ? { ok: false, issues } : { ok: true, document: value };
 }
 
+/**
+ * Validates every node's props in a BuilderDocument against the registered block schemas.
+ * Returns an issues map where keys are `<nodeId>.<propPath>` and values are error messages.
+ */
+export function validateDocumentProps(
+  doc: BuilderDocument,
+  definitions: Record<string, BlockDefinition>
+): Record<string, string> {
+  const issues: Record<string, string> = {};
+
+  for (const [id, node] of Object.entries(doc.nodes ?? {})) {
+    const def = definitions[node.type];
+    if (!def || !def.schema) continue;
+
+    const result = def.schema.safeParse(node.props ?? {});
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        const path = issue.path.join('.');
+        const key = path ? `${id}.${path}` : id;
+        if (!issues[key]) {
+          issues[key] = issue.message;
+        }
+      }
+    }
+  }
+
+  return issues;
+}
+
 /** One version's upgrade: returns the document (or raw record) one version newer. */
 export type DocumentMigration = (
   doc: Record<string, unknown>

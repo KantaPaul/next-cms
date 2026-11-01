@@ -4,6 +4,7 @@ export * from './CommandPopover';
 export * from './DockZone';
 export * from './EditorPanel';
 export * from './EditorShell';
+export * from './FloatingDeviceBar';
 export * from './FloatingLayersWindow';
 export * from './Panel';
 export * from './PanelHeader';

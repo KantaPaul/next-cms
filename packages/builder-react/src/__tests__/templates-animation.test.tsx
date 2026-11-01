@@ -16,6 +16,8 @@ import { FieldControl, setE12ControlsEnabled } from '../fields';
 import { SinglePanel } from '../single-panel';
 import { createEditorStore } from '../store';
 import { TemplateLibraryView } from '../template-library-view';
+import { AnimationView } from '../animation-view';
+import { JsonExportButton, JsonExportImportDialog } from '../json-io';
 
 const SCHEMAS: BlockSchemas = {
   Heading: {
@@ -213,5 +215,107 @@ describe('Animation & Easing Field Controls (Phase 8)', () => {
     assert.ok(html.includes('Transition Property'));
     assert.ok(html.includes('Duration'));
     assert.ok(html.includes('Hover Me'));
+  });
+});
+
+describe('AnimationView (Phase 5)', () => {
+  it('renders unselected empty state when no block is selected', () => {
+    const store = createEditorStore({
+      document: INITIAL_DOC,
+      schemas: SCHEMAS,
+    });
+
+    const html = renderToStaticMarkup(
+      <EditorProvider store={store}>
+        <AnimationView />
+      </EditorProvider>
+    );
+
+    assert.ok(html.includes('No Block Selected'));
+    assert.ok(html.includes('Select a block on the canvas'));
+  });
+
+  it('renders animation controls when a block is selected', () => {
+    const store = createEditorStore({
+      document: INITIAL_DOC,
+      schemas: SCHEMAS,
+    });
+    store.select('b1');
+
+    const html = renderToStaticMarkup(
+      <EditorProvider store={store}>
+        <AnimationView />
+      </EditorProvider>
+    );
+
+    assert.ok(html.includes('Entrance Effect'));
+    assert.ok(html.includes('Duration (ms)'));
+    assert.ok(html.includes('Delay (ms)'));
+    assert.ok(html.includes('Easing Curve'));
+    assert.ok(html.includes('Replay Animation'));
+    assert.ok(html.includes('Reset'));
+  });
+});
+
+describe('JSON Export & Import (Phase 5)', () => {
+  it('renders split export button with download and dropdown actions', () => {
+    const store = createEditorStore({
+      document: INITIAL_DOC,
+      schemas: SCHEMAS,
+    });
+
+    const html = renderToStaticMarkup(
+      <EditorProvider store={store}>
+        <JsonExportButton documentName="test-page" />
+      </EditorProvider>
+    );
+
+    assert.ok(html.includes('Export'));
+    assert.ok(html.includes('aria-label="Export and import options"'));
+  });
+
+  it('renders nothing when closed', () => {
+    const store = createEditorStore({
+      document: INITIAL_DOC,
+      schemas: SCHEMAS,
+    });
+
+    const html = renderToStaticMarkup(
+      <EditorProvider store={store}>
+        <JsonExportImportDialog
+          open={false}
+          onClose={() => {}}
+          initialTab="inspect"
+        />
+      </EditorProvider>
+    );
+
+    assert.equal(html, '');
+  });
+
+  it('replaces document in store in a single undoable step', () => {
+    const store = createEditorStore({
+      document: INITIAL_DOC,
+      schemas: SCHEMAS,
+    });
+
+    const newDoc: BuilderDocument = {
+      version: 1,
+      root: { props: { title: 'Imported Title' } },
+      rootSlot: ['imp-1'],
+      nodes: {
+        'imp-1': { id: 'imp-1', type: 'Heading', props: { text: 'Imported Heading' }, slots: {} },
+      },
+    };
+
+    store.replaceDocument(newDoc, { label: 'Import document JSON' });
+    assert.equal(store.getState().doc.root.props.title, 'Imported Title');
+    assert.ok(store.getState().doc.nodes['imp-1']);
+    assert.equal(store.canUndo(), true);
+
+    // Undo should restore previous doc
+    store.undo();
+    assert.ok(store.getState().doc.nodes['b1']);
+    assert.equal(store.getState().doc.nodes['imp-1'], undefined);
   });
 });

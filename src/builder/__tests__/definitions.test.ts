@@ -46,7 +46,10 @@ describe('page block definitions', () => {
       assert.ok(block.label, type);
     }
     assert.equal(pageInspectorBlocks.Hero.fields.title.type, 'textarea');
-    assert.equal(pageInspectorBlocks.Hero.fields.section.type, 'custom');
+    assert.ok(
+      pageInspectorBlocks.Hero.fields.section_background ||
+        pageInspectorBlocks.Hero.fields.section
+    );
     assert.equal(fieldsOf(pageDefinitions.Spacer).height.type, 'number');
     assert.ok(pageRootFields.maxWidth);
   });

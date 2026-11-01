@@ -140,6 +140,27 @@ export type HoverSettings = {
   shadow?: ShadowSettings;
 };
 
+export type ElementHoverStyle = {
+  color?: string;
+  fill?: Fill | string;
+  borderColor?: string;
+  shadow?: ShadowSettings;
+};
+
+export type ElementStyle = {
+  color?: string;
+  typography?: Typography;
+  textShadow?: TextShadowSettings;
+  fill?: Fill | string;
+  border?: BorderSettings;
+  shadow?: ShadowSettings | 'none' | 'sm' | 'md' | 'lg';
+  padding?: Responsive<Sides>;
+  paddingUnit?: SpacingUnit;
+  margin?: Responsive<Sides>;
+  marginUnit?: SpacingUnit;
+  hover?: ElementHoverStyle;
+};
+
 export const FONT_FAMILIES = [
   'Inter',
   'Plus Jakarta Sans',
@@ -1044,6 +1065,333 @@ export function resolveSectionStyle(
     innerClasses,
     style: style as CSSProperties,
     hasFill: !!fill,
+  };
+}
+
+export type ResolvedElementStyle = {
+  classes: string[];
+  style: CSSProperties;
+};
+
+/**
+ * Resolves per-element styles (e.g. for a Hero's title, badge, button, or image).
+ * Writes variables for all three devices (desktop, tablet, mobile) to avoid unintentional
+ * CSS cascade inheritance from outer sections, and attaches hover classes (s-hc, s-hf, s-hb, s-hs).
+ */
+export function resolveElementStyle(
+  es: ElementStyle | undefined
+): ResolvedElementStyle {
+  if (!es || typeof es !== 'object') {
+    return { classes: [], style: {} };
+  }
+
+  const classes: string[] = [];
+  const style: Record<string, string> = {};
+
+  // Text color
+  const color = safeColor(es.color);
+  if (color) {
+    style.color = color;
+  }
+
+  // Background / Fill (Fill object or hex/rgba color string)
+  if (es.fill) {
+    if (typeof es.fill === 'string') {
+      const c = safeColor(es.fill);
+      if (c) {
+        classes.push('s-fill');
+        style['--s-fill'] = c;
+        style['--s-fill-dark'] = c;
+      }
+    } else {
+      const f = fillValue(es.fill);
+      if (f) {
+        classes.push('s-fill');
+        style['--s-fill'] = f.light;
+        style['--s-fill-dark'] = f.dark;
+      }
+    }
+  }
+
+  // Typography
+  const ty = es.typography;
+  if (ty) {
+    const unitSize = responsiveLength(
+      ty.fontSize,
+      ty.fontSizeUnit,
+      PROP_UNITS.fontSize,
+      false,
+      'fs',
+      style
+    );
+    if (unitSize) {
+      classes.push('s-fs');
+      // Ensure all 3 devices have explicit fallback values so section variables don't bleed in
+      for (const d of DEVICES) {
+        const key = `--s-fs-${DEVICE_SUFFIX[d]}`;
+        if (!style[key]) {
+          const resolved = resolveResponsive(ty.fontSize, d, v =>
+            typeof v === 'number' && Number.isFinite(v) ? v : undefined
+          );
+          if (resolved !== undefined) {
+            const u = pick(ty.fontSizeUnit, PROP_UNITS.fontSize) ?? 'px';
+            style[key] = `${resolved}${u}`;
+          }
+        }
+      }
+    } else {
+      const hasSize = DEVICES.some(
+        d =>
+          resolveResponsive(ty.size, d, x =>
+            pick(x, ['sm', 'md', 'lg', 'xl'] as const)
+          ) !== undefined
+      );
+      if (hasSize) {
+        classes.push('s-fs');
+        for (const d of DEVICES) {
+          const resolved = resolveResponsive(ty.size, d, x =>
+            pick(x, ['sm', 'md', 'lg', 'xl'] as const)
+          );
+          if (resolved) {
+            style[`--s-fs-${DEVICE_SUFFIX[d]}`] = FONT_SIZE_REM[resolved];
+          }
+        }
+      }
+    }
+
+    if (
+      responsiveLength(
+        ty.lineHeight,
+        ty.lineHeightUnit,
+        PROP_UNITS.lineHeight,
+        false,
+        'lh',
+        style
+      )
+    ) {
+      classes.push('s-lh');
+      for (const d of DEVICES) {
+        const key = `--s-lh-${DEVICE_SUFFIX[d]}`;
+        if (!style[key]) {
+          const resolved = resolveResponsive(ty.lineHeight, d, v =>
+            typeof v === 'number' && Number.isFinite(v) ? v : undefined
+          );
+          if (resolved !== undefined) {
+            const u = pick(ty.lineHeightUnit, PROP_UNITS.lineHeight) ?? 'em';
+            style[key] = `${resolved}${u}`;
+          }
+        }
+      }
+    }
+
+    if (
+      responsiveLength(
+        ty.letterSpacing,
+        ty.letterSpacingUnit,
+        PROP_UNITS.letterSpacing,
+        true,
+        'ls',
+        style
+      )
+    ) {
+      classes.push('s-ls');
+      for (const d of DEVICES) {
+        const key = `--s-ls-${DEVICE_SUFFIX[d]}`;
+        if (!style[key]) {
+          const resolved = resolveResponsive(ty.letterSpacing, d, v =>
+            typeof v === 'number' && Number.isFinite(v) ? v : undefined
+          );
+          if (resolved !== undefined) {
+            const u = pick(ty.letterSpacingUnit, PROP_UNITS.letterSpacing) ?? 'px';
+            style[key] = `${resolved}${u}`;
+          }
+        }
+      }
+    }
+
+    if (
+      responsiveLength(
+        ty.wordSpacing,
+        ty.wordSpacingUnit,
+        PROP_UNITS.wordSpacing,
+        true,
+        'ws',
+        style
+      )
+    ) {
+      classes.push('s-ws');
+      for (const d of DEVICES) {
+        const key = `--s-ws-${DEVICE_SUFFIX[d]}`;
+        if (!style[key]) {
+          const resolved = resolveResponsive(ty.wordSpacing, d, v =>
+            typeof v === 'number' && Number.isFinite(v) ? v : undefined
+          );
+          if (resolved !== undefined) {
+            const u = pick(ty.wordSpacingUnit, PROP_UNITS.wordSpacing) ?? 'px';
+            style[key] = `${resolved}${u}`;
+          }
+        }
+      }
+    }
+
+    const family = pick(ty.family, FONT_FAMILIES);
+    if (family) {
+      classes.push('s-ff');
+      style['--s-ff'] = FONT_STACK[family];
+    }
+
+    const transform = pick(ty.transform, TEXT_TRANSFORMS);
+    if (transform && transform !== 'none') classes.push(`s-tt-${transform}`);
+    const fontStyle = pick(ty.fontStyle, FONT_STYLES);
+    if (fontStyle && fontStyle !== 'normal') classes.push(`s-fst-${fontStyle}`);
+    const decoration = pick(ty.decoration, TEXT_DECORATIONS);
+    if (decoration && decoration !== 'none') classes.push(`s-td-${decoration}`);
+
+    const hasWeight = DEVICES.some(
+      d =>
+        resolveResponsive(ty.weight, d, x =>
+          pick(x, ['regular', 'medium', 'bold'] as const)
+        ) !== undefined
+    );
+    if (hasWeight) {
+      classes.push('s-fw');
+      for (const d of DEVICES) {
+        const resolved = resolveResponsive(ty.weight, d, x =>
+          pick(x, ['regular', 'medium', 'bold'] as const)
+        );
+        if (resolved) {
+          style[`--s-fw-${DEVICE_SUFFIX[d]}`] = FONT_WEIGHT_MAP[resolved];
+        }
+      }
+    }
+  }
+
+  // Text Shadow (from typography.textShadow or es.textShadow)
+  const textShadow = formatTextShadow(es.textShadow ?? ty?.textShadow);
+  if (textShadow) {
+    classes.push('s-tsh');
+    style['--s-tsh'] = textShadow;
+  }
+
+  // Border
+  if (es.border) {
+    const bs = pick(es.border.style, [
+      'none',
+      'solid',
+      'dashed',
+      'double',
+      'dotted',
+      'groove',
+    ] as const);
+
+    if (bs && bs !== 'none') {
+      classes.push('s-bd');
+      style['--s-bd-style'] = bs;
+      const bc = safeColor(es.border.color);
+      if (bc) style['--s-bd-color'] = bc;
+      const bw = responsiveSides(es.border.width, 'b', 40, 'px');
+      classes.push(...bw.classes);
+      Object.assign(style, bw.vars);
+    }
+
+    if (
+      responsiveLength(
+        es.border.radius,
+        es.border.radiusUnit,
+        PROP_UNITS.radius,
+        false,
+        'br',
+        style
+      )
+    ) {
+      classes.push('s-br');
+      for (const d of DEVICES) {
+        const key = `--s-br-${DEVICE_SUFFIX[d]}`;
+        if (!style[key]) {
+          const resolved = resolveResponsive(es.border.radius, d, v =>
+            typeof v === 'number' && Number.isFinite(v) ? v : undefined
+          );
+          if (resolved !== undefined) {
+            const u = pick(es.border.radiusUnit, PROP_UNITS.radius) ?? 'px';
+            style[key] = `${resolved}${u}`;
+          }
+        }
+      }
+    }
+  }
+
+  // Box Shadow
+  if (es.shadow && typeof es.shadow === 'object') {
+    const css = formatShadow(es.shadow);
+    if (css) {
+      classes.push('s-shadow');
+      style['--s-shadow'] = css;
+    }
+  } else if (typeof es.shadow === 'string' && es.shadow !== 'none') {
+    const cls = SHADOW[es.shadow as keyof typeof SHADOW];
+    if (cls) classes.push(cls);
+  }
+
+  // Padding
+  if (es.padding) {
+    const pUnit = pick(es.paddingUnit, SPACING_UNITS) ?? 'px';
+    const maxP = SPACING_LIMITS[pUnit].max;
+    const pSides = responsiveSides(es.padding, 'p', maxP, pUnit);
+    classes.push(...pSides.classes);
+    Object.assign(style, pSides.vars);
+  }
+
+  // Margin
+  if (es.margin) {
+    const mUnit = pick(es.marginUnit, SPACING_UNITS) ?? 'px';
+    const maxM = SPACING_LIMITS[mUnit].max;
+    const mSides = responsiveSides(es.margin, 'm', maxM, mUnit);
+    classes.push(...mSides.classes);
+    Object.assign(style, mSides.vars);
+  }
+
+  // Hover states: s-hc (color), s-hf (fill), s-hb (border), s-hs (shadow)
+  if (es.hover) {
+    const hColor = safeColor(es.hover.color);
+    if (hColor) {
+      classes.push('s-hc');
+      style['--s-h-color'] = hColor;
+    }
+
+    if (es.hover.fill) {
+      if (typeof es.hover.fill === 'string') {
+        const c = safeColor(es.hover.fill);
+        if (c) {
+          classes.push('s-hf');
+          style['--s-h-fill'] = c;
+        }
+      } else {
+        const f = fillValue(es.hover.fill);
+        if (f) {
+          classes.push('s-hf');
+          style['--s-h-fill'] = f.light;
+        }
+      }
+    }
+
+    const hBd = safeColor(es.hover.borderColor);
+    if (hBd) {
+      classes.push('s-hb');
+      style['--s-h-bd'] = hBd;
+    }
+
+    if (es.hover.shadow) {
+      const hSh = formatShadow(es.hover.shadow);
+      if (hSh) {
+        classes.push('s-hs');
+        style['--s-h-shadow'] = hSh;
+      }
+    }
+  }
+
+  return {
+    classes: Array.from(new Set(classes.filter(Boolean))),
+    style: style as CSSProperties,
   };
 }
 

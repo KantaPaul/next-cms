@@ -7,6 +7,12 @@ import { EditorShell } from '../shell/EditorShell';
 import { Panel, readPanelState } from '../shell/Panel';
 import { StatusBar } from '../shell/StatusBar';
 import { TopBar } from '../shell/TopBar';
+import { FloatingDeviceBar } from '../shell/FloatingDeviceBar';
+import {
+  SHORTCUT_GROUPS,
+  ShortcutHelpDialog,
+  filterShortcutGroups,
+} from '../shell/ShortcutHelpDialog';
 import { LayersTree } from '../tree/LayersTree';
 
 describe('EditorShell slots (B15 E3, G6)', () => {
@@ -218,5 +224,57 @@ describe('LayersTree semantics (B15 E4, G8)', () => {
     const stops = html.match(/role="treeitem"[^>]*tabindex="0"/g) ?? [];
     assert.equal(stops.length, 1);
     assert.match(stops[0] ?? '', /aria-label="Hero"/);
+  });
+});
+
+describe('FloatingDeviceBar (Phase 2 Canvas Controls)', () => {
+  it('renders device options and zoom controls', () => {
+    const html = renderToStaticMarkup(
+      <FloatingDeviceBar
+        device="desktop"
+        onDeviceChange={() => {}}
+        zoom={100}
+        onZoomChange={() => {}}
+      />
+    );
+    assert.match(html, /role="toolbar"/);
+    assert.match(html, /aria-label="Desktop view"/);
+    assert.match(html, /aria-label="Tablet view"/);
+    assert.match(html, /aria-label="Mobile view"/);
+    assert.match(html, /100%/);
+    assert.match(html, /aria-label="Zoom in"/);
+    assert.match(html, /aria-label="Zoom out"/);
+  });
+});
+
+describe('ShortcutHelpDialog (Phase 5 Searchable Shortcuts)', () => {
+  it('renders nothing when closed', () => {
+    const html = renderToStaticMarkup(
+      <ShortcutHelpDialog open={false} onClose={() => {}} />
+    );
+    assert.equal(html, '');
+  });
+
+  it('contains categorized shortcuts for editing, canvas, and animation', () => {
+    assert.ok(SHORTCUT_GROUPS.length >= 3);
+    const allLabels = SHORTCUT_GROUPS.flatMap(g => g.items.map(i => i.label));
+    assert.ok(allLabels.includes('Save document'));
+    assert.ok(allLabels.includes('Animation view'));
+    assert.ok(allLabels.includes('Copy style'));
+    assert.ok(allLabels.includes('Paste style'));
+    assert.ok(allLabels.includes('Inspect block'));
+  });
+
+  it('filters shortcut items by query matching label, category, or keys', () => {
+    const animMatches = filterShortcutGroups(SHORTCUT_GROUPS, 'animation');
+    assert.equal(animMatches.length, 1);
+    assert.equal(animMatches[0]?.items[0]?.label, 'Animation view');
+
+    const styleMatches = filterShortcutGroups(SHORTCUT_GROUPS, 'style');
+    assert.equal(styleMatches.length, 1);
+    assert.equal(styleMatches[0]?.items.length, 2); // copy style and paste style
+
+    const emptyMatches = filterShortcutGroups(SHORTCUT_GROUPS, 'nonexistentquery12345');
+    assert.equal(emptyMatches.length, 0);
   });
 });

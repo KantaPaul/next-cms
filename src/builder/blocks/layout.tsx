@@ -1,8 +1,7 @@
 import { cn } from '@/lib/utils/cn';
 import type { UrlValue } from '../style';
+import { el, type WithSection } from './element';
 import { ButtonLink, type SectionSettings, Section } from './section';
-
-type WithSection = { section?: SectionSettings; editing?: boolean };
 
 export type ButtonProps = WithSection & {
   label?: string;
@@ -11,6 +10,7 @@ export type ButtonProps = WithSection & {
 };
 
 export function Button(p: ButtonProps) {
+  const btnEl = el(p, 'button');
   return (
     <Section section={p.section} editing={p.editing}>
       <div
@@ -19,7 +19,13 @@ export function Button(p: ButtonProps) {
           p.alignment === 'center' ? 'justify-center' : 'justify-start'
         )}
       >
-        <ButtonLink href={p.link}>{p.label}</ButtonLink>
+        <ButtonLink
+          href={p.link}
+          className={btnEl.className}
+          style={btnEl.style}
+        >
+          {p.label}
+        </ButtonLink>
       </div>
     </Section>
   );

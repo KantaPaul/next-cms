@@ -5,7 +5,7 @@
  */
 
 import { cloneSubtree, createNodeId } from '@nextcms/builder-core';
-import { Button, Chip, IconButton, Input } from '@nextcms/editor-ui';
+import { Button, Chip, Dialog, IconButton, Input } from '@nextcms/editor-ui';
 import {
   Check,
   Copy,
@@ -46,6 +46,8 @@ export function TemplateLibraryView({
   const [saveName, setSaveName] = useState('');
   const [saveCategory, setSaveCategory] = useState<TemplateItem['category']>('Custom');
   const [appliedId, setAppliedId] = useState<string | null>(null);
+  const [targetTemplate, setTargetTemplate] = useState<TemplateItem | null>(null);
+  const [confirmReplace, setConfirmReplace] = useState(false);
 
   const allTemplates = useMemo(() => {
     if (customTemplates && customTemplates.length > 0) {
@@ -76,17 +78,20 @@ export function TemplateLibraryView({
     });
   }, [allTemplates, selectedCategory, searchQuery]);
 
-  const handleApply = (template: TemplateItem) => {
+  const handleApply = (
+    template: TemplateItem,
+    mode: 'append' | 'replace' = 'append'
+  ) => {
     if (onApplyTemplate) {
       onApplyTemplate(template);
     } else {
-      // Default: insert template blocks into current document root
+      // Insert template blocks into current document root
       const state = store.getState();
       const currentDoc = state.doc;
       const tDoc = template.content;
       if (!tDoc.root || !tDoc.nodes) return;
 
-      const newNodes = { ...currentDoc.nodes };
+      const newNodes = mode === 'replace' ? {} : { ...currentDoc.nodes };
       const idMap = new Map<string, string>();
 
       // Generate fresh ids for template nodes to avoid collisions
@@ -111,16 +116,24 @@ export function TemplateLibraryView({
       const rootChildrenToAdd = (tDoc.rootSlot ?? []).map(
         c => idMap.get(c) ?? c
       );
-      const nextRootSlot = [
-        ...(currentDoc.rootSlot ?? []),
-        ...rootChildrenToAdd,
-      ];
+      const nextRootSlot =
+        mode === 'replace'
+          ? rootChildrenToAdd
+          : [...(currentDoc.rootSlot ?? []), ...rootChildrenToAdd];
 
-      store.replaceDocument({
-        ...currentDoc,
-        rootSlot: nextRootSlot,
-        nodes: newNodes,
-      });
+      store.replaceDocument(
+        {
+          ...currentDoc,
+          rootSlot: nextRootSlot,
+          nodes: newNodes,
+        },
+        {
+          label:
+            mode === 'replace'
+              ? `Replace page with ${template.name}`
+              : `Add ${template.name}`,
+        }
+      );
 
       if (rootChildrenToAdd.length > 0) {
         store.select([rootChildrenToAdd[0]]);
@@ -129,6 +142,16 @@ export function TemplateLibraryView({
 
     setAppliedId(template.id);
     setTimeout(() => setAppliedId(null), 1800);
+  };
+
+  const onInsertClick = (template: TemplateItem) => {
+    const hasBlocks = (store.getState().doc.rootSlot?.length ?? 0) > 0;
+    if (!hasBlocks) {
+      handleApply(template, 'append');
+    } else {
+      setTargetTemplate(template);
+      setConfirmReplace(false);
+    }
   };
 
   const handleSaveCurrentAsTemplate = async () => {
@@ -380,7 +403,7 @@ export function TemplateLibraryView({
                   <Button
                     size="sm"
                     variant={isApplied ? 'secondary' : 'primary'}
-                    onClick={() => handleApply(template)}
+                    onClick={() => onInsertClick(template)}
                     leftIcon={isApplied ? <Check size={12} /> : <Plus size={12} />}
                   >
                     {isApplied ? 'Inserted' : 'Insert'}
@@ -391,6 +414,88 @@ export function TemplateLibraryView({
           })
         )}
       </div>
+
+      {targetTemplate && (
+        <Dialog
+          open={!!targetTemplate}
+          onClose={() => {
+            setTargetTemplate(null);
+            setConfirmReplace(false);
+          }}
+          title={`Insert "${targetTemplate.name}"`}
+          description={
+            confirmReplace
+              ? 'Are you sure you want to replace all blocks on this page?'
+              : 'Choose whether to add this template to the bottom of the page or replace the page.'
+          }
+          maxWidth="sm"
+        >
+          <div className="space-y-4 py-2">
+            {!confirmReplace ? (
+              <div className="flex flex-col gap-2.5">
+                <Button
+                  variant="primary"
+                  size="md"
+                  className="w-full justify-start py-2.5 px-3 text-left"
+                  onClick={() => {
+                    handleApply(targetTemplate, 'append');
+                    setTargetTemplate(null);
+                  }}
+                >
+                  <div className="flex flex-col items-start gap-0.5">
+                    <span className="font-semibold text-xs">Add to bottom of page</span>
+                    <span className="text-[11px] opacity-80 font-normal">
+                      Appends all sections from this template after your existing blocks.
+                    </span>
+                  </div>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="md"
+                  className="w-full justify-start py-2.5 px-3 text-left"
+                  onClick={() => setConfirmReplace(true)}
+                >
+                  <div className="flex flex-col items-start gap-0.5">
+                    <span className="font-semibold text-xs text-[var(--ne-text)]">
+                      Replace page...
+                    </span>
+                    <span className="text-[11px] text-[var(--ne-text-muted)] font-normal">
+                      Replaces all current blocks on the canvas with this template.
+                    </span>
+                  </div>
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
+                  <span className="font-semibold">Caution:</span> This will overwrite all blocks currently on the page. You can still use Undo (⌘Z) if needed.
+                </div>
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setConfirmReplace(false)}
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    onClick={() => {
+                      handleApply(targetTemplate, 'replace');
+                      setTargetTemplate(null);
+                      setConfirmReplace(false);
+                    }}
+                  >
+                    Confirm & Replace
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </Dialog>
+      )}
     </div>
   );
 }

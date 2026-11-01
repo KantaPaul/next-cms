@@ -4,6 +4,11 @@
 
 import { defineBlock } from '@nextcms/builder-core';
 import { z } from 'zod';
+import {
+  sectionSettingsSchema,
+  elementStyleSchema,
+  safeUrlSchema,
+} from '../schemas/style.schema';
 import { VideoLibraryBlock } from '@/components/video/video-library';
 import {
   BlogPosts,
@@ -83,8 +88,13 @@ import {
   iconField,
   mediaField,
   STYLE,
+  BUTTON_PARTS,
+  elementStyle,
+  MEDIA_PARTS,
+  sectionControls,
   sectionField,
-  sectionSchema,
+  TEXT_PARTS,
+sectionSchema,
   urlField,
   urlSchema,
 } from './fields';
@@ -94,17 +104,15 @@ export const exampleBlock = defineBlock({
   label: 'Example',
   category: 'layout',
   icon: 'example',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: Example,
   fields: {
     heading: { label: 'Heading', group: CONTENT, type: 'text' },
     body: { label: 'Body', group: CONTENT, type: 'textarea' },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls(),
   },
   defaults: {
     heading: 'Example block',
@@ -126,7 +134,20 @@ export const HeroBlock = defineBlock({
   category: 'heroes',
   icon: 'hero',
   inlineProps: ['title', 'subtitle'],
-  schema: z.object({}),
+  schema: z.object({
+    badge: z.string().optional(),
+    title: z.string().optional(),
+    subtitle: z.string().optional(),
+    primaryButtonText: z.string().optional(),
+    primaryButtonLink: z.union([safeUrlSchema, z.record(z.unknown())]).optional(),
+    secondaryButtonText: z.string().optional(),
+    secondaryButtonLink: z.union([safeUrlSchema, z.record(z.unknown())]).optional(),
+    imageUrl: safeUrlSchema.optional(),
+    imageAlt: z.string().optional(),
+    alignment: z.enum(['left', 'center']).optional(),
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }),
   render: Hero,
   fields: {
     badge: { label: 'Badge', group: CONTENT, type: 'text' },
@@ -175,12 +196,13 @@ export const HeroBlock = defineBlock({
         { label: 'Left', value: 'left' },
       ],
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    title_style: elementStyle('title', 'Title Style', TEXT_PARTS),
+    subtitle_style: elementStyle('subtitle', 'Subtitle Style', TEXT_PARTS),
+    badge_style: elementStyle('badge', 'Badge Style', BUTTON_PARTS),
+    primary_btn_style: elementStyle('primaryButton', 'Primary Button Style', BUTTON_PARTS),
+    secondary_btn_style: elementStyle('secondaryButton', 'Secondary Button Style', BUTTON_PARTS),
+    image_style: elementStyle('image', 'Image Style', MEDIA_PARTS),
+    ...sectionControls(),
   },
   defaults: {
     badge: 'New',
@@ -209,7 +231,10 @@ export const FeaturesBlock = defineBlock({
   label: 'Feature grid',
   category: 'marketing',
   icon: 'features',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: Features,
   fields: {
     eyebrow: { label: 'Eyebrow', group: CONTENT, type: 'text' },
@@ -245,12 +270,9 @@ export const FeaturesBlock = defineBlock({
         description: 'Describe the benefit.',
       },
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    item_title_style: elementStyle('itemTitle', 'Item Title Style', TEXT_PARTS),
+    item_desc_style: elementStyle('itemDescription', 'Item Description Style', TEXT_PARTS),
+    ...sectionControls(),
   },
   defaults: {
     eyebrow: 'Features',
@@ -290,7 +312,10 @@ export const StatsBlock = defineBlock({
   label: 'Stats',
   category: 'marketing',
   icon: 'stats',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: Stats,
   fields: {
     headline: { label: 'Headline', group: CONTENT, type: 'text' },
@@ -305,12 +330,9 @@ export const StatsBlock = defineBlock({
       },
       defaultItem: { value: '99%', label: 'Label', change: '' },
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    value_style: elementStyle('value', 'Value Style', TEXT_PARTS),
+    label_style: elementStyle('label', 'Label Style', TEXT_PARTS),
+    ...sectionControls(),
   },
   defaults: {
     headline: 'Trusted by teams everywhere',
@@ -336,7 +358,10 @@ export const PricingBlock = defineBlock({
   label: 'Pricing table',
   category: 'marketing',
   icon: 'pricing',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: Pricing,
   fields: {
     eyebrow: { label: 'Eyebrow', group: CONTENT, type: 'text' },
@@ -400,12 +425,10 @@ export const PricingBlock = defineBlock({
         popular: false,
       },
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    plan_title_style: elementStyle('planTitle', 'Plan Title Style', TEXT_PARTS),
+    plan_price_style: elementStyle('planPrice', 'Plan Price Style', TEXT_PARTS),
+    plan_btn_style: elementStyle('planButton', 'Plan Button Style', BUTTON_PARTS),
+    ...sectionControls(),
   },
   defaults: {
     eyebrow: 'Pricing',
@@ -460,7 +483,10 @@ export const TestimonialsBlock = defineBlock({
   label: 'Testimonials',
   category: 'marketing',
   icon: 'testimonials',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: Testimonials,
   fields: {
     eyebrow: { label: 'Eyebrow', group: CONTENT, type: 'text' },
@@ -489,12 +515,9 @@ export const TestimonialsBlock = defineBlock({
         avatar: '',
       },
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    quote_style: elementStyle('quote', 'Quote Style', TEXT_PARTS),
+    author_style: elementStyle('author', 'Author Style', TEXT_PARTS),
+    ...sectionControls(),
   },
   defaults: {
     eyebrow: 'Testimonials',
@@ -531,7 +554,10 @@ export const FAQBlock = defineBlock({
   label: 'FAQ',
   category: 'marketing',
   icon: 'faq',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: Faq,
   fields: {
     eyebrow: { label: 'Eyebrow', group: CONTENT, type: 'text' },
@@ -546,12 +572,9 @@ export const FAQBlock = defineBlock({
       },
       defaultItem: { question: 'Question?', answer: 'Answer.' },
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    question_style: elementStyle('question', 'Question Style', TEXT_PARTS),
+    answer_style: elementStyle('answer', 'Answer Style', TEXT_PARTS),
+    ...sectionControls(),
   },
   defaults: {
     eyebrow: 'FAQ',
@@ -582,7 +605,10 @@ export const CTABlock = defineBlock({
   label: 'Call to action',
   category: 'heroes',
   icon: 'cta',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: Cta,
   fields: {
     badge: { label: 'Badge', group: CONTENT, type: 'text' },
@@ -620,12 +646,12 @@ export const CTABlock = defineBlock({
         { label: 'Subtle', value: 'subtle' },
       ],
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    title_style: elementStyle('title', 'Title Style', TEXT_PARTS),
+    desc_style: elementStyle('description', 'Description Style', TEXT_PARTS),
+    badge_style: elementStyle('badge', 'Badge Style', BUTTON_PARTS),
+    primary_btn_style: elementStyle('primaryButton', 'Primary Button Style', BUTTON_PARTS),
+    secondary_btn_style: elementStyle('secondaryButton', 'Secondary Button Style', BUTTON_PARTS),
+    ...sectionControls(),
   },
   defaults: {
     badge: '',
@@ -652,7 +678,10 @@ export const ColumnsBlock = defineBlock({
   label: 'Columns',
   category: 'layout',
   icon: 'columns',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: Columns,
   fields: {
     layout: {
@@ -687,12 +716,7 @@ export const ColumnsBlock = defineBlock({
         { label: 'Bottom', value: 'end' },
       ],
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls(),
   },
   defaults: {
     layout: '1-1',
@@ -724,21 +748,21 @@ export const ContainerBlock = defineBlock({
   label: 'Container',
   category: 'layout',
   icon: 'container',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: Container,
   fields: {
     container: {
       label: 'Container',
       group: CONTENT,
+      tab: 'layout',
+      section: 'Container Layout',
       type: 'custom',
       render: ContainerLayoutControl,
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls({ omit: ['width'] }),
   },
   defaults: {
     container: {
@@ -769,16 +793,14 @@ export const VideoBlock = defineBlock({
   label: 'Video',
   category: 'content',
   icon: 'video',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: Video,
   fields: {
     url: { label: 'Video URL', group: CONTENT, type: 'text' },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls(),
   },
   defaults: {
     url: '',
@@ -798,7 +820,10 @@ export const VideoLibraryNativeBlock = defineBlock({
   label: 'Video library',
   category: 'content',
   icon: 'videolibrary',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: VideoLibraryBlock,
   fields: {
     title: { label: 'Title', group: CONTENT, type: 'text' },
@@ -824,12 +849,7 @@ export const VideoLibraryNativeBlock = defineBlock({
       min: 1,
       max: 48,
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls(),
   },
   defaults: {
     title: 'Videos',
@@ -853,16 +873,14 @@ export const EmbedBlock = defineBlock({
   label: 'Embed',
   category: 'content',
   icon: 'embed',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: Embed,
   fields: {
     url: { label: 'Embed URL', group: CONTENT, type: 'text' },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls(),
   },
   defaults: {
     url: '',
@@ -882,16 +900,14 @@ export const MapNativeBlock = defineBlock({
   label: 'Map',
   category: 'content',
   icon: 'map',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: MapBlock,
   fields: {
     address: { label: 'Address', group: CONTENT, type: 'text' },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls(),
   },
   defaults: {
     address: '',
@@ -911,16 +927,14 @@ export const CodeBlock = defineBlock({
   label: 'Code',
   category: 'content',
   icon: 'code',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: Code,
   fields: {
     code: { label: 'Code', group: CONTENT, type: 'textarea' },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls(),
   },
   defaults: {
     code: '',
@@ -940,18 +954,16 @@ export const NewsletterBlock = defineBlock({
   label: 'Newsletter',
   category: 'content',
   icon: 'newsletter',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: Newsletter,
   fields: {
     title: { label: 'Title', group: CONTENT, type: 'text' },
     subtitle: { label: 'Short text', group: CONTENT, type: 'text' },
     email: { label: 'Email', group: CONTENT, type: 'text' },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls(),
   },
   defaults: {
     title: 'Newsletter',
@@ -973,7 +985,10 @@ export const ImageMorphBlock = defineBlock({
   label: 'Image morph',
   category: 'layout',
   icon: 'imagemorph',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: ImageMorph,
   fields: {
     morph: {
@@ -982,12 +997,7 @@ export const ImageMorphBlock = defineBlock({
       type: 'custom',
       render: ImageMorphField,
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls(),
   },
   defaults: {
     morph: {
@@ -1019,7 +1029,10 @@ export const RichTextBlock = defineBlock({
   label: 'Rich text',
   category: 'content',
   icon: 'richtext',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: RichText,
   fields: {
     content: {
@@ -1038,12 +1051,8 @@ export const RichTextBlock = defineBlock({
         { label: 'Wide', value: 'wide' },
       ],
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    content_style: elementStyle('content', 'Content Style', TEXT_PARTS),
+    ...sectionControls(),
   },
   defaults: {
     content: '<h2>Section heading</h2><p>Write your content here.</p>',
@@ -1064,7 +1073,10 @@ export const ImageNativeBlock = defineBlock({
   label: 'Image',
   category: 'content',
   icon: 'image',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: ImageBlock,
   fields: {
     url: {
@@ -1126,12 +1138,9 @@ export const ImageNativeBlock = defineBlock({
       type: 'custom',
       render: UrlField,
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    image_style: elementStyle('image', 'Image Style', MEDIA_PARTS),
+    caption_style: elementStyle('caption', 'Caption Style', TEXT_PARTS),
+    ...sectionControls(),
   },
   defaults: {
     url: '',
@@ -1157,7 +1166,10 @@ export const GalleryBlock = defineBlock({
   label: 'Gallery',
   category: 'content',
   icon: 'gallery',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: Gallery,
   fields: {
     eyebrow: { label: 'Eyebrow', group: CONTENT, type: 'text' },
@@ -1199,12 +1211,8 @@ export const GalleryBlock = defineBlock({
       },
       defaultItem: { url: '', alt: '', caption: '' },
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    image_style: elementStyle('image', 'Image Style', MEDIA_PARTS),
+    ...sectionControls(),
   },
   defaults: {
     eyebrow: '',
@@ -1233,7 +1241,10 @@ export const ContactFormBlock = defineBlock({
   label: 'Contact form',
   category: 'contact',
   icon: 'contactform',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: ContactForm,
   fields: {
     title: { label: 'Title', group: CONTENT, type: 'text' },
@@ -1295,12 +1306,7 @@ export const ContactFormBlock = defineBlock({
         options: '',
       },
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls(),
   },
   defaults: {
     title: 'Contact us',
@@ -1330,7 +1336,10 @@ export const ButtonBlock = defineBlock({
   category: 'layout',
   icon: 'button',
   inlineProps: ['label'],
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: Button,
   fields: {
     label: { label: 'Label', group: CONTENT, type: 'text' },
@@ -1344,12 +1353,8 @@ export const ButtonBlock = defineBlock({
         { label: 'Left', value: 'left' },
       ],
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    button_style: elementStyle('button', 'Button Style', BUTTON_PARTS),
+    ...sectionControls(),
   },
   defaults: {
     label: '',
@@ -1371,7 +1376,10 @@ export const SpacerBlock = defineBlock({
   label: 'Spacer',
   category: 'layout',
   icon: 'spacer',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: Spacer,
   fields: {
     height: {
@@ -1381,12 +1389,7 @@ export const SpacerBlock = defineBlock({
       min: 0,
       max: 400,
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls(),
   },
   defaults: {
     height: 96,
@@ -1406,16 +1409,14 @@ export const CollectionItemBlock = defineBlock({
   label: 'Collection item',
   category: 'collections',
   icon: 'collectionitem',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: CollectionItem,
   fields: {
     field: { label: 'Field key (optional)', group: CONTENT, type: 'text' },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls(),
   },
   defaults: {
     field: '',
@@ -1435,7 +1436,10 @@ export const GlobalRefBlock = defineBlock({
   label: 'Global block',
   category: 'global',
   icon: 'globalref',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: GlobalRef,
   fields: {
     globalBlockId: {
@@ -1453,7 +1457,10 @@ export const LogoCloudBlock = defineBlock({
   label: 'Logo cloud',
   category: 'marketing',
   icon: 'logocloud',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: LogoCloud,
   fields: {
     eyebrow: { label: 'Eyebrow', group: CONTENT, type: 'text' },
@@ -1480,12 +1487,7 @@ export const LogoCloudBlock = defineBlock({
       },
       defaultItem: { url: '', alt: '', link: '' },
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls(),
   },
   defaults: {
     eyebrow: '',
@@ -1508,7 +1510,10 @@ export const TeamBlock = defineBlock({
   label: 'Team',
   category: 'marketing',
   icon: 'team',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: Team,
   fields: {
     eyebrow: { label: 'Eyebrow', group: CONTENT, type: 'text' },
@@ -1529,12 +1534,7 @@ export const TeamBlock = defineBlock({
       },
       defaultItem: { photo: '', name: '', role: '' },
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls(),
   },
   defaults: {
     eyebrow: '',
@@ -1556,7 +1556,10 @@ export const TimelineBlock = defineBlock({
   label: 'Timeline',
   category: 'marketing',
   icon: 'timeline',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: Timeline,
   fields: {
     eyebrow: { label: 'Eyebrow', group: CONTENT, type: 'text' },
@@ -1572,12 +1575,7 @@ export const TimelineBlock = defineBlock({
       },
       defaultItem: { date: '', title: '', body: '' },
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls(),
   },
   defaults: {
     eyebrow: '',
@@ -1599,7 +1597,10 @@ export const BlogPostsBlock = defineBlock({
   label: 'Blog posts',
   category: 'blog',
   icon: 'blogposts',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: BlogPosts,
   fields: {
     title: { label: 'Title', group: CONTENT, type: 'text' },
@@ -1724,12 +1725,7 @@ export const BlogPostsBlock = defineBlock({
       render: TagLockField,
     },
     emptyMessage: { label: 'Empty message', group: CONTENT, type: 'text' },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls(),
   },
   defaults: {
     title: 'Latest posts',
@@ -1763,7 +1759,10 @@ export const SliderBlock = defineBlock({
   label: 'Slider',
   category: 'layout',
   icon: 'slider',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: Slider,
   fields: {
     items: {
@@ -1773,12 +1772,7 @@ export const SliderBlock = defineBlock({
       item: { title: { label: 'Title', group: CONTENT, type: 'text' } },
       defaultItem: { title: 'Slide', content: [] },
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls(),
   },
   defaults: {
     items: [{ title: 'Slide 1', content: [] }],
@@ -1799,7 +1793,10 @@ export const TabsBlock = defineBlock({
   label: 'Tabs',
   category: 'layout',
   icon: 'tabs',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: Tabs,
   fields: {
     items: {
@@ -1809,12 +1806,7 @@ export const TabsBlock = defineBlock({
       item: { label: { label: 'Label', group: CONTENT, type: 'text' } },
       defaultItem: { label: 'Tab 1', content: [] },
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls(),
   },
   defaults: {
     items: [{ label: 'Tab 1', content: [] }],
@@ -1835,7 +1827,10 @@ export const AccordionBlock = defineBlock({
   label: 'Accordion',
   category: 'layout',
   icon: 'accordion',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: Accordion,
   fields: {
     items: {
@@ -1845,12 +1840,7 @@ export const AccordionBlock = defineBlock({
       item: { title: { label: 'Title', group: CONTENT, type: 'text' } },
       defaultItem: { title: 'Question?', content: [] },
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls(),
   },
   defaults: {
     items: [{ title: 'Item 1', content: [] }],
@@ -1871,7 +1861,10 @@ export const PostTitleBlock = defineBlock({
   label: 'Post title',
   category: 'post',
   icon: 'posttitle',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: PostTitle,
   fields: {
     showBackLink: {
@@ -1901,12 +1894,7 @@ export const PostTitleBlock = defineBlock({
         { label: 'Left', value: 'left' },
       ],
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls(),
   },
   defaults: {
     showBackLink: true,
@@ -1928,7 +1916,10 @@ export const PostFeaturedImageBlock = defineBlock({
   label: 'Featured image',
   category: 'post',
   icon: 'postfeaturedimage',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: PostFeaturedImage,
   fields: {
     aspect: {
@@ -1942,12 +1933,7 @@ export const PostFeaturedImageBlock = defineBlock({
         { label: 'Original', value: 'auto' },
       ],
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls(),
   },
   defaults: {
     aspect: 'wide',
@@ -1967,7 +1953,10 @@ export const PostMetaBlock = defineBlock({
   label: 'Post details',
   category: 'post',
   icon: 'postmeta',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: PostMeta,
   fields: {
     showAuthor: {
@@ -2006,12 +1995,7 @@ export const PostMetaBlock = defineBlock({
         { label: 'No', value: false },
       ],
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls(),
   },
   defaults: {
     showAuthor: true,
@@ -2034,7 +2018,10 @@ export const PostContentBlock = defineBlock({
   label: 'Post content',
   category: 'post',
   icon: 'postcontent',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: PostContent,
   fields: {
     width: {
@@ -2047,12 +2034,7 @@ export const PostContentBlock = defineBlock({
         { label: 'Wide', value: 'wide' },
       ],
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls(),
   },
   defaults: {
     width: 'normal',
@@ -2072,7 +2054,10 @@ export const RelatedPostsBlock = defineBlock({
   label: 'Related posts',
   category: 'post',
   icon: 'relatedposts',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: RelatedPosts,
   fields: {
     title: { label: 'Title', group: CONTENT, type: 'text' },
@@ -2129,12 +2114,7 @@ export const RelatedPostsBlock = defineBlock({
         { label: 'No', value: false },
       ],
     },
-    section: {
-      label: 'Section',
-      group: STYLE,
-      type: 'custom',
-      render: SectionField,
-    },
+    ...sectionControls(),
   },
   defaults: {
     title: 'Related posts',
@@ -3199,7 +3179,10 @@ export const LanguageSwitcherNativeBlock = defineBlock({
   label: 'Language switcher',
   category: 'header',
   icon: 'globe',
-  schema: z.object({}),
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(elementStyleSchema).optional(),
+  }).passthrough(),
   render: LanguageSwitcherBlock,
   fields: {},
   defaults: {},
@@ -3305,12 +3288,16 @@ export const HEADER_ROOT_FIELDS = {
   style: {
     type: 'custom',
     label: 'Header style',
+    tab: 'style',
+    section: 'Header Style',
     group: STYLE,
     render: HeaderStyleField,
   },
   sticky: {
     type: 'select',
     label: 'Sticky header',
+    tab: 'advanced',
+    section: 'Header Behaviour',
     group: 'Header Behaviour',
     options: [
       { label: 'Off', value: 'off' },
@@ -3321,6 +3308,8 @@ export const HEADER_ROOT_FIELDS = {
   transparent: {
     type: 'radio',
     label: 'Transparent on load',
+    tab: 'advanced',
+    section: 'Header Behaviour',
     group: 'Header Behaviour',
     options: [
       { label: 'Solid', value: false },
@@ -3330,6 +3319,8 @@ export const HEADER_ROOT_FIELDS = {
   shrinkOnScroll: {
     type: 'radio',
     label: 'Shrink logo on scroll',
+    tab: 'advanced',
+    section: 'Header Behaviour',
     group: 'Header Behaviour',
     options: [
       { label: 'No', value: false },
@@ -3339,6 +3330,8 @@ export const HEADER_ROOT_FIELDS = {
   hideOnScrollDown: {
     type: 'radio',
     label: 'Hide on scroll down',
+    tab: 'advanced',
+    section: 'Header Behaviour',
     group: 'Header Behaviour',
     options: [
       { label: 'No', value: false },
@@ -3348,6 +3341,8 @@ export const HEADER_ROOT_FIELDS = {
   shadow: {
     type: 'select',
     label: 'Shadow',
+    tab: 'advanced',
+    section: 'Header Behaviour',
     group: 'Header Behaviour',
     options: [
       { label: 'None', value: 'none' },
@@ -3358,6 +3353,8 @@ export const HEADER_ROOT_FIELDS = {
   zIndex: {
     type: 'number',
     label: 'Z-Index layer',
+    tab: 'advanced',
+    section: 'Header Behaviour',
     group: 'Header Behaviour',
   },
 } as any;
@@ -3366,6 +3363,8 @@ export const FOOTER_ROOT_FIELDS = {
   style: {
     type: 'custom',
     label: 'Footer style',
+    tab: 'style',
+    section: 'Footer Style',
     group: STYLE,
     render: FooterStyleField,
   },

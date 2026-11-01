@@ -2,6 +2,7 @@ import { Check, Quote } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { BlockIcon } from '../icons';
 import { resolveLinkProps, type UrlValue } from '../style';
+import { el, type WithSection } from './element';
 import { PricingToggle } from './pricing-toggle';
 import {
   ButtonLink,
@@ -10,8 +11,6 @@ import {
   SectionHeading,
   type SectionSettings,
 } from './section';
-
-type WithSection = { section?: SectionSettings; editing?: boolean };
 
 export type HeroProps = WithSection & {
   badge?: string;
@@ -29,6 +28,19 @@ export type HeroProps = WithSection & {
 export function Hero(p: HeroProps) {
   const centered = p.alignment !== 'left';
   const split = !centered && !!p.imageUrl;
+  const badgeEl = el(p, 'badge', 's-soft-primary mb-6 inline-flex rounded-full px-3 py-1 text-xs font-semibold');
+  const titleEl = el(p, 'title', 'text-4xl font-extrabold tracking-tight md:text-6xl');
+  const subtitleEl = el(p, 'subtitle', 's-muted mt-6 text-lg leading-relaxed md:text-xl');
+  const primaryBtnEl = el(p, 'primaryButton');
+  const secondaryBtnEl = el(p, 'secondaryButton');
+  const imageEl = el(
+    p,
+    'image',
+    cn(
+      's-radius s-border w-full border object-cover shadow-xl',
+      centered ? 'mx-auto mt-4 max-w-5xl' : 'aspect-[4/3]'
+    )
+  );
 
   return (
     <Section section={p.section} editing={p.editing}>
@@ -37,15 +49,15 @@ export function Hero(p: HeroProps) {
       >
         <div className={cn(centered && 'mx-auto max-w-3xl text-center')}>
           {p.badge && (
-            <span className="s-soft-primary mb-6 inline-flex rounded-full px-3 py-1 text-xs font-semibold">
+            <span className={badgeEl.className} style={badgeEl.style}>
               {p.badge}
             </span>
           )}
-          <h1 className="text-4xl font-extrabold tracking-tight md:text-6xl">
+          <h1 className={titleEl.className} style={titleEl.style}>
             {p.title}
           </h1>
           {p.subtitle && (
-            <p className="s-muted mt-6 text-lg leading-relaxed md:text-xl">
+            <p className={subtitleEl.className} style={subtitleEl.style}>
               {p.subtitle}
             </p>
           )}
@@ -56,10 +68,19 @@ export function Hero(p: HeroProps) {
                 centered && 'justify-center'
               )}
             >
-              <ButtonLink href={p.primaryButtonLink}>
+              <ButtonLink
+                href={p.primaryButtonLink}
+                className={primaryBtnEl.className}
+                style={primaryBtnEl.style}
+              >
                 {p.primaryButtonText}
               </ButtonLink>
-              <ButtonLink href={p.secondaryButtonLink} variant="secondary">
+              <ButtonLink
+                href={p.secondaryButtonLink}
+                variant="secondary"
+                className={secondaryBtnEl.className}
+                style={secondaryBtnEl.style}
+              >
                 {p.secondaryButtonText}
               </ButtonLink>
             </div>
@@ -70,10 +91,8 @@ export function Hero(p: HeroProps) {
           <img
             src={p.imageUrl}
             alt={p.imageAlt ?? ''}
-            className={cn(
-              's-radius s-border w-full border object-cover shadow-xl',
-              centered ? 'mx-auto mt-4 max-w-5xl' : 'aspect-[4/3]'
-            )}
+            className={imageEl.className}
+            style={imageEl.style}
           />
         )}
       </div>
@@ -96,6 +115,9 @@ const GRID_COLS = {
 };
 
 export function Features(p: FeaturesProps) {
+  const itemTitleEl = el(p, 'itemTitle', 'text-lg font-semibold');
+  const itemDescEl = el(p, 'itemDescription', 's-muted mt-2 leading-relaxed');
+
   return (
     <Section section={p.section} editing={p.editing} hasItems>
       <SectionHeading
@@ -114,9 +136,13 @@ export function Features(p: FeaturesProps) {
                 <BlockIcon name={item.icon} className="size-5" />
               </div>
             )}
-            <h3 className="text-lg font-semibold">{item.title}</h3>
+            <h3 className={itemTitleEl.className} style={itemTitleEl.style}>
+              {item.title}
+            </h3>
             {item.description && (
-              <p className="s-muted mt-2 leading-relaxed">{item.description}</p>
+              <p className={itemDescEl.className} style={itemDescEl.style}>
+                {item.description}
+              </p>
             )}
           </MotionItem>
         ))}
@@ -131,6 +157,9 @@ export type StatsProps = WithSection & {
 };
 
 export function Stats(p: StatsProps) {
+  const valueEl = el(p, 'value', 's-primary-text order-1 text-3xl font-extrabold md:text-4xl');
+  const labelEl = el(p, 'label', 'order-2 mt-1 text-sm font-medium');
+
   return (
     <Section section={p.section} editing={p.editing} hasItems>
       {p.headline && (
@@ -141,8 +170,10 @@ export function Stats(p: StatsProps) {
       <dl className="grid grid-cols-2 gap-6 lg:grid-cols-4">
         {(p.items ?? []).map((item, i) => (
           <MotionItem key={i} className="flex flex-col text-center">
-            <dt className="order-2 mt-1 text-sm font-medium">{item.label}</dt>
-            <dd className="s-primary-text order-1 text-3xl font-extrabold md:text-4xl">
+            <dt className={labelEl.className} style={labelEl.style}>
+              {item.label}
+            </dt>
+            <dd className={valueEl.className} style={valueEl.style}>
               {item.value}
             </dd>
             {item.change && (
@@ -181,6 +212,9 @@ const featureText = (f: { text: string } | string) =>
 export function Pricing(p: PricingProps) {
   const plans = p.plans ?? [];
   const hasYearly = plans.some(plan => plan.yearlyPrice);
+  const planTitleEl = el(p, 'planTitle', 'text-lg font-semibold');
+  const planPriceEl = el(p, 'planPrice', 'text-4xl font-extrabold');
+  const planBtnEl = el(p, 'planButton');
 
   const cards = (yearly: boolean) => (
     <div
@@ -205,12 +239,14 @@ export function Pricing(p: PricingProps) {
               Most popular
             </span>
           )}
-          <h3 className="text-lg font-semibold">{plan.name}</h3>
+          <h3 className={planTitleEl.className} style={planTitleEl.style}>
+            {plan.name}
+          </h3>
           {plan.description && (
             <p className="s-muted mt-1 text-sm">{plan.description}</p>
           )}
           <p className="mt-5 flex items-baseline gap-1">
-            <span className="text-4xl font-extrabold">
+            <span className={planPriceEl.className} style={planPriceEl.style}>
               {yearly && plan.yearlyPrice ? plan.yearlyPrice : plan.price}
             </span>
             {plan.period && (
@@ -235,6 +271,8 @@ export function Pricing(p: PricingProps) {
               <ButtonLink
                 href={plan.buttonLink}
                 variant={plan.popular ? 'primary' : 'secondary'}
+                className={planBtnEl.className}
+                style={planBtnEl.style}
               >
                 {plan.buttonText}
               </ButtonLink>
@@ -274,6 +312,9 @@ export type TestimonialsProps = WithSection & {
 };
 
 export function Testimonials(p: TestimonialsProps) {
+  const quoteEl = el(p, 'quote', 'flex-1 text-lg leading-relaxed');
+  const authorEl = el(p, 'author', 'font-semibold');
+
   return (
     <Section section={p.section} editing={p.editing} hasItems>
       <SectionHeading eyebrow={p.eyebrow} title={p.title} />
@@ -285,7 +326,7 @@ export function Testimonials(p: TestimonialsProps) {
             className="s-surface s-border s-radius flex flex-col border p-7"
           >
             <Quote className="s-primary-text mb-4 size-6" aria-hidden />
-            <blockquote className="flex-1 text-lg leading-relaxed">
+            <blockquote className={quoteEl.className} style={quoteEl.style}>
               “{item.quote}”
             </blockquote>
             <figcaption className="mt-6 flex items-center gap-3">
@@ -298,7 +339,9 @@ export function Testimonials(p: TestimonialsProps) {
                 />
               )}
               <div>
-                <p className="font-semibold">{item.author}</p>
+                <p className={authorEl.className} style={authorEl.style}>
+                  {item.author}
+                </p>
                 {(item.role || item.company) && (
                   <p className="s-muted text-sm">
                     {[item.role, item.company].filter(Boolean).join(', ')}
@@ -320,6 +363,9 @@ export type FaqProps = WithSection & {
 };
 
 export function Faq(p: FaqProps) {
+  const questionEl = el(p, 'question', 'flex cursor-pointer list-none items-center justify-between gap-4 font-semibold');
+  const answerEl = el(p, 'answer', 's-muted mt-3 leading-relaxed');
+
   return (
     <Section
       section={p.section}
@@ -336,7 +382,7 @@ export function Faq(p: FaqProps) {
             className="group py-5"
             open={p.editing && i === 0}
           >
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold">
+            <summary className={questionEl.className} style={questionEl.style}>
               {item.question}
               <span
                 className="s-muted text-xl transition group-open:rotate-45"
@@ -345,7 +391,9 @@ export function Faq(p: FaqProps) {
                 +
               </span>
             </summary>
-            <p className="s-muted mt-3 leading-relaxed">{item.answer}</p>
+            <p className={answerEl.className} style={answerEl.style}>
+              {item.answer}
+            </p>
           </MotionItem>
         ))}
       </div>
@@ -367,6 +415,26 @@ export type CtaProps = WithSection & {
 export function Cta(p: CtaProps) {
   const variant = p.variant ?? 'gradient';
   const onColor = variant !== 'subtle';
+  const badgeEl = el(
+    p,
+    'badge',
+    cn(
+      'mb-5 inline-flex rounded-full px-3 py-1 text-xs font-semibold',
+      onColor ? 'bg-white/20 text-white' : 's-soft-primary'
+    )
+  );
+  const titleEl = el(p, 'title', 'mx-auto max-w-2xl text-3xl font-bold tracking-tight md:text-4xl');
+  const descEl = el(
+    p,
+    'description',
+    cn(
+      'mx-auto mt-4 max-w-2xl text-lg',
+      onColor ? 'text-white/85' : 's-muted'
+    )
+  );
+  const primaryBtnEl = el(p, 'primaryButton');
+  const secondaryBtnEl = el(p, 'secondaryButton');
+
   return (
     <Section section={p.section} editing={p.editing}>
       <div
@@ -378,25 +446,15 @@ export function Cta(p: CtaProps) {
         )}
       >
         {p.badge && (
-          <span
-            className={cn(
-              'mb-5 inline-flex rounded-full px-3 py-1 text-xs font-semibold',
-              onColor ? 'bg-white/20 text-white' : 's-soft-primary'
-            )}
-          >
+          <span className={badgeEl.className} style={badgeEl.style}>
             {p.badge}
           </span>
         )}
-        <h2 className="mx-auto max-w-2xl text-3xl font-bold tracking-tight md:text-4xl">
+        <h2 className={titleEl.className} style={titleEl.style}>
           {p.title}
         </h2>
         {p.description && (
-          <p
-            className={cn(
-              'mx-auto mt-4 max-w-2xl text-lg',
-              onColor ? 'text-white/85' : 's-muted'
-            )}
-          >
+          <p className={descEl.className} style={descEl.style}>
             {p.description}
           </p>
         )}
@@ -404,12 +462,16 @@ export function Cta(p: CtaProps) {
           <ButtonLink
             href={p.primaryButtonLink}
             variant={onColor ? 'light' : 'primary'}
+            className={primaryBtnEl.className}
+            style={primaryBtnEl.style}
           >
             {p.primaryButtonText}
           </ButtonLink>
           <ButtonLink
             href={p.secondaryButtonLink}
             variant={onColor ? 'ghost-light' : 'secondary'}
+            className={secondaryBtnEl.className}
+            style={secondaryBtnEl.style}
           >
             {p.secondaryButtonText}
           </ButtonLink>

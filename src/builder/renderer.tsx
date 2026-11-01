@@ -29,10 +29,10 @@ import {
 import { renderSlot, type SlotValue } from './blocks/content';
 import { getBlockComponents } from './blocks/registry';
 import { type LoaderContext, resolveDocumentData } from './loaders';
-import { MotionScope } from './motion';
+import { MotionItem, MotionScope } from './motion';
 import { type PostView, SAMPLE_POST } from './post-template';
 import { fontStylesheetUrl, resolveThemeTokens, themeStyle } from './theme';
-import { type ChromeStyle, resolveChromeStyle } from './style';
+import { type ChromeStyle, resolveAnimation, resolveChromeStyle } from './style';
 
 /** `post` adds the post blocks, like `postBuilderConfig` does for Puck. */
 export type RenderKind = 'page' | 'post';
@@ -117,6 +117,13 @@ function renderOptions(
     components: rendererComponents(kind),
     editing: !!metadata.editing,
     transformProps: cmsTransformProps(metadata, kind),
+    wrapNode: (node, element) => {
+      const anim = (node.props as Record<string, unknown>)?.animation as any;
+      if (!anim || !anim.entrance || anim.entrance === 'none') return element;
+      const resolved = resolveAnimation(anim);
+      if (!resolved) return element;
+      return <MotionItem animation={resolved}>{element}</MotionItem>;
+    },
   };
 }
 

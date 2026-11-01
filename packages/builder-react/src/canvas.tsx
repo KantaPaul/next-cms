@@ -47,10 +47,13 @@ import {
   ArrowUp,
   Copy,
   CornerLeftUp,
+  Globe,
   Group,
+  LayoutTemplate,
   Lock,
   LockOpen,
   Move,
+  Sparkles,
   Trash2,
 } from 'lucide-react';
 import { useEditorAnnouncements } from './announcements';
@@ -137,6 +140,8 @@ export type EditorCanvasProps = {
   dynamicContext?: DynamicContext;
   /** When true, hides editing overlays (selection box, hover box, floating toolbar, etc.) for live preview. */
   isPreview?: boolean;
+  /** Address displayed in the browser-style frame header. */
+  previewAddress?: string;
   style?: CSSProperties;
 };
 
@@ -163,11 +168,124 @@ function previewDynamic(value: unknown, context: DynamicContext): unknown {
 function EmptySlot({
   root,
   onInsert,
+  onAddHero,
 }: {
   root: boolean;
   /** Opens the quick-insert popover anchored on this empty slot (R713, R721). */
   onInsert?: (event: ReactMouseEvent) => void;
+  onAddHero?: () => void;
 }) {
+  if (root) {
+    return (
+      <div
+        data-empty-page
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '64px 24px',
+          textAlign: 'center',
+          minHeight: 400,
+          gap: 16,
+          font: '500 13px/1.4 system-ui, sans-serif',
+          color: '#64748b',
+        }}
+      >
+        <div
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: '50%',
+            backgroundColor: '#eff6ff',
+            border: '1px solid #bfdbfe',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: ACCENT,
+            marginBottom: 2,
+          }}
+        >
+          <LayoutTemplate size={20} />
+        </div>
+        <div style={{ maxWidth: 360 }}>
+          <h3
+            style={{
+              margin: '0 0 6px',
+              fontSize: 16,
+              fontWeight: 600,
+              color: '#0f172a',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            Start building your page
+          </h3>
+          <p
+            style={{
+              margin: 0,
+              fontSize: 12,
+              color: '#64748b',
+              lineHeight: 1.5,
+            }}
+          >
+            Drag a block here, or click one in the block list, or start with a hero section.
+          </p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+          {onAddHero && (
+            <button
+              type="button"
+              aria-label="Add Hero Section"
+              title="Add Hero Section"
+              onClick={onAddHero}
+              style={{
+                all: 'unset',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '8px 16px',
+                borderRadius: 6,
+                backgroundColor: ACCENT,
+                color: '#fff',
+                fontSize: 13,
+                fontWeight: 600,
+                boxShadow: '0 1px 2px rgba(37, 99, 235, 0.2)',
+              }}
+            >
+              <Sparkles size={14} />
+              <span>Add Hero Section</span>
+            </button>
+          )}
+          {onInsert && (
+            <button
+              type="button"
+              aria-label="Insert a block here"
+              title="Insert a block here"
+              onClick={onInsert}
+              style={{
+                all: 'unset',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                padding: '8px 14px',
+                borderRadius: 6,
+                border: '1px solid #cbd5e1',
+                backgroundColor: '#fff',
+                color: '#334155',
+                fontSize: 13,
+                fontWeight: 500,
+              }}
+            >
+              <span>+ Browse Blocks</span>
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
@@ -180,15 +298,13 @@ function EmptySlot({
         flex: '1 1 auto',
         alignSelf: 'stretch',
         gridColumn: '1 / -1',
-        minHeight: root ? 240 : 72,
+        minHeight: 72,
         font: '500 12px/1.4 system-ui, sans-serif',
         color: '#6b7280',
       }}
     >
       <span aria-hidden style={{ pointerEvents: 'none' }}>
-        {root
-          ? 'Drag a block here, or click one in the block list'
-          : 'Drop blocks here'}
+        Drop blocks here
       </span>
       {onInsert && (
         <button
@@ -222,7 +338,8 @@ function makeRenderSlot(
   onInsertHere?: (
     position: { parentId: NodeId | null; slot: string },
     event: ReactMouseEvent
-  ) => void
+  ) => void,
+  onAddHero?: () => void
 ) {
   return function renderSlot({
     parentId,
@@ -255,6 +372,7 @@ function makeRenderSlot(
                 ? event => onInsertHere({ parentId, slot }, event)
                 : undefined
             }
+            onAddHero={onAddHero}
           />
         )}
       </div>
@@ -346,6 +464,14 @@ function CanvasDocument({
   stateStyle?: 'hover' | 'focus' | 'active' | null;
 }) {
   const doc = useEditor(state => state.doc);
+  const store = useEditorStore();
+  const onAddHero = () => {
+    const heroType =
+      Object.keys(store.schemas).find(k => k.toLowerCase() === 'hero') || 'Hero';
+    if (store.schemas[heroType]) {
+      store.insertBlock(heroType);
+    }
+  };
   // Hidden blocks are hidden on the canvas only; the wrapper adds no box.
   const wrapNode = (node: BuilderNode, element: ReactNode) => (
     <div
@@ -361,7 +487,7 @@ function CanvasDocument({
     editing: true,
     wrapNode,
     renderUnknown,
-    renderSlot: makeRenderSlot(onInsertHere),
+    renderSlot: makeRenderSlot(onInsertHere, onAddHero),
     transformProps: (node, rawProps) => {
       const props = previewDynamic(rawProps, dynamicContext ?? {}) as Record<
         string,
@@ -732,6 +858,9 @@ function CanvasOverlay({
 }
 
 /** The canvas: frame, overlay, and pointer handling. */
+// Copied block styles for Copy Style / Paste Style actions
+let copiedBlockStyles: Record<string, unknown> | null = null;
+
 export function EditorCanvas({
   components,
   drag,
@@ -747,6 +876,7 @@ export function EditorCanvas({
   stateStyle,
   dynamicContext,
   isPreview = false,
+  previewAddress = 'preview.site.local/home',
   style,
 }: EditorCanvasProps) {
   const store = useEditorStore();
@@ -927,6 +1057,84 @@ export function EditorCanvas({
         store.schemas[node?.type ?? '']?.label ||
         node?.type ||
         'Block';
+
+      const copyStyle = (targetId: NodeId) => {
+        const targetNode = store.getState().doc.nodes[targetId];
+        if (!targetNode) return;
+        const schema = store.schemas[targetNode.type];
+        const schemaRecord = schema as Record<string, unknown> | undefined;
+        const schemaFields = schemaRecord?.fields as Record<string, Record<string, unknown>> | undefined;
+        const patch: Record<string, unknown> = {};
+        if (schemaFields) {
+          for (const [key, field] of Object.entries(schemaFields)) {
+            if (
+              field.tab === 'style' ||
+              field.section === 'Style' ||
+              field.section === 'Dimensions' ||
+              field.section === 'Background' ||
+              field.section === 'Typography' ||
+              field.section === 'Border'
+            ) {
+              if (key in targetNode.props) patch[key] = targetNode.props[key];
+            }
+          }
+        }
+        if (Object.keys(patch).length === 0) {
+          const commonStyleProps = [
+            'background',
+            'backgroundColor',
+            'bgTone',
+            'color',
+            'textColor',
+            'padding',
+            'paddingY',
+            'paddingX',
+            'margin',
+            'borderRadius',
+            'border',
+            'shadow',
+            'textAlign',
+            'align',
+            'maxWidth',
+            'opacity',
+          ];
+          for (const k of commonStyleProps) {
+            if (k in targetNode.props) patch[k] = targetNode.props[k];
+          }
+        }
+        copiedBlockStyles = patch;
+      };
+
+      const pasteStyle = (targetId: NodeId) => {
+        if (copiedBlockStyles && Object.keys(copiedBlockStyles).length > 0) {
+          store.updateProps(targetId, copiedBlockStyles);
+        }
+      };
+
+      const resetToDefaults = (targetId: NodeId) => {
+        const targetNode = store.getState().doc.nodes[targetId];
+        if (!targetNode) return;
+        const schema = store.schemas[targetNode.type];
+        const schemaRecord = schema as Record<string, unknown> | undefined;
+        const defaults =
+          schema?.defaultProps ??
+          (typeof schemaRecord?.defaults === 'function'
+            ? (schemaRecord.defaults as () => Record<string, unknown>)()
+            : {});
+        if (defaults && Object.keys(defaults).length > 0) {
+          store.updateProps(targetId, defaults);
+        }
+      };
+
+      const inspectBlock = (targetId: NodeId) => {
+        store.select(targetId);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('ne-inspect-block', { detail: { id: targetId } })
+          );
+        }
+      };
+
       const items: ContextMenuItem[] = locked
         ? [
             {
@@ -959,13 +1167,40 @@ export function EditorCanvas({
               id: 'duplicate',
               label: 'Duplicate',
               shortcut: 'Mod+D',
-              separator: true,
               run: () => store.duplicate([id]),
+            },
+            {
+              id: 'copy-style',
+              label: 'Copy Style',
+              shortcut: '⌥⌘C',
+              separator: true,
+              run: () => copyStyle(id),
+            },
+            {
+              id: 'paste-style',
+              label: 'Paste Style',
+              shortcut: '⌥⌘V',
+              disabled:
+                !copiedBlockStyles || Object.keys(copiedBlockStyles).length === 0,
+              run: () => pasteStyle(id),
+            },
+            {
+              id: 'reset-defaults',
+              label: 'Reset to Defaults',
+              run: () => resetToDefaults(id),
+            },
+            {
+              id: 'inspect',
+              label: 'Inspect',
+              shortcut: '⌥I',
+              separator: true,
+              run: () => inspectBlock(id),
             },
             {
               id: 'delete',
               label: 'Delete',
               shortcut: 'Del',
+              separator: true,
               run: () => store.remove([id]),
             },
             {
@@ -1078,70 +1313,204 @@ export function EditorCanvas({
 
   return (
     <div
+      data-testid="canvas-container"
+      className="ne-canvas-bg"
       style={{
         display: 'flex',
-        justifyContent: 'center',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
         width: '100%',
         height: '100%',
+        minHeight: '100%',
         overflow: 'auto',
-        background: width ? 'rgba(127,127,127,.12)' : undefined,
+        boxSizing: 'border-box',
+        padding: '24px 16px',
         ...style,
       }}
     >
+      {/* Browser-style frame wrapping the page */}
       <div
-        data-device={device}
+        data-testid="browser-frame"
         style={{
-          position: 'relative',
-          flex: width ? `0 0 ${width}px` : '1 1 auto',
+          display: 'flex',
+          flexDirection: 'column',
+          width: width ? `${width}px` : '100%',
+          maxWidth: width ? `${width}px` : undefined,
           minWidth: width ? undefined : DESKTOP_MIN_WIDTH,
-          height: '100%',
-          boxShadow: width
-            ? '0 0 0 1px rgba(127,127,127,.25), 0 8px 24px rgba(0,0,0,.08)'
-            : undefined,
-          transition: 'flex-basis .2s ease',
+          borderRadius: 12,
+          border: '1px solid var(--ne-border, #e2e8f0)',
+          backgroundColor: '#ffffff',
+          boxShadow:
+            '0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04)',
+          overflow: 'hidden',
+          transition: 'width .2s ease, max-width .2s ease',
+          flex: width ? '0 0 auto' : '1 1 auto',
+          minHeight: '700px',
         }}
       >
-        <CanvasFrame onReady={onReady}>
-          <CanvasDocument
-            components={components}
-            transformProps={transformProps}
-            loaded={loaded}
-            renderRoot={renderRoot}
-            remount={remount}
-            onInsertHere={insertGroups ? onInsertHere : undefined}
-            stateStyle={stateStyle}
-            dynamicContext={dynamicContext}
-          />
-        </CanvasFrame>
-        {frame && !isPreview && (
-          <CanvasOverlay
-            frame={frame}
-            frameDoc={frameDoc}
-            drag={drag}
-            resizeHandles={resizeHandles}
-            blockActions={blockActions}
-            marquee={marquee}
-            isMoveMode={isMoveMode}
-            onEnterMoveMode={() => setIsMoveMode(true)}
-          />
-        )}
-        {hoverInsert && !dragState.active && !marquee && !isPreview && (
-          // `.ne-ui`: styled by editor-ui in the old chrome too.
-          <span className="ne-ui" style={{ display: 'contents' }}>
-            <InsertPoint
-              x={hoverInsert.point.x}
-              y={hoverInsert.point.y}
-              label="Insert a block here"
-              onClick={event => {
-                setQuickInsert({
-                  point: { x: event.clientX, y: event.clientY },
-                  position: hoverInsert.position,
-                });
-                setHoverInsert(null);
+        {/* Browser frame header bar */}
+        <div
+          data-testid="browser-frame-header"
+          style={{
+            display: 'flex',
+            height: 38,
+            flexShrink: 0,
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderBottom: '1px solid var(--ne-border, #e2e8f0)',
+            backgroundColor: 'var(--ne-surface-subtle, #f8fafc)',
+            padding: '0 12px',
+            userSelect: 'none',
+          }}
+        >
+          {/* Three dots */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: 64 }}>
+            <span
+              style={{
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                backgroundColor: '#ff5f56',
+                border: '1px solid #e0443e',
+                display: 'inline-block',
               }}
             />
-          </span>
-        )}
+            <span
+              style={{
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                backgroundColor: '#ffbd2e',
+                border: '1px solid #dea123',
+                display: 'inline-block',
+              }}
+            />
+            <span
+              style={{
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                backgroundColor: '#27c93f',
+                border: '1px solid #1aab29',
+                display: 'inline-block',
+              }}
+            />
+          </div>
+
+          {/* Address Bar */}
+          <div
+            style={{
+              display: 'flex',
+              flex: '1 1 auto',
+              maxWidth: 360,
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              borderRadius: 6,
+              border: '1px solid var(--ne-border, #e2e8f0)',
+              backgroundColor: 'var(--ne-surface, #ffffff)',
+              padding: '2px 10px',
+              fontSize: 11,
+              fontFamily: 'ui-monospace, monospace',
+              color: 'var(--ne-text-muted, #64748b)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <span style={{ fontSize: 10, opacity: 0.7 }}>🔒</span>
+            <span
+              style={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {previewAddress}
+            </span>
+          </div>
+
+          {/* Device Label */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              width: 64,
+            }}
+          >
+            <span
+              style={{
+                borderRadius: 4,
+                padding: '2px 6px',
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.05em',
+                textTransform: 'uppercase',
+                color: 'var(--ne-text-muted, #64748b)',
+                backgroundColor: 'var(--ne-surface, #ffffff)',
+                border: '1px solid var(--ne-border, #e2e8f0)',
+              }}
+            >
+              {device.toUpperCase()}
+            </span>
+          </div>
+        </div>
+
+        {/* Page canvas iframe body */}
+        <div
+          data-device={device}
+          style={{
+            position: 'relative',
+            width: '100%',
+            flex: '1 1 auto',
+            minHeight: '660px',
+            backgroundColor: '#ffffff',
+          }}
+        >
+          <CanvasFrame onReady={onReady}>
+            <CanvasDocument
+              components={components}
+              transformProps={transformProps}
+              loaded={loaded}
+              renderRoot={renderRoot}
+              remount={remount}
+              onInsertHere={insertGroups ? onInsertHere : undefined}
+              stateStyle={stateStyle}
+              dynamicContext={dynamicContext}
+            />
+          </CanvasFrame>
+          {frame && !isPreview && (
+            <CanvasOverlay
+              frame={frame}
+              frameDoc={frameDoc}
+              drag={drag}
+              resizeHandles={resizeHandles}
+              blockActions={blockActions}
+              marquee={marquee}
+              isMoveMode={isMoveMode}
+              onEnterMoveMode={() => setIsMoveMode(true)}
+            />
+          )}
+          {hoverInsert && !dragState.active && !marquee && !isPreview && (
+            // `.ne-ui`: styled by editor-ui in the old chrome too.
+            <span className="ne-ui" style={{ display: 'contents' }}>
+              <InsertPoint
+                x={hoverInsert.point.x}
+                y={hoverInsert.point.y}
+                label="Insert a block here"
+                onClick={event => {
+                  setQuickInsert({
+                    point: { x: event.clientX, y: event.clientY },
+                    position: hoverInsert.position,
+                  });
+                  setHoverInsert(null);
+                }}
+              />
+            </span>
+          )}
+        </div>
       </div>
       {dragState.active && (
         <div

@@ -10,11 +10,6 @@ export { ColorPicker, type ColorPickerProps } from './color-picker';
 export { DeviceRow, DeviceToggles, useCanvasDevice } from './device-row';
 export { Dimensions } from './dimensions';
 export { FilterControl } from './filter';
-export {
-  type InspectorTab,
-  InspectorTabContext,
-  useInspectorTab,
-} from './inspector-tab';
 export { PageTransitionField } from './page-transition';
 export {
   Choose,

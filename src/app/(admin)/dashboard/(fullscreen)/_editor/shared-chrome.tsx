@@ -10,6 +10,7 @@
 import {
   Breadcrumb,
   getPreferencesStore,
+  JsonExportButton,
   type SaveQueue,
   type SaveStatus as QueueStatus,
   useEditor,
@@ -19,6 +20,7 @@ import {
 import {
   EditorShell,
   type EditorTheme,
+  FloatingDeviceBar,
   Kbd,
   Panel,
   type SaveState,
@@ -250,10 +252,6 @@ export function SharedChrome({
           canRedo={history.future.length > 0}
           onUndo={() => store.undo()}
           onRedo={() => store.redo()}
-          device={device}
-          onDeviceChange={next => store.setDevice(next)}
-          zoom={zoom}
-          onZoomChange={onZoomChange}
           isPreview={isPreview}
           onPreview={onTogglePreview}
           isDark={isDarkCurrent}
@@ -266,6 +264,7 @@ export function SharedChrome({
           onLayoutChange={onLayoutChange}
           dockSide={singlePanelDockSide}
           onDockSideChange={onDockSideChange}
+          exportAction={<JsonExportButton documentName={title} />}
           extraActions={actions}
           onPublish={primaryAction?.run}
           publishLabel={primaryAction?.label}
@@ -290,14 +289,24 @@ export function SharedChrome({
         )
       }
       canvas={
-        <div
-          className="relative flex min-h-0 w-full flex-1 flex-col items-center justify-start overflow-auto ne-scrollbar transition-transform duration-150"
-          style={{
-            transform: zoom && zoom !== 100 ? `scale(${zoom / 100})` : undefined,
-            transformOrigin: 'top center',
-          }}
-        >
-          {canvas}
+        <div className="ne-canvas-bg relative flex min-h-0 w-full flex-1 flex-col items-center justify-start overflow-auto ne-scrollbar p-4 md:p-6">
+          {!isPreview && onZoomChange && (
+            <FloatingDeviceBar
+              device={device}
+              onDeviceChange={next => store.setDevice(next)}
+              zoom={zoom}
+              onZoomChange={onZoomChange}
+            />
+          )}
+          <div
+            className="flex flex-col items-center justify-start w-full transition-transform duration-150"
+            style={{
+              transform: zoom && zoom !== 100 ? `scale(${zoom / 100})` : undefined,
+              transformOrigin: 'top center',
+            }}
+          >
+            {canvas}
+          </div>
         </div>
       }
       inspector={

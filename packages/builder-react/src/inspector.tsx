@@ -9,9 +9,13 @@ import {
   DEVICES,
   type Device,
   type FieldDef,
+  type InspectorTabDef,
   inheritedFrom,
   resetDeviceValue,
   valueForDevice,
+  layoutFields,
+  fieldChanged,
+  DEFAULT_TABS,
 } from '@nextcms/builder-core';
 import {
   FieldRow as FieldRowFrame,
@@ -28,11 +32,14 @@ import {
   FieldControl,
   FieldTypesProvider,
   fieldControlId,
+  fieldValueAccess,
 } from './fields';
 
 export type InspectorBlock = {
   label: string;
   fields: Record<string, FieldDef>;
+  /** Custom inspector tabs for this block. */
+  tabs?: InspectorTabDef[];
   /** Default props for changed-field dots and reset (R722). */
   defaultProps?: Record<string, unknown>;
 };
@@ -41,12 +48,6 @@ const DEVICE_ICONS: Record<Device, typeof Monitor> = {
   desktop: Monitor,
   tablet: Tablet,
   mobile: Smartphone,
-};
-
-const TAB_LABELS: Record<string, string> = {
-  content: 'Content',
-  style: 'Style',
-  advanced: 'Advanced',
 };
 
 /** Desktop, tablet, and mobile buttons; switches the canvas and per-device fields. */
@@ -86,87 +87,28 @@ export function DeviceSwitch({ style }: { style?: CSSProperties }) {
   );
 }
 
-/** Which tab a field belongs to: Content, Style, or Advanced. */
-function fieldTab(field: FieldDef): 'content' | 'style' | 'advanced' {
-  const group = (field.group ?? '').toLowerCase();
-  if (group === 'content' || group === 'contents') return 'content';
-  if (
-    group === 'style' ||
-    group === 'style & layout' ||
-    group === 'layout' ||
-    group === 'spacing' ||
-    group === 'typography' ||
-    group === 'color'
-  )
-    return 'style';
-  // Infer from field type when no group is set.
-  switch (field.type) {
-    case 'text':
-    case 'textarea':
-    case 'url':
-    case 'image':
-    case 'custom':
-      return 'content';
-    case 'number':
-    case 'toggle':
-    case 'select':
-    case 'radio':
-    case 'object':
-    case 'list':
-    case 'slider':
-    case 'choose':
-    case 'dimensions':
-    case 'color':
-    case 'typography':
-    case 'border':
-    case 'shadow':
-    case 'background':
-    case 'flex':
-    case 'alignment':
-    case 'easing':
-    case 'transition':
-      return 'style';
-    default:
-      return 'advanced';
-  }
-}
-
-/** Whether a field's shown value differs from its default. */
-function fieldChanged(
-  field: FieldDef,
-  value: unknown,
-  defaultValue: unknown,
-  device: Device
-): boolean {
-  const shown = field.responsive ? valueForDevice(value, device) : value;
-  const defaultShown = field.responsive
-    ? valueForDevice(defaultValue, device)
-    : defaultValue;
-  if (shown === undefined && defaultShown === undefined) return false;
-  return JSON.stringify(shown) !== JSON.stringify(defaultShown);
-}
-
 /** One field row with a changed-field dot and reset controls (R722), drawn by editor-ui's FieldRow. */
 function FieldRow({
   name,
   field,
-  value,
-  defaultValue,
   props,
+  defaultProps = {},
   device,
   onChange,
   readOnly,
 }: {
   name: string;
   field: FieldDef;
-  value: unknown;
-  defaultValue: unknown;
   props: Record<string, unknown>;
+  defaultProps?: Record<string, unknown>;
   device: Device;
   onChange: (value: unknown) => void;
   readOnly?: boolean;
 }) {
   if (field.when && !field.when(props)) return null;
+  const access = fieldValueAccess(field, name);
+  const value = access.read(props);
+  const defaultValue = access.read(defaultProps);
   const changed = fieldChanged(field, value, defaultValue, device);
   const responsive = !!field.responsive;
   const source = responsive ? inheritedFrom(value, device) : null;
@@ -175,15 +117,14 @@ function FieldRow({
   return (
     <FieldRowFrame
       layout="vertical"
-      label={field.label ?? ''}
+      label={field.label ?? name}
       htmlFor={isContainer ? undefined : fieldControlId(name)}
       description={field.description}
       changed={changed}
       onReset={
         readOnly
           ? undefined
-          : // Back to the block's default, which is what the changed dot compares against.
-            () =>
+          : () =>
               onChange(
                 responsive ? resetDeviceValue(value, device) : defaultValue
               )
@@ -336,58 +277,55 @@ function InspectorTabs({
   block,
   node,
   props,
-  defaultProps,
+  defaultProps = {},
   device,
   readOnly,
   isRoot = false,
 }: InspectorTabsProps) {
   const store = useEditorStore();
   const [query, setQuery] = useState('');
-  const tabFields = (tab: 'content' | 'style' | 'advanced') =>
-    Object.entries(block.fields).filter(([, field]) => fieldTab(field) === tab);
+  const [pickedTab, setPickedTab] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState<'content' | 'style' | 'advanced'>(
-    () => {
-      const hasContent = Object.values(block.fields).some(
-        f => fieldTab(f) === 'content'
-      );
-      if (hasContent) return 'content';
-      const hasStyle = Object.values(block.fields).some(
-        f => fieldTab(f) === 'style'
-      );
-      if (hasStyle) return 'style';
-      return 'advanced';
-    }
+  const layoutResult = useMemo(
+    () =>
+      layoutFields({
+        fields: block.fields,
+        props,
+        defaultProps,
+        device,
+        tabs: block.tabs,
+        query,
+      }),
+    [block, props, defaultProps, device, query]
   );
 
-  const filtered = (tab: 'content' | 'style' | 'advanced') => {
-    const q = query.toLowerCase().trim();
-    if (!q) return tabFields(tab);
-    return tabFields(tab).filter(
-      ([name, field]) =>
-        (field.label ?? name).toLowerCase().includes(q) ||
-        name.toLowerCase().includes(q)
-    );
-  };
+  const availableTabIds = useMemo(
+    () => layoutResult.tabs.map(t => t.def.id),
+    [layoutResult.tabs]
+  );
 
-  const changedCount = Object.entries(block.fields).filter(([name, field]) =>
-    fieldChanged(field, props[name], defaultProps?.[name], device)
-  ).length;
+  const activeTab =
+    pickedTab && availableTabIds.includes(pickedTab)
+      ? pickedTab
+      : availableTabIds[0] ?? 'content';
 
-  const tabs = (['content', 'style', 'advanced'] as const).map(tab => {
-    const fields = tabFields(tab);
-    const hasChanged = fields.some(([name, field]) =>
-      fieldChanged(field, props[name], defaultProps?.[name], device)
-    );
+  const currentTab = layoutResult.tabs.find(t => t.def.id === activeTab);
+  const sections = query.trim()
+    ? layoutResult.tabs.flatMap(t => t.sections)
+    : currentTab?.sections ?? [];
+
+  const shownFields = sections.flatMap(s => s.fields);
+
+  const tabs = layoutResult.tabs.map(t => {
+    const totalFields = t.sections.reduce((sum, s) => sum + s.fields.length, 0);
     return {
-      id: tab,
-      label: TAB_LABELS[tab],
-      badge: fields.length || undefined,
-      changed: hasChanged,
-      ariaLabel: `${TAB_LABELS[tab]} (${fields.length}${hasChanged ? ', changed' : ''})`,
+      id: t.def.id,
+      label: t.def.label,
+      badge: totalFields || undefined,
+      changed: t.changedCount > 0,
+      ariaLabel: `${t.def.label} (${totalFields}${t.changedCount > 0 ? ', changed' : ''})`,
     };
   });
-  const shown = filtered(activeTab);
 
   return (
     <div
@@ -396,20 +334,20 @@ function InspectorTabs({
       <InspectorTabsBar
         tabs={tabs}
         activeTab={activeTab}
-        onTabChange={id => setActiveTab(id as typeof activeTab)}
+        onTabChange={id => setPickedTab(id)}
         searchQuery={query}
         onSearchChange={setQuery}
       />
       <div
         role="tabpanel"
-        aria-label={TAB_LABELS[activeTab]}
+        aria-label={currentTab?.def.label ?? activeTab}
         style={{
           display: 'grid',
           gap: 4,
           gridTemplateColumns: 'minmax(0, 1fr)',
         }}
       >
-        {shown.length === 0 && (
+        {shownFields.length === 0 && (
           <p
             style={{
               margin: 0,
@@ -420,29 +358,33 @@ function InspectorTabs({
             No {activeTab} settings{query ? ` matching “${query}”` : ''}.
           </p>
         )}
-        {shown.map(([name, field]) => (
-          <FieldRow
-            key={name}
-            name={`${isRoot ? 'root' : (node?.id ?? 'root')}.${name}`}
-            field={field}
-            value={props[name]}
-            defaultValue={defaultProps?.[name]}
-            props={props}
-            device={device}
-            onChange={value => {
-              if (isRoot) {
-                store.updateRootProps({ [name]: value }, `root.${name}`);
-              } else if (node) {
-                store.updateProps(
-                  node.id,
-                  { [name]: value },
-                  `${node.id}.${name}`
-                );
-              }
-            }}
-            readOnly={readOnly}
-          />
-        ))}
+        {shownFields.map(([name, field]) => {
+          const access = fieldValueAccess(field, name);
+          const targetPath = access.path;
+          return (
+            <FieldRow
+              key={name}
+              name={`${isRoot ? 'root' : (node?.id ?? 'root')}.${name}`}
+              field={field}
+              props={props}
+              defaultProps={defaultProps}
+              device={device}
+              onChange={value => {
+                const patch = access.write(props, value);
+                if (isRoot) {
+                  store.updateRootProps(patch, `root.${targetPath}`);
+                } else if (node) {
+                  store.updateProps(
+                    node.id,
+                    patch,
+                    `${node.id}.${targetPath}`
+                  );
+                }
+              }}
+              readOnly={readOnly}
+            />
+          );
+        })}
       </div>
     </div>
   );

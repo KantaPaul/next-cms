@@ -8,6 +8,7 @@ export * from './dynamic-resolver';
 export * from './extend';
 export * from './fields';
 export * from './history';
+export * from './inspector-layout';
 export * from './loaders';
 export * from './normalize';
 export * from './patch';

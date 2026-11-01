@@ -25,6 +25,7 @@ import {
   Pin,
   PinOff,
   Redo2,
+  Sparkles,
   Undo2,
   X,
 } from 'lucide-react';
@@ -43,6 +44,7 @@ import {
   TemplateLibraryView,
   type TemplateItem,
 } from './template-library-view';
+import { AnimationView } from './animation-view';
 
 export { type TemplateItem };
 
@@ -52,7 +54,8 @@ export type SinglePanelViewMode =
   | 'templates'
   | 'settings'
   | 'page'
-  | 'history';
+  | 'history'
+  | 'animation';
 
 export interface SinglePanelProps {
   blocks: Record<string, InspectorBlock>;
@@ -78,6 +81,7 @@ const VIEW_LABELS: Record<Exclude<SinglePanelViewMode, 'settings'>, string> = {
   templates: 'Template Library',
   page: 'Page Settings',
   history: 'History',
+  animation: 'Animation',
 };
 
 const isMac =
@@ -139,6 +143,29 @@ export function SinglePanel({
     );
   }, [selectionKey]);
 
+  useEffect(() => {
+    const onInspect = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      if (detail?.id) {
+        store.select(detail.id);
+      }
+      setActiveMode('settings');
+    };
+    window.addEventListener('ne-inspect-block', onInspect);
+    return () => window.removeEventListener('ne-inspect-block', onInspect);
+  }, [store]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.altKey && (e.code === 'KeyT' || e.key === '†' || e.key === 't')) {
+        e.preventDefault();
+        setActiveMode(m => (m === 'animation' ? 'elements' : 'animation'));
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   const nodeLabel = (id: string) => {
     const node = doc.nodes[id];
     if (!node) return id;
@@ -196,6 +223,7 @@ export function SinglePanel({
     route('history', 'History', <History size={15} />),
     route('page', 'Page Settings', <FileText size={15} />),
     route('templates', 'Templates', <LayoutTemplate size={15} />),
+    route('animation', 'Animation', <Sparkles size={15} />, '⌥T'),
   ];
 
   const railButton =
@@ -373,6 +401,7 @@ export function SinglePanel({
         {activeMode === 'settings' && <SettingsView blocks={blocks} />}
         {activeMode === 'page' && <PageSettingsView />}
         {activeMode === 'history' && <HistoryView queue={queue} />}
+        {activeMode === 'animation' && <AnimationView />}
       </EditorPanel>
     </div>
   );

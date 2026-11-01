@@ -702,7 +702,7 @@ export function NewEditor({
     (name: string) => {
       setDocumentTitle(name);
       page.title = name;
-      store.commit({ label: `Rename to "${name}"` });
+      store.updateRootProps({ title: name });
     },
     [page, store]
   );
@@ -1091,6 +1091,11 @@ export function NewEditor({
       stateStyle={stateStyle}
       dynamicContext={dynamicContext}
       isPreview={isPreview}
+      previewAddress={
+        adapter.previewHref
+          ? adapter.previewHref.replace(/^https?:\/\//, '')
+          : `preview.site/${(page as any).slug || 'home'}`
+      }
     />
   );
   const rightPanelContent = (

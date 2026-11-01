@@ -35,6 +35,7 @@ export const FloatingLayersWindow: React.FC<FloatingLayersWindowProps> = ({
   const [size, setSize] = useState(defaultSize);
   const [isDragging, setIsDragging] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [dockTarget, setDockTarget] = useState<'left' | 'right' | null>(null);
 
   const windowRef = useRef<HTMLDivElement>(null);
 
@@ -65,16 +66,34 @@ export const FloatingLayersWindow: React.FC<FloatingLayersWindowProps> = ({
     const startY = event.clientY;
     const startPosX = pos.x;
     const startPosY = pos.y;
+    let currentDockTarget: 'left' | 'right' | null = null;
 
     const onMove = (move: PointerEvent) => {
-      setPos({
-        x: Math.max(10, startPosX + (move.clientX - startX)),
-        y: Math.max(10, startPosY + (move.clientY - startY)),
-      });
+      const currentX = Math.max(10, startPosX + (move.clientX - startX));
+      const currentY = Math.max(10, startPosY + (move.clientY - startY));
+      setPos({ x: currentX, y: currentY });
+
+      if (onDock && typeof window !== 'undefined') {
+        const screenWidth = window.innerWidth;
+        if (currentX < 140) {
+          currentDockTarget = 'left';
+          setDockTarget('left');
+        } else if (currentX + size.width > screenWidth - 140) {
+          currentDockTarget = 'right';
+          setDockTarget('right');
+        } else {
+          currentDockTarget = null;
+          setDockTarget(null);
+        }
+      }
     };
 
     const onUp = () => {
       setIsDragging(false);
+      if (currentDockTarget && onDock) {
+        onDock(currentDockTarget);
+      }
+      setDockTarget(null);
       handle.removeEventListener('pointermove', onMove);
       handle.removeEventListener('pointerup', onUp);
       handle.removeEventListener('pointercancel', onUp);
@@ -165,6 +184,25 @@ export const FloatingLayersWindow: React.FC<FloatingLayersWindowProps> = ({
           )}
         </div>
       </div>
+
+      {/* Dock Banner */}
+      {isDragging && onDock && (
+        <div
+          data-dock-banner
+          className={cn(
+            'px-2.5 py-1 text-[11px] font-semibold text-center transition-colors flex items-center justify-center gap-1.5 select-none',
+            dockTarget
+              ? 'bg-[var(--ne-primary)] text-white animate-pulse'
+              : 'bg-[var(--ne-surface-subtle)] text-[var(--ne-text-muted)] border-b border-[var(--ne-border)]'
+          )}
+        >
+          <span>
+            {dockTarget
+              ? `Release to dock ${dockTarget}`
+              : 'Drag to screen edge to dock'}
+          </span>
+        </div>
+      )}
 
       {/* Content */}
       {!isMinimized && (

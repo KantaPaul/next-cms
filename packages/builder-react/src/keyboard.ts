@@ -27,8 +27,8 @@ export type KeyAction =
   | 'settings-style'
   | 'settings-advanced';
 
-/** Inspector tabs the ⌥C / ⌥S / ⌥A shortcuts switch to. */
-export type SettingsTabId = 'content' | 'style' | 'advanced';
+/** Inspector tabs the ⌥C / ⌥S / ⌥A shortcuts switch to (or custom block tabs). */
+export type SettingsTabId = string;
 
 /**
  * Fired on the editor window when a settings-tab shortcut runs and no

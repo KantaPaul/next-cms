@@ -46,4 +46,6 @@ export * from './settings-view';
 export * from './page-settings-view';
 export * from './history-view';
 export * from './template-library-view';
+export * from './animation-view';
+export * from './json-io';
 export * from './single-panel';

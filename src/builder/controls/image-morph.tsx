@@ -1,7 +1,6 @@
 'use client';
 
 import { Choose, ColorInput, Group, SelectInput, Slider, Switcher, type ChooseOption } from './primitives';
-import { useInspectorTab } from './inspector-tab';
 import { MediaField } from '@/components/media/media-picker';
 import type { MediaItem } from '@/app/(admin)/dashboard/(shell)/media/_modules/media.service';
 import { extractSvgPath } from '../morph';
@@ -217,15 +216,9 @@ function StyleGroups({ value, onChange }: { value: MorphData; onChange: (value: 
 }
 
 export function ImageMorphField({ value, onChange, field }: Props) {
-  const tab = useInspectorTab();
-
   const content = <ContentGroups value={value} onChange={onChange} />;
   const style = <StyleGroups value={value} onChange={onChange} />;
 
-  if (tab === 'content') return <>{content}</>;
-  if (tab === 'style') return <>{style}</>;
-
-  // No tab (for example the global-block sidebar): every group is visible.
   return (
     <div className="space-y-2">
       {content}

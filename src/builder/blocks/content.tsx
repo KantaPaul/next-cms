@@ -5,6 +5,7 @@ import { sanitizeRichText } from '../sanitize';
 import { normalizeUrlValue, resolveLinkProps, type UrlValue } from '../style';
 import { BlockList } from './block-list';
 import { ContactFormClient } from './contact-form-client';
+import { el, type WithSection } from './element';
 import {
   MotionItem,
   Section,
@@ -22,8 +23,6 @@ export function CollectionItem(p: CollectionItemProps) {
   return <CollectionItemClient {...p} />;
 }
 
-type WithSection = { section?: SectionSettings; editing?: boolean };
-
 export type RichTextProps = WithSection & {
   content: string;
   width?: 'narrow' | 'normal' | 'wide';
@@ -32,6 +31,7 @@ export type RichTextProps = WithSection & {
 const WIDTH = { narrow: 'max-w-2xl', normal: 'max-w-3xl', wide: 'max-w-5xl' };
 
 export function RichText(p: RichTextProps) {
+  const contentEl = el(p, 'content', 's-prose prose prose-lg max-w-none');
   return (
     <Section
       section={p.section}
@@ -39,7 +39,8 @@ export function RichText(p: RichTextProps) {
       innerClassName={WIDTH[p.width ?? 'normal']}
     >
       <div
-        className="s-prose prose prose-lg max-w-none"
+        className={contentEl.className}
+        style={contentEl.style}
         dangerouslySetInnerHTML={{ __html: sanitizeRichText(p.content) }}
       />
     </Section>
@@ -93,23 +94,30 @@ export function ImageBlock(p: ImageProps) {
         }
       : undefined;
 
+  const imageEl = el(
+    p,
+    'image',
+    cn(
+      's-radius',
+      !dimStyle && 'w-full',
+      fit === 'contain'
+        ? 'object-contain'
+        : fit === 'fill'
+          ? 'object-fill'
+          : 'object-cover',
+      ASPECT[p.aspect ?? 'auto']
+    )
+  );
+  const captionEl = el(p, 'caption', 's-muted mt-3 text-center text-sm');
+
   const img = (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={p.url}
       alt={p.alt ?? ''}
       loading="lazy"
-      style={dimStyle}
-      className={cn(
-        's-radius',
-        !dimStyle && 'w-full',
-        fit === 'contain'
-          ? 'object-contain'
-          : fit === 'fill'
-            ? 'object-fill'
-            : 'object-cover',
-        ASPECT[p.aspect ?? 'auto']
-      )}
+      style={{ ...dimStyle, ...imageEl.style }}
+      className={imageEl.className}
     />
   );
 
@@ -126,7 +134,7 @@ export function ImageBlock(p: ImageProps) {
           img
         )}
         {p.caption && (
-          <figcaption className="s-muted mt-3 text-center text-sm">
+          <figcaption className={captionEl.className} style={captionEl.style}>
             {p.caption}
           </figcaption>
         )}
@@ -163,6 +171,7 @@ export function Gallery(p: GalleryProps) {
   const items = (p.items ?? []).filter(i => i.url);
   const cols = (p.columns ?? 3) as 2 | 3 | 4;
   const gap = p.gap ?? 'md';
+  const imageEl = el(p, 'image', 's-radius aspect-[4/3] w-full object-cover transition-transform duration-300 hover:scale-105');
 
   if (!items.length) {
     return p.editing ? (
@@ -198,10 +207,11 @@ export function Gallery(p: GalleryProps) {
               src={item.url}
               alt={item.alt ?? ''}
               loading="lazy"
-              className="s-radius aspect-square w-full object-cover"
+              className={imageEl.className}
+              style={imageEl.style}
             />
             {item.caption && (
-              <figcaption className="s-muted mt-2 text-center text-sm">
+              <figcaption className="s-muted mt-2 text-center text-xs">
                 {item.caption}
               </figcaption>
             )}

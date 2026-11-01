@@ -86,6 +86,12 @@ export type FieldOption = { label: string; value: string | number | boolean };
 type BaseField<P> = {
   label?: string;
   description?: string;
+  /** Explicit tab id: 'content' | 'style' | 'advanced', or a custom id. */
+  tab?: string;
+  /** Title of the collapsible section inside that tab. */
+  section?: string;
+  /** Dotted path into props, e.g. 'section.fill' or 'elements.title'. */
+  path?: string;
   /** Inspector section; fields with the same group are shown together (R784). */
   group?: string;
   /** Show the field only when this returns true; hidden values are kept (BLD-33). */

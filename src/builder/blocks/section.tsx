@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { cn } from '@/lib/utils/cn';
 import { MotionBoundary, MotionSection } from '../motion';
 import {
@@ -139,17 +139,22 @@ export function ButtonLink({
   href,
   children,
   variant = 'primary',
+  className,
+  style,
 }: {
   href?: UrlValue;
   children: ReactNode;
   variant?: 'primary' | 'secondary' | 'light' | 'ghost-light';
+  className?: string;
+  style?: CSSProperties;
 }) {
   if (!children) return null;
   const link = resolveLinkProps(href);
   return (
     <a
       href={link.href}
-      className={cn('s-btn', `s-btn-${variant}`)}
+      className={cn('s-btn', `s-btn-${variant}`, className)}
+      style={style}
       {...('target' in link ? { target: link.target, rel: link.rel } : {})}
     >
       {children}

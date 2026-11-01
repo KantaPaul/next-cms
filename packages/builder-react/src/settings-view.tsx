@@ -10,6 +10,13 @@ import {
   inheritedFrom,
   resetDeviceValue,
   valueForDevice,
+  layoutFields,
+  fieldChanged,
+  fieldSectionTitle,
+  fieldTabId,
+  DEFAULT_TABS,
+  type LayoutFieldsResult,
+  type LayoutSection,
 } from '@nextcms/builder-core';
 import {
   ChangedFilter,
@@ -19,8 +26,7 @@ import {
   SettingsSearch,
 } from '@nextcms/editor-ui';
 import { Copy, FileText, Paintbrush, Sliders, Trash2 } from 'lucide-react';
-import type React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useEditor, useEditorStore } from './context';
 import {
   DeviceProvider,
@@ -28,9 +34,12 @@ import {
   FieldControl,
   FieldTypesProvider,
   fieldControlId,
+  fieldValueAccess,
 } from './fields';
 import { DeviceSwitch, type InspectorBlock } from './inspector';
 import { SETTINGS_TAB_EVENT, type SettingsTabId } from './keyboard';
+
+export { fieldChanged, fieldSectionTitle, fieldTabId };
 
 export interface SettingsViewProps {
   blocks: Record<string, InspectorBlock>;
@@ -49,86 +58,10 @@ export interface SettingsViewProps {
   hideChangedFilter?: boolean;
 }
 
-export function fieldChanged(
-  field: FieldDef,
-  value: unknown,
-  defaultValue: unknown,
-  device: Device
-): boolean {
-  const shown = field.responsive ? valueForDevice(value, device) : value;
-  const defaultShown = field.responsive
-    ? valueForDevice(defaultValue, device)
-    : defaultValue;
-  if (shown === undefined && defaultShown === undefined) return false;
-  return JSON.stringify(shown) !== JSON.stringify(defaultShown);
-}
-
-/** Categorize a field into an accordion group. */
-function fieldSection(field: FieldDef): string {
-  const g = (field.group ?? '').toLowerCase();
-  if (g.includes('content') || g.includes('basic') || g.includes('main')) return 'Content';
-  if (g.includes('layout') || g.includes('spacing') || g.includes('dimension')) return 'Layout & Spacing';
-  if (g.includes('typo') || g.includes('font') || g.includes('text')) return 'Typography';
-  if (g.includes('border') || g.includes('corner') || g.includes('radius')) return 'Borders';
-  if (g.includes('back') || g.includes('color') || g.includes('shadow') || g.includes('effect')) return 'Background & Effects';
-  if (g.includes('advanced') || g.includes('meta')) return 'Advanced';
-
-  // Fallback by type
-  switch (field.type) {
-    case 'text':
-    case 'textarea':
-    case 'url':
-    case 'image':
-    case 'icon':
-    case 'media':
-      return 'Content';
-    case 'color':
-    case 'shadow':
-    case 'background':
-      return 'Background & Effects';
-    case 'typography':
-      return 'Typography';
-    case 'border':
-      return 'Borders';
-    case 'dimensions':
-    case 'flex':
-    case 'alignment':
-      return 'Layout & Spacing';
-    case 'easing':
-    case 'transition':
-      return 'Animation & Effects';
-    default:
-      return 'General';
-  }
-}
-
-const SETTINGS_TABS: { id: SettingsTabId; label: string; shortcut: string; icon: React.ReactNode }[] = [
-  { id: 'content', label: 'Content', shortcut: '⌥C', icon: <FileText size={13} /> },
-  { id: 'style', label: 'Style', shortcut: '⌥S', icon: <Paintbrush size={13} /> },
-  { id: 'advanced', label: 'Advanced', shortcut: '⌥A', icon: <Sliders size={13} /> },
-];
-
-/** Which tab a section lives in. */
-function sectionTab(section: string): SettingsTabId {
-  if (section === 'Content') return 'content';
-  if (section === 'Advanced' || section === 'Animation & Effects') return 'advanced';
-  return 'style';
-}
-
-export function settingsFieldTab(field: FieldDef): SettingsTabId {
-  return sectionTab(fieldSection(field));
-}
-
-export type SettingsSection = {
-  title: string;
-  fields: Array<[string, FieldDef]>;
-  changedCount: number;
-};
+export type SettingsSection = LayoutSection;
 
 /**
- * The visible sections for a block: fields hidden by `when` are dropped, then
- * the tab (ignored while searching), "Show only changed", and the query
- * (name, label, or description) narrow them down.
+ * Filter and lay out sections for a block using builder-core layoutFields.
  */
 export function filterSettingsFields({
   fields,
@@ -147,30 +80,22 @@ export function filterSettingsFields({
   changedOnly?: boolean;
   tab?: SettingsTabId;
 }): SettingsSection[] {
-  const q = query.trim().toLowerCase();
-  const sections = new Map<string, SettingsSection>();
-  for (const [name, field] of Object.entries(fields)) {
-    if (field.when && !field.when(props)) continue;
-    const section = fieldSection(field);
-    if (tab && !q && sectionTab(section) !== tab) continue;
-    const changed = fieldChanged(field, props[name], defaultProps[name], device);
-    if (changedOnly && !changed) continue;
-    if (
-      q &&
-      !name.toLowerCase().includes(q) &&
-      !(field.label ?? '').toLowerCase().includes(q) &&
-      !(field.description ?? '').toLowerCase().includes(q)
-    )
-      continue;
-    let entry = sections.get(section);
-    if (!entry) {
-      entry = { title: section, fields: [], changedCount: 0 };
-      sections.set(section, entry);
-    }
-    entry.fields.push([name, field]);
-    if (changed) entry.changedCount++;
+  const result = layoutFields({
+    fields,
+    props,
+    defaultProps,
+    device,
+    query,
+    changedOnly,
+  });
+  if (query.trim()) {
+    return result.tabs.flatMap(t => t.sections);
   }
-  return [...sections.values()];
+  if (tab) {
+    const matched = result.tabs.find(t => t.def.id === tab);
+    return matched ? matched.sections : [];
+  }
+  return result.tabs.flatMap(t => t.sections);
 }
 
 export function SettingsView({
@@ -199,60 +124,73 @@ export function SettingsView({
     onChangedOnlyChange?.(next);
   };
   const [pickedTab, setPickedTab] = useState<SettingsTabId | null>(null);
+  const [openSection, setOpenSection] = useState<string | null>(null);
 
   const block = node ? blocks[node.type] : null;
   const props = node ? node.props : {};
   const defaultProps = block?.defaultProps ?? {};
   const isLocked = !!node?.meta?.locked;
 
-  const tabsWithFields = useMemo(() => {
-    const present = new Set<SettingsTabId>();
-    for (const field of Object.values(block?.fields ?? {}))
-      present.add(settingsFieldTab(field));
-    return present;
-  }, [block]);
-  // Start on the first tab that has fields; a picked tab sticks across blocks.
-  const activeTab: SettingsTabId =
-    pickedTab ??
-    SETTINGS_TABS.find(t => tabsWithFields.has(t.id))?.id ??
-    'content';
+  // Lay out fields using the dynamic inspector layout engine
+  const layoutResult = useMemo<LayoutFieldsResult>(() => {
+    if (!block) return { tabs: [] };
+    return layoutFields({
+      fields: block.fields,
+      props,
+      defaultProps,
+      device,
+      tabs: block.tabs,
+      query: searchQuery,
+      changedOnly,
+    });
+  }, [block, props, defaultProps, device, searchQuery, changedOnly]);
 
-  // ⌥C / ⌥S / ⌥A from the editor keyboard (keyboard.ts).
+  const availableTabIds = useMemo(
+    () => layoutResult.tabs.map(t => t.def.id),
+    [layoutResult.tabs]
+  );
+
+  // The picked tab stays selected when you change blocks if the new block has it;
+  // otherwise the panel falls back to the first tab.
+  const activeTab: SettingsTabId =
+    pickedTab && availableTabIds.includes(pickedTab)
+      ? pickedTab
+      : availableTabIds[0] ?? 'content';
+
+  // ⌥C / ⌥S / ⌥A from the editor keyboard (keyboard.ts) - ignores tabs current block doesn't have.
   useEffect(() => {
     const onTab = (event: Event) => {
       const tab = (event as CustomEvent<SettingsTabId>).detail;
-      if (SETTINGS_TABS.some(t => t.id === tab)) setPickedTab(tab);
+      if (availableTabIds.includes(tab)) {
+        setPickedTab(tab);
+        setOpenSection(null);
+      }
     };
     window.addEventListener(SETTINGS_TAB_EVENT, onTab);
     return () => window.removeEventListener(SETTINGS_TAB_EVENT, onTab);
-  }, []);
+  }, [availableTabIds]);
 
-  const sections = useMemo(
-    () =>
-      block
-        ? filterSettingsFields({
-            fields: block.fields,
-            props,
-            defaultProps,
-            device,
-            query: searchQuery,
-            changedOnly,
-            tab: activeTab,
-          })
-        : [],
-    [block, props, defaultProps, device, searchQuery, changedOnly, activeTab]
-  );
+  const currentTab = layoutResult.tabs.find(t => t.def.id === activeTab);
+  const sections = searchQuery.trim()
+    ? layoutResult.tabs.flatMap(t => t.sections)
+    : currentTab?.sections ?? [];
 
-  const changedByTab = useMemo(() => {
-    const counts: Record<SettingsTabId, number> = { content: 0, style: 0, advanced: 0 };
-    for (const [name, field] of Object.entries(block?.fields ?? {})) {
-      if (fieldChanged(field, props[name], defaultProps[name], device))
-        counts[settingsFieldTab(field)]++;
-    }
-    return counts;
+  // Reset open section when activeTab or block changes
+  useEffect(() => {
+    setOpenSection(null);
+  }, [activeTab, selectedId]);
+
+  const totalChangedCount = useMemo(() => {
+    if (!block) return 0;
+    const all = layoutFields({
+      fields: block.fields,
+      props,
+      defaultProps,
+      device,
+      tabs: block.tabs,
+    });
+    return all.tabs.reduce((sum, t) => sum + t.changedCount, 0);
   }, [block, props, defaultProps, device]);
-  const totalChangedCount =
-    changedByTab.content + changedByTab.style + changedByTab.advanced;
 
   useEffect(() => {
     onChangedCountChange?.(totalChangedCount);
@@ -320,6 +258,21 @@ export function SettingsView({
     );
   }
 
+  const panelTabs = layoutResult.tabs.map(t => ({
+    id: t.def.id,
+    label: t.def.label,
+    shortcut: t.def.shortcut ?? '',
+    icon:
+      t.def.id === 'content' ? (
+        <FileText size={13} />
+      ) : t.def.id === 'style' ? (
+        <Paintbrush size={13} />
+      ) : t.def.id === 'advanced' ? (
+        <Sliders size={13} />
+      ) : undefined,
+    changed: t.changedCount > 0,
+  }));
+
   return (
     <FieldTypesProvider types={fieldTypes}>
       <DeviceProvider value={device}>
@@ -327,16 +280,18 @@ export function SettingsView({
           className={className}
           style={{ display: 'flex', flexDirection: 'column', height: '100%', font: 'var(--ne-text-body)' }}
         >
-          <PanelTabs
-            ariaLabel="Settings tabs"
-            variant="segmented"
-            activeTab={activeTab}
-            onChange={id => setPickedTab(id as SettingsTabId)}
-            tabs={SETTINGS_TABS.map(t => ({
-              ...t,
-              changed: changedByTab[t.id] > 0,
-            }))}
-          />
+          {panelTabs.length > 0 && (
+            <PanelTabs
+              ariaLabel="Settings tabs"
+              variant="segmented"
+              activeTab={activeTab}
+              onChange={id => {
+                setPickedTab(id as SettingsTabId);
+                setOpenSection(null);
+              }}
+              tabs={panelTabs}
+            />
+          )}
 
           {/* Search & Changed Filter */}
           <div
@@ -402,7 +357,7 @@ export function SettingsView({
             <DeviceSwitch />
           </div>
 
-          {/* Accordion Sections */}
+          {/* Accordion Sections: first section is open by default, others collapsed (Elementor style) */}
           <div style={{ flex: 1, overflow: 'auto', padding: '8px 12px' }} className="ne-scrollbar">
             {sections.length === 0 ? (
               <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--ne-text-muted)', margin: '24px 0' }}>
@@ -411,23 +366,36 @@ export function SettingsView({
                   : `No ${activeTab} settings for this block.`}
               </p>
             ) : (
-              sections.map(({ title: sectionTitle, fields, changedCount }) => {
+              sections.map(({ title: sectionTitle, fields, changedCount }, sectionIndex) => {
+                const isSearching = !!searchQuery.trim();
+                const isExpanded = isSearching
+                  ? true
+                  : openSection === null
+                    ? sectionIndex === 0
+                    : openSection === sectionTitle;
+
                 return (
                   <div key={sectionTitle} style={{ marginBottom: 8 }}>
                     <FieldGroup
                       title={sectionTitle}
                       changedCount={changedCount}
-                      // Searching opens every matching section.
-                      expanded={searchQuery.trim() ? true : undefined}
+                      expanded={isExpanded}
+                      onExpandedChange={next => {
+                        if (!isSearching) {
+                          setOpenSection(next ? sectionTitle : '');
+                        }
+                      }}
                     >
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 6 }}>
                         {fields.map(([name, field]) => {
-                          const val = props[name];
-                          const defVal = defaultProps[name];
+                          const access = fieldValueAccess(field, name);
+                          const val = access.read(props);
+                          const defVal = access.read(defaultProps);
                           const isChanged = fieldChanged(field, val, defVal, device);
                           const isResp = !!field.responsive;
                           const source = isResp ? inheritedFrom(val, device) : null;
                           const isContainer = field.type === 'list' || field.type === 'object';
+                          const targetPath = access.path;
 
                           return (
                             <FieldRowFrame
@@ -439,16 +407,17 @@ export function SettingsView({
                               onReset={
                                 isLocked || field.readOnly
                                   ? undefined
-                                  : () =>
+                                  : () => {
+                                      const nextVal = isResp
+                                        ? resetDeviceValue(val, device)
+                                        : defVal;
+                                      const patch = access.write(props, nextVal);
                                       store.updateProps(
                                         node.id,
-                                        {
-                                          [name]: isResp
-                                            ? resetDeviceValue(val, device)
-                                            : defVal,
-                                        },
-                                        `${node.id}.${name}`
-                                      )
+                                        patch,
+                                        `${node.id}.${targetPath}`
+                                      );
+                                    }
                               }
                               device={isResp ? device : undefined}
                               isInherited={!!source && source !== device}
@@ -460,13 +429,14 @@ export function SettingsView({
                                 field={field}
                                 value={val}
                                 props={props}
-                                onChange={next =>
+                                onChange={next => {
+                                  const patch = access.write(props, next);
                                   store.updateProps(
                                     node.id,
-                                    { [name]: next },
-                                    `${node.id}.${name}`
-                                  )
-                                }
+                                    patch,
+                                    `${node.id}.${targetPath}`
+                                  );
+                                }}
                                 readOnly={isLocked || field.readOnly}
                               />
                             </FieldRowFrame>

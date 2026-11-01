@@ -1,4 +1,4 @@
-import type React from 'react';
+import React from 'react';
 import { ChangedDot } from './ChangedDot';
 import { type DeviceType, DeviceValueBadge } from './DeviceValueBadge';
 import { ResetButton } from './ResetButton';
@@ -22,6 +22,8 @@ export interface FieldRowProps {
   adornment?: React.ReactNode;
   /** Shown under the control (helper or error text). */
   footer?: React.ReactNode;
+  /** Validation error message shown below the field. */
+  error?: React.ReactNode;
   /** Device badge click handler, e.g. to cycle devices. */
   onDeviceClick?: () => void;
 }
@@ -41,6 +43,7 @@ export const FieldRow: React.FC<FieldRowProps> = ({
   labelProps,
   adornment,
   footer,
+  error,
   onDeviceClick,
 }) => {
   const row = (
@@ -78,7 +81,12 @@ export const FieldRow: React.FC<FieldRowProps> = ({
       >
         {children}
       </div>
-      {description && layout === 'vertical' && (
+      {error && (
+        <p className="m-0 text-[11px] text-[var(--ne-danger,#ef4444)] font-medium">
+          {error}
+        </p>
+      )}
+      {description && !error && layout === 'vertical' && (
         <p className="m-0 text-[11px] text-[var(--ne-text-muted)]">
           {description}
         </p>

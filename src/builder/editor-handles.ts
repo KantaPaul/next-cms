@@ -84,7 +84,11 @@ const spacerHeight: ResizeHandle = {
 };
 
 /** Blocks whose definition has section settings, even when stored without them. */
-const hasSection = (type: string) => !!pageDefinitions[type]?.fields?.section;
+const hasSection = (type: string) => {
+  const fields = pageDefinitions[type]?.fields;
+  if (!fields) return false;
+  return 'section' in fields || 'section_background' in fields || 'section_layout' in fields;
+};
 
 export function cmsResizeHandles(node: BuilderNode): ResizeHandle[] {
   if (node.type === 'Spacer') return [spacerHeight, sectionWidth];

@@ -6,7 +6,7 @@
 import type { NodeId } from '@nextcms/builder-core';
 import { type LayerNode, LayersTree } from '@nextcms/editor-ui';
 import { Search } from 'lucide-react';
-import type React from 'react';
+import React from 'react';
 import { useMemo, useState } from 'react';
 import { useEditor, useEditorStore } from './context';
 import { layerNodes } from './layers';

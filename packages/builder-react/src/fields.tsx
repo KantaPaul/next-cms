@@ -12,6 +12,8 @@ import {
   type Device,
   type DynamicBinding,
   type FieldDef,
+  getPath,
+  setPath,
   inheritedFrom,
   resetDeviceValue,
   valueForDevice,
@@ -1331,6 +1333,60 @@ export function DynamicBindingField({
       </div>
     </div>
   );
+}
+
+export type FieldValueAccessor = {
+  path: string;
+  read: (props: Record<string, unknown> | undefined) => unknown;
+  write: (
+    props: Record<string, unknown> | undefined,
+    next: unknown
+  ) => Record<string, unknown>;
+};
+
+/**
+ * Access a field's value and build atomic patches for `store.updateProps`.
+ * Supports direct prop keys ('title') and dotted paths ('section.fill', 'elements.title.color').
+ */
+export function fieldValueAccess(
+  field: FieldDef,
+  name: string
+): FieldValueAccessor {
+  const targetPath = field.path ?? name;
+  return {
+    path: targetPath,
+    read(props) {
+      return getPath(props, targetPath);
+    },
+    write(props, next) {
+      if (!targetPath.includes('.')) {
+        if (
+          targetPath === 'section' &&
+          next &&
+          typeof next === 'object' &&
+          !Array.isArray(next)
+        ) {
+          const existing =
+            props?.section && typeof props.section === 'object'
+              ? (props.section as Record<string, unknown>)
+              : {};
+          return { section: { ...existing, ...(next as Record<string, unknown>) } };
+        }
+        return { [targetPath]: next };
+      }
+      const rootKey = targetPath.split('.')[0]!;
+      const rest = targetPath.slice(rootKey.length + 1);
+      const rootVal =
+        props?.[rootKey] &&
+        typeof props[rootKey] === 'object' &&
+        !Array.isArray(props[rootKey])
+          ? (props[rootKey] as Record<string, unknown>)
+          : {};
+      return {
+        [rootKey]: setPath(rootVal, rest, next),
+      };
+    },
+  };
 }
 
 /**
