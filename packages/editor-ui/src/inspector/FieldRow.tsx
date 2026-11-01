@@ -1,7 +1,7 @@
-import React from 'react';
+import type React from 'react';
 import { ChangedDot } from './ChangedDot';
+import { type DeviceType, DeviceValueBadge } from './DeviceValueBadge';
 import { ResetButton } from './ResetButton';
-import { DeviceValueBadge, DeviceType } from './DeviceValueBadge';
 
 export interface FieldRowProps {
   label: string;
@@ -35,7 +35,7 @@ export const FieldRow: React.FC<FieldRowProps> = ({
   isInherited,
   inheritedFrom,
   htmlFor,
-  layout = 'horizontal',
+  layout = 'vertical',
   children,
   className = '',
   labelProps,
@@ -50,7 +50,6 @@ export const FieldRow: React.FC<FieldRowProps> = ({
       <div
         className={`flex items-center gap-1.5 min-w-0 ${layout === 'horizontal' ? 'w-2/5 shrink-0' : 'w-full'}`}
       >
-        <ChangedDot changed={changed} />
         <label
           htmlFor={htmlFor}
           title={description || label}
@@ -59,6 +58,7 @@ export const FieldRow: React.FC<FieldRowProps> = ({
         >
           {label}
         </label>
+        <ChangedDot changed={changed} />
         {adornment}
         {device && (
           <DeviceValueBadge

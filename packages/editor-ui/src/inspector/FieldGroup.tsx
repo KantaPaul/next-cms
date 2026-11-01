@@ -84,7 +84,7 @@ export const FieldGroup: React.FC<FieldGroupProps> = ({
         </div>
       </div>
       <Collapsible.Content className="ne-motion-collapse">
-        <div className="space-y-1 pe-1 ps-5">{children}</div>
+        <div className="space-y-1">{children}</div>
       </Collapsible.Content>
     </Collapsible.Root>
   );

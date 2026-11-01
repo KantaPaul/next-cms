@@ -1,5 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
+import { BuilderOrNewEditor } from '@/app/(admin)/dashboard/(fullscreen)/_editor/builder-or-new-editor';
 import { pagesServices } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
+import { OtherSiteNotice } from '@/components/organisms/other-site-notice';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import { getCurrentUserAndTeamId } from '@/lib/auth';
@@ -7,8 +9,6 @@ import { metaObject } from '@/lib/utils/metadata';
 import { accessService } from '@/server/services/access.service';
 import { siteContext } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
-import { OtherSiteNotice } from '@/components/organisms/other-site-notice';
-import { BuilderOrNewEditor } from '@/app/(admin)/dashboard/(fullscreen)/_editor/builder-or-new-editor';
 
 export const metadata = metaObject('Visual builder');
 
