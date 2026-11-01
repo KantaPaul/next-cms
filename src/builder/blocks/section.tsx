@@ -61,10 +61,12 @@ export function Section({
     s.hideOnDesktop && (editing ? 'lg:opacity-30' : 'lg:hidden')
   );
   const styles = resolveSectionStyle(s);
+  const hasVideo = s.fill?.type === 'video' && Boolean(s.fill.videoUrl);
   const outer = cn(
     PADDING[s.paddingY ?? 'md'],
     !styles.hasFill && BACKGROUND[s.background ?? 'default'],
     styles.outerClasses,
+    hasVideo && 'relative overflow-hidden',
     hidden,
     className
   );
@@ -74,6 +76,20 @@ export function Section({
     innerClassName
   );
   const animation = resolveAnimation(s.animation);
+
+  const videoLayer = hasVideo ? (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        poster={s.fill?.videoFallback || undefined}
+        className="absolute min-w-full min-h-full w-auto h-auto object-cover top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+        src={s.fill?.videoUrl}
+      />
+    </div>
+  ) : null;
 
   if (animation) {
     return (
@@ -85,6 +101,7 @@ export function Section({
         innerClassName={inner}
         style={styles.style}
       >
+        {videoLayer}
         {children}
       </MotionSection>
     );
@@ -92,6 +109,7 @@ export function Section({
 
   return (
     <section id={s.anchor || undefined} className={outer} style={styles.style}>
+      {videoLayer}
       <div className={inner}>
         {hasItems ? <MotionBoundary>{children}</MotionBoundary> : children}
       </div>

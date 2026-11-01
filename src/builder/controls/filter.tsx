@@ -36,22 +36,35 @@ const ROWS: {
     unit: '%',
     fallback: 100,
   },
+  {
+    key: 'grayscale',
+    label: 'Grayscale',
+    min: 0,
+    max: 100,
+    unit: '%',
+    fallback: 0,
+  },
   { key: 'hue', label: 'Hue', min: 0, max: 360, unit: '°', fallback: 0 },
 ];
 
-/** CSS filter group: blur, brightness, contrast, saturation, hue. */
+/** CSS filter group: blur, brightness, contrast, saturation, grayscale, hue. */
 export function FilterControl({
   value,
   onChange,
+  exclude,
 }: {
   value: FilterSettings | undefined;
   onChange: (value: FilterSettings | undefined) => void;
+  exclude?: string[];
 }) {
   const f = value ?? {};
+  const visibleRows = exclude?.length
+    ? ROWS.filter(r => !exclude.includes(r.key))
+    : ROWS;
 
   return (
     <div className="space-y-3">
-      {ROWS.map(r => (
+      {visibleRows.map(r => (
         <Slider
           key={r.key}
           label={r.label}

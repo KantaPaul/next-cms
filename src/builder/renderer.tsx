@@ -127,6 +127,36 @@ function renderOptions(
   };
 }
 
+export function collectDocumentFontFamilies(doc: unknown): string[] {
+  const families = new Set<string>();
+  if (!doc || typeof doc !== 'object') return [];
+
+  function walk(val: unknown) {
+    if (!val || typeof val !== 'object') return;
+    if (Array.isArray(val)) {
+      for (const item of val) walk(item);
+      return;
+    }
+    const record = val as Record<string, unknown>;
+    if (typeof record.family === 'string' && record.family.trim()) {
+      families.add(record.family.trim());
+    }
+    if (
+      record.typography &&
+      typeof record.typography === 'object' &&
+      typeof (record.typography as any).family === 'string'
+    ) {
+      families.add((record.typography as any).family.trim());
+    }
+    for (const key of Object.keys(record)) {
+      walk(record[key]);
+    }
+  }
+
+  walk(doc);
+  return Array.from(families);
+}
+
 type RootProps = {
   maxWidth?: string;
   theme?: string;
@@ -140,10 +170,12 @@ type RootProps = {
 export function SiteRoot({
   rootProps,
   metadata = {},
+  fonts = [],
   children,
 }: {
   rootProps: RootProps;
   metadata?: RenderMetadata;
+  fonts?: string[];
   children: ReactNode;
 }): ReactNode {
   const tokens = resolveThemeTokens(metadata.themeTokens as never);
@@ -153,7 +185,7 @@ export function SiteRoot({
       : tokens.colorMode === 'dark'
         ? 'dark'
         : 'light';
-  const fontUrl = fontStylesheetUrl(tokens);
+  const fontUrl = fontStylesheetUrl(tokens, fonts);
   const editing = !!metadata.editing;
 
   const isChrome = Boolean(rootProps.style || rootProps.background);
@@ -220,8 +252,13 @@ export function BuilderRenderer({
   metadata?: RenderMetadata;
   kind?: RenderKind;
 }): ReactNode {
+  const documentFonts = collectDocumentFontFamilies(doc);
   return (
-    <SiteRoot rootProps={(doc.root?.props ?? {}) as RootProps} metadata={metadata}>
+    <SiteRoot
+      rootProps={(doc.root?.props ?? {}) as RootProps}
+      metadata={metadata}
+      fonts={documentFonts}
+    >
       {renderDocument(doc, renderOptions(metadata, kind))}
     </SiteRoot>
   );

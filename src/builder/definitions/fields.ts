@@ -5,12 +5,18 @@
  */
 
 import type { FieldDef, Fields } from '@nextcms/builder-core';
+import { createElement } from 'react';
 import { z } from 'zod';
 import type { SectionSettings } from '../blocks/section';
 import {
-  ElementPart,
+  type ElementPart,
   ElementStyleControl,
 } from '../controls/element-style';
+import {
+  GROUP_CONTROLS,
+  type GroupKind,
+  GroupShell,
+} from '../controls/groups';
 import {
   AttributesSectionControl,
   BackgroundSectionControl,
@@ -28,6 +34,178 @@ import type { UrlValue } from '../style';
 
 export const CONTENT = 'Content';
 export const STYLE = 'Style & layout';
+
+export interface GroupControlOptions<T = any> {
+  label: string;
+  path?: string;
+  exclude?: string[];
+  defaults?: Partial<T>;
+  popover?: boolean;
+  states?: ('normal' | 'hover')[];
+  tab?: string;
+  section?: string;
+}
+
+function renderGroupShell(
+  opts: GroupControlOptions<any>,
+  value: any,
+  onChange: (val: any) => void,
+  Component: any
+) {
+  return createElement(GroupShell as any, {
+    label: opts.label,
+    value,
+    onChange,
+    exclude: opts.exclude,
+    defaults: opts.defaults,
+    popover: opts.popover,
+    states: opts.states,
+    children: ({ value: childVal, onChange: childOnChange, exclude, state }: any) =>
+      createElement(Component, {
+        value: childVal,
+        onChange: childOnChange,
+        exclude,
+        state,
+      }),
+  });
+}
+
+/**
+ * Creates an Elementor-style group control field (typography, textStroke, textShadow,
+ * boxShadow, border, background, imageSize, cssFilter).
+ */
+export function groupControl<T = any>(
+  kind: GroupKind,
+  opts: GroupControlOptions<T>
+): FieldDef {
+  const Component = GROUP_CONTROLS[kind];
+
+  return {
+    type: 'custom',
+    label: opts.label,
+    tab: opts.tab ?? 'style',
+    section: opts.section ?? opts.label,
+    path: opts.path,
+    groupKind: kind,
+    exclude: opts.exclude,
+    defaults: opts.defaults,
+    popover: opts.popover,
+    states: opts.states,
+    render: (props: any) => {
+      const isSectionContainer =
+        props.value &&
+        typeof props.value === 'object' &&
+        ('paddingY' in props.value ||
+          'background' in props.value ||
+          ('fill' in props.value && kind === 'background') ||
+          ('border' in props.value && kind === 'border') ||
+          ('typography' in props.value && kind === 'typography') ||
+          ('filter' in props.value && kind === 'cssFilter'));
+
+      if (isSectionContainer) {
+        const s = props.value;
+        const setSection = props.onChange;
+
+        if (kind === 'background') {
+          return renderGroupShell(
+            opts,
+            opts.states?.includes('hover')
+              ? { normal: s.fill, hover: s.hover?.fill }
+              : s.fill,
+            val => {
+              if (
+                opts.states?.includes('hover') &&
+                val &&
+                typeof val === 'object' &&
+                ('normal' in val || 'hover' in val)
+              ) {
+                setSection({
+                  ...s,
+                  fill: (val as any).normal,
+                  hover: { ...(s.hover ?? {}), fill: (val as any).hover },
+                });
+              } else {
+                setSection({ ...s, fill: val });
+              }
+            },
+            Component
+          );
+        }
+
+        if (kind === 'border') {
+          return renderGroupShell(
+            opts,
+            opts.states?.includes('hover')
+              ? {
+                  normal: s.border,
+                  hover: s.hover?.borderColor
+                    ? { color: s.hover.borderColor }
+                    : undefined,
+                }
+              : s.border,
+            val => {
+              if (
+                opts.states?.includes('hover') &&
+                val &&
+                typeof val === 'object' &&
+                ('normal' in val || 'hover' in val)
+              ) {
+                setSection({
+                  ...s,
+                  border: (val as any).normal,
+                  hover: {
+                    ...(s.hover ?? {}),
+                    borderColor: (val as any).hover?.color,
+                  },
+                });
+              } else {
+                setSection({ ...s, border: val });
+              }
+            },
+            Component
+          );
+        }
+
+        if (kind === 'typography') {
+          return renderGroupShell(
+            opts,
+            s.typography,
+            typography => setSection({ ...s, typography }),
+            Component
+          );
+        }
+
+        if (kind === 'cssFilter') {
+          return renderGroupShell(
+            opts,
+            opts.states?.includes('hover')
+              ? { normal: s.filter, hover: s.hover?.filter }
+              : s.filter,
+            val => {
+              if (
+                opts.states?.includes('hover') &&
+                val &&
+                typeof val === 'object' &&
+                ('normal' in val || 'hover' in val)
+              ) {
+                setSection({
+                  ...s,
+                  filter: (val as any).normal,
+                  hover: { ...(s.hover ?? {}), filter: (val as any).hover },
+                });
+              } else {
+                setSection({ ...s, filter: val });
+              }
+            },
+            Component
+          );
+        }
+      }
+
+      return renderGroupShell(opts, props.value, props.onChange, Component);
+    },
+  };
+}
 
 export const urlField = (label: string): FieldDef => ({
   type: 'custom',
@@ -64,38 +242,33 @@ export const sectionField: FieldDef = {
 /** Split section controls into explicit Style & Advanced tabs and sections. */
 export function sectionControls(opts?: { omit?: string[] }): Fields {
   return {
-    section_background: {
-      type: 'custom',
+    section_background: groupControl('background', {
       label: 'Background',
       tab: 'style',
       section: 'Background',
       path: 'section',
-      render: BackgroundSectionControl,
-    },
-    section_border: {
-      type: 'custom',
+      states: ['normal', 'hover'],
+    }),
+    section_border: groupControl('border', {
       label: 'Border & Shadow',
       tab: 'style',
       section: 'Border',
       path: 'section',
-      render: BorderSectionControl,
-    },
-    section_typography: {
-      type: 'custom',
+      states: ['normal', 'hover'],
+    }),
+    section_typography: groupControl('typography', {
       label: 'Typography',
       tab: 'style',
       section: 'Typography',
       path: 'section',
-      render: TypographySectionControl,
-    },
-    section_filter: {
-      type: 'custom',
+    }),
+    section_filter: groupControl('cssFilter', {
       label: 'CSS Filters',
       tab: 'style',
       section: 'Filters',
       path: 'section.filter',
-      render: FilterSectionControl,
-    },
+      states: ['normal', 'hover'],
+    }),
     section_display: {
       type: 'custom',
       label: 'Height & Alignment',
@@ -143,6 +316,7 @@ export function sectionControls(opts?: { omit?: string[] }): Fields {
 export const TEXT_PARTS: readonly ElementPart[] = [
   'color',
   'typography',
+  'textStroke',
   'textShadow',
   'margin',
 ] as const;
@@ -150,6 +324,7 @@ export const TEXT_PARTS: readonly ElementPart[] = [
 export const BUTTON_PARTS: readonly ElementPart[] = [
   'color',
   'typography',
+  'textShadow',
   'background',
   'border',
   'shadow',
@@ -161,6 +336,22 @@ export const MEDIA_PARTS: readonly ElementPart[] = [
   'border',
   'shadow',
   'margin',
+  'imageSize',
+  'cssFilter',
+] as const;
+
+export const ALL_PARTS: readonly ElementPart[] = [
+  'color',
+  'typography',
+  'textStroke',
+  'textShadow',
+  'background',
+  'border',
+  'shadow',
+  'padding',
+  'margin',
+  'cssFilter',
+  'imageSize',
 ] as const;
 
 /** Creates a field definition for styling an inner block element. */

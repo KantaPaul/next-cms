@@ -2,7 +2,13 @@ import type { CSSProperties, ReactNode } from 'react';
 import { cn } from '@/lib/utils/cn';
 import type { BuilderItem } from '../data';
 import { sanitizeRichText } from '../sanitize';
-import { normalizeUrlValue, resolveLinkProps, type UrlValue } from '../style';
+import {
+  type ImageSize,
+  normalizeUrlValue,
+  resolveImageSize,
+  resolveLinkProps,
+  type UrlValue,
+} from '../style';
 import { BlockList } from './block-list';
 import { ContactFormClient } from './contact-form-client';
 import { el, type WithSection } from './element';
@@ -59,6 +65,7 @@ export type ImageProps = WithSection & {
   /** CSS height in px (optional). */
   imageHeight?: number;
   objectFit?: 'cover' | 'contain' | 'fill';
+  imageSize?: ImageSize;
 };
 
 const ASPECT = {
@@ -84,12 +91,17 @@ export function ImageBlock(p: ImageProps) {
     ) : null;
   }
 
+  const resolvedSize = resolveImageSize(p.imageSize, p.url);
+  const finalUrl = resolvedSize.src || p.url;
+  const effectiveWidth = resolvedSize.width ?? p.imageWidth;
+  const effectiveHeight = resolvedSize.height ?? p.imageHeight;
+
   const fit = p.objectFit ?? 'cover';
   const dimStyle =
-    p.imageWidth || p.imageHeight
+    effectiveWidth || effectiveHeight
       ? {
-          width: p.imageWidth ? `${p.imageWidth}px` : undefined,
-          height: p.imageHeight ? `${p.imageHeight}px` : undefined,
+          width: effectiveWidth ? `${effectiveWidth}px` : undefined,
+          height: effectiveHeight ? `${effectiveHeight}px` : undefined,
           maxWidth: '100%' as const,
         }
       : undefined;
@@ -113,9 +125,12 @@ export function ImageBlock(p: ImageProps) {
   const img = (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={p.url}
+      src={finalUrl}
       alt={p.alt ?? ''}
       loading="lazy"
+      width={effectiveWidth}
+      height={effectiveHeight}
+      sizes={resolvedSize.sizes}
       style={{ ...dimStyle, ...imageEl.style }}
       className={imageEl.className}
     />

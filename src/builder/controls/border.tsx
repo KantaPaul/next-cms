@@ -35,60 +35,71 @@ const radiusLimits = Object.fromEntries(
 export function BorderControl({
   value,
   onChange,
+  exclude,
 }: {
   value: BorderSettings | undefined;
   onChange: (value: BorderSettings | undefined) => void;
+  exclude?: string[];
 }) {
   const border = value ?? {};
   const style = border.style ?? 'none';
+  const isExcluded = (field: string) => exclude?.includes(field);
 
   return (
     <div className="space-y-3">
-      <Choose
-        label="Style"
-        value={style}
-        options={STYLES}
-        columns={3}
-        onChange={next =>
-          onChange(
-            next === 'none'
-              ? undefined
-              : {
-                  ...border,
-                  style: next,
-                  width: border.width ?? {
-                    desktop: { top: 1, right: 1, bottom: 1, left: 1 },
-                  },
-                }
-          )
-        }
-      />
+      {!isExcluded('style') && (
+        <Choose
+          label="Style"
+          value={style}
+          options={STYLES}
+          columns={3}
+          onChange={next =>
+            onChange(
+              next === 'none'
+                ? undefined
+                : {
+                    ...border,
+                    style: next,
+                    width: border.width ?? {
+                      desktop: { top: 1, right: 1, bottom: 1, left: 1 },
+                    },
+                  }
+            )
+          }
+        />
+      )}
       {style !== 'none' && (
         <>
-          <ColorPicker
-            label="Color"
-            value={border.color}
-            onChange={color => onChange({ ...border, color })}
-            placeholder="Theme border"
-          />
-          <Dimensions
-            label="Width"
-            value={border.width}
-            max={40}
-            onChange={width => onChange({ ...border, width })}
-          />
+          {!isExcluded('color') && (
+            <ColorPicker
+              label="Color"
+              value={border.color}
+              onChange={color => onChange({ ...border, color })}
+              placeholder="Theme border"
+            />
+          )}
+          {!isExcluded('width') && (
+            <Dimensions
+              label="Width"
+              value={border.width}
+              max={40}
+              onChange={width => onChange({ ...border, width })}
+            />
+          )}
         </>
       )}
-      <UnitSlider
-        label="Radius"
-        value={border.radius}
-        unit={border.radiusUnit}
-        units={RADIUS_UNITS}
-        limits={radiusLimits}
-        onChange={(radius, radiusUnit) =>
-          onChange({ ...border, radius, radiusUnit })
-        }
-      />
+      {!isExcluded('radius') && (
+        <UnitSlider
+          label="Radius"
+          value={border.radius}
+          unit={border.radiusUnit}
+          units={RADIUS_UNITS}
+          limits={radiusLimits}
+          onChange={(radius, radiusUnit) =>
+            onChange({ ...border, radius, radiusUnit })
+          }
+        />
+      )}
     </div>
   );
 }

@@ -2,7 +2,14 @@ import assert from 'node:assert';
 import { describe, it } from 'node:test';
 import { validateDocumentProps } from '@nextcms/builder-core';
 import { pageDefinitions } from '../definitions';
-import { safeUrlSchema } from '../schemas/style.schema';
+import {
+  fillSchema,
+  filterSchema,
+  imageSizeSchema,
+  safeUrlSchema,
+  textStrokeSchema,
+  typographySchema,
+} from '../schemas/style.schema';
 
 describe('Validation (style & content schemas)', () => {
   it('rejects javascript: and dangerous protocols in URLs', () => {
@@ -54,5 +61,88 @@ describe('Validation (style & content schemas)', () => {
 
     const issues = validateDocumentProps(invalidDoc as any, pageDefinitions);
     assert.ok(Object.keys(issues).some(k => k.startsWith('node1')));
+  });
+
+  describe('group control schemas', () => {
+    it('validates textStrokeSchema', () => {
+      assert.equal(
+        textStrokeSchema.safeParse({ width: 2, color: '#ff0000' }).success,
+        true
+      );
+      assert.equal(
+        textStrokeSchema.safeParse({
+          width: { desktop: 3, mobile: 1 },
+          color: 'rgba(0, 0, 0, 0.5)',
+        }).success,
+        true
+      );
+      assert.equal(textStrokeSchema.safeParse({ width: -5 }).success, false);
+    });
+
+    it('validates imageSizeSchema', () => {
+      assert.equal(
+        imageSizeSchema.safeParse({ size: 'thumbnail' }).success,
+        true
+      );
+      assert.equal(
+        imageSizeSchema.safeParse({ size: 'custom', width: 800, height: 600 }).success,
+        true
+      );
+      assert.equal(
+        imageSizeSchema.safeParse({ size: 'nonexistent' as any }).success,
+        false
+      );
+    });
+
+    it('validates filterSchema with grayscale', () => {
+      assert.equal(
+        filterSchema.safeParse({ grayscale: 50, blur: 2, contrast: 110 }).success,
+        true
+      );
+      assert.equal(
+        filterSchema.safeParse({ grayscale: 150 }).success,
+        false
+      );
+    });
+
+    it('validates typographySchema with numeric weight and word spacing', () => {
+      assert.equal(
+        typographySchema.safeParse({
+          fontWeight: 600,
+          family: 'Inter',
+          wordSpacing: { desktop: 2 },
+        }).success,
+        true
+      );
+      assert.equal(
+        typographySchema.safeParse({
+          weight: { desktop: 700, mobile: 400 },
+        }).success,
+        true
+      );
+      assert.equal(
+        typographySchema.safeParse({ fontWeight: 50 }).success,
+        false
+      );
+    });
+
+    it('validates fillSchema with video and gradient options', () => {
+      assert.equal(
+        fillSchema.safeParse({
+          type: 'video',
+          videoUrl: 'https://cdn.example.com/bg.mp4',
+          videoFallback: 'https://cdn.example.com/fallback.jpg',
+        }).success,
+        true
+      );
+      assert.equal(
+        fillSchema.safeParse({
+          type: 'gradient',
+          gradientType: 'radial',
+          gradientPosition: 'center center',
+        }).success,
+        true
+      );
+    });
   });
 });

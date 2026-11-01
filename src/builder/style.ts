@@ -1,4 +1,9 @@
 import type { CSSProperties } from 'react';
+import {
+  FONT_FAMILIES as CURATED_FONT_FAMILIES,
+  FONT_STACK as CURATED_FONT_STACK,
+  getFontStack,
+} from './fonts';
 
 /*
  * Section style and motion settings stored in page JSON.
@@ -49,7 +54,7 @@ export const SPACING_LIMITS: Record<
 };
 
 export type Fill = {
-  type?: 'color' | 'gradient' | 'image';
+  type?: 'color' | 'gradient' | 'image' | 'video';
   color?: string;
   colorDark?: string;
   from?: string;
@@ -58,14 +63,82 @@ export type Fill = {
   start?: number;
   end?: number;
   gradientType?: 'linear' | 'radial';
+  gradientPosition?: string;
   attachment?: 'scroll' | 'fixed';
   posX?: number;
   posY?: number;
   image?: string;
-  size?: 'cover' | 'contain' | 'auto';
-  position?: 'center' | 'top' | 'bottom' | 'left' | 'right';
+  size?: MaybeResponsive<string>;
+  position?: MaybeResponsive<string>;
   repeat?: 'no-repeat' | 'repeat' | 'repeat-x' | 'repeat-y';
+  videoUrl?: string;
+  videoFallback?: string;
 };
+
+export type ImageSizePreset = 'thumbnail' | 'medium' | 'large' | 'full' | 'custom';
+
+export type ImageSize = {
+  size?: ImageSizePreset;
+  width?: number;
+  height?: number;
+};
+
+export const IMAGE_SIZE_PRESETS: Record<
+  Exclude<ImageSizePreset, 'full' | 'custom'>,
+  { width: number; height: number }
+> = {
+  thumbnail: { width: 150, height: 150 },
+  medium: { width: 300, height: 300 },
+  large: { width: 1024, height: 1024 },
+};
+
+export function resolveImageSize(
+  imageSize?: ImageSize,
+  originalUrl?: string
+): {
+  width?: number;
+  height?: number;
+  src: string;
+  sizes?: string;
+} {
+  const src = originalUrl ?? '';
+  if (!imageSize || !imageSize.size || imageSize.size === 'full') {
+    return { src, width: undefined, height: undefined };
+  }
+
+  let width: number | undefined;
+  let height: number | undefined;
+
+  if (imageSize.size === 'custom') {
+    width = imageSize.width;
+    height = imageSize.height;
+  } else if (IMAGE_SIZE_PRESETS[imageSize.size]) {
+    width = IMAGE_SIZE_PRESETS[imageSize.size].width;
+    height = IMAGE_SIZE_PRESETS[imageSize.size].height;
+  }
+
+  let transformedSrc = src;
+  if (src && (width !== undefined || height !== undefined)) {
+    try {
+      const isRelative = src.startsWith('/') || !src.includes('://');
+      const url = new URL(src, 'http://localhost');
+      if (width !== undefined) url.searchParams.set('w', String(width));
+      if (height !== undefined) url.searchParams.set('h', String(height));
+      transformedSrc = isRelative ? `${url.pathname}${url.search}` : url.toString();
+    } catch {
+      transformedSrc = src;
+    }
+  }
+
+  const sizes = width ? `(max-width: ${width}px) 100vw, ${width}px` : undefined;
+
+  return {
+    width,
+    height,
+    src: transformedSrc,
+    sizes,
+  };
+}
 
 export type LengthUnit = 'px' | 'rem' | 'em' | '%' | 'vw';
 export const LENGTH_UNITS: readonly LengthUnit[] = [
@@ -130,7 +203,7 @@ export type TextShadowSettings = {
   blur?: number;
   color?: string;
 };
-export type TextStrokeSettings = { width?: number; color?: string };
+export type TextStrokeSettings = { width?: MaybeResponsive<number>; color?: string };
 export type HoverSettings = {
   fill?: Fill;
   textColor?: string;
@@ -138,6 +211,7 @@ export type HoverSettings = {
   opacity?: number;
   scale?: number;
   shadow?: ShadowSettings;
+  filter?: FilterSettings;
 };
 
 export type ElementHoverStyle = {
@@ -145,11 +219,13 @@ export type ElementHoverStyle = {
   fill?: Fill | string;
   borderColor?: string;
   shadow?: ShadowSettings;
+  filter?: FilterSettings;
 };
 
 export type ElementStyle = {
   color?: string;
   typography?: Typography;
+  textStroke?: TextStrokeSettings;
   textShadow?: TextShadowSettings;
   fill?: Fill | string;
   border?: BorderSettings;
@@ -158,15 +234,15 @@ export type ElementStyle = {
   paddingUnit?: SpacingUnit;
   margin?: Responsive<Sides>;
   marginUnit?: SpacingUnit;
+  filter?: FilterSettings;
+  imageSize?: ImageSize;
   hover?: ElementHoverStyle;
 };
 
-export const FONT_FAMILIES = [
-  'Inter',
-  'Plus Jakarta Sans',
-  'JetBrains Mono',
-  'System',
-] as const;
+export const FONT_FAMILIES = CURATED_FONT_FAMILIES;
+export const FONT_STACK = CURATED_FONT_STACK;
+export { getFontStack };
+
 export const TEXT_TRANSFORMS = [
   'none',
   'uppercase',
@@ -183,7 +259,7 @@ export const TEXT_DECORATIONS = [
 
 export type Typography = {
   size?: MaybeResponsive<'' | 'sm' | 'md' | 'lg' | 'xl'>;
-  weight?: MaybeResponsive<'' | 'regular' | 'medium' | 'bold'>;
+  weight?: MaybeResponsive<'' | 'regular' | 'medium' | 'bold' | number | string>;
   family?: string;
   fontStyle?: (typeof FONT_STYLES)[number];
   fontSize?: Responsive<number>;
@@ -577,11 +653,13 @@ export function formatFilter(f: FilterSettings | undefined): string | null {
   const brightness = clamp(f.brightness, 0, 200);
   const contrast = clamp(f.contrast, 0, 200);
   const saturate = clamp(f.saturate, 0, 200);
+  const grayscale = clamp(f.grayscale, 0, 100);
   const hue = clamp(f.hueRotate ?? f.hue, 0, 360);
   if (blur !== undefined) parts.push(`blur(${blur}px)`);
   if (brightness !== undefined) parts.push(`brightness(${brightness}%)`);
   if (contrast !== undefined) parts.push(`contrast(${contrast}%)`);
   if (saturate !== undefined) parts.push(`saturate(${saturate}%)`);
+  if (grayscale !== undefined) parts.push(`grayscale(${grayscale}%)`);
   if (hue !== undefined) parts.push(`hue-rotate(${hue}deg)`);
   return parts.length ? parts.join(' ') : null;
 }
@@ -694,7 +772,7 @@ function responsiveLength(
   return any;
 }
 
-function fillValue(fill: Fill | undefined) {
+export function fillValue(fill: Fill | undefined) {
   if (!fill?.type) return null;
 
   if (fill.type === 'color') {
@@ -709,29 +787,40 @@ function fillValue(fill: Fill | undefined) {
     const angle = clamp(fill.angle, 0, 360) ?? 135;
     const start = clamp(fill.start, 0, 100) ?? 0;
     const end = clamp(fill.end, 0, 100) ?? 100;
+    const pos = fill.gradientPosition ? ` at ${fill.gradientPosition}` : '';
     const value =
       fill.gradientType === 'radial'
-        ? `radial-gradient(circle, ${from} ${start}%, ${to} ${end}%)`
+        ? `radial-gradient(circle${pos}, ${from} ${start}%, ${to} ${end}%)`
         : `linear-gradient(${angle}deg, ${from} ${start}%, ${to} ${end}%)`;
     return { light: value, dark: value };
   }
 
+  if (fill.type === 'video') {
+    if (fill.videoFallback) {
+      const fb = safeUrl(fill.videoFallback);
+      if (fb) return { light: `url("${fb}") center / cover no-repeat`, dark: `url("${fb}") center / cover no-repeat` };
+    }
+    return null;
+  }
+
   const url = safeUrl(fill.image);
   if (!url) return null;
+  const rawSize = typeof fill.size === 'string' ? fill.size : (fill.size?.desktop ?? 'cover');
   const size =
-    pick(fill.size, ['cover', 'contain', 'auto'] as const) ?? 'cover';
+    pick(rawSize, ['cover', 'contain', 'auto'] as const) ?? (rawSize || 'cover');
   const posX = clamp(fill.posX, 0, 100);
   const posY = clamp(fill.posY, 0, 100);
+  const rawPos = typeof fill.position === 'string' ? fill.position : (fill.position?.desktop ?? 'center');
   const position =
     posX !== undefined || posY !== undefined
       ? `${posX ?? 50}% ${posY ?? 50}%`
-      : (pick(fill.position, [
+      : (pick(rawPos, [
           'center',
           'top',
           'bottom',
           'left',
           'right',
-        ] as const) ?? 'center');
+        ] as const) ?? (rawPos || 'center'));
   const attachment =
     pick(fill.attachment, ['scroll', 'fixed'] as const) ?? 'scroll';
   const repeat =
@@ -746,13 +835,19 @@ function fillValue(fill: Fill | undefined) {
 }
 
 const SHADOW = { none: '', sm: 'shadow-sm', md: 'shadow-md', lg: 'shadow-xl' };
-const FONT_STACK: Record<(typeof FONT_FAMILIES)[number], string> = {
-  Inter: "'Inter', ui-sans-serif, system-ui, sans-serif",
-  'Plus Jakarta Sans':
-    "'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif",
-  'JetBrains Mono': "'JetBrains Mono', ui-monospace, monospace",
-  System: 'ui-sans-serif, system-ui, -apple-system, sans-serif',
-};
+
+export function resolveFontWeight(val: unknown): string | undefined {
+  if (val === undefined || val === null || val === '') return undefined;
+  if (typeof val === 'number') {
+    if (val >= 100 && val <= 900) return String(Math.round(val));
+    return undefined;
+  }
+  const s = String(val).trim().toLowerCase();
+  if (FONT_WEIGHT_MAP[s]) return FONT_WEIGHT_MAP[s];
+  const num = parseInt(s, 10);
+  if (!Number.isNaN(num) && num >= 100 && num <= 900) return String(num);
+  return undefined;
+}
 const FONT_SIZE_REM: Record<string, string> = {
   sm: '0.875rem',
   md: '1rem',
@@ -880,11 +975,11 @@ export function resolveSectionStyle(
   )
     outerClasses.push('s-ws');
 
-  const family = pick(ty?.family, FONT_FAMILIES);
+  const family = ty?.family;
 
   if (family) {
     outerClasses.push('s-ff');
-    style['--s-ff'] = FONT_STACK[family];
+    style['--s-ff'] = getFontStack(family);
   }
 
   const transform = pick(ty?.transform, TEXT_TRANSFORMS);
@@ -903,22 +998,54 @@ export function resolveSectionStyle(
     style['--s-tsh'] = textShadow;
   }
 
-  const hasWeight = DEVICES.some(
-    d =>
-      resolveResponsive(s.typography?.weight, d, x =>
-        pick(x, ['regular', 'medium', 'bold'] as const)
-      ) !== undefined
-  );
+  const hasWeight =
+    (typeof ty?.fontWeight === 'number' && ty.fontWeight >= 100 && ty.fontWeight <= 900) ||
+    DEVICES.some(
+      d => resolveResponsive(ty?.weight, d, resolveFontWeight) !== undefined
+    );
 
   if (hasWeight) {
     outerClasses.push('s-fw');
 
     for (const d of DEVICES) {
-      const resolved = resolveResponsive(s.typography?.weight, d, x =>
-        pick(x, ['regular', 'medium', 'bold'] as const)
-      );
+      const resolved =
+        resolveResponsive(ty?.weight, d, resolveFontWeight) ??
+        (ty?.fontWeight ? String(ty.fontWeight) : undefined);
       if (resolved)
-        style[`--s-fw-${DEVICE_SUFFIX[d]}`] = FONT_WEIGHT_MAP[resolved];
+        style[`--s-fw-${DEVICE_SUFFIX[d]}`] = String(resolved);
+    }
+  }
+
+  if (s.fill?.type === 'image') {
+    if (typeof s.fill.position === 'object' && s.fill.position !== null) {
+      outerClasses.push('s-bg-pos');
+      for (const d of DEVICES) {
+        const pos = resolveResponsive(
+          s.fill.position,
+          d,
+          v => (typeof v === 'string' && v.trim() ? v.trim() : undefined)
+        );
+        if (pos) style[`--s-bg-pos-${DEVICE_SUFFIX[d]}`] = pos;
+      }
+    }
+    if (typeof s.fill.size === 'object' && s.fill.size !== null) {
+      outerClasses.push('s-bg-size');
+      for (const d of DEVICES) {
+        const sz = resolveResponsive(
+          s.fill.size,
+          d,
+          v => (typeof v === 'string' && v.trim() ? v.trim() : undefined)
+        );
+        if (sz) style[`--s-bg-size-${DEVICE_SUFFIX[d]}`] = sz;
+      }
+    }
+    if (s.fill.attachment) {
+      outerClasses.push('s-bg-attach');
+      style['--s-bg-attach'] = s.fill.attachment;
+    }
+    if (s.fill.repeat) {
+      outerClasses.push('s-bg-repeat');
+      style['--s-bg-repeat'] = s.fill.repeat;
     }
   }
 
@@ -1057,6 +1184,45 @@ export function resolveSectionStyle(
           pick(x, ['start', 'center', 'end'] as const)
         ) ?? 'center';
       style[`--s-jc-${DEVICE_SUFFIX[d]}`] = JUSTIFY_MAP[resolved];
+    }
+  }
+
+  // Hover states on section: s-hc, s-hf, s-hb, s-hs, s-hfl
+  if (s.hover) {
+    const hColor = safeColor(s.hover.textColor);
+    if (hColor) {
+      outerClasses.push('s-hc');
+      style['--s-h-color'] = hColor;
+    }
+
+    if (s.hover.fill) {
+      const f = fillValue(s.hover.fill);
+      if (f) {
+        outerClasses.push('s-hf');
+        style['--s-h-fill'] = f.light;
+      }
+    }
+
+    const hBd = safeColor(s.hover.borderColor);
+    if (hBd) {
+      outerClasses.push('s-hb');
+      style['--s-h-bd'] = hBd;
+    }
+
+    if (s.hover.shadow) {
+      const hSh = formatShadow(s.hover.shadow);
+      if (hSh) {
+        outerClasses.push('s-hs');
+        style['--s-h-shadow'] = hSh;
+      }
+    }
+
+    if (s.hover.filter) {
+      const hFl = formatFilter(s.hover.filter);
+      if (hFl) {
+        outerClasses.push('s-hfl');
+        style['--s-h-filter'] = hFl;
+      }
     }
   }
 
@@ -1234,10 +1400,10 @@ export function resolveElementStyle(
       }
     }
 
-    const family = pick(ty.family, FONT_FAMILIES);
+    const family = ty.family;
     if (family) {
       classes.push('s-ff');
-      style['--s-ff'] = FONT_STACK[family];
+      style['--s-ff'] = getFontStack(family);
     }
 
     const transform = pick(ty.transform, TEXT_TRANSFORMS);
@@ -1247,20 +1413,58 @@ export function resolveElementStyle(
     const decoration = pick(ty.decoration, TEXT_DECORATIONS);
     if (decoration && decoration !== 'none') classes.push(`s-td-${decoration}`);
 
-    const hasWeight = DEVICES.some(
-      d =>
-        resolveResponsive(ty.weight, d, x =>
-          pick(x, ['regular', 'medium', 'bold'] as const)
-        ) !== undefined
-    );
+    const hasWeight =
+      (typeof ty.fontWeight === 'number' && ty.fontWeight >= 100 && ty.fontWeight <= 900) ||
+      DEVICES.some(
+        d => resolveResponsive(ty.weight, d, resolveFontWeight) !== undefined
+      );
     if (hasWeight) {
       classes.push('s-fw');
       for (const d of DEVICES) {
-        const resolved = resolveResponsive(ty.weight, d, x =>
-          pick(x, ['regular', 'medium', 'bold'] as const)
-        );
+        const resolved =
+          resolveResponsive(ty.weight, d, resolveFontWeight) ??
+          (ty.fontWeight ? String(ty.fontWeight) : undefined);
         if (resolved) {
-          style[`--s-fw-${DEVICE_SUFFIX[d]}`] = FONT_WEIGHT_MAP[resolved];
+          style[`--s-fw-${DEVICE_SUFFIX[d]}`] = String(resolved);
+        }
+      }
+    }
+  }
+
+  // Text Stroke
+  const textStroke = es.textStroke ?? ty?.textStroke;
+  if (textStroke) {
+    const color = safeColor(textStroke.color) ?? '#000000';
+    const hasStrokeWidth =
+      typeof textStroke.width === 'number' ||
+      (typeof textStroke.width === 'object' && textStroke.width !== null);
+    if (hasStrokeWidth || textStroke.color) {
+      classes.push('s-tst');
+      if (typeof textStroke.width === 'object' && textStroke.width !== null) {
+        for (const d of DEVICES) {
+          const w =
+            resolveResponsive(textStroke.width, d, v =>
+              typeof v === 'number' && Number.isFinite(v)
+                ? clamp(v, 0, 50)
+                : undefined
+            ) ?? 0;
+          style[`--s-tst-${DEVICE_SUFFIX[d]}`] = `${w}px ${color}`;
+        }
+        const desktopW =
+          resolveResponsive(textStroke.width, 'desktop', v =>
+            typeof v === 'number' && Number.isFinite(v)
+              ? clamp(v, 0, 50)
+              : undefined
+          ) ?? 0;
+        style['--s-tst'] = `${desktopW}px ${color}`;
+      } else {
+        const w =
+          typeof textStroke.width === 'number'
+            ? clamp(textStroke.width, 0, 50)
+            : 1;
+        style['--s-tst'] = `${w}px ${color}`;
+        for (const d of DEVICES) {
+          style[`--s-tst-${DEVICE_SUFFIX[d]}`] = `${w}px ${color}`;
         }
       }
     }
@@ -1271,6 +1475,27 @@ export function resolveElementStyle(
   if (textShadow) {
     classes.push('s-tsh');
     style['--s-tsh'] = textShadow;
+  }
+
+  // Filter (cssFilter)
+  const filterCss = formatFilter(es.filter);
+  if (filterCss) {
+    classes.push('s-filter');
+    style['--s-filter'] = filterCss;
+  }
+
+  // Image size
+  if (es.imageSize) {
+    const resolvedSize = resolveImageSize(es.imageSize);
+    if (resolvedSize.width !== undefined || resolvedSize.height !== undefined) {
+      classes.push('s-img-size');
+      if (resolvedSize.width !== undefined) {
+        style['--s-img-w'] = `${resolvedSize.width}px`;
+      }
+      if (resolvedSize.height !== undefined) {
+        style['--s-img-h'] = `${resolvedSize.height}px`;
+      }
+    }
   }
 
   // Border
@@ -1385,6 +1610,14 @@ export function resolveElementStyle(
       if (hSh) {
         classes.push('s-hs');
         style['--s-h-shadow'] = hSh;
+      }
+    }
+
+    if (es.hover.filter) {
+      const hFl = formatFilter(es.hover.filter);
+      if (hFl) {
+        classes.push('s-hfl');
+        style['--s-h-filter'] = hFl;
       }
     }
   }

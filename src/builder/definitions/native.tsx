@@ -7,6 +7,7 @@ import { z } from 'zod';
 import {
   sectionSettingsSchema,
   elementStyleSchema,
+  imageSizeSchema,
   safeUrlSchema,
 } from '../schemas/style.schema';
 import { VideoLibraryBlock } from '@/components/video/video-library';
@@ -90,6 +91,7 @@ import {
   STYLE,
   BUTTON_PARTS,
   elementStyle,
+  groupControl,
   MEDIA_PARTS,
   sectionControls,
   sectionField,
@@ -1076,6 +1078,7 @@ export const ImageNativeBlock = defineBlock({
   schema: z.object({
     section: sectionSettingsSchema.optional(),
     elements: z.record(elementStyleSchema).optional(),
+    imageSize: imageSizeSchema.optional(),
   }).passthrough(),
   render: ImageBlock,
   fields: {
@@ -1085,6 +1088,12 @@ export const ImageNativeBlock = defineBlock({
       type: 'custom',
       render: MediaUrlField,
     },
+    image_size: groupControl('imageSize', {
+      label: 'Image Resolution',
+      tab: 'content',
+      section: 'Image',
+      path: 'imageSize',
+    }),
     alt: { label: 'Alt text', group: CONTENT, type: 'text' },
     caption: { label: 'Caption', group: CONTENT, type: 'text' },
     aspect: {
@@ -1894,6 +1903,7 @@ export const PostTitleBlock = defineBlock({
         { label: 'Left', value: 'left' },
       ],
     },
+    title_style: elementStyle('title', 'Title Style', TEXT_PARTS),
     ...sectionControls(),
   },
   defaults: {
@@ -1933,6 +1943,7 @@ export const PostFeaturedImageBlock = defineBlock({
         { label: 'Original', value: 'auto' },
       ],
     },
+    image_style: elementStyle('image', 'Image Style', MEDIA_PARTS),
     ...sectionControls(),
   },
   defaults: {
@@ -2034,6 +2045,7 @@ export const PostContentBlock = defineBlock({
         { label: 'Wide', value: 'wide' },
       ],
     },
+    content_style: elementStyle('content', 'Content Style', TEXT_PARTS),
     ...sectionControls(),
   },
   defaults: {

@@ -27,6 +27,7 @@ import { ColorPicker } from './color-picker';
 import { DeviceToggles } from './device-row';
 import { Dimensions } from './dimensions';
 import { FilterControl } from './filter';
+import { GroupShell } from './groups/shell';
 import {
   Choose,
   ControlLabel,
@@ -75,19 +76,29 @@ export function BackgroundSectionControl({
       <StateTabs
         normal={
           <div className="space-y-3">
-            <BackgroundControl
+            <GroupShell
+              label="Background"
               value={s.fill}
               onChange={fill => onChange({ ...s, fill })}
-            />
+            >
+              {({ value: val, onChange: onValChange }) => (
+                <BackgroundControl value={val} onChange={onValChange} />
+              )}
+            </GroupShell>
           </div>
         }
         hover={
           <div className="space-y-3">
             <Description>Optional overrides applied on hover.</Description>
-            <BackgroundControl
+            <GroupShell
+              label="Background"
               value={hover.fill}
               onChange={fill => onChange({ ...s, hover: { ...hover, fill } })}
-            />
+            >
+              {({ value: val, onChange: onValChange }) => (
+                <BackgroundControl value={val} onChange={onValChange} />
+              )}
+            </GroupShell>
           </div>
         }
       />
@@ -110,14 +121,25 @@ export function BorderSectionControl({
       <StateTabs
         normal={
           <div className="space-y-3">
-            <BorderControl
+            <GroupShell
+              label="Border"
               value={s.border}
               onChange={border => onChange({ ...s, border })}
-            />
-            <ShadowControl
+            >
+              {({ value: val, onChange: onValChange }) => (
+                <BorderControl value={val} onChange={onValChange} />
+              )}
+            </GroupShell>
+            <GroupShell
+              label="Box Shadow"
+              popover
               value={s.shadow}
               onChange={shadow => onChange({ ...s, shadow })}
-            />
+            >
+              {({ value: val, onChange: onValChange }) => (
+                <ShadowControl value={val} onChange={onValChange} />
+              )}
+            </GroupShell>
           </div>
         }
         hover={
@@ -130,10 +152,16 @@ export function BorderSectionControl({
                 onChange({ ...s, hover: { ...hover, borderColor } })
               }
             />
-            <ShadowControl
+            <GroupShell
+              label="Box Shadow"
+              popover
               value={hover.shadow}
               onChange={shadow => onChange({ ...s, hover: { ...hover, shadow } })}
-            />
+            >
+              {({ value: val, onChange: onValChange }) => (
+                <ShadowControl value={val} onChange={onValChange} />
+              )}
+            </GroupShell>
           </div>
         }
       />
@@ -152,10 +180,16 @@ export function TypographySectionControl({
 
   return (
     <div className="space-y-3">
-      <TypographyControl
+      <GroupShell
+        label="Typography"
+        popover
         value={s.typography}
         onChange={typography => onChange({ ...s, typography })}
-      />
+      >
+        {({ value: val, onChange: onValChange }) => (
+          <TypographyControl value={val} onChange={onValChange} />
+        )}
+      </GroupShell>
       <ColorPicker
         label="Text color"
         value={s.textColor}
@@ -177,13 +211,19 @@ export function FilterSectionControl({
   const isSection = value && typeof value === 'object' && 'filter' in value;
 
   return (
-    <FilterControl
+    <GroupShell
+      label="CSS Filters"
+      popover
       value={filterVal}
       onChange={filter => {
         if (isSection) onChange({ ...value, filter });
         else onChange(filter);
       }}
-    />
+    >
+      {({ value: val, onChange: onValChange }) => (
+        <FilterControl value={val} onChange={onValChange} />
+      )}
+    </GroupShell>
   );
 }
 

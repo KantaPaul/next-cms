@@ -5,6 +5,7 @@ import { BackgroundControl } from './background';
 import { BorderControl } from './border';
 import { ColorPicker } from './color-picker';
 import { Dimensions } from './dimensions';
+import { GroupShell } from './groups/shell';
 import { Choose, Description, Group, UnitSlider } from './primitives';
 import { ShadowControl } from './shadow';
 
@@ -61,10 +62,15 @@ export function ChromeStyleField({
           onChange={background => set({ background })}
         />
         <div className="space-y-3 pt-2">
-          <BackgroundControl
+          <GroupShell
+            label="Background"
             value={s.fill}
             onChange={fill => set({ fill })}
-          />
+          >
+            {({ value: val, onChange: onValChange }) => (
+              <BackgroundControl value={val} onChange={onValChange} />
+            )}
+          </GroupShell>
           <ColorPicker
             label="Text color"
             value={s.textColor}
@@ -134,20 +140,31 @@ export function ChromeStyleField({
       {/* Border */}
       <Group title="Border">
         <div className="space-y-3">
-          <BorderControl
+          <GroupShell
+            label="Border"
             value={s.border}
             onChange={border => set({ border })}
-          />
+          >
+            {({ value: val, onChange: onValChange }) => (
+              <BorderControl value={val} onChange={onValChange} />
+            )}
+          </GroupShell>
         </div>
       </Group>
 
       {/* Shadow */}
       <Group title="Shadow">
         <div className="space-y-3">
-          <ShadowControl
+          <GroupShell
+            label="Box Shadow"
+            popover
             value={s.shadow}
             onChange={shadow => set({ shadow })}
-          />
+          >
+            {({ value: val, onChange: onValChange }) => (
+              <ShadowControl value={val} onChange={onValChange} />
+            )}
+          </GroupShell>
         </div>
       </Group>
 
@@ -158,12 +175,17 @@ export function ChromeStyleField({
             Overrides applied when the header is sticky and scrolled.
           </Description>
           <div className="space-y-3 pt-2">
-            <BackgroundControl
+            <GroupShell
+              label="Scrolled Background"
               value={s.scrolled?.fill}
               onChange={fill =>
                 set({ scrolled: { ...s.scrolled, fill } })
               }
-            />
+            >
+              {({ value: val, onChange: onValChange }) => (
+                <BackgroundControl value={val} onChange={onValChange} />
+              )}
+            </GroupShell>
             <ColorPicker
               label="Text color"
               value={s.scrolled?.textColor}

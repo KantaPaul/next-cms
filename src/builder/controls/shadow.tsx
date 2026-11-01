@@ -11,38 +11,9 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils/cn';
-import { clamp, type ShadowSettings, safeColor } from '../style';
+import { clamp, formatShadow, type ShadowSettings, safeColor } from '../style';
 import { ColorPicker } from './color-picker';
 import { Slider } from './primitives';
-
-function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
-  const h = hex.replace('#', '');
-  const full =
-    h.length === 3
-      ? h
-          .split('')
-          .map(c => c + c)
-          .join('')
-      : h.slice(0, 6);
-  if (!/^[0-9a-f]{6}$/i.test(full)) return null;
-  return {
-    r: parseInt(full.slice(0, 2), 16),
-    g: parseInt(full.slice(2, 4), 16),
-    b: parseInt(full.slice(4, 6), 16),
-  };
-}
-
-function formatShadow(shadow: ShadowSettings): string | null {
-  const x = clamp(shadow.x, -50, 50) ?? 0;
-  const y = clamp(shadow.y, -50, 50) ?? 0;
-  const blur = clamp(shadow.blur, 0, 100) ?? 0;
-  const spread = clamp(shadow.spread, -50, 50) ?? 0;
-  const opacity = clamp(shadow.opacity, 0, 1) ?? 1;
-  const color = safeColor(shadow.color) ?? '#000000';
-  const rgb = hexToRgb(color) ?? { r: 0, g: 0, b: 0 };
-  const colorWithAlpha = `rgb(${rgb.r} ${rgb.g} ${rgb.b} / ${opacity})`;
-  return `${shadow.inset ? 'inset ' : ''}${x}px ${y}px ${blur}px ${spread}px ${colorWithAlpha}`;
-}
 
 const DEFAULT_SHADOW: Required<ShadowSettings> = {
   x: 0,

@@ -174,8 +174,22 @@ export function themeStyle(
   return styles as CSSProperties;
 }
 
-export function fontStylesheetUrl(tokens?: Partial<ThemeTokens> | null) {
-  const font = resolveThemeTokens(tokens).fontFamily;
-  if (font === 'System') return null;
-  return `https://fonts.googleapis.com/css2?family=${font.replace(/ /g, '+')}:wght@400;500;600;700;800&display=swap`;
+import { buildGoogleFontsUrl, isGoogleFont } from './fonts';
+
+export function fontStylesheetUrl(
+  tokens?: Partial<ThemeTokens> | null,
+  additionalFamilies: string[] = []
+): string | null {
+  const themeFont = resolveThemeTokens(tokens).fontFamily;
+  const allFonts: string[] = [];
+  if (themeFont && themeFont !== 'System') {
+    allFonts.push(themeFont);
+  }
+  for (const f of additionalFamilies) {
+    if (f && f !== 'System' && isGoogleFont(f)) {
+      allFonts.push(f);
+    }
+  }
+
+  return buildGoogleFontsUrl(allFonts);
 }

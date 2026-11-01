@@ -15,6 +15,7 @@ import {
   pageRootFields,
   pageSchemas,
 } from '../definitions';
+import { groupControl, sectionControls } from '../definitions/fields';
 
 describe('page block definitions', () => {
   it('cover every native block', () => {
@@ -58,5 +59,45 @@ describe('page block definitions', () => {
     const alt = pageInspectorBlocks.Hero.fields.imageAlt;
     assert.equal(alt.when?.({ imageUrl: '' }), false);
     assert.equal(alt.when?.({ imageUrl: '/a.jpg' }), true);
+  });
+
+  it('configures groupControl with exclude, defaults, and popover', () => {
+    const field = groupControl('typography', {
+      label: 'Title Typography',
+      path: 'elements.title.typography',
+      exclude: ['wordSpacing'],
+      defaults: { fontSize: { desktop: 32 } },
+      popover: true,
+      states: ['normal', 'hover'],
+      tab: 'style',
+      section: 'Title',
+    });
+
+    assert.equal(field.type, 'custom');
+    assert.equal(field.label, 'Title Typography');
+    assert.equal(field.path, 'elements.title.typography');
+    assert.equal((field as any).groupKind, 'typography');
+    assert.deepEqual((field as any).exclude, ['wordSpacing']);
+    assert.deepEqual((field as any).defaults, { fontSize: { desktop: 32 } });
+    assert.equal((field as any).popover, true);
+    assert.deepEqual((field as any).states, ['normal', 'hover']);
+    assert.equal(typeof (field as any).render, 'function');
+  });
+
+  it('provides group controls for sectionControls', () => {
+    const sc = sectionControls() as Record<string, any>;
+    assert.equal(sc.section_typography.type, 'custom');
+    assert.equal(sc.section_typography.groupKind, 'typography');
+
+    assert.equal(sc.section_background.type, 'custom');
+    assert.equal(sc.section_background.groupKind, 'background');
+    assert.deepEqual(sc.section_background.states, ['normal', 'hover']);
+
+    assert.equal(sc.section_border.type, 'custom');
+    assert.equal(sc.section_border.groupKind, 'border');
+
+    assert.equal(sc.section_filter.type, 'custom');
+    assert.equal(sc.section_filter.groupKind, 'cssFilter');
+    assert.deepEqual(sc.section_filter.states, ['normal', 'hover']);
   });
 });

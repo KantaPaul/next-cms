@@ -83,7 +83,7 @@ export const shadowSchema = z.object({
 });
 
 export const fillSchema = z.object({
-  type: z.enum(['color', 'gradient', 'image']).optional(),
+  type: z.enum(['color', 'gradient', 'image', 'video']).optional(),
   color: colorSchema.optional(),
   colorDark: colorSchema.optional(),
   from: colorSchema.optional(),
@@ -92,13 +92,22 @@ export const fillSchema = z.object({
   start: z.number().min(0).max(100).optional(),
   end: z.number().min(0).max(100).optional(),
   gradientType: z.enum(['linear', 'radial']).optional(),
+  gradientPosition: z.string().optional(),
   attachment: z.enum(['scroll', 'fixed']).optional(),
   posX: z.number().min(0).max(100).optional(),
   posY: z.number().min(0).max(100).optional(),
   image: safeUrlSchema.optional(),
-  size: z.enum(['cover', 'contain', 'auto']).optional(),
-  position: z.enum(['center', 'top', 'bottom', 'left', 'right']).optional(),
+  size: z.union([z.enum(['cover', 'contain', 'auto']), z.string(), responsive(z.string())]).optional(),
+  position: z.union([z.enum(['center', 'top', 'bottom', 'left', 'right']), z.string(), responsive(z.string())]).optional(),
   repeat: z.enum(['no-repeat', 'repeat', 'repeat-x', 'repeat-y']).optional(),
+  videoUrl: safeUrlSchema.optional(),
+  videoFallback: safeUrlSchema.optional(),
+});
+
+export const imageSizeSchema = z.object({
+  size: z.enum(['thumbnail', 'medium', 'large', 'full', 'custom']).optional(),
+  width: z.number().min(1).max(5000).optional(),
+  height: z.number().min(1).max(5000).optional(),
 });
 
 export const borderSchema = z.object({
@@ -116,9 +125,14 @@ export const textShadowSchema = z.object({
   color: colorSchema.optional(),
 });
 
+export const textStrokeSchema = z.object({
+  width: responsive(z.number().min(0).max(50)).optional(),
+  color: colorSchema.optional(),
+});
+
 export const typographySchema = z.object({
   size: responsive(z.enum(['', 'sm', 'md', 'lg', 'xl'])).optional(),
-  weight: responsive(z.enum(['', 'regular', 'medium', 'bold'])).optional(),
+  weight: responsive(z.union([z.enum(['', 'regular', 'medium', 'bold']), z.number().min(100).max(900), z.string()])).optional(),
   family: z.string().optional(),
   fontStyle: z.enum(FONT_STYLES as any).optional(),
   fontSize: responsive(z.number().min(0).max(200)).optional(),
@@ -133,6 +147,7 @@ export const typographySchema = z.object({
   wordSpacing: responsive(z.number().min(-50).max(50)).optional(),
   wordSpacingUnit: lengthUnitSchema.optional(),
   textShadow: textShadowSchema.optional(),
+  textStroke: textStrokeSchema.optional(),
 });
 
 export const filterSchema = z.object({
@@ -176,11 +191,13 @@ export const elementHoverStyleSchema = z.object({
   fill: z.union([fillSchema, colorSchema]).optional(),
   borderColor: colorSchema.optional(),
   shadow: shadowSchema.optional(),
+  filter: filterSchema.optional(),
 });
 
 export const elementStyleSchema = z.object({
   color: colorSchema.optional(),
   typography: typographySchema.optional(),
+  textStroke: textStrokeSchema.optional(),
   textShadow: textShadowSchema.optional(),
   fill: z.union([fillSchema, colorSchema]).optional(),
   border: borderSchema.optional(),
@@ -189,6 +206,8 @@ export const elementStyleSchema = z.object({
   paddingUnit: spacingUnitSchema.optional(),
   margin: responsive(sidesSchema).optional(),
   marginUnit: spacingUnitSchema.optional(),
+  filter: filterSchema.optional(),
+  imageSize: imageSizeSchema.optional(),
   hover: elementHoverStyleSchema.optional(),
 });
 
@@ -218,6 +237,7 @@ export const sectionSettingsSchema = z.object({
       opacity: z.number().min(0).max(1).optional(),
       scale: z.number().min(0.5).max(1.5).optional(),
       shadow: shadowSchema.optional(),
+      filter: filterSchema.optional(),
     })
     .optional(),
   margin: responsive(sidesSchema).optional(),
