@@ -8,8 +8,11 @@ import {
 } from 'react';
 import {
   ArrowUp,
+  BookOpen,
   ChevronDown,
   ChevronUp,
+  FileText,
+  Loader2,
   Menu as MenuIcon,
   Moon,
   MoreVertical,
@@ -18,9 +21,11 @@ import {
   X,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils/cn';
 import { menuHref } from '@/components/site/menu-links';
 import type { MenuWithItems } from '@/server/services/public-site.service';
+import { liveSearch, type LiveSearchResultItem } from '@/server/actions/site-chrome.actions';
 
 /* =========================================================================
    MobileMenu Client Component
@@ -134,15 +139,13 @@ export function MobileMenuClient({
             {/* Optional Search */}
             {showSearch && (
               <div className="border-b border-steel-200 dark:border-dark-300 p-4">
-                <form action="/search" method="GET" className="relative">
-                  <input
-                    type="search"
-                    name="q"
-                    placeholder="Search..."
-                    className="w-full rounded-md border border-steel-300 bg-transparent py-2 pl-9 pr-3 text-sm placeholder:text-steel-400 focus:outline-none focus:ring-2 focus:ring-primary dark:border-dark-300"
-                  />
-                  <SearchIcon className="absolute left-2.5 top-2.5 size-4 text-steel-400" />
-                </form>
+                <SearchBoxClient
+                  mode="inline"
+                  placeholder="Search..."
+                  siteSlug={siteSlug}
+                  align="left"
+                  className="w-full"
+                />
               </div>
             )}
 
@@ -215,36 +218,259 @@ export function MobileMenuClient({
 export type SearchBoxClientProps = {
   mode?: 'inline' | 'icon-modal';
   placeholder?: string;
+  liveResults?: boolean;
+  align?: 'left' | 'right';
   siteSlug?: string;
+  language?: string;
+  className?: string;
 };
 
 export function SearchBoxClient({
   mode = 'inline',
   placeholder = 'Search...',
+  liveResults = true,
+  align = 'right',
   siteSlug,
+  language,
+  className,
 }: SearchBoxClientProps) {
+  const router = useRouter();
   const [modalOpen, setModalOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [hits, setHits] = useState<LiveSearchResultItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [showFlyout, setShowFlyout] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+
+  const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const searchPath = siteSlug ? `/${siteSlug}/search` : '/search';
+  const fullSearchUrl = `${searchPath}?q=${encodeURIComponent(query.trim())}`;
 
   useEffect(() => {
     if (modalOpen) {
       inputRef.current?.focus();
       const onKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') setModalOpen(false);
+        if (e.key === 'Escape') {
+          if (showFlyout) {
+            setShowFlyout(false);
+          } else {
+            setModalOpen(false);
+          }
+        }
       };
       window.addEventListener('keydown', onKeyDown);
       return () => window.removeEventListener('keydown', onKeyDown);
     }
-  }, [modalOpen]);
+  }, [modalOpen, showFlyout]);
 
-  const searchPath = siteSlug ? `/${siteSlug}/search` : '/search';
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setShowFlyout(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setQuery(val);
+    setActiveIndex(-1);
+
+    if (!liveResults) return;
+
+    if (val.trim().length < 2) {
+      setHits([]);
+      setShowFlyout(false);
+      setLoading(false);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      return;
+    }
+
+    setLoading(true);
+    setShowFlyout(true);
+
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(async () => {
+      try {
+        const results = await liveSearch({
+          query: val,
+          language,
+          limit: 6,
+        });
+        setHits(results);
+      } catch {
+        setHits([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 250);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showFlyout || (!hits.length && !loading)) {
+      return;
+    }
+
+    const totalItems = hits.length > 0 ? hits.length + 1 : 0;
+    if (totalItems === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex(prev => (prev + 1 < totalItems ? prev + 1 : 0));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex(prev => (prev - 1 >= 0 ? prev - 1 : totalItems - 1));
+    } else if (e.key === 'Enter') {
+      if (activeIndex >= 0 && activeIndex < hits.length) {
+        e.preventDefault();
+        const target = hits[activeIndex];
+        setShowFlyout(false);
+        if (mode === 'icon-modal') setModalOpen(false);
+        router.push(target.path);
+      } else if (activeIndex === hits.length) {
+        e.preventDefault();
+        setShowFlyout(false);
+        if (mode === 'icon-modal') setModalOpen(false);
+        router.push(fullSearchUrl);
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setShowFlyout(false);
+      setActiveIndex(-1);
+    }
+  };
+
+  const handleInputFocus = () => {
+    if (
+      liveResults &&
+      query.trim().length >= 2 &&
+      (hits.length > 0 || loading)
+    ) {
+      setShowFlyout(true);
+    }
+  };
+
+  const renderDropdownContent = () => {
+    if (!showFlyout || !liveResults || query.trim().length < 2) return null;
+
+    return (
+      <div
+        role="listbox"
+        aria-label="Search suggestions"
+        className={cn(
+          'overflow-hidden rounded-xl border border-steel-200 bg-[var(--site-bg)] p-1.5 shadow-2xl dark:border-dark-300',
+          mode === 'inline'
+            ? cn(
+                'absolute top-full mt-2 w-72 sm:w-80 md:w-96 max-w-[calc(100vw-2rem)] z-50',
+                align === 'right' ? 'right-0' : 'left-0'
+              )
+            : 'mt-3 w-full border-t border-steel-100 dark:border-dark-200 pt-3'
+        )}
+      >
+        {loading && hits.length === 0 ? (
+          <div className="flex items-center justify-center gap-2 py-4 text-xs text-steel-500">
+            <Loader2 className="size-4 animate-spin text-[var(--site-primary)]" />
+            <span>Searching...</span>
+          </div>
+        ) : hits.length === 0 ? (
+          <div className="py-4 text-center text-xs text-steel-500">
+            No matches for &ldquo;
+            <span className="font-medium text-steel-700 dark:text-steel-300">
+              {query}
+            </span>
+            &rdquo;
+          </div>
+        ) : (
+          <>
+            <div className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-steel-400">
+              Results
+            </div>
+            <ul className="flex flex-col gap-0.5">
+              {hits.map((hit, idx) => {
+                const isSelected = activeIndex === idx;
+                return (
+                  <li key={`${hit.kind}-${hit.path}`}>
+                    <Link
+                      href={hit.path}
+                      onClick={() => {
+                        setShowFlyout(false);
+                        if (mode === 'icon-modal') setModalOpen(false);
+                      }}
+                      className={cn(
+                        'flex items-start gap-2.5 rounded-lg px-2.5 py-2 text-xs transition-colors',
+                        isSelected
+                          ? 'bg-steel-100 text-[var(--site-primary)] dark:bg-dark-200'
+                          : 'hover:bg-steel-100 dark:hover:bg-dark-200 text-[var(--site-text)]'
+                      )}
+                    >
+                      <div className="mt-0.5 shrink-0 text-steel-400">
+                        {hit.kind === 'post' ? (
+                          <BookOpen className="size-4" />
+                        ) : (
+                          <FileText className="size-4" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="truncate font-medium">{hit.title}</span>
+                          <span className="shrink-0 rounded bg-steel-100 dark:bg-dark-300 px-1 py-0.5 text-[9px] uppercase tracking-wider font-semibold text-steel-500">
+                            {hit.kind}
+                          </span>
+                        </div>
+                        {hit.snippet && (
+                          <p className="mt-0.5 line-clamp-1 text-[11px] text-steel-400">
+                            {hit.snippet}
+                          </p>
+                        )}
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="mt-1 border-t border-steel-200 dark:border-dark-300 pt-1">
+              <Link
+                href={fullSearchUrl}
+                onClick={() => {
+                  setShowFlyout(false);
+                  if (mode === 'icon-modal') setModalOpen(false);
+                }}
+                className={cn(
+                  'block rounded-md px-2.5 py-1.5 text-center text-xs font-medium text-[var(--site-primary)] transition-colors',
+                  activeIndex === hits.length
+                    ? 'bg-steel-100 dark:bg-dark-200'
+                    : 'hover:bg-steel-50 dark:hover:bg-dark-200'
+                )}
+              >
+                View all results for &ldquo;{query}&rdquo; &rarr;
+              </Link>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
 
   if (mode === 'icon-modal') {
     return (
-      <div>
+      <div className={className}>
         <button
           type="button"
-          onClick={() => setModalOpen(true)}
+          onClick={() => {
+            setModalOpen(true);
+            setActiveIndex(-1);
+          }}
           aria-label="Open search"
           className="inline-flex items-center justify-center rounded-md p-2 text-steel-600 hover:bg-steel-100 dark:text-steel-400 dark:hover:bg-dark-200 transition-colors"
         >
@@ -255,26 +481,41 @@ export function SearchBoxClient({
           <div className="fixed inset-0 z-[110] flex items-start justify-center pt-20 px-4">
             <div
               className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-              onClick={() => setModalOpen(false)}
+              onClick={() => {
+                setModalOpen(false);
+                setShowFlyout(false);
+              }}
             />
-            <div className="relative z-10 w-full max-w-lg rounded-xl border border-steel-200 bg-[var(--site-bg)] p-4 shadow-2xl dark:border-dark-300">
+            <div
+              ref={containerRef}
+              className="relative z-10 w-full max-w-lg rounded-xl border border-steel-200 bg-[var(--site-bg)] p-4 shadow-2xl dark:border-dark-300"
+            >
               <form action={searchPath} method="GET" className="relative">
                 <SearchIcon className="absolute left-3 top-3 size-5 text-steel-400" />
                 <input
                   ref={inputRef}
                   type="search"
                   name="q"
+                  value={query}
+                  onChange={handleInputChange}
+                  onKeyDown={handleKeyDown}
+                  onFocus={handleInputFocus}
                   placeholder={placeholder}
                   className="w-full rounded-lg border border-steel-200 bg-transparent py-2.5 pl-11 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary dark:border-dark-300"
                 />
                 <button
                   type="button"
-                  onClick={() => setModalOpen(false)}
+                  onClick={() => {
+                    setModalOpen(false);
+                    setShowFlyout(false);
+                  }}
                   className="absolute right-2.5 top-2.5 rounded p-1 text-steel-400 hover:text-steel-600"
                 >
                   <X className="size-4" />
                 </button>
               </form>
+
+              {renderDropdownContent()}
             </div>
           </div>
         )}
@@ -283,15 +524,26 @@ export function SearchBoxClient({
   }
 
   return (
-    <form action={searchPath} method="GET" className="relative w-48 sm:w-64">
-      <SearchIcon className="absolute left-2.5 top-2.5 size-4 text-steel-400" />
-      <input
-        type="search"
-        name="q"
-        placeholder={placeholder}
-        className="w-full rounded-md border border-steel-200 bg-[var(--site-surface)] py-1.5 pl-8 pr-3 text-xs placeholder:text-steel-400 focus:outline-none focus:ring-1 focus:ring-primary dark:border-dark-300"
-      />
-    </form>
+    <div
+      ref={containerRef}
+      className={cn('relative', className || 'w-48 sm:w-64')}
+    >
+      <form action={searchPath} method="GET" className="relative w-full">
+        <SearchIcon className="absolute left-2.5 top-2.5 size-4 text-steel-400" />
+        <input
+          ref={inputRef}
+          type="search"
+          name="q"
+          value={query}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          onFocus={handleInputFocus}
+          placeholder={placeholder}
+          className="w-full rounded-md border border-steel-200 bg-[var(--site-surface)] py-1.5 pl-8 pr-3 text-xs placeholder:text-steel-400 focus:outline-none focus:ring-1 focus:ring-primary dark:border-dark-300"
+        />
+      </form>
+      {renderDropdownContent()}
+    </div>
   );
 }
 

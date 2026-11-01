@@ -129,17 +129,20 @@ export const searchIndex = {
     q,
     language,
     limit = 20,
+    siteId,
   }: {
     q: string;
     language?: string | null;
     limit?: number;
+    siteId?: string | null;
   }) => {
     const query = q.trim();
     if (!query) return [];
     const tsQuery = sql`plainto_tsquery('english', ${query})`;
+    const targetSiteId = siteId ?? (await siteContext.publicSite()).id;
     const filters = [
       sql`${searchDocuments.searchVector} @@ ${tsQuery}`,
-      eq(searchDocuments.siteId, (await siteContext.publicSite()).id),
+      eq(searchDocuments.siteId, targetSiteId),
       language ? eq(searchDocuments.language, language) : undefined,
     ];
     return db

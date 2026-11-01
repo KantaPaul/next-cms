@@ -125,7 +125,7 @@ export type FooterColumnsProps = {
   width?: 'boxed' | 'full';
   background?: 'default' | 'muted' | 'inverted' | 'primary';
   paddingY?: 'none' | 'sm' | 'md' | 'lg' | 'xl';
-  columns?: 1 | 2 | 3 | 4 | 5 | 6;
+  columns?: number;
   gap?: 'sm' | 'md' | 'lg' | 'xl';
   stackOn?: 'mobile' | 'tablet';
   col1?: SlotValue;

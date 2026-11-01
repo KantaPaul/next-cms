@@ -44,6 +44,7 @@ import {
   duplicateHeaderFooter,
   renameHeaderFooter,
 } from '../_modules/header-footer.actions';
+import { DisplayConditionsDialog } from './display-conditions-dialog';
 
 export function HeaderFooterList({
   items,
@@ -55,6 +56,7 @@ export function HeaderFooterList({
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'Header' | 'Footer'>('Header');
   const [renaming, setRenaming] = useState<HeaderFooterItem | null>(null);
+  const [conditionsItem, setConditionsItem] = useState<HeaderFooterItem | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -219,6 +221,10 @@ export function HeaderFooterList({
                               label="Edit in builder"
                             />
                             <ActionDropdownItem
+                              label="Display conditions"
+                              onClick={() => setConditionsItem(item)}
+                            />
+                            <ActionDropdownItem
                               label="Duplicate"
                               onClick={() => duplicate(item)}
                             />
@@ -256,6 +262,14 @@ export function HeaderFooterList({
           item={renaming}
           open={!!renaming}
           onOpenChange={open => !open && setRenaming(null)}
+        />
+      )}
+
+      {conditionsItem && (
+        <DisplayConditionsDialog
+          item={conditionsItem}
+          open={!!conditionsItem}
+          onOpenChange={open => !open && setConditionsItem(null)}
         />
       )}
     </div>

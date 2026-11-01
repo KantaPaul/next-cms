@@ -1047,6 +1047,163 @@ export function resolveSectionStyle(
   };
 }
 
+/* ---------- Chrome style (Header / Footer root settings) ---------- */
+
+export type ChromeStyle = {
+  background?: 'default' | 'muted' | 'primary' | 'dark';
+  fill?: Fill;
+  textColor?: string;
+  linkColor?: string;
+  linkHoverColor?: string;
+  spacing?: Responsive<Sides>;
+  spacingUnit?: SpacingUnit;
+  border?: BorderSettings;
+  shadow?: 'none' | 'sm' | 'md' | 'lg' | ShadowSettings;
+  minHeight?: Responsive<number>;
+  minHeightUnit?: 'px' | 'rem' | 'vh' | LengthUnit;
+  contentWidth?: 'full' | 'boxed';
+  maxWidth?: Responsive<number>;
+  maxWidthUnit?: 'px' | 'rem' | '%' | 'vw' | LengthUnit;
+  scrolled?: {
+    fill?: Fill;
+    textColor?: string;
+    linkColor?: string;
+  };
+  transparentTextColor?: string;
+};
+
+export type ResolvedChromeStyle = {
+  classes: string[];
+  style: CSSProperties;
+};
+
+export function resolveChromeStyle(
+  style?: ChromeStyle,
+  legacy?: { background?: string; paddingY?: string }
+): ResolvedChromeStyle {
+  if (!style && !legacy) {
+    return { classes: [], style: {} };
+  }
+
+  const effective: ChromeStyle = style ? { ...style } : {};
+
+  if (!effective.background && legacy?.background) {
+    const bg = legacy.background === 'inverted' ? 'dark' : legacy.background;
+    if (bg === 'default' || bg === 'muted' || bg === 'primary' || bg === 'dark') {
+      effective.background = bg;
+    }
+  }
+
+  if (!effective.spacing && legacy?.paddingY && legacy.paddingY !== 'none') {
+    const map: Record<string, number> = {
+      sm: 16,
+      md: 32,
+      lg: 64,
+      xl: 96,
+    };
+    const val = map[legacy.paddingY];
+    if (val !== undefined) {
+      effective.spacing = {
+        desktop: { top: val, bottom: val },
+        tablet: { top: val, bottom: val },
+        mobile: { top: val, bottom: val },
+      };
+      effective.spacingUnit = 'px';
+    }
+  }
+
+  const sectionSettings: SectionSettings = {
+    background: effective.background,
+    fill: effective.fill,
+    textColor: effective.textColor,
+    spacing: effective.spacing,
+    spacingUnit: effective.spacingUnit,
+    border: effective.border,
+    shadow: effective.shadow,
+  };
+
+  const base = resolveSectionStyle(sectionSettings);
+  const classes: string[] = [...base.outerClasses];
+  if (!base.hasFill && effective.background && effective.background !== 'default') {
+    classes.push(`s-section-${effective.background}`);
+  }
+  const vars: Record<string, string> = { ...(base.style as Record<string, string>) };
+
+  const linkColor = safeColor(effective.linkColor);
+  if (linkColor) {
+    classes.push('has-link-color');
+    vars['--chrome-link'] = linkColor;
+  }
+
+  const linkHoverColor = safeColor(effective.linkHoverColor);
+  if (linkHoverColor) {
+    classes.push('has-link-hover-color');
+    vars['--chrome-link-hover'] = linkHoverColor;
+  }
+
+  const scrolledFill = fillValue(effective.scrolled?.fill);
+  const scrolledFg = safeColor(effective.scrolled?.textColor);
+  const scrolledLink = safeColor(effective.scrolled?.linkColor);
+  if (scrolledFill || scrolledFg || scrolledLink) {
+    classes.push('has-scrolled-style');
+    if (scrolledFill) {
+      vars['--chrome-scrolled-fill'] = scrolledFill.light;
+      vars['--chrome-scrolled-fill-dark'] = scrolledFill.dark;
+    }
+    if (scrolledFg) {
+      vars['--chrome-scrolled-fg'] = scrolledFg;
+    }
+    if (scrolledLink) {
+      vars['--chrome-scrolled-link'] = scrolledLink;
+    }
+  }
+
+  const transparentFg = safeColor(effective.transparentTextColor);
+  if (transparentFg) {
+    classes.push('has-transparent-style');
+    vars['--chrome-transparent-fg'] = transparentFg;
+  }
+
+  if (effective.minHeight && typeof effective.minHeight === 'object') {
+    const mhUnit = pick(effective.minHeightUnit, ['px', 'rem', 'em', 'vh', 'vw'] as const) ?? 'px';
+    let anyMh = false;
+    for (const d of DEVICES) {
+      const val = resolveResponsive(effective.minHeight, d, v => (typeof v === 'number' && Number.isFinite(v) ? v : undefined));
+      if (val !== undefined && val >= 0) {
+        const clamped = clamp(val, 0, mhUnit === 'px' ? 2000 : 100);
+        if (clamped !== undefined) {
+          vars[`--s-mh-${DEVICE_SUFFIX[d]}`] = `${clamped}${mhUnit}`;
+          anyMh = true;
+        }
+      }
+    }
+    if (anyMh) {
+      classes.push('s-mh');
+    }
+  }
+
+  if (effective.contentWidth === 'boxed') {
+    classes.push('is-boxed');
+    if (effective.maxWidth && typeof effective.maxWidth === 'object') {
+      const mwUnit = pick(effective.maxWidthUnit, ['px', 'rem', '%', 'vw'] as const) ?? 'px';
+      for (const d of DEVICES) {
+        const val = resolveResponsive(effective.maxWidth, d, v => (typeof v === 'number' && Number.isFinite(v) ? v : undefined));
+        if (val !== undefined && val > 0) {
+          const clamped = clamp(val, 100, mwUnit === 'px' ? 3000 : 100);
+          if (clamped !== undefined) {
+            vars[`--chrome-max-width-${DEVICE_SUFFIX[d]}`] = `${clamped}${mwUnit}`;
+          }
+        }
+      }
+    }
+  }
+
+  return {
+    classes: Array.from(new Set(classes.filter(Boolean))),
+    style: vars as CSSProperties,
+  };
+}
+
 /* ---------- Container / flex / grid layout validation and resolution ----------
 
 Layout intent is stored as validated, unit-aware numbers and allow-listed

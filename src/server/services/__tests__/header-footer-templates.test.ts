@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { localizedSettings } from '../site-settings.service';
+import { liveSearch } from '@/server/actions/site-chrome.actions';
 
 describe('Header & Footer Templates Resolution (R484, R485)', () => {
   const baseSettings = {
@@ -233,5 +234,13 @@ describe('Header & Footer Templates Resolution (R484, R485)', () => {
     });
     assert.equal(resOverride.templateId, 'custom-h');
     assert.equal(resOverride.source, 'entity-override');
+  });
+
+  it('liveSearch returns empty results for queries under 2 characters', async () => {
+    const emptyResult = await liveSearch({ query: '' });
+    assert.deepEqual(emptyResult, []);
+
+    const singleResult = await liveSearch({ query: '   x   ' });
+    assert.deepEqual(singleResult, []);
   });
 });

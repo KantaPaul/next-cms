@@ -144,7 +144,12 @@ export default async function SiteLayout({
 
         customHeader = await renderBuilderContent({
           content: headerBlock.content,
-          metadata: { themeTokens: settings.themeTokens, language },
+          metadata: {
+            themeTokens: settings.themeTokens,
+            language,
+            siteId: site.id,
+            siteSlug: siteSlugPrefix(site),
+          },
         });
       }
     } catch {
@@ -168,7 +173,12 @@ export default async function SiteLayout({
       ) {
         customFooter = await renderBuilderContent({
           content: footerBlock.content,
-          metadata: { themeTokens: settings.themeTokens, language },
+          metadata: {
+            themeTokens: settings.themeTokens,
+            language,
+            siteId: site.id,
+            siteSlug: siteSlugPrefix(site),
+          },
         });
       }
     } catch {

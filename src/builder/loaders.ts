@@ -202,6 +202,31 @@ const loadNavMenu: BlockLoader = async (props, ctx) => {
   }
 };
 
+const loadMobileMenu: BlockLoader = async (props, ctx) => {
+  const location = (props.menuLocation === 'footer' ? 'footer' : 'header') as
+    | 'header'
+    | 'footer';
+  try {
+    const { getSiteMenu } = await import('@/server/actions/site-chrome.actions');
+    const menu = await getSiteMenu({ location, language: ctx.language });
+    return {
+      menu,
+      siteSlug: ctx.siteSlug as string | undefined,
+    };
+  } catch {
+    return {
+      siteSlug: ctx.siteSlug as string | undefined,
+    };
+  }
+};
+
+const loadSearchBox: BlockLoader = async (_props, ctx) => {
+  return {
+    siteSlug: ctx.siteSlug as string | undefined,
+    language: ctx.language as string | undefined,
+  };
+};
+
 const loadFooterLinks: BlockLoader = async (props, ctx) => {
   if (props.source !== 'menu') return {};
   const location = (props.menuLocation === 'header' ? 'header' : 'footer') as
@@ -250,7 +275,8 @@ const registry = createLoaderRegistry<LoaderContext>(
     RelatedPosts: loadRelatedPosts,
     VideoLibrary: loadVideoLibrary,
     NavMenu: loadNavMenu,
-    MobileMenu: loadNavMenu,
+    MobileMenu: loadMobileMenu,
+    SearchBox: loadSearchBox,
     FooterLinks: loadFooterLinks,
     LegalLinks: loadFooterLinks,
     Logo: loadLogo,

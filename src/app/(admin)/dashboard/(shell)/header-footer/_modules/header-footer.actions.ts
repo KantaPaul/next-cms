@@ -7,6 +7,8 @@ import { accessProcedure } from '@/server/procedures/permission.procedure';
 import { revalidatePublicSite } from '@/lib/utils/revalidate-site';
 import { adminSiteId } from '@/server/services/site-context';
 import { headerFooterService } from './header-footer.service';
+import { templateResolverService } from '@/server/services/template-resolver.service';
+import { taxonomyService } from '@/app/(admin)/dashboard/(shell)/taxonomy/_modules/taxonomy.service';
 
 export const createHeaderFooter = accessProcedure
   .input(
@@ -70,3 +72,45 @@ export const deleteHeaderFooter = accessProcedure
     await revalidatePublicSite(siteId);
     return row;
   });
+
+export const getDisplayRules = accessProcedure
+  .input(z.object({ templateId: z.string().min(1) }))
+  .action(async ({ input }) => {
+    const siteId = await adminSiteId();
+    return templateResolverService.getRulesForTemplate(siteId, input.templateId);
+  });
+
+export const saveDisplayRules = accessProcedure
+  .input(
+    z.object({
+      templateId: z.string().min(1),
+      area: z.enum(['header', 'footer']),
+      rules: z.array(
+        z.object({
+          kind: z.enum(['post-type', 'category', 'tag', 'user-state', 'role']),
+          value: z.string().min(1),
+          priority: z.number().default(0),
+        })
+      ),
+    })
+  )
+  .action(async ({ input }) => {
+    const siteId = await adminSiteId();
+    const rows = await templateResolverService.saveRulesForTemplate(
+      siteId,
+      input.templateId,
+      input.area,
+      input.rules
+    );
+    revalidatePath(PAGES.DASHBOARD.HEADER_FOOTER);
+    await revalidatePublicSite(siteId);
+    return rows;
+  });
+
+export const getDisplayRulesTaxonomy = accessProcedure.action(async () => {
+  const [categories, tags] = await Promise.all([
+    taxonomyService.listCategories(),
+    taxonomyService.listTags(),
+  ]);
+  return { categories, tags };
+});

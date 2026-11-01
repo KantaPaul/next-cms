@@ -36,6 +36,7 @@ import { ContainerLayoutControl } from '../controls/container-layout';
 import { ImageMorphField } from '../controls/image-morph';
 import { PageTransitionField } from '../controls/page-transition';
 import { SectionField } from '../controls/section-inspector';
+import { HeaderStyleField, FooterStyleField } from '../controls/chrome-style';
 import { ContactFormOptionsField } from '../fields/contact-form-options-field';
 import { CategoryLockField, TagLockField, GlobalBlockSelectField, IconPickerField, MediaUrlField, RichTextField, UrlField } from '../fields/client-fields';
 import { CONTENT, STYLE, mediaField, sectionField, sectionSchema, urlField, urlSchema, iconField } from './fields';
@@ -949,6 +950,8 @@ export const SearchBoxBlock = defineBlock({
   schema: z.object({
     mode: z.enum(['inline', 'icon-modal']).default('inline'),
     placeholder: z.string().default('Search...'),
+    liveResults: z.boolean().default(true),
+    align: z.enum(['left', 'right']).default('right'),
   }),
   render: SearchBox,
   fields: {
@@ -964,10 +967,24 @@ export const SearchBoxBlock = defineBlock({
       label: 'Placeholder text',
       type: 'text',
     },
+    liveResults: {
+      label: 'Live search results dropdown',
+      type: 'toggle',
+    },
+    align: {
+      label: 'Dropdown alignment',
+      type: 'radio',
+      options: [
+        { label: 'Right aligned', value: 'right' },
+        { label: 'Left aligned', value: 'left' },
+      ],
+    },
   },
   defaults: {
     mode: 'inline',
     placeholder: 'Search...',
+    liveResults: true,
+    align: 'right',
   },
 });
 
@@ -1445,6 +1462,13 @@ export const PAGE_ROOT_FIELDS = {
 } as any;
 
 export const HEADER_ROOT_FIELDS = {
+  style: {
+    type: 'custom',
+    label: 'Header style',
+    group: STYLE,
+    render: HeaderStyleField,
+    responsive: true,
+  },
   sticky: {
     type: 'select',
     label: 'Sticky header',
@@ -1500,28 +1524,12 @@ export const HEADER_ROOT_FIELDS = {
 } as any;
 
 export const FOOTER_ROOT_FIELDS = {
-  background: {
-    type: 'select',
-    label: 'Background style',
-    group: 'Footer Style',
-    options: [
-      { label: 'Default', value: 'default' },
-      { label: 'Surface / Muted', value: 'muted' },
-      { label: 'Inverted', value: 'inverted' },
-      { label: 'Primary', value: 'primary' },
-    ],
-  },
-  paddingY: {
-    type: 'select',
-    label: 'Vertical padding',
-    group: 'Footer Style',
-    options: [
-      { label: 'None', value: 'none' },
-      { label: 'Small', value: 'sm' },
-      { label: 'Medium', value: 'md' },
-      { label: 'Large', value: 'lg' },
-      { label: 'Extra large', value: 'xl' },
-    ],
+  style: {
+    type: 'custom',
+    label: 'Footer style',
+    group: STYLE,
+    render: FooterStyleField,
+    responsive: true,
   },
 } as any;
 

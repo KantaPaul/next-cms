@@ -1,5 +1,6 @@
 import 'server-only';
 import { and, desc, eq } from 'drizzle-orm';
+import { createId } from '@paralleldrive/cuid2';
 import { db } from '@/db';
 import { templateRules } from '@/db/schema';
 
@@ -168,5 +169,64 @@ export const templateResolverService = {
       .orderBy(desc(templateRules.priority));
 
     return rows as TemplateRuleItem[];
+  },
+
+  getRulesForTemplate: async (
+    siteId: string,
+    templateId: string
+  ): Promise<TemplateRuleItem[]> => {
+    const rows = await db
+      .select({
+        id: templateRules.id,
+        templateId: templateRules.templateId,
+        area: templateRules.area,
+        kind: templateRules.kind,
+        value: templateRules.value,
+        priority: templateRules.priority,
+      })
+      .from(templateRules)
+      .where(
+        and(
+          eq(templateRules.siteId, siteId),
+          eq(templateRules.templateId, templateId)
+        )
+      )
+      .orderBy(desc(templateRules.priority));
+
+    return rows as TemplateRuleItem[];
+  },
+
+  saveRulesForTemplate: async (
+    siteId: string,
+    templateId: string,
+    area: 'header' | 'footer',
+    rules: Array<{
+      kind: 'post-type' | 'category' | 'tag' | 'user-state' | 'role';
+      value: string;
+      priority?: number;
+    }>
+  ) => {
+    await db
+      .delete(templateRules)
+      .where(
+        and(
+          eq(templateRules.siteId, siteId),
+          eq(templateRules.templateId, templateId)
+        )
+      );
+
+    if (rules.length === 0) return [];
+
+    const newRows = rules.map(r => ({
+      id: createId(),
+      siteId,
+      templateId,
+      area,
+      kind: r.kind,
+      value: r.value,
+      priority: r.priority ?? 0,
+    }));
+
+    return db.insert(templateRules).values(newRows).returning();
   },
 };

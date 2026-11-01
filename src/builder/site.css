@@ -739,8 +739,18 @@
   background-color: transparent !important;
 }
 
-.site-header-shell[data-transparent="true"] > div {
+.site-header-shell[data-transparent="true"] > div,
+.site-header-shell[data-transparent="true"] .site-chrome {
   background-color: transparent !important;
+}
+
+.site-header-shell[data-transparent="true"][data-scrolled="false"] .site-chrome {
+  background-color: transparent !important;
+  color: var(--chrome-transparent-fg, inherit);
+}
+
+.site-header-shell[data-transparent="true"][data-scrolled="false"] .site-chrome.has-transparent-style a {
+  color: var(--chrome-transparent-fg, inherit);
 }
 
 .site-header-shell[data-transparent="true"][data-scrolled="true"] {
@@ -750,6 +760,46 @@
 
 .site-header-shell[data-transparent="true"][data-scrolled="true"] > div {
   background-color: var(--site-bg) !important;
+}
+
+.site-header-shell[data-scrolled="true"] .site-chrome.has-scrolled-style {
+  background: var(--chrome-scrolled-fill, var(--site-bg)) !important;
+  color: var(--chrome-scrolled-fg, inherit);
+}
+
+.site-root[data-site-theme='dark'] .site-header-shell[data-scrolled="true"] .site-chrome.has-scrolled-style {
+  background: var(--chrome-scrolled-fill-dark, var(--chrome-scrolled-fill, var(--site-bg))) !important;
+}
+
+.site-header-shell[data-scrolled="true"] .site-chrome.has-scrolled-style a {
+  color: var(--chrome-scrolled-link, var(--chrome-scrolled-fg, inherit));
+}
+
+.site-root .site-chrome.has-link-color a {
+  color: var(--chrome-link);
+}
+
+.site-root .site-chrome.has-link-hover-color a:hover {
+  color: var(--chrome-link-hover);
+}
+
+.site-root .site-chrome.is-boxed {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: var(--chrome-max-width-m, 1280px);
+}
+
+@media (min-width: 768px) {
+  .site-root .site-chrome.is-boxed {
+    max-width: var(--chrome-max-width-t, var(--chrome-max-width-m, 1280px));
+  }
+}
+
+@media (min-width: 1024px) {
+  .site-root .site-chrome.is-boxed {
+    max-width: var(--chrome-max-width-d, var(--chrome-max-width-t, var(--chrome-max-width-m, 1280px)));
+  }
 }
 
 .site-header-shell[data-shadow="always"] {

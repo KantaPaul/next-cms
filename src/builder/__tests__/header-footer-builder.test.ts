@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { defaultProps, validateProps } from '@nextcms/builder-core';
 import { editorSetup, pageDefinitions } from '../definitions';
 import { normalizeGlobalContent } from '../normalize-global-content';
+import { resolveChromeStyle } from '../style';
 import { menuHref } from '@/components/site/menu-links';
 import {
   HEADER_STARTERS,
@@ -43,6 +44,8 @@ describe('Header & Footer builder palette and editor setup', () => {
     assert.ok(!setup.definitions.GlobalRef); // no nesting global blocks
 
     // Root fields
+    assert.ok(setup.rootFields.style);
+    assert.equal(setup.rootFields.style.group, 'Style & layout');
     assert.ok(setup.rootFields.sticky);
     assert.ok(setup.rootFields.transparent);
     assert.ok(setup.rootFields.shrinkOnScroll);
@@ -55,8 +58,8 @@ describe('Header & Footer builder palette and editor setup', () => {
     assert.equal(setup.groups[1].title, 'Header');
 
     // Root fields
-    assert.ok(setup.rootFields.background);
-    assert.ok(setup.rootFields.paddingY);
+    assert.ok(setup.rootFields.style);
+    assert.equal(setup.rootFields.style.group, 'Style & layout');
   });
 
   it('editorSetup(page) and editorSetup(global) palettes exclude header and footer blocks', () => {
@@ -213,5 +216,118 @@ describe('menuHref', () => {
     assert.equal(menuHref('/acme/about', 'acme'), '/acme/about');
     assert.equal(menuHref('/acme', 'acme'), '/acme');
     assert.equal(menuHref('https://external.com', 'acme'), 'https://external.com');
+  });
+});
+
+describe('SearchBox block and live search configuration', () => {
+  it('SearchBoxBlock defaults to inline mode with liveResults enabled and right alignment', () => {
+    const def = pageDefinitions.SearchBox;
+    assert.ok(def);
+    const defaults = defaultProps(def) as Record<string, unknown>;
+    assert.equal(defaults.mode, 'inline');
+    assert.equal(defaults.placeholder, 'Search...');
+    assert.equal(defaults.liveResults, true);
+    assert.equal(defaults.align, 'right');
+  });
+
+  it('validates custom props for SearchBox', () => {
+    const def = pageDefinitions.SearchBox;
+    const valid = validateProps(def, {
+      mode: 'icon-modal',
+      placeholder: 'Search documentation...',
+      liveResults: false,
+      align: 'left',
+    });
+    assert.equal(valid.ok, true);
+
+    const invalid = validateProps(def, {
+      mode: 'unsupported-mode' as any,
+    });
+    assert.equal(invalid.ok, false);
+  });
+});
+
+describe('resolveChromeStyle', () => {
+  it('returns empty result when no style or legacy input provided', () => {
+    const empty = resolveChromeStyle();
+    assert.deepEqual(empty.classes, []);
+    assert.deepEqual(empty.style, {});
+  });
+
+  it('emits vars only for valid values and rejects unsafe colors', () => {
+    const res = resolveChromeStyle({
+      textColor: '#112233',
+      linkColor: 'rgba(255, 0, 0, 0.8)',
+      linkHoverColor: 'javascript:alert(1)', // unsafe -> rejected
+      scrolled: {
+        textColor: 'invalid-color-value', // invalid -> rejected
+        linkColor: '#445566',
+      },
+    });
+
+    assert.ok(res.classes.includes('has-link-color'));
+    assert.ok(!res.classes.includes('has-link-hover-color'));
+    assert.ok(res.classes.includes('has-scrolled-style'));
+
+    const s = res.style as Record<string, string>;
+    assert.equal(s.color, '#112233');
+    assert.equal(s['--chrome-link'], 'rgba(255, 0, 0, 0.8)');
+    assert.equal(s['--chrome-link-hover'], undefined);
+    assert.equal(s['--chrome-scrolled-fg'], undefined);
+    assert.equal(s['--chrome-scrolled-link'], '#445566');
+  });
+
+  it('maps legacy footer background and paddingY', () => {
+    const resLegacy = resolveChromeStyle(undefined, {
+      background: 'inverted',
+      paddingY: 'lg',
+    });
+
+    assert.ok(resLegacy.classes.includes('s-section-dark'));
+    assert.ok(resLegacy.classes.includes('s-pt'));
+    assert.ok(resLegacy.classes.includes('s-pb'));
+    const s = resLegacy.style as Record<string, string>;
+    assert.equal(s['--s-pt-d'], '64px');
+    assert.equal(s['--s-pb-d'], '64px');
+  });
+
+  it('handles responsive minHeight and boxed contentWidth', () => {
+    const res = resolveChromeStyle({
+      contentWidth: 'boxed',
+      maxWidth: { desktop: 1200, tablet: 700, mobile: 360 },
+      maxWidthUnit: 'px',
+      minHeight: { desktop: 80, tablet: 60, mobile: 50 },
+      minHeightUnit: 'px',
+    });
+
+    assert.ok(res.classes.includes('is-boxed'));
+    assert.ok(res.classes.includes('s-mh'));
+    const s = res.style as Record<string, string>;
+    assert.equal(s['--chrome-max-width-d'], '1200px');
+    assert.equal(s['--chrome-max-width-t'], '700px');
+    assert.equal(s['--chrome-max-width-m'], '360px');
+    assert.equal(s['--s-mh-d'], '80px');
+    assert.equal(s['--s-mh-t'], '60px');
+    assert.equal(s['--s-mh-m'], '50px');
+  });
+
+  it('resolves header scrolled and transparent state properties', () => {
+    const res = resolveChromeStyle({
+      transparentTextColor: '#ffffff',
+      scrolled: {
+        fill: { type: 'color', color: '#111827', colorDark: '#030712' },
+        textColor: '#f9fafb',
+        linkColor: '#60a5fa',
+      },
+    });
+
+    assert.ok(res.classes.includes('has-transparent-style'));
+    assert.ok(res.classes.includes('has-scrolled-style'));
+    const s = res.style as Record<string, string>;
+    assert.equal(s['--chrome-transparent-fg'], '#ffffff');
+    assert.equal(s['--chrome-scrolled-fill'], '#111827');
+    assert.equal(s['--chrome-scrolled-fill-dark'], '#030712');
+    assert.equal(s['--chrome-scrolled-fg'], '#f9fafb');
+    assert.equal(s['--chrome-scrolled-link'], '#60a5fa');
   });
 });

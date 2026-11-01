@@ -32,6 +32,7 @@ import { type LoaderContext, resolveDocumentData } from './loaders';
 import { MotionScope } from './motion';
 import { type PostView, SAMPLE_POST } from './post-template';
 import { fontStylesheetUrl, resolveThemeTokens, themeStyle } from './theme';
+import { type ChromeStyle, resolveChromeStyle } from './style';
 
 /** `post` adds the post blocks, like `postBuilderConfig` does for Puck. */
 export type RenderKind = 'page' | 'post';
@@ -57,6 +58,7 @@ const ROOT_PADDING: Record<string, string> = {
   sm: 'py-4',
   md: 'py-8',
   lg: 'py-16',
+  xl: 'py-24',
 };
 
 /** Client blocks that receive resolved `panels` instead of `items` with slots. */
@@ -123,6 +125,8 @@ type RootProps = {
   theme?: string;
   paddingY?: string;
   pageTransition?: string;
+  background?: string;
+  style?: ChromeStyle;
 };
 
 /** The site root around page content: theme tokens, fonts, width, and page transition. */
@@ -145,11 +149,27 @@ export function SiteRoot({
   const fontUrl = fontStylesheetUrl(tokens);
   const editing = !!metadata.editing;
 
+  const isChrome = Boolean(rootProps.style || rootProps.background);
+  const chrome = isChrome
+    ? resolveChromeStyle(rootProps.style, {
+        background: rootProps.background,
+        paddingY: rootProps.paddingY,
+      })
+    : null;
+
+  const content = chrome ? (
+    <div className={cn('site-chrome', chrome.classes)} style={chrome.style}>
+      {children}
+    </div>
+  ) : (
+    children
+  );
+
   return (
     <div
       className={cn(
         'site-root min-h-full',
-        ROOT_PADDING[rootProps.paddingY ?? 'none'] ?? ''
+        ROOT_PADDING[isChrome ? 'none' : (rootProps.paddingY ?? 'none')] ?? ''
       )}
       data-site-theme={mode}
       style={{
@@ -173,7 +193,7 @@ export function SiteRoot({
         preview={!!metadata.motionPreview}
         transition={rootProps.pageTransition}
       >
-        {children}
+        {content}
       </MotionScope>
     </div>
   );

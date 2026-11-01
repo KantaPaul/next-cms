@@ -1,6 +1,11 @@
 export { AnimationControl } from './animation';
 export { BackgroundControl } from './background';
 export { BorderControl } from './border';
+export {
+  ChromeStyleField,
+  HeaderStyleField,
+  FooterStyleField,
+} from './chrome-style';
 export { ColorPicker, type ColorPickerProps } from './color-picker';
 export { DeviceRow, DeviceToggles, useCanvasDevice } from './device-row';
 export { Dimensions } from './dimensions';
