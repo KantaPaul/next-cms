@@ -110,8 +110,8 @@ export type BlockActionsFor = (node: BuilderNode) => BlockAction[];
 
 /** Canvas width per device; desktop fills the available space. */
 export const DEVICE_WIDTHS: Record<Device, number | null> = {
-  desktop: null,
-  tablet: 768,
+  desktop: 1400,
+  tablet: 1024,
   mobile: 375,
 };
 
@@ -119,7 +119,7 @@ export const DEVICE_WIDTHS: Record<Device, number | null> = {
  * Desktop never renders narrower than the desktop breakpoint, so the page's
  * media queries match the device being edited; small windows scroll instead.
  */
-export const DESKTOP_MIN_WIDTH = 1024;
+export const DESKTOP_MIN_WIDTH = 1400;
 
 export type EditorCanvasProps = {
   components: BlockComponents;

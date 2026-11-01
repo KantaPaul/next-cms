@@ -10,6 +10,7 @@
 import { ancestorIds } from '@nextcms/builder-core';
 import {
   EditorPanel,
+  FloatingLayersWindow,
   type PanelDockSide,
   PinnedBlockStrip,
   ToolRail,
@@ -17,6 +18,7 @@ import {
 } from '@nextcms/editor-ui';
 import {
   Command,
+  ExternalLink,
   FileText,
   History,
   LayoutGrid,
@@ -130,6 +132,7 @@ export function SinglePanel({
     () => defaultMode ?? (selection.length ? 'settings' : 'elements')
   );
   const [pinned, setPinned] = useState(false);
+  const [floatingLayers, setFloatingLayers] = useState(false);
 
   // Selecting a block opens its settings; clearing the selection while in
   // settings goes back to the library (the prototype's back-stack).
@@ -325,6 +328,16 @@ export function SinglePanel({
           <X size={13} />
         </button>
       </>
+    ) : activeMode === 'layers' && !floatingLayers ? (
+      <button
+        type="button"
+        onClick={() => setFloatingLayers(true)}
+        aria-label="Float layers window"
+        title="Float layers window"
+        className={headerIconButton}
+      >
+        <ExternalLink size={13} />
+      </button>
     ) : null;
 
   const breadcrumbs = isSettings ? (
@@ -389,7 +402,21 @@ export function SinglePanel({
         {activeMode === 'elements' && (
           <ElementsView categories={categories} drag={drag} />
         )}
-        {activeMode === 'layers' && <LayersView />}
+        {activeMode === 'layers' &&
+          (floatingLayers ? (
+            <div className="p-6 text-center text-xs text-[var(--ne-text-muted)] space-y-2">
+              <p>Layers window is currently floating.</p>
+              <button
+                type="button"
+                onClick={() => setFloatingLayers(false)}
+                className="text-xs text-[var(--ne-primary)] font-semibold hover:underline"
+              >
+                Dock window back here
+              </button>
+            </div>
+          ) : (
+            <LayersView />
+          ))}
         {activeMode === 'templates' && (
           <TemplateLibraryView
             templates={templates}
@@ -403,6 +430,23 @@ export function SinglePanel({
         {activeMode === 'history' && <HistoryView queue={queue} />}
         {activeMode === 'animation' && <AnimationView />}
       </EditorPanel>
+
+      {floatingLayers && (
+        <FloatingLayersWindow
+          open={floatingLayers}
+          title="Layers"
+          onClose={() => setFloatingLayers(false)}
+          onDock={side => {
+            setFloatingLayers(false);
+            onDockSideChange?.(side);
+            setActiveMode('layers');
+          }}
+        >
+          <div className="p-3 h-full overflow-auto ne-scrollbar">
+            <LayersView />
+          </div>
+        </FloatingLayersWindow>
+      )}
     </div>
   );
 }
