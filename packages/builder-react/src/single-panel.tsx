@@ -16,10 +16,10 @@ import {
   Clock,
   FileText,
   Layers,
+  LayoutTemplate,
   Settings,
 } from 'lucide-react';
-import type React from 'react';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useEditor } from './context';
 import type { DragController } from './drag';
 import { type BlockCategory, ElementsView } from './elements-view';
@@ -29,10 +29,15 @@ import { LayersView } from './layers-view';
 import { PageSettingsView } from './page-settings-view';
 import type { SaveQueue } from './save';
 import { SettingsView } from './settings-view';
+import {
+  TemplateLibraryView,
+  type TemplateItem,
+} from './template-library-view';
 
 export type SinglePanelViewMode =
   | 'elements'
   | 'layers'
+  | 'templates'
   | 'settings'
   | 'page'
   | 'history';
@@ -40,6 +45,10 @@ export type SinglePanelViewMode =
 export interface SinglePanelProps {
   blocks: Record<string, InspectorBlock>;
   categories?: BlockCategory[];
+  templates?: TemplateItem[];
+  onApplyTemplate?: (template: TemplateItem) => void;
+  onSaveTemplate?: (template: Omit<TemplateItem, 'id'>) => Promise<void> | void;
+  onDeleteTemplate?: (id: string) => Promise<void> | void;
   drag?: DragController;
   queue?: SaveQueue;
   defaultMode?: SinglePanelViewMode;
@@ -52,6 +61,10 @@ export interface SinglePanelProps {
 export function SinglePanel({
   blocks,
   categories,
+  templates,
+  onApplyTemplate,
+  onSaveTemplate,
+  onDeleteTemplate,
   drag,
   queue,
   defaultMode = 'settings',
@@ -70,6 +83,7 @@ export function SinglePanel({
     { id: 'settings', label: 'Settings', icon: <Settings size={13} /> },
     { id: 'layers', label: 'Layers', icon: <Layers size={13} /> },
     { id: 'elements', label: 'Elements', icon: <Boxes size={13} /> },
+    { id: 'templates', label: 'Templates', icon: <LayoutTemplate size={13} /> },
     { id: 'page', label: 'Page', icon: <FileText size={13} /> },
     { id: 'history', label: 'History', icon: <Clock size={13} /> },
   ];
@@ -97,6 +111,13 @@ export function SinglePanel({
       onClick: () => setActiveMode('elements'),
     },
     {
+      id: 'templates',
+      label: 'Template Library',
+      icon: <LayoutTemplate size={16} />,
+      active: activeMode === 'templates',
+      onClick: () => setActiveMode('templates'),
+    },
+    {
       id: 'page',
       label: 'Page Settings',
       icon: <FileText size={16} />,
@@ -118,6 +139,8 @@ export function SinglePanel({
         return 'Elements Library';
       case 'layers':
         return 'Layers Tree';
+      case 'templates':
+        return 'Template Library';
       case 'settings':
         return selectedNode
           ? (blocks[selectedNode.type]?.label ?? selectedNode.type)
@@ -151,6 +174,14 @@ export function SinglePanel({
           <ElementsView categories={categories} drag={drag} />
         )}
         {activeMode === 'layers' && <LayersView />}
+        {activeMode === 'templates' && (
+          <TemplateLibraryView
+            templates={templates}
+            onApplyTemplate={onApplyTemplate}
+            onSaveTemplate={onSaveTemplate}
+            onDeleteTemplate={onDeleteTemplate}
+          />
+        )}
         {activeMode === 'settings' && <SettingsView blocks={blocks} />}
         {activeMode === 'page' && <PageSettingsView />}
         {activeMode === 'history' && <HistoryView queue={queue} />}

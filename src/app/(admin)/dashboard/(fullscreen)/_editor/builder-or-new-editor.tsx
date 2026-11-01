@@ -15,6 +15,20 @@ function chromeFor(param: string | string[] | undefined): 'legacy' | 'shared' {
   return process.env.NEXT_PUBLIC_EDITOR_UI_SHELL === '1' ? 'shared' : 'legacy';
 }
 
+/**
+ * Which layout to show: `?layout=single` or `?layout=split`.
+ * Defaults to the single-panel layout unless `split` is explicitly requested.
+ */
+function layoutFor(param: string | string[] | undefined): 'single' | 'split' {
+  const value = Array.isArray(param) ? param[0] : param;
+  if (value === 'split') return 'split';
+  if (value === 'single') return 'single';
+  if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_USE_SINGLE_PANEL === '0') {
+    return 'split';
+  }
+  return 'single';
+}
+
 export async function BuilderOrNewEditor({
   searchParams,
   draftVersion,
@@ -36,6 +50,7 @@ export async function BuilderOrNewEditor({
       {...data}
       draftVersion={draftVersion}
       shell={chromeFor(params.shell)}
+      layout={layoutFor(params.layout)}
     />
   );
 }

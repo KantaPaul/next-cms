@@ -45,4 +45,5 @@ export * from './layers-view';
 export * from './settings-view';
 export * from './page-settings-view';
 export * from './history-view';
+export * from './template-library-view';
 export * from './single-panel';

@@ -70,6 +70,8 @@ import {
   setPreferencesStore,
   getStyleClassStore,
   captureStyles,
+  SinglePanel,
+  E12ControlsProvider,
 } from '@nextcms/builder-react';
 import { PreferencesPanel } from '@nextcms/builder-react';
 import {
@@ -81,6 +83,7 @@ import {
 import {
   ArrowLeft,
   CommandIcon,
+  Columns2,
   Eye,
   HelpCircle,
   History,
@@ -166,6 +169,8 @@ export type NewEditorProps = BuilderPageProps & {
   dynamicRefs?: DynamicRefOptions;
   /** Editor chrome: the current one, or the shared @nextcms/editor-ui shell (B15 E6). */
   shell?: 'legacy' | 'shared';
+  /** Layout mode: single dockable panel vs split two-panel layout. */
+  layout?: 'single' | 'split';
 };
 
 /** Errors come back from actions as values; turn them into thrown errors so the queue retries. */
@@ -608,6 +613,7 @@ export function NewEditor({
   issues = [],
   dynamicRefs = NO_DYNAMIC_REFS,
   shell = 'legacy',
+  layout = 'single',
 }: NewEditorProps) {
   const setup = useMemo(() => editorSetup(kind), [kind]);
   const adapter = useMemo(
@@ -686,6 +692,18 @@ export function NewEditor({
   const [frameWindow, setFrameWindow] = useState<Window | null>(null);
   const [panel, setPanel] = useState<'blocks' | 'layers'>('blocks');
   const [focusMode, setFocusMode] = useState(false);
+  const [singlePanelSide, setSinglePanelSide] = useState<'left' | 'right'>('right');
+  const [currentLayout, setCurrentLayout] = useState<'single' | 'split'>(() => {
+    if (layout) return layout;
+    if (
+      typeof process !== 'undefined' &&
+      process.env?.NEXT_PUBLIC_USE_SINGLE_PANEL === '0'
+    ) {
+      return 'split';
+    }
+    return 'single';
+  });
+  const isSinglePanel = currentLayout === 'single';
   const [paletteOpen, setPaletteOpen] = useState(false);
   // B9: right panel tabs (R722-R733)
   const [rightPanel, setRightPanel] = useState<
@@ -1258,10 +1276,24 @@ export function NewEditor({
             }
           : null;
     const selection = store.getState().selection;
+    const singlePanelElement = (
+      <SinglePanel
+        blocks={setup.inspectorBlocks}
+        categories={setup.groups?.map(g => ({
+          name: g.name,
+          types: g.blocks,
+        }))}
+        drag={drag}
+        queue={queue}
+        dockSide={singlePanelSide}
+        onDockSideChange={setSinglePanelSide}
+      />
+    );
     return (
-      <EditorProvider store={store}>
-      <DynamicRefsProvider value={refChoices}>
-        <SharedChrome
+      <E12ControlsProvider value={true}>
+        <EditorProvider store={store}>
+        <DynamicRefsProvider value={refChoices}>
+          <SharedChrome
           queue={queue}
           title={page.title}
           kindLabel={adapter.label}
@@ -1276,6 +1308,24 @@ export function NewEditor({
           onOpenShortcuts={() => setShortcutsOpen(true)}
           actions={
             <>
+              <ChromeIconButton
+                size="sm"
+                active={isSinglePanel}
+                aria-pressed={isSinglePanel}
+                aria-label={
+                  isSinglePanel
+                    ? 'Switch to split layout'
+                    : 'Switch to single-panel layout'
+                }
+                tooltip={isSinglePanel ? 'Split layout' : 'Single-panel layout'}
+                onClick={() =>
+                  setCurrentLayout(prev =>
+                    prev === 'single' ? 'split' : 'single'
+                  )
+                }
+              >
+                <Columns2 className="h-3.5 w-3.5" />
+              </ChromeIconButton>
               <ChromeIconButton
                 size="sm"
                 active={motionPreview}
@@ -1345,17 +1395,21 @@ export function NewEditor({
               {rightPanelContent}
             </>
           }
+          singlePanel={isSinglePanel ? singlePanelElement : undefined}
+          singlePanelDockSide={singlePanelSide}
           commandPalette={commandPalette}
         />
         {dialogs}
       </DynamicRefsProvider>
       </EditorProvider>
+      </E12ControlsProvider>
     );
   }
 
   return (
-    <EditorProvider store={store}>
-      <DynamicRefsProvider value={refChoices}>
+    <E12ControlsProvider value={true}>
+      <EditorProvider store={store}>
+        <DynamicRefsProvider value={refChoices}>
       <div className="flex h-screen flex-col bg-steel-50 dark:bg-dark-50">
         <header className="flex h-12 shrink-0 items-center gap-2 border-b border-steel-200 bg-white px-3 dark:border-dark-300 dark:bg-dark-100">
           <Button
@@ -1394,6 +1448,23 @@ export function NewEditor({
               }
             />
             <HistoryButtons />
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label={
+                isSinglePanel
+                  ? 'Switch to split layout'
+                  : 'Switch to single-panel layout'
+              }
+              title={isSinglePanel ? 'Split layout' : 'Single-panel layout'}
+              onClick={() =>
+                setCurrentLayout(prev =>
+                  prev === 'single' ? 'split' : 'single'
+                )
+              }
+            >
+              <Columns2 className="size-4" />
+            </Button>
             <Button
               size="icon"
               variant="ghost"
@@ -1515,37 +1586,70 @@ export function NewEditor({
         </header>
         {notices}
         <div className="flex min-h-0 flex-1">
-          {!focusMode && (
-            <ResizablePanel
-              side="left"
-              title="Blocks"
-              storageKey="nextcms-editor:left-panel"
-              style={{
-                borderRight: '1px solid var(--steel-200, #e2e8f0)',
-                background: 'var(--panel-bg, #fff)',
-              }}
-            >
-              <EditorUIScopeBox>{leftPanelContent}</EditorUIScopeBox>
-            </ResizablePanel>
-          )}
-          <main className="flex min-w-0 flex-1 flex-col">
-            <div className="flex h-9 shrink-0 items-center border-b border-steel-200 bg-white px-3 dark:border-dark-300 dark:bg-dark-100">
-              <Breadcrumb />
-            </div>
-            <div className="min-h-0 flex-1">{canvas}</div>
-          </main>
-          {!focusMode && (
-            <ResizablePanel
-              side="right"
-              title="Settings"
-              storageKey="nextcms-editor:right-panel"
-              style={{
-                borderLeft: '1px solid var(--steel-200, #e2e8f0)',
-                background: 'var(--panel-bg, #fff)',
-              }}
-            >
-              <EditorUIScopeBox>{rightPanelContent}</EditorUIScopeBox>
-            </ResizablePanel>
+          {isSinglePanel ? (
+            <>
+              {!focusMode && singlePanelSide === 'left' && (
+                <SinglePanel
+                  blocks={setup.inspectorBlocks}
+                  categories={setup.groups?.map(g => ({ name: g.name, types: g.blocks }))}
+                  drag={drag}
+                  queue={queue}
+                  dockSide="left"
+                  onDockSideChange={setSinglePanelSide}
+                />
+              )}
+              <main className="flex min-w-0 flex-1 flex-col">
+                <div className="flex h-9 shrink-0 items-center border-b border-steel-200 bg-white px-3 dark:border-dark-300 dark:bg-dark-100">
+                  <Breadcrumb />
+                </div>
+                <div className="min-h-0 flex-1">{canvas}</div>
+              </main>
+              {!focusMode && singlePanelSide === 'right' && (
+                <SinglePanel
+                  blocks={setup.inspectorBlocks}
+                  categories={setup.groups?.map(g => ({ name: g.name, types: g.blocks }))}
+                  drag={drag}
+                  queue={queue}
+                  dockSide="right"
+                  onDockSideChange={setSinglePanelSide}
+                />
+              )}
+            </>
+          ) : (
+            <>
+              {!focusMode && (
+                <ResizablePanel
+                  side="left"
+                  title="Blocks"
+                  storageKey="nextcms-editor:left-panel"
+                  style={{
+                    borderRight: '1px solid var(--steel-200, #e2e8f0)',
+                    background: 'var(--panel-bg, #fff)',
+                  }}
+                >
+                  <EditorUIScopeBox>{leftPanelContent}</EditorUIScopeBox>
+                </ResizablePanel>
+              )}
+              <main className="flex min-w-0 flex-1 flex-col">
+                <div className="flex h-9 shrink-0 items-center border-b border-steel-200 bg-white px-3 dark:border-dark-300 dark:bg-dark-100">
+                  <Breadcrumb />
+                </div>
+                <div className="min-h-0 flex-1">{canvas}</div>
+              </main>
+              {!focusMode && (
+                <ResizablePanel
+                  side="right"
+                  title="Settings"
+                  storageKey="nextcms-editor:right-panel"
+                  style={{
+                    borderLeft: '1px solid var(--steel-200, #e2e8f0)',
+                    background: 'var(--panel-bg, #fff)',
+                  }}
+                >
+                  <EditorUIScopeBox>{rightPanelContent}</EditorUIScopeBox>
+                </ResizablePanel>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -1553,5 +1657,6 @@ export function NewEditor({
       {dialogs}
     </DynamicRefsProvider>
       </EditorProvider>
+    </E12ControlsProvider>
   );
 }

@@ -123,6 +123,8 @@ function fieldTab(field: FieldDef): 'content' | 'style' | 'advanced' {
     case 'background':
     case 'flex':
     case 'alignment':
+    case 'easing':
+    case 'transition':
       return 'style';
     default:
       return 'advanced';

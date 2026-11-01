@@ -14,4 +14,7 @@ export * from './GroupControl';
 export * from './AlignmentPad';
 export * from './ShadowEditor';
 export * from './GradientEditor';
+export * from './EasingField';
+export * from './TransitionPicker';
+export * from './AnimationTimelineView';
 export * from './groups';

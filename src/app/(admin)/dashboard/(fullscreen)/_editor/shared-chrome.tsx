@@ -132,9 +132,11 @@ export type SharedChromeProps = {
   onOpenCommandPalette: () => void;
   onOpenShortcuts?: () => void;
   notices: ReactNode;
-  library: ReactNode;
+  library?: ReactNode;
   canvas: ReactNode;
-  inspector: ReactNode;
+  inspector?: ReactNode;
+  singlePanel?: ReactNode;
+  singlePanelDockSide?: 'left' | 'right';
   commandPalette?: ReactNode;
 };
 
@@ -156,6 +158,8 @@ export function SharedChrome({
   library,
   canvas,
   inspector,
+  singlePanel,
+  singlePanelDockSide = 'right',
   commandPalette,
 }: SharedChromeProps) {
   const store = useEditorStore();
@@ -225,25 +229,37 @@ export function SharedChrome({
       }
       notices={notices}
       library={
-        <Panel
-          side="left"
-          title="Blocks"
-          storageKey="nextcms-editor:left-panel"
-          defaultWidth={280}
-        >
-          {library}
-        </Panel>
+        singlePanel ? (
+          singlePanelDockSide === 'left' ? (
+            singlePanel
+          ) : null
+        ) : (
+          <Panel
+            side="left"
+            title="Blocks"
+            storageKey="nextcms-editor:left-panel"
+            defaultWidth={280}
+          >
+            {library}
+          </Panel>
+        )
       }
       canvas={canvas}
       inspector={
-        <Panel
-          side="right"
-          title="Settings"
-          storageKey="nextcms-editor:right-panel"
-          defaultWidth={320}
-        >
-          {inspector}
-        </Panel>
+        singlePanel ? (
+          singlePanelDockSide === 'right' ? (
+            singlePanel
+          ) : null
+        ) : (
+          <Panel
+            side="right"
+            title="Settings"
+            storageKey="nextcms-editor:right-panel"
+            defaultWidth={320}
+          >
+            {inspector}
+          </Panel>
+        )
       }
       statusBar={
         <StatusBar

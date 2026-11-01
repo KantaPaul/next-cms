@@ -32,6 +32,7 @@ import {
   type ColorToken,
   DimensionsField as E12DimensionsField,
   type DimensionsValue,
+  EasingField,
   FlexContainerGroup,
   type FlexContainerValue,
   IconButton,
@@ -44,6 +45,8 @@ import {
   SliderField as E12SliderField,
   Switch,
   Textarea,
+  TransitionPicker,
+  type TransitionValue,
   TypographyGroup,
   type TypographyValue,
 } from '@nextcms/editor-ui';
@@ -754,6 +757,38 @@ function AlignmentFieldControl({
   );
 }
 
+function EasingFieldControl({
+  field,
+  value,
+  onChange,
+  readOnly,
+}: FieldProps<string | undefined>) {
+  return (
+    <EasingField
+      label={field.label}
+      value={value ?? 'ease-out'}
+      onChange={onChange}
+      disabled={readOnly}
+    />
+  );
+}
+
+function TransitionFieldControl({
+  field,
+  value,
+  onChange,
+  readOnly,
+}: FieldProps<TransitionValue | undefined>) {
+  return (
+    <TransitionPicker
+      label={field.label}
+      value={value}
+      onChange={onChange}
+      disabled={readOnly}
+    />
+  );
+}
+
 function E12NumberFieldControl({
   field,
   value,
@@ -833,6 +868,8 @@ export const E12_FIELD_COMPONENTS: Record<string, FieldComponent> = {
   background: asField(BackgroundFieldControl),
   flex: asField(FlexFieldControl),
   alignment: asField(AlignmentFieldControl),
+  easing: asField(EasingFieldControl),
+  transition: asField(TransitionFieldControl),
 };
 
 export const E12_UPGRADED_BUILT_IN_FIELDS: Record<string, FieldComponent> = {

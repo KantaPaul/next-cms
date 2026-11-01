@@ -79,6 +79,9 @@ function fieldSection(field: FieldDef): string {
     case 'flex':
     case 'alignment':
       return 'Layout & Spacing';
+    case 'easing':
+    case 'transition':
+      return 'Animation & Effects';
     default:
       return 'General';
   }

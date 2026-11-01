@@ -162,6 +162,12 @@ export type FieldDef<P = Record<string, unknown>> =
       mode?: 'flex' | 'grid';
     })
   | (BaseField<P> & {
+      type: 'easing';
+    })
+  | (BaseField<P> & {
+      type: 'transition';
+    })
+  | (BaseField<P> & {
       type: 'list';
       item: Record<string, FieldDef>;
       defaultItem?: Record<string, unknown>;

@@ -78,6 +78,10 @@ import {
   type GradientConfig,
   AlignmentPad,
   type AlignmentValue,
+  EasingField,
+  TransitionPicker,
+  type TransitionValue,
+  AnimationTimelineView,
 } from '../index';
 import { DesignSystemGallery } from './DesignSystemGallery';
 
@@ -926,6 +930,46 @@ function GroupControlsDemo() {
   );
 }
 
+function AnimationControlsDemo() {
+  const [transition, setTransition] = useState<TransitionValue>({
+    property: 'all',
+    duration: 300,
+    timingFunction: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+    delay: 0,
+  });
+
+  const [easing, setEasing] = useState('ease-out');
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 rounded-[var(--ne-radius-lg)] border border-[var(--ne-border)] bg-[var(--ne-surface)] p-5">
+      <div className="space-y-4">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--ne-text-muted)]">
+          CSS Transitions & Live Preview
+        </h3>
+        <TransitionPicker
+          value={transition}
+          onChange={setTransition}
+        />
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--ne-text-muted)]">
+          Animation Curve & Timeline Scrubber
+        </h3>
+        <EasingField
+          value={easing}
+          onChange={setEasing}
+        />
+        <AnimationTimelineView
+          duration={transition.duration ?? 300}
+          delay={transition.delay ?? 0}
+          easing={easing}
+        />
+      </div>
+    </div>
+  );
+}
+
 export const EditorUIGallery: React.FC = () => {
   const [theme, setTheme] = useState<EditorTheme>('light');
   const [dir, setDir] = useState<EditorDirection>('ltr');
@@ -1017,6 +1061,16 @@ export const EditorUIGallery: React.FC = () => {
             Specialized group controls: Typography, Border, Background with GradientEditor, Box & Text Shadow, and Flex Container with AlignmentPad.
           </p>
           <GroupControlsDemo />
+        </section>
+
+        <section className="mx-auto w-full max-w-6xl space-y-3 px-6 pb-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--ne-text-muted)]">
+            0f. Animation & Motion Controls (Phase 8)
+          </h2>
+          <p className="text-xs text-[var(--ne-text-muted)]">
+            Animation easing curves with SVG curve previews, interactive CSS transition picker with live hover test, and playback timeline scrubber.
+          </p>
+          <AnimationControlsDemo />
         </section>
 
         <DesignSystemGallery
