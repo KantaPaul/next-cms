@@ -1,5 +1,5 @@
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
-import type React from 'react';
+import React from 'react';
 import { cn } from '../lib/cn';
 import { useLayerScope } from '../theme/EditorUIProvider';
 

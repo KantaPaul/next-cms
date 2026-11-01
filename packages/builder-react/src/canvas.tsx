@@ -10,15 +10,19 @@ import {
   type BlockComponents,
   type BuilderNode,
   type Device,
+  type DynamicContext,
+  isDynamicBinding,
   type NodeId,
   type RenderOptions,
   renderDocument,
+  resolveDynamicValue,
   type SlotRenderArgs,
 } from '@nextcms/builder-core';
 import {
   Component,
   type CSSProperties,
   type ErrorInfo,
+  isValidElement,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
   useCallback,
@@ -127,8 +131,30 @@ export type EditorCanvasProps = {
   insertGroups?: BlockGroup[];
   /** Current state style being edited (hover/focus/active) for preview (R725). */
   stateStyle?: 'hover' | 'focus' | 'active' | null;
+  /** Data for previewing dynamic bindings (R416); unresolved ones show `{source.path}`. */
+  dynamicContext?: DynamicContext;
   style?: CSSProperties;
 };
+
+/**
+ * Resolves dynamic bindings for the canvas, at any depth (repeater items too),
+ * so a block never receives a raw `{ $dynamic }` object as a React child.
+ */
+function previewDynamic(value: unknown, context: DynamicContext): unknown {
+  if (isDynamicBinding(value)) {
+    const resolved = resolveDynamicValue(value, context);
+    return resolved === '' || resolved == null
+      ? `{${value.$dynamic}${value.path ? `.${value.path}` : ''}}`
+      : resolved;
+  }
+  if (Array.isArray(value)) return value.map(v => previewDynamic(v, context));
+  if (value && typeof value === 'object' && !isValidElement(value)) {
+    return Object.fromEntries(
+      Object.entries(value).map(([k, v]) => [k, previewDynamic(v, context)])
+    );
+  }
+  return value;
+}
 
 function EmptySlot({
   root,
@@ -300,9 +326,10 @@ function CanvasDocument({
   remount,
   onInsertHere,
   stateStyle,
+  dynamicContext,
 }: Pick<
   EditorCanvasProps,
-  'components' | 'transformProps' | 'loaded' | 'renderRoot'
+  'components' | 'transformProps' | 'loaded' | 'renderRoot' | 'dynamicContext'
 > & {
   /** Bumped per block after inline editing, so its DOM is rebuilt by React. */
   remount: Record<NodeId, number>;
@@ -331,7 +358,11 @@ function CanvasDocument({
     wrapNode,
     renderUnknown,
     renderSlot: makeRenderSlot(onInsertHere),
-    transformProps: (node, props) => {
+    transformProps: (node, rawProps) => {
+      const props = previewDynamic(rawProps, dynamicContext ?? {}) as Record<
+        string,
+        unknown
+      >;
       const merged = loaded?.[node.id]
         ? { ...props, ...loaded[node.id] }
         : props;
@@ -684,6 +715,7 @@ export function EditorCanvas({
   blockActions,
   insertGroups,
   stateStyle,
+  dynamicContext,
   style,
 }: EditorCanvasProps) {
   const store = useEditorStore();
@@ -1001,6 +1033,7 @@ export function EditorCanvas({
             remount={remount}
             onInsertHere={insertGroups ? onInsertHere : undefined}
             stateStyle={stateStyle}
+            dynamicContext={dynamicContext}
           />
         </CanvasFrame>
         {frame && (

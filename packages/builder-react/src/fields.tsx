@@ -18,16 +18,37 @@ import {
   withDeviceValue,
 } from '@nextcms/builder-core';
 import {
+  AlignmentPad,
+  type AlignmentValue,
+  BackgroundGroup,
+  type BackgroundValue,
+  BorderGroup,
+  type BorderValue,
   Button,
   Chip,
+  ChooseField as E12ChooseField,
+  type ChooseOption,
+  ColorField as E12ColorField,
+  type ColorToken,
+  DimensionsField as E12DimensionsField,
+  type DimensionsValue,
+  FlexContainerGroup,
+  type FlexContainerValue,
   IconButton,
   Input,
+  NumberField as E12NumberField,
   Select,
+  SelectField as E12SelectField,
+  ShadowEditor,
+  type ShadowItem,
+  SliderField as E12SliderField,
   Switch,
   Textarea,
+  TypographyGroup,
+  type TypographyValue,
 } from '@nextcms/editor-ui';
 import { ArrowDown, ArrowUp, ChevronDown, Database, Plus, X } from 'lucide-react';
-import {
+import React, {
   type ComponentType,
   type CSSProperties,
   createContext,
@@ -35,7 +56,7 @@ import {
   useContext,
   useState,
 } from 'react';
-import { DraggableNumber, TokenPicker, type Unit } from './style-controls';
+import { DraggableNumber, TokenPicker, type Unit, parseSize } from './style-controls';
 
 export type FieldProps<V = unknown> = {
   field: FieldDef & Record<string, unknown>;
@@ -482,17 +503,542 @@ export const BUILT_IN_FIELDS: Record<string, FieldComponent> = {
   custom: asField(CustomRenderField),
 };
 
+/* ---------- E12 Normalization & Adaptation Helpers ---------- */
+
+function toColorTokens(
+  tokens?: { value: string; label: string; color?: string }[]
+): ColorToken[] | undefined {
+  if (!tokens || tokens.length === 0) return undefined;
+  return tokens.map(t => ({
+    name: t.label || t.value,
+    value: t.color || t.value,
+    cssVar: t.value.startsWith('var(') ? t.value.slice(4, -1) : undefined,
+  }));
+}
+
+export function normalizeDimensions(val: unknown): DimensionsValue {
+  if (val && typeof val === 'object' && 'top' in val) {
+    const obj = val as Record<string, unknown>;
+    return {
+      top: typeof obj.top === 'number' ? obj.top : (Number(obj.top) || 0),
+      right: typeof obj.right === 'number' ? obj.right : (Number(obj.right) || 0),
+      bottom: typeof obj.bottom === 'number' ? obj.bottom : (Number(obj.bottom) || 0),
+      left: typeof obj.left === 'number' ? obj.left : (Number(obj.left) || 0),
+      unit: typeof obj.unit === 'string' ? obj.unit : 'px',
+    };
+  }
+  if (typeof val === 'number') {
+    return { top: val, right: val, bottom: val, left: val, unit: 'px' };
+  }
+  if (typeof val === 'string') {
+    const parsed = parseSize(val);
+    const num = parsed?.value ?? 0;
+    const unit = parsed?.unit ?? 'px';
+    return { top: num, right: num, bottom: num, left: num, unit };
+  }
+  return { top: 0, right: 0, bottom: 0, left: 0, unit: 'px' };
+}
+
+export function normalizeBorder(val: unknown): BorderValue {
+  if (typeof val === 'string') {
+    const parts = val.trim().split(/\s+/);
+    return {
+      width: Number.parseInt(parts[0] || '1', 10) || 1,
+      style: (parts[1] as BorderValue['style']) || 'solid',
+      color: parts[2] || '#000000',
+    };
+  }
+  if (val && typeof val === 'object') {
+    return val as BorderValue;
+  }
+  return {};
+}
+
+export function normalizeShadow(val: unknown): ShadowItem[] {
+  if (Array.isArray(val)) {
+    return val as ShadowItem[];
+  }
+  if (val && typeof val === 'object' && 'x' in val) {
+    return [val as ShadowItem];
+  }
+  if (typeof val === 'string') {
+    return [{ x: 0, y: 4, blur: 6, spread: 0, color: val || 'rgba(0,0,0,0.15)' }];
+  }
+  return [{ x: 0, y: 4, blur: 6, spread: 0, color: 'rgba(0,0,0,0.15)' }];
+}
+
+export function normalizeBackground(val: unknown): BackgroundValue {
+  if (typeof val === 'string') {
+    if (val.includes('gradient')) {
+      return {
+        type: 'gradient',
+        gradient: {
+          type: 'linear',
+          angle: 90,
+          stops: [
+            { offset: 0, color: '#4f46e5' },
+            { offset: 100, color: '#06b6d4' },
+          ],
+        },
+      };
+    }
+    return { type: 'color', color: val };
+  }
+  if (val && typeof val === 'object') {
+    return val as BackgroundValue;
+  }
+  return { type: 'color', color: 'transparent' };
+}
+
+/* ---------- E12 Control Adapters ---------- */
+
+function SliderFieldControl({
+  field,
+  value,
+  onChange,
+  readOnly,
+}: FieldProps<number | undefined>) {
+  const f = field as Extract<FieldDef, { type: 'slider' }>;
+  return (
+    <E12SliderField
+      label={field.label}
+      value={typeof value === 'number' ? value : (f.defaultValue ?? f.min ?? 0)}
+      onChange={onChange}
+      min={f.min}
+      max={f.max}
+      step={f.step}
+      unit={f.unit}
+      ticks={f.ticks}
+      defaultValue={f.defaultValue}
+      disabled={readOnly}
+    />
+  );
+}
+
+function ChooseFieldControl({
+  field,
+  value,
+  onChange,
+  readOnly,
+}: FieldProps<string | number | boolean | undefined>) {
+  const f = field as Extract<FieldDef, { type: 'choose' }>;
+  const options = ((f.options ?? []) as { value: string | number | boolean; label: string }[]).map(o => ({
+    value: String(o.value),
+    label: o.label,
+  }));
+  return (
+    <E12ChooseField
+      label={field.label}
+      options={options}
+      value={value !== undefined ? String(value) : undefined}
+      onChange={val => {
+        const match = f.options?.find(o => String(o.value) === val);
+        onChange(match ? match.value : val);
+      }}
+      disabled={readOnly}
+    />
+  );
+}
+
+function DimensionsFieldControl({
+  field,
+  value,
+  onChange,
+  readOnly,
+}: FieldProps<DimensionsValue | number | string | undefined>) {
+  const f = field as Extract<FieldDef, { type: 'dimensions' }>;
+  const normalized = normalizeDimensions(value);
+  return (
+    <E12DimensionsField
+      label={field.label}
+      value={normalized}
+      onChange={onChange}
+      units={f.units}
+      disabled={readOnly}
+    />
+  );
+}
+
+function TypographyFieldControl({
+  field,
+  value,
+  onChange,
+}: FieldProps<TypographyValue | undefined>) {
+  const f = field as Extract<FieldDef, { type: 'typography' }>;
+  const tokens = toColorTokens(f.tokens);
+  return (
+    <TypographyGroup
+      value={value && typeof value === 'object' ? value : {}}
+      onChange={onChange}
+      tokens={tokens}
+    />
+  );
+}
+
+function BorderFieldControl({
+  field,
+  value,
+  onChange,
+}: FieldProps<BorderValue | string | undefined>) {
+  const f = field as Extract<FieldDef, { type: 'border' }>;
+  const tokens = toColorTokens(f.tokens);
+  const normalized = normalizeBorder(value);
+  return (
+    <BorderGroup
+      value={normalized}
+      onChange={onChange}
+      tokens={tokens}
+    />
+  );
+}
+
+function ShadowFieldControl({
+  field,
+  value,
+  onChange,
+}: FieldProps<ShadowItem[] | ShadowItem | string | undefined>) {
+  const f = field as Extract<FieldDef, { type: 'shadow' }>;
+  const tokens = toColorTokens(f.tokens);
+  const normalized = normalizeShadow(value);
+  return (
+    <ShadowEditor
+      label={field.label ?? 'Shadow'}
+      value={normalized}
+      onChange={onChange}
+      type={f.kind ?? 'box'}
+      tokens={tokens}
+    />
+  );
+}
+
+function BackgroundFieldControl({
+  field,
+  value,
+  onChange,
+}: FieldProps<BackgroundValue | string | undefined>) {
+  const f = field as Extract<FieldDef, { type: 'background' }>;
+  const tokens = toColorTokens(f.tokens);
+  const normalized = normalizeBackground(value);
+  return (
+    <BackgroundGroup
+      value={normalized}
+      onChange={onChange}
+      tokens={tokens}
+    />
+  );
+}
+
+function FlexFieldControl({
+  value,
+  onChange,
+}: FieldProps<FlexContainerValue | undefined>) {
+  return (
+    <FlexContainerGroup
+      value={value && typeof value === 'object' ? value : {}}
+      onChange={onChange}
+    />
+  );
+}
+
+function AlignmentFieldControl({
+  field,
+  value,
+  onChange,
+}: FieldProps<AlignmentValue | undefined>) {
+  return (
+    <AlignmentPad
+      label={field.label}
+      value={value ?? { justify: 'center', align: 'center' }}
+      onChange={onChange}
+    />
+  );
+}
+
+function E12NumberFieldControl({
+  field,
+  value,
+  onChange,
+  readOnly,
+}: FieldProps<number | string | undefined>) {
+  const f = field as Extract<FieldDef, { type: 'number' }>;
+  const numValue =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string' && value.trim() !== ''
+        ? Number.parseFloat(value)
+        : undefined;
+  return (
+    <E12NumberField
+      label={field.label}
+      value={numValue !== undefined && !Number.isNaN(numValue) ? numValue : undefined}
+      onChange={next => onChange(next)}
+      min={f.min}
+      max={f.max}
+      step={f.step}
+      unit={f.unit}
+      disabled={readOnly}
+    />
+  );
+}
+
+function E12ColorFieldControl({
+  field,
+  value,
+  onChange,
+  readOnly,
+}: FieldProps<string | undefined>) {
+  const tokens = toColorTokens(field.tokens);
+  return (
+    <E12ColorField
+      label={field.label}
+      value={value ?? ''}
+      onChange={onChange}
+      tokens={tokens}
+      disabled={readOnly}
+    />
+  );
+}
+
+function E12SelectFieldControl({
+  field,
+  value,
+  onChange,
+  readOnly,
+}: FieldProps<string | number | boolean | undefined>) {
+  const f = field as Extract<FieldDef, { type: 'select' | 'radio' }>;
+  const options = f.options ?? [];
+  return (
+    <E12SelectField
+      label={field.label}
+      value={value !== undefined ? String(value) : undefined}
+      onChange={val => {
+        const match = options.find(o => String(o.value) === val);
+        onChange(match ? match.value : val);
+      }}
+      options={options.map(o => ({ value: String(o.value), label: o.label }))}
+      disabled={readOnly}
+    />
+  );
+}
+
+/* ---------- E12 Field Registry & Feature Flag ---------- */
+
+export const E12_FIELD_COMPONENTS: Record<string, FieldComponent> = {
+  slider: asField(SliderFieldControl),
+  choose: asField(ChooseFieldControl),
+  dimensions: asField(DimensionsFieldControl),
+  typography: asField(TypographyFieldControl),
+  border: asField(BorderFieldControl),
+  shadow: asField(ShadowFieldControl),
+  background: asField(BackgroundFieldControl),
+  flex: asField(FlexFieldControl),
+  alignment: asField(AlignmentFieldControl),
+};
+
+export const E12_UPGRADED_BUILT_IN_FIELDS: Record<string, FieldComponent> = {
+  number: asField(E12NumberFieldControl),
+  color: asField(E12ColorFieldControl),
+  select: asField(E12SelectFieldControl),
+  radio: asField(ChooseFieldControl),
+};
+
+export const E12_BUILT_IN_FIELDS: Record<string, FieldComponent> = {
+  ...BUILT_IN_FIELDS,
+  ...E12_FIELD_COMPONENTS,
+  ...E12_UPGRADED_BUILT_IN_FIELDS,
+};
+
+let e12RuntimeFlag: boolean | null = null;
+
+export const USE_E12_CONTROLS_FLAG = 'NEXT_PUBLIC_USE_E12_CONTROLS';
+
+export function isE12ControlsEnabled(): boolean {
+  if (e12RuntimeFlag !== null) {
+    return e12RuntimeFlag;
+  }
+  if (typeof process !== 'undefined' && process.env) {
+    return (
+      process.env.NEXT_PUBLIC_USE_E12_CONTROLS === '1' ||
+      process.env.USE_E12_CONTROLS === '1' ||
+      process.env.NEXT_PUBLIC_USE_E12_CONTROLS === 'true'
+    );
+  }
+  return false;
+}
+
+export function setE12ControlsEnabled(enabled: boolean | null): void {
+  e12RuntimeFlag = enabled;
+}
+
+export const E12ControlsContext = createContext<boolean | undefined>(undefined);
+export const E12ControlsProvider = E12ControlsContext.Provider;
+
+export function useE12Controls(): boolean {
+  const ctx = useContext(E12ControlsContext);
+  return ctx !== undefined ? ctx : isE12ControlsEnabled();
+}
+
+export function getBuiltInFields(useE12?: boolean): Record<string, FieldComponent> {
+  const active = useE12 !== undefined ? useE12 : isE12ControlsEnabled();
+  return active ? E12_BUILT_IN_FIELDS : { ...BUILT_IN_FIELDS, ...E12_FIELD_COMPONENTS };
+}
+
+/**
+ * Migrates legacy flat or unstructured block props to E12 structured style values (E12h).
+ * Handles:
+ * - Flat typography props (fontSize, fontWeight, fontFamily, etc.) -> TypographyValue
+ * - Flat or string border props (borderWidth, borderStyle, borderColor, borderRadius) -> BorderValue
+ * - Flat or string shadow props -> ShadowValue
+ * - Flat background props -> BackgroundValue
+ * - Flat spacing props (padding, margin as string or number) -> DimensionsValue
+ * - Responsive values ({ desktop, tablet, mobile })
+ */
+export function migrateLegacyBlockProps(
+  props: Record<string, unknown>,
+  fields?: Record<string, FieldDef>
+): Record<string, unknown> {
+  const result: Record<string, unknown> = { ...props };
+
+  const migrateValue = (val: unknown, migrator: (v: unknown) => unknown): unknown => {
+    if (val && typeof val === 'object' && !Array.isArray(val)) {
+      const keys = Object.keys(val);
+      if (keys.some(k => k === 'desktop' || k === 'tablet' || k === 'mobile')) {
+        const resp: Record<string, unknown> = {};
+        for (const [d, v] of Object.entries(val)) {
+          resp[d] = migrator(v);
+        }
+        return resp;
+      }
+    }
+    return migrator(val);
+  };
+
+  if (fields) {
+    for (const [key, field] of Object.entries(fields)) {
+      const current = result[key];
+      switch (field.type) {
+        case 'dimensions': {
+          if (current !== undefined) {
+            result[key] = migrateValue(current, normalizeDimensions);
+          }
+          break;
+        }
+        case 'border': {
+          if (current !== undefined) {
+            result[key] = migrateValue(current, normalizeBorder);
+          }
+          break;
+        }
+        case 'shadow': {
+          if (current !== undefined) {
+            result[key] = migrateValue(current, normalizeShadow);
+          }
+          break;
+        }
+        case 'background': {
+          if (current !== undefined) {
+            result[key] = migrateValue(current, normalizeBackground);
+          }
+          break;
+        }
+        case 'typography': {
+          if (current && typeof current === 'object') {
+            result[key] = current;
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  // Common legacy flat props migration
+  if (typeof result.padding === 'number' || typeof result.padding === 'string') {
+    result.padding = normalizeDimensions(result.padding);
+  }
+  if (typeof result.margin === 'number' || typeof result.margin === 'string') {
+    result.margin = normalizeDimensions(result.margin);
+  }
+
+  const hasFlatTypo =
+    result.fontSize !== undefined ||
+    result.fontWeight !== undefined ||
+    result.fontFamily !== undefined ||
+    result.lineHeight !== undefined ||
+    result.letterSpacing !== undefined ||
+    result.textAlign !== undefined;
+
+  if (hasFlatTypo && !result.typography) {
+    const typo: Record<string, unknown> = {};
+    if (result.fontFamily !== undefined) typo.fontFamily = String(result.fontFamily);
+    if (result.fontSize !== undefined) {
+      typo.fontSize =
+        typeof result.fontSize === 'number'
+          ? result.fontSize
+          : Number(result.fontSize) || 16;
+    }
+    if (result.fontWeight !== undefined) typo.fontWeight = String(result.fontWeight);
+    if (result.lineHeight !== undefined) {
+      typo.lineHeight =
+        typeof result.lineHeight === 'number'
+          ? result.lineHeight
+          : Number(result.lineHeight) || 1.5;
+    }
+    if (result.letterSpacing !== undefined) typo.letterSpacing = String(result.letterSpacing);
+    if (result.textAlign !== undefined) typo.textAlign = String(result.textAlign);
+    if (result.textColor !== undefined) typo.color = String(result.textColor);
+    result.typography = typo;
+  }
+
+  const hasFlatBorder =
+    result.borderWidth !== undefined ||
+    result.borderStyle !== undefined ||
+    result.borderColor !== undefined ||
+    result.borderRadius !== undefined;
+
+  if (hasFlatBorder && !result.border) {
+    const border: Record<string, unknown> = {};
+    if (result.borderWidth !== undefined) {
+      border.width =
+        typeof result.borderWidth === 'number'
+          ? result.borderWidth
+          : Number(result.borderWidth) || 1;
+    }
+    if (result.borderStyle !== undefined) border.style = String(result.borderStyle);
+    if (result.borderColor !== undefined) border.color = String(result.borderColor);
+    if (result.borderRadius !== undefined) {
+      border.radius =
+        typeof result.borderRadius === 'number'
+          ? result.borderRadius
+          : Number(result.borderRadius) || 0;
+    }
+    result.border = border;
+  }
+
+  if (typeof result.backgroundColor === 'string' && !result.background) {
+    result.background = { type: 'color', color: result.backgroundColor };
+  }
+
+  return result;
+}
+
 export function FieldTypesProvider({
   types,
+  useE12,
   children,
 }: {
   types?: Record<string, FieldComponent>;
+  useE12?: boolean;
   children: ReactNode;
 }) {
+  const inheritedE12 = useE12Controls();
+  const activeE12 = useE12 !== undefined ? useE12 : inheritedE12;
+  const builtIn = activeE12 ? E12_BUILT_IN_FIELDS : BUILT_IN_FIELDS;
   return (
-    <FieldTypesContext.Provider value={{ ...BUILT_IN_FIELDS, ...types }}>
-      {children}
-    </FieldTypesContext.Provider>
+    <E12ControlsProvider value={activeE12}>
+      <FieldTypesContext.Provider value={{ ...builtIn, ...types }}>
+        {children}
+      </FieldTypesContext.Provider>
+    </E12ControlsProvider>
   );
 }
 
@@ -510,6 +1056,20 @@ export function fieldControlId(name: string): string {
   return `field-${name.replace(/[^\w-]/g, '-')}`;
 }
 
+/** Records a picked-item source (`pageRef`, `postRef`) can point at. */
+export type DynamicRefChoices = {
+  page: { id: string; title: string }[];
+  post: { id: string; title: string }[];
+};
+
+const DynamicRefsContext = createContext<DynamicRefChoices>({
+  page: [],
+  post: [],
+});
+
+/** Gives dynamic bindings the pages and posts to choose from. */
+export const DynamicRefsProvider = DynamicRefsContext.Provider;
+
 /** Dynamic content source and field picker (R415 / BLD-23). */
 export function DynamicBindingField({
   value,
@@ -524,6 +1084,9 @@ export function DynamicBindingField({
   const currentPath = value.path || '';
   const sourceDef = APPROVED_DYNAMIC_SOURCES[currentSource];
   const availableFields = sourceDef?.fields ?? [];
+  const refChoices = useContext(DynamicRefsContext);
+  const pickKind = sourceDef?.pick;
+  const choices = pickKind ? refChoices[pickKind] : [];
 
   return (
     <div
@@ -577,7 +1140,8 @@ export function DynamicBindingField({
               const newSource = e.target.value;
               const def = APPROVED_DYNAMIC_SOURCES[newSource];
               const firstField = def?.fields[0]?.key ?? '';
-              onChange({ ...value, $dynamic: newSource, path: firstField });
+              const { ref: _ref, ...rest } = value;
+              onChange({ ...rest, $dynamic: newSource, path: firstField });
             }}
             style={inputStyle}
           >
@@ -616,6 +1180,36 @@ export function DynamicBindingField({
           )}
         </div>
       </div>
+
+      {pickKind && (
+        <div>
+          <label style={{ display: 'block', fontSize: '11px', color: 'var(--ne-text-muted, #64748b)', marginBottom: 2 }}>
+            {pickKind === 'post' ? 'Blog post' : 'Page'}
+          </label>
+          <select
+            value={value.ref ?? ''}
+            onChange={e => {
+              const { ref: _ref, ...rest } = value;
+              onChange(e.target.value ? { ...rest, ref: e.target.value } : rest);
+            }}
+            style={inputStyle}
+          >
+            <option value="">
+              {choices.length
+                ? `Choose a ${pickKind === 'post' ? 'post' : 'page'}…`
+                : `No published ${pickKind === 'post' ? 'posts' : 'pages'}`}
+            </option>
+            {value.ref && !choices.some(c => c.id === value.ref) && (
+              <option value={value.ref}>Unavailable item</option>
+            )}
+            {choices.map(c => (
+              <option key={c.id} value={c.id}>
+                {c.title}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div>
         <label style={{ display: 'block', fontSize: '11px', color: 'var(--ne-text-muted, #64748b)', marginBottom: 2 }}>
@@ -657,9 +1251,13 @@ export function FieldControl({
 }) {
   const types = useContext(FieldTypesContext);
   const device = useContext(DeviceContext);
+  const e12 = useE12Controls();
   if (field.when && !field.when(props)) return null;
-  const Component = (types[field.type] ??
-    types.text) as unknown as ComponentType<FieldProps<unknown>>;
+  const activeTypes = e12
+    ? { ...E12_BUILT_IN_FIELDS, ...types }
+    : { ...BUILT_IN_FIELDS, ...E12_FIELD_COMPONENTS, ...types };
+  const Component = (activeTypes[field.type] ??
+    activeTypes.text) as unknown as ComponentType<FieldProps<unknown>>;
   const id = fieldControlId(name);
   const responsive = !!field.responsive;
   const shown = responsive ? valueForDevice(value, device) : value;
@@ -768,7 +1366,7 @@ export function FieldControl({
           }
         />
       )}
-      {field.visual && !readOnly && field.type === 'number' && (
+      {field.visual && !readOnly && field.type === 'number' && !e12 && (
         <DraggableNumber
           value={typeof shown === 'number' ? shown : undefined}
           onChange={next => onChange(next)}
@@ -779,7 +1377,7 @@ export function FieldControl({
           label={field.label}
         />
       )}
-      {field.visual && !readOnly && field.type === 'color' && field.tokens && (
+      {field.visual && !readOnly && field.type === 'color' && field.tokens && !e12 && (
         <TokenPicker
           value={typeof shown === 'string' ? shown : undefined}
           onChange={next => onChange(next)}

@@ -38,28 +38,40 @@ export function useScrub({
       const startX = e.clientX;
       const startValue = Number.isFinite(value) ? value : 0;
       setIsScrubbing(true);
-      document.body.style.cursor = 'ew-resize';
-      document.body.style.userSelect = 'none';
+      if (typeof document !== 'undefined') {
+        document.body.style.cursor = 'ew-resize';
+        document.body.style.userSelect = 'none';
+      }
 
       const handleMove = (move: PointerEvent) => {
         const { onChange, step, min, max } = latest.current;
         onChange(
-          clamp(scrubValue(startValue, move.clientX - startX, step, move), min, max)
+          clamp(
+            scrubValue(startValue, move.clientX - startX, step, move),
+            min,
+            max
+          )
         );
       };
       const handleUp = () => {
         setIsScrubbing(false);
-        document.body.style.cursor = '';
-        document.body.style.userSelect = '';
-        window.removeEventListener('pointermove', handleMove);
-        window.removeEventListener('pointerup', handleUp);
-        window.removeEventListener('pointercancel', handleUp);
+        if (typeof document !== 'undefined') {
+          document.body.style.cursor = '';
+          document.body.style.userSelect = '';
+        }
+        if (typeof window !== 'undefined') {
+          window.removeEventListener('pointermove', handleMove);
+          window.removeEventListener('pointerup', handleUp);
+          window.removeEventListener('pointercancel', handleUp);
+        }
         cleanupRef.current = null;
       };
 
-      window.addEventListener('pointermove', handleMove);
-      window.addEventListener('pointerup', handleUp);
-      window.addEventListener('pointercancel', handleUp);
+      if (typeof window !== 'undefined') {
+        window.addEventListener('pointermove', handleMove);
+        window.addEventListener('pointerup', handleUp);
+        window.addEventListener('pointercancel', handleUp);
+      }
       cleanupRef.current = handleUp;
     },
     [disabled, value]

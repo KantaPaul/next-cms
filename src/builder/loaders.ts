@@ -12,6 +12,7 @@
 import {
   type BuilderDocument,
   type BlockLoader as CoreBlockLoader,
+  collectDynamicRefs,
   createLoaderRegistry,
   documentToPuck,
   puckToDocument,
@@ -303,8 +304,16 @@ export async function resolveDocumentData(
   doc: BuilderDocument,
   ctx: LoaderContext = {}
 ): Promise<BuilderDocument> {
-  const resolved = await registry.resolve(doc, ctx);
-  return resolveDynamicDocument(resolved, ctx);
+  const refs = collectDynamicRefs(doc);
+  const [resolved, picked] = await Promise.all([
+    registry.resolve(doc, ctx),
+    Object.keys(refs).length
+      ? import('@/server/actions/dynamic-refs.actions').then(m =>
+          m.loadDynamicRefs(refs)
+        )
+      : undefined,
+  ]);
+  return resolveDynamicDocument(resolved, { ...ctx, ...picked });
 }
 
 /**

@@ -39,3 +39,10 @@ export * from './style-classes-ui';
 export * from './style-controls';
 export * from './store';
 export * from './version-compare';
+// Views (E12 single-panel layout)
+export * from './elements-view';
+export * from './layers-view';
+export * from './settings-view';
+export * from './page-settings-view';
+export * from './history-view';
+export * from './single-panel';

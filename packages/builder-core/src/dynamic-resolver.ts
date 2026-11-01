@@ -107,8 +107,14 @@ export function resolveDynamicValue(
     return value.fallback ?? '';
   }
 
-  const { $dynamic: source, path, fallback, transform } = value;
-  const sourceData = context[source];
+  const { $dynamic: source, path, fallback, transform, ref } = value;
+  // Picked-record sources keep their records by id: `context.postRef[id]`.
+  const records = context[source] as Record<string, unknown> | undefined;
+  const sourceData = ref
+    ? records && Object.hasOwn(records, ref)
+      ? records[ref]
+      : undefined
+    : records;
 
   let resolved: unknown;
   if (sourceData && typeof sourceData === 'object') {
@@ -187,4 +193,22 @@ export function resolveDynamicDocument(
     ...doc,
     nodes: resolvedNodes,
   };
+}
+
+/** Ids of picked records per source (`postRef`, `pageRef`), for batch loading. */
+export function collectDynamicRefs(doc: BuilderDocument): Record<string, string[]> {
+  const found: Record<string, Set<string>> = {};
+  const visit = (value: unknown): void => {
+    if (isDynamicBinding(value)) {
+      if (value.ref) (found[value.$dynamic] ??= new Set()).add(value.ref);
+    } else if (Array.isArray(value)) {
+      value.forEach(visit);
+    } else if (value && typeof value === 'object') {
+      Object.values(value).forEach(visit);
+    }
+  };
+  for (const node of Object.values(doc.nodes)) visit(node.props);
+  return Object.fromEntries(
+    Object.entries(found).map(([source, ids]) => [source, [...ids]])
+  );
 }

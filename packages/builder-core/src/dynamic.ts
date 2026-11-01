@@ -19,6 +19,8 @@ export interface DynamicBinding {
   path?: string;
   fallback?: string;
   transform?: DynamicTransform;
+  /** Item id for sources that point at one chosen record (`pageRef`, `postRef`). */
+  ref?: string;
 }
 
 const DISALLOWED_PATH_SEGMENTS = new Set([
@@ -51,6 +53,7 @@ export const dynamicBindingSchema = z.object({
     })
     .optional(),
   fallback: z.string().max(500).optional(),
+  ref: z.string().max(100).optional(),
   transform: z
     .enum(['uppercase', 'lowercase', 'titlecase', 'date', 'slug'])
     .optional(),
@@ -68,6 +71,8 @@ export interface DynamicSourceDef {
   label: string;
   description: string;
   fields: DynamicSourceField[];
+  /** The binding names one record of this kind in `ref`, picked in the editor. */
+  pick?: 'page' | 'post';
 }
 
 export const APPROVED_DYNAMIC_SOURCES: Record<string, DynamicSourceDef> = {
@@ -97,6 +102,34 @@ export const APPROVED_DYNAMIC_SOURCES: Record<string, DynamicSourceDef> = {
       { key: 'authorName', label: 'Author Name', type: 'text' },
       { key: 'publishedAt', label: 'Published Date', type: 'date' },
       { key: 'createdAt', label: 'Created Date', type: 'date' },
+    ],
+  },
+  postRef: {
+    id: 'postRef',
+    label: 'Specific Blog Post',
+    description: 'Fields of a chosen published blog post',
+    pick: 'post',
+    fields: [
+      { key: 'title', label: 'Post Title', type: 'text' },
+      { key: 'url', label: 'Post URL', type: 'url' },
+      { key: 'slug', label: 'Post Slug', type: 'text' },
+      { key: 'excerpt', label: 'Excerpt', type: 'text' },
+      { key: 'featuredImage', label: 'Featured Image', type: 'image' },
+      { key: 'authorName', label: 'Author Name', type: 'text' },
+      { key: 'publishedAt', label: 'Published Date', type: 'date' },
+    ],
+  },
+  pageRef: {
+    id: 'pageRef',
+    label: 'Specific Page',
+    description: 'Fields of a chosen published page',
+    pick: 'page',
+    fields: [
+      { key: 'title', label: 'Page Title', type: 'text' },
+      { key: 'url', label: 'Page URL', type: 'url' },
+      { key: 'slug', label: 'Slug', type: 'text' },
+      { key: 'publishedAt', label: 'Published Date', type: 'date' },
+      { key: 'updatedAt', label: 'Last Updated Date', type: 'date' },
     ],
   },
   site: {
@@ -150,6 +183,7 @@ export function isDynamicBinding(value: unknown): value is DynamicBinding {
   return (
     typeof obj.$dynamic === 'string' &&
     (obj.path === undefined || typeof obj.path === 'string') &&
-    (obj.fallback === undefined || typeof obj.fallback === 'string')
+    (obj.fallback === undefined || typeof obj.fallback === 'string') &&
+    (obj.ref === undefined || typeof obj.ref === 'string')
   );
 }

@@ -10,7 +10,7 @@
     "./dashboard": "./src/dashboard-adapters.ts"
   },
   "scripts": {
-    "test": "tsx --test \"src/**/*.test.ts\" \"src/**/*.test.tsx\"",
+    "test": "node --import tsx --test $(find src -name '*.test.ts' -o -name '*.test.tsx')",
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {

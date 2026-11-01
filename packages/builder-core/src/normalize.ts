@@ -26,6 +26,7 @@ export function normalizeProps(
         ...(value.path ? { path: String(value.path) } : {}),
         ...(value.fallback !== undefined ? { fallback: String(value.fallback) } : {}),
         ...(value.transform ? { transform: value.transform } : {}),
+        ...(value.ref ? { ref: String(value.ref) } : {}),
       };
     } else if (typeof value === 'string' && value.startsWith('token:')) {
       // Token reference - ensure safe fallback exists

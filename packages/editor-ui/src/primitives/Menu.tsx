@@ -1,5 +1,5 @@
 import * as MenuPrimitive from '@radix-ui/react-dropdown-menu';
-import type React from 'react';
+import React from 'react';
 import { cn } from '../lib/cn';
 import { useLayerScope } from '../theme/EditorUIProvider';
 

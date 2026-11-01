@@ -5,7 +5,7 @@ import {
   Info,
   X,
 } from 'lucide-react';
-import type React from 'react';
+import React from 'react';
 import { createContext, useContext, useMemo } from 'react';
 import { toast as sonnerToast, Toaster } from 'sonner';
 

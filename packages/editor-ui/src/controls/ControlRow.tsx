@@ -1,8 +1,9 @@
-import { CircleAlert, Info, Sparkles } from 'lucide-react';
-import type React from 'react';
+import { CircleAlert, Info } from 'lucide-react';
+import React from 'react';
 import type { DeviceType } from '../inspector/DeviceValueBadge';
 import { FieldRow } from '../inspector/FieldRow';
 import { Tooltip } from '../primitives/Tooltip';
+import { TokenChip } from './TokenChip';
 
 /** Which device is being edited, and whether this field overrides it. */
 export interface ControlDeviceState {
@@ -23,6 +24,8 @@ export interface ControlRowProps {
   onReset?: () => void;
   /** Name of the site token the value is linked to. */
   tokenName?: string;
+  /** Callback when the token chip's clear button is clicked. */
+  onClearToken?: () => void;
   deviceState?: ControlDeviceState;
   helperText?: string;
   errorText?: string;
@@ -45,6 +48,7 @@ export const ControlRow: React.FC<ControlRowProps> = ({
   changed,
   onReset,
   tokenName,
+  onClearToken,
   deviceState,
   helperText,
   errorText,
@@ -68,13 +72,7 @@ export const ControlRow: React.FC<ControlRowProps> = ({
           </Tooltip>
         )}
         {tokenName && (
-          <span
-            title={`Linked to token ${tokenName}`}
-            className="inline-flex min-w-0 shrink items-center gap-1 rounded-[var(--ne-radius-sm)] border border-[var(--ne-primary)]/30 bg-[var(--ne-primary-soft)] px-1.5 py-0.5 font-mono text-[10px] leading-none text-[var(--ne-primary)]"
-          >
-            <Sparkles className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
-            <span className="truncate">{tokenName}</span>
-          </span>
+          <TokenChip tokenName={tokenName} onClear={onClearToken} />
         )}
       </>
     ) : undefined;

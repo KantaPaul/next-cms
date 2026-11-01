@@ -1,7 +1,7 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Command } from 'cmdk';
 import { Search } from 'lucide-react';
-import type React from 'react';
+import React from 'react';
 import { Kbd } from '../primitives/Kbd';
 import { useEditorUI } from '../theme/EditorUIProvider';
 

@@ -1,4 +1,4 @@
-import type React from 'react';
+import React from 'react';
 import { DirectionProvider } from '@radix-ui/react-direction';
 import { createContext, useContext, useMemo } from 'react';
 

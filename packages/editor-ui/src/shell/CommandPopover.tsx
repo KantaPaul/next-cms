@@ -1,7 +1,7 @@
 import * as PopoverPrimitive from '@radix-ui/react-popover';
 import { Command } from 'cmdk';
 import { Search } from 'lucide-react';
-import type React from 'react';
+import React from 'react';
 import { cn } from '../lib/cn';
 import { useReturnFocus } from '../lib/useReturnFocus';
 import { useLayerScope } from '../theme/EditorUIProvider';

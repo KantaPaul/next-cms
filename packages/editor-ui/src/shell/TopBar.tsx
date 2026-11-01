@@ -16,7 +16,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
-import type React from 'react';
+import React from 'react';
 import { useState } from 'react';
 import { type SaveState, SaveStatus } from '../feedback/SaveStatus';
 import type { DeviceType } from '../inspector/DeviceValueBadge';

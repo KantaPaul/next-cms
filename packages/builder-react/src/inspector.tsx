@@ -113,6 +113,16 @@ function fieldTab(field: FieldDef): 'content' | 'style' | 'advanced' {
     case 'radio':
     case 'object':
     case 'list':
+    case 'slider':
+    case 'choose':
+    case 'dimensions':
+    case 'color':
+    case 'typography':
+    case 'border':
+    case 'shadow':
+    case 'background':
+    case 'flex':
+    case 'alignment':
       return 'style';
     default:
       return 'advanced';

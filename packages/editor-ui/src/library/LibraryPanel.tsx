@@ -1,5 +1,5 @@
 import { Clock, Search, Star, X } from 'lucide-react';
-import type React from 'react';
+import React from 'react';
 import { useMemo, useState } from 'react';
 import { LibraryItem, type LibraryItemDef } from './LibraryItem';
 

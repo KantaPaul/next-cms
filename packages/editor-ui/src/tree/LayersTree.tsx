@@ -10,7 +10,7 @@ import {
   Trash2,
   Unlock,
 } from 'lucide-react';
-import type React from 'react';
+import React from 'react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
 export interface LayerNode {

@@ -1,6 +1,6 @@
 import * as SelectPrimitive from '@radix-ui/react-select';
 import { Check, ChevronDown } from 'lucide-react';
-import type React from 'react';
+import React from 'react';
 import { forwardRef, useCallback, useRef } from 'react';
 import { cn } from '../lib/cn';
 import { useLayerScope } from '../theme/EditorUIProvider';
@@ -72,6 +72,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     const layer = useLayerScope();
     const empty = options.find(option => option.value === '');
     const items = options.filter(option => option.value !== '');
+    const selected = options.find(option => option.value === value);
 
     const handleRef = useCallback(
       (node: HTMLButtonElement | null) => {
@@ -111,7 +112,9 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           <span className="min-w-0 truncate">
             <SelectPrimitive.Value
               placeholder={placeholder ?? empty?.label ?? 'Choose…'}
-            />
+            >
+              {selected?.label}
+            </SelectPrimitive.Value>
           </span>
           <SelectPrimitive.Icon asChild>
             <ChevronDown className="h-3.5 w-3.5 shrink-0 text-[var(--ne-text-muted)]" />

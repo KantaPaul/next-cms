@@ -16,6 +16,7 @@ export * from './puck-data';
 export * from './query';
 export * from './renderer';
 export * from './schema-helpers';
+export * from './style-schemas';
 export * from './theme';
 export * from './traits';
 export * from './tree';

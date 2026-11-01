@@ -52,9 +52,9 @@ export const FieldRow: React.FC<FieldRowProps> = ({
       >
         <ChangedDot changed={changed} />
         <label
+          htmlFor={htmlFor}
           title={description || label}
           {...labelProps}
-          htmlFor={htmlFor}
           className={`text-xs font-medium text-[var(--ne-text)] truncate select-none font-sans ${labelProps?.className ?? ''}`}
         >
           {label}

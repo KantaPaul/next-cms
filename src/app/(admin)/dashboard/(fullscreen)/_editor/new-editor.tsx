@@ -37,6 +37,7 @@ import {
   createEditorStore,
   DeviceSwitch,
   EditorCanvas,
+  DynamicRefsProvider,
   EditorProvider,
   type EditorStore,
   Inspector,
@@ -116,6 +117,10 @@ import type { BuilderData } from '@/builder/data';
 import { editorSetup } from '@/builder/definitions';
 import { cmsInlineProps, cmsResizeHandles } from '@/builder/editor-handles';
 import { SAMPLE_POST } from '@/builder/post-template';
+import type {
+  DynamicRefItem,
+  DynamicRefOptions,
+} from '@/server/services/dynamic-refs.service';
 // Shared editor chrome styles (B15 E1), built by `pnpm --filter @nextcms/editor-ui build:css`.
 import '@nextcms/editor-ui/editor-ui.css';
 import {
@@ -157,6 +162,8 @@ export type NewEditorProps = BuilderPageProps & {
   draftVersion?: number;
   /** Problems found in the stored document (R797). */
   issues?: string[];
+  /** Pages and posts for "Specific Page/Blog Post" bindings. */
+  dynamicRefs?: DynamicRefOptions;
   /** Editor chrome: the current one, or the shared @nextcms/editor-ui shell (B15 E6). */
   shell?: 'legacy' | 'shared';
 };
@@ -584,6 +591,11 @@ function useEditorLock(targetType: 'page' | 'post' | null, id: string) {
   return { lockedBy, takeOver };
 }
 
+const NO_DYNAMIC_REFS: DynamicRefOptions = { pages: [], posts: [] };
+
+const recordsById = (items: DynamicRefItem[]) =>
+  Object.fromEntries(items.map(item => [item.id, item]));
+
 export function NewEditor({
   page,
   themeTokens,
@@ -594,6 +606,7 @@ export function NewEditor({
   loaded,
   draftVersion = 0,
   issues = [],
+  dynamicRefs = NO_DYNAMIC_REFS,
   shell = 'legacy',
 }: NewEditorProps) {
   const setup = useMemo(() => editorSetup(kind), [kind]);
@@ -742,6 +755,20 @@ export function NewEditor({
   const transformProps = useMemo(
     () => cmsTransformProps(metadata, setup.renderKind),
     [metadata, setup.renderKind]
+  );
+  const dynamicContext = useMemo(
+    () => ({
+      language: page.language,
+      page: { title: page.title, slug: page.slug, language: page.language },
+      ...(setup.renderKind === 'post' && { post: post ?? SAMPLE_POST }),
+      pageRef: recordsById(dynamicRefs.pages),
+      postRef: recordsById(dynamicRefs.posts),
+    }),
+    [page.title, page.slug, page.language, setup.renderKind, post, dynamicRefs]
+  );
+  const refChoices = useMemo(
+    () => ({ page: dynamicRefs.pages, post: dynamicRefs.posts }),
+    [dynamicRefs]
   );
   const renderRoot = useCallback(
     (children: ReactNode) => (
@@ -973,6 +1000,7 @@ export function NewEditor({
       blockActions={blockActions}
       insertGroups={setup.groups}
       stateStyle={stateStyle}
+      dynamicContext={dynamicContext}
     />
   );
   const rightPanelContent = (
@@ -1232,6 +1260,7 @@ export function NewEditor({
     const selection = store.getState().selection;
     return (
       <EditorProvider store={store}>
+      <DynamicRefsProvider value={refChoices}>
         <SharedChrome
           queue={queue}
           title={page.title}
@@ -1319,12 +1348,14 @@ export function NewEditor({
           commandPalette={commandPalette}
         />
         {dialogs}
+      </DynamicRefsProvider>
       </EditorProvider>
     );
   }
 
   return (
     <EditorProvider store={store}>
+      <DynamicRefsProvider value={refChoices}>
       <div className="flex h-screen flex-col bg-steel-50 dark:bg-dark-50">
         <header className="flex h-12 shrink-0 items-center gap-2 border-b border-steel-200 bg-white px-3 dark:border-dark-300 dark:bg-dark-100">
           <Button
@@ -1520,6 +1551,7 @@ export function NewEditor({
       </div>
       {commandPalette}
       {dialogs}
-    </EditorProvider>
+    </DynamicRefsProvider>
+      </EditorProvider>
   );
 }

@@ -5,8 +5,28 @@
  * through `onChange`, so the store records them as undoable commands.
  */
 
+import {
+  AlignmentPad,
+  type AlignmentValue,
+  BoxModelWidget,
+  type BoxSpacing,
+  COLOR_TOKENS as DEFAULT_COLOR_TOKENS,
+  type DesignTokenOption as TokenOption,
+  TokenPicker,
+} from '@nextcms/editor-ui';
 import type { CSSProperties } from 'react';
 import { useState } from 'react';
+
+export {
+  AlignmentPad,
+  AlignmentPad as AlignmentPads,
+  type AlignmentValue,
+  BoxModelWidget,
+  type BoxSpacing,
+  TokenPicker,
+  type TokenOption,
+  DEFAULT_COLOR_TOKENS,
+};
 
 const ACCENT = '#4f46e5';
 
@@ -201,223 +221,4 @@ export type BoxModelValue = { margin: BoxSides; padding: BoxSides; border: BoxSi
 
 const defaultSide = (unit: Unit = 'px'): BoxSides => ({ top: { value: 0, unit }, right: { value: 0, unit }, bottom: { value: 0, unit }, left: { value: 0, unit } });
 
-export function BoxModelWidget({
-  value,
-  onChange,
-  label = 'Spacing',
-}: {
-  value: BoxModelValue | undefined;
-  onChange: (next: BoxModelValue) => void;
-  label?: string;
-}) {
-  const [linked, setLinked] = useState(true);
-  const sides = ['top', 'right', 'bottom', 'left'] as const;
 
-  const sideInput = (which: 'margin' | 'padding' | 'border', side: string, sideValue: SizeValue) => {
-    return (
-      <DraggableNumber
-        value={sideValue.value}
-        unit={sideValue.unit}
-        step={1}
-        min={0}
-        label={side[0].toUpperCase() + side.slice(1)}
-        onChange={next => {
-          onChange({
-            ...value!,
-            [which]: { ...value![which], [side]: { value: next, unit: sideValue.unit } },
-          });
-        }}
-      />
-    );
-  };
-
-  const allInput = (which: 'margin' | 'padding' | 'border', allValue: SizeValue) => (
-    <DraggableNumber
-      key={which}
-      value={allValue.value}
-      unit={allValue.unit}
-      step={1}
-      min={0}
-      label={which === 'margin' ? 'Margin' : which === 'padding' ? 'Padding' : 'Border'}
-      onChange={next => {
-        const sides: BoxSides = { top: { value: next, unit: allValue.unit }, right: { value: next, unit: allValue.unit }, bottom: { value: next, unit: allValue.unit }, left: { value: next, unit: allValue.unit } };
-        onChange({ ...value!, [which]: sides });
-      }}
-    />
-  );
-
-  return (
-    <div style={{ display: 'grid', gap: 10, font: '13px/1.4 system-ui, sans-serif' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, font: '600 12px/1.4 system-ui, sans-serif' }}>
-        {label}
-        <span style={{ opacity: 0.6, fontSize: 11 }}>{linked ? 'linked sides' : 'independent sides'}</span>
-        <button
-          type="button"
-          aria-pressed={linked}
-          onClick={() => setLinked(l => !l)}
-          style={{
-            all: 'unset',
-            cursor: 'pointer',
-            padding: '1px 6px',
-            borderRadius: 4,
-            border: '1px solid rgba(127,127,127,.35)',
-            background: linked ? 'rgba(79,70,229,.15)' : 'transparent',
-            color: 'inherit',
-            font: '11px/1.4 system-ui, sans-serif',
-          }}
-        >
-          {linked ? 'Unlink' : 'Link'}
-        </button>
-      </div>
-      {(['margin', 'padding', 'border'] as const).map(which => (
-        <div key={which} style={{ display: 'grid', gap: 8, marginTop: 4 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ font: '600 11px/1.4 system-ui, sans-serif', opacity: 0.7, minWidth: 55 }}>{which === 'margin' ? 'Margin' : which === 'padding' ? 'Padding' : 'Border'}</span>
-            {linked ? (
-              allInput(which, value![which].top)
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                {sides.map(side => sideInput(which, side, value![which][side]))}
-              </div>
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/** Alignment pads for flex and grid: justify-content and align-items. */
-export type AlignmentValue = { justify: 'start' | 'center' | 'end' | 'space-between' | 'space-around'; align: 'start' | 'center' | 'end' | 'stretch' };
-
-const ALIGN_LABELS: Record<string, string> = { start: 'Start', center: 'Center', end: 'End', 'space-between': 'Space between', 'space-around': 'Space around', stretch: 'Stretch' };
-
-export function AlignmentPads({
-  value,
-  onChange,
-}: {
-  value: AlignmentValue | undefined;
-  onChange: (next: AlignmentValue) => void;
-}) {
-  const justifyOptions: { value: AlignmentValue['justify']; label: string }[] = [
-    { value: 'start', label: 'Start' },
-    { value: 'center', label: 'Center' },
-    { value: 'end', label: 'End' },
-    { value: 'space-between', label: 'Space between' },
-    { value: 'space-around', label: 'Space around' },
-  ];
-  const alignOptions: { value: AlignmentValue['align']; label: string }[] = [
-    { value: 'start', label: 'Start' },
-    { value: 'center', label: 'Center' },
-    { value: 'end', label: 'End' },
-    { value: 'stretch', label: 'Stretch' },
-  ];
-
-  return (
-    <div style={{ display: 'grid', gap: 10, font: '13px/1.4 system-ui, sans-serif' }}>
-      <div>
-        <div style={{ font: '600 11px/1.4 system-ui, sans-serif', opacity: 0.7, marginBottom: 6 }}>Justify content</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
-          {justifyOptions.map(opt => (
-            <button
-              key={opt.value}
-              type="button"
-              aria-pressed={value?.justify === opt.value}
-              onClick={() => onChange({ ...value!, justify: opt.value })}
-              style={{
-                all: 'unset',
-                padding: '8px 4px',
-                borderRadius: 6,
-                border: `1px solid ${value?.justify === opt.value ? '#4f46e5' : 'rgba(127,127,127,.35)'}`,
-                background: value?.justify === opt.value ? 'rgba(79,70,229,.15)' : 'transparent',
-                color: 'inherit',
-                font: '600 11px/1.4 system-ui, sans-serif',
-                cursor: 'pointer',
-              }}
-            >
-              {ALIGN_LABELS[opt.value]}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div>
-        <div style={{ font: '600 11px/1.4 system-ui, sans-serif', opacity: 0.7, marginBottom: 6 }}>Align items</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 4 }}>
-          {alignOptions.map(opt => (
-            <button
-              key={opt.value}
-              type="button"
-              aria-pressed={value?.align === opt.value}
-              onClick={() => onChange({ ...value!, align: opt.value })}
-              style={{
-                all: 'unset',
-                padding: '8px 4px',
-                borderRadius: 6,
-                border: `1px solid ${value?.align === opt.value ? '#4f46e5' : 'rgba(127,127,127,.35)'}`,
-                background: value?.align === opt.value ? 'rgba(79,70,229,.15)' : 'transparent',
-                color: 'inherit',
-                font: '600 11px/1.4 system-ui, sans-serif',
-                cursor: 'pointer',
-              }}
-            >
-              {ALIGN_LABELS[opt.value]}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/** A design token picker: choose from the site's theme tokens. */
-export type TokenOption = { value: string; label: string; color?: string };
-
-export const DEFAULT_COLOR_TOKENS: TokenOption[] = [
-  { value: 'token:primary', label: 'Primary Brand', color: '#4f46e5' },
-  { value: 'token:secondary', label: 'Secondary', color: '#64748b' },
-  { value: 'token:accent', label: 'Accent', color: '#0ea5e9' },
-  { value: 'token:text', label: 'Text', color: '#0f172a' },
-  { value: 'token:textMuted', label: 'Text Muted', color: '#64748b' },
-  { value: 'token:background', label: 'Background', color: '#ffffff' },
-  { value: 'token:surface', label: 'Surface', color: '#f8fafc' },
-  { value: 'token:border', label: 'Border', color: '#e2e8f0' },
-];
-
-export function TokenPicker({
-  value,
-  onChange,
-  tokens = DEFAULT_COLOR_TOKENS,
-  label = 'Token',
-}: {
-  value: string | undefined;
-  onChange: (next: string | undefined) => void;
-  tokens?: TokenOption[];
-  label?: string;
-}) {
-  const options = tokens && tokens.length > 0 ? tokens : DEFAULT_COLOR_TOKENS;
-  return (
-    <div style={{ display: 'grid', gap: 6, font: '13px/1.4 system-ui, sans-serif' }}>
-      <label style={{ font: '600 12px/1.4 system-ui, sans-serif' }}>{label}</label>
-      <select
-        value={value ?? ''}
-        onChange={event => onChange(event.target.value || undefined)}
-        style={{
-          width: '100%',
-          padding: '6px 8px',
-          borderRadius: 6,
-          border: '1px solid rgba(127,127,127,.35)',
-          background: 'transparent',
-          color: 'inherit',
-          font: '13px/1.4 system-ui, sans-serif',
-        }}
-      >
-        <option value="">Inherit token</option>
-        {options.map(token => (
-          <option key={token.value} value={token.value} style={{ color: token.color ?? 'inherit' }}>
-            {token.label}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}

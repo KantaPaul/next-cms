@@ -1,9 +1,10 @@
-import type React from 'react';
+import React from 'react';
 import { forwardRef } from 'react';
 import { clamp as clampTo } from '../controls/math';
 import { useScrub } from '../controls/useScrub';
 
 export interface NumberInputProps {
+  id?: string;
   value: number;
   onChange: (value: number) => void;
   min?: number;
@@ -19,6 +20,7 @@ export interface NumberInputProps {
 export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
   (
     {
+      id,
       value,
       onChange,
       min = -Infinity,
@@ -93,6 +95,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
 
         <input
           ref={ref}
+          id={id}
           type="number"
           value={value}
           disabled={disabled}

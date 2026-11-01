@@ -1,5 +1,5 @@
 import * as PopoverPrimitive from '@radix-ui/react-popover';
-import type React from 'react';
+import React from 'react';
 import { useState } from 'react';
 import { cn } from '../lib/cn';
 import { useLayerScope } from '../theme/EditorUIProvider';

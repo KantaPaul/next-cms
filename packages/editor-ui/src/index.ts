@@ -4,6 +4,8 @@
 
 // A11y
 export * from './a11y/LiveAnnouncer';
+// Controls (E12)
+export * from './controls';
 export * from './feedback/ConflictDialog';
 export * from './feedback/EmptyState';
 export * from './feedback/ErrorState';
@@ -56,15 +58,8 @@ export * from './primitives/Tabs';
 export * from './primitives/Textarea';
 export * from './primitives/Toast';
 export * from './primitives/Tooltip';
-export * from './shell/Breadcrumb';
-export * from './shell/CommandPalette';
-export * from './shell/CommandPopover';
-export * from './shell/EditorShell';
-export * from './shell/Panel';
-export * from './shell/StatusBar';
 // Shell
-export * from './shell/TopBar';
-export * from './shell/ShortcutHelpDialog';
+export * from './shell';
 // Theme and direction
 export * from './theme/EditorUIProvider';
 // Tokens

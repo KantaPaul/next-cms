@@ -122,6 +122,46 @@ export type FieldDef<P = Record<string, unknown>> =
   /** Any subset of an allowlisted set of class names, never a raw class string (R782). */
   | (BaseField<P> & { type: 'class-list'; options: FieldOption[] })
   | (BaseField<P> & {
+      type: 'slider';
+      min?: number;
+      max?: number;
+      step?: number;
+      unit?: string;
+      ticks?: number[];
+      defaultValue?: number;
+    })
+  | (BaseField<P> & {
+      type: 'choose';
+      options: FieldOption[];
+      clearable?: boolean;
+    })
+  | (BaseField<P> & {
+      type: 'dimensions';
+      units?: string[];
+      allowNegative?: boolean;
+    })
+  | (BaseField<P> & {
+      type: 'typography';
+      fonts?: { value: string; label: string }[];
+    })
+  | (BaseField<P> & {
+      type: 'border';
+    })
+  | (BaseField<P> & {
+      type: 'shadow';
+      kind?: 'box' | 'text';
+    })
+  | (BaseField<P> & {
+      type: 'background';
+    })
+  | (BaseField<P> & {
+      type: 'flex';
+    })
+  | (BaseField<P> & {
+      type: 'alignment';
+      mode?: 'flex' | 'grid';
+    })
+  | (BaseField<P> & {
       type: 'list';
       item: Record<string, FieldDef>;
       defaultItem?: Record<string, unknown>;

@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
-import { Link2, Link2Off } from 'lucide-react';
+import { ChevronsUpDown, Link, Unlink } from 'lucide-react';
+import React from 'react';
+import { useState } from 'react';
+import { cn } from '../lib/cn';
+import { useScrub } from '../controls/useScrub';
 
 export interface BoxSpacing {
   top: number;
@@ -7,6 +10,8 @@ export interface BoxSpacing {
   bottom: number;
   left: number;
 }
+
+export type BoxLinkMode = 'all' | 'axial' | 'independent';
 
 export interface BoxModelWidgetProps {
   margin: BoxSpacing;
@@ -17,6 +22,52 @@ export interface BoxModelWidgetProps {
   className?: string;
 }
 
+interface MiniInputProps {
+  value: number;
+  onChange: (value: number) => void;
+  label?: string;
+  disabled?: boolean;
+}
+
+const MiniInput: React.FC<MiniInputProps> = ({
+  value,
+  onChange,
+  label,
+  disabled = false,
+}) => {
+  const { onPointerDown } = useScrub({
+    value,
+    onChange,
+    step: 1,
+    min: 0,
+    disabled,
+  });
+
+  return (
+    <div className="inline-flex items-center gap-0.5">
+      {label && (
+        <span
+          onPointerDown={disabled ? undefined : onPointerDown}
+          className="cursor-ew-resize font-mono text-[8px] uppercase text-[var(--ne-text-muted)] select-none hover:text-[var(--ne-primary)]"
+          title={`Drag to scrub ${label}`}
+        >
+          {label}
+        </span>
+      )}
+      <input
+        type="number"
+        value={Number.isFinite(value) ? value : 0}
+        disabled={disabled}
+        onChange={e => {
+          const num = parseInt(e.target.value, 10);
+          onChange(Number.isNaN(num) ? 0 : num);
+        }}
+        className="w-7 h-4 text-[10px] text-center font-mono tabular-nums bg-transparent hover:bg-[var(--ne-surface)] focus:bg-[var(--ne-surface)] focus:outline-none focus:ring-1 focus:ring-[var(--ne-primary)] rounded-[2px] text-[var(--ne-text)] border border-transparent hover:border-[var(--ne-border)] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+      />
+    </div>
+  );
+};
+
 export const BoxModelWidget: React.FC<BoxModelWidgetProps> = ({
   margin,
   padding,
@@ -25,109 +76,171 @@ export const BoxModelWidget: React.FC<BoxModelWidgetProps> = ({
   unit = 'px',
   className = '',
 }) => {
-  const [marginLinked, setMarginLinked] = useState(false);
-  const [paddingLinked, setPaddingLinked] = useState(false);
+  const [marginMode, setMarginMode] = useState<BoxLinkMode>('independent');
+  const [paddingMode, setPaddingMode] = useState<BoxLinkMode>('independent');
+
+  const cycleMode = (mode: BoxLinkMode): BoxLinkMode => {
+    if (mode === 'independent') return 'all';
+    if (mode === 'all') return 'axial';
+    return 'independent';
+  };
 
   const updateMarginSide = (side: keyof BoxSpacing, val: number) => {
-    if (marginLinked) {
+    if (marginMode === 'all') {
       onMarginChange({ top: val, right: val, bottom: val, left: val });
+    } else if (marginMode === 'axial') {
+      if (side === 'top' || side === 'bottom') {
+        onMarginChange({ ...margin, top: val, bottom: val });
+      } else {
+        onMarginChange({ ...margin, right: val, left: val });
+      }
     } else {
       onMarginChange({ ...margin, [side]: val });
     }
   };
 
   const updatePaddingSide = (side: keyof BoxSpacing, val: number) => {
-    if (paddingLinked) {
+    if (paddingMode === 'all') {
       onPaddingChange({ top: val, right: val, bottom: val, left: val });
+    } else if (paddingMode === 'axial') {
+      if (side === 'top' || side === 'bottom') {
+        onPaddingChange({ ...padding, top: val, bottom: val });
+      } else {
+        onPaddingChange({ ...padding, right: val, left: val });
+      }
     } else {
       onPaddingChange({ ...padding, [side]: val });
     }
   };
 
-  const renderSmallInput = (
-    val: number,
-    onChange: (newVal: number) => void,
-    placeholder = '0'
-  ) => {
-    return (
-      <input
-        type="number"
-        value={val}
-        onChange={(e) => {
-          const num = parseInt(e.target.value, 10);
-          onChange(isNaN(num) ? 0 : num);
-        }}
-        placeholder={placeholder}
-        className="w-8 h-4 text-[10px] text-center font-mono tabular-nums bg-transparent hover:bg-[var(--ne-surface)] focus:bg-[var(--ne-surface)] focus:outline-none focus:ring-1 focus:ring-[var(--ne-primary)] rounded-[2px] text-[var(--ne-text)] border border-transparent hover:border-[var(--ne-border)] transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-      />
-    );
+  const modeIcon = (mode: BoxLinkMode) => {
+    if (mode === 'all') return <Link className="w-2.5 h-2.5 text-[var(--ne-primary)]" />;
+    if (mode === 'axial') return <ChevronsUpDown className="w-2.5 h-2.5 text-[var(--ne-primary)]" />;
+    return <Unlink className="w-2.5 h-2.5 opacity-60" />;
+  };
+
+  const modeTitle = (mode: BoxLinkMode) => {
+    if (mode === 'all') return 'All sides linked (click for axial split)';
+    if (mode === 'axial') return 'Axial split (click for independent)';
+    return 'Independent sides (click to link all)';
   };
 
   return (
-    <div className={`p-2 bg-[var(--ne-surface-subtle)] border border-[var(--ne-border)] rounded-[var(--ne-radius-md)] select-none text-[10px] font-mono ${className}`}>
+    <div
+      className={cn(
+        'p-2 bg-[var(--ne-surface-subtle)] border border-[var(--ne-border)] rounded-[var(--ne-radius-md)] select-none text-[10px] font-mono',
+        className
+      )}
+    >
       {/* Outer Box: Margin */}
       <div className="relative border border-dashed border-[var(--ne-warning)]/60 bg-[var(--ne-warning-soft)]/15 rounded-[var(--ne-radius-sm)] p-4 flex flex-col items-center">
-        {/* Margin Label & Lock */}
+        {/* Margin Label & Link Mode */}
         <div className="absolute top-1 left-1.5 flex items-center gap-1 text-[9px] uppercase tracking-wider text-[var(--ne-warning)] font-sans font-semibold">
           <span>margin</span>
           <button
             type="button"
-            onClick={() => setMarginLinked(!marginLinked)}
-            title={marginLinked ? 'Unlink sides' : 'Link all sides'}
+            onClick={() => setMarginMode(cycleMode(marginMode))}
+            title={modeTitle(marginMode)}
+            aria-label={modeTitle(marginMode)}
             className="p-0.5 hover:text-[var(--ne-text)] cursor-pointer"
           >
-            {marginLinked ? <Link2 className="w-2.5 h-2.5 text-[var(--ne-primary)]" /> : <Link2Off className="w-2.5 h-2.5 opacity-60" />}
+            {modeIcon(marginMode)}
           </button>
         </div>
 
         {/* Margin Top */}
-        <div className="mb-1">{renderSmallInput(margin.top, (v) => updateMarginSide('top', v))}</div>
+        <div className="mb-1">
+          <MiniInput
+            value={margin.top}
+            onChange={v => updateMarginSide('top', v)}
+            label={marginMode === 'axial' ? 'Y' : undefined}
+          />
+        </div>
 
         <div className="flex items-center justify-between w-full">
           {/* Margin Left */}
-          <div>{renderSmallInput(margin.left, (v) => updateMarginSide('left', v))}</div>
+          <div>
+            <MiniInput
+              value={margin.left}
+              onChange={v => updateMarginSide('left', v)}
+              label={marginMode === 'axial' ? 'X' : undefined}
+            />
+          </div>
 
           {/* Inner Box: Padding */}
           <div className="relative border border-solid border-[var(--ne-primary)]/50 bg-[var(--ne-primary-soft)]/20 rounded-[var(--ne-radius-sm)] px-5 py-3 flex flex-col items-center flex-1 mx-2">
-            {/* Padding Label & Lock */}
+            {/* Padding Label & Link Mode */}
             <div className="absolute top-0.5 left-1 flex items-center gap-1 text-[9px] uppercase tracking-wider text-[var(--ne-primary)] font-sans font-semibold">
               <span>pad</span>
               <button
                 type="button"
-                onClick={() => setPaddingLinked(!paddingLinked)}
-                title={paddingLinked ? 'Unlink sides' : 'Link all sides'}
+                onClick={() => setPaddingMode(cycleMode(paddingMode))}
+                title={modeTitle(paddingMode)}
+                aria-label={modeTitle(paddingMode)}
                 className="p-0.5 hover:text-[var(--ne-text)] cursor-pointer"
               >
-                {paddingLinked ? <Link2 className="w-2.5 h-2.5 text-[var(--ne-primary)]" /> : <Link2Off className="w-2.5 h-2.5 opacity-60" />}
+                {modeIcon(paddingMode)}
               </button>
             </div>
 
             {/* Padding Top */}
-            <div className="mb-1">{renderSmallInput(padding.top, (v) => updatePaddingSide('top', v))}</div>
+            <div className="mb-1">
+              <MiniInput
+                value={padding.top}
+                onChange={v => updatePaddingSide('top', v)}
+                label={paddingMode === 'axial' ? 'Y' : undefined}
+              />
+            </div>
 
             <div className="flex items-center justify-between w-full">
               {/* Padding Left */}
-              <div>{renderSmallInput(padding.left, (v) => updatePaddingSide('left', v))}</div>
+              <div>
+                <MiniInput
+                  value={padding.left}
+                  onChange={v => updatePaddingSide('left', v)}
+                  label={paddingMode === 'axial' ? 'X' : undefined}
+                />
+              </div>
 
-              {/* Core / Content box */}
-              <div className="mx-2 px-2 py-1 bg-[var(--ne-surface)] border border-[var(--ne-border)] rounded-[2px] text-[9px] text-[var(--ne-text-muted)] text-center font-sans">
-                content
+              {/* Core Content Box */}
+              <div className="h-5 px-2 bg-[var(--ne-surface)] border border-[var(--ne-border)] rounded-[2px] flex items-center justify-center text-[9px] text-[var(--ne-text-muted)]">
+                {unit}
               </div>
 
               {/* Padding Right */}
-              <div>{renderSmallInput(padding.right, (v) => updatePaddingSide('right', v))}</div>
+              <div>
+                <MiniInput
+                  value={padding.right}
+                  onChange={v => updatePaddingSide('right', v)}
+                />
+              </div>
             </div>
 
             {/* Padding Bottom */}
-            <div className="mt-1">{renderSmallInput(padding.bottom, (v) => updatePaddingSide('bottom', v))}</div>
+            <div className="mt-1">
+              <MiniInput
+                value={padding.bottom}
+                onChange={v => updatePaddingSide('bottom', v)}
+              />
+            </div>
           </div>
 
           {/* Margin Right */}
-          <div>{renderSmallInput(margin.right, (v) => updateMarginSide('right', v))}</div>
+          <div>
+            <MiniInput
+              value={margin.right}
+              onChange={v => updateMarginSide('right', v)}
+            />
+          </div>
         </div>
 
         {/* Margin Bottom */}
-        <div className="mt-1">{renderSmallInput(margin.bottom, (v) => updateMarginSide('bottom', v))}</div>
+        <div className="mt-1">
+          <MiniInput
+            value={margin.bottom}
+            onChange={v => updateMarginSide('bottom', v)}
+          />
+        </div>
       </div>
     </div>
   );

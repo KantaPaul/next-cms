@@ -1,4 +1,4 @@
-import type React from 'react';
+import React from 'react';
 import { LiveAnnouncerProvider } from '../a11y/LiveAnnouncer';
 import { cn } from '../lib/cn';
 import { ToastProvider } from '../primitives/Toast';
