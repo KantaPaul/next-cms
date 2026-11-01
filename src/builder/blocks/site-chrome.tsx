@@ -39,6 +39,7 @@ export type HeaderBarProps = {
   minHeight?: string;
   borderBottom?: boolean;
   align?: 'center' | 'start' | 'end';
+  layout?: 'left-center-right' | 'split-2' | 'equal-3' | 'left-heavy' | 'right-heavy';
   left?: SlotValue;
   center?: SlotValue;
   right?: SlotValue;
@@ -47,11 +48,11 @@ export type HeaderBarProps = {
 };
 
 const BG_STYLES: Record<string, string> = {
-  default: 'bg-[var(--site-bg)] text-[var(--site-text)]',
+  default: 'bg-transparent text-inherit',
   muted: 'bg-[var(--site-surface)] text-[var(--site-text)]',
   inverted: 'bg-[var(--site-text)] text-[var(--site-bg)]',
   primary: 'bg-[var(--site-primary)] text-white',
-  transparent: 'bg-transparent text-[var(--site-text)]',
+  transparent: 'bg-transparent text-inherit',
 };
 
 const PADDING_Y: Record<string, string> = {
@@ -75,6 +76,7 @@ export function HeaderBar({
   minHeight,
   borderBottom = false,
   align = 'center',
+  layout = 'left-center-right',
   left,
   center,
   right,
@@ -87,6 +89,34 @@ export function HeaderBar({
       : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8';
 
   const style: React.CSSProperties = minHeight ? { minHeight } : {};
+
+  const colStyles = {
+    'left-center-right': {
+      left: 'flex items-center gap-3 min-w-0',
+      center: 'flex items-center gap-4 min-w-0 justify-center flex-1',
+      right: 'flex items-center gap-3 min-w-0 justify-end',
+    },
+    'split-2': {
+      left: 'flex items-center gap-4 min-w-0 flex-1',
+      center: 'hidden',
+      right: 'flex items-center gap-4 min-w-0 justify-end',
+    },
+    'equal-3': {
+      left: 'flex items-center gap-3 min-w-0 flex-1',
+      center: 'flex items-center gap-4 min-w-0 justify-center flex-1',
+      right: 'flex items-center gap-3 min-w-0 justify-end flex-1',
+    },
+    'left-heavy': {
+      left: 'flex items-center gap-4 min-w-0 flex-[2]',
+      center: 'flex items-center gap-3 min-w-0 justify-center flex-1',
+      right: 'flex items-center gap-3 min-w-0 justify-end flex-1',
+    },
+    'right-heavy': {
+      left: 'flex items-center gap-3 min-w-0 flex-1',
+      center: 'flex items-center gap-3 min-w-0 justify-center flex-1',
+      right: 'flex items-center gap-4 min-w-0 justify-end flex-[2]',
+    },
+  }[layout || 'left-center-right'];
 
   return (
     <div
@@ -105,15 +135,114 @@ export function HeaderBar({
           ALIGN_ITEMS[align] || ALIGN_ITEMS.center
         )}
       >
-        <div className="flex items-center gap-3 min-w-0">
+        <div className={colStyles.left}>
           {renderSlot(left, zones)}
         </div>
-        <div className="flex items-center gap-4 min-w-0 justify-center flex-1">
-          {renderSlot(center, zones)}
-        </div>
-        <div className="flex items-center gap-3 min-w-0 justify-end">
+        {colStyles.center !== 'hidden' && (
+          <div className={colStyles.center}>
+            {renderSlot(center, zones)}
+          </div>
+        )}
+        <div className={colStyles.right}>
           {renderSlot(right, zones)}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- HeaderColumns ---------- */
+
+export type HeaderColumnsProps = {
+  width?: 'boxed' | 'full';
+  background?: 'default' | 'muted' | 'inverted' | 'primary' | 'transparent';
+  paddingY?: 'none' | 'xs' | 'sm' | 'md' | 'lg';
+  columns?: number;
+  gap?: 'sm' | 'md' | 'lg' | 'xl';
+  align?: 'center' | 'start' | 'end';
+  stackOn?: 'mobile' | 'tablet';
+  col1?: SlotValue;
+  col2?: SlotValue;
+  col3?: SlotValue;
+  col4?: SlotValue;
+  col5?: SlotValue;
+  col6?: SlotValue;
+  zones?: Record<string, BuilderItem[]>;
+  editing?: boolean;
+};
+
+export function HeaderColumns({
+  width = 'boxed',
+  background = 'default',
+  paddingY = 'none',
+  columns = 3,
+  gap = 'md',
+  align = 'center',
+  stackOn = 'mobile',
+  col1,
+  col2,
+  col3,
+  col4,
+  col5,
+  col6,
+  zones,
+  editing,
+}: HeaderColumnsProps) {
+  const containerClass =
+    width === 'full'
+      ? 'w-full px-4 sm:px-6 lg:px-8'
+      : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8';
+
+  const cols = Math.min(Math.max(Number(columns) || 3, 1), 6);
+  const slots = [col1, col2, col3, col4, col5, col6].slice(0, cols);
+
+  const gridColsClass =
+    stackOn === 'tablet'
+      ? cols === 1
+        ? 'grid-cols-1'
+        : cols === 2
+          ? 'grid-cols-1 lg:grid-cols-2'
+          : cols === 3
+            ? 'grid-cols-1 lg:grid-cols-3'
+            : cols === 4
+              ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
+              : cols === 5
+                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-5'
+                : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-6'
+      : cols === 1
+        ? 'grid-cols-1'
+        : cols === 2
+          ? 'grid-cols-1 md:grid-cols-2'
+          : cols === 3
+            ? 'grid-cols-1 md:grid-cols-3'
+            : cols === 4
+              ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4'
+              : cols === 5
+                ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-5'
+                : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-6';
+
+  return (
+    <div
+      className={cn(
+        'w-full transition-colors',
+        BG_STYLES[background] || BG_STYLES.default
+      )}
+    >
+      <div
+        className={cn(
+          containerClass,
+          PADDING_Y[paddingY] || PADDING_Y.none,
+          'grid items-center',
+          gridColsClass,
+          GAP_STYLES[gap] || GAP_STYLES.md,
+          ALIGN_ITEMS[align] || ALIGN_ITEMS.center
+        )}
+      >
+        {slots.map((slot, index) => (
+          <div key={index} className="min-w-0">
+            {renderSlot(slot, zones)}
+          </div>
+        ))}
       </div>
     </div>
   );

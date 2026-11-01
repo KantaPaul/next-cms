@@ -18,6 +18,7 @@ describe('Header & Footer builder palette and editor setup', () => {
     assert.equal(setup.groups[0].title, 'Header');
     assert.equal(setup.groups[1].title, 'Footer');
     assert.ok(setup.groups[0].types.includes('HeaderBar'));
+    assert.ok(setup.groups[0].types.includes('HeaderColumns'));
     assert.ok(setup.groups[0].types.includes('Logo'));
     assert.ok(setup.groups[0].types.includes('NavMenu'));
     assert.ok(setup.groups[0].types.includes('MobileMenu'));
@@ -89,6 +90,7 @@ describe('Header & Footer builder palette and editor setup', () => {
 describe('Header & Footer block definitions and schemas', () => {
   const chromeTypes = [
     'HeaderBar',
+    'HeaderColumns',
     'FooterColumns',
     'Logo',
     'NavMenu',
@@ -120,11 +122,22 @@ describe('Header & Footer block definitions and schemas', () => {
     }
   });
 
-  it('HeaderBar has left, center, right slots', () => {
+  it('HeaderBar has left, center, right slots and column layout options', () => {
     const setup = editorSetup('header');
     assert.ok(setup.schemas.HeaderBar.slots?.left);
     assert.ok(setup.schemas.HeaderBar.slots?.center);
     assert.ok(setup.schemas.HeaderBar.slots?.right);
+    assert.ok(setup.inspectorBlocks.HeaderBar.fields.layout);
+  });
+
+  it('HeaderColumns has col1 through col6 slots', () => {
+    const setup = editorSetup('header');
+    assert.ok(setup.schemas.HeaderColumns.slots?.col1);
+    assert.ok(setup.schemas.HeaderColumns.slots?.col2);
+    assert.ok(setup.schemas.HeaderColumns.slots?.col3);
+    assert.ok(setup.schemas.HeaderColumns.slots?.col4);
+    assert.ok(setup.schemas.HeaderColumns.slots?.col5);
+    assert.ok(setup.schemas.HeaderColumns.slots?.col6);
   });
 
   it('FooterColumns has col1 through col6 slots', () => {

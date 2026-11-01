@@ -34,6 +34,7 @@ import {
 import { Newsletter } from './newsletter';
 import {
   HeaderBar,
+  HeaderColumns,
   FooterColumns,
   Logo,
   NavMenu,
@@ -83,6 +84,7 @@ const builtInComponents = {
   Button,
   ImageMorph,
   HeaderBar,
+  HeaderColumns,
   FooterColumns,
   Logo,
   NavMenu,

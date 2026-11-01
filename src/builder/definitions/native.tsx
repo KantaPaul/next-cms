@@ -14,6 +14,7 @@ import { ImageMorph } from '../blocks/image-morph';
 import { Button, Spacer } from '../blocks/layout';
 import {
   HeaderBar,
+  HeaderColumns,
   FooterColumns,
   Logo,
   NavMenu,
@@ -469,6 +470,9 @@ export const HeaderBarBlock = defineBlock({
       .enum(['default', 'muted', 'inverted', 'primary', 'transparent'])
       .default('default'),
     paddingY: z.enum(['none', 'xs', 'sm', 'md', 'lg']).default('sm'),
+    layout: z
+      .enum(['left-center-right', 'split-2', 'equal-3', 'left-heavy', 'right-heavy'])
+      .default('left-center-right'),
     minHeight: z.string().default(''),
     borderBottom: z.boolean().default(false),
     align: z.enum(['center', 'start', 'end']).default('center'),
@@ -486,6 +490,17 @@ export const HeaderBarBlock = defineBlock({
       options: [
         { label: 'Boxed', value: 'boxed' },
         { label: 'Full', value: 'full' },
+      ],
+    },
+    layout: {
+      label: 'Column layout',
+      type: 'select',
+      options: [
+        { label: '3 columns (Left / Center / Right)', value: 'left-center-right' },
+        { label: '2 columns (Left / Right split)', value: 'split-2' },
+        { label: '3 equal columns (33% / 33% / 33%)', value: 'equal-3' },
+        { label: 'Left heavy (50% / 25% / 25%)', value: 'left-heavy' },
+        { label: 'Right heavy (25% / 25% / 50%)', value: 'right-heavy' },
       ],
     },
     background: {
@@ -533,9 +548,117 @@ export const HeaderBarBlock = defineBlock({
     width: 'boxed',
     background: 'default',
     paddingY: 'sm',
+    layout: 'left-center-right',
     minHeight: '',
     borderBottom: false,
     align: 'center',
+  },
+});
+
+export const HeaderColumnsBlock = defineBlock({
+  type: 'HeaderColumns',
+  label: 'Header columns',
+  category: 'header',
+  icon: 'columns',
+  schema: z.object({
+    width: z.enum(['boxed', 'full']).default('boxed'),
+    background: z
+      .enum(['default', 'muted', 'inverted', 'primary', 'transparent'])
+      .default('default'),
+    paddingY: z.enum(['none', 'xs', 'sm', 'md', 'lg']).default('none'),
+    columns: z.number().min(1).max(6).default(3),
+    gap: z.enum(['sm', 'md', 'lg', 'xl']).default('md'),
+    align: z.enum(['center', 'start', 'end']).default('center'),
+    stackOn: z.enum(['mobile', 'tablet']).default('mobile'),
+  }),
+  slots: {
+    col1: { label: 'Column 1' },
+    col2: { label: 'Column 2' },
+    col3: { label: 'Column 3' },
+    col4: { label: 'Column 4' },
+    col5: { label: 'Column 5' },
+    col6: { label: 'Column 6' },
+  },
+  render: HeaderColumns,
+  fields: {
+    width: {
+      label: 'Width',
+      type: 'radio',
+      options: [
+        { label: 'Boxed', value: 'boxed' },
+        { label: 'Full', value: 'full' },
+      ],
+    },
+    background: {
+      label: 'Background',
+      type: 'select',
+      options: [
+        { label: 'Default', value: 'default' },
+        { label: 'Surface / Muted', value: 'muted' },
+        { label: 'Inverted', value: 'inverted' },
+        { label: 'Primary', value: 'primary' },
+        { label: 'Transparent', value: 'transparent' },
+      ],
+    },
+    paddingY: {
+      label: 'Vertical padding',
+      type: 'select',
+      options: [
+        { label: 'None', value: 'none' },
+        { label: 'Extra small', value: 'xs' },
+        { label: 'Small', value: 'sm' },
+        { label: 'Medium', value: 'md' },
+        { label: 'Large', value: 'lg' },
+      ],
+    },
+    columns: {
+      label: 'Number of columns',
+      type: 'select',
+      options: [
+        { label: '1 column', value: 1 },
+        { label: '2 columns', value: 2 },
+        { label: '3 columns', value: 3 },
+        { label: '4 columns', value: 4 },
+        { label: '5 columns', value: 5 },
+        { label: '6 columns', value: 6 },
+      ],
+    },
+    gap: {
+      label: 'Gap between columns',
+      type: 'select',
+      options: [
+        { label: 'Small', value: 'sm' },
+        { label: 'Medium', value: 'md' },
+        { label: 'Large', value: 'lg' },
+        { label: 'Extra large', value: 'xl' },
+      ],
+    },
+    align: {
+      label: 'Vertical alignment',
+      type: 'radio',
+      options: [
+        { label: 'Center', value: 'center' },
+        { label: 'Start', value: 'start' },
+        { label: 'End', value: 'end' },
+      ],
+    },
+    stackOn: {
+      label: 'Stack on',
+      type: 'radio',
+      options: [
+        { label: 'Mobile (< 768px)', value: 'mobile' },
+        { label: 'Tablet (< 1024px)', value: 'tablet' },
+      ],
+    },
+  },
+  defaults: {
+    width: 'boxed',
+    background: 'default',
+    paddingY: 'none',
+    columns: 3,
+    gap: 'md',
+    align: 'center',
+    stackOn: 'mobile',
   },
 });
 
@@ -1410,6 +1533,7 @@ export const NATIVE_BLOCKS = [
   PostContentBlock,
   RelatedPostsBlock,
   HeaderBarBlock,
+  HeaderColumnsBlock,
   FooterColumnsBlock,
   LogoBlock,
   NavMenuBlock,
@@ -1467,7 +1591,6 @@ export const HEADER_ROOT_FIELDS = {
     label: 'Header style',
     group: STYLE,
     render: HeaderStyleField,
-    responsive: true,
   },
   sticky: {
     type: 'select',
@@ -1529,7 +1652,6 @@ export const FOOTER_ROOT_FIELDS = {
     label: 'Footer style',
     group: STYLE,
     render: FooterStyleField,
-    responsive: true,
   },
 } as any;
 
@@ -1538,6 +1660,7 @@ export const CATEGORIES = {
     title: 'Header',
     components: [
       'HeaderBar',
+      'HeaderColumns',
       'Logo',
       'NavMenu',
       'MobileMenu',

@@ -16,6 +16,14 @@ export interface FieldRowProps {
   layout?: 'horizontal' | 'vertical';
   children: React.ReactNode;
   className?: string;
+  /** Extra props for the label, e.g. a scrub handler. */
+  labelProps?: React.LabelHTMLAttributes<HTMLLabelElement>;
+  /** Shown after the label, before the reset button (token chip, info). */
+  adornment?: React.ReactNode;
+  /** Shown under the control (helper or error text). */
+  footer?: React.ReactNode;
+  /** Device badge click handler, e.g. to cycle devices. */
+  onDeviceClick?: () => void;
 }
 
 export const FieldRow: React.FC<FieldRowProps> = ({
@@ -30,27 +38,34 @@ export const FieldRow: React.FC<FieldRowProps> = ({
   layout = 'horizontal',
   children,
   className = '',
+  labelProps,
+  adornment,
+  footer,
+  onDeviceClick,
 }) => {
-  return (
+  const row = (
     <div
-      className={`py-1.5 ${layout === 'horizontal' ? 'flex items-center justify-between gap-2 min-h-[32px]' : 'space-y-1'} ${className}`}
+      className={`py-1.5 ${layout === 'horizontal' ? 'flex items-center justify-between gap-2 min-h-[32px]' : 'space-y-1'} ${footer ? '' : className}`}
     >
       <div
         className={`flex items-center gap-1.5 min-w-0 ${layout === 'horizontal' ? 'w-2/5 shrink-0' : 'w-full'}`}
       >
         <ChangedDot changed={changed} />
         <label
-          htmlFor={htmlFor}
-          className="text-xs font-medium text-[var(--ne-text)] truncate select-none font-sans"
           title={description || label}
+          {...labelProps}
+          htmlFor={htmlFor}
+          className={`text-xs font-medium text-[var(--ne-text)] truncate select-none font-sans ${labelProps?.className ?? ''}`}
         >
           {label}
         </label>
+        {adornment}
         {device && (
           <DeviceValueBadge
             device={device}
             isInherited={isInherited}
             inheritedFrom={inheritedFrom}
+            onClick={onDeviceClick}
           />
         )}
         {changed && onReset && (
@@ -68,6 +83,13 @@ export const FieldRow: React.FC<FieldRowProps> = ({
           {description}
         </p>
       )}
+    </div>
+  );
+  if (!footer) return row;
+  return (
+    <div className={className}>
+      {row}
+      {footer}
     </div>
   );
 };

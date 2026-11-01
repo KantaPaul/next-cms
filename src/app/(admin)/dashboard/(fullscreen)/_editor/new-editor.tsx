@@ -640,7 +640,10 @@ export function NewEditor({
         'document' in input
           ? input.document
           : applyPatch(store.getState().savedDoc, input.patch);
-      const result = await adapter.saveDraft(documentToPuck(next), true);
+      const result = await adapter.saveDraft(
+        documentToPuck(next, { slots: 'zones', ids: 'always' }),
+        true
+      );
       const error = actionError(result);
       if (error) throw new Error(error);
       return { ok: true, version: input.baseVersion + 1 };
@@ -996,12 +999,15 @@ export function NewEditor({
         </div>
         {rightPanel === 'settings' && (
           <Inspector
+            rootLabel={adapter.label ?? 'Page'}
             blocks={setup.inspectorBlocks}
             rootFields={setup.rootFields}
             empty={
               <p className="mb-2 text-xs text-steel-500">
                 Select a block to edit it.
-                {Object.keys(setup.rootFields).length ? ' Page settings:' : ''}
+                {Object.keys(setup.rootFields).length
+                  ? ` ${adapter.label ?? 'Page'} settings:`
+                  : ''}
               </p>
             }
           />
@@ -1150,7 +1156,12 @@ export function NewEditor({
         open={templateOpen}
         onOpenChange={setTemplateOpen}
         pageTitle={page.title}
-        getContent={() => documentToPuck(store.getState().doc)}
+        getContent={() =>
+          documentToPuck(store.getState().doc, {
+            slots: 'zones',
+            ids: 'always',
+          })
+        }
       />
       {hasRevisions && (
         <RevisionsDrawer

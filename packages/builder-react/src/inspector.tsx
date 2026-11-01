@@ -20,7 +20,7 @@ import {
 } from '@nextcms/editor-ui';
 import { Monitor, Smartphone, Tablet } from 'lucide-react';
 import type { CSSProperties, ReactNode } from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useEditor, useEditorStore } from './context';
 import {
   DeviceProvider,
@@ -199,6 +199,7 @@ export function Inspector({
   rootDefaultProps = {},
   fieldTypes,
   empty,
+  rootLabel = 'Page',
 }: {
   blocks: Record<string, InspectorBlock>;
   /** Page settings shown when nothing is selected. */
@@ -208,6 +209,8 @@ export function Inspector({
   fieldTypes?: Record<string, FieldComponent>;
   /** Shown above page settings when nothing is selected. */
   empty?: ReactNode;
+  /** Label for the root document (e.g. 'Page', 'Header', 'Footer'). */
+  rootLabel?: string;
 }) {
   const store = useEditorStore();
   const device = useEditor(state => state.device);
@@ -223,6 +226,15 @@ export function Inspector({
   const responsive = Object.values(
     node ? (block?.fields ?? {}) : rootFields
   ).some(field => field.responsive);
+
+  const rootBlock = useMemo<InspectorBlock>(
+    () => ({
+      label: rootLabel,
+      fields: rootFields,
+      defaultProps: rootDefaultProps,
+    }),
+    [rootLabel, rootFields, rootDefaultProps]
+  );
 
   return (
     <FieldTypesProvider types={fieldTypes}>
@@ -252,7 +264,7 @@ export function Inspector({
                 ? `${count} blocks selected`
                 : node
                   ? (block?.label ?? node.type)
-                  : 'Page'}
+                  : rootLabel}
             </h2>
             {responsive && <DeviceSwitch />}
           </div>
@@ -281,11 +293,8 @@ export function Inspector({
             <>
               {empty}
               <InspectorTabs
-                block={{
-                  label: 'Page',
-                  fields: rootFields,
-                  defaultProps: rootDefaultProps,
-                }}
+                key="root"
+                block={rootBlock}
                 node={null as any}
                 props={rootProps}
                 defaultProps={rootDefaultProps}
@@ -322,12 +331,22 @@ function InspectorTabs({
 }: InspectorTabsProps) {
   const store = useEditorStore();
   const [query, setQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'content' | 'style' | 'advanced'>(
-    'content'
-  );
-
   const tabFields = (tab: 'content' | 'style' | 'advanced') =>
     Object.entries(block.fields).filter(([, field]) => fieldTab(field) === tab);
+
+  const [activeTab, setActiveTab] = useState<'content' | 'style' | 'advanced'>(
+    () => {
+      const hasContent = Object.values(block.fields).some(
+        f => fieldTab(f) === 'content'
+      );
+      if (hasContent) return 'content';
+      const hasStyle = Object.values(block.fields).some(
+        f => fieldTab(f) === 'style'
+      );
+      if (hasStyle) return 'style';
+      return 'advanced';
+    }
+  );
 
   const filtered = (tab: 'content' | 'style' | 'advanced') => {
     const q = query.toLowerCase().trim();

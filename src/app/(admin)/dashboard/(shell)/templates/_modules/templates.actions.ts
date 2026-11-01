@@ -17,7 +17,7 @@ import {
 
 const blockItemSchema = z.object({
   type: z.string().min(1),
-  props: z.record(z.string(), z.unknown()).and(z.object({ id: z.string() })),
+  props: z.record(z.string(), z.unknown()),
 });
 
 /** Empty content is allowed on create only; service enforces non-empty on update. */

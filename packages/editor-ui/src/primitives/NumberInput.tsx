@@ -1,4 +1,7 @@
-import React, { forwardRef, useState, useRef, useEffect } from 'react';
+import type React from 'react';
+import { forwardRef } from 'react';
+import { clamp as clampTo } from '../controls/math';
+import { useScrub } from '../controls/useScrub';
 
 export interface NumberInputProps {
   value: number;
@@ -29,40 +32,16 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
     },
     ref
   ) => {
-    const [isScrubbing, setIsScrubbing] = useState(false);
-    const startXRef = useRef(0);
-    const startValRef = useRef(value);
-
-    const clamp = (val: number) => Math.min(max, Math.max(min, val));
-
-    const handleMouseDown = (e: React.MouseEvent) => {
-      if (disabled) return;
-      setIsScrubbing(true);
-      startXRef.current = e.clientX;
-      startValRef.current = value;
-      document.body.style.cursor = 'ew-resize';
-      document.body.style.userSelect = 'none';
-
-      const handleMouseMove = (moveEvent: MouseEvent) => {
-        const deltaX = moveEvent.clientX - startXRef.current;
-        // Holding Shift speeds up by 10x, Alt slows down to 0.1x
-        const multiplier = moveEvent.shiftKey ? 10 : moveEvent.altKey ? 0.1 : 1;
-        const rawNewVal =
-          startValRef.current + Math.round(deltaX * 0.5) * step * multiplier;
-        onChange(clamp(Number(rawNewVal.toFixed(2))));
-      };
-
-      const handleMouseUp = () => {
-        setIsScrubbing(false);
-        document.body.style.cursor = '';
-        document.body.style.userSelect = '';
-        window.removeEventListener('mousemove', handleMouseMove);
-        window.removeEventListener('mouseup', handleMouseUp);
-      };
-
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    };
+    const clamp = (val: number) => clampTo(val, min, max);
+    // Holding Shift speeds up by 10x, Alt slows down to 0.1x
+    const { isScrubbing, onPointerDown } = useScrub({
+      value,
+      onChange,
+      step,
+      min,
+      max,
+      disabled,
+    });
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (disabled) return;
@@ -92,7 +71,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
       >
         {/* Scrub handle / Label */}
         <div
-          onMouseDown={handleMouseDown}
+          onPointerDown={onPointerDown}
           title="Click and drag horizontally to scrub value"
           className={`px-2 flex items-center justify-center font-mono text-[11px] font-medium text-[var(--ne-text-muted)] select-none bg-[var(--ne-surface-subtle)] border-r border-[var(--ne-border)] transition-colors ${
             disabled
