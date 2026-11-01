@@ -71,6 +71,7 @@ import {
   getStyleClassStore,
   captureStyles,
   SinglePanel,
+  type TemplateItem,
   E12ControlsProvider,
 } from '@nextcms/builder-react';
 import { PreferencesPanel } from '@nextcms/builder-react';
@@ -692,6 +693,18 @@ export function NewEditor({
   const [frameWindow, setFrameWindow] = useState<Window | null>(null);
   const [panel, setPanel] = useState<'blocks' | 'layers'>('blocks');
   const [focusMode, setFocusMode] = useState(false);
+  const [zoom, setZoom] = useState(100);
+  const [isPreview, setIsPreview] = useState(false);
+  const [documentTitle, setDocumentTitle] = useState(page.title);
+
+  const handleRenameDocument = useCallback(
+    (name: string) => {
+      setDocumentTitle(name);
+      page.title = name;
+      store.commit({ label: `Rename to "${name}"` });
+    },
+    [page, store]
+  );
   const [singlePanelSide, setSinglePanelSide] = useState<'left' | 'right'>('right');
   const [currentLayout, setCurrentLayout] = useState<'single' | 'split'>(() => {
     if (layout) return layout;
@@ -705,6 +718,45 @@ export function NewEditor({
   });
   const isSinglePanel = currentLayout === 'single';
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [customTemplates, setCustomTemplates] = useState<TemplateItem[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const raw = localStorage.getItem('nextcms-user-templates');
+      return raw ? (JSON.parse(raw) as TemplateItem[]) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const handleSaveTemplate = useCallback((tpl: Omit<TemplateItem, 'id'>) => {
+    const fresh: TemplateItem = {
+      ...tpl,
+      id: `custom_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    };
+    setCustomTemplates(prev => {
+      const next = [fresh, ...prev];
+      try {
+        localStorage.setItem('nextcms-user-templates', JSON.stringify(next));
+      } catch {
+        /* noop */
+      }
+      return next;
+    });
+    toast.success(`Saved template "${tpl.name}"`);
+  }, []);
+
+  const handleDeleteTemplate = useCallback((id: string) => {
+    setCustomTemplates(prev => {
+      const next = prev.filter(t => t.id !== id);
+      try {
+        localStorage.setItem('nextcms-user-templates', JSON.stringify(next));
+      } catch {
+        /* noop */
+      }
+      return next;
+    });
+    toast.success('Template deleted');
+  }, []);
   // B9: right panel tabs (R722-R733)
   const [rightPanel, setRightPanel] = useState<
     | 'blocks'
@@ -1019,6 +1071,7 @@ export function NewEditor({
       insertGroups={setup.groups}
       stateStyle={stateStyle}
       dynamicContext={dynamicContext}
+      isPreview={isPreview}
     />
   );
   const rightPanelContent = (
@@ -1283,6 +1336,9 @@ export function NewEditor({
           name: g.name,
           types: g.blocks,
         }))}
+        templates={customTemplates}
+        onSaveTemplate={handleSaveTemplate}
+        onDeleteTemplate={handleDeleteTemplate}
         drag={drag}
         queue={queue}
         dockSide={singlePanelSide}
@@ -1295,7 +1351,8 @@ export function NewEditor({
         <DynamicRefsProvider value={refChoices}>
           <SharedChrome
           queue={queue}
-          title={page.title}
+          title={documentTitle}
+          onRenameDocument={handleRenameDocument}
           kindLabel={adapter.label}
           backHref={adapter.backHref}
           backLabel={adapter.backLabel}
@@ -1306,6 +1363,10 @@ export function NewEditor({
           onToggleFocusMode={() => setFocusMode(value => !value)}
           onOpenCommandPalette={() => setPaletteOpen(true)}
           onOpenShortcuts={() => setShortcutsOpen(true)}
+          zoom={zoom}
+          onZoomChange={setZoom}
+          isPreview={isPreview}
+          onTogglePreview={() => setIsPreview(prev => !prev)}
           actions={
             <>
               <ChromeIconButton
@@ -1592,6 +1653,9 @@ export function NewEditor({
                 <SinglePanel
                   blocks={setup.inspectorBlocks}
                   categories={setup.groups?.map(g => ({ name: g.name, types: g.blocks }))}
+                  templates={customTemplates}
+                  onSaveTemplate={handleSaveTemplate}
+                  onDeleteTemplate={handleDeleteTemplate}
                   drag={drag}
                   queue={queue}
                   dockSide="left"
@@ -1608,6 +1672,9 @@ export function NewEditor({
                 <SinglePanel
                   blocks={setup.inspectorBlocks}
                   categories={setup.groups?.map(g => ({ name: g.name, types: g.blocks }))}
+                  templates={customTemplates}
+                  onSaveTemplate={handleSaveTemplate}
+                  onDeleteTemplate={handleDeleteTemplate}
                   drag={drag}
                   queue={queue}
                   dockSide="right"

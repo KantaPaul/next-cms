@@ -34,6 +34,8 @@ import {
   type TemplateItem,
 } from './template-library-view';
 
+export { type TemplateItem };
+
 export type SinglePanelViewMode =
   | 'elements'
   | 'layers'

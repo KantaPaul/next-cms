@@ -48,7 +48,9 @@ import {
   Copy,
   CornerLeftUp,
   Group,
+  Lock,
   LockOpen,
+  Move,
   Trash2,
 } from 'lucide-react';
 import { useEditorAnnouncements } from './announcements';
@@ -133,6 +135,8 @@ export type EditorCanvasProps = {
   stateStyle?: 'hover' | 'focus' | 'active' | null;
   /** Data for previewing dynamic bindings (R416); unresolved ones show `{source.path}`. */
   dynamicContext?: DynamicContext;
+  /** When true, hides editing overlays (selection box, hover box, floating toolbar, etc.) for live preview. */
+  isPreview?: boolean;
   style?: CSSProperties;
 };
 
@@ -414,11 +418,13 @@ function Toolbar({
   rect,
   drag,
   blockActions,
+  onEnterMoveMode,
 }: {
   id: NodeId;
   rect: Rect;
   drag: DragController;
   blockActions?: BlockActionsFor;
+  onEnterMoveMode?: () => void;
 }) {
   const store = useEditorStore();
   const node = useEditor(state => state.doc.nodes[id]);
@@ -445,6 +451,17 @@ function Toolbar({
       ]
     : [
         parent,
+        ...(onEnterMoveMode
+          ? [
+              {
+                id: 'move',
+                label: 'Move with arrow keys',
+                shortcut: 'Enter',
+                icon: <Move className={icon} />,
+                onClick: onEnterMoveMode,
+              },
+            ]
+          : []),
         {
           id: 'up',
           label: 'Move up',
@@ -465,6 +482,12 @@ function Toolbar({
           shortcut: '⌘D',
           icon: <Copy className={icon} />,
           onClick: () => store.duplicate([id]),
+        },
+        {
+          id: 'lock',
+          label: 'Lock',
+          icon: <Lock className={icon} />,
+          onClick: () => store.updateMeta(id, { locked: true }),
         },
         ...(node
           ? (blockActions?.(node) ?? []).map(action => ({
@@ -566,6 +589,8 @@ function CanvasOverlay({
   resizeHandles,
   blockActions,
   marquee,
+  isMoveMode = false,
+  onEnterMoveMode,
 }: {
   frame: HTMLIFrameElement;
   frameDoc?: Document | null;
@@ -574,6 +599,8 @@ function CanvasOverlay({
   blockActions?: BlockActionsFor;
   /** The drag-select rectangle in progress, if any (R719). */
   marquee: Rect | null;
+  isMoveMode?: boolean;
+  onEnterMoveMode?: () => void;
 }) {
   const doc = useEditor(state => state.doc);
   const selection = useEditor(state => state.selection);
@@ -660,8 +687,10 @@ function CanvasOverlay({
         <SelectionBox
           key={id}
           bounds={rect}
-          showHandles={false}
+          label={labelOf(id)}
+          showHandles={!doc.nodes[id]?.meta?.locked && !isMoveMode}
           locked={!!doc.nodes[id]?.meta?.locked}
+          isMoveMode={isMoveMode && id === primary?.[0]}
         />
       ))}
       {primary && !multi && !dragState.active && (
@@ -671,6 +700,7 @@ function CanvasOverlay({
           rect={inView(primary[1])}
           drag={drag}
           blockActions={blockActions}
+          onEnterMoveMode={onEnterMoveMode}
         />
       )}
       {groupRect && !dragState.active && (
@@ -716,6 +746,7 @@ export function EditorCanvas({
   insertGroups,
   stateStyle,
   dynamicContext,
+  isPreview = false,
   style,
 }: EditorCanvasProps) {
   const store = useEditorStore();
@@ -794,6 +825,7 @@ export function EditorCanvas({
       return element;
     };
     const onClick = (event: MouseEvent) => {
+      if (isPreview) return;
       // Links and buttons inside blocks must not navigate or submit while editing.
       if (
         (event.target as Element | null)?.closest?.(
@@ -810,6 +842,7 @@ export function EditorCanvas({
     };
     let pending = 0;
     const onMove = (event: PointerEvent) => {
+      if (isPreview) return;
       cancelAnimationFrame(pending);
       pending = requestAnimationFrame(() => {
         store.hover(nodeAt(event.target));
@@ -999,6 +1032,50 @@ export function EditorCanvas({
     };
   }, [frame, frameDoc, store, insertGroups, toViewportPoint]);
 
+  // Keyboard move mode: "Enter" toggles move mode when a single unlocked block is selected.
+  // In move mode, ArrowUp/ArrowDown moves the block; Enter confirms; Escape cancels.
+  const [isMoveMode, setIsMoveMode] = useState(false);
+  useEffect(() => {
+    if (isPreview) {
+      if (isMoveMode) setIsMoveMode(false);
+      return;
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      const selection = store.getState().selection;
+      if (isTypingTarget(event.target)) return;
+      if (selection.length !== 1) {
+        if (isMoveMode) setIsMoveMode(false);
+        return;
+      }
+      const id = selection[0];
+      const isLocked = store.isLocked(id);
+      if (isLocked) return;
+
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        setIsMoveMode(prev => !prev);
+      } else if (event.key === 'Escape' && isMoveMode) {
+        event.preventDefault();
+        setIsMoveMode(false);
+      } else if (isMoveMode) {
+        if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          store.nudge(id, -1);
+        } else if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          store.nudge(id, 1);
+        }
+      }
+    };
+    const doc = frameDoc ?? frame?.contentDocument;
+    window.addEventListener('keydown', onKeyDown);
+    doc?.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      doc?.removeEventListener('keydown', onKeyDown);
+    };
+  }, [frame, frameDoc, store, isMoveMode, isPreview]);
+
   return (
     <div
       style={{
@@ -1036,7 +1113,7 @@ export function EditorCanvas({
             dynamicContext={dynamicContext}
           />
         </CanvasFrame>
-        {frame && (
+        {frame && !isPreview && (
           <CanvasOverlay
             frame={frame}
             frameDoc={frameDoc}
@@ -1044,9 +1121,11 @@ export function EditorCanvas({
             resizeHandles={resizeHandles}
             blockActions={blockActions}
             marquee={marquee}
+            isMoveMode={isMoveMode}
+            onEnterMoveMode={() => setIsMoveMode(true)}
           />
         )}
-        {hoverInsert && !dragState.active && !marquee && (
+        {hoverInsert && !dragState.active && !marquee && !isPreview && (
           // `.ne-ui`: styled by editor-ui in the old chrome too.
           <span className="ne-ui" style={{ display: 'contents' }}>
             <InsertPoint
@@ -1075,14 +1154,16 @@ export function EditorCanvas({
           }}
         />
       )}
-      {insertGroups && (
+      {insertGroups && !isPreview && (
         <QuickInsertPopover
           target={quickInsert}
           onClose={() => setQuickInsert(null)}
           groups={insertGroups}
         />
       )}
-      <ContextMenu target={contextMenu} onClose={() => setContextMenu(null)} />
+      {!isPreview && (
+        <ContextMenu target={contextMenu} onClose={() => setContextMenu(null)} />
+      )}
     </div>
   );
 }

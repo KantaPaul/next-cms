@@ -118,6 +118,7 @@ export type PrimaryAction = {
 export type SharedChromeProps = {
   queue: SaveQueue;
   title: string;
+  onRenameDocument?: (name: string) => void;
   kindLabel: string;
   backHref: string;
   backLabel: string;
@@ -138,11 +139,18 @@ export type SharedChromeProps = {
   singlePanel?: ReactNode;
   singlePanelDockSide?: 'left' | 'right';
   commandPalette?: ReactNode;
+  zoom?: number;
+  onZoomChange?: (zoom: number) => void;
+  isPreview?: boolean;
+  onTogglePreview?: () => void;
+  onToggleTheme?: () => void;
+  isDark?: boolean;
 };
 
 export function SharedChrome({
   queue,
   title,
+  onRenameDocument,
   kindLabel,
   backHref,
   backLabel,
@@ -161,6 +169,12 @@ export function SharedChrome({
   singlePanel,
   singlePanelDockSide = 'right',
   commandPalette,
+  zoom = 100,
+  onZoomChange,
+  isPreview = false,
+  onTogglePreview,
+  onToggleTheme,
+  isDark,
 }: SharedChromeProps) {
   const store = useEditorStore();
   const save = useSaveState(queue);
@@ -169,15 +183,29 @@ export function SharedChrome({
   const blockCount = useEditor(state => Object.keys(state.doc.nodes).length);
   const selected = useEditor(state => state.selection.length);
   const { theme, dir } = useEditorChromePreferences();
+  const isDarkCurrent = isDark !== undefined ? isDark : theme === 'dark';
+  const handleToggleTheme =
+    onToggleTheme ??
+    (() => {
+      const next = isDarkCurrent ? 'light' : 'dark';
+      const prefsStore = getPreferencesStore();
+      prefsStore?.set('theme', next);
+      if (next === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    });
 
   return (
     <EditorShell
       theme={theme}
       dir={dir}
-      focusMode={focusMode}
+      focusMode={focusMode || isPreview}
       topBar={
         <TopBar
           title={title}
+          onRenameDocument={onRenameDocument}
           brand={
             <span className="flex min-w-0 items-center gap-2">
               <Link
@@ -188,6 +216,9 @@ export function SharedChrome({
               >
                 <ArrowLeft className="h-3.5 w-3.5 rtl:-scale-x-100" />
               </Link>
+              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[var(--ne-radius-sm)] bg-[var(--ne-primary)] text-[10px] font-bold text-white tracking-tighter">
+                NX
+              </div>
               <span className="hidden text-[10px] uppercase tracking-wider text-[var(--ne-text-muted)] md:inline">
                 {kindLabel}
               </span>
@@ -212,12 +243,13 @@ export function SharedChrome({
           onRedo={() => store.redo()}
           device={device}
           onDeviceChange={next => store.setDevice(next)}
-          onPreview={
-            previewHref
-              ? () => window.open(previewHref, '_blank', 'noopener,noreferrer')
-              : undefined
-          }
-          focusMode={focusMode}
+          zoom={zoom}
+          onZoomChange={onZoomChange}
+          isPreview={isPreview}
+          onPreview={onTogglePreview}
+          isDark={isDarkCurrent}
+          onToggleTheme={handleToggleTheme}
+          focusMode={focusMode || isPreview}
           onToggleFocusMode={onToggleFocusMode}
           onOpenCommandPalette={onOpenCommandPalette}
           onOpenShortcuts={onOpenShortcuts}
@@ -244,7 +276,17 @@ export function SharedChrome({
           </Panel>
         )
       }
-      canvas={canvas}
+      canvas={
+        <div
+          className="relative flex min-h-0 w-full flex-1 flex-col items-center justify-start overflow-auto ne-scrollbar transition-transform duration-150"
+          style={{
+            transform: zoom && zoom !== 100 ? `scale(${zoom / 100})` : undefined,
+            transformOrigin: 'top center',
+          }}
+        >
+          {canvas}
+        </div>
+      }
       inspector={
         singlePanel ? (
           singlePanelDockSide === 'right' ? (
@@ -262,20 +304,22 @@ export function SharedChrome({
         )
       }
       statusBar={
-        <StatusBar
-          left={<Breadcrumb />}
-          center={
-            <>
-              Palette <Kbd>⌘K</Kbd> · Undo <Kbd>⌘Z</Kbd> · Focus mode hides
-              panels
-            </>
-          }
-          right={
-            <span>
-              {blockCount} blocks{selected ? ` · ${selected} selected` : ''}
-            </span>
-          }
-        />
+        isPreview ? null : (
+          <StatusBar
+            left={<Breadcrumb />}
+            center={
+              <>
+                Palette <Kbd>⌘K</Kbd> · Undo <Kbd>⌘Z</Kbd> · Focus mode hides
+                panels
+              </>
+            }
+            right={
+              <span>
+                {blockCount} blocks{selected ? ` · ${selected} selected` : ''}
+              </span>
+            }
+          />
+        )
       }
       commandPalette={commandPalette}
     />

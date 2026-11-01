@@ -223,9 +223,15 @@ export const TopBar: React.FC<TopBarProps> = ({
               >
                 <ZoomOut className="w-3 h-3" />
               </button>
-              <span className="w-8 text-center tabular-nums" aria-live="polite">
+              <button
+                type="button"
+                onClick={() => onZoomChange(100)}
+                className="w-8 text-center tabular-nums hover:text-[var(--ne-text)] cursor-pointer"
+                aria-live="polite"
+                title="Reset zoom to 100%"
+              >
                 {zoom}%
-              </span>
+              </button>
               <button
                 type="button"
                 onClick={() => onZoomChange(Math.min(150, zoom + 10))}
