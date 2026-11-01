@@ -7,10 +7,14 @@ import {
   useState,
 } from 'react';
 import {
+  ArrowUp,
   ChevronDown,
+  ChevronUp,
   Menu as MenuIcon,
+  Moon,
   MoreVertical,
   Search as SearchIcon,
+  Sun,
   X,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -377,5 +381,136 @@ export function AnnouncementBarClient({
         </button>
       )}
     </div>
+  );
+}
+
+/* =========================================================================
+   BackToTop Client Component
+   ========================================================================= */
+
+export type BackToTopClientProps = {
+  position?: 'bottom-right' | 'bottom-left' | 'inline';
+  showAfter?: number;
+  icon?: 'arrow' | 'chevron';
+  label?: string;
+  editing?: boolean;
+};
+
+export function BackToTopClient({
+  position = 'bottom-right',
+  showAfter = 300,
+  icon = 'arrow',
+  label = '',
+  editing = false,
+}: BackToTopClientProps) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (position === 'inline' || editing) {
+      setVisible(true);
+      return;
+    }
+
+    const handleScroll = () => {
+      setVisible(window.scrollY >= showAfter);
+    };
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [position, showAfter, editing]);
+
+  const scrollToTop = () => {
+    if (typeof window === 'undefined') return;
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    ).matches;
+    window.scrollTo({
+      top: 0,
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+    });
+  };
+
+  if (!visible && position !== 'inline') return null;
+
+  const posClasses =
+    position === 'bottom-left'
+      ? 'fixed bottom-6 left-6 z-40'
+      : position === 'bottom-right'
+        ? 'fixed bottom-6 right-6 z-40'
+        : 'relative inline-flex';
+
+  const IconComponent = icon === 'chevron' ? ChevronUp : ArrowUp;
+
+  return (
+    <button
+      type="button"
+      onClick={scrollToTop}
+      aria-label={label || 'Back to top'}
+      title={label || 'Back to top'}
+      className={cn(
+        'group inline-flex items-center justify-center gap-2 rounded-full shadow-md transition-all duration-200',
+        'bg-[var(--site-bg,#ffffff)] text-[var(--site-text,#1e293b)] border border-steel-200 dark:border-dark-300',
+        'hover:bg-steel-50 hover:shadow-lg dark:hover:bg-dark-200 hover:-translate-y-0.5',
+        'focus:outline-none focus:ring-2 focus:ring-[var(--site-primary,#3b82f6)]',
+        label ? 'px-4 py-2 text-xs font-medium' : 'p-3',
+        posClasses
+      )}
+    >
+      <IconComponent className="size-4 transition-transform group-hover:-translate-y-0.5" />
+      {label && <span>{label}</span>}
+    </button>
+  );
+}
+
+/* =========================================================================
+   ThemeToggle Client Component
+   ========================================================================= */
+
+export type ThemeToggleClientProps = {
+  icon?: 'sun-moon' | 'circle';
+  align?: 'left' | 'center' | 'right';
+};
+
+export function ThemeToggleClient({
+  icon = 'sun-moon',
+  align = 'center',
+}: ThemeToggleClientProps) {
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  useEffect(() => {
+    const root = document.querySelector<HTMLElement>('.site-root, [data-site-theme]');
+    const current = root?.getAttribute('data-site-theme') === 'dark' ? 'dark' : 'light';
+    setTheme(current);
+  }, []);
+
+  const toggle = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    const root = document.querySelector<HTMLElement>('.site-root, [data-site-theme]');
+    if (root) {
+      root.setAttribute('data-site-theme', next);
+    }
+    try {
+      document.cookie = `site_theme=${next}; path=/; max-age=31536000; SameSite=Lax`;
+    } catch {
+      // cookie unavailable
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+      title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+      className="inline-flex items-center justify-center rounded-md p-2 text-steel-600 hover:bg-steel-100 hover:text-steel-900 dark:text-steel-300 dark:hover:bg-dark-200 dark:hover:text-white transition-colors"
+    >
+      {theme === 'dark' ? (
+        <Sun className="size-4" />
+      ) : (
+        <Moon className="size-4" />
+      )}
+    </button>
   );
 }

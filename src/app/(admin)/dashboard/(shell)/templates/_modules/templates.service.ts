@@ -295,6 +295,35 @@ export const templatesService = {
     return row;
   },
 
+  publishGlobalBlock: async (id: string, access: UserAccess) => {
+    await accessService.assertPermission(access.userId, PERMISSIONS.PAGES_PUBLISH);
+    const siteId = await adminSiteId();
+    const [row] = await db
+      .select()
+      .from(globalBlocks)
+      .where(and(eq(globalBlocks.id, id), eq(globalBlocks.siteId, siteId)));
+    if (!row) throw new NotFoundException('Global block not found');
+
+    const [updated] = await db
+      .update(globalBlocks)
+      .set({
+        publishedContent: row.content,
+        publishedAt: new Date(),
+      })
+      .where(and(eq(globalBlocks.id, id), eq(globalBlocks.siteId, siteId)))
+      .returning();
+
+    await auditService.log({
+      actorId: access.userId,
+      action: 'publish',
+      targetType: 'global_block',
+      targetId: updated.id,
+      targetName: updated.name,
+    });
+    await revalidatePublicSite(siteId);
+    return updated;
+  },
+
   deleteGlobalBlock: async ({ id }: { id: string }, access: UserAccess) => {
     await accessService.assertPermission(
       access.userId,

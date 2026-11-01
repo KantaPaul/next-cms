@@ -4,6 +4,11 @@ import { defaultProps, validateProps } from '@nextcms/builder-core';
 import { editorSetup, pageDefinitions } from '../definitions';
 import { normalizeGlobalContent } from '../normalize-global-content';
 import { menuHref } from '@/components/site/menu-links';
+import {
+  HEADER_STARTERS,
+  FOOTER_STARTERS,
+  getStarterContent,
+} from '@/db/seed/header-footer-starters';
 
 describe('Header & Footer builder palette and editor setup', () => {
   it('editorSetup(header) surfaces only header and footer palette groups, with Header first', () => {
@@ -17,9 +22,18 @@ describe('Header & Footer builder palette and editor setup', () => {
     assert.ok(setup.groups[0].types.includes('MobileMenu'));
     assert.ok(setup.groups[0].types.includes('SearchBox'));
     assert.ok(setup.groups[0].types.includes('AnnouncementBar'));
+    assert.ok(setup.groups[0].types.includes('SocialIcons'));
+    assert.ok(setup.groups[0].types.includes('ContactInfo'));
+    assert.ok(setup.groups[0].types.includes('ThemeToggle'));
+    assert.ok(setup.groups[0].types.includes('LanguageSwitcher'));
     assert.ok(setup.groups[1].types.includes('FooterColumns'));
     assert.ok(setup.groups[1].types.includes('Copyright'));
     assert.ok(setup.groups[1].types.includes('FooterLinks'));
+    assert.ok(setup.groups[1].types.includes('LegalLinks'));
+    assert.ok(setup.groups[1].types.includes('BackToTop'));
+    assert.ok(setup.groups[1].types.includes('SocialIcons'));
+    assert.ok(setup.groups[1].types.includes('ContactInfo'));
+    assert.ok(setup.groups[1].types.includes('ThemeToggle'));
     // Page blocks like Hero or Features must NOT be in palette groups
     assert.ok(!setup.groups[0].types.includes('Hero'));
     assert.ok(!setup.groups[1].types.includes('Features'));
@@ -54,6 +68,8 @@ describe('Header & Footer builder palette and editor setup', () => {
       assert.notEqual(group.title, 'Footer');
       assert.ok(!group.types.includes('HeaderBar'));
       assert.ok(!group.types.includes('FooterColumns'));
+      assert.ok(!group.types.includes('LegalLinks'));
+      assert.ok(!group.types.includes('BackToTop'));
     }
 
     for (const group of globalSetup.groups) {
@@ -61,6 +77,8 @@ describe('Header & Footer builder palette and editor setup', () => {
       assert.notEqual(group.title, 'Footer');
       assert.ok(!group.types.includes('HeaderBar'));
       assert.ok(!group.types.includes('FooterColumns'));
+      assert.ok(!group.types.includes('LegalLinks'));
+      assert.ok(!group.types.includes('BackToTop'));
     }
   });
 });
@@ -76,6 +94,12 @@ describe('Header & Footer block definitions and schemas', () => {
     'MobileMenu',
     'SearchBox',
     'AnnouncementBar',
+    'SocialIcons',
+    'ContactInfo',
+    'LegalLinks',
+    'BackToTop',
+    'ThemeToggle',
+    'LanguageSwitcher',
   ];
 
   it('defines each block in pageDefinitions with valid defaults', () => {
@@ -111,6 +135,40 @@ describe('Header & Footer block definitions and schemas', () => {
   });
 });
 
+describe('Header & Footer starter templates', () => {
+  it('provides valid header starter templates', () => {
+    assert.ok(HEADER_STARTERS.length >= 4);
+    for (const starter of HEADER_STARTERS) {
+      assert.equal(starter.category, 'Header');
+      assert.ok(starter.name);
+      assert.ok(starter.content.content.length > 0);
+      assert.ok(starter.content.root.props);
+      const retrieved = getStarterContent('Header', starter.key);
+      assert.ok(retrieved);
+      assert.deepEqual(retrieved, starter.content);
+    }
+  });
+
+  it('provides valid footer starter templates', () => {
+    assert.ok(FOOTER_STARTERS.length >= 3);
+    for (const starter of FOOTER_STARTERS) {
+      assert.equal(starter.category, 'Footer');
+      assert.ok(starter.name);
+      assert.ok(starter.content.content.length > 0);
+      assert.ok(starter.content.root.props);
+      const retrieved = getStarterContent('Footer', starter.key);
+      assert.ok(retrieved);
+      assert.deepEqual(retrieved, starter.content);
+    }
+  });
+
+  it('returns null for blank starter key', () => {
+    assert.equal(getStarterContent('Header', 'blank'), null);
+    assert.equal(getStarterContent('Footer', 'blank'), null);
+    assert.equal(getStarterContent('Header', undefined), null);
+  });
+});
+
 describe('normalizeGlobalContent', () => {
   it('preserves root.props and normalizes content and zones', () => {
     const raw = {
@@ -138,7 +196,7 @@ describe('normalizeGlobalContent', () => {
     assert.equal(rootProps.transparent, true);
     assert.equal(rootProps.zIndex, 60);
     assert.equal(normalized.content.length, 1);
-    assert.equal(normalized.zones['bar-1:left'].length, 1);
+    assert.equal(normalized.zones?.['bar-1:left']?.length, 1);
   });
 
   it('handles empty or legacy array formats gracefully with empty root props', () => {

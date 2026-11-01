@@ -605,9 +605,7 @@ export function NewEditor({
   const savesGoLive =
     kind === 'global' ||
     kind === 'contact-form' ||
-    kind === 'page-template' ||
-    kind === 'header' ||
-    kind === 'footer';
+    kind === 'page-template';
   const canPublish = savesGoLive ? false : canPublishPermission;
   const hasRevisions = kind === 'page' || kind === 'post';
   const aiAvailable = !!useAiEnabled();
@@ -817,13 +815,15 @@ export function NewEditor({
         toast.success(
           kind === 'contact-form'
             ? 'Contact form saved. Pages embedding it show this version.'
-            : kind === 'header'
-              ? 'Header saved. Pages using it now show this version.'
-              : kind === 'footer'
-                ? 'Footer saved. Pages using it now show this version.'
-                : kind === 'global'
-                  ? 'Global block saved. Every page using it now shows this version.'
-                  : 'Template layout saved'
+            : kind === 'global'
+              ? 'Global block saved. Every page using it now shows this version.'
+              : 'Template layout saved'
+        );
+        return;
+      }
+      if (kind === 'header' || kind === 'footer') {
+        toast.success(
+          `${kind === 'header' ? 'Header' : 'Footer'} draft saved`
         );
         return;
       }

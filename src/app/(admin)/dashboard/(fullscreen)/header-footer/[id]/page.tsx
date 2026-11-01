@@ -32,6 +32,11 @@ export default async function HeaderFooterBuilderPage({
   }
 
   const kind = block.category === 'Header' ? 'header' : 'footer';
+  const isPublished = !!block.publishedAt;
+  const hasUnpublishedChanges =
+    !isPublished ||
+    (block.updatedAt && block.publishedAt && new Date(block.updatedAt) > new Date(block.publishedAt)) ||
+    JSON.stringify(block.content) !== JSON.stringify(block.publishedContent);
 
   return (
     <BuilderOrNewEditor
@@ -44,8 +49,8 @@ export default async function HeaderFooterBuilderPage({
         slug: block.id,
         language: 'en',
         isHome: false,
-        status: 'published',
-        hasUnpublishedChanges: false,
+        status: isPublished && !hasUnpublishedChanges ? 'published' : 'draft',
+        hasUnpublishedChanges,
         content: normalizeGlobalContent(block.content),
       }}
       themeTokens={settings.themeTokens}

@@ -450,10 +450,32 @@ export const globalBlocks = pgTable(
     name: varchar('name', { length: 150 }).notNull(),
   category: varchar('category', { length: 50 }).default('General').notNull(),
   content: jsonb('content').notNull(),
+  publishedContent: jsonb('published_content'),
+  publishedAt: timestamp('published_at', { withTimezone: true }),
   createdBy: text('created_by').references(() => users.id, setNull),
   ...timestampColumns,
   },
   t => [index('global_blocks_site_id_index').on(t.siteId)]
+);
+
+export const templateRules = pgTable(
+  'template_rules',
+  {
+    id,
+    siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
+    templateId: text('template_id')
+      .notNull()
+      .references(() => globalBlocks.id, cascade),
+    area: varchar('area', { length: 20 }).notNull(),
+    kind: varchar('kind', { length: 50 }).notNull(),
+    value: varchar('value', { length: 150 }).notNull(),
+    priority: integer('priority').default(0).notNull(),
+    ...timestampColumns,
+  },
+  t => [
+    index('template_rules_site_area_index').on(t.siteId, t.area),
+    index('template_rules_template_id_index').on(t.templateId),
+  ]
 );
 
 export const pageTemplates = pgTable(

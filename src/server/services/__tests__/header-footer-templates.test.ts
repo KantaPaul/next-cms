@@ -125,4 +125,113 @@ describe('Header & Footer Templates Resolution (R484, R485)', () => {
     assert.equal(res.headerTemplateId, 'post-h');
     assert.equal(res.footerTemplateId, 'post-f');
   });
+
+  it('resolveTemplate respects explicit hide sentinel and boolean flags', () => {
+    const { resolveTemplate } = require('../template-resolver.service');
+
+    // Case 1: 'none' sentinel suppresses template and prevents fallback
+    const hideHeader = resolveTemplate({
+      area: 'header',
+      entity: { headerTemplateId: 'none' },
+      localeOverride: 'locale-h',
+      siteDefault: 'site-h',
+    });
+    assert.equal(hideHeader.templateId, null);
+    assert.equal(hideHeader.isHidden, true);
+    assert.equal(hideHeader.source, 'explicit-hide');
+
+    // Case 2: boolean hideFooter suppresses template
+    const hideFooter = resolveTemplate({
+      area: 'footer',
+      entity: { hideFooter: true },
+      localeOverride: 'locale-f',
+      siteDefault: 'site-f',
+    });
+    assert.equal(hideFooter.templateId, null);
+    assert.equal(hideFooter.isHidden, true);
+    assert.equal(hideFooter.source, 'explicit-hide');
+  });
+
+  it('resolveTemplate prioritizes display rules before locale and site defaults', () => {
+    const { resolveTemplate } = require('../template-resolver.service');
+
+    const rules = [
+      {
+        id: 'rule-blog',
+        templateId: 'blog-header',
+        area: 'header',
+        kind: 'post-type',
+        value: 'post',
+        priority: 1,
+      },
+      {
+        id: 'rule-case-study',
+        templateId: 'case-study-header',
+        area: 'header',
+        kind: 'category',
+        value: 'cat-case-studies',
+        priority: 10,
+      },
+      {
+        id: 'rule-special-tag',
+        templateId: 'tag-header',
+        area: 'header',
+        kind: 'tag',
+        value: 'tag-featured',
+        priority: 10,
+      },
+    ];
+
+    // Case 1: Post matches post-type rule
+    const resPost = resolveTemplate({
+      area: 'header',
+      entity: { type: 'post' },
+      rules,
+      localeOverride: 'locale-h',
+      siteDefault: 'site-h',
+    });
+    assert.equal(resPost.templateId, 'blog-header');
+    assert.equal(resPost.source, 'rule');
+
+    // Case 2: Post matches higher priority category rule over post-type
+    const resCat = resolveTemplate({
+      area: 'header',
+      entity: { type: 'post', categoryIds: ['cat-case-studies'] },
+      rules,
+      localeOverride: 'locale-h',
+      siteDefault: 'site-h',
+    });
+    assert.equal(resCat.templateId, 'case-study-header');
+    assert.equal(resCat.source, 'rule');
+
+    // Case 3: Tag has higher specificity than category when priorities are equal
+    const resTag = resolveTemplate({
+      area: 'header',
+      entity: {
+        type: 'post',
+        categoryIds: ['cat-case-studies'],
+        tagIds: ['tag-featured'],
+      },
+      rules,
+      localeOverride: 'locale-h',
+      siteDefault: 'site-h',
+    });
+    assert.equal(resTag.templateId, 'tag-header');
+    assert.equal(resTag.source, 'rule');
+
+    // Case 4: Explicit page override wins over all rules
+    const resOverride = resolveTemplate({
+      area: 'header',
+      entity: {
+        headerTemplateId: 'custom-h',
+        type: 'post',
+        tagIds: ['tag-featured'],
+      },
+      rules,
+      localeOverride: 'locale-h',
+      siteDefault: 'site-h',
+    });
+    assert.equal(resOverride.templateId, 'custom-h');
+    assert.equal(resOverride.source, 'entity-override');
+  });
 });

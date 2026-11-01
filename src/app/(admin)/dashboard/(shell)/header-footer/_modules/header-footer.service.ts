@@ -11,12 +11,17 @@ import { auditService } from '@/server/services/audit.service';
 import { adminSiteId } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 import { PERMISSIONS } from '@/config/permissions';
+import { getStarterContent } from '@/db/seed/header-footer-starters';
 
 export type HeaderFooterItem = {
   id: string;
   name: string;
   category: 'Header' | 'Footer';
   content: unknown;
+  publishedContent: unknown;
+  publishedAt: Date | null;
+  isPublished: boolean;
+  hasDraftChanges: boolean;
   updatedAt: Date | null;
   createdByName: string | null;
   isSiteDefault: boolean;
@@ -158,6 +163,8 @@ export const headerFooterService = {
           name: globalBlocks.name,
           category: globalBlocks.category,
           content: globalBlocks.content,
+          publishedContent: globalBlocks.publishedContent,
+          publishedAt: globalBlocks.publishedAt,
           updatedAt: globalBlocks.updatedAt,
           createdByName: users.name,
         })
@@ -228,11 +235,21 @@ export const headerFooterService = {
         ? headerCounts[row.id] || 0
         : footerCounts[row.id] || 0;
 
+      const isPublished = !!row.publishedAt;
+      const hasDraftChanges =
+        !isPublished ||
+        (row.updatedAt && row.publishedAt && new Date(row.updatedAt) > new Date(row.publishedAt)) ||
+        JSON.stringify(row.content) !== JSON.stringify(row.publishedContent);
+
       return {
         id: row.id,
         name: row.name,
         category: (row.category === 'Footer' ? 'Footer' : 'Header') as 'Header' | 'Footer',
         content: row.content,
+        publishedContent: row.publishedContent,
+        publishedAt: row.publishedAt,
+        isPublished,
+        hasDraftChanges,
         updatedAt: row.updatedAt,
         createdByName: row.createdByName,
         isSiteDefault,
@@ -243,16 +260,21 @@ export const headerFooterService = {
   },
 
   create: async (
-    input: { name: string; category: 'Header' | 'Footer' },
+    input: { name: string; category: 'Header' | 'Footer'; starter?: string },
     access: UserAccess
   ) => {
     await accessService.assertPermission(access.userId, PERMISSIONS.PAGES_CREATE);
     const siteId = await adminSiteId();
 
+    const starterContent = input.starter
+      ? getStarterContent(input.category, input.starter)
+      : null;
+
     const initialContent =
-      input.category === 'Header'
+      starterContent ||
+      (input.category === 'Header'
         ? DEFAULT_HEADER_CONTENT
-        : DEFAULT_FOOTER_CONTENT;
+        : DEFAULT_FOOTER_CONTENT);
 
     const [row] = await db
       .insert(globalBlocks)

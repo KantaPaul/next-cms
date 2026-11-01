@@ -13,6 +13,7 @@ export const createHeaderFooter = accessProcedure
     z.object({
       name: z.string().trim().min(1).max(150),
       category: z.enum(['Header', 'Footer']),
+      starter: z.string().optional(),
     })
   )
   .action(async ({ input, ctx }) => {

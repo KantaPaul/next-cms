@@ -15,7 +15,12 @@ import {
   publicSiteService,
   resolveRoute,
 } from '@/server/services/public-site.service';
-import { resolvePostRoute } from '@/server/services/blog.service';
+import { blogService, resolvePostRoute } from '@/server/services/blog.service';
+import {
+  resolveTemplate,
+  templateResolverService,
+  type ResolvableEntity,
+} from '@/server/services/template-resolver.service';
 import { maybePublishScheduled } from '@/server/services/scheduler';
 import {
   siteContext,
@@ -50,46 +55,81 @@ export default async function SiteLayout({
     site.defaultLocale;
   const copy = localizedSettings(settings, language, site.defaultLocale);
 
-  // Header and footer resolution per page -> per locale -> site default (R484, R485)
-  let currentPage: {
-    headerTemplateId?: string | null;
-    footerTemplateId?: string | null;
-  } | null = null;
-  if (!postRoute && pageRoute) {
-    if (preview && preview.pageId) {
-      currentPage = await publicSiteService.getDraft(
-        pageRoute.language,
-        pageRoute.slug,
-        preview.pageId
-      );
-    } else {
-      currentPage = await publicSiteService.getPublished(
-        pageRoute.language,
-        pageRoute.slug
-      );
+  // Resolve page or post entity for templates
+  let currentEntity: ResolvableEntity | null = null;
+  if (postRoute) {
+    const postData =
+      preview && preview.postId
+        ? await blogService.getDraft(
+            postRoute.language,
+            postRoute.slug,
+            preview.postId
+          )
+        : await blogService.getPublished(postRoute.language, postRoute.slug);
+    if (postData?.view) {
+      currentEntity = {
+        type: 'post',
+        headerTemplateId: postData.view.headerTemplateId,
+        footerTemplateId: postData.view.footerTemplateId,
+        categoryIds: postData.view.categories?.map(c => c.id),
+        tagIds: postData.view.tags?.map(t => t.id),
+      };
+    }
+  } else if (pageRoute) {
+    const pageData =
+      preview && preview.pageId
+        ? await publicSiteService.getDraft(
+            pageRoute.language,
+            pageRoute.slug,
+            preview.pageId
+          )
+        : await publicSiteService.getPublished(
+            pageRoute.language,
+            pageRoute.slug
+          );
+    if (pageData) {
+      currentEntity = {
+        type: 'page',
+        headerTemplateId: pageData.headerTemplateId,
+        footerTemplateId: pageData.footerTemplateId,
+      };
     }
   }
 
-  const headerTemplateId =
-    currentPage?.headerTemplateId ||
-    copy.headerTemplateId ||
-    settings.headerTemplateId ||
-    null;
+  // Load rules for site
+  const siteRules = await templateResolverService.getRulesForSite(site.id);
 
-  const footerTemplateId =
-    currentPage?.footerTemplateId ||
-    copy.footerTemplateId ||
-    settings.footerTemplateId ||
-    null;
+  // Resolve headers and footers via hierarchy:
+  // entity override / explicit hide > display rules > locale override > site default > fallback
+  const headerRes = resolveTemplate({
+    area: 'header',
+    entity: currentEntity,
+    rules: siteRules,
+    localeOverride: copy.headerTemplateId,
+    siteDefault: settings.headerTemplateId,
+  });
+
+  const footerRes = resolveTemplate({
+    area: 'footer',
+    entity: currentEntity,
+    rules: siteRules,
+    localeOverride: copy.footerTemplateId,
+    siteDefault: settings.footerTemplateId,
+  });
+
+  const headerTemplateId = headerRes.templateId;
+  const footerTemplateId = footerRes.templateId;
+  const hideHeader = headerRes.isHidden;
+  const hideFooter = footerRes.isHidden;
 
   let customHeader: React.ReactNode = null;
   let headerRootProps: Record<string, unknown> = {};
-  if (headerTemplateId) {
+  if (headerTemplateId && !hideHeader) {
     try {
-      const headerBlock = await getGlobalBlockContent(
-        headerTemplateId,
-        site.id
-      );
+      const headerBlock = await getGlobalBlockContent(headerTemplateId, {
+        siteId: site.id,
+        draft: !!preview,
+      });
       if (
         headerBlock &&
         (headerBlock.blocks?.length ||
@@ -113,12 +153,12 @@ export default async function SiteLayout({
   }
 
   let customFooter: React.ReactNode = null;
-  if (footerTemplateId) {
+  if (footerTemplateId && !hideFooter) {
     try {
-      const footerBlock = await getGlobalBlockContent(
-        footerTemplateId,
-        site.id
-      );
+      const footerBlock = await getGlobalBlockContent(footerTemplateId, {
+        siteId: site.id,
+        draft: !!preview,
+      });
       if (
         footerBlock &&
         (footerBlock.blocks?.length ||
@@ -170,69 +210,73 @@ export default async function SiteLayout({
           </a>
         </div>
       )}
-      {customHeader ? (
-        <HeaderShell
-          sticky={headerRootProps.sticky as any}
-          transparent={headerRootProps.transparent as any}
-          shrinkOnScroll={headerRootProps.shrinkOnScroll as any}
-          hideOnScrollDown={headerRootProps.hideOnScrollDown as any}
-          shadow={headerRootProps.shadow as any}
-          zIndex={typeof headerRootProps.zIndex === 'number' ? headerRootProps.zIndex : 50}
-        >
-          {customHeader}
-        </HeaderShell>
-      ) : (
-        <header className="s-border border-b">
-          <nav
-            aria-label="Main"
-            className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-4 md:px-8"
+      {!hideHeader && (
+        customHeader ? (
+          <HeaderShell
+            sticky={headerRootProps.sticky as any}
+            transparent={headerRootProps.transparent as any}
+            shrinkOnScroll={headerRootProps.shrinkOnScroll as any}
+            hideOnScrollDown={headerRootProps.hideOnScrollDown as any}
+            shadow={headerRootProps.shadow as any}
+            zIndex={typeof headerRootProps.zIndex === 'number' ? headerRootProps.zIndex : 50}
           >
-            <Link href={siteHref('/', siteSlug)} className="flex items-center gap-2 text-lg font-bold">
-              {settings.logo && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={settings.logo}
-                  alt=""
-                  className="size-8 rounded object-cover"
+            {customHeader}
+          </HeaderShell>
+        ) : (
+          <header className="s-border border-b">
+            <nav
+              aria-label="Main"
+              className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-4 md:px-8"
+            >
+              <Link href={siteHref('/', siteSlug)} className="flex items-center gap-2 text-lg font-bold">
+                {settings.logo && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={settings.logo}
+                    alt=""
+                    className="size-8 rounded object-cover"
+                  />
+                )}
+                {copy.siteName}
+              </Link>
+              <div className="flex flex-wrap items-center gap-5">
+                <MenuLinks
+                  menu={header ?? undefined}
+                  siteSlug={siteSlug}
+                  className="flex flex-wrap items-center gap-5 text-sm font-medium"
                 />
-              )}
-              {copy.siteName}
-            </Link>
-            <div className="flex flex-wrap items-center gap-5">
-              <MenuLinks
-                menu={header ?? undefined}
-                siteSlug={siteSlug}
-                className="flex flex-wrap items-center gap-5 text-sm font-medium"
-              />
-              <LanguageSwitcher />
-            </div>
-          </nav>
-        </header>
+                <LanguageSwitcher />
+              </div>
+            </nav>
+          </header>
+        )
       )}
       <main className="flex-1">{children}</main>
-      {customFooter ? (
-        <footer className="site-footer">{customFooter}</footer>
-      ) : (
-        <footer className="s-border s-surface border-t">
-          <div className="mx-auto flex max-w-6xl flex-col gap-6 px-5 py-10 md:flex-row md:items-start md:justify-between md:px-8">
-            <div>
-              <p className="font-semibold">{copy.siteName}</p>
-              {copy.siteDescription && (
-                <p className="s-muted mt-1 max-w-sm text-sm">
-                  {copy.siteDescription}
-                </p>
-              )}
+      {!hideFooter && (
+        customFooter ? (
+          <footer className="site-footer">{customFooter}</footer>
+        ) : (
+          <footer className="s-border s-surface border-t">
+            <div className="mx-auto flex max-w-6xl flex-col gap-6 px-5 py-10 md:flex-row md:items-start md:justify-between md:px-8">
+              <div>
+                <p className="font-semibold">{copy.siteName}</p>
+                {copy.siteDescription && (
+                  <p className="s-muted mt-1 max-w-sm text-sm">
+                    {copy.siteDescription}
+                  </p>
+                )}
+              </div>
+              <MenuLinks
+                menu={footer ?? undefined}
+                siteSlug={siteSlug}
+                className="s-muted flex flex-wrap gap-x-6 gap-y-2 text-sm"
+              />
             </div>
-            <MenuLinks
-              menu={footer ?? undefined}
-              siteSlug={siteSlug}
-              className="s-muted flex flex-wrap gap-x-6 gap-y-2 text-sm"
-            />
-          </div>
-          <p className="s-muted pb-8 text-center text-xs">
-            © {new Date().getFullYear()} {copy.siteName}
-          </p>
-        </footer>
+            <p className="s-muted pb-8 text-center text-xs">
+              © {new Date().getFullYear()} {copy.siteName}
+            </p>
+          </footer>
+        )
       )}
       {settings.googleAnalyticsId &&
         /^G-[A-Z0-9]+$/i.test(settings.googleAnalyticsId) && (

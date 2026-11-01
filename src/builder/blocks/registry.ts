@@ -42,6 +42,12 @@ import {
   MobileMenu,
   SearchBox,
   AnnouncementBar,
+  SocialIcons,
+  ContactInfo,
+  LegalLinks,
+  BackToTop,
+  ThemeToggle,
+  LanguageSwitcherBlock,
 } from './site-chrome';
 
 const builtInComponents = {
@@ -85,6 +91,12 @@ const builtInComponents = {
   MobileMenu,
   SearchBox,
   AnnouncementBar,
+  SocialIcons,
+  ContactInfo,
+  LegalLinks,
+  BackToTop,
+  ThemeToggle,
+  LanguageSwitcher: LanguageSwitcherBlock,
 };
 
 export const getBlockComponents = () => ({

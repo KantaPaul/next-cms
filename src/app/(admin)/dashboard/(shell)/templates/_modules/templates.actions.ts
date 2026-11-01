@@ -2,6 +2,8 @@
 import { and, asc, eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
+import { adminSiteId } from '@/server/services/site-context';
+import { revalidatePublicSite } from '@/lib/utils/revalidate-site';
 import { templatesService } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.service';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
@@ -50,10 +52,16 @@ export const listGlobalBlockOptions = permissionProcedure(
 
 /**
  * Public read of a global block's sections. Used by the GlobalRef block's `resolveData`
- * in the editor and during public rendering; global blocks hold only published copy.
+ * in the editor and during public rendering. Reads published_content by default, or draft content when draft: true.
  */
-export async function getGlobalBlockContent(id: string, siteId?: string) {
+export async function getGlobalBlockContent(
+  id: string,
+  options?: string | { siteId?: string; draft?: boolean }
+) {
   if (typeof id !== 'string' || !id) return null;
+  const siteId = typeof options === 'string' ? options : options?.siteId;
+  const draft = typeof options === 'object' ? !!options?.draft : false;
+
   const conditions = [eq(globalBlocks.id, id)];
   if (siteId) {
     conditions.push(eq(globalBlocks.siteId, siteId));
@@ -63,19 +71,23 @@ export async function getGlobalBlockContent(id: string, siteId?: string) {
       id: globalBlocks.id,
       name: globalBlocks.name,
       content: globalBlocks.content,
+      publishedContent: globalBlocks.publishedContent,
     })
     .from(globalBlocks)
     .where(and(...conditions))
     .limit(1);
 
   if (row) {
+    const activeContent = draft
+      ? row.content
+      : (row.publishedContent ?? row.content);
     let blocks: unknown[] = [];
     let zones: Record<string, unknown[]> = {};
 
-    if (Array.isArray(row.content)) {
-      blocks = row.content;
-    } else if (row.content && typeof row.content === 'object') {
-      const obj = row.content as {
+    if (Array.isArray(activeContent)) {
+      blocks = activeContent;
+    } else if (activeContent && typeof activeContent === 'object') {
+      const obj = activeContent as {
         content?: unknown[];
         zones?: Record<string, unknown[]>;
       };
@@ -86,7 +98,7 @@ export async function getGlobalBlockContent(id: string, siteId?: string) {
     return {
       id: row.id,
       name: row.name,
-      content: row.content,
+      content: activeContent,
       blocks,
       zones,
     };
@@ -145,6 +157,22 @@ export const saveGlobalBlock = accessProcedure
     revalidatePath(PAGES.DASHBOARD.TEMPLATES);
     revalidatePath(PAGES.DASHBOARD.CONTACT_FORMS);
     revalidatePath(PAGES.DASHBOARD.HEADER_FOOTER);
+    return row;
+  });
+
+export const publishGlobalBlock = accessProcedure
+  .input(
+    z.object({
+      id: z.string().min(1),
+    })
+  )
+  .action(async ({ input, ctx }) => {
+    const row = await templatesService.publishGlobalBlock(input.id, ctx.access);
+    const siteId = await adminSiteId();
+    revalidatePath(PAGES.DASHBOARD.TEMPLATES);
+    revalidatePath(PAGES.DASHBOARD.CONTACT_FORMS);
+    revalidatePath(PAGES.DASHBOARD.HEADER_FOOTER);
+    await revalidatePublicSite(siteId);
     return row;
   });
 

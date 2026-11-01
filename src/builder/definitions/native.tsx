@@ -22,6 +22,12 @@ import {
   MobileMenu,
   SearchBox,
   AnnouncementBar,
+  SocialIcons,
+  ContactInfo,
+  LegalLinks,
+  BackToTop,
+  ThemeToggle,
+  LanguageSwitcherBlock,
 } from '../blocks/site-chrome';
 import { BlogPosts, PostTitle, PostFeaturedImage, PostMeta, PostContent, RelatedPosts } from '../blocks/blog';
 import { Slider, Tabs, Accordion } from '../blocks/interactive';
@@ -1013,6 +1019,341 @@ export const AnnouncementBarBlock = defineBlock({
   },
 });
 
+export const SocialIconsBlock = defineBlock({
+  type: 'SocialIcons',
+  label: 'Social icons',
+  category: 'footer',
+  icon: 'share-2',
+  schema: z.object({
+    shape: z.enum(['plain', 'round', 'square']).default('plain'),
+    size: z.enum(['sm', 'md', 'lg']).default('md'),
+    align: z.enum(['left', 'center', 'right']).default('left'),
+    items: z
+      .array(
+        z.object({
+          network: z.string(),
+          url: z.string(),
+          label: z.string().optional(),
+        })
+      )
+      .default([
+        { network: 'x', url: 'https://x.com', label: 'X' },
+        { network: 'github', url: 'https://github.com', label: 'GitHub' },
+        { network: 'linkedin', url: 'https://linkedin.com', label: 'LinkedIn' },
+      ]),
+  }),
+  render: SocialIcons,
+  fields: {
+    shape: {
+      label: 'Icon shape',
+      type: 'radio',
+      options: [
+        { label: 'Plain', value: 'plain' },
+        { label: 'Round', value: 'round' },
+        { label: 'Square', value: 'square' },
+      ],
+    },
+    size: {
+      label: 'Icon size',
+      type: 'radio',
+      options: [
+        { label: 'Small', value: 'sm' },
+        { label: 'Medium', value: 'md' },
+        { label: 'Large', value: 'lg' },
+      ],
+    },
+    align: {
+      label: 'Alignment',
+      type: 'radio',
+      options: [
+        { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+        { label: 'Right', value: 'right' },
+      ],
+    },
+    items: {
+      label: 'Networks',
+      type: 'list',
+      item: {
+        network: {
+          label: 'Network',
+          type: 'select',
+          options: [
+            { label: 'X (Twitter)', value: 'x' },
+            { label: 'GitHub', value: 'github' },
+            { label: 'LinkedIn', value: 'linkedin' },
+            { label: 'YouTube', value: 'youtube' },
+            { label: 'Facebook', value: 'facebook' },
+            { label: 'Instagram', value: 'instagram' },
+            { label: 'Discord', value: 'discord' },
+            { label: 'TikTok', value: 'tiktok' },
+          ],
+        },
+        url: { label: 'Profile URL', type: 'custom', render: UrlField },
+        label: { label: 'Accessible label', type: 'text' },
+      },
+      defaultItem: { network: 'x', url: 'https://x.com', label: 'X' },
+    },
+  },
+  defaults: {
+    shape: 'plain',
+    size: 'md',
+    align: 'left',
+    items: [
+      { network: 'x', url: 'https://x.com', label: 'X' },
+      { network: 'github', url: 'https://github.com', label: 'GitHub' },
+      { network: 'linkedin', url: 'https://linkedin.com', label: 'LinkedIn' },
+    ],
+  },
+});
+
+export const ContactInfoBlock = defineBlock({
+  type: 'ContactInfo',
+  label: 'Contact info',
+  category: 'footer',
+  icon: 'phone',
+  schema: z.object({
+    showIcons: z.boolean().default(true),
+    layout: z.enum(['vertical', 'horizontal']).default('vertical'),
+    align: z.enum(['left', 'center', 'right']).default('left'),
+    items: z
+      .array(
+        z.object({
+          kind: z.enum(['address', 'phone', 'email']),
+          value: z.string(),
+          label: z.string().optional(),
+        })
+      )
+      .default([
+        { kind: 'email', value: 'contact@example.com', label: 'Email' },
+        { kind: 'phone', value: '+1 (555) 000-0000', label: 'Phone' },
+      ]),
+  }),
+  render: ContactInfo,
+  fields: {
+    showIcons: {
+      label: 'Show icons',
+      type: 'radio',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+      ],
+    },
+    layout: {
+      label: 'Layout',
+      type: 'radio',
+      options: [
+        { label: 'Vertical', value: 'vertical' },
+        { label: 'Horizontal', value: 'horizontal' },
+      ],
+    },
+    align: {
+      label: 'Alignment',
+      type: 'radio',
+      options: [
+        { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+        { label: 'Right', value: 'right' },
+      ],
+    },
+    items: {
+      label: 'Contact items',
+      type: 'list',
+      item: {
+        kind: {
+          label: 'Type',
+          type: 'select',
+          options: [
+            { label: 'Email address', value: 'email' },
+            { label: 'Phone number', value: 'phone' },
+            { label: 'Physical address', value: 'address' },
+          ],
+        },
+        value: { label: 'Value', type: 'text' },
+        label: { label: 'Label (optional)', type: 'text' },
+      },
+      defaultItem: { kind: 'email', value: 'hello@example.com', label: 'Email' },
+    },
+  },
+  defaults: {
+    showIcons: true,
+    layout: 'vertical',
+    align: 'left',
+    items: [
+      { kind: 'email', value: 'contact@example.com', label: 'Email' },
+      { kind: 'phone', value: '+1 (555) 000-0000', label: 'Phone' },
+    ],
+  },
+});
+
+export const LegalLinksBlock = defineBlock({
+  type: 'LegalLinks',
+  label: 'Legal links',
+  category: 'footer',
+  icon: 'file-text',
+  schema: z.object({
+    source: z.enum(['menu', 'manual']).default('manual'),
+    menuLocation: z.enum(['header', 'footer']).default('footer'),
+    separator: z.enum(['dot', 'pipe', 'dash', 'none']).default('dot'),
+    align: z.enum(['left', 'center', 'right']).default('center'),
+    links: z
+      .array(
+        z.object({
+          label: z.string(),
+          url: z.string(),
+          target: z.string().optional(),
+        })
+      )
+      .default([
+        { label: 'Privacy Policy', url: '/privacy' },
+        { label: 'Terms of Service', url: '/terms' },
+        { label: 'Cookie Settings', url: '/cookies' },
+      ]),
+  }),
+  render: LegalLinks,
+  fields: {
+    source: {
+      label: 'Link source',
+      type: 'radio',
+      options: [
+        { label: 'Manual list', value: 'manual' },
+        { label: 'Menu location', value: 'menu' },
+      ],
+    },
+    menuLocation: {
+      label: 'Menu location',
+      type: 'select',
+      options: [
+        { label: 'Footer menu', value: 'footer' },
+        { label: 'Header menu', value: 'header' },
+      ],
+      when: (props: any) => props.source === 'menu',
+    },
+    separator: {
+      label: 'Separator style',
+      type: 'select',
+      options: [
+        { label: 'Dot ( · )', value: 'dot' },
+        { label: 'Pipe ( | )', value: 'pipe' },
+        { label: 'Dash ( – )', value: 'dash' },
+        { label: 'None (space only)', value: 'none' },
+      ],
+    },
+    align: {
+      label: 'Alignment',
+      type: 'radio',
+      options: [
+        { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+        { label: 'Right', value: 'right' },
+      ],
+    },
+    links: {
+      label: 'Links',
+      type: 'list',
+      when: (props: any) => props.source === 'manual',
+      item: {
+        label: { label: 'Label', type: 'text' },
+        url: { label: 'URL', type: 'custom', render: UrlField },
+      },
+      defaultItem: { label: 'Link', url: '#' },
+    },
+  },
+  defaults: {
+    source: 'manual',
+    menuLocation: 'footer',
+    separator: 'dot',
+    align: 'center',
+    links: [
+      { label: 'Privacy Policy', url: '/privacy' },
+      { label: 'Terms of Service', url: '/terms' },
+      { label: 'Cookie Settings', url: '/cookies' },
+    ],
+  },
+});
+
+export const BackToTopBlock = defineBlock({
+  type: 'BackToTop',
+  label: 'Back to top',
+  category: 'footer',
+  icon: 'arrow-up',
+  schema: z.object({
+    position: z.enum(['bottom-right', 'bottom-left', 'inline']).default('bottom-right'),
+    showAfter: z.number().default(300),
+    icon: z.enum(['arrow', 'chevron']).default('arrow'),
+    label: z.string().default(''),
+  }),
+  render: BackToTop,
+  fields: {
+    position: {
+      label: 'Button placement',
+      type: 'select',
+      options: [
+        { label: 'Fixed bottom right', value: 'bottom-right' },
+        { label: 'Fixed bottom left', value: 'bottom-left' },
+        { label: 'Inline (in-flow)', value: 'inline' },
+      ],
+    },
+    showAfter: {
+      label: 'Show after scroll (px)',
+      type: 'number',
+    },
+    icon: {
+      label: 'Icon style',
+      type: 'radio',
+      options: [
+        { label: 'Arrow', value: 'arrow' },
+        { label: 'Chevron', value: 'chevron' },
+      ],
+    },
+    label: {
+      label: 'Button label (optional)',
+      type: 'text',
+    },
+  },
+  defaults: {
+    position: 'bottom-right',
+    showAfter: 300,
+    icon: 'arrow',
+    label: '',
+  },
+});
+
+export const ThemeToggleBlock = defineBlock({
+  type: 'ThemeToggle',
+  label: 'Theme toggle',
+  category: 'header',
+  icon: 'sun',
+  schema: z.object({
+    icon: z.enum(['sun-moon', 'circle']).default('sun-moon'),
+  }),
+  render: ThemeToggle,
+  fields: {
+    icon: {
+      label: 'Icon style',
+      type: 'radio',
+      options: [
+        { label: 'Sun / Moon', value: 'sun-moon' },
+        { label: 'Circle', value: 'circle' },
+      ],
+    },
+  },
+  defaults: {
+    icon: 'sun-moon',
+  },
+});
+
+export const LanguageSwitcherNativeBlock = defineBlock({
+  type: 'LanguageSwitcher',
+  label: 'Language switcher',
+  category: 'header',
+  icon: 'globe',
+  schema: z.object({}),
+  render: LanguageSwitcherBlock,
+  fields: {},
+  defaults: {},
+});
+
 export const NATIVE_BLOCKS = [
   exampleBlock,
   HeroBlock,
@@ -1060,6 +1401,12 @@ export const NATIVE_BLOCKS = [
   MobileMenuBlock,
   SearchBoxBlock,
   AnnouncementBarBlock,
+  SocialIconsBlock,
+  ContactInfoBlock,
+  LegalLinksBlock,
+  BackToTopBlock,
+  ThemeToggleBlock,
+  LanguageSwitcherNativeBlock,
 ];
 export const PAGE_ROOT_FIELDS = {
   maxWidth: {
@@ -1188,6 +1535,10 @@ export const CATEGORIES = {
       'MobileMenu',
       'SearchBox',
       'AnnouncementBar',
+      'SocialIcons',
+      'ContactInfo',
+      'ThemeToggle',
+      'LanguageSwitcher',
       'Button',
       'Spacer',
     ],
@@ -1197,8 +1548,13 @@ export const CATEGORIES = {
     components: [
       'FooterColumns',
       'FooterLinks',
-      'Logo',
+      'SocialIcons',
+      'ContactInfo',
       'Copyright',
+      'LegalLinks',
+      'BackToTop',
+      'ThemeToggle',
+      'Logo',
       'RichText',
       'Newsletter',
       'Spacer',

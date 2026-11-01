@@ -251,6 +251,8 @@ async function loadPost(where: SQL | undefined, kind: 'draft' | 'published') {
       ...cardSelect,
       layout: posts.layout,
       templateId: posts.templateId,
+      headerTemplateId: posts.headerTemplateId,
+      footerTemplateId: posts.footerTemplateId,
       siteId: posts.siteId,
       status: posts.status,
       updatedAt: posts.updatedAt,
@@ -287,6 +289,8 @@ async function loadPost(where: SQL | undefined, kind: 'draft' | 'published') {
     authorName: row.authorName,
     categories: categoriesByPost.get(row.id) ?? [],
     tags: tagsByPost.get(row.id) ?? [],
+    headerTemplateId: row.headerTemplateId,
+    footerTemplateId: row.footerTemplateId,
     blogUrl,
   };
 

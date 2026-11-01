@@ -21,6 +21,8 @@ export type PostView = {
   authorName: string | null;
   categories: PostTerm[];
   tags: PostTerm[];
+  headerTemplateId?: string | null;
+  footerTemplateId?: string | null;
   /** URL of the language's blog index page, when one is published. */
   blogUrl?: string | null;
 };

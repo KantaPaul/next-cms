@@ -18,6 +18,7 @@ import {
   updatePost,
 } from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.actions';
 import {
+  publishGlobalBlock,
   saveGlobalBlock,
   updateTemplate,
 } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
@@ -78,7 +79,7 @@ export function adapterFor(
       backLabel: 'Header & Footer',
       headerPath: '',
       previewHref: null,
-      liveLabel: 'Save',
+      liveLabel: 'Publish',
       saveDraft: async content => {
         const blocks = (content.content ?? []) as BuilderItem[];
         const zones = (content.zones ?? {}) as Record<string, BuilderItem[]>;
@@ -100,7 +101,7 @@ export function adapterFor(
           content: { root, content: blocks, zones },
         });
       },
-      publish: async () => null,
+      publish: () => publishGlobalBlock({ id: page.id }),
       submitForReview: null,
     };
   }

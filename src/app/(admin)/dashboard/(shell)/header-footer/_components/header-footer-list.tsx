@@ -1,11 +1,16 @@
 'use client';
 
 import { format } from 'date-fns';
-import { Copy, Edit3, Globe, LayoutTemplate, MoreHorizontal, PanelBottom, PanelTop, Plus, Trash2 } from 'lucide-react';
+import { Check, Copy, Edit3, Globe, LayoutTemplate, MoreHorizontal, PanelBottom, PanelTop, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState, useTransition } from 'react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils/cn';
+import {
+  HEADER_STARTERS,
+  FOOTER_STARTERS,
+} from '@/db/seed/header-footer-starters';
 import {
   ActionDropdown,
   ActionDropdownItem,
@@ -146,12 +151,27 @@ export function HeaderFooterList({
                     {currentList.map(item => (
                       <TableRow key={item.id}>
                         <TableCell>
-                          <Link
-                            href={PAGES.DASHBOARD.HEADER_FOOTER_EDIT(item.id)}
-                            className="font-medium hover:underline flex items-center gap-2"
-                          >
-                            {item.name}
-                          </Link>
+                          <div className="flex items-center gap-2">
+                            <Link
+                              href={PAGES.DASHBOARD.HEADER_FOOTER_EDIT(item.id)}
+                              className="font-medium hover:underline"
+                            >
+                              {item.name}
+                            </Link>
+                            {!item.isPublished ? (
+                              <span className="rounded bg-steel-100 px-1.5 py-0.5 text-[10px] font-medium text-steel-600 dark:bg-dark-200 dark:text-steel-400">
+                                Draft
+                              </span>
+                            ) : item.hasDraftChanges ? (
+                              <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                                Draft changes
+                              </span>
+                            ) : (
+                              <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                                Published
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap items-center gap-1.5 text-xs">
@@ -253,7 +273,12 @@ function NewHeaderFooterDialog({
 }) {
   const router = useRouter();
   const [name, setName] = useState('');
+  const [starter, setStarter] = useState<string>(
+    category === 'Header' ? 'classic' : 'columns-4'
+  );
   const [isPending, startTransition] = useTransition();
+
+  const starters = category === 'Header' ? HEADER_STARTERS : FOOTER_STARTERS;
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -264,6 +289,7 @@ function NewHeaderFooterDialog({
         createHeaderFooter({
           name: name.trim(),
           category,
+          starter,
         }),
         row => {
           toast.success(`${category} created`);
@@ -277,15 +303,15 @@ function NewHeaderFooterDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <form onSubmit={submit}>
           <DialogHeader>
             <DialogTitle>New {category}</DialogTitle>
             <DialogDescription>
-              Create a new {category.toLowerCase()} layout with dedicated builder blocks.
+              Create a new {category.toLowerCase()} layout with dedicated builder blocks or choose a starter.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-4 space-y-4">
             <label className="flex flex-col gap-1.5 text-xs font-medium">
               <span>Name</span>
               <FormInput
@@ -297,6 +323,67 @@ function NewHeaderFooterDialog({
                 autoFocus
               />
             </label>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-medium text-steel-700 dark:text-steel-300">
+                Choose a starter template
+              </span>
+              <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-1">
+                {starters.map(s => {
+                  const selected = starter === s.key;
+                  return (
+                    <button
+                      key={s.key}
+                      type="button"
+                      onClick={() => {
+                        setStarter(s.key);
+                        if (!name.trim()) setName(s.name);
+                      }}
+                      className={cn(
+                        'flex flex-col text-left p-3 rounded-lg border transition-all',
+                        selected
+                          ? 'border-[var(--site-primary,#3b82f6)] bg-[var(--site-primary,#3b82f6)]/5 ring-1 ring-[var(--site-primary,#3b82f6)]'
+                          : 'border-steel-200 dark:border-dark-300 hover:border-steel-300 dark:hover:border-dark-200 bg-white dark:bg-dark-100'
+                      )}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span className="text-sm font-medium text-steel-900 dark:text-steel-100">
+                          {s.name}
+                        </span>
+                        {selected && (
+                          <Check className="size-4 text-[var(--site-primary,#3b82f6)] shrink-0" />
+                        )}
+                      </div>
+                      <p className="text-xs text-steel-500 dark:text-steel-400 mt-0.5 line-clamp-2">
+                        {s.description}
+                      </p>
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={() => setStarter('blank')}
+                  className={cn(
+                    'flex flex-col text-left p-3 rounded-lg border transition-all',
+                    starter === 'blank'
+                      ? 'border-[var(--site-primary,#3b82f6)] bg-[var(--site-primary,#3b82f6)]/5 ring-1 ring-[var(--site-primary,#3b82f6)]'
+                      : 'border-steel-200 dark:border-dark-300 hover:border-steel-300 dark:hover:border-dark-200 bg-white dark:bg-dark-100'
+                  )}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-sm font-medium text-steel-900 dark:text-steel-100">
+                      Blank / Minimal
+                    </span>
+                    {starter === 'blank' && (
+                      <Check className="size-4 text-[var(--site-primary,#3b82f6)] shrink-0" />
+                    )}
+                  </div>
+                  <p className="text-xs text-steel-500 dark:text-steel-400 mt-0.5">
+                    Start from an empty template and build your layout completely from scratch.
+                  </p>
+                </button>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button

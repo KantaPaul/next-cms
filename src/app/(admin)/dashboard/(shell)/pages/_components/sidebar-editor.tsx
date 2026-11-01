@@ -100,11 +100,13 @@ export const SidebarEditor = ({
 
   const headerOptions = [
     { label: 'Site Default', value: '' },
+    { label: 'None (Hide header)', value: 'none' },
     ...uniqueHeaders,
   ];
 
   const footerOptions = [
     { label: 'Site Default', value: '' },
+    { label: 'None (Hide footer)', value: 'none' },
     ...uniqueFooters,
   ];
 

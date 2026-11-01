@@ -252,6 +252,7 @@ const registry = createLoaderRegistry<LoaderContext>(
     NavMenu: loadNavMenu,
     MobileMenu: loadNavMenu,
     FooterLinks: loadFooterLinks,
+    LegalLinks: loadFooterLinks,
     Logo: loadLogo,
     Copyright: loadCopyright,
   },
