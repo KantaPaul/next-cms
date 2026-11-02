@@ -5,17 +5,18 @@ import { useForm, FormProvider, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Loader2, Plus, Save, Trash2 } from 'lucide-react';
+import { AlertTriangle, Loader2, Plus, Save, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { MediaField } from '@/components/media/media-picker';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PAGES } from '@/config/pages';
 import { cn } from '@/lib/utils/cn';
 import { updateSiteSettings } from '../_modules/settings.actions';
 import { useFormAction } from '@/hooks/use-form-action';
 import { settingsSchema } from '../_modules/settings.schemas';
-import { type ThemeTokens } from '@/db/schemas/pages.schema';
+import { type ThemeTokens, type AuthSettings } from '@/db/schemas/pages.schema';
 import { FormInput as Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -26,6 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { FormItem, FormMessage } from '@/components/ui/form';
+import { siteTemplateEditHref } from '../../header-footer/_modules/site-template-href';
 
 type SettingsInput = z.infer<typeof settingsSchema>;
 
@@ -168,9 +170,15 @@ export function SettingsForm({
         kind?: 'page' | 'post' | 'collection' | 'video';
       }>;
     } | null;
+    authSettings?: AuthSettings | null;
   };
   menus: { id: string; title: string; location: string; language: string }[];
-  templates?: { id: string; name: string; category: string }[];
+  templates?: {
+    id: string;
+    name: string;
+    category: string;
+    kind: 'global' | 'page';
+  }[];
   fallbackSiteUrl: string;
   locales: { code: string; label: string }[];
   defaultLocale: string;
@@ -331,20 +339,28 @@ export function SettingsForm({
       | 'footerTemplateId'
       | 'searchTemplateId'
       | 'archiveTemplateId',
-    filterCategory?: 'header' | 'footer',
+    filterCategory: 'header' | 'footer' | 'search' | 'archive',
     noneLabel = 'None (use menu layout)'
   ) => {
-    const relevant = templates.filter(
-      t =>
-        !filterCategory ||
-        t.category.toLowerCase() === filterCategory.toLowerCase() ||
-        t.category.toLowerCase() === 'general'
-    );
+    // Header/footer pick global blocks of their own category; search and
+    // archive also accept page templates, which /search and archives render too.
+    const matches = (t: (typeof templates)[number]) => {
+      const category = t.category.toLowerCase();
+      if (t.kind === 'page') {
+        return filterCategory === 'search' || filterCategory === 'archive';
+      }
+      return category === filterCategory || category === 'general';
+    };
     return (
       <Controller
         name={key}
         render={({ field, fieldState }) => {
           const id = useId();
+          // Keep a saved choice visible even if it no longer matches the filter.
+          const relevant = templates.filter(
+            t => matches(t) || t.id === field.value
+          );
+          const selected = templates.find(t => t.id === field.value);
           return (
             <FormItem>
               <div className="flex items-center gap-2">
@@ -357,9 +373,13 @@ export function SettingsForm({
                     options={relevant.map(t => ({ value: t.id, label: t.name }))}
                   />
                 </div>
-                {field.value && (
+                {selected && (
                   <Link
-                    href={PAGES.DASHBOARD.HEADER_FOOTER_EDIT(field.value)}
+                    href={
+                      selected.kind === 'page'
+                        ? PAGES.DASHBOARD.TEMPLATE(selected.id)
+                        : siteTemplateEditHref(selected.id, selected.category)
+                    }
                     target="_blank"
                     className="text-xs font-medium text-indigo-600 hover:underline shrink-0"
                   >
@@ -545,7 +565,7 @@ export function SettingsForm({
             </span>
             {templateSelect(
               'searchTemplateId',
-              undefined,
+              'search',
               'None (use default search layout)'
             )}
           </div>
@@ -555,17 +575,17 @@ export function SettingsForm({
             </span>
             {templateSelect(
               'archiveTemplateId',
-              undefined,
+              'archive',
               'None (use default archive layout)'
             )}
           </div>
           <p className="text-xs text-steel-500 sm:col-span-2">
-            Header, footer, search, and archive templates override the default layouts. Manage templates in{' '}
+            Header, footer, search, and archive templates override the default layouts. Create and edit them in{' '}
             <Link
               href={PAGES.DASHBOARD.HEADER_FOOTER}
               className="font-medium text-indigo-600 hover:underline"
             >
-              Header & Footer
+              Site templates
             </Link>
             .
           </p>
@@ -805,6 +825,200 @@ export function SettingsForm({
               Enable all
             </Button>
           </div>
+        </Section>
+
+        <Section
+          title="Authentication & access"
+          description="Configure login visibility, registration rules, session durations, and account security."
+        >
+          <Controller
+            name="authSettings.loginEnabled"
+            render={({ field }) => (
+              <Field group label="Login availability" wide>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={field.value !== false}
+                    onChange={() => field.onChange(field.value === false ? true : false)}
+                    className="rounded border-steel-300 text-indigo-600 focus:ring-indigo-500 dark:border-dark-300"
+                  />
+                  <span className="font-medium text-sm">Enable login</span>
+                </label>
+                <p className="text-xs text-steel-500">
+                  When turned off, the login form and sign-in routes refuse requests.
+                </p>
+                {field.value === false && (
+                  <div className="mt-2 flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700/50 dark:bg-amber-950/40 dark:text-amber-200">
+                    <AlertTriangle className="size-4 shrink-0 text-amber-600 mt-0.5" />
+                    <div>
+                      <strong>Warning:</strong> Turning login off blocks all incoming sign-ins. If you log out and need to re-enable login, run this command on the server:
+                      <code className="mt-1 block rounded bg-amber-100/80 px-1.5 py-0.5 font-mono text-[11px] text-amber-950 dark:bg-amber-900/60 dark:text-amber-100">
+                        npm run auth:enable-login
+                      </code>
+                    </div>
+                  </div>
+                )}
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="authSettings.loginDisabledMessage"
+            render={({ field }) => (
+              <Field label="Login disabled message" wide hint="Message shown to visitors when login is disabled.">
+                <Input
+                  {...field}
+                  value={field.value ?? ''}
+                  placeholder="Login is currently disabled."
+                />
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="authSettings.publicRegistrationEnabled"
+            render={({ field }) => (
+              <Field group label="Public registration">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={field.value !== false}
+                    onChange={() => field.onChange(field.value === false ? true : false)}
+                    className="rounded border-steel-300 text-indigo-600 focus:ring-indigo-500 dark:border-dark-300"
+                  />
+                  <span>Allow new user registration</span>
+                </label>
+                <p className="text-xs text-steel-500">
+                  When disabled, only existing users can sign in. New accounts cannot be created.
+                </p>
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="authSettings.requireAdminApproval"
+            render={({ field }) => (
+              <Field group label="Admin approval">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={field.value === true}
+                    onChange={() => field.onChange(!field.value)}
+                    className="rounded border-steel-300 text-indigo-600 focus:ring-indigo-500 dark:border-dark-300"
+                  />
+                  <span>Require admin approval</span>
+                </label>
+                <p className="text-xs text-steel-500">
+                  New users start as inactive until an administrator approves them in Users &amp; Roles.
+                </p>
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="authSettings.requireEmailVerification"
+            render={({ field }) => (
+              <Field group label="Email verification">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={field.value === true}
+                    onChange={() => field.onChange(!field.value)}
+                    className="rounded border-steel-300 text-indigo-600 focus:ring-indigo-500 dark:border-dark-300"
+                  />
+                  <span>Require verified email</span>
+                </label>
+                <p className="text-xs text-steel-500">
+                  Users must have a verified email address to establish an active session.
+                </p>
+              </Field>
+            )}
+          />
+
+          <Field label="Default role" hint="Fixed role assigned to all new sign-ins.">
+            <div className="flex h-9 items-center gap-2">
+              <Badge variant="secondary" className="px-2.5 py-1 text-xs font-semibold">
+                Viewer
+              </Badge>
+              <span className="text-xs text-steel-500">
+                (Fixed default role; not customizable)
+              </span>
+            </div>
+          </Field>
+
+          <Controller
+            name="authSettings.sessionLifetimeHours"
+            render={({ field }) => {
+              const id = useId();
+              return (
+                <Field label="Session lifetime" hint="How long an authenticated session remains valid before re-login.">
+                  <Select
+                    value={String(field.value ?? 720)}
+                    onValueChange={v => field.onChange(Number(v))}
+                  >
+                    <SelectTrigger id={id} className={inputClass}>
+                      <SelectValue placeholder="Choose session duration" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="24">24 hours (1 day)</SelectItem>
+                      <SelectItem value="168">168 hours (7 days)</SelectItem>
+                      <SelectItem value="720">720 hours (30 days)</SelectItem>
+                      <SelectItem value="2160">2160 hours (90 days)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+              );
+            }}
+          />
+
+          <Controller
+            name="authSettings.maxFailedAttempts"
+            render={({ field }) => {
+              const id = useId();
+              return (
+                <Field label="Failed login attempts" hint="Number of consecutive failed attempts before account lockout.">
+                  <Select
+                    value={String(field.value ?? 5)}
+                    onValueChange={v => field.onChange(Number(v))}
+                  >
+                    <SelectTrigger id={id} className={inputClass}>
+                      <SelectValue placeholder="Attempts before lockout" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3">3 attempts</SelectItem>
+                      <SelectItem value="5">5 attempts</SelectItem>
+                      <SelectItem value="10">10 attempts</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+              );
+            }}
+          />
+
+          <Controller
+            name="authSettings.lockoutMinutes"
+            render={({ field }) => {
+              const id = useId();
+              return (
+                <Field label="Lockout duration" hint="How long an account remains locked after reaching attempt limit.">
+                  <Select
+                    value={String(field.value ?? 15)}
+                    onValueChange={v => field.onChange(Number(v))}
+                  >
+                    <SelectTrigger id={id} className={inputClass}>
+                      <SelectValue placeholder="Lockout duration" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5 minutes</SelectItem>
+                      <SelectItem value="15">15 minutes</SelectItem>
+                      <SelectItem value="30">30 minutes</SelectItem>
+                      <SelectItem value="60">60 minutes</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+              );
+            }}
+          />
         </Section>
 
         <Section

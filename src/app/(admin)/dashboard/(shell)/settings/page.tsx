@@ -81,6 +81,7 @@ export default async function SettingsPage() {
             ),
             pinnedResults: settings.searchSettings?.pinnedResults ?? [],
           },
+          authSettings: settings.authSettings,
         }}
         menus={menus.map(m => ({
           id: m.id,
@@ -93,11 +94,13 @@ export default async function SettingsPage() {
             id: g.id,
             name: `${g.name} (${g.category})`,
             category: g.category,
+            kind: 'global' as const,
           })),
           ...pageTemplatesList.map(t => ({
             id: t.id,
-            name: `${t.name} (${t.category})`,
+            name: `${t.name} (page template · ${t.category})`,
             category: t.category,
+            kind: 'page' as const,
           })),
         ]}
         locales={site.locales}

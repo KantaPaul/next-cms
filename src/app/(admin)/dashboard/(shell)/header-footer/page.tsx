@@ -7,7 +7,7 @@ import { requirePermission } from '@/server/services/require-permission';
 import { HeaderFooterList } from './_components/header-footer-list';
 import { headerFooterService } from './_modules/header-footer.service';
 
-const TITLE = 'Header & Footer';
+const TITLE = 'Site templates';
 
 export const metadata = {
   ...metaObject(TITLE),
@@ -24,7 +24,7 @@ export default async function HeaderFooterPage() {
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="header and footer templates" />
+        <AccessDenied what="site templates" />
       </>
     );
   }

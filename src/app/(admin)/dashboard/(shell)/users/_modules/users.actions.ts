@@ -33,3 +33,11 @@ export const inviteUser = permissionProcedure(PERMISSIONS.SETTINGS_MANAGE)
     revalidatePath(PAGES.DASHBOARD.USERS);
     return row;
   });
+
+export const approveUserAction = permissionProcedure(PERMISSIONS.SETTINGS_MANAGE)
+  .input(z.object({ userId: z.string().min(1) }))
+  .action(async ({ input, ctx }) => {
+    const row = await usersService.approveUser(input, ctx.user.userId);
+    revalidatePath(PAGES.DASHBOARD.USERS);
+    return row;
+  });

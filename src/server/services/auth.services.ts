@@ -27,6 +27,7 @@ import type { DBTrx } from '@/lib/types';
 import { ApplicationException } from '@/lib/utils/error';
 import { newDate } from '@/lib/utils/format-date';
 import { logout } from '@/server/actions/auth.actions';
+import { accessService } from '@/server/services/access.service';
 
 export type UserParams = {
   size?: number;
@@ -90,10 +91,19 @@ export const AuthService = {
 
   create: async (data: User, orm: DBTrx = db) => {
     const defaultName = data.name || data.email.split('@')[0];
+    const { roleId: _ignoredRole, ...safeData } = data as Record<string, unknown>;
 
     const [inserted] = await orm
       .insert(usersModel)
-      .values({ ...data, name: defaultName })
+      .values({
+        email: data.email,
+        name: defaultName,
+        image: data.image,
+        status: data.status,
+        googleId: data.googleId,
+        emailVerified: data.emailVerified,
+        approvedAt: (safeData.approvedAt as Date | undefined) ?? null,
+      })
       .onConflictDoUpdate({
         target: usersModel.email,
         set: {
@@ -107,6 +117,10 @@ export const AuthService = {
       })
       .returning()
       .execute();
+
+    if (!inserted.roleId) {
+      await accessService.assignDefaultRole(inserted.id);
+    }
 
     return inserted;
   },

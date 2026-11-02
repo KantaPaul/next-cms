@@ -4,7 +4,8 @@ import { randomBytes } from 'crypto';
 import { and, desc, eq, getTableColumns, gt, lt } from 'drizzle-orm';
 import { cookies, headers } from 'next/headers';
 import { db } from '@/db';
-import { sessions, users } from '@/db/schema';
+import { sessions, users, UserStatus } from '@/db/schema';
+import { siteSettingsService } from '@/server/services/site-settings.service';
 
 export interface Session {
   id: string;
@@ -56,7 +57,15 @@ async function getClientInfo() {
 export async function createSession(userId: string): Promise<Session> {
   const now = new Date();
   const sessionId = generateSessionId();
-  const expiresAt = new Date(now.getTime() + 1000 * sessionExpiresInSeconds);
+  let lifetimeHours = 720;
+  try {
+    const settings = await siteSettingsService.getAuthSettings();
+    if (settings?.sessionLifetimeHours) {
+      lifetimeHours = settings.sessionLifetimeHours;
+    }
+  } catch {}
+  const sessionLifetimeSeconds = lifetimeHours * 3600;
+  const expiresAt = new Date(now.getTime() + 1000 * sessionLifetimeSeconds);
   const { userIp, userAgent } = await getClientInfo();
 
   await db.insert(sessions).values({
@@ -87,7 +96,8 @@ export async function validateSession(sessionId: string) {
     const isValidSessionId = /^[A-Za-z0-9_-]+$/.test(sessionId);
 
     if (!isValidSessionId) {
-      console.warn('Invalid session ID format:', sessionId);
+      // R274: Stop writing the raw session id into logs
+      console.warn('Invalid session ID format');
       return null;
     }
 
@@ -112,6 +122,24 @@ export async function validateSession(sessionId: string) {
       return null;
     }
 
+    // R274: Reject inactive users
+    if (result.user.status !== UserStatus.Active) {
+      return null;
+    }
+
+    // R274: Reject locked users
+    if (result.user.lockedUntil && result.user.lockedUntil > now) {
+      return null;
+    }
+
+    // R274: Reject unapproved users when approval is required
+    try {
+      const settings = await siteSettingsService.getAuthSettings();
+      if (settings?.requireAdminApproval && !result.user.approvedAt) {
+        return null;
+      }
+    } catch {}
+
     const session: Session = {
       id: result.session.id,
       userId: result.session.userId,
@@ -126,10 +154,18 @@ export async function validateSession(sessionId: string) {
     }
 
     // Refresh session if it's close to expiring (more than half way through)
-    const halfLife = (1000 * sessionExpiresInSeconds) / 2;
+    let lifetimeHours = 720;
+    try {
+      const settings = await siteSettingsService.getAuthSettings();
+      if (settings?.sessionLifetimeHours) {
+        lifetimeHours = settings.sessionLifetimeHours;
+      }
+    } catch {}
+    const sessionLifetimeSeconds = lifetimeHours * 3600;
+    const halfLife = (1000 * sessionLifetimeSeconds) / 2;
 
     if (now.getTime() >= session.expiresAt.getTime() - halfLife) {
-      session.expiresAt = new Date(Date.now() + 1000 * sessionExpiresInSeconds);
+      session.expiresAt = new Date(Date.now() + 1000 * sessionLifetimeSeconds);
       // Use a non-blocking update to avoid blocking the response
       db.update(sessions)
         .set({ expiresAt: session.expiresAt })

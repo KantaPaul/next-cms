@@ -5,6 +5,8 @@ import { Check, Loader2, Minus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   PERMISSION_MATRIX,
@@ -14,7 +16,11 @@ import {
 } from '@/config/permissions';
 import { cn } from '@/lib/utils/cn';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
-import { setUserRole, inviteUser } from '../_modules/users.actions';
+import {
+  setUserRole,
+  inviteUser,
+  approveUserAction,
+} from '../_modules/users.actions';
 import type { UserListItem } from '../_modules/users.service';
 
 type ActivityRow = {
@@ -105,11 +111,13 @@ function InviteForm() {
               role,
             }),
             result => {
-              const mailed = (result as { mailed?: boolean; mailError?: string | null }).mailed;
+              const mailed = (
+                result as { mailed?: boolean; mailError?: string | null }
+              ).mailed;
               toast.success(
                 mailed
                   ? 'Invite sent'
-                  : `User created. ${((result as { mailError?: string | null }).mailError ?? 'Email was not sent.')}`
+                  : `User created. ${(result as { mailError?: string | null }).mailError ?? 'Email was not sent.'}`
               );
               form.reset();
               router.refresh();
@@ -204,6 +212,7 @@ function TeamTable({
 }) {
   const router = useRouter();
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [approvingId, setApprovingId] = useState<string | null>(null);
 
   const changeRole = async (user: UserListItem, role: RoleName) => {
     setPendingId(user.id);
@@ -216,11 +225,20 @@ function TeamTable({
     setPendingId(null);
   };
 
+  const handleApprove = async (user: UserListItem) => {
+    setApprovingId(user.id);
+    await handleActionResponse(approveUserAction({ userId: user.id }), () => {
+      toast.success(`User ${user.name || user.email} approved`);
+      router.refresh();
+    });
+    setApprovingId(null);
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <p className="text-sm text-steel-500">
-        People join by signing in with Google. The first account becomes Admin,
-        everyone after starts as Viewer until an admin assigns a role.
+        People join by signing in. New accounts start as Viewer until an
+        administrator assigns a role.
       </p>
       <div className="overflow-x-auto rounded-lg border border-steel-200 dark:border-dark-300">
         <table className="w-full min-w-[560px] text-sm">
@@ -228,12 +246,14 @@ function TeamTable({
             <tr>
               <th className="px-4 py-2.5 font-medium">User</th>
               <th className="px-4 py-2.5 font-medium">Role</th>
+              <th className="px-4 py-2.5 font-medium">Status</th>
               <th className="px-4 py-2.5 font-medium">Joined</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-steel-200 dark:divide-dark-300">
             {users.map(user => {
               const isSelf = user.id === currentUserId;
+              const isPending = !user.approvedAt || user.status === 'Inactive';
               return (
                 <tr key={user.id}>
                   <td className="px-4 py-3">
@@ -283,6 +303,37 @@ function TeamTable({
                           <Loader2 className="size-4 animate-spin text-steel-400" />
                         )}
                       </div>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {isPending ? (
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className="border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+                        >
+                          Pending approval
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="h-7 text-xs"
+                          disabled={approvingId === user.id}
+                          onClick={() => handleApprove(user)}
+                        >
+                          {approvingId === user.id && (
+                            <Loader2 className="mr-1 size-3 animate-spin" />
+                          )}
+                          Approve
+                        </Button>
+                      </div>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className="border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                      >
+                        Active
+                      </Badge>
                     )}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-steel-500">

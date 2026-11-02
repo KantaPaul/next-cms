@@ -17,6 +17,8 @@ import {
 } from '@/server/services/auth-attempts';
 import { auditService } from '@/server/services/audit.service';
 import { isMailConfigured, sendMail } from '@/server/services/mail';
+import { siteSettingsService } from '@/server/services/site-settings.service';
+import { authRateLimitService } from '@/server/services/auth-rate-limit.service';
 
 const PENDING_COOKIE = 'totp_pending';
 const GENERIC_LOGIN_ERROR = 'Email or password is incorrect.';
@@ -25,7 +27,9 @@ const MAGIC_MINUTES = 15;
 function signPending(userId: string) {
   const exp = Date.now() + 5 * 60 * 1000;
   const payload = `${userId}.${exp}`;
-  const sig = createHmac('sha256', env.DATABASE_URL).update(payload).digest('base64url');
+  const sig = createHmac('sha256', env.DATABASE_URL)
+    .update(payload)
+    .digest('base64url');
   return `${payload}.${sig}`;
 }
 
@@ -67,19 +71,47 @@ async function activeUserByEmail(email: string) {
     .where(and(eq(users.email, email), isNull(users.deletedAt)))
     .limit(1);
   if (!user || user.status !== UserStatus.Active) return null;
+  const settings = await siteSettingsService.getAuthSettings();
+  if (settings.requireAdminApproval && !user.approvedAt) return null;
   return user;
 }
 
 export const staffAuth = {
   password: async (email: string, password: string) => {
     const normalized = email.trim().toLowerCase();
+    const settings = await siteSettingsService.getAuthSettings();
+    if (!settings.loginEnabled) {
+      return {
+        error:
+          settings.loginDisabledMessage ||
+          'Login is currently disabled by administrator.',
+        userId: null,
+        totp: false,
+      };
+    }
+    const lockout = await authRateLimitService.checkLockout(
+      normalized,
+      normalized
+    );
+    if (lockout.locked) {
+      return {
+        error:
+          'Account temporarily locked due to too many failed attempts. Try again later.',
+        userId: null,
+        totp: false,
+      };
+    }
     const user = await activeUserByEmail(normalized);
     const matches =
       Boolean(user?.passwordHash) &&
       (await verifyPassword(password, user!.passwordHash!));
     if (!user || !matches) {
       await recordAuthAttempt({ email: normalized, success: false });
-      return { error: GENERIC_LOGIN_ERROR as string, userId: null, totp: false };
+      return {
+        error: GENERIC_LOGIN_ERROR as string,
+        userId: null,
+        totp: false,
+      };
     }
     if (user.totpEnabled && user.totpSecret) {
       await setPending(user.id);
@@ -92,8 +124,13 @@ export const staffAuth = {
   verifyTotp: async (code: string) => {
     const store = await cookies();
     const userId = readPending(store.get(PENDING_COOKIE)?.value);
-    if (!userId) return { error: 'That sign-in expired. Start again.', userId: null };
-    const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    if (!userId)
+      return { error: 'That sign-in expired. Start again.', userId: null };
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
     if (!user?.totpSecret || !verifyTotp(user.totpSecret, code)) {
       await recordAuthAttempt({ email: user?.email, success: false });
       return { error: 'That code is incorrect.', userId: null };
@@ -104,10 +141,28 @@ export const staffAuth = {
   },
 
   requestMagicLink: async (email: string) => {
+    const settings = await siteSettingsService.getAuthSettings();
+    if (!settings.loginEnabled) {
+      return {
+        error:
+          settings.loginDisabledMessage ||
+          'Login is currently disabled by administrator.',
+      };
+    }
     if (!isMailConfigured()) {
       return { error: 'Email is not configured.' as string | null };
     }
     const normalized = email.trim().toLowerCase();
+    const lockout = await authRateLimitService.checkLockout(
+      normalized,
+      normalized
+    );
+    if (lockout.locked) {
+      return {
+        error:
+          'Account temporarily locked due to too many failed attempts. Try again later.',
+      };
+    }
     const user = await activeUserByEmail(normalized);
     if (user) {
       const token = randomBytes(32).toString('base64url');
@@ -122,12 +177,23 @@ export const staffAuth = {
         subject: 'Sign in to Next CMS',
         text: `Use this link to sign in. It expires in ${MAGIC_MINUTES} minutes.\n\n${link}`,
       });
-      if (!mailed.sent) return { error: mailed.reason ?? 'The email could not be sent.' };
+      if (!mailed.sent)
+        return { error: mailed.reason ?? 'The email could not be sent.' };
     }
     return { error: null };
   },
 
   consumeMagicLink: async (token: string) => {
+    const settings = await siteSettingsService.getAuthSettings();
+    if (!settings.loginEnabled) {
+      return {
+        error:
+          settings.loginDisabledMessage ||
+          'Login is currently disabled by administrator.',
+        userId: null,
+        totp: false,
+      };
+    }
     const tokenHash = hashToken(token);
     const [row] = await db
       .select()
@@ -135,7 +201,11 @@ export const staffAuth = {
       .where(eq(loginTokens.tokenHash, tokenHash))
       .limit(1);
     if (!row || row.usedAt || row.expiresAt.getTime() < Date.now()) {
-      return { error: 'This sign-in link is invalid or expired.', userId: null, totp: false };
+      return {
+        error: 'This sign-in link is invalid or expired.',
+        userId: null,
+        totp: false,
+      };
     }
     await db
       .update(loginTokens)
@@ -143,7 +213,11 @@ export const staffAuth = {
       .where(eq(loginTokens.id, row.id));
     const user = await activeUserByEmail(row.email);
     if (!user) {
-      return { error: 'This sign-in link is invalid or expired.', userId: null, totp: false };
+      return {
+        error: 'This sign-in link is invalid or expired.',
+        userId: null,
+        totp: false,
+      };
     }
     await db
       .update(users)
@@ -157,15 +231,27 @@ export const staffAuth = {
     return { error: null, userId: user.id, totp: false };
   },
 
-  setPassword: async (userId: string, password: string, currentPassword?: string) => {
+  setPassword: async (
+    userId: string,
+    password: string,
+    currentPassword?: string
+  ) => {
     if (password.length < 8) {
       throw new ApplicationException('Use at least 8 characters.');
     }
-    const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
     if (!user) throw new ApplicationException('User not found.');
     if (user.passwordHash) {
-      const matches = await verifyPassword(currentPassword ?? '', user.passwordHash);
-      if (!matches) throw new ApplicationException('Current password is incorrect.');
+      const matches = await verifyPassword(
+        currentPassword ?? '',
+        user.passwordHash
+      );
+      if (!matches)
+        throw new ApplicationException('Current password is incorrect.');
     }
     await db
       .update(users)
@@ -176,35 +262,66 @@ export const staffAuth = {
   totpSetup: async (userId: string) => {
     const access = await accessService.getUserAccess(userId);
     if (access.role !== 'Admin') {
-      throw new ApplicationException('Only admins can turn on two-factor authentication.');
+      throw new ApplicationException(
+        'Only admins can turn on two-factor authentication.'
+      );
     }
-    const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
     if (!user) throw new ApplicationException('User not found.');
-    const secret = user.totpEnabled && user.totpSecret ? user.totpSecret : generateTotpSecret();
+    const secret =
+      user.totpEnabled && user.totpSecret
+        ? user.totpSecret
+        : generateTotpSecret();
     if (!user.totpEnabled) {
-      await db.update(users).set({ totpSecret: secret, totpEnabled: false }).where(eq(users.id, userId));
+      await db
+        .update(users)
+        .set({ totpSecret: secret, totpEnabled: false })
+        .where(eq(users.id, userId));
     }
-    return { secret, uri: totpUri(user.email, secret), enabled: user.totpEnabled };
+    return {
+      secret,
+      uri: totpUri(user.email, secret),
+      enabled: user.totpEnabled,
+    };
   },
 
   enableTotp: async (userId: string, code: string) => {
     const access = await accessService.getUserAccess(userId);
     if (access.role !== 'Admin') {
-      throw new ApplicationException('Only admins can turn on two-factor authentication.');
+      throw new ApplicationException(
+        'Only admins can turn on two-factor authentication.'
+      );
     }
-    const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
     if (!user?.totpSecret || !verifyTotp(user.totpSecret, code)) {
       throw new ApplicationException('That code is incorrect.');
     }
-    await db.update(users).set({ totpEnabled: true }).where(eq(users.id, userId));
+    await db
+      .update(users)
+      .set({ totpEnabled: true })
+      .where(eq(users.id, userId));
   },
 
   disableTotp: async (userId: string, code: string) => {
     const access = await accessService.getUserAccess(userId);
     if (access.role !== 'Admin') {
-      throw new ApplicationException('Only admins can turn off two-factor authentication.');
+      throw new ApplicationException(
+        'Only admins can turn off two-factor authentication.'
+      );
     }
-    const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
     if (!user?.totpSecret || !verifyTotp(user.totpSecret, code)) {
       throw new ApplicationException('That code is incorrect.');
     }
@@ -222,16 +339,20 @@ export async function inviteStaff(input: {
   actorId: string;
 }) {
   const email = input.email.trim().toLowerCase();
-  const roleName = input.role && ROLE_NAMES.includes(input.role) ? input.role : 'Viewer';
+  const roleName =
+    input.role && ROLE_NAMES.includes(input.role) ? input.role : 'Viewer';
   const [existing] = await db
     .select({ id: users.id })
     .from(users)
     .where(eq(users.email, email))
     .limit(1);
-  if (existing) throw new ApplicationException('A user with that email already exists.');
+  if (existing)
+    throw new ApplicationException('A user with that email already exists.');
 
   const allRoles = await accessService.ensureRolesSeeded();
-  const role = allRoles.find(r => r.name === roleName) ?? allRoles.find(r => r.name === 'Viewer');
+  const role =
+    allRoles.find(r => r.name === roleName) ??
+    allRoles.find(r => r.name === 'Viewer');
   if (!role) throw new ApplicationException('Roles are not set up yet.');
 
   const { siteContext } = await import('@/server/services/site-context');

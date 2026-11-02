@@ -8,6 +8,8 @@ import { menuHref } from '@/components/site/menu-links';
 import {
   HEADER_STARTERS,
   FOOTER_STARTERS,
+  SEARCH_STARTERS,
+  ARCHIVE_STARTERS,
   getStarterContent,
 } from '@/db/seed/header-footer-starters';
 
@@ -183,6 +185,28 @@ describe('Header & Footer starter templates', () => {
     assert.equal(getStarterContent('Footer', 'blank'), null);
     assert.equal(getStarterContent('Header', undefined), null);
   });
+
+  for (const [category, starters, required] of [
+    ['Search', SEARCH_STARTERS, 'SearchResults'],
+    ['Archive', ARCHIVE_STARTERS, 'QueryLoop'],
+  ] as const) {
+    it(`provides valid ${category.toLowerCase()} starter templates`, () => {
+      assert.ok(starters.length >= 2);
+      for (const starter of starters) {
+        assert.equal(starter.category, category);
+        const types = starter.content.content.map(b => b.type);
+        assert.ok(types.includes(required), `${starter.key} lacks ${required}`);
+        for (const block of starter.content.content) {
+          const def = pageDefinitions[block.type as keyof typeof pageDefinitions];
+          assert.ok(def, `Unknown block ${block.type}`);
+          const validation = validateProps(def, block.props);
+          assert.equal(validation.ok, true, `${starter.key}/${block.type} props invalid`);
+        }
+        assert.deepEqual(getStarterContent(category, starter.key), starter.content);
+      }
+      assert.equal(getStarterContent(category, 'blank'), null);
+    });
+  }
 });
 
 describe('normalizeGlobalContent', () => {

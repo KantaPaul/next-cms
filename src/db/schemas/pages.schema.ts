@@ -1,5 +1,6 @@
 import { relations, sql } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
+import { z } from 'zod';
 import {
   boolean,
   check,
@@ -434,6 +435,39 @@ export const DEFAULT_SEARCH_SETTINGS: SearchSettings = {
   pinnedResults: [],
 };
 
+export type AuthSettings = {
+  loginEnabled: boolean;
+  publicRegistrationEnabled: boolean;
+  requireEmailVerification: boolean;
+  requireAdminApproval: boolean;
+  sessionLifetimeHours: number;
+  maxFailedAttempts: number;
+  lockoutMinutes: number;
+  loginDisabledMessage: string;
+};
+
+export const DEFAULT_AUTH_SETTINGS: AuthSettings = {
+  loginEnabled: true,
+  publicRegistrationEnabled: true,
+  requireEmailVerification: false,
+  requireAdminApproval: false,
+  sessionLifetimeHours: 720,
+  maxFailedAttempts: 5,
+  lockoutMinutes: 15,
+  loginDisabledMessage: 'Login is currently disabled.',
+};
+
+export const authSettingsSchema = z.object({
+  loginEnabled: z.boolean().default(true),
+  publicRegistrationEnabled: z.boolean().default(true),
+  requireEmailVerification: z.boolean().default(false),
+  requireAdminApproval: z.boolean().default(false),
+  sessionLifetimeHours: z.number().int().min(1).max(2160).default(720),
+  maxFailedAttempts: z.number().int().min(1).max(100).default(5),
+  lockoutMinutes: z.number().int().min(1).max(1440).default(15),
+  loginDisabledMessage: z.string().default('Login is currently disabled.'),
+});
+
 export const SITE_SETTINGS_ID = 'default';
 
 export const siteSettings = pgTable('site_settings', {
@@ -469,6 +503,10 @@ export const siteSettings = pgTable('site_settings', {
   licenseSettings: jsonb('license_settings')
     .$type<LicenseSettings>()
     .default(DEFAULT_LICENSE_SETTINGS)
+    .notNull(),
+  authSettings: jsonb('auth_settings')
+    .$type<AuthSettings>()
+    .default(DEFAULT_AUTH_SETTINGS)
     .notNull(),
   robotsTxt: text('robots_txt'),
   googleAnalyticsId: varchar('google_analytics_id', { length: 50 }),

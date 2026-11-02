@@ -1,15 +1,33 @@
-import { getCurrentUserAndTeamId } from '@/lib/auth';
+import { RedirectType, redirect } from 'next/navigation';
+import { PAGES } from '@/config/pages';
+import { validateSession } from '@/lib/auth';
 import { AccessProvider } from '@/providers/access.provider';
 import { SiteLocalesProvider } from '@/providers/site-locales';
 import { accessService } from '@/server/services/access.service';
 import { siteContext } from '@/server/services/site-context';
 import { licenseService } from '@/server/services/license.service';
+import { siteSettingsService } from '@/server/services/site-settings.service';
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // R279 / A5-01: Require valid session before license check or dashboard render
+  const session = await validateSession();
+  if (!session?.user) {
+    const authSettings = await siteSettingsService.getAuthSettings();
+    if (!authSettings.loginEnabled) {
+      redirect(
+        `/login?message=${encodeURIComponent(
+          authSettings.loginDisabledMessage || 'Login is currently disabled.'
+        )}`,
+        RedirectType.replace
+      );
+    }
+    redirect(PAGES.AUTH.LOGIN, RedirectType.replace);
+  }
+
   // R239 / L5-02: Dashboard layout fails closed without a valid installation token
   const licenseCheck = await licenseService.requireLicense();
   if (!licenseCheck.ok) {
@@ -33,7 +51,7 @@ export default async function DashboardLayout({
     );
   }
 
-  const { userId } = await getCurrentUserAndTeamId();
+  const userId = session.user.id;
   const [access, site] = await Promise.all([
     accessService.getUserAccess(userId),
     siteContext.adminSite(userId),

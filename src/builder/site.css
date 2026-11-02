@@ -753,12 +753,12 @@
 
 .site-header-shell[data-sticky="always"] {
   position: sticky;
-  top: 0;
+  top: var(--cms-admin-bar-h, 0px);
 }
 
 .site-header-shell[data-sticky="scroll-up"] {
   position: sticky;
-  top: 0;
+  top: var(--cms-admin-bar-h, 0px);
 }
 
 .site-header-shell[data-sticky="scroll-up"][data-hidden="true"] {
@@ -767,7 +767,7 @@
 
 .site-header-shell[data-transparent="true"] {
   position: absolute;
-  top: 0;
+  top: var(--cms-admin-bar-h, 0px);
   left: 0;
   right: 0;
   background-color: transparent !important;

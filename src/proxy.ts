@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { ADMIN_BAR_HINT_COOKIE } from '@/lib/admin-bar';
 
 function skip(pathname: string) {
   return (
@@ -16,9 +17,30 @@ function firstPathSegment(pathname: string): string | null {
   return segments.length ? segments[0] : null;
 }
 
+/** Mirrors whether a session cookie exists into a readable hint for the admin bar. */
+function syncSignedInHint(request: NextRequest, response: NextResponse) {
+  const hasSession = Boolean(request.cookies.get('session')?.value);
+  const hasHint = request.cookies.has(ADMIN_BAR_HINT_COOKIE);
+
+  if (hasSession && !hasHint) {
+    response.cookies.set(ADMIN_BAR_HINT_COOKIE, '1', {
+      path: '/',
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    });
+  } else if (!hasSession && hasHint) {
+    response.cookies.delete(ADMIN_BAR_HINT_COOKIE);
+  }
+
+  return response;
+}
+
 function continueRequest(request: NextRequest, headers: Headers) {
   headers.set('x-pathname', request.nextUrl.pathname);
-  return NextResponse.next({ request: { headers } });
+  return syncSignedInHint(
+    request,
+    NextResponse.next({ request: { headers } })
+  );
 }
 
 export async function proxy(request: NextRequest) {
@@ -53,7 +75,10 @@ export async function proxy(request: NextRequest) {
     if (!response.ok) return continueRequest(request, headers);
     const data = (await response.json()) as { to?: string | null; status?: number };
     if (!data.to) return continueRequest(request, headers);
-    return NextResponse.redirect(new URL(data.to, request.url), data.status ?? 301);
+    return syncSignedInHint(
+      request,
+      NextResponse.redirect(new URL(data.to, request.url), data.status ?? 301)
+    );
   } catch {
     return continueRequest(request, headers);
   }

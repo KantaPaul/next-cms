@@ -1,7 +1,15 @@
-/** R276 fills these in. They stay empty so password login has one call site and no lockout table. */
-export async function recordAuthAttempt(_input: {
+import 'server-only';
+import { authRateLimitService } from '@/server/services/auth-rate-limit.service';
+
+export async function recordAuthAttempt(input: {
   email?: string;
   success: boolean;
-}) {}
+}) {
+  if (!input.email || input.success) return;
+  await authRateLimitService.recordFailedLogin(input.email, input.email);
+}
 
-export async function clearAuthAttempts(_input: { email?: string }) {}
+export async function clearAuthAttempts(input: { email?: string }) {
+  if (!input.email) return;
+  await authRateLimitService.clearFailedLogins(input.email, input.email);
+}

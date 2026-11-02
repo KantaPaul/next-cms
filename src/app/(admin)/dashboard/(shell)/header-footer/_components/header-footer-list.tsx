@@ -1,15 +1,15 @@
 'use client';
 
 import { format } from 'date-fns';
-import { Check, Copy, Edit3, Globe, LayoutTemplate, MoreHorizontal, PanelBottom, PanelTop, Plus, Trash2 } from 'lucide-react';
+import { Archive, Check, Globe, LayoutTemplate, PanelBottom, PanelTop, Plus, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils/cn';
 import {
-  HEADER_STARTERS,
-  FOOTER_STARTERS,
+  STARTERS_BY_CATEGORY,
+  type SiteTemplateCategory,
 } from '@/db/seed/header-footer-starters';
 import {
   ActionDropdown,
@@ -35,7 +35,6 @@ import {
 } from '@/components/ui/dialog';
 import { FormInput } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PAGES } from '@/config/pages';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import type { HeaderFooterItem } from '../_modules/header-footer.service';
 import {
@@ -44,7 +43,43 @@ import {
   duplicateHeaderFooter,
   renameHeaderFooter,
 } from '../_modules/header-footer.actions';
+import { siteTemplateEditHref } from '../_modules/site-template-href';
 import { DisplayConditionsDialog } from './display-conditions-dialog';
+
+const TABS: {
+  value: SiteTemplateCategory;
+  label: string;
+  icon: typeof PanelTop;
+  emptyHint: string;
+}[] = [
+  {
+    value: 'Header',
+    label: 'Headers',
+    icon: PanelTop,
+    emptyHint: 'Create a header here, customize it in the visual builder, then assign it in Settings or on individual pages.',
+  },
+  {
+    value: 'Footer',
+    label: 'Footers',
+    icon: PanelBottom,
+    emptyHint: 'Create a footer here, customize it in the visual builder, then assign it in Settings or on individual pages.',
+  },
+  {
+    value: 'Search',
+    label: 'Search',
+    icon: Search,
+    emptyHint: 'Design the /search results page, then assign it in Settings → Search Results Template.',
+  },
+  {
+    value: 'Archive',
+    label: 'Archives',
+    icon: Archive,
+    emptyHint: 'Design category, tag, author, and date archive pages, then assign it in Settings → Archive Template.',
+  },
+];
+
+const isPerPage = (category: SiteTemplateCategory) =>
+  category === 'Header' || category === 'Footer';
 
 export function HeaderFooterList({
   items,
@@ -54,16 +89,16 @@ export function HeaderFooterList({
   can: { create: boolean; delete: boolean };
 }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'Header' | 'Footer'>('Header');
+  const [activeTab, setActiveTab] = useState<SiteTemplateCategory>('Header');
   const [renaming, setRenaming] = useState<HeaderFooterItem | null>(null);
   const [conditionsItem, setConditionsItem] = useState<HeaderFooterItem | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
-  const headers = items.filter(i => i.category === 'Header');
-  const footers = items.filter(i => i.category === 'Footer');
-
-  const currentList = activeTab === 'Header' ? headers : footers;
+  const byCategory = (c: SiteTemplateCategory) =>
+    items.filter(i => i.category === c);
+  const currentList = byCategory(activeTab);
+  const currentTab = TABS.find(t => t.value === activeTab)!;
 
   const remove = async (item: HeaderFooterItem) => {
     let warning = `Delete the "${item.name}" ${item.category.toLowerCase()}?`;
@@ -95,7 +130,7 @@ export function HeaderFooterList({
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-steel-500">
-          Design visual header and footer layouts with dedicated blocks. Assign them as site defaults, locale overrides, or on specific pages.
+          Design header, footer, search results, and archive layouts in the visual builder. Assign them as site defaults, locale overrides, or (headers and footers) on specific pages.
         </p>
         {can.create && (
           <Button
@@ -104,34 +139,38 @@ export function HeaderFooterList({
             onClick={() => setCreateOpen(true)}
           >
             <Plus className="mr-1.5 size-4" />
-            New {activeTab.toLowerCase()}
+            New {activeTab.toLowerCase()} template
           </Button>
         )}
       </div>
 
       <Tabs
         value={activeTab}
-        onValueChange={v => setActiveTab(v as 'Header' | 'Footer')}
+        onValueChange={v => setActiveTab(v as SiteTemplateCategory)}
         className="w-full"
       >
         <TabsList className="mb-4">
-          <TabsTrigger value="Header" className="flex items-center gap-2">
-            <PanelTop className="size-4" />
-            Headers ({headers.length})
-          </TabsTrigger>
-          <TabsTrigger value="Footer" className="flex items-center gap-2">
-            <PanelBottom className="size-4" />
-            Footers ({footers.length})
-          </TabsTrigger>
+          {TABS.map(tab => (
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              className="flex items-center gap-2"
+            >
+              <tab.icon className="size-4" />
+              {tab.label} ({byCategory(tab.value).length})
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-0">
           {!currentList.length ? (
             <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-steel-200 px-6 py-12 text-center dark:border-dark-300">
               <LayoutTemplate className="size-8 text-steel-300" />
-              <p className="font-medium">No {activeTab.toLowerCase()}s yet</p>
+              <p className="font-medium">
+                No {activeTab.toLowerCase()} templates yet
+              </p>
               <p className="max-w-md text-sm text-steel-500">
-                Create a {activeTab.toLowerCase()} here, customize it in the visual builder, then assign it in Settings or on individual pages.
+                {currentTab.emptyHint}
               </p>
             </div>
           ) : (
@@ -155,7 +194,7 @@ export function HeaderFooterList({
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Link
-                              href={PAGES.DASHBOARD.HEADER_FOOTER_EDIT(item.id)}
+                              href={siteTemplateEditHref(item.id, item.category)}
                               className="font-medium hover:underline"
                             >
                               {item.name}
@@ -217,13 +256,15 @@ export function HeaderFooterList({
                             variant="vertical"
                           >
                             <ActionDropdownItem
-                              href={PAGES.DASHBOARD.HEADER_FOOTER_EDIT(item.id)}
+                              href={siteTemplateEditHref(item.id, item.category)}
                               label="Edit in builder"
                             />
-                            <ActionDropdownItem
-                              label="Display conditions"
-                              onClick={() => setConditionsItem(item)}
-                            />
+                            {isPerPage(item.category) && (
+                              <ActionDropdownItem
+                                label="Display conditions"
+                                onClick={() => setConditionsItem(item)}
+                              />
+                            )}
                             <ActionDropdownItem
                               label="Duplicate"
                               onClick={() => duplicate(item)}
@@ -252,6 +293,7 @@ export function HeaderFooterList({
       </Tabs>
 
       <NewHeaderFooterDialog
+        key={activeTab}
         open={createOpen}
         onOpenChange={setCreateOpen}
         category={activeTab}
@@ -283,16 +325,13 @@ function NewHeaderFooterDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  category: 'Header' | 'Footer';
+  category: SiteTemplateCategory;
 }) {
   const router = useRouter();
+  const starters = STARTERS_BY_CATEGORY[category];
   const [name, setName] = useState('');
-  const [starter, setStarter] = useState<string>(
-    category === 'Header' ? 'classic' : 'columns-4'
-  );
+  const [starter, setStarter] = useState<string>(starters[0]?.key ?? 'blank');
   const [isPending, startTransition] = useTransition();
-
-  const starters = category === 'Header' ? HEADER_STARTERS : FOOTER_STARTERS;
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -309,7 +348,7 @@ function NewHeaderFooterDialog({
           toast.success(`${category} created`);
           onOpenChange(false);
           setName('');
-          router.push(PAGES.DASHBOARD.HEADER_FOOTER_EDIT(row.id));
+          router.push(siteTemplateEditHref(row.id, category));
         }
       );
     });
@@ -320,9 +359,9 @@ function NewHeaderFooterDialog({
       <DialogContent className="sm:max-w-lg">
         <form onSubmit={submit}>
           <DialogHeader>
-            <DialogTitle>New {category}</DialogTitle>
+            <DialogTitle>New {category.toLowerCase()} template</DialogTitle>
             <DialogDescription>
-              Create a new {category.toLowerCase()} layout with dedicated builder blocks or choose a starter.
+              Create a new {category.toLowerCase()} layout in the visual builder, or start from a starter.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">

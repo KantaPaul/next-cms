@@ -336,8 +336,8 @@ export function VideoLibrary({
     <div className="flex flex-col gap-3">
       <div className="relative bg-black rounded-xl overflow-hidden aspect-video shadow-md ring-1 ring-black/10">
         {unavailable || !parsed ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-steel-100 dark:bg-dark-200 px-6 text-center">
-            <p className="text-sm text-steel-700 dark:text-steel-300">
+          <div className="s-surface absolute inset-0 flex items-center justify-center px-6 text-center">
+            <p className="s-muted text-sm">
               This video is currently unavailable.
             </p>
           </div>
@@ -357,18 +357,18 @@ export function VideoLibrary({
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
         <div>
-          <h3 className="font-semibold text-lg text-slate-900 dark:text-white">
+          <h3 className="text-lg font-semibold">
             {selected.title}
           </h3>
-          <div className="flex items-center gap-2 text-xs text-steel-500 mt-0.5">
+          <div className="s-muted mt-0.5 flex flex-wrap items-center gap-2 text-xs">
             <span
               className={cn(
                 'inline-flex items-center gap-1 font-medium px-2 py-0.5 rounded-full capitalize',
                 selected.provider === 'youtube'
-                  ? 'bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400'
+                  ? 'bg-red-500/10 text-red-500'
                   : selected.provider === 'vimeo'
-                    ? 'bg-sky-50 text-sky-600 dark:bg-sky-950/40 dark:text-sky-400'
-                    : 'bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-400'
+                    ? 'bg-sky-500/10 text-sky-500'
+                    : 'bg-violet-500/10 text-violet-500'
               )}
             >
               <Play className="h-2.5 w-2.5 fill-current" />
@@ -381,9 +381,9 @@ export function VideoLibrary({
       </div>
     </div>
   ) : (
-    <div className="bg-steel-100 dark:bg-dark-200 rounded-xl aspect-video flex flex-col items-center justify-center p-6 text-center">
-      <VideoIcon className="h-10 w-10 text-steel-400 mb-2" />
-      <p className="text-sm font-medium text-steel-700 dark:text-steel-300">
+    <div className="s-surface rounded-xl aspect-video flex flex-col items-center justify-center p-6 text-center">
+      <VideoIcon className="s-muted mb-2 h-10 w-10" />
+      <p className="s-muted text-sm font-medium">
         No video selected
       </p>
     </div>
@@ -394,19 +394,19 @@ export function VideoLibrary({
       {/* Search Input */}
       {resolvedSettings.showSearch && (
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-steel-400" />
+          <Search className="s-muted absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder={currentPlaceholder}
-            className="w-full h-9 rounded-lg border border-steel-200 bg-white/90 dark:border-dark-300 dark:bg-dark-100 pl-9 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+            className="s-border h-9 w-full rounded-lg border bg-[var(--site-bg)] pl-9 pr-8 text-sm text-[var(--site-fg)] transition placeholder:text-[var(--site-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--site-primary)]"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-steel-400 hover:text-steel-600 rounded"
+              className="s-muted absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 hover:text-[var(--site-fg)]"
               title="Clear search"
             >
               <X className="h-3.5 w-3.5" />
@@ -417,15 +417,15 @@ export function VideoLibrary({
 
       {/* Provider tabs (only if multiple sources are allowed) */}
       {allowedSources.length > 1 && (
-        <div className="flex items-center gap-1 p-0.5 bg-steel-100 dark:bg-dark-200 rounded-lg text-xs font-medium">
+        <div className="s-surface s-border flex items-center gap-1 rounded-lg border p-0.5 text-xs font-medium">
           <button
             type="button"
             onClick={() => setActiveSourceFilter('all')}
             className={cn(
               'flex-1 py-1 px-2 rounded-md transition text-center',
               activeSourceFilter === 'all'
-                ? 'bg-white dark:bg-dark-100 text-slate-900 dark:text-white shadow-sm font-semibold'
-                : 'text-steel-600 dark:text-steel-400 hover:text-slate-900'
+                ? 'bg-[var(--site-bg)] text-[var(--site-fg)] shadow-sm font-semibold'
+                : 's-muted hover:text-[var(--site-fg)]'
             )}
           >
             All
@@ -437,8 +437,8 @@ export function VideoLibrary({
               className={cn(
                 'flex-1 py-1 px-2 rounded-md transition text-center flex items-center justify-center gap-1',
                 activeSourceFilter === 'youtube'
-                  ? 'bg-white dark:bg-dark-100 text-red-600 dark:text-red-400 shadow-sm font-semibold'
-                  : 'text-steel-600 dark:text-steel-400 hover:text-red-600'
+                  ? 'bg-[var(--site-bg)] text-red-500 shadow-sm font-semibold'
+                  : 's-muted hover:text-red-500'
               )}
             >
               <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
@@ -452,8 +452,8 @@ export function VideoLibrary({
               className={cn(
                 'flex-1 py-1 px-2 rounded-md transition text-center flex items-center justify-center gap-1',
                 activeSourceFilter === 'vimeo'
-                  ? 'bg-white dark:bg-dark-100 text-sky-600 dark:text-sky-400 shadow-sm font-semibold'
-                  : 'text-steel-600 dark:text-steel-400 hover:text-sky-600'
+                  ? 'bg-[var(--site-bg)] text-sky-500 shadow-sm font-semibold'
+                  : 's-muted hover:text-sky-500'
               )}
             >
               <span className="h-1.5 w-1.5 rounded-full bg-sky-500" />
@@ -467,8 +467,8 @@ export function VideoLibrary({
               className={cn(
                 'flex-1 py-1 px-2 rounded-md transition text-center flex items-center justify-center gap-1',
                 activeSourceFilter === 'direct'
-                  ? 'bg-white dark:bg-dark-100 text-violet-600 dark:text-violet-400 shadow-sm font-semibold'
-                  : 'text-steel-600 dark:text-steel-400 hover:text-violet-600'
+                  ? 'bg-[var(--site-bg)] text-violet-500 shadow-sm font-semibold'
+                  : 's-muted hover:text-violet-500'
               )}
             >
               Direct
@@ -484,11 +484,11 @@ export function VideoLibrary({
       {searchControls}
 
       {filtered.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-steel-200 dark:border-dark-300 p-6 text-center">
-          <p className="text-sm font-medium text-steel-700 dark:text-steel-300">
+        <div className="s-border rounded-lg border border-dashed p-6 text-center">
+          <p className="text-sm font-medium">
             No videos found
           </p>
-          <p className="text-xs text-steel-500 mt-1">
+          <p className="s-muted mt-1 text-xs">
             {searchQuery
               ? `No results for "${searchQuery}". Try a different keyword.`
               : 'No videos available under this category.'}
@@ -497,7 +497,7 @@ export function VideoLibrary({
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              className="mt-3 text-xs text-indigo-600 hover:underline font-medium"
+              className="s-primary-text mt-3 text-xs font-medium hover:underline"
             >
               Clear search filter
             </button>
@@ -515,11 +515,11 @@ export function VideoLibrary({
                   className={cn(
                     'group flex w-full items-start gap-3 rounded-lg border p-2 text-left transition',
                     isSelected
-                      ? 'border-indigo-400 bg-indigo-50/80 dark:border-indigo-800 dark:bg-indigo-950/40 shadow-sm'
-                      : 'border-steel-100 bg-white/50 hover:bg-steel-50 dark:border-dark-300/60 dark:bg-dark-100/40 dark:hover:bg-dark-200/80'
+                      ? 's-soft-primary border-[var(--site-primary)] shadow-sm'
+                      : 's-border bg-[var(--site-bg)] hover:bg-[var(--site-surface)]'
                   )}
                 >
-                  <div className="relative h-16 w-28 shrink-0 overflow-hidden rounded-md bg-steel-200 dark:bg-dark-200">
+                  <div className="s-surface relative h-16 w-28 shrink-0 overflow-hidden rounded-md">
                     {resolvedSettings.thumbnails && video.thumbnailUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -529,7 +529,7 @@ export function VideoLibrary({
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center">
-                        <Play className="h-5 w-5 text-steel-400" />
+                        <Play className="s-muted h-5 w-5" />
                       </div>
                     )}
                     {video.duration ? (
@@ -540,28 +540,28 @@ export function VideoLibrary({
                   </div>
 
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium text-slate-900 dark:text-white group-hover:text-indigo-600 transition">
+                    <span className="block truncate text-sm font-medium text-[var(--site-fg)] transition group-hover:text-[var(--site-primary)]">
                       {video.title}
                     </span>
-                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-steel-500">
+                    <span className="s-muted mt-1 flex flex-wrap items-center gap-1.5 text-xs">
                       <span
                         className={cn(
-                          'inline-block px-1.5 py-0.2 rounded text-[10px] font-semibold uppercase',
+                          'inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase',
                           video.provider === 'youtube'
-                            ? 'text-red-600 bg-red-50 dark:bg-red-950/50'
+                            ? 'bg-red-500/10 text-red-500'
                             : video.provider === 'vimeo'
-                              ? 'text-sky-600 bg-sky-50 dark:bg-sky-950/50'
-                              : 'text-violet-600 bg-violet-50 dark:bg-violet-950/50'
+                              ? 'bg-sky-500/10 text-sky-500'
+                              : 'bg-violet-500/10 text-violet-500'
                         )}
                       >
                         {video.provider}
                       </span>
                       {video.completed ? (
-                        <span className="rounded-full bg-green-100 px-1.5 py-0.2 text-[10px] font-medium text-green-700 dark:bg-green-900/40 dark:text-green-300">
+                        <span className="rounded-full bg-green-500/10 px-1.5 py-0.5 text-[10px] font-medium text-green-600">
                           Watched
                         </span>
                       ) : null}
-                    </div>
+                    </span>
                   </span>
                 </button>
               </li>
@@ -592,12 +592,12 @@ export function VideoLibrary({
         {(resolvedSettings.title || resolvedSettings.description) && (
           <div className="mb-5">
             {resolvedSettings.title && (
-              <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+              <h2 className="text-2xl font-bold tracking-tight">
                 {resolvedSettings.title}
               </h2>
             )}
             {resolvedSettings.description && (
-              <p className="mt-1 text-sm text-steel-500">
+              <p className="s-muted mt-1 text-sm">
                 {resolvedSettings.description}
               </p>
             )}

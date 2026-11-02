@@ -54,23 +54,31 @@ export const accessService = {
   },
 
   /**
-   * Users without a role get one on first access: the first user becomes Admin
-   * so a fresh install is usable, everyone after that starts as Viewer.
+   * Users without a role get Viewer by default inside a transaction.
+   * Users who already have roleId are left unchanged (R264 / A2-01).
    */
   assignDefaultRole: async (userId: string) => {
-    const allRoles = await accessService.ensureRolesSeeded();
-    const admin = allRoles.find(r => r.name === 'Admin')!;
-    const viewer = allRoles.find(r => r.name === 'Viewer')!;
+    return await db.transaction(async tx => {
+      const [user] = await tx
+        .select({ id: users.id, roleId: users.roleId })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
 
-    const [existingAdmin] = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(and(eq(users.roleId, admin.id), isNotNull(users.roleId)))
-      .limit(1);
+      if (!user) return null;
+      if (user.roleId) return user.roleId;
 
-    const roleId = existingAdmin ? viewer.id : admin.id;
-    await db.update(users).set({ roleId }).where(eq(users.id, userId));
-    return roleId;
+      const allRoles = await accessService.ensureRolesSeeded();
+      const viewer = allRoles.find(r => r.name === 'Viewer');
+      if (!viewer) throw new Error('Viewer role not found');
+
+      await tx
+        .update(users)
+        .set({ roleId: viewer.id })
+        .where(and(eq(users.id, userId), isNull(users.roleId)));
+
+      return viewer.id;
+    });
   },
 
   getUserAccess: cache(async (userId: string): Promise<UserAccess> => {

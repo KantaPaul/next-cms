@@ -335,94 +335,94 @@ todos:
   status: completed
 - id: R262
   content: A1-01 auth_settings on site_settings for login, registration, approval, session, and lockout
-  status: pending
+  status: completed
 - id: R263
   content: A1-02 approved_at, failed_login_count, and locked_until on users, with a migration
-  status: pending
+  status: completed
 - id: R264
   content: A2-01 assignDefaultRole always sets Viewer and ignores a client role
-  status: pending
+  status: completed
 - id: R265
   content: A2-02 Google callback and AuthService.create use Viewer for a new user
-  status: pending
+  status: completed
 - id: R266
   content: A2-03 Role changes stay on settings.manage and are audited
-  status: pending
+  status: completed
 - id: R267
   content: A2-04 Server CLI auth:promote assigns Admin for a bootstrap email
-  status: pending
+  status: completed
 - id: R268
   content: A3-01 Server helper that reads auth settings
-  status: pending
+  status: completed
 - id: R269
   content: A3-02 Hide login links when login is disabled
-  status: pending
+  status: completed
 - id: R270
   content: A3-03 Login page and Google routes reject when login is disabled
-  status: pending
+  status: completed
 - id: R271
   content: A3-04 Reject new accounts when public registration is disabled
-  status: pending
+  status: completed
 - id: R272
   content: A3-05 Admin approval leaves new users without a session until approved
-  status: pending
+  status: completed
 - id: R273
   content: A3-06 Block session creation when email verification is required and missing
-  status: pending
+  status: completed
 - id: R274
   content: A3-07 Reject inactive, unapproved, and locked users in validateSession
-  status: pending
+  status: completed
 - id: R275
   content: A4-01 Session lifetime comes from auth settings
-  status: pending
+  status: completed
 - id: R276
   content: A4-02 Rate limit and lockout on login attempts
-  status: pending
+  status: completed
 - id: R277
   content: A4-03 Post-login redirect stays on a same-site path
-  status: pending
+  status: completed
 - id: R278
   content: A4-04 Keep httpOnly SameSite cookies and check the request origin
-  status: pending
+  status: completed
 - id: R279
   content: A5-01 Unauthenticated admin routes redirect to login or the disabled message
-  status: pending
+  status: completed
 - id: R280
   content: A5-02 Server-side permission checks on users, settings, and licenses
-  status: pending
+  status: completed
 - id: R281
   content: A5-03 Published public pages stay available without a session
-  status: pending
+  status: completed
 - id: R282
   content: A6-01 Authentication and Access settings section
-  status: pending
+  status: completed
 - id: R283
   content: A6-02 Approve pending users from the admin user list
-  status: pending
+  status: completed
 - id: R284
   content: A7-01 CLI auth:enable-login turns login back on through the database
-  status: pending
+  status: completed
 - id: R285
   content: A7-02 docs/auth.md for defaults, Viewer, and recovery
-  status: pending
+  status: completed
 - id: R286
   content: A8-01 Tests that new and Google users receive Viewer
-  status: pending
+  status: completed
 - id: R287
   content: A8-02 Tests that Viewer and Editor cannot perform admin operations
-  status: pending
+  status: completed
 - id: R288
   content: A8-03 Tests for disabled login, disabled registration, and blocked accounts
-  status: pending
+  status: completed
 - id: R289
   content: A8-04 Tests for lockout, audited role changes, public pages, and login recovery
-  status: pending
+  status: completed
 - id: R290
   content: A8-05 Lint, tsc, and the auth tests
-  status: pending
+  status: completed
 - id: R291
   content: A8-06 Browser check of the auth settings and a disabled login page
-  status: pending
+  status: completed
 - id: R069
   content: P6-06 products and orders tables
   status: pending
@@ -674,7 +674,7 @@ todos:
   status: pending
 - id: R397
   content: BLD-05 Add container sizing controls for width, max/min width, height, min/max height, grow, shrink, basis, and box sizing
-  status: in_progress
+  status: completed
 - id: R398
   content: BLD-06 Add CSS Grid controls for column/row tracks, repeat patterns, gaps, auto-flow, and responsive track definitions
   status: pending
@@ -686,7 +686,7 @@ todos:
   status: pending
 - id: R401
   content: BLD-09 Add responsive breakpoint values and desktop/tablet/mobile preview, including inheritance and reset-to-inherited behavior
-  status: in_progress
+  status: completed
 - id: R402
   content: BLD-10 Reuse existing section style controls for spacing, padding, margin, background, border, radius, and overflow where compatible
   status: pending

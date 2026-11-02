@@ -17,6 +17,7 @@ import {
   type ContainerSettings,
   type Device,
   DEVICES,
+  deviceForWidth,
   resolveResponsive,
 } from '../style';
 
@@ -265,5 +266,147 @@ describe('LANDMARK_TAGS', () => {
     assert.ok(LANDMARK_TAGS.includes('main'));
     assert.ok(LANDMARK_TAGS.includes('nav'));
     assert.equal(LANDMARK_TAGS.length, 2);
+  });
+});
+
+describe('Container sizing controls (R397 / BLD-05)', () => {
+  it('emits classes and CSS variables for width, min/max width, height, min/max height', () => {
+    const { classes, style } = resolveContainerStyle(
+      {
+        width: { desktop: 180 },
+        minWidth: { desktop: 50 },
+        maxWidth: { desktop: 200 },
+        height: { desktop: 120 },
+        minHeight: { desktop: 40 },
+        maxHeight: { desktop: 200 },
+        sizeUnit: 'px',
+      } as ContainerSettings,
+      'desktop'
+    );
+
+    assert.ok(classes.includes('s-c-w'));
+    assert.ok(classes.includes('s-c-nw'));
+    assert.ok(classes.includes('s-c-xw'));
+    assert.ok(classes.includes('s-c-h'));
+    assert.ok(classes.includes('s-c-nh'));
+    assert.ok(classes.includes('s-c-xh'));
+
+    const s = style as Record<string, string>;
+    assert.equal(s['--s-c-w-d'], '180px');
+    assert.equal(s['--s-c-nw-d'], '50px');
+    assert.equal(s['--s-c-xw-d'], '200px');
+    assert.equal(s['--s-c-h-d'], '120px');
+    assert.equal(s['--s-c-nh-d'], '40px');
+    assert.equal(s['--s-c-xh-d'], '200px');
+  });
+
+  it('emits classes and CSS variables for grow, shrink, and basis with unit', () => {
+    const { classes, style } = resolveContainerStyle(
+      {
+        grow: { desktop: 2 },
+        shrink: { desktop: 0 },
+        basis: { desktop: 160 },
+        basisUnit: 'px',
+      } as ContainerSettings,
+      'desktop'
+    );
+
+    assert.ok(classes.includes('s-c-grw'));
+    assert.ok(classes.includes('s-c-grs'));
+    assert.ok(classes.includes('s-c-grb'));
+
+    const s = style as Record<string, string>;
+    assert.equal(s['--s-c-grw-d'], '2');
+    assert.equal(s['--s-c-grs-d'], '0');
+    assert.equal(s['--s-c-grb-d'], '160px');
+  });
+
+  it('handles box-sizing as border-box and content-box and responsive values', () => {
+    const defaultRes = resolveContainerStyle(
+      { boxSizing: 'content-box' } as ContainerSettings,
+      'desktop'
+    );
+    assert.ok(defaultRes.classes.includes('s-c-box'));
+    assert.equal(
+      (defaultRes.style as Record<string, string>)['--s-c-box-d'],
+      'content-box'
+    );
+
+    const responsiveRes = resolveContainerStyle(
+      {
+        boxSizing: { desktop: 'border-box', mobile: 'content-box' },
+      } as ContainerSettings,
+      'desktop'
+    );
+    const rs = responsiveRes.style as Record<string, string>;
+    assert.equal(rs['--s-c-box-d'], 'border-box');
+    assert.equal(rs['--s-c-box-t'], 'border-box');
+    assert.equal(rs['--s-c-box-m'], 'content-box');
+  });
+});
+
+describe('Responsive breakpoint inheritance and preview (R401 / BLD-09)', () => {
+  it('maps viewport widths to breakpoints correctly via deviceForWidth', () => {
+    assert.equal(deviceForWidth(1400), 'desktop');
+    assert.equal(deviceForWidth(1024), 'desktop');
+    assert.equal(deviceForWidth(1023), 'tablet');
+    assert.equal(deviceForWidth(768), 'tablet');
+    assert.equal(deviceForWidth(767), 'mobile');
+    assert.equal(deviceForWidth(375), 'mobile');
+  });
+
+  it('cascades sizing settings with desktop fallback to tablet and mobile', () => {
+    const { style } = resolveContainerStyle(
+      {
+        width: { desktop: 100 },
+        grow: { desktop: 1 },
+        sizeUnit: '%',
+      } as ContainerSettings,
+      'desktop'
+    );
+    const s = style as Record<string, string>;
+    assert.equal(s['--s-c-w-d'], '100%');
+    assert.equal(s['--s-c-w-t'], '100%');
+    assert.equal(s['--s-c-w-m'], '100%');
+    assert.equal(s['--s-c-grw-d'], '1');
+    assert.equal(s['--s-c-grw-t'], '1');
+    assert.equal(s['--s-c-grw-m'], '1');
+  });
+
+  it('tablet overrides desktop, and mobile inherits tablet override when mobile is unset', () => {
+    const { style } = resolveContainerStyle(
+      {
+        width: { desktop: 100, tablet: 75 },
+        grow: { desktop: 0, tablet: 2 },
+        sizeUnit: '%',
+      } as ContainerSettings,
+      'desktop'
+    );
+    const s = style as Record<string, string>;
+    assert.equal(s['--s-c-w-d'], '100%');
+    assert.equal(s['--s-c-w-t'], '75%');
+    assert.equal(s['--s-c-w-m'], '75%');
+    assert.equal(s['--s-c-grw-d'], '0');
+    assert.equal(s['--s-c-grw-t'], '2');
+    assert.equal(s['--s-c-grw-m'], '2');
+  });
+
+  it('reset-to-inherited logic removes device override reverting to ancestor value', () => {
+    const baseSettings = {
+      width: { desktop: 100, tablet: 75, mobile: 50 },
+    };
+    // Simulating resetting mobile override
+    const nextMobile = { ...baseSettings.width };
+    delete (nextMobile as Partial<Record<Device, number>>).mobile;
+
+    const validNum = (x: unknown) =>
+      typeof x === 'number' && Number.isFinite(x) ? x : undefined;
+    assert.equal(resolveResponsive(nextMobile, 'mobile', validNum), 75);
+
+    // Simulating resetting tablet override
+    const nextTablet = { ...nextMobile };
+    delete (nextTablet as Partial<Record<Device, number>>).tablet;
+    assert.equal(resolveResponsive(nextTablet, 'mobile', validNum), 100);
+    assert.equal(resolveResponsive(nextTablet, 'tablet', validNum), 100);
   });
 });

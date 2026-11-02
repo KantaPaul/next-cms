@@ -78,7 +78,7 @@ export function adapterFor(
     return {
       label: isHeader ? 'Header' : 'Footer',
       backHref: PAGES.DASHBOARD.HEADER_FOOTER,
-      backLabel: 'Header & Footer',
+      backLabel: 'Site templates',
       headerPath: '',
       previewHref: null,
       liveLabel: 'Publish',
@@ -110,12 +110,24 @@ export function adapterFor(
 
   if (kind === 'global' || kind === 'contact-form') {
     const isContactForm = kind === 'contact-form';
+    // Search and archive templates are listed on the Site templates screen.
+    const isSiteTemplate = category === 'Search' || category === 'Archive';
     return {
-      label: isContactForm ? 'Contact form' : 'Global block',
+      label: isContactForm
+        ? 'Contact form'
+        : isSiteTemplate
+          ? `${category} template`
+          : 'Global block',
       backHref: isContactForm
         ? PAGES.DASHBOARD.CONTACT_FORMS
-        : PAGES.DASHBOARD.TEMPLATES,
-      backLabel: isContactForm ? 'Contact forms' : 'Templates & Globals',
+        : isSiteTemplate
+          ? PAGES.DASHBOARD.HEADER_FOOTER
+          : PAGES.DASHBOARD.TEMPLATES,
+      backLabel: isContactForm
+        ? 'Contact forms'
+        : isSiteTemplate
+          ? 'Site templates'
+          : 'Templates & Globals',
       headerPath: '',
       previewHref: null,
       liveLabel: 'Save',

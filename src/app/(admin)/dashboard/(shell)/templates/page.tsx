@@ -45,7 +45,9 @@ export default async function TemplatesPage() {
             g =>
               g.category !== 'contact-form' &&
               g.category !== 'Header' &&
-              g.category !== 'Footer'
+              g.category !== 'Footer' &&
+              g.category !== 'Search' &&
+              g.category !== 'Archive'
           )
           .map(({ content, ...g }) => ({
             ...g,

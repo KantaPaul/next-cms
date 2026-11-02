@@ -493,7 +493,7 @@ export type ContainerSettings = {
   shrink?: Responsive<number>;
   basis?: Responsive<number>;
   basisUnit?: LengthUnit;
-  boxSizing?: 'border-box' | 'content-box';
+  boxSizing?: MaybeResponsive<'border-box' | 'content-box'>;
   gridTemplateColumns?: Responsive<string>;
   gridTemplateRows?: Responsive<string>;
   gridAutoFlow?: Responsive<GridAutoFlow>;
@@ -2040,7 +2040,10 @@ export function normalizeContainerSettings(value: unknown): ContainerSettings {
     shrink: normalizeResponsiveNumber(c.shrink, FLEX_NUMBER_LIMITS),
     basis: normalizeResponsiveNumber(c.basis, basisLim),
     basisUnit,
-    boxSizing: pick(c.boxSizing, ['border-box', 'content-box']) ?? 'border-box',
+    boxSizing:
+      typeof c.boxSizing === 'object' && c.boxSizing !== null
+        ? (normalizeResponsiveEnum(c.boxSizing, ['border-box', 'content-box']) ?? 'border-box')
+        : (pick(c.boxSizing, ['border-box', 'content-box']) ?? 'border-box'),
     gridTemplateColumns: normalizeResponsiveTrack(c.gridTemplateColumns),
     gridTemplateRows: normalizeResponsiveTrack(c.gridTemplateRows),
     gridAutoFlow: normalizeResponsiveEnum(c.gridAutoFlow, GRID_AUTO_FLOWS),
@@ -2282,10 +2285,53 @@ export function resolveContainerStyle(
     }
   }
 
+  const hasGrow = DEVICES.some(
+    d => resolveResponsive(s.grow, d, validFinite) !== undefined
+  );
+  if (hasGrow) {
+    classes.push('s-c-grw');
+    for (const d of DEVICES) {
+      const n = resolveResponsive(s.grow, d, validFinite);
+      if (n !== undefined) {
+        style[`--s-c-grw-${DEVICE_SUFFIX[d]}`] = `${clampNumber(n, FLEX_NUMBER_LIMITS.min, FLEX_NUMBER_LIMITS.max) ?? 0}`;
+      }
+    }
+  }
+
+  const hasShrink = DEVICES.some(
+    d => resolveResponsive(s.shrink, d, validFinite) !== undefined
+  );
+  if (hasShrink) {
+    classes.push('s-c-grs');
+    for (const d of DEVICES) {
+      const n = resolveResponsive(s.shrink, d, validFinite);
+      if (n !== undefined) {
+        style[`--s-c-grs-${DEVICE_SUFFIX[d]}`] = `${clampNumber(n, FLEX_NUMBER_LIMITS.min, FLEX_NUMBER_LIMITS.max) ?? 0}`;
+      }
+    }
+  }
+
+  const hasBasis = DEVICES.some(
+    d => resolveResponsive(s.basis, d, validFinite) !== undefined
+  );
+  if (hasBasis) {
+    classes.push('s-c-grb');
+    for (const d of DEVICES) {
+      const n = resolveResponsive(s.basis, d, validFinite);
+      if (n !== undefined) {
+        style[`--s-c-grb-${DEVICE_SUFFIX[d]}`] = `${clampNumber(n, basisLim.min, basisLim.max) ?? 0}${basisUnit}`;
+      }
+    }
+  }
+
   classes.push('s-c-box');
-  for (const d of DEVICES)
-    style[`--s-c-box-${DEVICE_SUFFIX[d]}`] =
-      pick(s.boxSizing, ['border-box', 'content-box']) ?? 'border-box';
+  for (const d of DEVICES) {
+    const bs =
+      resolveResponsive(s.boxSizing, d, v =>
+        pick(v, ['border-box', 'content-box'])
+      ) ?? 'border-box';
+    style[`--s-c-box-${DEVICE_SUFFIX[d]}`] = bs;
+  }
 
   if (s.contentWidth === 'boxed') {
     classes.push('s-c-boxed');

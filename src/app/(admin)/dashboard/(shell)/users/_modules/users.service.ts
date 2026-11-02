@@ -2,7 +2,7 @@ import 'server-only';
 import { and, asc, count, eq, isNull, ne } from 'drizzle-orm';
 import { ROLE_NAMES, type RoleName } from '@/config/permissions';
 import { db } from '@/db';
-import { roles, users } from '@/db/schema';
+import { roles, users, UserStatus } from '@/db/schema';
 import { ApplicationException, NotFoundException } from '@/lib/utils/error';
 import { accessService } from '@/server/services/access.service';
 import { auditService } from '@/server/services/audit.service';
@@ -17,6 +17,9 @@ export const usersService = {
         email: users.email,
         image: users.image,
         createdAt: users.createdAt,
+        status: users.status,
+        approvedAt: users.approvedAt,
+        lockedUntil: users.lockedUntil,
         role: roles.name,
       })
       .from(users)
@@ -84,6 +87,50 @@ export const usersService = {
       details: `${previous} → ${role}`,
     });
     return { id: user.id, role };
+  },
+
+  approveUser: async ({ userId }: { userId: string }, actorId: string) => {
+    return await db.transaction(async tx => {
+      const [user] = await tx
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          status: users.status,
+          roleId: users.roleId,
+          approvedAt: users.approvedAt,
+        })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (!user) throw new NotFoundException('User not found');
+
+      const allRoles = await accessService.ensureRolesSeeded();
+      const viewer = allRoles.find(r => r.name === 'Viewer');
+      const targetRoleId = user.roleId || viewer?.id;
+
+      const now = new Date();
+      await tx
+        .update(users)
+        .set({
+          status: UserStatus.Active,
+          approvedAt: now,
+          roleId: targetRoleId,
+        })
+        .where(eq(users.id, userId));
+
+      await auditService.log({
+        actorId,
+        action: 'update',
+        targetType: 'user',
+        targetId: userId,
+        targetName: user.name || user.email,
+        details: 'Approved pending user',
+      });
+
+      return { id: user.id, approved: true };
+    });
   },
 };
 

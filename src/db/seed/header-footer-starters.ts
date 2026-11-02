@@ -1,10 +1,20 @@
 import type { BuilderData, BuilderItem } from '@/builder/data';
 
+/** Global-block categories managed on the Site templates screen. */
+export type SiteTemplateCategory = 'Header' | 'Footer' | 'Search' | 'Archive';
+
+export const SITE_TEMPLATE_CATEGORIES: readonly SiteTemplateCategory[] = [
+  'Header',
+  'Footer',
+  'Search',
+  'Archive',
+];
+
 export type StarterTemplate = {
   key: string;
   name: string;
   description: string;
-  category: 'Header' | 'Footer';
+  category: SiteTemplateCategory;
   content: BuilderData;
 };
 
@@ -771,6 +781,136 @@ export const FOOTER_STARTER_DARK_NEWSLETTER: StarterTemplate = {
   },
 };
 
+/* =========================================================================
+   Search Results Starters (QRY-16)
+   ========================================================================= */
+
+export const SEARCH_STARTER_SIMPLE: StarterTemplate = {
+  key: 'simple',
+  name: 'Simple Search',
+  description: 'Search box, result type tabs, thumbnails, and highlighted snippets.',
+  category: 'Search',
+  content: {
+    root: { props: {} },
+    content: [
+      {
+        type: 'SearchResults',
+        props: {
+          id: 'search-results-main',
+          title: 'Search',
+          showTabs: true,
+          showThumbnails: true,
+          showTypeBadges: true,
+          showSnippets: true,
+          pageSize: 20,
+        },
+      },
+    ],
+    zones: {},
+  },
+};
+
+export const SEARCH_STARTER_COMPACT: StarterTemplate = {
+  key: 'compact',
+  name: 'Compact Search',
+  description: 'Text-only results without thumbnails, ten per page.',
+  category: 'Search',
+  content: {
+    root: { props: {} },
+    content: [
+      {
+        type: 'SearchResults',
+        props: {
+          id: 'search-results-main',
+          title: 'Search results',
+          showTabs: false,
+          showThumbnails: false,
+          showTypeBadges: true,
+          showSnippets: true,
+          pageSize: 10,
+        },
+      },
+    ],
+    zones: {},
+  },
+};
+
+/* =========================================================================
+   Archive Starters (QRY-25). The Query Loop binds to the current
+   category, tag, author, or date automatically on archive routes.
+   ========================================================================= */
+
+export const ARCHIVE_STARTER_GRID: StarterTemplate = {
+  key: 'grid',
+  name: 'Archive Grid',
+  description: 'Archive title with a three-column post grid and numbered pages.',
+  category: 'Archive',
+  content: {
+    root: { props: {} },
+    content: [
+      {
+        type: 'QueryLoop',
+        props: {
+          id: 'archive-loop',
+          loopId: '',
+          source: 'posts',
+          title: '{archive_title}',
+          subtitle: '{archive_description}',
+          layout: 'grid',
+          columnsDesktop: 3,
+          pageSize: 9,
+          sortField: 'publishedAt',
+          sortOrder: 'desc',
+          pagination: 'numbered',
+          emptyText: 'No posts in this archive yet.',
+        },
+      },
+    ],
+    zones: {},
+  },
+};
+
+export const ARCHIVE_STARTER_LIST_FILTERS: StarterTemplate = {
+  key: 'list-filters',
+  name: 'List with Filters',
+  description: 'Keyword, tag, and sort filters above a post list.',
+  category: 'Archive',
+  content: {
+    root: { props: {} },
+    content: [
+      {
+        type: 'QueryFilter',
+        props: {
+          id: 'archive-filter',
+          targetLoopId: '',
+          showKeyword: true,
+          showCategories: false,
+          showTags: true,
+          showSort: true,
+          showResultCount: true,
+          showActiveChips: true,
+        },
+      },
+      {
+        type: 'QueryLoop',
+        props: {
+          id: 'archive-loop',
+          loopId: '',
+          source: 'posts',
+          title: '{archive_title}',
+          layout: 'list',
+          pageSize: 10,
+          sortField: 'publishedAt',
+          sortOrder: 'desc',
+          pagination: 'numbered',
+          emptyText: 'No posts match these filters.',
+        },
+      },
+    ],
+    zones: {},
+  },
+};
+
 export const HEADER_STARTERS: StarterTemplate[] = [
   HEADER_STARTER_CLASSIC,
   HEADER_STARTER_CENTERED,
@@ -784,12 +924,28 @@ export const FOOTER_STARTERS: StarterTemplate[] = [
   FOOTER_STARTER_DARK_NEWSLETTER,
 ];
 
+export const SEARCH_STARTERS: StarterTemplate[] = [
+  SEARCH_STARTER_SIMPLE,
+  SEARCH_STARTER_COMPACT,
+];
+
+export const ARCHIVE_STARTERS: StarterTemplate[] = [
+  ARCHIVE_STARTER_GRID,
+  ARCHIVE_STARTER_LIST_FILTERS,
+];
+
+export const STARTERS_BY_CATEGORY: Record<SiteTemplateCategory, StarterTemplate[]> = {
+  Header: HEADER_STARTERS,
+  Footer: FOOTER_STARTERS,
+  Search: SEARCH_STARTERS,
+  Archive: ARCHIVE_STARTERS,
+};
+
 export function getStarterContent(
-  category: 'Header' | 'Footer',
+  category: SiteTemplateCategory,
   key?: string
 ): BuilderData | null {
   if (!key || key === 'blank') return null;
-  const list = category === 'Header' ? HEADER_STARTERS : FOOTER_STARTERS;
-  const found = list.find(s => s.key === key);
+  const found = STARTERS_BY_CATEGORY[category].find(s => s.key === key);
   return found ? JSON.parse(JSON.stringify(found.content)) : null;
 }

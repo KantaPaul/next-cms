@@ -11,12 +11,18 @@ import { auditService } from '@/server/services/audit.service';
 import { adminSiteId } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 import { PERMISSIONS } from '@/config/permissions';
-import { getStarterContent } from '@/db/seed/header-footer-starters';
+import {
+  getStarterContent,
+  SEARCH_STARTER_SIMPLE,
+  ARCHIVE_STARTER_GRID,
+  SITE_TEMPLATE_CATEGORIES,
+  type SiteTemplateCategory,
+} from '@/db/seed/header-footer-starters';
 
 export type HeaderFooterItem = {
   id: string;
   name: string;
-  category: 'Header' | 'Footer';
+  category: SiteTemplateCategory;
   content: unknown;
   publishedContent: unknown;
   publishedAt: Date | null;
@@ -173,7 +179,7 @@ export const headerFooterService = {
         .where(
           and(
             eq(globalBlocks.siteId, siteId),
-            inArray(globalBlocks.category, ['Header', 'Footer'])
+            inArray(globalBlocks.category, [...SITE_TEMPLATE_CATEGORIES])
           )
         )
         .orderBy(asc(globalBlocks.name)),
@@ -215,36 +221,47 @@ export const headerFooterService = {
       }
     }
 
+    const settingKey = {
+      Header: 'headerTemplateId',
+      Footer: 'footerTemplateId',
+      Search: 'searchTemplateId',
+      Archive: 'archiveTemplateId',
+    } as const;
+
     return rows.map(row => {
-      const isHeader = row.category === 'Header';
-      const isSiteDefault = isHeader
-        ? settings.headerTemplateId === row.id
-        : settings.footerTemplateId === row.id;
+      const category = row.category as SiteTemplateCategory;
+      const key = settingKey[category];
+      const isSiteDefault = settings[key] === row.id;
 
       const locales: string[] = [];
       if (settings.translations) {
         for (const [code, copy] of Object.entries(settings.translations)) {
-          const match = isHeader
-            ? copy.headerTemplateId === row.id
-            : copy.footerTemplateId === row.id;
-          if (match) locales.push(code);
+          if (copy[key] === row.id) locales.push(code);
         }
       }
 
-      const pageCount = isHeader
-        ? headerCounts[row.id] || 0
-        : footerCounts[row.id] || 0;
+      // Search and archive templates are site-wide, not assigned per page.
+      const pageCount =
+        category === 'Header'
+          ? headerCounts[row.id] || 0
+          : category === 'Footer'
+            ? footerCounts[row.id] || 0
+            : 0;
 
-      const isPublished = !!row.publishedAt;
+      // Search and archive templates use the global block editor, which
+      // saves straight to live content (no separate publish step).
+      const savesLive = category === 'Search' || category === 'Archive';
+      const isPublished = savesLive || !!row.publishedAt;
       const hasDraftChanges =
-        !isPublished ||
-        (row.updatedAt && row.publishedAt && new Date(row.updatedAt) > new Date(row.publishedAt)) ||
-        JSON.stringify(row.content) !== JSON.stringify(row.publishedContent);
+        !savesLive &&
+        (!isPublished ||
+          (row.updatedAt && row.publishedAt && new Date(row.updatedAt) > new Date(row.publishedAt)) ||
+          JSON.stringify(row.content) !== JSON.stringify(row.publishedContent));
 
       return {
         id: row.id,
         name: row.name,
-        category: (row.category === 'Footer' ? 'Footer' : 'Header') as 'Header' | 'Footer',
+        category,
         content: row.content,
         publishedContent: row.publishedContent,
         publishedAt: row.publishedAt,
@@ -260,7 +277,7 @@ export const headerFooterService = {
   },
 
   create: async (
-    input: { name: string; category: 'Header' | 'Footer'; starter?: string },
+    input: { name: string; category: SiteTemplateCategory; starter?: string },
     access: UserAccess
   ) => {
     await accessService.assertPermission(access.userId, PERMISSIONS.PAGES_CREATE);
@@ -270,11 +287,14 @@ export const headerFooterService = {
       ? getStarterContent(input.category, input.starter)
       : null;
 
+    const defaultContent: Record<SiteTemplateCategory, unknown> = {
+      Header: DEFAULT_HEADER_CONTENT,
+      Footer: DEFAULT_FOOTER_CONTENT,
+      Search: SEARCH_STARTER_SIMPLE.content,
+      Archive: ARCHIVE_STARTER_GRID.content,
+    };
     const initialContent =
-      starterContent ||
-      (input.category === 'Header'
-        ? DEFAULT_HEADER_CONTENT
-        : DEFAULT_FOOTER_CONTENT);
+      starterContent || structuredClone(defaultContent[input.category]);
 
     const [row] = await db
       .insert(globalBlocks)

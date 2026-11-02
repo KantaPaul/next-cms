@@ -61,7 +61,7 @@ export function getMenuItems(): {
       icon: <LayoutTemplate className="w-[18px]" />,
     },
     {
-      name: 'Header & Footer',
+      name: 'Site templates',
       href: PAGES.DASHBOARD.HEADER_FOOTER,
       icon: <PanelTop className="w-[18px]" />,
     },

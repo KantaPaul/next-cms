@@ -117,7 +117,7 @@ export type BlockActionsFor = (node: BuilderNode) => BlockAction[];
 /** Canvas width per device; desktop fills the available space. */
 export const DEVICE_WIDTHS: Record<Device, number | null> = {
   desktop: 1400,
-  tablet: 1024,
+  tablet: 768,
   mobile: 375,
 };
 

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { parseVideoSettings } from '@/lib/video/settings';
 import { licenseSettingsSchema } from '@/db/schemas/licenses.schema';
+import { authSettingsSchema } from '@/db/schemas/pages.schema';
 
 const optionalText = (max: number) =>
   z
@@ -164,6 +165,7 @@ export const settingsSchema = z.object({
     })
     .nullish(),
   licenseSettings: licenseSettingsSchema.optional(),
+  authSettings: authSettingsSchema.optional(),
 });
 
 export type SettingsInput = z.infer<typeof settingsSchema>;

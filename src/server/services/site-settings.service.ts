@@ -11,11 +11,14 @@ import {
   DEFAULT_VIDEO_SETTINGS,
   DEFAULT_SEARCH_SETTINGS,
   DEFAULT_LICENSE_SETTINGS,
+  DEFAULT_AUTH_SETTINGS,
   licenseSettingsSchema,
+  authSettingsSchema,
   type ThemeTokens,
   type VideoSettings,
   type SearchSettings,
   type LicenseSettings,
+  type AuthSettings,
 } from '@/db/schema';
 import type { SiteCopy } from '@/db/schemas/sites.schema';
 import { parseVideoSettings } from '@/lib/video/settings';
@@ -44,6 +47,7 @@ export type SiteSettingsInput = {
   videoSettings?: VideoSettings;
   searchSettings?: SearchSettings | null;
   licenseSettings?: LicenseSettings;
+  authSettings?: AuthSettings;
   robotsTxt?: string | null;
   googleAnalyticsId?: string | null;
   seoTitle?: string | null;
@@ -118,6 +122,7 @@ async function loadSettings(siteId: string) {
       ...settings,
       themeTokens: resolveThemeTokens(settings?.themeTokens),
       licenseSettings: (settings?.licenseSettings as LicenseSettings) ?? DEFAULT_LICENSE_SETTINGS,
+      authSettings: (settings?.authSettings as AuthSettings) ?? DEFAULT_AUTH_SETTINGS,
     };
   } catch {
     return {
@@ -142,6 +147,7 @@ async function loadSettings(siteId: string) {
       videoSettings: DEFAULT_VIDEO_SETTINGS,
       searchSettings: DEFAULT_SEARCH_SETTINGS,
       licenseSettings: DEFAULT_LICENSE_SETTINGS,
+      authSettings: DEFAULT_AUTH_SETTINGS,
       robotsTxt: null,
       googleAnalyticsId: null,
       updatedAt: new Date(),
@@ -154,6 +160,18 @@ export const siteSettingsService = {
 
   getPublic: cache(async () => loadSettings((await siteContext.publicSite()).id)),
 
+  getAuthSettings: cache(async (): Promise<AuthSettings> => {
+    try {
+      const siteId = await adminSiteId();
+      const settings = await loadSettings(siteId);
+      const raw = settings?.authSettings;
+      const parsed = authSettingsSchema.safeParse(raw);
+      return parsed.success ? parsed.data : DEFAULT_AUTH_SETTINGS;
+    } catch {
+      return DEFAULT_AUTH_SETTINGS;
+    }
+  }),
+
   update: async (input: SiteSettingsInput, access: UserAccess) => {
     await accessService.assertPermission(
       access.userId,
@@ -161,6 +179,13 @@ export const siteSettingsService = {
     );
     const siteId = await adminSiteId();
     const current = await loadSettings(siteId);
+
+    let authSettingsToSave: AuthSettings | undefined = undefined;
+    if (input.authSettings) {
+      // Validate schema and caps; ensure no role field can be set
+      const parsed = authSettingsSchema.parse(input.authSettings);
+      authSettingsToSave = parsed;
+    }
 
     const [row] = await db
       .update(siteSettings)
@@ -171,6 +196,7 @@ export const siteSettingsService = {
         ),
         searchSettings: input.searchSettings ?? undefined,
         licenseSettings: input.licenseSettings ?? undefined,
+        authSettings: authSettingsToSave ?? undefined,
         updatedAt: new Date(),
       })
       .where(eq(siteSettings.siteId, siteId))
@@ -178,10 +204,11 @@ export const siteSettingsService = {
 
     await auditService.log({
       actorId: access.userId,
-      action: 'update',
+      action: input.authSettings ? 'settings_change' : 'update',
       targetType: 'settings',
       targetId: siteId,
       targetName: 'Site settings',
+      details: input.authSettings ? { authSettings: authSettingsToSave } : undefined,
     });
     revalidatePublicSite();
     return row;

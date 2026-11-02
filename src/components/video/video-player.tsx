@@ -75,8 +75,8 @@ export function VideoPlayer({
 
   if (!embed) {
     return (
-      <div className="bg-steel-100 rounded-lg aspect-video flex items-center justify-center dark:bg-dark-200">
-        <p className="text-sm text-steel-500">Unsupported video provider</p>
+      <div className="bg-neutral-900 rounded-lg aspect-video flex items-center justify-center">
+        <p className="text-sm text-neutral-400">Unsupported video provider</p>
       </div>
     );
   }

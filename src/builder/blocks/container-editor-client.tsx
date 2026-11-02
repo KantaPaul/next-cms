@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
+import { useEditorBridge } from '../controls/editor-bridge';
 import {
   deviceForWidth,
   resolveLinkProps,
@@ -32,7 +33,12 @@ export function ContainerEditor({
   p: ContainerProps;
   c: ContainerSettings;
 }): ReactNode {
-  const device = useContainerDevice();
+  const bridge = useEditorBridge();
+  const windowDevice = useContainerDevice();
+  const device =
+    bridge?.device && bridge.device !== 'desktop'
+      ? bridge.device
+      : windowDevice;
   const linkProps = c.link ? resolveLinkProps(c.link) : null;
   const nestedWarning = !!linkProps && hasNestedInteractive(p.content, p.zones);
 

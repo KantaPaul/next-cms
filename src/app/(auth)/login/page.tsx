@@ -1,10 +1,7 @@
-import { RedirectType, redirect } from 'next/navigation';
 import { LoginForm } from '@/components/templates/auth/login-form';
-
-// import LoginView from "@/components/templates/auth/login";
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { metaObject } from '@/lib/utils/metadata';
-// import { PAGES } from '@/config/pages';
-// import { validateRequest } from "@/lib/auth/auth.actions";
+import { siteSettingsService } from '@/server/services/site-settings.service';
 
 export const metadata = {
   ...metaObject('Login'),
@@ -17,11 +14,24 @@ export default async function Page(props: {
   }>;
 }) {
   const searchParams = await props.searchParams;
-  // const sessions = await validateRequest();
+  const authSettings = await siteSettingsService.getAuthSettings();
 
-  // if (sessions) {
-  //   redirect(PAGES.DASHBOARD.ROOT, RedirectType.replace);
-  // }
+  if (!authSettings.loginEnabled) {
+    return (
+      <div className="flex flex-col gap-6">
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-xl">Login Unavailable</CardTitle>
+            <CardDescription className="text-sm text-muted-foreground mt-2">
+              {searchParams.message ||
+                authSettings.loginDisabledMessage ||
+                'Login is currently disabled.'}
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   return <LoginForm message={searchParams.message} step={searchParams.step} />;
 }

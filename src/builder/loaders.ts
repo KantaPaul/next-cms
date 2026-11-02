@@ -582,8 +582,30 @@ const loadQueryLoop: BlockLoader = async (props, ctx) => {
     pageHrefs,
     clearFiltersHref: clearQs ? `?${clearQs}` : '?',
     language: typeof ctx.language === 'string' ? ctx.language : 'en',
+    ...archiveTokenPatch(props, ctx),
   };
 };
+
+/**
+ * Replaces `{archive_title}` / `{archive_description}` in a Query Loop's
+ * heading props with the current archive term, so one archive template
+ * can title every category, tag, author, and date page.
+ */
+function archiveTokenPatch(
+  props: Record<string, unknown>,
+  ctx: LoaderContext
+): Record<string, string> {
+  const patch: Record<string, string> = {};
+  for (const key of ['eyebrow', 'title', 'subtitle'] as const) {
+    const value = props[key];
+    if (typeof value !== 'string' || !value.includes('{archive_')) continue;
+    patch[key] = value
+      .replace(/\{archive_title\}/g, ctx.archive?.title ?? '')
+      .replace(/\{archive_description\}/g, ctx.archive?.description ?? '')
+      .trim();
+  }
+  return patch;
+}
 
 const loadQueryFilter: BlockLoader = async (props, ctx) => {
   const targetLoopId =

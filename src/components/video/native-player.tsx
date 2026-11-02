@@ -46,6 +46,8 @@ export function NativePlayer({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSeeking, setIsSeeking] = useState(false);
   const lastPositionRef = useRef(0);
+  // `canplay` fires again after every seek/buffer; only resume once per source.
+  const resumedSrcRef = useRef<string | null>(null);
   const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const clearTimer = useCallback(() => {
@@ -121,13 +123,14 @@ export function NativePlayer({
 
   const handleCanPlay = useCallback(() => {
     const el = videoRef.current;
-    if (!el) return;
+    if (!el || resumedSrcRef.current === src) return;
+    resumedSrcRef.current = src;
     // Resume to the saved position if we have one
     if (startPosition && startPosition > 0) {
       el.currentTime = startPosition;
     }
     lastPositionRef.current = startPosition && startPosition > 0 ? startPosition : 0;
-  }, [startPosition]);
+  }, [src, startPosition]);
 
   return (
     <div className="relative bg-black rounded-lg overflow-hidden aspect-video">
@@ -149,7 +152,7 @@ export function NativePlayer({
         onCanPlay={handleCanPlay}
       />
       {lockSeek && (
-        <div className="absolute inset-0 bg-black/40 flex items-center justify-center pointer-events-none">
+        <div className="absolute top-2 right-2 pointer-events-none">
           <span className="px-3 py-1 rounded bg-black/60 text-white text-xs font-medium">
             Seek locked
           </span>

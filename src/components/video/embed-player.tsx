@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { EmbedResult } from '@/lib/video/embed';
 
 /**
  * EmbedPlayer — YouTube/Vimeo iframe player with unavailable fallback.
  *
- * Renders an iframe using the allowlisted embed src. If the iframe fails
- * to load (e.g. owner disallows embedding, provider script blocked), an
- * unavailable fallback is shown.
+ * Renders an iframe using the allowlisted embed src. If the iframe errors,
+ * an unavailable fallback is shown; providers render their own message
+ * when the owner disallows embedding.
  */
 export type EmbedPlayerProps = {
   embed: EmbedResult;
@@ -31,43 +31,19 @@ export function EmbedPlayer({
   title,
   onUnavailable,
 }: EmbedPlayerProps) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [mounted, setMounted] = useState(false);
   const [isUnavailable, setIsUnavailable] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // Mount the iframe on the client only: a server-rendered iframe can finish
+  // loading before hydration, so React never sees `load` and the overlay sticks.
+  useEffect(() => setMounted(true), []);
 
   // Reset states when the embed src changes (e.g. user selects a different video)
   useEffect(() => {
     setIsLoaded(false);
     setIsUnavailable(false);
   }, [embed?.src]);
-
-  useEffect(() => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-
-    const handleLoad = () => setIsLoaded(true);
-    const handleError = () => {
-      setIsUnavailable(true);
-      onUnavailable?.();
-    };
-
-    iframe.addEventListener('load', handleLoad);
-    iframe.addEventListener('error', handleError);
-
-    // YouTube/Vimeo can take a moment; treat no load after 12s as unavailable
-    const timer = setTimeout(() => {
-      if (!isLoaded && !isUnavailable) {
-        setIsUnavailable(true);
-        onUnavailable?.();
-      }
-    }, 12000);
-
-    return () => {
-      iframe.removeEventListener('load', handleLoad);
-      iframe.removeEventListener('error', handleError);
-      clearTimeout(timer);
-    };
-  }, [embed?.src, isLoaded, isUnavailable, onUnavailable]);
 
   const resolvedSrc =
     embed && start && start > 0
@@ -80,14 +56,14 @@ export function EmbedPlayer({
   if (isUnavailable) {
     return (
       <div
-        className="relative w-full h-full bg-steel-100 rounded-lg aspect-video flex items-center justify-center dark:bg-dark-200"
+        className="relative flex aspect-video h-full w-full items-center justify-center rounded-lg bg-neutral-900"
         style={containerStyle}
       >
-        <div className="text-center p-4">
-          <p className="text-sm font-medium text-steel-700 dark:text-steel-300">
+        <div className="p-4 text-center">
+          <p className="text-sm font-medium text-neutral-200">
             Video unavailable
           </p>
-          <p className="text-xs text-steel-500 dark:text-steel-400 mt-1">
+          <p className="mt-1 text-xs text-neutral-400">
             Embedding is not allowed for this video.
           </p>
           {thumbnailUrl && (
@@ -95,7 +71,7 @@ export function EmbedPlayer({
             <img
               src={thumbnailUrl}
               alt="Video thumbnail"
-              className="mt-3 rounded max-w-full max-h-48 opacity-50 mx-auto"
+              className="mx-auto mt-3 max-h-48 max-w-full rounded opacity-50"
             />
           )}
         </div>
@@ -106,40 +82,42 @@ export function EmbedPlayer({
   if (!embed) {
     return (
       <div
-        className="relative w-full h-full bg-steel-100 rounded-lg aspect-video flex items-center justify-center dark:bg-dark-200"
+        className="relative flex aspect-video h-full w-full items-center justify-center rounded-lg bg-neutral-900"
         style={containerStyle}
       >
-        <p className="text-sm text-steel-500">Unsupported video provider</p>
+        <p className="text-sm text-neutral-400">Unsupported video provider</p>
       </div>
     );
   }
 
   return (
     <div
-      className="relative w-full h-full bg-black rounded-lg overflow-hidden aspect-video"
+      className="relative aspect-video h-full w-full overflow-hidden rounded-lg bg-black"
       style={containerStyle}
     >
       {!isLoaded && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black z-10 pointer-events-none">
-          <div className="text-sm text-steel-400">Loading…</div>
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-black">
+          <div className="text-sm text-neutral-400">Loading…</div>
         </div>
       )}
-      <iframe
-        ref={iframeRef}
-        src={resolvedSrc ?? undefined}
-        width={width ?? '100%'}
-        height={height ?? '100%'}
-        className="w-full h-full border-0"
-        title={title ?? `${embed.provider} video`}
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        allowFullScreen
-        loading="lazy"
-        onLoad={() => setIsLoaded(true)}
-        onError={() => {
-          setIsUnavailable(true);
-          onUnavailable?.();
-        }}
-      />
+      {mounted && (
+        <iframe
+          key={resolvedSrc}
+          src={resolvedSrc ?? undefined}
+          width={width ?? '100%'}
+          height={height ?? '100%'}
+          className="h-full w-full border-0"
+          title={title ?? `${embed.provider} video`}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+          loading="lazy"
+          onLoad={() => setIsLoaded(true)}
+          onError={() => {
+            setIsUnavailable(true);
+            onUnavailable?.();
+          }}
+        />
+      )}
     </div>
   );
 }

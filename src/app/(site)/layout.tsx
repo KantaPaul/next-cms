@@ -4,6 +4,7 @@ import Script from 'next/script';
 import { getGlobalBlockContent } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
 import { renderBuilderContent } from '@/builder/render-content';
 import { fontStylesheetUrl, themeStyle } from '@/builder/theme';
+import { AdminBar } from '@/components/site/admin-bar';
 import { LanguageSwitcher } from '@/components/site/language-switcher';
 import { MenuLinks, menuHref } from '@/components/site/menu-links';
 import { HeaderShell } from '@/components/site/header-shell';
@@ -209,10 +210,11 @@ export default async function SiteLayout({
       style={themeStyle(settings.themeTokens)}
     >
       {fontUrl && <link rel="stylesheet" href={fontUrl} precedence="default" />}
+      <AdminBar />
       {exitPreviewHref && (
         <div
           role="status"
-          className="sticky top-0 z-50 flex items-center justify-center gap-3 bg-amber-400 px-4 py-2 text-sm font-medium text-amber-950"
+          className="sticky top-[var(--cms-admin-bar-h,0px)] z-50 flex items-center justify-center gap-3 bg-amber-400 px-4 py-2 text-sm font-medium text-amber-950"
         >
           You are viewing an unpublished draft.
           <a href={exitPreviewHref} className="underline underline-offset-2">

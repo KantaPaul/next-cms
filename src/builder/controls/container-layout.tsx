@@ -426,6 +426,35 @@ export function ContainerLayoutControl({
           limits={LENGTH_LIMITS}
           onChange={(width, sizeUnit) => set({ width, sizeUnit })}
         />
+        <div className="flex flex-wrap gap-1 mb-2">
+          {[
+            { label: 'Auto', value: undefined, unit: c.sizeUnit ?? 'px' },
+            { label: '25%', value: 25, unit: '%' as const },
+            { label: '50%', value: 50, unit: '%' as const },
+            { label: '75%', value: 75, unit: '%' as const },
+            { label: '100%', value: 100, unit: '%' as const },
+          ].map(p => (
+            <button
+              key={p.label}
+              type="button"
+              title={`Set width to ${p.label}`}
+              onClick={() => {
+                const isObj = typeof c.width === 'object' && c.width !== null;
+                const base = isObj ? { ...(c.width as Record<Device, number>) } : {};
+                if (p.value === undefined) {
+                  delete base[device];
+                  const has = Object.values(base).some(v => v !== undefined);
+                  set({ width: has ? base : undefined, sizeUnit: p.unit });
+                } else {
+                  set({ width: { ...base, [device]: p.value }, sizeUnit: p.unit });
+                }
+              }}
+              className="h-6 rounded border border-border bg-background px-1.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
         <UnitSlider
           label="Min width"
           value={c.minWidth}
@@ -450,6 +479,33 @@ export function ContainerLayoutControl({
           limits={LENGTH_LIMITS}
           onChange={(height, sizeUnit) => set({ height, sizeUnit })}
         />
+        <div className="flex flex-wrap gap-1 mb-2">
+          {[
+            { label: 'Auto', value: undefined, unit: c.sizeUnit ?? 'px' },
+            { label: '50vh', value: 50, unit: 'vh' as const },
+            { label: '100vh', value: 100, unit: 'vh' as const },
+          ].map(p => (
+            <button
+              key={p.label}
+              type="button"
+              title={`Set height to ${p.label}`}
+              onClick={() => {
+                const isObj = typeof c.height === 'object' && c.height !== null;
+                const base = isObj ? { ...(c.height as Record<Device, number>) } : {};
+                if (p.value === undefined) {
+                  delete base[device];
+                  const has = Object.values(base).some(v => v !== undefined);
+                  set({ height: has ? base : undefined, sizeUnit: p.unit });
+                } else {
+                  set({ height: { ...base, [device]: p.value }, sizeUnit: p.unit });
+                }
+              }}
+              className="h-6 rounded border border-border bg-background px-1.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
         <UnitSlider
           label="Min height"
           value={c.minHeight}
@@ -494,11 +550,18 @@ export function ContainerLayoutControl({
           limits={LENGTH_LIMITS}
           onChange={(basis, basisUnit) => set({ basis, basisUnit })}
         />
-        <Choose
+        <ResponsiveChoose
           label="Box sizing"
-          value={c.boxSizing ?? 'border-box'}
+          value={c.boxSizing}
           options={optionLabels(BOX_SIZING_LABELS)}
-          onChange={next => set({ boxSizing: next })}
+          onChange={next =>
+            set({
+              boxSizing: normalizeResponsiveEnum(next, [
+                'border-box',
+                'content-box',
+              ]),
+            })
+          }
         />
       </Group>
 

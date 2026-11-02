@@ -35,6 +35,9 @@ export const users = pgTable(
       .notNull()
       .default(UserStatus.Inactive),
     roleId: text('role_id').references(() => roles.id, setNull),
+    approvedAt: timestamp('approved_at'),
+    failedLoginCount: integer('failed_login_count').default(0).notNull(),
+    lockedUntil: timestamp('locked_until'),
     ...timestampColumns,
   },
   t => [
@@ -141,3 +144,13 @@ export const userUpdateSchema = userInsertSchema.partial().omit({
 });
 
 export type UpdateUser = z.infer<typeof userUpdateSchema>;
+
+export const authAttempts = pgTable('auth_attempts', {
+  id: text('id').primaryKey(),
+  key: text('key').notNull().unique(),
+  count: integer('count').default(0).notNull(),
+  lockedUntil: timestamp('locked_until'),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export type AuthAttempt = typeof authAttempts.$inferSelect;
