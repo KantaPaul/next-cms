@@ -130,7 +130,7 @@ export function ElementStyleControl({
           label="Background"
           value={
             typeof es.fill === 'string'
-              ? { type: 'color', color: es.fill }
+              ? ({ type: 'color', color: es.fill } as Fill)
               : (es.fill as Fill | undefined)
           }
           onChange={fill => set({ fill })}
@@ -228,7 +228,7 @@ export function ElementStyleControl({
           label="Hover Background"
           value={
             typeof es.hover?.fill === 'string'
-              ? { type: 'color', color: es.hover.fill }
+              ? ({ type: 'color', color: es.hover.fill } as Fill)
               : (es.hover?.fill as Fill | undefined)
           }
           onChange={fill => setHover({ fill })}

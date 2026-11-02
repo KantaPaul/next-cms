@@ -140,13 +140,14 @@ export function resolveImageSize(
   };
 }
 
-export type LengthUnit = 'px' | 'rem' | 'em' | '%' | 'vw';
+export type LengthUnit = 'px' | 'rem' | 'em' | '%' | 'vw' | 'vh';
 export const LENGTH_UNITS: readonly LengthUnit[] = [
   'px',
   'rem',
   'em',
   '%',
   'vw',
+  'vh',
 ] as const;
 type Limits = { min: number; max: number; step: number };
 export const LENGTH_LIMITS: Record<LengthUnit, Limits> = {
@@ -155,6 +156,7 @@ export const LENGTH_LIMITS: Record<LengthUnit, Limits> = {
   em: { min: 0, max: 12, step: 0.1 },
   '%': { min: 0, max: 100, step: 1 },
   vw: { min: 0, max: 100, step: 0.5 },
+  vh: { min: 0, max: 100, step: 0.5 },
 };
 export const SIGNED_LENGTH_LIMITS: Record<LengthUnit, Limits> = {
   px: { min: -50, max: 50, step: 1 },
@@ -162,6 +164,7 @@ export const SIGNED_LENGTH_LIMITS: Record<LengthUnit, Limits> = {
   em: { min: -5, max: 5, step: 0.1 },
   '%': { min: -50, max: 50, step: 1 },
   vw: { min: -20, max: 20, step: 0.5 },
+  vh: { min: -100, max: 100, step: 0.5 },
 };
 export const PROP_UNITS = {
   fontSize: ['px', 'rem', 'em', 'vw'],

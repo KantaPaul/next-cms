@@ -440,7 +440,7 @@ export function ContainerLayoutControl({
               title={`Set width to ${p.label}`}
               onClick={() => {
                 const isObj = typeof c.width === 'object' && c.width !== null;
-                const base = isObj ? { ...(c.width as Record<Device, number>) } : {};
+                const base: Partial<Record<Device, number>> = isObj ? { ...(c.width as Record<Device, number>) } : {};
                 if (p.value === undefined) {
                   delete base[device];
                   const has = Object.values(base).some(v => v !== undefined);
@@ -491,7 +491,7 @@ export function ContainerLayoutControl({
               title={`Set height to ${p.label}`}
               onClick={() => {
                 const isObj = typeof c.height === 'object' && c.height !== null;
-                const base = isObj ? { ...(c.height as Record<Device, number>) } : {};
+                const base: Partial<Record<Device, number>> = isObj ? { ...(c.height as Record<Device, number>) } : {};
                 if (p.value === undefined) {
                   delete base[device];
                   const has = Object.values(base).some(v => v !== undefined);

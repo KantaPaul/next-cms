@@ -899,13 +899,13 @@ todos:
   status: completed
 - id: R328
   content: OZ-01 Record a reproducible production baseline for public routes and admin workflows
-  status: pending
+  status: completed
 - id: R329
   content: OZ-02 Audit Next.js rendering, hydration, client boundaries, and server data access
-  status: pending
+  status: completed
 - id: R331
   content: OZ-04 Audit images, fonts, video, embeds, and third-party assets
-  status: pending
+  status: completed
 - id: R334
   content: OZ-07 Profile database queries, indexes, pagination, and connection usage
   status: pending
@@ -938,16 +938,16 @@ todos:
   status: pending
 - id: R351
   content: OZ-24 Produce a prioritized audit report with evidence, risks, and remediation scope
-  status: pending
+  status: completed
 - id: R352
   content: "OZ-25 Gate 1 approval: baseline and audit findings reviewed before broad refactoring"
-  status: pending
+  status: completed
 - id: R330
   content: OZ-03 Optimize Core Web Vitals and route-level loading performance
   status: pending
 - id: R332
   content: OZ-05 Reduce JavaScript bundles and remove unused or duplicated dependencies
-  status: pending
+  status: completed
 - id: R333
   content: OZ-06 Review caching, revalidation, and invalidation for public content
   status: pending

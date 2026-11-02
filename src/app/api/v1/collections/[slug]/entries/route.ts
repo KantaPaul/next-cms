@@ -20,9 +20,9 @@ const createEntrySchema = z.object({
 
 export const dynamic = 'force-dynamic';
 
-export const POST = apiHandler(
+export const POST = apiHandler<{ slug: string }>(
   async (request, { params }) => {
-    const { slug: collectionSlug } = await params;
+    const { slug: collectionSlug } = params;
     const { userId } = await getCurrentUserAndTeamId();
     const access = await accessService.getUserAccess(userId);
     if (!accessService.can(access, PERMISSIONS.PAGES_CREATE)) {

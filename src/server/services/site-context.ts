@@ -165,12 +165,14 @@ async function fallback() {
 /** Looks a site up by its URL-safe slug. Returns null for reserved/invalid/unknown slugs. */
 async function getSiteBySlug(slug: string): Promise<ResolvedSite | null> {
   const valid = validateSiteSlug(slug);
+  console.log('valid', valid);
   if (!valid.ok) return null;
   const [row] = await db
     .select()
     .from(sites)
     .where(and(eq(sites.slug, valid.slug), isNull(sites.deletedAt)))
     .limit(1);
+  console.log('row', row);
   return row ? toSite(row) : null;
 }
 

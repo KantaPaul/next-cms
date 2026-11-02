@@ -30,11 +30,10 @@ import { issueLicenseAction } from '../_modules/licenses.actions';
 
 const issueLicenseSchema = z.object({
   ownerUserId: z.string().optional(),
-  expiresInDays: z.coerce
-    .number({ invalid_type_error: 'Validity period must be a number' })
+  expiresInDays: z
+    .number({ message: 'Validity period must be a number' })
     .int('Must be a whole number of days')
-    .min(1, 'Validity period must be at least 1 day')
-    .default(365),
+    .min(1, 'Validity period must be at least 1 day'),
 });
 
 type IssueLicenseFormValues = z.infer<typeof issueLicenseSchema>;

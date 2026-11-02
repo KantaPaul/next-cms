@@ -92,6 +92,8 @@ export const POST = apiHandler(
         language: parsed.data.language,
         scheduledAt: null,
         content: parsed.data.content,
+        headerTemplateId: null,
+        footerTemplateId: null,
       },
       access
     );

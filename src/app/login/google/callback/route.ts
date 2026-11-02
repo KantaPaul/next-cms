@@ -10,7 +10,9 @@ import { AuthService } from '@/server/services/auth.services';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 import { authRateLimitService } from '@/server/services/auth-rate-limit.service';
 
-export interface GoogleAuthResponse {
+import { getSafeNextPath } from '@/lib/auth-path';
+
+interface GoogleAuthResponse {
   sub: string;
   name: string;
   given_name: string;
@@ -19,19 +21,6 @@ export interface GoogleAuthResponse {
   email: string;
   email_verified: boolean;
   locale: string;
-}
-
-/**
- * Validates post-login next path to ensure it starts with a single '/'
- * and is not protocol-relative (R277 / A4-03).
- */
-export function getSafeNextPath(raw: string | null | undefined): string {
-  if (!raw || typeof raw !== 'string') return PAGES.DASHBOARD.ROOT;
-  const trimmed = raw.trim();
-  if (trimmed.startsWith('/') && !trimmed.startsWith('//') && !trimmed.startsWith('/\\')) {
-    return trimmed;
-  }
-  return PAGES.DASHBOARD.ROOT;
 }
 
 export async function GET(request: Request): Promise<Response> {

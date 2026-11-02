@@ -11,9 +11,9 @@ import { webhookService } from '@/server/services/webhook.service';
 
 export const dynamic = 'force-dynamic';
 
-export const POST = apiHandler(
+export const POST = apiHandler<{ slug: string; id: string }>(
   async (request, { params }) => {
-    const { slug: collectionSlug, id: entryId } = await params;
+    const { slug: collectionSlug, id: entryId } = params;
     const { userId } = await getCurrentUserAndTeamId();
     const access = await accessService.getUserAccess(userId);
     if (!accessService.can(access, PERMISSIONS.PAGES_PUBLISH)) {

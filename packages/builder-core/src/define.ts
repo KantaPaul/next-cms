@@ -134,11 +134,35 @@ function effectiveSchema<P extends Record<string, unknown>>(
  * `defaults`, `fields`, and `when` conditions are checked against them here;
  * the result is a plain `BlockDefinition` that registries can hold together.
  */
-export function defineBlock<S extends z.ZodObject<Shape>>(
+export function defineBlock<
+  S extends z.ZodObject<Shape>,
+  P extends Record<string, unknown> = z.infer<S> & Record<string, unknown>,
+>(
   definition: Omit<
-    BlockDefinition<z.infer<S> & Record<string, unknown>>,
-    'schema'
-  > & { schema: S }
+    BlockDefinition<NoInfer<P>>,
+    'schema' | 'render'
+  > & {
+    schema: S;
+    render: ComponentType<P & { editing?: boolean }>;
+  }
+): BlockDefinition;
+export function defineBlock(
+  definition: BlockMeta & {
+    type: string;
+    schema?: z.ZodType<any>;
+    fields?: Fields<any>;
+    defaults?: any;
+    slots?: Record<string, SlotDef>;
+    arraySlots?: Record<string, Record<string, SlotDef>>;
+    loader?: BlockLoader<LoaderContext>;
+    traits?: PropTrait<any>[];
+    presets?: Record<string, any>;
+    tabs?: InspectorTabDef[];
+    render: ComponentType<any>;
+  }
+): BlockDefinition;
+export function defineBlock(
+  definition: any
 ): BlockDefinition {
   if (definition.reorder && definition.schema) {
     const prop = definition.reorder.prop ?? 'partOrder';

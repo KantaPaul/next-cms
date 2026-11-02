@@ -11,7 +11,7 @@ import {
   DEFAULT_AUTH_SETTINGS,
 } from '@/db/schemas/pages.schema';
 import { hashIdentifier } from '@/server/services/auth-rate-limit.service';
-import { getSafeNextPath } from '@/app/login/google/callback/route';
+import { getSafeNextPath } from '@/lib/auth-path';
 
 describe('Login visibility & default Viewer RBAC (R262–R291 / A1–A8)', () => {
   describe('A1 & A5: Default Role Assignment & Privilege Escalation Prevention (R264, R265, R286)', () => {

@@ -473,9 +473,14 @@ pnpm start
     return new Promise((resolve, reject) => {
       fs.mkdirSync(path.dirname(zipFilePath), { recursive: true });
       const output = fs.createWriteStream(zipFilePath);
-      const archive = archiverModule.ZipArchive
-        ? new archiverModule.ZipArchive({ zlib: { level: 9 } })
-        : ((archiverModule as any).default || archiverModule)('zip', { zlib: { level: 9 } });
+      const archiveFn = typeof archiverModule === 'function'
+        ? (archiverModule as any)
+        : (archiverModule as Record<string, any>)['ZipArchive']
+          ? (opts: any) => new (archiverModule as any)['ZipArchive'](opts)
+          : (archiverModule as Record<string, any>)['default'];
+      const archive = typeof (archiverModule as any)['ZipArchive'] === 'function'
+        ? new (archiverModule as any)['ZipArchive']({ zlib: { level: 9 } })
+        : archiveFn('zip', { zlib: { level: 9 } });
 
       output.on('close', () => resolve());
       archive.on('error', (err: unknown) => reject(err));

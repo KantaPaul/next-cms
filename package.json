@@ -7,7 +7,7 @@
     "clean:cache": "rimraf -g \".next,.cache\"",
     "dev": "pnpm --filter @nextcms/editor-ui build:css && next dev -p 3001 -H 0.0.0.0",
     "dev:only": "next dev -p 3001 -H 0.0.0.0",
-    "build": "pnpm --filter @nextcms/editor-ui build && next build",
+    "build": "pnpm --filter @nextcms/editor-ui build && next build --webpack",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
