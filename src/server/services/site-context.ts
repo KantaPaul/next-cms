@@ -1,6 +1,7 @@
 import 'server-only';
 import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import { cookies, headers } from 'next/headers';
+import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { db } from '@/db';
 import { pages, posts, siteMemberships, sites } from '@/db/schema';
@@ -9,16 +10,16 @@ import {
   DEFAULT_SITE_LOCALES,
   type SiteLocale,
 } from '@/db/schemas/sites.schema';
+import { getCurrentUserAndTeamId } from '@/lib/auth';
 import {
   DEFAULT_ROUTING_MODE,
   DEV_ROUTING_MODE,
-  type SiteRoutingMode,
   resolveRoutingMode,
   routingMode,
+  type SiteRoutingMode,
   sitePathSegments,
   validateSiteSlug,
 } from '@/lib/utils/site-slug';
-import { notFound } from 'next/navigation';
 
 export const SITE_COOKIE = 'cms_site';
 
@@ -98,7 +99,9 @@ export function isLocalHost(host: string) {
   return false;
 }
 
-export function normalizeDomainList(value: string | null | undefined): string[] {
+export function normalizeDomainList(
+  value: string | null | undefined
+): string[] {
   if (!value) return [];
   return value
     .split(/[\s,]+/)
@@ -113,7 +116,11 @@ export async function validateHostOwnership(
   const h = normalizeHost(host);
   if (!h) return { ok: false };
   const rows = await db
-    .select({ id: sites.id, primaryHost: sites.primaryHost, extraDomains: sites.extraDomains })
+    .select({
+      id: sites.id,
+      primaryHost: sites.primaryHost,
+      extraDomains: sites.extraDomains,
+    })
     .from(sites)
     .where(isNull(sites.deletedAt));
   for (const row of rows) {
@@ -180,7 +187,9 @@ async function getSiteBySlug(slug: string): Promise<ResolvedSite | null> {
  */
 async function siteSelectedInAdmin(): Promise<ResolvedSite | null> {
   try {
-    const { getSessionId, validateSession } = await import('@/lib/auth/session');
+    const { getSessionId, validateSession } = await import(
+      '@/lib/auth/session'
+    );
     const sessionId = await getSessionId();
     if (!sessionId) return null;
     const session = await validateSession(sessionId);
@@ -261,7 +270,9 @@ export const siteContext = {
       console.error(
         `[site-context] Host collision detected for "${host}": sites=${matches
           .map(m => m.id)
-          .join(',')}. Falling back to the first match to avoid cross-tenant leakage.`
+          .join(
+            ','
+          )}. Falling back to the first match to avoid cross-tenant leakage.`
       );
       return matches[0] ? toSite(matches[0]) : null;
     }
@@ -319,7 +330,9 @@ export const siteContext = {
       if (matched) {
         const policy = getUnknownHostPolicy();
         if (policy === 'deny' && !matched) {
-          throw new Error(`Unknown host: ${normalizeHost(headerStore.get('host'))}`);
+          throw new Error(
+            `Unknown host: ${normalizeHost(headerStore.get('host'))}`
+          );
         }
         return { ...matched, source: 'host' as const };
       }
@@ -361,7 +374,10 @@ export const siteContext = {
       .from(siteMemberships)
       .innerJoin(sites, eq(sites.id, siteMemberships.siteId))
       .where(
-        and(eq(siteMemberships.userId, userId), isNull(siteMemberships.deletedAt))
+        and(
+          eq(siteMemberships.userId, userId),
+          isNull(siteMemberships.deletedAt)
+        )
       )
       .orderBy(asc(sites.name));
 
@@ -392,8 +408,8 @@ export const siteContext = {
       cookie && rows.some(row => row.siteId === cookie)
         ? 'admin-cookie'
         : rows[0]?.siteId === id
-        ? 'admin-membership'
-        : 'fallback';
+          ? 'admin-membership'
+          : 'fallback';
     return { ...site, source };
   }),
 
@@ -458,8 +474,8 @@ export async function resolveSiteContext(input: {
 }
 
 export async function adminSiteId() {
-  const { getCurrentUserAndTeamId } = await import('@/lib/auth');
   const { userId } = await getCurrentUserAndTeamId();
+  console.log('userId', userId);
   return siteContext.adminSiteId(userId);
 }
 
@@ -475,7 +491,8 @@ export async function getAdminSiteContext(
 
 export type UnknownHostPolicy = 'fallback-default' | 'deny' | 'redirect';
 
-export const DEFAULT_UNKNOWN_HOST_POLICY: UnknownHostPolicy = 'fallback-default';
+export const DEFAULT_UNKNOWN_HOST_POLICY: UnknownHostPolicy =
+  'fallback-default';
 
 export function getUnknownHostPolicy(): UnknownHostPolicy {
   const policy = process.env.CMS_UNKNOWN_HOST_POLICY?.toLowerCase();
@@ -499,4 +516,3 @@ export function siteSlugPrefix(site: ResolvedSite): string | undefined {
 export async function siteBySlug(slug: string): Promise<ResolvedSite | null> {
   return getSiteBySlug(slug);
 }
-
