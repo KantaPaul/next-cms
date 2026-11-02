@@ -408,7 +408,7 @@ isProject: false
 <!-- progress:start -->
 ## Progress
 
-Updated 2026-10-30 by `scripts/plan-progress.mjs`. Do not edit this block by hand.
+Updated 2026-11-02 by `scripts/plan-progress.mjs`. Do not edit this block by hand.
 
 **78 of 133 completed (58.6%)** · 13 in progress · 42 pending
 

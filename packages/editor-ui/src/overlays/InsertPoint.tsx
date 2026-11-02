@@ -10,6 +10,7 @@ export interface InsertPointProps {
   x: number;
   y: number;
   label?: string;
+  line?: { left: number; width: number };
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
   className?: string;
 }
@@ -18,20 +19,35 @@ export const InsertPoint: React.FC<InsertPointProps> = ({
   x,
   y,
   label = 'Insert here',
+  line,
   onClick,
   className,
 }) => (
-  <button
-    type="button"
-    aria-label={label}
-    title={label}
-    onClick={onClick}
-    style={{ left: x - 11, top: y - 11 }}
-    className={cn(
-      'ne-motion-pop-in pointer-events-auto absolute z-[3] flex h-[22px] w-[22px] cursor-pointer items-center justify-center rounded-full bg-[var(--ne-primary)] text-white shadow-md transition-[scale,background-color] hover:scale-110 hover:bg-[var(--ne-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ne-focus-ring)] active:scale-95',
-      className
+  <>
+    {line && (
+      <div
+        aria-hidden
+        style={{
+          left: line.left,
+          top: y - 1,
+          width: line.width,
+          height: 2,
+        }}
+        className="pointer-events-none absolute z-[44] bg-[var(--ne-primary)]/80 shadow-xs"
+      />
     )}
-  >
-    <Plus aria-hidden className="h-3.5 w-3.5" />
-  </button>
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      style={{ left: x - 11, top: y - 11 }}
+      className={cn(
+        'ne-motion-pop-in pointer-events-auto absolute z-[45] flex h-[22px] w-[22px] cursor-pointer items-center justify-center rounded-full bg-[var(--ne-primary)] text-white shadow-md transition-[scale,background-color] hover:scale-110 hover:bg-[var(--ne-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ne-focus-ring)] active:scale-95',
+        className
+      )}
+    >
+      <Plus aria-hidden className="h-3.5 w-3.5" />
+    </button>
+  </>
 );

@@ -16,19 +16,20 @@ import type { Rect } from './drop';
 export type ResizeHandle = {
   id: string;
   label: string;
-  /** `right` changes a width; `bottom` changes a height or bottom spacing. */
-  edge: 'right' | 'bottom';
+  /** `right` changes a width; `bottom` changes height or bottom spacing; `top` changes top spacing. */
+  edge: 'right' | 'bottom' | 'top';
   unit: 'px' | '%';
   min?: number;
   max?: number;
   step?: number;
+  snap?: number[];
   /** The value set for the device (including inherited values), if any. */
   read: (props: Record<string, unknown>, device: Device) => number | undefined;
   /** Prop patch that sets `value` for the device; `start` is the value before this change. */
   write: (
     props: Record<string, unknown>,
     device: Device,
-    value: number,
+    value: number | undefined,
     context: { start: number }
   ) => Record<string, unknown>;
   /** Starting value when nothing is set, from the block's measured size and first element. */
@@ -42,13 +43,44 @@ export type ResizeHandle = {
 
 export type ResizeHandlesFor = (node: BuilderNode) => ResizeHandle[];
 
-function clamp(value: number, handle: ResizeHandle) {
+export function clamp(
+  value: number,
+  handle: ResizeHandle,
+  options?: { altKey?: boolean }
+): number {
+  if (!options?.altKey && handle.snap && handle.snap.length > 0) {
+    const threshold = handle.unit === '%' ? 1 : 4;
+    let closest = handle.snap[0];
+    let minDiff = Math.abs(value - closest);
+    for (let i = 1; i < handle.snap.length; i++) {
+      const diff = Math.abs(value - handle.snap[i]);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closest = handle.snap[i];
+      }
+    }
+    if (minDiff <= threshold) {
+      return Math.min(
+        handle.max ?? Number.POSITIVE_INFINITY,
+        Math.max(handle.min ?? 0, closest)
+      );
+    }
+  }
   const step = handle.step ?? 1;
   const rounded = Math.round(value / step) * step;
   return Math.min(
     handle.max ?? Number.POSITIVE_INFINITY,
     Math.max(handle.min ?? 0, rounded)
   );
+}
+
+export function isSnapped(
+  value: number,
+  handle: ResizeHandle,
+  options?: { altKey?: boolean }
+): boolean {
+  if (options?.altKey || !handle.snap || handle.snap.length === 0) return false;
+  return handle.snap.some(s => Math.abs(value - s) < 0.01);
 }
 
 function Handle({
@@ -66,6 +98,7 @@ function Handle({
   const device = useEditor(state => state.device);
   const props = useEditor(state => state.doc.nodes[id]?.props);
   const [live, setLive] = useState<number | null>(null);
+  const [snapped, setSnapped] = useState(false);
   if (!props) return null;
 
   const measure = () => {
@@ -91,6 +124,7 @@ function Handle({
     if (event.button !== 0) return;
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
+    store.setResizing(true);
     const base = props;
     const start = current();
     const { parentWidth } = measure();
@@ -99,10 +133,15 @@ function Handle({
 
     const onMove = (move: globalThis.PointerEvent) => {
       const delta =
-        (handle.edge === 'right' ? move.clientX : move.clientY) - origin;
+        handle.edge === 'right'
+          ? move.clientX - origin
+          : handle.edge === 'top'
+            ? origin - move.clientY
+            : move.clientY - origin;
       const change = handle.unit === '%' ? (delta / parentWidth) * 100 : delta;
-      const next = clamp(start + change, handle);
+      const next = clamp(start + change, handle, { altKey: move.altKey });
       setLive(next);
+      setSnapped(isSnapped(next, handle, { altKey: move.altKey }));
       store.updatePropsLive(id, handle.write(base, device, next, { start }));
     };
     const finish = (cancel: boolean) => {
@@ -110,7 +149,9 @@ function Handle({
       target.removeEventListener('pointerup', onUp);
       target.removeEventListener('pointercancel', onCancel);
       window.removeEventListener('keydown', onKey, true);
+      store.setResizing(false);
       setLive(null);
+      setSnapped(false);
       store.commitLive(`Resize ${handle.label.toLowerCase()}`, { cancel });
     };
     const onUp = () => finish(false);
@@ -127,6 +168,17 @@ function Handle({
     window.addEventListener('keydown', onKey, true);
   };
 
+  const onDoubleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const start = current();
+    store.updateProps(
+      id,
+      handle.write(latest(), device, undefined, { start }),
+      `Reset ${handle.label.toLowerCase()}`
+    );
+  };
+
   const onKeyDown = (event: KeyboardEvent) => {
     const keys: Record<string, number> = {
       ArrowRight: 1,
@@ -139,7 +191,8 @@ function Handle({
     event.stopPropagation();
     const step = (handle.step ?? 1) * (event.shiftKey ? 10 : 1);
     const start = current();
-    const next = clamp(start + keys[event.key] * step, handle);
+    const next = clamp(start + keys[event.key] * step, handle, { altKey: event.altKey });
+    setSnapped(isSnapped(next, handle, { altKey: event.altKey }));
     store.updateProps(
       id,
       handle.write(latest(), device, next, { start }),
@@ -147,10 +200,17 @@ function Handle({
     );
   };
 
-  const shown =
+  const rawShown =
     value === undefined
       ? 'auto'
       : `${Math.round(value * 10) / 10}${handle.unit}`;
+
+  const deviceLabel =
+    device === 'desktop'
+      ? ''
+      : ` · ${device.charAt(0).toUpperCase() + device.slice(1)}`;
+
+  const shown = `${rawShown}${deviceLabel}`;
 
   return (
     <ResizeHandleView
@@ -162,7 +222,14 @@ function Handle({
       max={handle.max}
       valueText={shown}
       active={live !== null}
+      snapped={snapped || (live !== null && isSnapped(value ?? 0, handle))}
+      padding={
+        typeof value === 'number' && (handle.edge === 'bottom' || handle.edge === 'top')
+          ? value
+          : undefined
+      }
       onPointerDown={onPointerDown}
+      onDoubleClick={onDoubleClick}
       onKeyDown={onKeyDown}
     />
   );

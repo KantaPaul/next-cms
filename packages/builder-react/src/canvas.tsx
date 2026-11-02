@@ -16,6 +16,7 @@ import {
   type RenderOptions,
   renderDocument,
   resolveDynamicValue,
+  slotChildren,
   type SlotRenderArgs,
 } from '@nextcms/builder-core';
 import {
@@ -28,6 +29,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -48,6 +50,7 @@ import {
   Copy,
   CornerLeftUp,
   Globe,
+  GripVertical,
   Group,
   LayoutTemplate,
   Lock,
@@ -66,8 +69,10 @@ import {
 } from './context-menu';
 import {
   allNodeRects,
+  contentsRect,
   hoverInsertTarget,
   NODE_ATTR,
+  nodeElement,
   nodeRect,
   SLOT_ATTR,
   SLOT_NAME_ATTR,
@@ -553,12 +558,22 @@ function useFrameLayoutTick(
 function Toolbar({
   id,
   rect,
+  bounds,
+  anchorRight,
+  anchorBottom,
+  placement,
+  onRectChange,
   drag,
   blockActions,
   onEnterMoveMode,
 }: {
   id: NodeId;
   rect: Rect;
+  bounds?: { left: number; right: number; top?: number; bottom?: number };
+  anchorRight?: number;
+  anchorBottom?: number;
+  placement?: 'above' | 'below' | 'inside-bottom';
+  onRectChange?: (rect: Rect) => void;
   drag: DragController;
   blockActions?: BlockActionsFor;
   onEnterMoveMode?: () => void;
@@ -647,7 +662,11 @@ function Toolbar({
     <FloatingToolbar
       top={rect.top}
       left={rect.left}
-      placement={rect.top >= 34 ? 'above' : 'below'}
+      bounds={bounds}
+      anchorRight={anchorRight}
+      anchorBottom={anchorBottom}
+      placement={placement ?? (rect.top >= 34 ? 'above' : 'below')}
+      onRectChange={onRectChange}
       label={label}
       tone={locked ? 'locked' : 'default'}
       dragHandle={
@@ -664,7 +683,23 @@ function Toolbar({
 }
 
 /** Toolbar shown above a multi-block selection (R719): duplicate, delete, and group. */
-function MultiSelectToolbar({ ids, rect }: { ids: NodeId[]; rect: Rect }) {
+function MultiSelectToolbar({
+  ids,
+  rect,
+  bounds,
+  anchorRight,
+  anchorBottom,
+  placement,
+  onRectChange,
+}: {
+  ids: NodeId[];
+  rect: Rect;
+  bounds?: { left: number; right: number; top?: number; bottom?: number };
+  anchorRight?: number;
+  anchorBottom?: number;
+  placement?: 'above' | 'below' | 'inside-bottom';
+  onRectChange?: (rect: Rect) => void;
+}) {
   const store = useEditorStore();
   const canGroup =
     !!store.schemas.Container?.slots &&
@@ -674,7 +709,11 @@ function MultiSelectToolbar({ ids, rect }: { ids: NodeId[]; rect: Rect }) {
     <FloatingToolbar
       top={rect.top}
       left={rect.left}
-      placement={rect.top >= 34 ? 'above' : 'below'}
+      bounds={bounds}
+      anchorRight={anchorRight}
+      anchorBottom={anchorBottom}
+      placement={placement ?? (rect.top >= 34 ? 'above' : 'below')}
+      onRectChange={onRectChange}
       label={`${ids.length} selected`}
       ariaLabel={`${ids.length} blocks selected`}
       actions={[
@@ -707,15 +746,17 @@ function MultiSelectToolbar({ ids, rect }: { ids: NodeId[]; rect: Rect }) {
 }
 
 /** DropLine props from the drop target's line rect: wide is horizontal, tall is vertical. */
-function dropLineProps(line: Rect) {
+function dropLineProps(line: Rect, noop?: boolean, tooltip?: string) {
   const horizontal = line.width >= line.height;
   return {
     orientation: horizontal ? ('horizontal' as const) : ('vertical' as const),
     position: {
-      top: horizontal ? line.top + line.height / 2 - 1 : line.top,
-      left: horizontal ? line.left : line.left + line.width / 2 - 1,
+      top: horizontal ? line.top + line.height / 2 - 2 : line.top,
+      left: horizontal ? line.left : line.left + line.width / 2 - 2,
       length: horizontal ? line.width : line.height,
     },
+    noop,
+    tooltip,
   };
 }
 
@@ -728,6 +769,7 @@ function CanvasOverlay({
   marquee,
   isMoveMode = false,
   onEnterMoveMode,
+  onChromeRectsChange,
 }: {
   frame: HTMLIFrameElement;
   frameDoc?: Document | null;
@@ -738,6 +780,7 @@ function CanvasOverlay({
   marquee: Rect | null;
   isMoveMode?: boolean;
   onEnterMoveMode?: () => void;
+  onChromeRectsChange?: (rects: Rect[]) => void;
 }) {
   const doc = useEditor(state => state.doc);
   const selection = useEditor(state => state.selection);
@@ -756,6 +799,14 @@ function CanvasOverlay({
   };
   const overlayRef = useRef<HTMLDivElement>(null);
   const [visibleLeft, setVisibleLeft] = useState(0);
+  const [overlayBounds, setOverlayBounds] = useState<{
+    left: number;
+    right: number;
+    top: number;
+    bottom: number;
+  }>({ left: 0, right: 10000, top: 0, bottom: 10000 });
+  const [toolbarBox, setToolbarBox] = useState<Rect | null>(null);
+
   const inView = (rect: Rect): Rect => ({
     ...rect,
     left: Math.max(rect.left, visibleLeft + 8),
@@ -789,13 +840,19 @@ function CanvasOverlay({
     while (clip && getComputedStyle(clip).overflowX === 'visible')
       clip = clip.parentElement;
     if (overlay && clip) {
-      setVisibleLeft(
-        Math.max(
-          0,
-          clip.getBoundingClientRect().left -
-            overlay.getBoundingClientRect().left
-        )
-      );
+      const oRect = overlay.getBoundingClientRect();
+      const cRect = clip.getBoundingClientRect();
+      const vLeft = Math.max(0, cRect.left - oRect.left);
+      const vRight = cRect.right - oRect.left;
+      const vTop = Math.max(0, cRect.top - oRect.top);
+      const vBottom = cRect.bottom - oRect.top;
+      setVisibleLeft(vLeft);
+      setOverlayBounds({
+        left: vLeft,
+        right: vRight,
+        top: vTop,
+        bottom: vBottom,
+      });
     }
   }, [frame, frameDoc, doc, selection, hovered, tick]);
 
@@ -804,6 +861,37 @@ function CanvasOverlay({
   const groupRect = multi
     ? unionRect(rects.selected.map(([, rect]) => rect))
     : null;
+
+  useLayoutEffect(() => {
+    const avoidRects: Rect[] = [];
+    if (primary) {
+      const [, pRect] = primary;
+      avoidRects.push({
+        left: pRect.left + pRect.width / 2 - 14,
+        top: pRect.top + pRect.height - 12,
+        width: 28,
+        height: 10,
+      });
+    }
+    if (toolbarBox && !dragState.active) {
+      avoidRects.push(toolbarBox);
+    }
+    onChromeRectsChange?.(avoidRects);
+  }, [primary, toolbarBox, dragState.active, onChromeRectsChange]);
+
+  const dropTooltip = useMemo(() => {
+    if (!dragState.target) return undefined;
+    const { position, noop } = dragState.target;
+    if (noop) return undefined;
+    const children = slotChildren(doc, position);
+    if (children.length === 0) return 'Drop here';
+    if (position.index < children.length) {
+      return `Insert above ${labelOf(children[position.index])}`;
+    }
+    const last = children[children.length - 1];
+    return `Insert below ${labelOf(last)}`;
+  }, [dragState.target, doc]);
+
   return (
     <div
       // `.ne-ui`: editor-ui's styling scope, so these parts look the same in
@@ -820,21 +908,46 @@ function CanvasOverlay({
       {rects.hovered && hovered && !dragState.active && (
         <HoverBox bounds={rects.hovered} label={labelOf(hovered)} />
       )}
-      {rects.selected.map(([id, rect]) => (
-        <SelectionBox
-          key={id}
-          bounds={rect}
-          label={labelOf(id)}
-          showHandles={!doc.nodes[id]?.meta?.locked && !isMoveMode}
-          locked={!!doc.nodes[id]?.meta?.locked}
-          isMoveMode={isMoveMode && id === primary?.[0]}
-        />
-      ))}
+      {rects.selected.map(([id, rect]) => {
+        const isMovingSource =
+          dragState.active &&
+          dragState.payload?.kind === 'move' &&
+          dragState.payload.id === id;
+        return (
+          <SelectionBox
+            key={id}
+            bounds={rect}
+            label={labelOf(id)}
+            showHandles={
+              !doc.nodes[id]?.meta?.locked && !isMoveMode && !isMovingSource
+            }
+            locked={!!doc.nodes[id]?.meta?.locked}
+            isMoveMode={isMoveMode && id === primary?.[0]}
+            isDragging={isMovingSource}
+            hideLabel={
+              (!multi && !dragState.active && id === primary?.[0]) ||
+              isMovingSource
+            }
+          />
+        );
+      })}
       {primary && !multi && !dragState.active && (
         <Toolbar
           key={primary[0]}
           id={primary[0]}
           rect={inView(primary[1])}
+          bounds={overlayBounds}
+          anchorRight={primary[1].left + primary[1].width}
+          anchorBottom={primary[1].top + primary[1].height}
+          placement={
+            primary[1].height > (overlayBounds.bottom - overlayBounds.top) &&
+            primary[1].top < overlayBounds.top
+              ? 'inside-bottom'
+              : primary[1].top >= 34
+                ? 'above'
+                : 'below'
+          }
+          onRectChange={setToolbarBox}
           drag={drag}
           blockActions={blockActions}
           onEnterMoveMode={onEnterMoveMode}
@@ -844,6 +957,10 @@ function CanvasOverlay({
         <MultiSelectToolbar
           ids={rects.selected.map(([id]) => id)}
           rect={inView(groupRect)}
+          bounds={overlayBounds}
+          anchorRight={groupRect.left + groupRect.width}
+          anchorBottom={groupRect.top + groupRect.height}
+          onRectChange={setToolbarBox}
         />
       )}
       {primary && !multi && !dragState.active && resizeHandles && (
@@ -857,7 +974,13 @@ function CanvasOverlay({
       {dragState.active && dragState.target && (
         <>
           <DropZone bounds={dragState.target.slot} />
-          <DropLine {...dropLineProps(dragState.target.line)} />
+          <DropLine
+            {...dropLineProps(
+              dragState.target.line,
+              dragState.target.noop,
+              dropTooltip
+            )}
+          />
         </>
       )}
       {dragState.active && dragState.blockedReason && (
@@ -899,13 +1022,32 @@ export function EditorCanvas({
   const [hoverInsert, setHoverInsert] = useState<{
     point: Point;
     position: { parentId: NodeId | null; slot: string; index: number };
+    line?: { left: number; width: number };
   } | null>(null);
+  const chromeRectsRef = useRef<Rect[]>([]);
   const [quickInsert, setQuickInsert] = useState<QuickInsertTarget | null>(
     null
   );
   const [contextMenu, setContextMenu] = useState<ContextMenuTarget | null>(
     null
   );
+
+  const resizing = useEditor(state => state.resizing);
+  const dragGhostLabel = useMemo(() => {
+    if (!dragState.payload) return '';
+    if (dragState.payload.kind === 'new') {
+      return (
+        store.schemas[dragState.payload.type]?.label || dragState.payload.type
+      );
+    }
+    const node = store.getState().doc.nodes[dragState.payload.id];
+    return (
+      node?.meta?.name ||
+      store.schemas[node?.type ?? '']?.label ||
+      node?.type ||
+      'Block'
+    );
+  }, [dragState.payload, store]);
 
   const onReady = useCallback(
     (next: HTMLIFrameElement, nextDoc?: Document) => {
@@ -984,14 +1126,62 @@ export function EditorCanvas({
       cancelAnimationFrame(pending);
       pending = requestAnimationFrame(() => {
         store.hover(nodeAt(event.target));
-        if (insertGroups && !dragState.active && !marqueeRef.current) {
-          const hit = hoverInsertTarget(doc, {
-            x: event.clientX,
-            y: event.clientY,
-          });
-          setHoverInsert(
-            hit ? { point: hit.buttonPoint, position: hit.position } : null
+        if (
+          insertGroups &&
+          !dragState.active &&
+          !marqueeRef.current &&
+          !store.getState().resizing
+        ) {
+          const hit = hoverInsertTarget(
+            doc,
+            {
+              x: event.clientX,
+              y: event.clientY,
+            },
+            10,
+            chromeRectsRef.current
           );
+
+          let validHit = hit;
+          const currentSelection = store.getState().selection;
+          if (validHit && currentSelection.length === 1) {
+            const selId = currentSelection[0];
+            const selEl = nodeElement(doc, selId);
+            if (selEl) {
+              const el = selEl.firstElementChild ?? selEl;
+              const view = doc.defaultView;
+              const style = view ? view.getComputedStyle(el) : null;
+              const padTop = style ? parseFloat(style.paddingTop) || 0 : 0;
+              const padBottom = style ? parseFloat(style.paddingBottom) || 0 : 0;
+              const selRect = contentsRect(selEl);
+              if (selRect) {
+                const by = validHit.buttonPoint.y;
+                const insideBottomPad =
+                  padBottom > 0 &&
+                  by > selRect.top + selRect.height - padBottom + 2 &&
+                  by < selRect.top + selRect.height - 2;
+                const insideTopPad =
+                  padTop > 0 &&
+                  by > selRect.top + 2 &&
+                  by < selRect.top + padTop - 2;
+                if (insideBottomPad || insideTopPad) {
+                  validHit = null;
+                }
+              }
+            }
+          }
+
+          setHoverInsert(
+            validHit
+              ? {
+                  point: validHit.buttonPoint,
+                  position: validHit.position,
+                  line: validHit.line,
+                }
+              : null
+          );
+        } else {
+          setHoverInsert(null);
         }
       });
     };
@@ -1433,25 +1623,33 @@ export function EditorCanvas({
               marquee={marquee}
               isMoveMode={isMoveMode}
               onEnterMoveMode={() => setIsMoveMode(true)}
+              onChromeRectsChange={rects => {
+                chromeRectsRef.current = rects;
+              }}
             />
           )}
-          {hoverInsert && !dragState.active && !marquee && !isPreview && (
-            // `.ne-ui`: styled by editor-ui in the old chrome too.
-            <span className="ne-ui" style={{ display: 'contents' }}>
-              <InsertPoint
-                x={hoverInsert.point.x}
-                y={hoverInsert.point.y}
-                label="Insert a block here"
-                onClick={event => {
-                  setQuickInsert({
-                    point: { x: event.clientX, y: event.clientY },
-                    position: hoverInsert.position,
-                  });
-                  setHoverInsert(null);
-                }}
-              />
-            </span>
-          )}
+          {hoverInsert &&
+            !dragState.active &&
+            !marquee &&
+            !resizing &&
+            !isPreview && (
+              // `.ne-ui`: styled by editor-ui in the old chrome too.
+              <span className="ne-ui" style={{ display: 'contents' }}>
+                <InsertPoint
+                  x={hoverInsert.point.x}
+                  y={hoverInsert.point.y}
+                  line={hoverInsert.line}
+                  label="Insert a block here"
+                  onClick={event => {
+                    setQuickInsert({
+                      point: { x: event.clientX, y: event.clientY },
+                      position: hoverInsert.position,
+                    });
+                    setHoverInsert(null);
+                  }}
+                />
+              </span>
+            )}
         </div>
       </div>
       {dragState.active && (
@@ -1462,8 +1660,24 @@ export function EditorCanvas({
             inset: 0,
             zIndex: 2147483647,
             cursor: 'grabbing',
+            pointerEvents: 'none',
           }}
-        />
+        >
+          {dragState.pointer && (
+            <div
+              style={{
+                position: 'fixed',
+                left: dragState.pointer.x + 12,
+                top: dragState.pointer.y + 12,
+                pointerEvents: 'none',
+              }}
+              className="flex items-center gap-1.5 rounded-full border border-[var(--ne-border)] bg-[var(--ne-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--ne-text)] shadow-lg"
+            >
+              <GripVertical className="h-3.5 w-3.5 text-neutral-400 shrink-0" />
+              <span className="truncate max-w-[140px]">{dragGhostLabel}</span>
+            </div>
+          )}
+        </div>
       )}
       {!isPreview && (
         <QuickInsertPopover

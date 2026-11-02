@@ -9,14 +9,14 @@
  * it remains the choice for in-page lists such as the layers panel (R692).
  */
 
-import type { NodeId } from '@nextcms/builder-core';
+import { findPosition, type NodeId } from '@nextcms/builder-core';
 import {
   type PointerEvent as ReactPointerEvent,
   useMemo,
   useSyncExternalStore,
 } from 'react';
 import { type DropTarget, findDropTarget, nearestSlot } from './dom';
-import { autoScrollSpeed } from './drop';
+import { autoScrollSpeed, type Point } from './drop';
 import type { EditorStore } from './store';
 
 export type DragPayload =
@@ -30,6 +30,7 @@ export type DragState = {
   target: DropTarget | null;
   /** Set while hovering a real slot that rejects this block (R721). */
   blockedReason: string | null;
+  pointer: Point | null;
 };
 
 /** Pointer travel before a press becomes a drag, in pixels. */
@@ -40,6 +41,7 @@ const IDLE: DragState = {
   active: false,
   target: null,
   blockedReason: null,
+  pointer: null,
 };
 
 export function createDragController(store: EditorStore) {
@@ -59,7 +61,8 @@ export function createDragController(store: EditorStore) {
   const targetAt = (
     clientX: number,
     clientY: number,
-    payload: DragPayload
+    payload: DragPayload,
+    previousTarget?: DropTarget | null
   ): { target: DropTarget | null; blockedReason: string | null } => {
     const doc = frame?.contentDocument;
     const type = typeOf(payload);
@@ -75,10 +78,27 @@ export function createDragController(store: EditorStore) {
       return { target: null, blockedReason: null };
     }
     const movingId = payload.kind === 'move' ? payload.id : undefined;
-    const target = findDropTarget(doc, point, slot =>
-      store.canPlace(type, slot, movingId)
+    const target = findDropTarget(
+      doc,
+      point,
+      slot => store.canPlace(type, slot, movingId),
+      previousTarget
     );
-    if (target) return { target, blockedReason: null };
+    if (target) {
+      if (payload.kind === 'move') {
+        const sourcePos = findPosition(store.getState().doc, payload.id);
+        if (
+          sourcePos &&
+          sourcePos.parentId === target.position.parentId &&
+          sourcePos.slot === target.position.slot &&
+          (target.position.index === sourcePos.index ||
+            target.position.index === sourcePos.index + 1)
+        ) {
+          target.noop = true;
+        }
+      }
+      return { target, blockedReason: null };
+    }
     // A real slot is under the pointer, it just will not take this block.
     const nearest = nearestSlot(doc, point);
     const label = store.schemas[type]?.label ?? type;
@@ -112,9 +132,19 @@ export function createDragController(store: EditorStore) {
       const origin = { x: event.clientX, y: event.clientY };
       let last = origin;
       let scrolling = 0;
-      set({ payload, active: false, target: null, blockedReason: null });
+      set({
+        payload,
+        active: false,
+        target: null,
+        blockedReason: null,
+        pointer: origin,
+      });
 
-      const update = () => set(targetAt(last.x, last.y, payload));
+      const update = () =>
+        set({
+          ...targetAt(last.x, last.y, payload, state.target),
+          pointer: last,
+        });
       const scroll = () => {
         const win = frame?.contentWindow;
         if (state.active && frame && win) {
@@ -133,7 +163,7 @@ export function createDragController(store: EditorStore) {
         if (!state.active) {
           if (Math.hypot(last.x - origin.x, last.y - origin.y) < DRAG_THRESHOLD)
             return;
-          set({ active: true });
+          set({ active: true, pointer: last });
           scrolling = requestAnimationFrame(scroll);
         }
         update();
@@ -149,8 +179,9 @@ export function createDragController(store: EditorStore) {
         if (!active) onClick?.();
         else if (target && payload.kind === 'new')
           store.insertBlock(payload.type, target.position);
-        else if (target && payload.kind === 'move')
-          store.move(payload.id, target.position);
+        else if (target && payload.kind === 'move') {
+          if (!target.noop) store.move(payload.id, target.position);
+        }
       };
       const onUp = () => finish(true);
       const onKey = (key: KeyboardEvent) => {

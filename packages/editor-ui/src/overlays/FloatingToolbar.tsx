@@ -28,6 +28,19 @@ export interface FloatingToolbarProps {
   /** Top of the target box (generic mode) or of the toolbar's anchor (legacy). */
   top: number;
   left: number;
+  /** Visible overlay area bounds for flipping and clamping. */
+  bounds?: { left: number; right: number; top?: number; bottom?: number };
+  /** Right edge of the target block for flipping alignment. */
+  anchorRight?: number;
+  /** Bottom edge of the target block for inside-bottom flipping. */
+  anchorBottom?: number;
+  /** Callback reporting measured toolbar rect in overlay coordinates. */
+  onRectChange?: (rect: {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  }) => void;
   /** Generic mode (B15 E5): a name, a drag handle, and any actions. */
   label?: string;
   actions?: ToolbarAction[];
@@ -35,8 +48,8 @@ export interface FloatingToolbarProps {
     label: string;
     onPointerDown: (event: React.PointerEvent<HTMLButtonElement>) => void;
   };
-  /** Above the target when there is room, else inside its top edge. */
-  placement?: 'above' | 'below';
+  /** Above the target when there is room, else inside its top edge, or inside bottom when scrolled off. */
+  placement?: 'above' | 'below' | 'inside-bottom';
   tone?: 'default' | 'locked';
   /** Accessible name for the toolbar; defaults to "<label> actions". */
   ariaLabel?: string;
@@ -51,6 +64,30 @@ export interface FloatingToolbarProps {
   canMoveUp?: boolean;
   canMoveDown?: boolean;
   className?: string;
+}
+
+/**
+ * Computes toolbar x position, flipping to the block's right edge when near the
+ * right viewport boundary, and clamping to visible bounds.
+ */
+export function toolbarX({
+  left,
+  width,
+  anchorRight,
+  bounds,
+}: {
+  left: number;
+  width: number;
+  anchorRight?: number;
+  bounds?: { left: number; right: number; top?: number };
+}): number {
+  if (!bounds) return left;
+  const rightEdge = anchorRight ?? left + width;
+  const initial =
+    left + width <= bounds.right - 8
+      ? left
+      : Math.max(bounds.left + 8, rightEdge - width);
+  return Math.max(bounds.left + 8, Math.min(initial, bounds.right - 8 - width));
 }
 
 const ICON = 'h-3.5 w-3.5';
@@ -143,6 +180,10 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = props => {
   const {
     top,
     left,
+    bounds,
+    anchorRight,
+    anchorBottom,
+    onRectChange,
     label,
     actions,
     dragHandle,
@@ -151,21 +192,52 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = props => {
     ariaLabel,
     className,
   } = props;
+  const toolbarRef = React.useRef<HTMLDivElement>(null);
+  const [measuredWidth, setMeasuredWidth] = React.useState<number | null>(null);
+
   const generic = actions !== undefined || label !== undefined;
   const items = actions ?? legacyActions(props);
+
+  const width = measuredWidth ?? 200;
+  const x = toolbarX({ left, width, anchorRight, bounds });
+
+  const isScrolledOff =
+    bounds?.top !== undefined &&
+    top < bounds.top &&
+    anchorBottom !== undefined;
+
+  const effectivePlacement =
+    placement === 'inside-bottom' || isScrolledOff
+      ? 'inside-bottom'
+      : placement;
+
   const y = generic
-    ? placement === 'above'
-      ? top - 32
-      : top + 4
+    ? effectivePlacement === 'inside-bottom' && anchorBottom !== undefined
+      ? anchorBottom - 36
+      : effectivePlacement === 'above'
+        ? top - 32
+        : top + 4
     : Math.max(10, top - 36);
   const locked = tone === 'locked' || !!props.isLocked;
 
+  React.useLayoutEffect(() => {
+    if (toolbarRef.current) {
+      const w = toolbarRef.current.offsetWidth;
+      const h = toolbarRef.current.offsetHeight;
+      if (measuredWidth !== w) {
+        setMeasuredWidth(w);
+      }
+      onRectChange?.({ left: x, top: y, width: w, height: h });
+    }
+  }, [x, y, onRectChange, measuredWidth]);
+
   return (
     <div
+      ref={toolbarRef}
       role="toolbar"
       aria-label={ariaLabel ?? (label ? `${label} actions` : 'Actions')}
       onKeyDown={onToolbarKeyDown}
-      style={{ top: y, left }}
+      style={{ top: y, left: x }}
       className={cn(
         'ne-motion-enter-up pointer-events-auto absolute z-40 flex items-center gap-0.5 rounded-[var(--ne-radius-md)] border bg-[var(--ne-surface)] p-0.5 shadow-md',
         locked ? 'border-[var(--ne-locked)]' : 'border-[var(--ne-border)]',

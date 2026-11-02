@@ -56,6 +56,8 @@ export type EditorState = {
   savedDoc: BuilderDocument;
   /** Device the canvas shows and per-device fields edit (R694). */
   device: Device;
+  /** True while dragging a resize handle on the canvas. */
+  resizing: boolean;
 };
 
 export type EditorStoreOptions = {
@@ -84,6 +86,7 @@ export function createEditorStore({
     clipboard: null,
     savedDoc: initial,
     device: 'desktop',
+    resizing: false,
   };
   const listeners = new Set<Listener>();
 
@@ -238,6 +241,10 @@ export function createEditorStore({
       const history = commit(state.history, state.doc, { label });
       set({ history });
       return true;
+    },
+
+    setResizing(resizing: boolean) {
+      if (state.resizing !== resizing) set({ resizing });
     },
 
     /** Renames, hides, or locks a block in the editor (R692). */

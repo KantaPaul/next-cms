@@ -71,7 +71,12 @@ export function slotAxis(slot: Element, children: Rect[]): Axis {
   return row ? 'x' : 'y';
 }
 
-export type DropTarget = { position: SlotPosition; line: Rect; slot: Rect };
+export type DropTarget = {
+  position: SlotPosition;
+  line: Rect;
+  slot: Rect;
+  noop?: boolean;
+};
 
 /**
  * The deepest slot under the pointer that accepts the dragged block, with the
@@ -80,26 +85,37 @@ export type DropTarget = { position: SlotPosition; line: Rect; slot: Rect };
 export function findDropTarget(
   doc: Document,
   point: Point,
-  accepts: (slot: SlotRef) => boolean
+  accepts: (slot: SlotRef) => boolean,
+  previousTarget?: DropTarget | null
 ): DropTarget | null {
   const hit = doc.elementFromPoint(point.x, point.y);
   let element: Element | null = hit?.closest(`[${SLOT_ATTR}]`) ?? null;
   while (element) {
     const ref = slotRefOf(element);
-    if (accepts(ref)) return targetIn(element, ref, point);
+    if (accepts(ref)) return targetIn(element, ref, point, previousTarget);
     element = element.parentElement?.closest(`[${SLOT_ATTR}]`) ?? null;
   }
   const root = doc.querySelector(`[${SLOT_ATTR}][${SLOT_PARENT_ATTR}=""]`);
   if (root && accepts(slotRefOf(root)))
-    return targetIn(root, slotRefOf(root), point);
+    return targetIn(root, slotRefOf(root), point, previousTarget);
   return null;
 }
 
-function targetIn(element: Element, ref: SlotRef, point: Point): DropTarget {
+function targetIn(
+  element: Element,
+  ref: SlotRef,
+  point: Point,
+  previousTarget?: DropTarget | null
+): DropTarget {
   const children = slotChildRects(element);
   const axis = slotAxis(element, children);
   const slot = toRect(element.getBoundingClientRect());
-  const index = dropIndex(children, point, axis);
+  const prevIndex =
+    previousTarget?.position.parentId === ref.parentId &&
+    previousTarget?.position.slot === ref.slot
+      ? previousTarget.position.index
+      : undefined;
+  const index = dropIndex(children, point, axis, prevIndex, 12);
   return {
     position: { ...ref, index },
     line: dropLine(children, index, axis, slot),
@@ -133,16 +149,29 @@ export function allNodeRects(doc: Document): { id: NodeId; rect: Rect }[] {
     .filter((entry): entry is { id: NodeId; rect: Rect } => !!entry.rect);
 }
 
+function distanceToRect(p: Point, r: Rect): number {
+  const dx = Math.max(r.left - p.x, 0, p.x - (r.left + r.width));
+  const dy = Math.max(r.top - p.y, 0, p.y - (r.top + r.height));
+  return Math.hypot(dx, dy);
+}
+
 /**
  * The gap nearest the pointer, for the "+" quick-insert affordance shown
  * between blocks on hover (R713). Only returns a gap within `threshold`
  * pixels, so the button does not fight with block selection.
+ * If `avoid` rects are provided and the default center point is within 18px of any,
+ * shifts x along the line (try centre, then centre ± 40px, else left+24).
  */
 export function hoverInsertTarget(
   doc: Document,
   point: Point,
-  threshold = 10
-): { position: SlotPosition; buttonPoint: Point } | null {
+  threshold = 10,
+  avoid: Rect[] = []
+): {
+  position: SlotPosition;
+  buttonPoint: Point;
+  line: { left: number; width: number };
+} | null {
   const hit = doc.elementFromPoint(point.x, point.y);
   const element = hit?.closest(`[${SLOT_ATTR}]`);
   if (!element) return null;
@@ -162,11 +191,40 @@ export function hoverInsertTarget(
       ? Math.abs(point.y - (line.top + line.height / 2))
       : Math.abs(point.x - (line.left + line.width / 2));
   if (distance > threshold) return null;
+
+  const defaultX = line.left + line.width / 2;
+  const buttonY = line.top + line.height / 2;
+  let finalX = defaultX;
+
+  if (avoid.length > 0) {
+    const collides = (x: number) =>
+      avoid.some(r => distanceToRect({ x, y: buttonY }, r) < 18);
+
+    if (collides(defaultX)) {
+      const isFree = (candX: number) =>
+        candX >= line.left &&
+        candX <= line.left + line.width &&
+        !collides(candX);
+
+      if (isFree(defaultX + 40)) {
+        finalX = defaultX + 40;
+      } else if (isFree(defaultX - 40)) {
+        finalX = defaultX - 40;
+      } else {
+        finalX = line.left + 24;
+      }
+    }
+  }
+
   return {
     position: { ...ref, index },
     buttonPoint: {
-      x: line.left + line.width / 2,
-      y: line.top + line.height / 2,
+      x: finalX,
+      y: buttonY,
+    },
+    line: {
+      left: line.left,
+      width: line.width,
     },
   };
 }

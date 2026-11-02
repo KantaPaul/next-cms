@@ -9,16 +9,81 @@ export type Point = { x: number; y: number };
 export type Axis = 'x' | 'y';
 
 /** Line thickness of the drop indicator, in pixels. */
-export const DROP_LINE = 3;
+export const DROP_LINE = 4;
+
+/**
+ * Drop index with hysteresis to prevent flickering near child midpoints.
+ * Keeps the previous index while the pointer is within `hysteresis` px of the midpoint.
+ */
+export function dropIndexWithHysteresis(
+  children: Rect[],
+  point: Point,
+  axis: Axis,
+  previousIndex?: number | null,
+  hysteresis = 12
+): number {
+  const p = axis === 'y' ? point.y : point.x;
+  for (let j = 0; j < children.length; j++) {
+    const rect = children[j];
+    const mid =
+      axis === 'y' ? rect.top + rect.height / 2 : rect.left + rect.width / 2;
+    let threshold = mid;
+    let inclusive = false;
+    if (previousIndex === j) {
+      threshold = mid + hysteresis;
+      inclusive = true;
+    } else if (previousIndex === j + 1) {
+      threshold = mid - hysteresis;
+      inclusive = false;
+    }
+    if (inclusive ? p <= threshold : p < threshold) {
+      return j;
+    }
+  }
+  return children.length;
+}
 
 /** Index to insert at: before the first child whose middle is past the pointer. */
-export function dropIndex(children: Rect[], point: Point, axis: Axis): number {
+export function dropIndex(
+  children: Rect[],
+  point: Point,
+  axis: Axis,
+  previousIndex?: number | null,
+  hysteresis = 12
+): number {
+  if (previousIndex !== undefined && previousIndex !== null) {
+    return dropIndexWithHysteresis(children, point, axis, previousIndex, hysteresis);
+  }
   const index = children.findIndex(rect =>
     axis === 'y'
       ? point.y < rect.top + rect.height / 2
       : point.x < rect.left + rect.width / 2
   );
   return index === -1 ? children.length : index;
+}
+
+/**
+ * Computes toolbar x position, flipping to the block's right edge when near the
+ * right viewport boundary, and clamping to visible bounds.
+ */
+export function toolbarX({
+  left,
+  width,
+  anchorRight,
+  bounds,
+}: {
+  left: number;
+  width: number;
+  anchorRight?: number;
+  bounds?: { left: number; right: number; top?: number };
+}): number {
+  if (!bounds) return left;
+  const rightEdge = anchorRight ?? left + width;
+  const initial =
+    left + width <= bounds.right - 8
+      ? left
+      : Math.max(bounds.left + 8, rightEdge - width);
+  return Math.max(bounds.left + 8, Math.min(initial, bounds.right - 8 - width));
 }
 
 /** Where to draw the drop line for an insert at `index`. */

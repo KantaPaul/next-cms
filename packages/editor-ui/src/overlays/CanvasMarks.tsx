@@ -25,7 +25,7 @@ export const DropZone: React.FC<{
     aria-hidden
     style={place(bounds)}
     className={cn(
-      'ne-motion-follow pointer-events-none absolute z-20 rounded-[var(--ne-radius-sm)] border border-[var(--ne-drop)]/40 bg-[var(--ne-drop)]/5',
+      'ne-motion-follow pointer-events-none absolute z-20 rounded-[var(--ne-radius-sm)] border border-[var(--ne-drop)]/25 bg-[var(--ne-drop)]/[0.02]',
       className
     )}
   />

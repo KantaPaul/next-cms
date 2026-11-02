@@ -11,6 +11,9 @@ export interface SelectionBoxProps {
   label?: string;
   locked?: boolean;
   isMoveMode?: boolean;
+  isDragging?: boolean;
+  hideLabel?: boolean;
+  labelPlacement?: 'top-left' | 'top-right';
   onResizeStart?: (handle: string, e: React.MouseEvent) => void;
   showHandles?: boolean;
   className?: string;
@@ -21,6 +24,9 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
   label,
   locked = false,
   isMoveMode = false,
+  isDragging = false,
+  hideLabel = false,
+  labelPlacement = 'top-left',
   onResizeStart,
   showHandles = true,
   className = '',
@@ -35,6 +41,23 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
     { id: 's', pos: '-bottom-1.5 left-1/2 -translate-x-1/2 cursor-ns-resize' },
     { id: 'se', pos: '-bottom-1.5 -right-1.5 cursor-nwse-resize' },
   ];
+
+  if (isDragging) {
+    return (
+      <div
+        aria-hidden
+        style={{
+          top: `${bounds.top}px`,
+          left: `${bounds.left}px`,
+          width: `${bounds.width}px`,
+          height: `${bounds.height}px`,
+        }}
+        className={`absolute pointer-events-none z-30 ne-motion-follow border-2 border-dashed border-[var(--ne-select)] bg-[var(--ne-select)]/10 opacity-40 rounded-[var(--ne-radius-sm)] ${className}`}
+      />
+    );
+  }
+
+  const isRight = labelPlacement === 'top-right';
 
   return (
     <div
@@ -53,9 +76,11 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
       } ${className}`}
     >
       {/* Label Badge */}
-      {label && (
+      {label && !hideLabel && (
         <div
-          className={`absolute -top-6 left-0 px-1.5 py-0.5 text-[10px] font-sans font-medium rounded-t-[var(--ne-radius-sm)] flex items-center gap-1 text-white shadow-xs pointer-events-auto select-none ${
+          className={`absolute -top-6 ${
+            isRight ? 'right-0' : 'left-0'
+          } px-1.5 py-0.5 text-[10px] font-sans font-medium rounded-t-[var(--ne-radius-sm)] flex items-center gap-1 text-white shadow-xs pointer-events-auto select-none ${
             locked
               ? 'bg-[var(--ne-warning)]'
               : isMoveMode

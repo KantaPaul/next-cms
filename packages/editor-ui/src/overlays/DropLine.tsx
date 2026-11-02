@@ -8,6 +8,7 @@ export interface DropLineProps {
     length: number;
   };
   allowed?: boolean;
+  noop?: boolean;
   tooltip?: string;
   className?: string;
 }
@@ -16,40 +17,71 @@ export const DropLine: React.FC<DropLineProps> = ({
   orientation = 'horizontal',
   position,
   allowed = true,
+  noop = false,
   tooltip,
   className = '',
 }) => {
   const isHorizontal = orientation === 'horizontal';
+  const label = tooltip || (allowed ? 'Drop here' : undefined);
 
   return (
     <div
       style={{
         top: `${position.top}px`,
         left: `${position.left}px`,
-        width: isHorizontal ? `${position.length}px` : '2px',
-        height: isHorizontal ? '2px' : `${position.length}px`,
+        width: isHorizontal ? `${position.length}px` : '4px',
+        height: isHorizontal ? '4px' : `${position.length}px`,
       }}
       className={`absolute z-40 pointer-events-none ne-motion-follow ${
-        allowed
-          ? 'bg-[var(--ne-drop)] shadow-xs'
-          : 'bg-[var(--ne-danger)] shadow-xs'
+        noop
+          ? 'bg-neutral-400/60 opacity-50'
+          : allowed
+            ? 'bg-[var(--ne-drop)] shadow-xs'
+            : 'bg-[var(--ne-danger)] shadow-xs'
       } ${className}`}
     >
-      {/* Bead indicator on edge */}
+      {/* Bead indicator on start edge */}
       <div
-        className={`absolute -top-1 -left-1 w-2.5 h-2.5 rounded-full border-2 border-white ${
-          allowed ? 'bg-[var(--ne-drop)]' : 'bg-[var(--ne-danger)]'
+        className={`absolute ${
+          isHorizontal ? '-top-1 -left-1.5' : '-top-1.5 -left-1'
+        } w-3 h-3 rounded-full border-2 border-white shadow-xs ${
+          noop
+            ? 'bg-neutral-400'
+            : allowed
+              ? 'bg-[var(--ne-drop)]'
+              : 'bg-[var(--ne-danger)]'
         }`}
       />
 
-      {/* Tooltip notice (e.g. "Columns cannot go inside Columns") */}
-      {tooltip && (
+      {/* Bead indicator on end edge */}
+      <div
+        className={`absolute ${
+          isHorizontal ? '-top-1 -right-1.5' : '-bottom-1.5 -left-1'
+        } w-3 h-3 rounded-full border-2 border-white shadow-xs ${
+          noop
+            ? 'bg-neutral-400'
+            : allowed
+              ? 'bg-[var(--ne-drop)]'
+              : 'bg-[var(--ne-danger)]'
+        }`}
+      />
+
+      {/* Centred pill label */}
+      {label && (
         <div
-          className={`absolute left-4 -top-6 px-1.5 py-0.5 text-[10px] rounded-[var(--ne-radius-sm)] shadow-md text-white whitespace-nowrap ${
-            allowed ? 'bg-[var(--ne-primary)]' : 'bg-[var(--ne-danger)]'
+          className={`absolute ${
+            isHorizontal
+              ? 'left-1/2 -translate-x-1/2 -top-7'
+              : 'top-1/2 -translate-y-1/2 left-3'
+          } px-2.5 py-0.5 text-[11px] font-medium rounded-full shadow-md text-white whitespace-nowrap ${
+            noop
+              ? 'bg-neutral-500/80 text-neutral-200'
+              : allowed
+                ? 'bg-[var(--ne-drop)]'
+                : 'bg-[var(--ne-danger)]'
           }`}
         >
-          {tooltip}
+          {label}
         </div>
       )}
     </div>

@@ -7,6 +7,7 @@
 import {
   type BuilderNode,
   type Device,
+  resetDeviceValue,
   valueForDevice,
   withDeviceValue,
 } from '@nextcms/builder-core';
@@ -27,19 +28,78 @@ const sectionWidth: ResizeHandle = {
   min: 10,
   max: 100,
   step: 1,
+  snap: [25, 33.33, 50, 66.67, 75, 100],
   read: (props, device) => {
     const section = sectionOf(props);
     if (section.widthUnit && section.widthUnit !== '%') return undefined;
     return valueForDevice(section.width, device);
   },
-  write: (props, device, value) => ({
-    section: {
-      ...sectionOf(props),
-      widthUnit: '%',
-      width: withDeviceValue(sectionOf(props).width, device, value),
-    },
-  }),
+  write: (props, device, value) => {
+    const section = sectionOf(props);
+    const nextWidth =
+      value === undefined
+        ? resetDeviceValue(section.width, device)
+        : withDeviceValue(section.width, device, value);
+    return {
+      section: {
+        ...section,
+        widthUnit: '%',
+        width: nextWidth,
+      },
+    };
+  },
   fallback: ({ width, parentWidth }) => Math.round((width / parentWidth) * 100),
+};
+
+/** Top padding in px. Spacing applies only with a desktop value, so other devices pin desktop first. */
+const sectionTop: ResizeHandle = {
+  id: 'section-top',
+  label: 'Top spacing',
+  edge: 'top',
+  unit: 'px',
+  min: 0,
+  max: SPACING_LIMITS.px.max,
+  step: 2,
+  snap: [0, 8, 16, 24, 32, 48, 64, 80, 96, 120, 160],
+  read: (props, device) => {
+    const section = sectionOf(props);
+    if (section.spacingUnit && section.spacingUnit !== 'px') return undefined;
+    return valueForDevice(section.spacing, device)?.top;
+  },
+  write: (props, device, value, { start }) => {
+    const section = sectionOf(props);
+    const spacing = { ...section.spacing };
+    if (value === undefined) {
+      if (spacing[device]) {
+        const sides = { ...spacing[device] };
+        delete sides.top;
+        if (Object.keys(sides).length) spacing[device] = sides;
+        else delete spacing[device];
+      }
+      return { section: { ...section, spacing } };
+    }
+    if (device !== 'desktop' && spacing.desktop?.top === undefined) {
+      spacing.desktop = { ...spacing.desktop, top: start };
+    }
+    const sides: Sides = {
+      ...valueForDevice(section.spacing, device),
+      ...spacing[device],
+      top: value,
+    };
+    return {
+      section: {
+        ...section,
+        spacingUnit: 'px',
+        spacing: { ...spacing, [device]: sides },
+      },
+    };
+  },
+  fallback: ({ element }) => {
+    const view = element?.ownerDocument.defaultView;
+    return element && view
+      ? Number.parseFloat(view.getComputedStyle(element).paddingTop) || 0
+      : 0;
+  },
 };
 
 /** Bottom padding in px. Spacing applies only with a desktop value, so other devices pin desktop first. */
@@ -51,6 +111,7 @@ const sectionBottom: ResizeHandle = {
   min: 0,
   max: SPACING_LIMITS.px.max,
   step: 2,
+  snap: [0, 8, 16, 24, 32, 48, 64, 80, 96, 120, 160],
   read: (props, device) => {
     const section = sectionOf(props);
     if (section.spacingUnit && section.spacingUnit !== 'px') return undefined;
@@ -59,15 +120,36 @@ const sectionBottom: ResizeHandle = {
   write: (props, device, value, { start }) => {
     const section = sectionOf(props);
     const spacing = { ...section.spacing };
+    if (value === undefined) {
+      if (spacing[device]) {
+        const sides = { ...spacing[device] };
+        delete sides.bottom;
+        if (Object.keys(sides).length) spacing[device] = sides;
+        else delete spacing[device];
+      }
+      return { section: { ...section, spacing } };
+    }
     if (device !== 'desktop' && spacing.desktop?.bottom === undefined) {
       spacing.desktop = { ...spacing.desktop, bottom: start };
     }
-    const sides: Sides = { ...valueForDevice(section.spacing, device), ...spacing[device], bottom: value };
-    return { section: { ...section, spacingUnit: 'px', spacing: { ...spacing, [device]: sides } } };
+    const sides: Sides = {
+      ...valueForDevice(section.spacing, device),
+      ...spacing[device],
+      bottom: value,
+    };
+    return {
+      section: {
+        ...section,
+        spacingUnit: 'px',
+        spacing: { ...spacing, [device]: sides },
+      },
+    };
   },
   fallback: ({ element }) => {
     const view = element?.ownerDocument.defaultView;
-    return element && view ? Number.parseFloat(view.getComputedStyle(element).paddingBottom) || 0 : 0;
+    return element && view
+      ? Number.parseFloat(view.getComputedStyle(element).paddingBottom) || 0
+      : 0;
   },
 };
 
@@ -92,7 +174,7 @@ const hasSection = (type: string) => {
 
 export function cmsResizeHandles(node: BuilderNode): ResizeHandle[] {
   if (node.type === 'Spacer') return [spacerHeight, sectionWidth];
-  return hasSection(node.type) ? [sectionWidth, sectionBottom] : [];
+  return hasSection(node.type) ? [sectionWidth, sectionTop, sectionBottom] : [];
 }
 
 /** Text props editable on the canvas: declared inline props, else every plain text field. */

@@ -188,8 +188,8 @@ describe('drop geometry', () => {
 
   it('draws the line between children or in an empty slot', () => {
     const slot = { left: 0, top: 0, width: 100, height: 100 };
-    assert.equal(dropLine(rows, 1, 'y', slot).top, 50 - 1.5);
-    assert.equal(dropLine(rows, 2, 'y', slot).top, 90 - 1.5);
+    assert.equal(dropLine(rows, 1, 'y', slot).top, 50 - 2);
+    assert.equal(dropLine(rows, 2, 'y', slot).top, 90 - 2);
     assert.equal(dropLine([], 0, 'y', slot).top, 50);
   });
 
