@@ -155,6 +155,10 @@ async function loadSettings(siteId: string) {
   }
 }
 
+async function authSettingsSiteId() {
+  return (await siteContext.systemSiteContext()).id;
+}
+
 export const siteSettingsService = {
   get: cache(async () => loadSettings(await adminSiteId())),
 
@@ -162,8 +166,9 @@ export const siteSettingsService = {
 
   getAuthSettings: cache(async (): Promise<AuthSettings> => {
     try {
-      const siteId = await adminSiteId();
-      const settings = await loadSettings(siteId);
+      // Auth settings are install-wide and must not depend on the session:
+      // validateSession reads them, so resolving the admin site here would recurse.
+      const settings = await loadSettings(await authSettingsSiteId());
       const raw = settings?.authSettings;
       const parsed = authSettingsSchema.safeParse(raw);
       return parsed.success ? parsed.data : DEFAULT_AUTH_SETTINGS;
@@ -196,11 +201,20 @@ export const siteSettingsService = {
         ),
         searchSettings: input.searchSettings ?? undefined,
         licenseSettings: input.licenseSettings ?? undefined,
-        authSettings: authSettingsToSave ?? undefined,
+        authSettings: undefined,
         updatedAt: new Date(),
       })
       .where(eq(siteSettings.siteId, siteId))
       .returning();
+
+    if (authSettingsToSave) {
+      const authSiteId = await authSettingsSiteId();
+      await loadSettings(authSiteId);
+      await db
+        .update(siteSettings)
+        .set({ authSettings: authSettingsToSave, updatedAt: new Date() })
+        .where(eq(siteSettings.siteId, authSiteId));
+    }
 
     await auditService.log({
       actorId: access.userId,
@@ -208,7 +222,7 @@ export const siteSettingsService = {
       targetType: 'settings',
       targetId: siteId,
       targetName: 'Site settings',
-      details: input.authSettings ? { authSettings: authSettingsToSave } : undefined,
+      details: input.authSettings ? JSON.stringify({ authSettings: authSettingsToSave }) : undefined,
     });
     revalidatePublicSite();
     return row;

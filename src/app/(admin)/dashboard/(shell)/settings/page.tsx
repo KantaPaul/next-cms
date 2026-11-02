@@ -37,8 +37,9 @@ export default async function SettingsPage() {
   }
 
   const { userId } = await getCurrentUserAndTeamId();
-  const [settings, menus, site, globalBlocks, pageTemplatesList] = await Promise.all([
+  const [settings, authSettings, menus, site, globalBlocks, pageTemplatesList] = await Promise.all([
     siteSettingsService.get(),
+    siteSettingsService.getAuthSettings(),
     menusService.list(),
     siteContext.adminSite(userId),
     templatesService.listGlobalBlocks(),
@@ -81,7 +82,7 @@ export default async function SettingsPage() {
             ),
             pinnedResults: settings.searchSettings?.pinnedResults ?? [],
           },
-          authSettings: settings.authSettings,
+          authSettings,
         }}
         menus={menus.map(m => ({
           id: m.id,
