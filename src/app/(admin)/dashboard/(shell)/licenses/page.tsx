@@ -1,12 +1,17 @@
+import { Settings } from 'lucide-react';
+import Link from 'next/link';
 import { AccessDenied } from '@/components/organisms/access-denied';
 import { PageHeader } from '@/components/organisms/page-header';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
-import { metaObject } from '@/lib/utils/metadata';
-import { requirePermission } from '@/server/services/require-permission';
-import { licenseService } from '@/server/services/license.service';
-import { LicensesList, type LicenseListItem } from './_components/licenses-list';
 import type { LicenseStatus } from '@/db/schemas/licenses.schema';
+import { metaObject } from '@/lib/utils/metadata';
+import { licenseService } from '@/server/services/license.service';
+import { requirePermission } from '@/server/services/require-permission';
+import {
+  type LicenseListItem,
+  LicensesList,
+} from './_components/licenses-list';
 
 const TITLE = 'Licenses';
 
@@ -22,7 +27,9 @@ interface LicensesPageProps {
   }>;
 }
 
-export default async function LicensesPage({ searchParams }: LicensesPageProps) {
+export default async function LicensesPage({
+  searchParams,
+}: LicensesPageProps) {
   const { allowed } = await requirePermission(PERMISSIONS.LICENSES_MANAGE);
   const breadcrumbs = [
     { title: 'Dashboard', href: PAGES.DASHBOARD.ROOT },
@@ -52,7 +59,17 @@ export default async function LicensesPage({ searchParams }: LicensesPageProps) 
 
   return (
     <>
-      <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
+      <PageHeader title={TITLE} breadcrumbs={breadcrumbs}>
+        <div className="w-full text-right">
+          <Link
+            href={PAGES.DASHBOARD.SETTINGS_LICENSE}
+            className="inline-flex items-center gap-2 rounded-md bg-secondary px-4 py-2 text-sm font-medium hover:bg-secondary/80 border text-foreground"
+          >
+            <Settings className="h-4 w-4" />
+            License Settings
+          </Link>
+        </div>
+      </PageHeader>
       <LicensesList
         items={result.items as unknown as LicenseListItem[]}
         total={result.total}

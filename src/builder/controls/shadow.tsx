@@ -72,9 +72,11 @@ function normalizeShadow(
 export function ShadowControl({
   value,
   onChange,
+  hideLabel = false,
 }: {
   value: 'none' | 'sm' | 'md' | 'lg' | ShadowSettings | undefined;
   onChange: (value: ShadowSettings | undefined) => void;
+  hideLabel?: boolean;
 }) {
   const current = normalizeShadow(value);
   const s = { ...DEFAULT_SHADOW, ...current };
@@ -86,8 +88,10 @@ export function ShadowControl({
 
   return (
     <div>
-      <div className="mb-1.5 flex min-h-5 items-center justify-between gap-2">
-        <Label className="text-xs font-medium text-steel-600">Shadow</Label>
+      <div className={cn("mb-1.5 flex min-h-5 items-center gap-2", hideLabel ? "justify-end" : "justify-between")}>
+        {!hideLabel && (
+          <Label className="text-xs font-medium text-steel-600">Shadow</Label>
+        )}
         <div className="flex items-center gap-2">
           <div
             title={shadowCss ?? 'No shadow'}

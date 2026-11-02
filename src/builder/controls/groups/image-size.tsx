@@ -41,7 +41,6 @@ export function ImageSizeControl({
     <div className="space-y-3">
       {!isExcluded('size') && (
         <SelectInput
-          label="Image Size"
           value={selectedSize}
           options={SIZE_PRESETS}
           onChange={size => set({ size: (size || 'full') as ImageSizePreset })}

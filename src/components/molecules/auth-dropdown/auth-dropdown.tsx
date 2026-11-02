@@ -1,6 +1,6 @@
 'use client';
 
-import { Globe, KeyRound, LogOut } from 'lucide-react';
+import { Globe, KeyRound, LogOut, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
 import { MenuTrigger } from '@/components/molecules/auth-dropdown/menu-trigger';
@@ -60,6 +60,14 @@ export default function AuthDropdown({ user }: { user: User }) {
             <Link href={PAGES.DASHBOARD.SITES} className="cursor-pointer">
               <Globe className="mr-2 size-4" />
               <span>Sites</span>
+            </Link>
+          </DropdownMenuItem>
+        </Can>
+        <Can permission={PERMISSIONS.LICENSES_MANAGE}>
+          <DropdownMenuItem asChild>
+            <Link href={PAGES.DASHBOARD.LICENSES} className="cursor-pointer">
+              <ShieldCheck className="mr-2 size-4" />
+              <span>Licenses</span>
             </Link>
           </DropdownMenuItem>
         </Can>

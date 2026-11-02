@@ -39,6 +39,7 @@ export async function BuilderOrNewEditor({
       language: props.page.language,
       themeTokens: props.themeTokens,
       post: props.post,
+      collectionEntry: props.collectionEntry,
     }),
     searchParams,
   ]);

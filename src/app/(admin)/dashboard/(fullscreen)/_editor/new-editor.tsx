@@ -129,6 +129,7 @@ import type {
 } from '@/server/services/dynamic-refs.service';
 // Shared editor chrome styles (B15 E1), built by `pnpm --filter @nextcms/editor-ui build:css`.
 import '@nextcms/editor-ui/editor-ui.css';
+import { EntryProvider } from '@/components/analytics/entry-context';
 import {
   cmsTransformProps,
   rendererComponents,
@@ -196,16 +197,20 @@ function actionError(result: unknown): string | null {
 
 function EditorSiteRoot({
   metadata,
+  collectionEntry,
   children,
 }: {
   metadata: Record<string, unknown>;
+  collectionEntry?: any;
   children: ReactNode;
 }) {
   const rootProps = useEditor(state => state.doc.root.props);
   return (
-    <SiteRoot rootProps={rootProps} metadata={{ ...metadata, editing: true }}>
-      {children}
-    </SiteRoot>
+    <EntryProvider entry={collectionEntry ?? null}>
+      <SiteRoot rootProps={rootProps} metadata={{ ...metadata, editing: true }}>
+        {children}
+      </SiteRoot>
+    </EntryProvider>
   );
 }
 
@@ -610,6 +615,7 @@ export function NewEditor({
   kind = 'page',
   post,
   category,
+  collectionEntry,
   document,
   loaded,
   draftVersion = 0,
@@ -851,10 +857,14 @@ export function NewEditor({
       language: page.language,
       page: { title: page.title, slug: page.slug, language: page.language },
       ...(setup.renderKind === 'post' && { post: post ?? SAMPLE_POST }),
+      ...(collectionEntry && {
+        entry: collectionEntry.data,
+        collection: collectionEntry.collection,
+      }),
       pageRef: recordsById(dynamicRefs.pages),
       postRef: recordsById(dynamicRefs.posts),
     }),
-    [page.title, page.slug, page.language, setup.renderKind, post, dynamicRefs]
+    [page.title, page.slug, page.language, setup.renderKind, post, collectionEntry, dynamicRefs]
   );
   const refChoices = useMemo(
     () => ({ page: dynamicRefs.pages, post: dynamicRefs.posts }),
@@ -862,9 +872,14 @@ export function NewEditor({
   );
   const renderRoot = useCallback(
     (children: ReactNode) => (
-      <EditorSiteRoot metadata={metadata}>{children}</EditorSiteRoot>
+      <EditorSiteRoot
+        metadata={metadata}
+        collectionEntry={collectionEntry}
+      >
+        {children}
+      </EditorSiteRoot>
     ),
-    [metadata]
+    [metadata, collectionEntry]
   );
   const onFrame = useCallback(
     (frame: HTMLIFrameElement) => setFrameWindow(frame.contentWindow),
@@ -1391,8 +1406,9 @@ export function NewEditor({
       <E12ControlsProvider value={true}>
         <EditorProvider store={store}>
           <DynamicRefsProvider value={refChoices}>
-            <NewEditorBridge themeTokens={themeTokens}>
-              <SharedChrome
+            <EntryProvider entry={collectionEntry ?? null}>
+              <NewEditorBridge themeTokens={themeTokens}>
+                <SharedChrome
           queue={queue}
           title={documentTitle}
           onRenameDocument={handleRenameDocument}
@@ -1489,7 +1505,8 @@ export function NewEditor({
           commandPalette={commandPalette}
         />
         {dialogs}
-            </NewEditorBridge>
+              </NewEditorBridge>
+            </EntryProvider>
           </DynamicRefsProvider>
         </EditorProvider>
       </E12ControlsProvider>
@@ -1500,7 +1517,8 @@ export function NewEditor({
     <E12ControlsProvider value={true}>
       <EditorProvider store={store}>
         <DynamicRefsProvider value={refChoices}>
-          <NewEditorBridge themeTokens={themeTokens}>
+          <EntryProvider entry={collectionEntry ?? null}>
+            <NewEditorBridge themeTokens={themeTokens}>
       <div className="flex h-screen flex-col bg-steel-50 dark:bg-dark-50">
         <header className="flex h-12 shrink-0 items-center gap-2 border-b border-steel-200 bg-white px-3 dark:border-dark-300 dark:bg-dark-100">
           <Button
@@ -1523,6 +1541,11 @@ export function NewEditor({
           {status && !savesGoLive && (
             <span className="rounded bg-steel-100 px-2 py-0.5 text-xs capitalize text-steel-700 dark:bg-dark-200">
               {status}
+            </span>
+          )}
+          {collectionEntry?.collection && (
+            <span className="rounded bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary border border-primary/20">
+              Collection: {collectionEntry.collection.name}
             </span>
           )}
           <div className="ml-auto flex items-center gap-2">
@@ -1750,7 +1773,8 @@ export function NewEditor({
       </div>
       {commandPalette}
       {dialogs}
-          </NewEditorBridge>
+            </NewEditorBridge>
+          </EntryProvider>
         </DynamicRefsProvider>
       </EditorProvider>
     </E12ControlsProvider>

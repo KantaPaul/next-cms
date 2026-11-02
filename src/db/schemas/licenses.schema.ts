@@ -51,6 +51,15 @@ export const licenseSettingsSchema = z.object({
   notifyOnConflict: z.boolean().default(true),
   notifyOnRevocation: z.boolean().default(true),
   notifyOnExpiryWindowDays: z.number().int().min(1).default(14),
+  managedLicenseKey: z.string().trim().nullish(),
+  authorityUrl: z.string().trim().nullish(),
+  managedLicenseStatus: z
+    .enum(['active', 'pending', 'expired', 'revoked', 'inactive'])
+    .nullish(),
+  managedLicenseActivatedAt: z.string().nullish(),
+  managedLicenseExpiresAt: z.string().nullish(),
+  managedInstallationPublicId: z.string().nullish(),
+  managedLastCheckedAt: z.string().nullish(),
 });
 
 export type LicenseSettings = z.infer<typeof licenseSettingsSchema>;

@@ -11,6 +11,8 @@ import { validateSession } from '@/lib/auth';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 import { accessProcedure, permissionProcedure } from '@/server/procedures/permission.procedure';
 import { adminSiteId } from '@/server/services/site-context';
+import { parseVideoUrl } from '@/lib/video/parse';
+import { fetchOEmbed } from '@/lib/video/oembed';
 import {
   playlistService,
   videoLibraryService,
@@ -27,6 +29,7 @@ const listSchema = z.object({
   search: z.string().optional(),
   playlistId: z.string().optional(),
   status: z.enum(['draft', 'published', 'archived']).optional(),
+  provider: z.enum(['youtube', 'vimeo', 'direct']).optional(),
   page: z.number().int().min(1).optional(),
   size: z.number().int().min(1).max(100).optional(),
 });
@@ -34,6 +37,12 @@ const listSchema = z.object({
 const queryVideosSchema = z.object({
   playlistId: z.string().trim().max(150).nullish(),
   pageSize: z.coerce.number().int().min(1).max(48).nullish(),
+  provider: z.union([
+    z.enum(['youtube', 'vimeo', 'direct', 'all']),
+    z.array(z.enum(['youtube', 'vimeo', 'direct'])),
+  ]).nullish(),
+  providers: z.array(z.enum(['youtube', 'vimeo', 'direct'])).nullish(),
+  sources: z.array(z.enum(['youtube', 'vimeo', 'direct'])).nullish(),
 });
 
 /**
@@ -42,9 +51,18 @@ const queryVideosSchema = z.object({
  * without a playlist, or when viewer access requires a signed-in session.
  */
 export const queryVideos = async (input: z.infer<typeof queryVideosSchema>) => {
+  const providers =
+    input.providers ??
+    input.sources ??
+    (Array.isArray(input.provider)
+      ? input.provider
+      : input.provider && input.provider !== 'all'
+        ? [input.provider]
+        : undefined);
   const result = await videoLibraryService.listPublished({
     playlistId: input.playlistId ?? null,
     pageSize: input.pageSize ?? undefined,
+    providers,
   });
   return result;
 };
@@ -266,3 +284,32 @@ export const saveVideoProgress = async (input: {
     completed: clamped.completed,
   };
 };
+
+export const fetchVideoMetadata = accessProcedure
+  .input(z.object({ url: z.string().url() }))
+  .action(async ({ input }) => {
+    const parsed = parseVideoUrl(input.url);
+    if (!parsed) {
+      return null;
+    }
+    let title = '';
+    let thumbnailUrl = '';
+    try {
+      const oembed = await fetchOEmbed(parsed);
+      if (oembed) {
+        title = oembed.title || '';
+        thumbnailUrl = oembed.thumbnailUrl || '';
+      }
+    } catch {
+      // ignore
+    }
+    if (!thumbnailUrl && parsed.provider === 'youtube') {
+      thumbnailUrl = `https://i.ytimg.com/vi/${parsed.id}/hqdefault.jpg`;
+    }
+    return {
+      provider: parsed.provider,
+      id: parsed.id,
+      title,
+      thumbnailUrl,
+    };
+  });

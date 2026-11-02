@@ -35,6 +35,12 @@ export default async function CollectionsPage() {
     pagesServices.listTemplateOptions(),
   ]);
 
+  const rowsWithTemplate = rows.map(r => ({
+    ...r,
+    templateName:
+      templatePages.find(p => p.id === r.templatePageId)?.title ?? null,
+  }));
+
   return (
     <>
       <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
@@ -48,7 +54,7 @@ export default async function CollectionsPage() {
           </CardContent>
         </Card>
         <div className="lg:col-span-8">
-          <CollectionList rows={rows} />
+          <CollectionList rows={rowsWithTemplate} />
         </div>
       </div>
     </>

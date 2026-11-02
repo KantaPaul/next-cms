@@ -3,6 +3,19 @@ import { ChangedDot } from './ChangedDot';
 import { type DeviceType, DeviceValueBadge } from './DeviceValueBadge';
 import { ResetButton } from './ResetButton';
 
+/** Label of the enclosing FieldRow, so nested controls can skip a duplicate header. */
+const FieldRowLabelContext = React.createContext<string | null>(null);
+
+/**
+ * True when `label` repeats the enclosing FieldRow's label. Controls use it to
+ * hide their own title and reset button, since the row already draws both.
+ */
+export function useIsFieldRowLabel(label?: string): boolean {
+  const outer = React.useContext(FieldRowLabelContext);
+  if (!outer || !label) return false;
+  return outer.trim().toLowerCase() === label.trim().toLowerCase();
+}
+
 export interface FieldRowProps {
   label: string;
   description?: string;
@@ -79,7 +92,9 @@ export const FieldRow: React.FC<FieldRowProps> = ({
       <div
         className={`${layout === 'horizontal' ? 'w-3/5 min-w-0' : 'w-full'}`}
       >
-        {children}
+        <FieldRowLabelContext.Provider value={label}>
+          {children}
+        </FieldRowLabelContext.Provider>
       </div>
       {error && (
         <p className="m-0 text-[11px] text-[var(--ne-danger,#ef4444)] font-medium">

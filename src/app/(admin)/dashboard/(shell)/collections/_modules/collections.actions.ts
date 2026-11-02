@@ -3,6 +3,7 @@
 import { z } from 'zod';
 import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { collectionsService } from '@/server/services/collections.service';
+import { slugify } from '@/lib/utils/slugify';
 import { revalidatePath } from 'next/cache';
 import { PAGES } from '@/config/pages';
 import {
@@ -16,9 +17,13 @@ async function actorId() {
 }
 
 export async function createCollection(formData: FormData) {
-  const name = formData.get('name');
-  const slug = formData.get('slug');
+  const name = String(formData.get('name') ?? '').trim();
+  let slug = String(formData.get('slug') ?? '').trim();
   const templatePageId = formData.get('templatePageId') || undefined;
+
+  if (!slug && name) {
+    slug = slugify(name);
+  }
 
   const parsed = createCollectionSchema.safeParse({ name, slug, templatePageId });
   if (!parsed.success) {
@@ -26,7 +31,15 @@ export async function createCollection(formData: FormData) {
   }
 
   try {
-    await collectionsService.create(parsed.data, await actorId());
+    const finalSlug = parsed.data.slug || slugify(parsed.data.name);
+    await collectionsService.create(
+      {
+        name: parsed.data.name,
+        slug: finalSlug,
+        templatePageId: parsed.data.templatePageId,
+      },
+      await actorId()
+    );
     revalidatePath(PAGES.DASHBOARD.COLLECTIONS);
     return { ok: true };
   } catch (error: any) {
@@ -181,17 +194,12 @@ export async function deleteCollectionField(formData: FormData) {
 
 const createEntrySchema = z.object({
   collectionId: z.string().min(1),
-  slug: z.string().trim().min(1).max(200),
+  slug: z.string().trim().max(200).optional(),
 });
 
 export async function createCollectionEntry(formData: FormData) {
   const collectionId = formData.get('collectionId');
-  const slug = formData.get('slug');
-
-  const parsed = createEntrySchema.safeParse({ collectionId, slug });
-  if (!parsed.success) {
-    return { ok: false, error: 'Invalid entry input.' };
-  }
+  let slug = String(formData.get('slug') ?? '').trim();
 
   const data: Record<string, unknown> = {};
   for (const [key, value] of formData.entries()) {
@@ -200,10 +208,24 @@ export async function createCollectionEntry(formData: FormData) {
     }
   }
 
+  if (!slug) {
+    const candidate =
+      data.title ||
+      data.name ||
+      data.label ||
+      Object.values(data).find(v => typeof v === 'string' && v.trim().length > 0);
+    slug = candidate ? slugify(String(candidate)) : `entry-${Date.now().toString(36)}`;
+  }
+
+  const parsed = createEntrySchema.safeParse({ collectionId, slug });
+  if (!parsed.success) {
+    return { ok: false, error: 'Invalid entry input.' };
+  }
+
   try {
     await collectionsService.createEntry(
       parsed.data.collectionId,
-      { slug: parsed.data.slug, data },
+      { slug: parsed.data.slug || slug, data },
       await actorId()
     );
     revalidatePath(PAGES.DASHBOARD.COLLECTION_ENTRIES(parsed.data.collectionId));
@@ -254,22 +276,43 @@ export async function updateCollectionEntry(formData: FormData) {
 export async function publishCollectionEntry(formData: FormData): Promise<void> {
   const entryId = formData.get('entryId') as string;
   const collectionId = formData.get('collectionId') as string;
-  await collectionsService.publishEntry(entryId, await actorId());
-  revalidatePath(PAGES.DASHBOARD.COLLECTION_ENTRY(collectionId, entryId));
-  revalidatePath(PAGES.DASHBOARD.COLLECTION_ENTRIES(collectionId));
+  try {
+    await collectionsService.publishEntry(entryId, await actorId());
+    revalidatePath(PAGES.DASHBOARD.COLLECTION_ENTRY(collectionId, entryId));
+    revalidatePath(PAGES.DASHBOARD.COLLECTION_ENTRIES(collectionId));
+  } catch (error) {
+    console.error('Failed to publish collection entry:', error);
+  }
 }
 
 export async function unpublishCollectionEntry(formData: FormData): Promise<void> {
   const entryId = formData.get('entryId') as string;
   const collectionId = formData.get('collectionId') as string;
-  await collectionsService.unpublishEntry(entryId, await actorId());
-  revalidatePath(PAGES.DASHBOARD.COLLECTION_ENTRY(collectionId, entryId));
-  revalidatePath(PAGES.DASHBOARD.COLLECTION_ENTRIES(collectionId));
+  try {
+    await collectionsService.unpublishEntry(entryId, await actorId());
+    revalidatePath(PAGES.DASHBOARD.COLLECTION_ENTRY(collectionId, entryId));
+    revalidatePath(PAGES.DASHBOARD.COLLECTION_ENTRIES(collectionId));
+  } catch (error) {
+    console.error('Failed to unpublish collection entry:', error);
+  }
 }
 
 export async function deleteCollectionEntry(formData: FormData): Promise<void> {
   const entryId = formData.get('entryId') as string;
   const collectionId = formData.get('collectionId') as string;
-  await collectionsService.deleteEntry(entryId, await actorId());
-  revalidatePath(PAGES.DASHBOARD.COLLECTION_ENTRIES(collectionId));
+  try {
+    await collectionsService.deleteEntry(entryId, await actorId());
+    revalidatePath(PAGES.DASHBOARD.COLLECTION_ENTRIES(collectionId));
+  } catch (error) {
+    console.error('Failed to delete collection entry:', error);
+  }
+}
+
+export async function listCollectionOptions() {
+  try {
+    const list = await collectionsService.list();
+    return list.map(c => ({ id: c.id, name: c.name, slug: c.slug }));
+  } catch {
+    return [];
+  }
 }

@@ -6,6 +6,7 @@ import {
   desc,
   eq,
   ilike,
+  inArray,
   isNull,
   or,
   type SQL,
@@ -35,6 +36,7 @@ export type VideoListParams = {
   search?: string;
   playlistId?: string;
   status?: 'draft' | 'published' | 'archived';
+  provider?: 'youtube' | 'vimeo' | 'direct' | '';
   page?: number;
   size?: number;
   siteId?: string;
@@ -260,7 +262,8 @@ export const videoService = {
       conditions.push(
         or(
           ilike(videos.title, `%${params.search}%`),
-          ilike(videos.slug, `%${params.search}%`)
+          ilike(videos.slug, `%${params.search}%`),
+          ilike(videos.provider, `%${params.search}%`)
         ) as SQL<unknown>
       );
     }
@@ -269,6 +272,9 @@ export const videoService = {
     }
     if (params.status) {
       conditions.push(eq(videos.status, params.status));
+    }
+    if (params.provider) {
+      conditions.push(eq(videos.provider, params.provider));
     }
 
     const [dataResult, totalResult] = await Promise.all([
@@ -503,6 +509,8 @@ export const videoLibraryService = {
     catalogMode?: 'all-published' | 'playlist-only';
     pageSize?: number;
     viewerId?: string | null;
+    provider?: 'youtube' | 'vimeo' | 'direct' | 'all' | ('youtube' | 'vimeo' | 'direct')[];
+    providers?: ('youtube' | 'vimeo' | 'direct')[];
   }) => {
     const siteId =
       input.siteId ?? (await siteContext.publicSite())?.id ?? 'default';
@@ -549,6 +557,24 @@ export const videoLibraryService = {
       eq(videos.visibility, 'public'),
       isNull(videos.deletedAt),
     ];
+
+    const rawProviders = input.providers ?? (
+      Array.isArray(input.provider)
+        ? input.provider
+        : input.provider && input.provider !== 'all'
+          ? [input.provider]
+          : undefined
+    );
+    if (rawProviders && rawProviders.length > 0) {
+      const allowed = rawProviders.filter((p): p is 'youtube' | 'vimeo' | 'direct' => (
+        Boolean(p) && (p as string) !== 'all'
+      ));
+      if (allowed.length === 1) {
+        conditions.push(eq(videos.provider, allowed[0]));
+      } else if (allowed.length > 1) {
+        conditions.push(inArray(videos.provider, allowed));
+      }
+    }
 
     if (wantsPlaylistOnly) {
       if (!effectivePlaylistId) {

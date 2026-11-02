@@ -167,3 +167,59 @@ export const settingsSchema = z.object({
 });
 
 export type SettingsInput = z.infer<typeof settingsSchema>;
+
+export const manageLicenseFormSchema = z.object({
+  licenseKey: z
+    .string()
+    .trim()
+    .min(1, 'License key is required'),
+  authorityUrl: z
+    .string()
+    .trim()
+    .url('Must be a valid URL like https://licenses.example.com')
+    .optional()
+    .or(z.literal(''))
+    .nullable(),
+});
+
+export type ManageLicenseFormInput = z.infer<typeof manageLicenseFormSchema>;
+
+export const licensePolicyFormSchema = z.object({
+  heartbeatIntervalSeconds: z
+    .number()
+    .int('Must be a whole number')
+    .min(60, 'Heartbeat interval must be at least 60 seconds (1 minute)'),
+  gracePeriodSeconds: z
+    .number()
+    .int('Must be a whole number')
+    .min(0, 'Grace period cannot be negative')
+    .max(604800, 'Grace period is capped at 7 days (604,800 seconds)'),
+  defaultExpiryDays: z
+    .number()
+    .int('Must be a whole number')
+    .min(1, 'Default expiry must be at least 1 day'),
+  reassignmentCooldownHours: z
+    .number()
+    .int('Must be a whole number')
+    .min(0, 'Cooldown must be non-negative'),
+  maxReassignments: z
+    .number()
+    .int('Must be a whole number')
+    .min(0, 'Max reassignments must be non-negative'),
+  rateLimitMaxAttempts: z
+    .number()
+    .int('Must be a whole number')
+    .min(1, 'Rate limit max attempts must be at least 1'),
+  rateLimitWindowMinutes: z
+    .number()
+    .int('Must be a whole number')
+    .min(1, 'Window must be at least 1 minute'),
+  notifyOnConflict: z.boolean(),
+  notifyOnRevocation: z.boolean(),
+  notifyOnExpiryWindowDays: z
+    .number()
+    .int('Must be a whole number')
+    .min(1),
+});
+
+export type LicensePolicyFormInput = z.infer<typeof licensePolicyFormSchema>;

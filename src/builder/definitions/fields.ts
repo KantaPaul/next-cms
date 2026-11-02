@@ -45,6 +45,7 @@ export interface GroupControlOptions<T = any> {
   states?: ('normal' | 'hover')[];
   tab?: string;
   section?: string;
+  hideHeader?: boolean;
 }
 
 function renderGroupShell(
@@ -61,6 +62,7 @@ function renderGroupShell(
     defaults: opts.defaults,
     popover: opts.popover,
     states: opts.states,
+    hideHeader: opts.hideHeader ?? true,
     children: ({ value: childVal, onChange: childOnChange, exclude, state }: any) =>
       createElement(Component, {
         value: childVal,
@@ -92,6 +94,7 @@ export function groupControl<T = any>(
     defaults: opts.defaults,
     popover: opts.popover,
     states: opts.states,
+    hideHeader: opts.hideHeader,
     render: (props: any) => {
       const isSectionContainer =
         opts.path === 'section' ||

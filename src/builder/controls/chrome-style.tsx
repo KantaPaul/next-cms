@@ -66,6 +66,7 @@ export function ChromeStyleField({
             label="Background"
             value={s.fill}
             onChange={fill => set({ fill })}
+            hideHeader
           >
             {({ value: val, onChange: onValChange }) => (
               <BackgroundControl value={val} onChange={onValChange} />
@@ -181,6 +182,7 @@ export function ChromeStyleField({
               onChange={fill =>
                 set({ scrolled: { ...s.scrolled, fill } })
               }
+              hideHeader
             >
               {({ value: val, onChange: onValChange }) => (
                 <BackgroundControl value={val} onChange={onValChange} />

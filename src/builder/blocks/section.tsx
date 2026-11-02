@@ -64,6 +64,7 @@ export function Section({
   const styles = resolveSectionStyle(s);
   const hasVideo = s.fill?.type === 'video' && Boolean(s.fill.videoUrl);
   const outer = cn(
+    'w-full',
     PADDING[s.paddingY ?? 'md'],
     !styles.hasFill && BACKGROUND[s.background ?? 'default'],
     styles.outerClasses,

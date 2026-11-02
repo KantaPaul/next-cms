@@ -189,17 +189,40 @@ const loadVideoLibrary: BlockLoader = async props => {
       : null;
   const pageSize =
     typeof props.pageSize === 'number' ? props.pageSize : undefined;
+
+  let providers: ('youtube' | 'vimeo' | 'direct')[] | undefined;
+  if (Array.isArray(props.sources)) {
+    providers = props.sources.filter(
+      (s: string): s is 'youtube' | 'vimeo' | 'direct' =>
+        s === 'youtube' || s === 'vimeo' || s === 'direct'
+    );
+  } else if (Array.isArray(props.source)) {
+    providers = props.source.filter(
+      (s: string): s is 'youtube' | 'vimeo' | 'direct' =>
+        s === 'youtube' || s === 'vimeo' || s === 'direct'
+    );
+  } else if (typeof props.source === 'string' && props.source !== 'all') {
+    providers = [props.source as 'youtube' | 'vimeo' | 'direct'];
+  } else if (typeof props.provider === 'string' && props.provider !== 'all') {
+    providers = [props.provider as 'youtube' | 'vimeo' | 'direct'];
+  }
+
   const { queryVideos } = await import(
     '@/app/(admin)/dashboard/(shell)/videos/_modules/videos.actions'
   );
-  const result = await queryVideos({ playlistId, pageSize });
+  const result = await queryVideos({ playlistId, pageSize, providers });
+  const activeSources =
+    providers && providers.length > 0
+      ? providers
+      : (['youtube', 'vimeo', 'direct'] as const);
+
   return {
     videos: result.videos as VideoLibraryVideoItem[],
     settings: {
       enabled: result.enabled,
-      title: result.title,
-      description: result.description,
-      layout: result.layout,
+      title: (props.title as string) || result.title,
+      description: (props.description as string) || result.description,
+      layout: (props.layout as 'sidebar' | 'stacked') || result.layout,
       defaultPlaylistId: result.defaultPlaylistId,
       thumbnails: true,
       descriptions: true,
@@ -208,6 +231,10 @@ const loadVideoLibrary: BlockLoader = async props => {
       progress: result.progress,
       resume: result.resume,
       completionPercent: result.completionPercent,
+      sources: [...activeSources],
+      source: activeSources.length === 1 ? activeSources[0] : 'all',
+      showSearch: props.showSearch ?? true,
+      searchPlaceholder: (props.searchPlaceholder as string) || undefined,
     },
   };
 };

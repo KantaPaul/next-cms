@@ -52,6 +52,7 @@ export const PAGES = {
     REVIEW: '/dashboard/review',
     ACCOUNT: '/dashboard/account',
     SETTINGS: '/dashboard/settings',
+    SETTINGS_LICENSE: '/dashboard/settings/license',
     THEME: '/dashboard/theme',
     SITES: '/dashboard/sites',
     USERS: '/dashboard/users',

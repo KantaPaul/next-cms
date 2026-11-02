@@ -4,13 +4,11 @@ import {
   Image as ImageIcon,
   PaintBucket,
   Palette,
-  RotateCcw,
   Video,
 } from 'lucide-react';
 import { MediaField } from '@/components/media/media-picker';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils/cn';
 import type { Fill } from '../style';
 import { ColorPicker } from './color-picker';
@@ -52,48 +50,32 @@ export function BackgroundControl({
 
   return (
     <div className="space-y-3">
-      {/* Label row with tabs-in-label */}
-      <div className="flex min-h-5 items-center justify-between gap-2">
-        <Label>Custom Background</Label>
-        <div className="flex items-center gap-1">
-          <div className="flex rounded-md border border-steel-200 bg-steel-50/80 p-0.5">
-            {availableTypes.map(t => {
-              const Icon = t.icon;
-              const selected = hasCustom && type === t.value;
+      {/* Type selector tabs */}
+      <div className="flex items-center">
+        <div className="flex rounded-md border border-steel-200 bg-steel-50/80 p-0.5">
+          {availableTypes.map(t => {
+            const Icon = t.icon;
+            const selected = hasCustom && type === t.value;
 
-              return (
-                <Button
-                  key={t.value}
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  title={t.label}
-                  aria-label={t.label}
-                  aria-pressed={selected}
-                  onClick={() => onChange({ ...fill, type: t.value })}
-                  className={cn(
-                    'flex size-6 items-center justify-center rounded text-steel-500 transition hover:text-steel-900',
-                    selected && 'bg-white text-indigo-600 shadow-xs font-medium'
-                  )}
-                >
-                  <Icon className="size-3.5" />
-                </Button>
-              );
-            })}
-          </div>
-
-          {hasCustom && (
-            <Button
-              type="button"
-              title="Reset background"
-              onClick={() => onChange(undefined)}
-              variant="outline"
-              size="icon-sm"
-              className="ml-1 inline-flex items-center gap-0.5 text-steel-400 hover:text-steel-700"
-            >
-              <RotateCcw className="size-3.5" />
-            </Button>
-          )}
+            return (
+              <Button
+                key={t.value}
+                type="button"
+                variant="ghost"
+                size="icon"
+                title={t.label}
+                aria-label={t.label}
+                aria-pressed={selected}
+                onClick={() => onChange({ ...fill, type: t.value })}
+                className={cn(
+                  'flex size-6 items-center justify-center rounded text-steel-500 transition hover:text-steel-900',
+                  selected && 'bg-white text-indigo-600 shadow-xs font-medium'
+                )}
+              >
+                <Icon className="size-3.5" />
+              </Button>
+            );
+          })}
         </div>
       </div>
 

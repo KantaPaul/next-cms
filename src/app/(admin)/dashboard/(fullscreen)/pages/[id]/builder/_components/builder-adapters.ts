@@ -47,6 +47,8 @@ export type BuilderPageProps = {
   post?: PostView;
   /** Global block category; only used when kind is `global` or `contact-form`. */
   category?: string;
+  /** Collection entry rendered by collection-bound blocks in template pages. */
+  collectionEntry?: any;
 };
 
 /** Config for global blocks: no GlobalRef and no Global category so a global cannot nest another. */

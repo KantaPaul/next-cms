@@ -80,6 +80,7 @@ export function BackgroundSectionControl({
               label="Background"
               value={s.fill}
               onChange={fill => onChange({ ...s, fill })}
+              hideHeader
             >
               {({ value: val, onChange: onValChange }) => (
                 <BackgroundControl value={val} onChange={onValChange} />
@@ -94,6 +95,7 @@ export function BackgroundSectionControl({
               label="Background"
               value={hover.fill}
               onChange={fill => onChange({ ...s, hover: { ...hover, fill } })}
+              hideHeader
             >
               {({ value: val, onChange: onValChange }) => (
                 <BackgroundControl value={val} onChange={onValChange} />
@@ -125,6 +127,7 @@ export function BorderSectionControl({
               label="Border"
               value={s.border}
               onChange={border => onChange({ ...s, border })}
+              hideHeader
             >
               {({ value: val, onChange: onValChange }) => (
                 <BorderControl value={val} onChange={onValChange} />

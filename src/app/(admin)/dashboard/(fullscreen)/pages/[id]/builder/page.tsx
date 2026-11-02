@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { BuilderOrNewEditor } from '@/app/(admin)/dashboard/(fullscreen)/_editor/builder-or-new-editor';
 import { pagesServices } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
+import { collectionsService } from '@/server/services/collections.service';
 import { OtherSiteNotice } from '@/components/organisms/other-site-notice';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
@@ -25,9 +26,10 @@ export default async function BuilderPage({
   if (!accessService.can(access, PERMISSIONS.PAGES_EDIT))
     redirect(PAGES.DASHBOARD.PAGES.INDEX);
 
-  const [page, settings] = await Promise.all([
+  const [page, settings, collection] = await Promise.all([
     pagesServices.getById({ id }),
     siteSettingsService.get(),
+    collectionsService.findByTemplatePageId(id).catch(() => null),
   ]);
   if (!page) {
     // The page may exist in another site this user can open.
@@ -48,6 +50,10 @@ export default async function BuilderPage({
   }
   if (page.editorType !== 'builder') redirect(PAGES.DASHBOARD.PAGES.EDIT(id));
 
+  const collectionEntry = collection
+    ? await collectionsService.getPreviewEntryForCollection(collection.id).catch(() => null)
+    : null;
+
   return (
     <BuilderOrNewEditor
       searchParams={searchParams}
@@ -63,6 +69,7 @@ export default async function BuilderPage({
       }}
       themeTokens={settings.themeTokens}
       draftVersion={page.draftVersion}
+      collectionEntry={collectionEntry}
     />
   );
 }

@@ -79,12 +79,15 @@ import { SectionField } from '../controls/section-inspector';
 import { Example } from '../custom/example';
 import {
   CategoryLockField,
+  CollectionItemFieldSelect,
+  CollectionSelectField,
   GlobalBlockSelectField,
   IconPickerField,
   MediaUrlField,
   RichTextField,
   TagLockField,
   UrlField,
+  VideoSourcesField,
 } from '../fields/client-fields';
 import { ContactFormOptionsField } from '../fields/contact-form-options-field';
 import {
@@ -875,13 +878,37 @@ export const VideoLibraryNativeBlock = defineBlock({
   category: 'content',
   icon: 'videolibrary',
   schema: z.object({
+    sources: z.array(z.enum(['youtube', 'vimeo', 'direct'])).optional(),
+    source: z.union([
+      z.enum(['all', 'youtube', 'vimeo', 'direct']),
+      z.array(z.enum(['youtube', 'vimeo', 'direct'])),
+    ]).optional(),
+    showSearch: z.boolean().optional(),
+    searchPlaceholder: z.string().optional(),
     section: sectionSettingsSchema.optional(),
     elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: VideoLibraryBlock,
   fields: {
+    sources: {
+      label: 'Data sources',
+      group: CONTENT,
+      type: 'custom',
+      render: VideoSourcesField,
+    },
     title: { label: 'Title', group: CONTENT, type: 'text' },
     description: { label: 'Description', group: CONTENT, type: 'textarea' },
+    showSearch: {
+      label: 'Show search bar',
+      group: CONTENT,
+      type: 'toggle',
+    },
+    searchPlaceholder: {
+      label: 'Search placeholder',
+      group: CONTENT,
+      type: 'text',
+      when: (props: any) => props.showSearch !== false,
+    },
     layout: {
       label: 'Layout',
       group: CONTENT,
@@ -906,8 +933,11 @@ export const VideoLibraryNativeBlock = defineBlock({
     ...sectionControls(),
   },
   defaults: {
+    sources: ['youtube', 'vimeo', 'direct'],
     title: 'Videos',
     description: '',
+    showSearch: true,
+    searchPlaceholder: '',
     layout: 'sidebar',
     playlistId: '',
     pageSize: 12,
@@ -1474,13 +1504,63 @@ export const CollectionItemBlock = defineBlock({
     section: sectionSettingsSchema.optional(),
     elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
-  render: CollectionItem,
+  render: CollectionItem as any,
   fields: {
-    field: { label: 'Field key (optional)', group: CONTENT, type: 'text' },
+    field: {
+      label: 'Field to display',
+      group: CONTENT,
+      type: 'custom',
+      render: CollectionItemFieldSelect,
+    },
+    layout: {
+      label: 'Container style',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Card (Box with border & shadow)', value: 'card' },
+        { label: 'Clean (Inline, no box)', value: 'clean' },
+      ],
+      when: (props: any) => Boolean(props.field),
+    },
+    showLabel: {
+      label: 'Show field label',
+      group: CONTENT,
+      type: 'toggle',
+      when: (props: any) => Boolean(props.field),
+    },
+    textSize: {
+      label: 'Text size / Heading',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Auto (Smart heading / text)', value: 'auto' },
+        { label: 'Heading 1 (Hero Title)', value: 'h1' },
+        { label: 'Heading 2 (Section Title)', value: 'h2' },
+        { label: 'Heading 3 (Card Title)', value: 'h3' },
+        { label: 'Lead (Large text)', value: 'lead' },
+        { label: 'Body (Regular text)', value: 'body' },
+      ],
+      when: (props: any) => Boolean(props.field),
+    },
+    align: {
+      label: 'Alignment',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+        { label: 'Right', value: 'right' },
+      ],
+      when: (props: any) => Boolean(props.field),
+    },
     ...sectionControls(),
   },
   defaults: {
     field: '',
+    layout: 'card',
+    textSize: 'auto',
+    align: 'left',
+    showLabel: true,
     section: {
       paddingY: 'md',
       background: 'default',
@@ -3389,9 +3469,10 @@ export const QueryLoopBlock = defineBlock({
       ],
     },
     collectionId: {
-      label: 'Collection ID',
+      label: 'Collection',
       group: CONTENT,
-      type: 'text',
+      type: 'custom',
+      render: CollectionSelectField,
       when: (props: any) => props.source === 'collection-entries',
     },
     playlistId: {

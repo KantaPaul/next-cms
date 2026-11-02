@@ -571,9 +571,21 @@ export default async function SitePage({ params, searchParams }: Params) {
 
   const page = await loadPage(segments);
   if (!page) {
-    // Collection route: /{collectionSlug}/{entrySlug}
+    // Collection route: /{collectionSlug}/{entrySlug} OR /collections/{collectionSlug}/{entrySlug}
     const localeCodes = site.locales.map(l => l.code) ?? [];
+    let collectionSlug: string | undefined;
+    let entrySlug: string | undefined;
+
     if (
+      Array.isArray(segments) &&
+      segments.length === 3 &&
+      segments[0] === 'collections' &&
+      segments[1] &&
+      segments[2]
+    ) {
+      collectionSlug = segments[1];
+      entrySlug = segments[2];
+    } else if (
       Array.isArray(segments) &&
       segments.length === 2 &&
       segments[0] &&
@@ -581,13 +593,19 @@ export default async function SitePage({ params, searchParams }: Params) {
       !localeCodes.includes(segments[0]) &&
       segments[0] !== 'blog'
     ) {
+      collectionSlug = segments[0];
+      entrySlug = segments[1];
+    }
+
+    if (collectionSlug && entrySlug) {
       try {
-        const entry = await collectionsService.getPublishedEntry(
-          segments[0],
-          segments[1]
+        const entry = await collectionsService.getPublishedEntryByAnySlug(
+          collectionSlug,
+          entrySlug,
+          site.id
         );
         const base = settings.siteUrl || env.SITE_URL;
-        const path = `/${segments[0]}/${segments[1]}`;
+        const path = `/${collectionSlug}/${entrySlug}`;
 
         if (entry.collection.templatePageId) {
           const template = await publicSiteService.getPublished(
@@ -701,10 +719,37 @@ export default async function SitePage({ params, searchParams }: Params) {
   ) : null;
 
   if (page.editorType === 'builder') {
+    let collectionEntry = null;
+    const linkedCollection = await collectionsService
+      .findByTemplatePageId(page.id, site.id)
+      .catch(() => null);
+
+    if (linkedCollection) {
+      const sParams = await searchParams;
+      const requestedSlug =
+        typeof sParams.entry === 'string'
+          ? sParams.entry
+          : typeof sParams.slug === 'string'
+            ? sParams.slug
+            : undefined;
+
+      if (requestedSlug) {
+        collectionEntry = await collectionsService
+          .getPublishedEntry(linkedCollection.slug, requestedSlug, site.id)
+          .catch(() => null);
+      }
+      if (!collectionEntry) {
+        collectionEntry = await collectionsService
+          .getLatestPublishedEntry(linkedCollection.id, site.id)
+          .catch(() => null);
+      }
+    }
+
     const metadata = {
       themeTokens: settings.themeTokens,
       searchParams: await searchParams,
       language: page.language,
+      custom: collectionEntry?.data,
       page: {
         id: page.id,
         title: page.title,
@@ -728,11 +773,11 @@ export default async function SitePage({ params, searchParams }: Params) {
       metadata,
     });
     return (
-      <>
+      <EntryProvider entry={collectionEntry}>
         {beacon}
         <StructuredData page={page} base={base} siteSlug={siteSlug ?? ''} />
         {rendered}
-      </>
+      </EntryProvider>
     );
   }
 

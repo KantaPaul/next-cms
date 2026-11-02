@@ -23,6 +23,8 @@ export type EditorData = {
   issues: string[];
   /** Pages and posts for "Specific Page/Blog Post" bindings: picker and preview. */
   dynamicRefs: DynamicRefOptions;
+  /** Collection entry context for template pages. */
+  collectionEntry?: any;
 };
 
 /** Adds records the document already points at that fell outside the option list. */
@@ -41,12 +43,14 @@ export async function loadEditorData({
   language,
   themeTokens,
   post,
+  collectionEntry,
 }: {
   content: unknown;
   kind: string;
   language: string;
   themeTokens: unknown;
   post?: PostView;
+  collectionEntry?: any;
 }): Promise<EditorData> {
   const document = toDocument(content);
   const [loaded, options, picked] = await Promise.all([
@@ -62,5 +66,6 @@ export async function loadEditorData({
       pages: withPicked(options.pages, picked.pageRef),
       posts: withPicked(options.posts, picked.postRef),
     },
+    collectionEntry,
   };
 }

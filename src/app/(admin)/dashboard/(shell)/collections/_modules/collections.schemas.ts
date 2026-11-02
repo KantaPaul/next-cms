@@ -20,10 +20,16 @@ export const createCollectionSchema = z.object({
   slug: z
     .string()
     .trim()
-    .min(1, 'Slug is required')
     .max(150)
-    .regex(slugRegex, 'Slug can only contain lowercase letters, numbers, and dashes')
-    .refine(v => !RESERVED_COLLECTION_SLUGS.includes(v), 'This slug is reserved.'),
+    .optional()
+    .refine(
+      v => !v || slugRegex.test(v),
+      'Slug can only contain lowercase letters, numbers, and dashes'
+    )
+    .refine(
+      v => !v || !RESERVED_COLLECTION_SLUGS.includes(v),
+      'This slug is reserved.'
+    ),
   templatePageId: z.string().nullish().optional(),
 });
 

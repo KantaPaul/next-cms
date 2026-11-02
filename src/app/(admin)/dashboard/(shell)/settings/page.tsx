@@ -8,10 +8,11 @@ import { requirePermission } from '@/server/services/require-permission';
 import { siteContext } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 import { getCurrentUserAndTeamId } from '@/lib/auth';
-import { Download } from 'lucide-react';
+import { ExportWebsiteButton } from '@/components/dashboard/export-website-button';
 import { menusService } from '../menus/_modules/menus.service';
 import { templatesService } from '../templates/_modules/templates.service';
 import { SettingsForm } from './_components/settings-form';
+import { SettingsNav } from './_components/settings-nav';
 
 const TITLE = 'Settings';
 
@@ -47,15 +48,9 @@ export default async function SettingsPage() {
   return (
     <>
       <PageHeader title={TITLE} breadcrumbs={breadcrumbs}>
-        <a
-          href="/api/v1/export/site"
-          download
-          className="inline-flex items-center gap-2 rounded-md bg-secondary px-4 py-2 text-sm font-medium hover:bg-secondary/80 border text-foreground"
-        >
-          <Download className="h-4 w-4" />
-          Export Website (.zip)
-        </a>
+        <ExportWebsiteButton showTextOnMobile variant="secondary" className="border text-foreground" />
       </PageHeader>
+      <SettingsNav />
       <SettingsForm
         settings={{
           siteName: settings.siteName,

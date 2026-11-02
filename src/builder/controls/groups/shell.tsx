@@ -1,6 +1,6 @@
 'use client';
 
-import { Popover, ResetButton } from '@nextcms/editor-ui';
+import { Popover, ResetButton, useIsFieldRowLabel } from '@nextcms/editor-ui';
 import { Pencil } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Label } from '@/components/ui/label';
@@ -15,6 +15,7 @@ export interface GroupShellProps<T = any> {
   defaults?: Partial<T>;
   popover?: boolean;
   states?: ('normal' | 'hover')[];
+  hideHeader?: boolean;
   children: (props: {
     value: any;
     onChange: (val: any) => void;
@@ -52,8 +53,11 @@ export function GroupShell<T = any>({
   defaults,
   popover = false,
   states,
+  hideHeader: hideHeaderProp = false,
   children,
 }: GroupShellProps<T>) {
+  // The inspector row already shows this label and its reset button.
+  const hideHeader = useIsFieldRowLabel(label) || hideHeaderProp;
   const hasHoverState = Boolean(states && states.length > 1 && states.includes('hover'));
 
   // Separate normal and hover values when states are used
@@ -129,6 +133,35 @@ export function GroupShell<T = any>({
   );
 
   if (popover) {
+    if (hideHeader) {
+      return (
+        <div className="flex items-center justify-end">
+          <Popover
+            trigger={
+              <button
+                type="button"
+                aria-label={`Edit ${label}`}
+                className={cn(
+                  'inline-flex size-6 items-center justify-center rounded border border-steel-200 bg-white text-steel-500 hover:text-steel-800 transition shadow-xs',
+                  isChanged && 'border-blue-400 text-blue-600 bg-blue-50/50'
+                )}
+              >
+                <Pencil className="size-3" />
+              </button>
+            }
+            content={() => (
+              <div className="w-72 max-w-[90vw] p-1 space-y-3">
+                <div className="font-medium text-xs text-steel-700 pb-1 border-b border-steel-100">
+                  {label}
+                </div>
+                {content}
+              </div>
+            )}
+          />
+        </div>
+      );
+    }
+
     return (
       <div className="flex min-h-6 items-center justify-between gap-2">
         <Label className="text-xs font-medium text-steel-600">{label}</Label>
@@ -170,6 +203,10 @@ export function GroupShell<T = any>({
         </div>
       </div>
     );
+  }
+
+  if (hideHeader) {
+    return <div className="space-y-2">{content}</div>;
   }
 
   return (

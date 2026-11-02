@@ -1,5 +1,6 @@
 'use client';
 
+import { useIsFieldRowLabel } from '@nextcms/editor-ui';
 import { ChevronDown, RotateCcw, X } from 'lucide-react';
 import { type ReactNode, useEffect, useId, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -44,14 +45,26 @@ export function ControlLabel({
   responsive?: boolean;
   aside?: ReactNode;
 }) {
+  // The inspector row already shows this label; keep only the extras.
+  const duplicate = useIsFieldRowLabel(label);
+  const extras = aside ?? children;
+  if (duplicate && !responsive && !extras) return null;
+
   return (
-    <div className="mb-1.5 flex min-h-5 items-center justify-between gap-2">
-      <Label htmlFor={htmlFor} className="text-xs font-medium text-steel-600">
-        {label}
-      </Label>
+    <div
+      className={cn(
+        'mb-1.5 flex min-h-5 items-center gap-2',
+        duplicate ? 'justify-end' : 'justify-between'
+      )}
+    >
+      {!duplicate && (
+        <Label htmlFor={htmlFor} className="text-xs font-medium text-steel-600">
+          {label}
+        </Label>
+      )}
       <div className="flex items-center gap-1.5">
         {responsive && <DeviceRow />}
-        {aside ?? children}
+        {extras}
       </div>
     </div>
   );
@@ -291,7 +304,7 @@ export function SelectInput<T extends string>({
   responsive,
   isInherited,
 }: {
-  label: string;
+  label?: string;
   value: T;
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
@@ -303,9 +316,11 @@ export function SelectInput<T extends string>({
 
   return (
     <div className="space-y-1.5">
-      <ControlLabel label={label} htmlFor={id} responsive={responsive}>
-        {aside}
-      </ControlLabel>
+      {label && (
+        <ControlLabel label={label} htmlFor={id} responsive={responsive}>
+          {aside}
+        </ControlLabel>
+      )}
       <Select value={value} onValueChange={v => onChange(v as T)}>
         <SelectTrigger
           id={id}

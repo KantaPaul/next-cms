@@ -13,6 +13,8 @@ import { cn } from '@/lib/utils/cn';
 import { Can } from '@/providers/access.provider';
 import { me } from '@/server/actions/auth.actions';
 import { SiteSwitcher } from '@/components/dashboard/site-switcher';
+import { LangSwitcher } from '@/components/dashboard/lang-switcher';
+import { ExportWebsiteButton } from '@/components/dashboard/export-website-button';
 import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { siteContext } from '@/server/services/site-context';
 
@@ -22,9 +24,10 @@ export default async function Header() {
     getCurrentUserAndTeamId(),
   ]);
   const { user, profile } = currentUser;
-  const [memberships, currentSite] = await Promise.all([
+  const [memberships, currentSite, site] = await Promise.all([
     siteContext.memberships(session.userId),
     siteContext.adminSiteId(session.userId),
+    siteContext.adminSite(session.userId),
   ]);
 
   return (
@@ -51,9 +54,14 @@ export default async function Header() {
 
         <Flex
           justify="end"
-          className="order-3 flex w-full ml-auto items-center gap-0.5 md:gap-4 lg:gap-7"
+          className="order-3 flex w-full ml-auto items-center gap-1.5 md:gap-3 lg:gap-4"
         >
+          <ExportWebsiteButton />
           <SiteSwitcher current={currentSite} memberships={memberships} />
+          <LangSwitcher
+            locales={site.locales}
+            defaultLocale={site.defaultLocale}
+          />
           <ThemeToggle />
           {/* <TopBarPanel /> */}
           {/* <Box className="order-2 ml-1 items-center justify-center md:order-0 md:ml-0 lg:flex"> */}

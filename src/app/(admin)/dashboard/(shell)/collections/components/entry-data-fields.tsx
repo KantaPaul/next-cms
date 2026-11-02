@@ -22,7 +22,7 @@ export type EntryFieldConfig = {
 
 // Slug plus one `data-{key}` value per field; data values are validated server-side.
 export const entryFormSchema = z
-  .object({ slug: z.string().min(1, 'Slug is required') })
+  .object({ slug: z.string().optional() })
   .catchall(z.unknown());
 
 export type EntryFormValues = z.infer<typeof entryFormSchema>;
@@ -31,9 +31,11 @@ export type EntryFormValues = z.infer<typeof entryFormSchema>;
 export function EntryDataFields({
   fields,
   richtextRows = 6,
+  onFieldChange,
 }: {
   fields: EntryFieldConfig[];
   richtextRows?: number;
+  onFieldChange?: (key: string, value: unknown) => void;
 }) {
   const { control } = useFormContext();
 
@@ -56,7 +58,11 @@ export function EntryDataFields({
               <FormControl>
                 <Checkbox
                   checked={field.value === true || field.value === 'true'}
-                  onCheckedChange={value => field.onChange(value === true)}
+                  onCheckedChange={value => {
+                    const checked = value === true;
+                    field.onChange(checked);
+                    onFieldChange?.(config.key, checked);
+                  }}
                 />
               </FormControl>
               {label}
@@ -74,6 +80,10 @@ export function EntryDataFields({
                   {...field}
                   value={String(field.value ?? '')}
                   rows={richtextRows}
+                  onChange={e => {
+                    field.onChange(e);
+                    onFieldChange?.(config.key, e.target.value);
+                  }}
                 />
               ) : (
                 <Input
@@ -86,6 +96,10 @@ export function EntryDataFields({
                         ? 'date'
                         : 'text'
                   }
+                  onChange={e => {
+                    field.onChange(e);
+                    onFieldChange?.(config.key, e.target.value);
+                  }}
                 />
               )}
             </FormControl>

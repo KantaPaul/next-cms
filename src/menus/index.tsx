@@ -119,12 +119,6 @@ export function getMenuItems(): {
       permission: PERMISSIONS.API_MANAGE,
     },
     {
-      name: 'Licenses',
-      href: PAGES.DASHBOARD.LICENSES,
-      icon: <ShieldCheck className="w-[18px]" />,
-      permission: PERMISSIONS.LICENSES_MANAGE,
-    },
-    {
       name: 'Collections',
       href: PAGES.DASHBOARD.COLLECTIONS,
       icon: <Database className="w-[18px]" />,

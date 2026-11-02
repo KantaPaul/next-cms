@@ -6,6 +6,7 @@ import {
   collectionEntries,
   collectionFields,
   collections,
+  pages,
   type CollectionEntryStatus,
   type CollectionFieldType,
 } from '@/db/schema';
@@ -138,8 +139,8 @@ export const collectionsService = {
   },
 
   /** Get one collection by id. */
-  async get(id: string) {
-    const siteId = await adminSiteId();
+  async get(id: string, siteIdOverride?: string) {
+    const siteId = siteIdOverride ?? (await adminSiteId());
     const [row] = await db
       .select()
       .from(collections)
@@ -168,6 +169,94 @@ export const collectionsService = {
       .limit(1);
     if (!row) throw new NotFoundException('Collection not found');
     return row;
+  },
+
+  /** Find active collection linked to a template page. */
+  async findByTemplatePageId(templatePageId: string, siteIdOverride?: string) {
+    const siteId = siteIdOverride ?? (await adminSiteId());
+    const [row] = await db
+      .select()
+      .from(collections)
+      .where(
+        and(
+          eq(collections.templatePageId, templatePageId),
+          eq(collections.siteId, siteId),
+          isNull(collections.deletedAt),
+          eq(collections.status, 'active')
+        )
+      )
+      .limit(1);
+    return row ?? null;
+  },
+
+  /** Get the latest published entry for a collection. */
+  async getLatestPublishedEntry(collectionId: string, siteIdOverride?: string) {
+    const siteId = siteIdOverride ?? (await adminSiteId());
+    const [entry] = await db
+      .select()
+      .from(collectionEntries)
+      .where(
+        and(
+          eq(collectionEntries.collectionId, collectionId),
+          eq(collectionEntries.siteId, siteId),
+          eq(collectionEntries.status, 'published'),
+          isNull(collectionEntries.deletedAt)
+        )
+      )
+      .orderBy(desc(collectionEntries.publishedAt), desc(collectionEntries.createdAt))
+      .limit(1);
+
+    if (!entry) return null;
+    const collection = await this.get(collectionId, siteId);
+    const fields = await this.getFields(collectionId);
+    return {
+      ...entry,
+      collection: { ...collection, fields },
+    };
+  },
+
+  /** Get the latest entry or a mock entry for previewing a collection template. */
+  async getPreviewEntryForCollection(collectionId: string) {
+    const [entry] = await db
+      .select()
+      .from(collectionEntries)
+      .where(
+        and(
+          eq(collectionEntries.collectionId, collectionId),
+          isNull(collectionEntries.deletedAt)
+        )
+      )
+      .orderBy(desc(collectionEntries.createdAt))
+      .limit(1);
+
+    const collection = await this.get(collectionId);
+    const fields = await this.getFields(collectionId);
+
+    if (entry) {
+      return {
+        ...entry,
+        collection: { ...collection, fields },
+      };
+    }
+
+    // Fallback: construct mock preview entry if no entries exist yet
+    const mockData: Record<string, unknown> = {};
+    for (const f of fields) {
+      mockData[f.key] = `Sample ${f.label}`;
+    }
+    return {
+      id: 'preview-entry',
+      siteId: collection.siteId,
+      collectionId: collection.id,
+      slug: 'sample-entry',
+      status: 'published',
+      data: mockData,
+      publishedAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+      collection: { ...collection, fields },
+    };
   },
 
   /** Get fields for a collection, ordered by position. */
@@ -500,8 +589,12 @@ export const collectionsService = {
   },
 
   /** Get a published entry by collection slug and entry slug. */
-  async getPublishedEntry(collectionSlug: string, entrySlug: string) {
-    const siteId = await adminSiteId();
+  async getPublishedEntry(
+    collectionSlug: string,
+    entrySlug: string,
+    siteIdOverride?: string
+  ) {
+    const siteId = siteIdOverride ?? (await adminSiteId());
     const [row] = await db
       .select()
       .from(collectionEntries)
@@ -524,6 +617,58 @@ export const collectionsService = {
       ...row.collection_entries,
       collection: { ...row.collections, fields },
     };
+  },
+
+  /**
+   * Get a published entry by matching either the collection slug or the template page slug.
+   */
+  async getPublishedEntryByAnySlug(
+    collectionOrPageSlug: string,
+    entrySlug: string,
+    siteIdOverride?: string
+  ) {
+    const siteId = siteIdOverride ?? (await adminSiteId());
+
+    // 1. First attempt: match by collection slug
+    try {
+      return await this.getPublishedEntry(collectionOrPageSlug, entrySlug, siteId);
+    } catch {
+      // Continue to template page match
+    }
+
+    // 2. Second attempt: match by template page slug
+    const [matchedPage] = await db
+      .select({ id: pages.id })
+      .from(pages)
+      .where(
+        and(
+          eq(pages.slug, collectionOrPageSlug),
+          eq(pages.siteId, siteId),
+          isNull(pages.deletedAt)
+        )
+      )
+      .limit(1);
+
+    if (matchedPage) {
+      const [col] = await db
+        .select()
+        .from(collections)
+        .where(
+          and(
+            eq(collections.templatePageId, matchedPage.id),
+            eq(collections.siteId, siteId),
+            isNull(collections.deletedAt),
+            eq(collections.status, 'active')
+          )
+        )
+        .limit(1);
+
+      if (col) {
+        return this.getPublishedEntry(col.slug, entrySlug, siteId);
+      }
+    }
+
+    throw new NotFoundException('Entry not found');
   },
 
   /** Create an entry (draft). Requires pages.create. */
@@ -555,21 +700,22 @@ export const collectionsService = {
       throw new ApplicationException(`Invalid entry data: ${error.message}`);
     }
 
-    const [existing] = await db
-      .select({ id: collectionEntries.id })
-      .from(collectionEntries)
-      .where(
-        and(
-          eq(collectionEntries.collectionId, collectionId),
-          eq(collectionEntries.slug, input.slug),
-          isNull(collectionEntries.deletedAt)
+    let targetSlug = input.slug;
+    let suffix = 1;
+    while (true) {
+      const [existing] = await db
+        .select({ id: collectionEntries.id })
+        .from(collectionEntries)
+        .where(
+          and(
+            eq(collectionEntries.collectionId, collectionId),
+            eq(collectionEntries.slug, targetSlug),
+            isNull(collectionEntries.deletedAt)
+          )
         )
-      )
-      .limit(1);
-    if (existing) {
-      throw new ApplicationException(
-        `An entry with slug "${input.slug}" already exists.`
-      );
+        .limit(1);
+      if (!existing) break;
+      targetSlug = `${input.slug}-${suffix++}`;
     }
 
     const [row] = await db
@@ -577,7 +723,7 @@ export const collectionsService = {
       .values({
         siteId,
         collectionId,
-        slug: input.slug,
+        slug: targetSlug,
         status: 'draft',
         data,
       })
@@ -666,7 +812,11 @@ export const collectionsService = {
       targetId: id,
       targetName: entry.slug,
     });
-    await searchIndex.syncCollectionEntry(id);
+    try {
+      await searchIndex.syncCollectionEntry(id);
+    } catch (err) {
+      console.error('Failed to sync collection entry search document:', err);
+    }
     return row;
   },
 

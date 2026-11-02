@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import {
   DEFAULT_LANGUAGE,
   SUPPORTED_LANGUAGES,
@@ -8,15 +8,24 @@ import {
 
 export type LocaleOption = { value: string; label: string };
 
-const fallback: { locales: LocaleOption[]; defaultLocale: string } = {
+export type SiteLocalesContextValue = {
+  locales: LocaleOption[];
+  defaultLocale: string;
+  currentLocale: string;
+  setCurrentLocale: (locale: string) => void;
+};
+
+const fallback: SiteLocalesContextValue = {
   locales: SUPPORTED_LANGUAGES.map(language => ({
     value: language.value,
     label: language.label,
   })),
   defaultLocale: DEFAULT_LANGUAGE,
+  currentLocale: DEFAULT_LANGUAGE,
+  setCurrentLocale: () => {},
 };
 
-const SiteLocalesContext = createContext(fallback);
+const SiteLocalesContext = createContext<SiteLocalesContextValue>(fallback);
 
 export function SiteLocalesProvider({
   locales,
@@ -27,12 +36,25 @@ export function SiteLocalesProvider({
   defaultLocale: string;
   children: React.ReactNode;
 }) {
-  const value = {
-    locales: locales.length
-      ? locales.map(locale => ({ value: locale.code, label: locale.label }))
-      : fallback.locales,
-    defaultLocale: defaultLocale || fallback.defaultLocale,
-  };
+  const effectiveDefault = defaultLocale || fallback.defaultLocale;
+  const [currentLocale, setCurrentLocale] = useState(effectiveDefault);
+
+  useEffect(() => {
+    setCurrentLocale(effectiveDefault);
+  }, [effectiveDefault]);
+
+  const value = useMemo(
+    () => ({
+      locales: locales.length
+        ? locales.map(locale => ({ value: locale.code, label: locale.label }))
+        : fallback.locales,
+      defaultLocale: effectiveDefault,
+      currentLocale: currentLocale || effectiveDefault,
+      setCurrentLocale,
+    }),
+    [locales, effectiveDefault, currentLocale]
+  );
+
   return (
     <SiteLocalesContext.Provider value={value}>
       {children}

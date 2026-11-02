@@ -4,6 +4,8 @@ import { Check, ChevronsUpDown, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { DayPicker } from 'react-day-picker';
 import { listGlobalBlockOptions } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
+import { listCollectionOptions } from '@/app/(admin)/dashboard/(shell)/collections/_modules/collections.actions';
+import { useEntry } from '@/components/analytics/entry-context';
 import { TextEditor } from '@/components/atoms/text-editor';
 import { MediaField } from '@/components/media/media-picker';
 import {
@@ -429,6 +431,191 @@ export function GlobalBlockSelectField({
       </select>
       <p className="mt-2 text-xs text-steel-500">
         Edits to a global block update every page that uses it.
+      </p>
+    </div>
+  );
+}
+
+/* ---------- Video Sources Multi-select (YouTube, Vimeo, Direct) ---------- */
+
+export function VideoSourcesField({
+  value,
+  onChange,
+  field,
+}: CustomFieldProps<string[] | string | undefined>) {
+  const current: string[] = useMemo(() => {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string' && value && value !== 'all') return [value];
+    return ['youtube', 'vimeo', 'direct'];
+  }, [value]);
+
+  const toggle = (sourceId: string) => {
+    let next: string[];
+    if (current.includes(sourceId)) {
+      next = current.filter(s => s !== sourceId);
+      if (next.length === 0) {
+        next = ['youtube', 'vimeo', 'direct'];
+      }
+    } else {
+      next = [...current, sourceId];
+    }
+    onChange(next);
+  };
+
+  const selectAll = () => {
+    onChange(['youtube', 'vimeo', 'direct']);
+  };
+
+  const sourcesList = [
+    {
+      id: 'youtube',
+      label: 'YouTube',
+      activeColor:
+        'border-red-300 bg-red-50/80 text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400',
+      dot: 'bg-red-500',
+    },
+    {
+      id: 'vimeo',
+      label: 'Vimeo',
+      activeColor:
+        'border-sky-300 bg-sky-50/80 text-sky-700 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-400',
+      dot: 'bg-sky-500',
+    },
+    {
+      id: 'direct',
+      label: 'Direct (MP4/WebM)',
+      activeColor:
+        'border-violet-300 bg-violet-50/80 text-violet-700 dark:border-violet-800 dark:bg-violet-950/40 dark:text-violet-400',
+      dot: 'bg-violet-500',
+    },
+  ];
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <FieldLabel label={field.label || 'Data sources'} />
+        <button
+          type="button"
+          onClick={selectAll}
+          className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+        >
+          Select all
+        </button>
+      </div>
+
+      <div className="space-y-1.5">
+        {sourcesList.map(item => {
+          const isSelected = current.includes(item.id);
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => toggle(item.id)}
+              className={cn(
+                'flex w-full items-center justify-between px-3 py-2 rounded-lg border text-xs font-medium transition',
+                isSelected
+                  ? item.activeColor
+                  : 'border-steel-200 bg-white text-steel-600 hover:bg-steel-50 dark:border-dark-300 dark:bg-dark-100 dark:text-steel-400'
+              )}
+            >
+              <span className="flex items-center gap-2">
+                <span className={cn('h-2 w-2 rounded-full', item.dot)} />
+                {item.label}
+              </span>
+              <span
+                className={cn(
+                  'h-4 w-4 rounded flex items-center justify-center border text-[11px]',
+                  isSelected
+                    ? 'border-current bg-current/15 font-bold'
+                    : 'border-steel-300 bg-steel-50 dark:border-dark-300 dark:bg-dark-200'
+                )}
+              >
+                {isSelected ? '✓' : ''}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="text-[11px] text-steel-500">
+        Choose which video sources to pull videos from. You can select multiple.
+      </p>
+    </div>
+  );
+}
+
+export function CollectionSelectField({
+  value,
+  onChange,
+  field,
+}: CustomFieldProps<string | undefined>) {
+  const [options, setOptions] = useState<
+    { id: string; name: string; slug: string }[] | null
+  >(null);
+
+  useEffect(() => {
+    let active = true;
+    listCollectionOptions().then(rows => {
+      if (active) setOptions(Array.isArray(rows) ? rows : []);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return (
+    <div>
+      <FieldLabel label={field.label} />
+      <select
+        value={value ?? ''}
+        onChange={e => onChange(e.target.value || undefined)}
+        className="h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm text-foreground"
+        aria-label={field.label}
+      >
+        <option value="">
+          {options === null
+            ? 'Loading collections…'
+            : options.length
+              ? 'Select a collection'
+              : 'No collections found'}
+        </option>
+        {options?.map(o => (
+          <option key={o.id} value={o.id}>
+            {o.name} ({o.slug})
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+export function CollectionItemFieldSelect({
+  value,
+  onChange,
+  field,
+}: CustomFieldProps<string | undefined>) {
+  const { entry } = useEntry();
+  const fields = entry?.collection?.fields ?? [];
+
+  return (
+    <div>
+      <FieldLabel label={field.label} />
+      <select
+        value={value ?? ''}
+        onChange={e => onChange(e.target.value || undefined)}
+        className="h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm text-foreground"
+        aria-label={field.label}
+      >
+        <option value="">All fields (full entry preview)</option>
+        {fields.map(f => (
+          <option key={f.key} value={f.key}>
+            {f.label} ({f.key})
+          </option>
+        ))}
+      </select>
+      <p className="mt-1 text-xs text-steel-500">
+        Choose a specific field to render, or leave on &ldquo;All fields&rdquo; to show the full entry.
       </p>
     </div>
   );
