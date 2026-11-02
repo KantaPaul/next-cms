@@ -9,8 +9,13 @@ import {
   SITE_SETTINGS_ID,
   siteSettings,
   DEFAULT_VIDEO_SETTINGS,
+  DEFAULT_SEARCH_SETTINGS,
+  DEFAULT_LICENSE_SETTINGS,
+  licenseSettingsSchema,
   type ThemeTokens,
   type VideoSettings,
+  type SearchSettings,
+  type LicenseSettings,
 } from '@/db/schema';
 import type { SiteCopy } from '@/db/schemas/sites.schema';
 import { parseVideoSettings } from '@/lib/video/settings';
@@ -33,8 +38,12 @@ export type SiteSettingsInput = {
   footerMenuId?: string | null;
   headerTemplateId?: string | null;
   footerTemplateId?: string | null;
-  themeTokens: ThemeTokens;
+  searchTemplateId?: string | null;
+  archiveTemplateId?: string | null;
+  themeTokens?: ThemeTokens;
   videoSettings?: VideoSettings;
+  searchSettings?: SearchSettings | null;
+  licenseSettings?: LicenseSettings;
   robotsTxt?: string | null;
   googleAnalyticsId?: string | null;
   seoTitle?: string | null;
@@ -50,6 +59,8 @@ export function localizedSettings(
     seoDescription?: string | null;
     headerTemplateId?: string | null;
     footerTemplateId?: string | null;
+    searchTemplateId?: string | null;
+    archiveTemplateId?: string | null;
     translations?: Record<string, SiteCopy> | null;
   },
   locale: string,
@@ -70,6 +81,10 @@ export function localizedSettings(
       translated?.headerTemplateId ?? settings.headerTemplateId ?? null,
     footerTemplateId:
       translated?.footerTemplateId ?? settings.footerTemplateId ?? null,
+    searchTemplateId:
+      translated?.searchTemplateId ?? settings.searchTemplateId ?? null,
+    archiveTemplateId:
+      translated?.archiveTemplateId ?? settings.archiveTemplateId ?? null,
   };
 }
 
@@ -102,6 +117,7 @@ async function loadSettings(siteId: string) {
     return {
       ...settings,
       themeTokens: resolveThemeTokens(settings?.themeTokens),
+      licenseSettings: (settings?.licenseSettings as LicenseSettings) ?? DEFAULT_LICENSE_SETTINGS,
     };
   } catch {
     return {
@@ -117,11 +133,15 @@ async function loadSettings(siteId: string) {
       footerMenuId: null,
       headerTemplateId: null,
       footerTemplateId: null,
+      searchTemplateId: null,
+      archiveTemplateId: null,
       seoTitle: null,
       seoDescription: null,
       translations: null,
       themeTokens: resolveThemeTokens(null),
       videoSettings: DEFAULT_VIDEO_SETTINGS,
+      searchSettings: DEFAULT_SEARCH_SETTINGS,
+      licenseSettings: DEFAULT_LICENSE_SETTINGS,
       robotsTxt: null,
       googleAnalyticsId: null,
       updatedAt: new Date(),
@@ -140,13 +160,17 @@ export const siteSettingsService = {
       PERMISSIONS.SETTINGS_MANAGE
     );
     const siteId = await adminSiteId();
-    await loadSettings(siteId);
+    const current = await loadSettings(siteId);
 
     const [row] = await db
       .update(siteSettings)
       .set({
         ...input,
-        themeTokens: resolveThemeTokens(input.themeTokens),
+        themeTokens: resolveThemeTokens(
+          input.themeTokens ?? current.themeTokens
+        ),
+        searchSettings: input.searchSettings ?? undefined,
+        licenseSettings: input.licenseSettings ?? undefined,
         updatedAt: new Date(),
       })
       .where(eq(siteSettings.siteId, siteId))
@@ -158,6 +182,37 @@ export const siteSettingsService = {
       targetType: 'settings',
       targetId: siteId,
       targetName: 'Site settings',
+    });
+    revalidatePublicSite();
+    return row;
+  },
+
+  updateThemeTokens: async (
+    themeTokens: ThemeTokens,
+    access: UserAccess
+  ) => {
+    await accessService.assertPermission(
+      access.userId,
+      PERMISSIONS.SETTINGS_MANAGE
+    );
+    const siteId = await adminSiteId();
+    await loadSettings(siteId);
+
+    const [row] = await db
+      .update(siteSettings)
+      .set({
+        themeTokens: resolveThemeTokens(themeTokens),
+        updatedAt: new Date(),
+      })
+      .where(eq(siteSettings.siteId, siteId))
+      .returning();
+
+    await auditService.log({
+      actorId: access.userId,
+      action: 'update',
+      targetType: 'settings',
+      targetId: siteId,
+      targetName: 'Site theme',
     });
     revalidatePublicSite();
     return row;
@@ -195,6 +250,39 @@ export const siteSettingsService = {
       targetName: 'Site settings (video)',
     });
     revalidatePublicSite();
+    return { ok: true, data: parsed.data };
+  },
+
+  updateLicenseSettings: async (
+    input: unknown,
+    access: UserAccess
+  ): Promise<{ ok: true; data: LicenseSettings } | { ok: false; error: string }> => {
+    await accessService.assertPermission(
+      access.userId,
+      PERMISSIONS.SETTINGS_MANAGE
+    );
+    const parsed = licenseSettingsSchema.safeParse(input);
+    if (!parsed.success) {
+      return { ok: false, error: parsed.error.issues.map(i => i.message).join(', ') };
+    }
+    const siteId = await adminSiteId();
+    await loadSettings(siteId);
+
+    await db
+      .update(siteSettings)
+      .set({
+        licenseSettings: parsed.data,
+        updatedAt: new Date(),
+      })
+      .where(eq(siteSettings.siteId, siteId));
+
+    await auditService.log({
+      actorId: access.userId,
+      action: 'update',
+      targetType: 'settings',
+      targetId: siteId,
+      targetName: 'Site settings (licensing policy)',
+    });
     return { ok: true, data: parsed.data };
   },
 };

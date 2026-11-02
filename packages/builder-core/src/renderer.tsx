@@ -12,6 +12,7 @@
 
 import { type ComponentType, type CSSProperties, Fragment, type ReactNode } from 'react';
 import type { BuilderDocument, BuilderNode, NodeId } from './document';
+import { type DynamicContext, resolveDynamicProps } from './dynamic-resolver';
 import { ROOT_SLOT } from './tree';
 
 export type BlockComponents = Record<
@@ -24,6 +25,10 @@ export type SlotRender = (options?: {
   className?: string;
   style?: CSSProperties;
   minEmptyHeight?: number;
+  /** Per-item dynamic context (e.g. `{ loopItem }`) when repeating a slot across query items. */
+  itemContext?: DynamicContext;
+  /** Index when a slot is repeated across multiple items; index > 0 renders as read-only preview in editor. */
+  itemIndex?: number;
 }) => ReactNode;
 
 /** What a custom slot renderer receives; see `RenderOptions.renderSlot`. */
@@ -41,6 +46,8 @@ export type RenderOptions = {
   components: BlockComponents;
   /** Passed to every block as `editing`. */
   editing?: boolean;
+  /** Per-item dynamic context inherited from an ancestor repeating slot (e.g. QueryLoop). */
+  itemContext?: DynamicContext;
   /** Adjusts a block's props after slots are built and before it renders. */
   transformProps?: (
     node: BuilderNode,
@@ -64,14 +71,33 @@ function buildProps(
   doc: BuilderDocument,
   options: RenderOptions
 ): Record<string, unknown> {
-  const props: Record<string, unknown> = { ...node.props };
-  delete props.id;
+  const rawProps: Record<string, unknown> = { ...node.props };
+  delete rawProps.id;
+  const props: Record<string, unknown> = options.itemContext
+    ? resolveDynamicProps(rawProps, options.itemContext)
+    : rawProps;
 
   for (const [slotPath, childIds] of Object.entries(node.slots)) {
     const slot: SlotRender = slotOptions => {
-      const children = renderNodes(doc, childIds, options);
-      if (options.renderSlot) {
-        return options.renderSlot({
+      const isRepeatClone =
+        typeof slotOptions?.itemIndex === 'number' && slotOptions.itemIndex > 0;
+      const childOptions: RenderOptions = {
+        ...options,
+        ...(slotOptions?.itemContext
+          ? {
+              itemContext: {
+                ...options.itemContext,
+                ...slotOptions.itemContext,
+              },
+            }
+          : {}),
+        ...(isRepeatClone
+          ? { wrapNode: undefined, renderSlot: undefined }
+          : {}),
+      };
+      const children = renderNodes(doc, childIds, childOptions);
+      if (childOptions.renderSlot) {
+        return childOptions.renderSlot({
           parentId: node.id,
           slot: slotPath,
           className: slotOptions?.className,
@@ -97,6 +123,11 @@ function buildProps(
       props[arrayKey] = items;
     } else {
       props[slotPath] = slot;
+      if (slotPath === 'card') {
+        props.hasCustomCard = childIds.length > 0;
+      } else if (slotPath === 'emptyState') {
+        props.hasCustomEmptyState = childIds.length > 0;
+      }
     }
   }
 

@@ -32,11 +32,13 @@ const liveSearchSchema = z.object({
 });
 
 export type LiveSearchResultItem = {
-  kind: 'page' | 'post';
+  kind: 'page' | 'post' | 'collection' | 'video';
   title: string;
   path: string;
   language: string;
   snippet?: string;
+  thumbnailUrl?: string | null;
+  pinned?: boolean;
 };
 
 export async function liveSearch(
@@ -45,13 +47,15 @@ export async function liveSearch(
   const { query, language, limit } = liveSearchSchema.parse(input);
   if (!query || query.length < 2) return [];
   try {
-    const results = await searchIndex.search({ q: query, language, limit });
+    const results = await searchIndex.suggest({ q: query, language, limit });
     return results.map(r => ({
-      kind: r.kind as 'page' | 'post',
+      kind: r.kind,
       title: r.title,
       path: r.path,
       language: r.language,
       snippet: r.snippet || undefined,
+      thumbnailUrl: r.thumbnailUrl ?? null,
+      pinned: r.pinned,
     }));
   } catch (err) {
     console.error('[site-chrome.actions] liveSearch error:', err);

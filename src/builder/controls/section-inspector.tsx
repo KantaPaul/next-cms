@@ -187,7 +187,12 @@ export function TypographySectionControl({
         onChange={typography => onChange({ ...s, typography })}
       >
         {({ value: val, onChange: onValChange }) => (
-          <TypographyControl value={val} onChange={onValChange} />
+          <TypographyControl
+            value={val}
+            onChange={onValChange}
+            defaultFamily="Inter"
+            defaultWeight="400"
+          />
         )}
       </GroupShell>
       <ColorPicker

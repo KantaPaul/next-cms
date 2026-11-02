@@ -11,6 +11,7 @@ export const PERMISSIONS = {
   VIDEOS_EDIT: 'videos.edit',
   VIDEOS_PUBLISH: 'videos.publish',
   VIDEOS_DELETE: 'videos.delete',
+  LICENSES_MANAGE: 'licenses.manage',
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -82,6 +83,11 @@ export const PERMISSION_MATRIX: {
     key: PERMISSIONS.VIDEOS_DELETE,
     label: 'Delete and archive videos',
     roles: { Admin: true, Editor: true, Author: false, Viewer: false },
+  },
+  {
+    key: PERMISSIONS.LICENSES_MANAGE,
+    label: 'Manage single-install licenses and bindings',
+    roles: { Admin: true, Editor: false, Author: false, Viewer: false },
   },
 ];
 

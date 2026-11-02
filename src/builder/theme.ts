@@ -113,6 +113,48 @@ export function resolveTokenValue(
   return fallback;
 }
 
+export type ThemeColorToken = {
+  name: string;
+  value: string;
+  /** The custom property `themeStyle` emits for this token. */
+  cssVar: string;
+};
+
+const CORE_COLOR_TOKENS: Array<{
+  key: Exclude<keyof GlobalColorTokens, 'custom'>;
+  name: string;
+  cssVar: string;
+}> = [
+  { key: 'primary', name: 'Primary', cssVar: '--site-color-primary' },
+  { key: 'secondary', name: 'Secondary', cssVar: '--site-color-secondary' },
+  { key: 'accent', name: 'Accent', cssVar: '--site-color-accent' },
+  { key: 'text', name: 'Text', cssVar: '--site-color-text' },
+  { key: 'textMuted', name: 'Text Muted', cssVar: '--site-color-text-muted' },
+  { key: 'background', name: 'Background', cssVar: '--site-color-background' },
+  { key: 'surface', name: 'Surface', cssVar: '--site-color-surface' },
+  { key: 'border', name: 'Border', cssVar: '--site-color-border' },
+];
+
+/** The site's color variables (Settings → Theme), in the shape color pickers list them. */
+export function themeColorTokens(
+  tokens?: Partial<ThemeTokens> | null
+): ThemeColorToken[] {
+  const colors = resolveThemeTokens(tokens).colors ?? DEFAULT_GLOBAL_COLORS;
+  const core = CORE_COLOR_TOKENS.map(({ key, name, cssVar }) => ({
+    name,
+    cssVar,
+    value: colors[key] ?? DEFAULT_GLOBAL_COLORS[key] ?? '#000000',
+  }));
+  const custom = (colors.custom ?? [])
+    .filter(c => c.id && c.value)
+    .map(c => ({
+      name: c.name || c.id,
+      value: c.value,
+      cssVar: `--site-token-${sanitizeTokenKey(c.id)}`,
+    }));
+  return [...core, ...custom];
+}
+
 /** CSS custom properties consumed by `site.css` and every builder block (R419, R420, R423). */
 export function themeStyle(
   tokens?: Partial<ThemeTokens> | null

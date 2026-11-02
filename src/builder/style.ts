@@ -585,6 +585,8 @@ export function safeColor(value: unknown): string | undefined {
     )
   )
     return v;
+  // Theme variable reference, e.g. var(--site-color-primary)
+  if (/^var\(--[a-zA-Z0-9_-]+\)$/.test(v)) return v;
   return undefined;
 }
 
@@ -642,7 +644,9 @@ export function formatShadow(shadow: ShadowSettings): string | null {
   const opacity = clamp(shadow.opacity, 0, 1) ?? 1;
   const color = safeColor(shadow.color) ?? '#000000';
   const rgb = hexToRgb(color) ?? { r: 0, g: 0, b: 0 };
-  const colorWithAlpha = `rgb(${rgb.r} ${rgb.g} ${rgb.b} / ${opacity})`;
+  const colorWithAlpha = color.startsWith('var(')
+    ? `color-mix(in srgb, ${color} ${Math.round(opacity * 100)}%, transparent)`
+    : `rgb(${rgb.r} ${rgb.g} ${rgb.b} / ${opacity})`;
   return `${shadow.inset ? 'inset ' : ''}${x}px ${y}px ${blur}px ${spread}px ${colorWithAlpha}`;
 }
 

@@ -153,6 +153,23 @@ export const APPROVED_DYNAMIC_SOURCES: Record<string, DynamicSourceDef> = {
       { key: 'avatar', label: 'Avatar Image', type: 'image' },
     ],
   },
+  loopItem: {
+    id: 'loopItem',
+    label: 'Loop Item (Query Loop)',
+    description: 'Current item inside a Query Loop card slot',
+    fields: [
+      { key: 'title', label: 'Item Title', type: 'text' },
+      { key: 'url', label: 'Item URL', type: 'url' },
+      { key: 'slug', label: 'Slug', type: 'text' },
+      { key: 'excerpt', label: 'Excerpt / Summary', type: 'text' },
+      { key: 'image', label: 'Featured Image / Thumbnail', type: 'image' },
+      { key: 'publishedAt', label: 'Published Date', type: 'date' },
+      { key: 'authorName', label: 'Author Name', type: 'text' },
+      { key: 'authorImage', label: 'Author Avatar', type: 'image' },
+      { key: 'category', label: 'Primary Category', type: 'text' },
+      { key: 'tags', label: 'Tags', type: 'text' },
+    ],
+  },
   custom: {
     id: 'custom',
     label: 'Custom Field',

@@ -8,11 +8,12 @@ import { requirePermission } from '@/server/services/require-permission';
 import { siteContext } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 import { getCurrentUserAndTeamId } from '@/lib/auth';
+import { Download } from 'lucide-react';
 import { menusService } from '../menus/_modules/menus.service';
 import { templatesService } from '../templates/_modules/templates.service';
 import { SettingsForm } from './_components/settings-form';
 
-const TITLE = 'Settings & Theme';
+const TITLE = 'Settings';
 
 export const metadata = {
   ...metaObject(TITLE),
@@ -45,7 +46,16 @@ export default async function SettingsPage() {
 
   return (
     <>
-      <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
+      <PageHeader title={TITLE} breadcrumbs={breadcrumbs}>
+        <a
+          href="/api/v1/export/site"
+          download
+          className="inline-flex items-center gap-2 rounded-md bg-secondary px-4 py-2 text-sm font-medium hover:bg-secondary/80 border text-foreground"
+        >
+          <Download className="h-4 w-4" />
+          Export Website (.zip)
+        </a>
+      </PageHeader>
       <SettingsForm
         settings={{
           siteName: settings.siteName,
@@ -58,6 +68,8 @@ export default async function SettingsPage() {
           footerMenuId: settings.footerMenuId,
           headerTemplateId: settings.headerTemplateId ?? null,
           footerTemplateId: settings.footerTemplateId ?? null,
+          searchTemplateId: settings.searchTemplateId ?? null,
+          archiveTemplateId: settings.archiveTemplateId ?? null,
           robotsTxt: settings.robotsTxt,
           googleAnalyticsId: settings.googleAnalyticsId,
           seoTitle: settings.seoTitle ?? null,
@@ -65,6 +77,15 @@ export default async function SettingsPage() {
           translations: settings.translations ?? null,
           themeTokens: settings.themeTokens,
           videoSettings: settings.videoSettings ?? null,
+          searchSettings: {
+            synonyms: Object.entries(settings.searchSettings?.synonyms ?? {}).map(
+              ([term, synonyms]) => ({
+                term,
+                synonyms: Array.isArray(synonyms) ? synonyms : [],
+              })
+            ),
+            pinnedResults: settings.searchSettings?.pinnedResults ?? [],
+          },
         }}
         menus={menus.map(m => ({
           id: m.id,

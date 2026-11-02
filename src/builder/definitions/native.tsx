@@ -49,6 +49,9 @@ import {
   Timeline,
 } from '../blocks/marketing';
 import { Newsletter } from '../blocks/newsletter';
+import { QueryFilter } from '../blocks/query-filters';
+import { LoopItemField, QueryLoop } from '../blocks/query-loop';
+import { SearchResults } from '../blocks/search-results';
 import { DEFAULT_SECTION as _DS, DEFAULT_SECTION } from '../blocks/section';
 import {
   AnnouncementBar,
@@ -108,7 +111,7 @@ export const exampleBlock = defineBlock({
   icon: 'example',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: Example,
   fields: {
@@ -149,14 +152,14 @@ export const HeroBlock = defineBlock({
     title: z.string().optional(),
     subtitle: z.string().optional(),
     primaryButtonText: z.string().optional(),
-    primaryButtonLink: z.union([safeUrlSchema, z.record(z.unknown())]).optional(),
+    primaryButtonLink: z.union([urlSchema, z.record(z.string(), z.unknown())]).optional(),
     secondaryButtonText: z.string().optional(),
-    secondaryButtonLink: z.union([safeUrlSchema, z.record(z.unknown())]).optional(),
+    secondaryButtonLink: z.union([urlSchema, z.record(z.string(), z.unknown())]).optional(),
     imageUrl: safeUrlSchema.optional(),
     imageAlt: z.string().optional(),
     alignment: z.enum(['left', 'center']).optional(),
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }),
   render: Hero,
   fields: {
@@ -250,7 +253,7 @@ export const FeaturesBlock = defineBlock({
   },
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: Features,
   fields: {
@@ -338,7 +341,7 @@ export const StatsBlock = defineBlock({
   },
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: Stats,
   fields: {
@@ -391,7 +394,7 @@ export const PricingBlock = defineBlock({
   },
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: Pricing,
   fields: {
@@ -522,7 +525,7 @@ export const TestimonialsBlock = defineBlock({
   },
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: Testimonials,
   fields: {
@@ -599,7 +602,7 @@ export const FAQBlock = defineBlock({
   },
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: Faq,
   fields: {
@@ -658,7 +661,7 @@ export const CTABlock = defineBlock({
   },
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: Cta,
   fields: {
@@ -731,7 +734,7 @@ export const ColumnsBlock = defineBlock({
   icon: 'columns',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: Columns,
   fields: {
@@ -801,7 +804,7 @@ export const ContainerBlock = defineBlock({
   icon: 'container',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: Container,
   fields: {
@@ -846,7 +849,7 @@ export const VideoBlock = defineBlock({
   icon: 'video',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: Video,
   fields: {
@@ -873,7 +876,7 @@ export const VideoLibraryNativeBlock = defineBlock({
   icon: 'videolibrary',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: VideoLibraryBlock,
   fields: {
@@ -926,7 +929,7 @@ export const EmbedBlock = defineBlock({
   icon: 'embed',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: Embed,
   fields: {
@@ -953,7 +956,7 @@ export const MapNativeBlock = defineBlock({
   icon: 'map',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: MapBlock,
   fields: {
@@ -980,7 +983,7 @@ export const CodeBlock = defineBlock({
   icon: 'code',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: Code,
   fields: {
@@ -1007,7 +1010,7 @@ export const NewsletterBlock = defineBlock({
   icon: 'newsletter',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: Newsletter,
   fields: {
@@ -1038,7 +1041,7 @@ export const ImageMorphBlock = defineBlock({
   icon: 'imagemorph',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: ImageMorph,
   fields: {
@@ -1082,7 +1085,7 @@ export const RichTextBlock = defineBlock({
   icon: 'richtext',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: RichText,
   fields: {
@@ -1126,7 +1129,7 @@ export const ImageNativeBlock = defineBlock({
   icon: 'image',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
     imageSize: imageSizeSchema.optional(),
   }).passthrough(),
   render: ImageBlock,
@@ -1226,7 +1229,7 @@ export const GalleryBlock = defineBlock({
   icon: 'gallery',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: Gallery,
   fields: {
@@ -1301,7 +1304,7 @@ export const ContactFormBlock = defineBlock({
   icon: 'contactform',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: ContactForm,
   fields: {
@@ -1396,7 +1399,7 @@ export const ButtonBlock = defineBlock({
   inlineProps: ['label'],
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: Button,
   fields: {
@@ -1436,7 +1439,7 @@ export const SpacerBlock = defineBlock({
   icon: 'spacer',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: Spacer,
   fields: {
@@ -1469,7 +1472,7 @@ export const CollectionItemBlock = defineBlock({
   icon: 'collectionitem',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: CollectionItem,
   fields: {
@@ -1496,7 +1499,7 @@ export const GlobalRefBlock = defineBlock({
   icon: 'globalref',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: GlobalRef,
   fields: {
@@ -1524,7 +1527,7 @@ export const LogoCloudBlock = defineBlock({
   },
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: LogoCloud,
   fields: {
@@ -1583,7 +1586,7 @@ export const TeamBlock = defineBlock({
   },
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: Team,
   fields: {
@@ -1635,7 +1638,7 @@ export const TimelineBlock = defineBlock({
   },
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: Timeline,
   fields: {
@@ -1676,7 +1679,7 @@ export const BlogPostsBlock = defineBlock({
   icon: 'blogposts',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: BlogPosts,
   fields: {
@@ -1838,7 +1841,7 @@ export const SliderBlock = defineBlock({
   icon: 'slider',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: Slider,
   fields: {
@@ -1872,7 +1875,7 @@ export const TabsBlock = defineBlock({
   icon: 'tabs',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: Tabs,
   fields: {
@@ -1906,7 +1909,7 @@ export const AccordionBlock = defineBlock({
   icon: 'accordion',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: Accordion,
   fields: {
@@ -1940,7 +1943,7 @@ export const PostTitleBlock = defineBlock({
   icon: 'posttitle',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: PostTitle,
   fields: {
@@ -1996,7 +1999,7 @@ export const PostFeaturedImageBlock = defineBlock({
   icon: 'postfeaturedimage',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: PostFeaturedImage,
   fields: {
@@ -2034,7 +2037,7 @@ export const PostMetaBlock = defineBlock({
   icon: 'postmeta',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: PostMeta,
   fields: {
@@ -2099,7 +2102,7 @@ export const PostContentBlock = defineBlock({
   icon: 'postcontent',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: PostContent,
   fields: {
@@ -2136,7 +2139,7 @@ export const RelatedPostsBlock = defineBlock({
   icon: 'relatedposts',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: RelatedPosts,
   fields: {
@@ -3261,11 +3264,586 @@ export const LanguageSwitcherNativeBlock = defineBlock({
   icon: 'globe',
   schema: z.object({
     section: sectionSettingsSchema.optional(),
-    elements: z.record(elementStyleSchema).optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }).passthrough(),
   render: LanguageSwitcherBlock,
   fields: {},
   defaults: {},
+});
+
+export const QueryLoopBlock = defineBlock({
+  type: 'QueryLoop',
+  label: 'Query Loop',
+  category: 'blog',
+  icon: 'layout-grid',
+  inlineProps: ['eyebrow', 'title', 'subtitle'],
+  schema: z
+    .object({
+      loopId: z.string().default(''),
+      source: z
+        .enum(['posts', 'pages', 'collection-entries', 'videos'])
+        .default('posts'),
+      collectionId: z.string().optional(),
+      playlistId: z.string().optional(),
+      lockedCategory: z.string().optional(),
+      lockedTag: z.string().optional(),
+      lockedAuthorId: z.string().optional(),
+      sortField: z.string().default('publishedAt'),
+      sortOrder: z.enum(['asc', 'desc']).default('desc'),
+      pageSize: z.number().int().min(1).max(100).default(9),
+      offset: z.number().int().min(0).default(0),
+      excludeCurrent: z.boolean().default(false),
+      eyebrow: z.string().optional(),
+      title: z.string().optional(),
+      subtitle: z.string().optional(),
+      layout: z
+        .enum(['grid', 'list', 'masonry', 'carousel', 'table'])
+        .default('grid'),
+      columnsDesktop: z.number().int().min(1).max(4).default(3),
+      columnsTablet: z.number().int().min(1).max(3).default(2),
+      columnsMobile: z.number().int().min(1).max(2).default(1),
+      gap: z.enum(['sm', 'md', 'lg', 'xl']).default('md'),
+      pagination: z
+        .enum(['numbered', 'load-more', 'infinite-scroll', 'none'])
+        .default('numbered'),
+      loadMoreLabel: z.string().default('Load more'),
+      showImage: z.boolean().default(true),
+      showExcerpt: z.boolean().default(true),
+      showAuthor: z.boolean().default(true),
+      showDate: z.boolean().default(true),
+      showTerms: z.boolean().default(true),
+      emptyText: z.string().default('No matching items found.'),
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: QueryLoop as any,
+  slots: {
+    card: {
+      label: 'Item Card Template',
+      disallow: ['QueryLoop', 'GlobalRef'],
+    },
+    emptyState: {
+      label: 'Empty State',
+      disallow: ['QueryLoop', 'GlobalRef'],
+    },
+  },
+  presets: {
+    'Latest posts': {
+      source: 'posts',
+      title: 'Latest posts',
+      layout: 'grid',
+      columnsDesktop: 3,
+      pageSize: 6,
+      sortField: 'publishedAt',
+      sortOrder: 'desc',
+      pagination: 'numbered',
+    },
+    'Related posts': {
+      source: 'posts',
+      title: 'Related posts',
+      excludeCurrent: true,
+      layout: 'grid',
+      columnsDesktop: 3,
+      pageSize: 3,
+      sortField: 'publishedAt',
+      sortOrder: 'desc',
+      pagination: 'none',
+    },
+    'Collection entries': {
+      source: 'collection-entries',
+      title: 'Collection items',
+      layout: 'grid',
+      columnsDesktop: 3,
+      pageSize: 9,
+      sortField: 'publishedAt',
+      sortOrder: 'desc',
+      pagination: 'numbered',
+    },
+    Videos: {
+      source: 'videos',
+      title: 'Featured videos',
+      layout: 'grid',
+      columnsDesktop: 3,
+      pageSize: 6,
+      sortField: 'publishedAt',
+      sortOrder: 'desc',
+      pagination: 'load-more',
+    },
+  },
+  fields: {
+    loopId: {
+      label: 'Loop ID (for linking filter blocks & URL params)',
+      group: CONTENT,
+      type: 'text',
+    },
+    source: {
+      label: 'Content source',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Blog posts', value: 'posts' },
+        { label: 'Pages', value: 'pages' },
+        { label: 'Collection entries', value: 'collection-entries' },
+        { label: 'Videos', value: 'videos' },
+      ],
+    },
+    collectionId: {
+      label: 'Collection ID',
+      group: CONTENT,
+      type: 'text',
+      when: (props: any) => props.source === 'collection-entries',
+    },
+    playlistId: {
+      label: 'Playlist ID (optional)',
+      group: CONTENT,
+      type: 'text',
+      when: (props: any) => props.source === 'videos',
+    },
+    eyebrow: { label: 'Eyebrow', group: CONTENT, type: 'text' },
+    title: { label: 'Heading', group: CONTENT, type: 'text' },
+    subtitle: { label: 'Subheading', group: CONTENT, type: 'textarea' },
+    layout: {
+      label: 'Layout',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Grid', value: 'grid' },
+        { label: 'List', value: 'list' },
+        { label: 'Masonry', value: 'masonry' },
+        { label: 'Carousel', value: 'carousel' },
+        { label: 'Table', value: 'table' },
+      ],
+    },
+    columnsDesktop: {
+      label: 'Columns (Desktop)',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: '1 column', value: 1 },
+        { label: '2 columns', value: 2 },
+        { label: '3 columns', value: 3 },
+        { label: '4 columns', value: 4 },
+      ],
+    },
+    columnsTablet: {
+      label: 'Columns (Tablet)',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: '1 column', value: 1 },
+        { label: '2 columns', value: 2 },
+        { label: '3 columns', value: 3 },
+      ],
+    },
+    columnsMobile: {
+      label: 'Columns (Mobile)',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: '1 column', value: 1 },
+        { label: '2 columns', value: 2 },
+      ],
+    },
+    gap: {
+      label: 'Grid gap',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Small', value: 'sm' },
+        { label: 'Medium', value: 'md' },
+        { label: 'Large', value: 'lg' },
+        { label: 'Extra large', value: 'xl' },
+      ],
+    },
+    pageSize: {
+      label: 'Items per page (max 100)',
+      group: CONTENT,
+      type: 'number',
+      min: 1,
+      max: 100,
+    },
+    sortField: {
+      label: 'Sort field',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Published date', value: 'publishedAt' },
+        { label: 'Title', value: 'title' },
+        { label: 'Created date', value: 'createdAt' },
+        { label: 'Updated date', value: 'updatedAt' },
+        { label: 'Playlist position', value: 'position' },
+        { label: 'Video duration', value: 'duration' },
+      ],
+    },
+    sortOrder: {
+      label: 'Sort order',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Descending', value: 'desc' },
+        { label: 'Ascending', value: 'asc' },
+      ],
+    },
+    excludeCurrent: {
+      label: 'Exclude current page/post',
+      group: CONTENT,
+      type: 'toggle',
+    },
+    lockedCategory: {
+      label: 'Lock to category (slug or ID)',
+      group: CONTENT,
+      type: 'custom',
+      render: CategoryLockField,
+    },
+    lockedTag: {
+      label: 'Lock to tag (slug or ID)',
+      group: CONTENT,
+      type: 'custom',
+      render: TagLockField,
+    },
+    pagination: {
+      label: 'Pagination style',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Numbered pages', value: 'numbered' },
+        { label: 'Load more button', value: 'load-more' },
+        { label: 'Infinite scroll', value: 'infinite-scroll' },
+        { label: 'None', value: 'none' },
+      ],
+    },
+    loadMoreLabel: {
+      label: 'Load more button label',
+      group: CONTENT,
+      type: 'text',
+      when: (props: any) => props.pagination === 'load-more',
+    },
+    showImage: { label: 'Show featured image', group: CONTENT, type: 'toggle' },
+    showExcerpt: { label: 'Show excerpt', group: CONTENT, type: 'toggle' },
+    showAuthor: { label: 'Show author', group: CONTENT, type: 'toggle' },
+    showDate: { label: 'Show published date', group: CONTENT, type: 'toggle' },
+    showTerms: { label: 'Show categories/tags', group: CONTENT, type: 'toggle' },
+    emptyText: { label: 'Empty state text', group: CONTENT, type: 'text' },
+    ...sectionControls(),
+  },
+  defaults: {
+    loopId: '',
+    source: 'posts',
+    sortField: 'publishedAt',
+    sortOrder: 'desc',
+    pageSize: 9,
+    offset: 0,
+    excludeCurrent: false,
+    eyebrow: '',
+    title: 'Latest posts',
+    subtitle: '',
+    layout: 'grid',
+    columnsDesktop: 3,
+    columnsTablet: 2,
+    columnsMobile: 1,
+    gap: 'md',
+    pagination: 'numbered',
+    loadMoreLabel: 'Load more',
+    showImage: true,
+    showExcerpt: true,
+    showAuthor: true,
+    showDate: true,
+    showTerms: true,
+    emptyText: 'No matching items found.',
+    card: [],
+    emptyState: [],
+    section: DEFAULT_SECTION,
+  },
+});
+
+export const LoopItemFieldBlock = defineBlock({
+  type: 'LoopItemField',
+  label: 'Loop Item Field',
+  category: 'blog',
+  icon: 'file-text',
+  schema: z
+    .object({
+      field: z
+        .enum([
+          'title',
+          'excerpt',
+          'image',
+          'publishedAt',
+          'author',
+          'terms',
+          'readMore',
+          'custom',
+        ])
+        .default('title'),
+      customKey: z.string().default(''),
+      linkToItem: z.boolean().default(true),
+      readMoreLabel: z.string().default('Read more'),
+    })
+    .passthrough(),
+  render: LoopItemField,
+  fields: {
+    field: {
+      label: 'Item field',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Title', value: 'title' },
+        { label: 'Excerpt / Summary', value: 'excerpt' },
+        { label: 'Featured Image', value: 'image' },
+        { label: 'Published Date', value: 'publishedAt' },
+        { label: 'Author Name', value: 'author' },
+        { label: 'Categories & Tags', value: 'terms' },
+        { label: 'Read More Link', value: 'readMore' },
+        { label: 'Custom / Collection Field', value: 'custom' },
+      ],
+    },
+    customKey: {
+      label: 'Custom field key',
+      group: CONTENT,
+      type: 'text',
+      when: (props: any) => props.field === 'custom',
+    },
+    linkToItem: {
+      label: 'Link to item URL',
+      group: CONTENT,
+      type: 'toggle',
+    },
+    readMoreLabel: {
+      label: 'Read more label',
+      group: CONTENT,
+      type: 'text',
+      when: (props: any) => props.field === 'readMore',
+    },
+  },
+  defaults: {
+    field: 'title',
+    customKey: '',
+    linkToItem: true,
+    readMoreLabel: 'Read more',
+  },
+});
+
+export const QueryFilterBlock = defineBlock({
+  type: 'QueryFilter',
+  label: 'Query Filter',
+  category: 'blog',
+  icon: 'filter',
+  schema: z
+    .object({
+      targetLoopId: z.string().default(''),
+      showKeyword: z.boolean().default(true),
+      keywordPlaceholder: z.string().default('Search items…'),
+      showCategories: z.boolean().default(true),
+      categoryStyle: z
+        .enum(['select', 'checkboxes', 'chips'])
+        .default('select'),
+      showTags: z.boolean().default(true),
+      tagStyle: z.enum(['select', 'checkboxes', 'chips']).default('chips'),
+      showDateRange: z.boolean().default(false),
+      showNumberRange: z.boolean().default(false),
+      numberRangeLabel: z.string().default('Duration / Value'),
+      showBooleanToggle: z.boolean().default(false),
+      booleanToggleLabel: z.string().default('With image only'),
+      showSort: z.boolean().default(true),
+      showResultCount: z.boolean().default(true),
+      showActiveChips: z.boolean().default(true),
+      showFacetCounts: z.boolean().default(true),
+      mobileDrawer: z.boolean().default(true),
+      applyButtonLabel: z.string().default('Apply filters'),
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: QueryFilter as any,
+  fields: {
+    targetLoopId: {
+      label: 'Target Query Loop ID (leave blank for default loop)',
+      group: CONTENT,
+      type: 'text',
+    },
+    showKeyword: {
+      label: 'Show keyword search',
+      group: CONTENT,
+      type: 'toggle',
+    },
+    keywordPlaceholder: {
+      label: 'Keyword placeholder',
+      group: CONTENT,
+      type: 'text',
+      when: (props: any) => props.showKeyword !== false,
+    },
+    showCategories: {
+      label: 'Show category filter',
+      group: CONTENT,
+      type: 'toggle',
+    },
+    categoryStyle: {
+      label: 'Category control style',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Dropdown select', value: 'select' },
+        { label: 'Checkboxes', value: 'checkboxes' },
+        { label: 'Filter chips', value: 'chips' },
+      ],
+      when: (props: any) => props.showCategories !== false,
+    },
+    showTags: {
+      label: 'Show tag filter',
+      group: CONTENT,
+      type: 'toggle',
+    },
+    tagStyle: {
+      label: 'Tag control style',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Filter chips', value: 'chips' },
+        { label: 'Dropdown select', value: 'select' },
+        { label: 'Checkboxes', value: 'checkboxes' },
+      ],
+      when: (props: any) => props.showTags !== false,
+    },
+    showDateRange: {
+      label: 'Show date range filter',
+      group: CONTENT,
+      type: 'toggle',
+    },
+    showNumberRange: {
+      label: 'Show number range filter',
+      group: CONTENT,
+      type: 'toggle',
+    },
+    numberRangeLabel: {
+      label: 'Number range label',
+      group: CONTENT,
+      type: 'text',
+      when: (props: any) => Boolean(props.showNumberRange),
+    },
+    showBooleanToggle: {
+      label: 'Show yes/no toggle filter',
+      group: CONTENT,
+      type: 'toggle',
+    },
+    booleanToggleLabel: {
+      label: 'Yes/No toggle label',
+      group: CONTENT,
+      type: 'text',
+      when: (props: any) => Boolean(props.showBooleanToggle),
+    },
+    showSort: {
+      label: 'Show sort selector',
+      group: CONTENT,
+      type: 'toggle',
+    },
+    showResultCount: {
+      label: 'Show result count',
+      group: CONTENT,
+      type: 'toggle',
+    },
+    showActiveChips: {
+      label: 'Show active filter chips & clear all',
+      group: CONTENT,
+      type: 'toggle',
+    },
+    showFacetCounts: {
+      label: 'Show facet counts next to options',
+      group: CONTENT,
+      type: 'toggle',
+    },
+    mobileDrawer: {
+      label: 'Use collapsible filter drawer on mobile',
+      group: CONTENT,
+      type: 'toggle',
+    },
+    applyButtonLabel: {
+      label: 'Apply button label',
+      group: CONTENT,
+      type: 'text',
+    },
+    ...sectionControls(),
+  },
+  defaults: {
+    targetLoopId: '',
+    showKeyword: true,
+    keywordPlaceholder: 'Search items…',
+    showCategories: true,
+    categoryStyle: 'select',
+    showTags: true,
+    tagStyle: 'chips',
+    showDateRange: false,
+    showNumberRange: false,
+    numberRangeLabel: 'Duration / Value',
+    showBooleanToggle: false,
+    booleanToggleLabel: 'With image only',
+    showSort: true,
+    showResultCount: true,
+    showActiveChips: true,
+    showFacetCounts: true,
+    mobileDrawer: true,
+    applyButtonLabel: 'Apply filters',
+    section: DEFAULT_SECTION,
+  },
+});
+
+export const SearchResultsBlock = defineBlock({
+  type: 'SearchResults',
+  label: 'Search Results',
+  category: 'blog',
+  icon: 'search',
+  inlineProps: ['eyebrow', 'title', 'subtitle'],
+  schema: z
+    .object({
+      eyebrow: z.string().optional(),
+      title: z.string().default('Search'),
+      subtitle: z.string().optional(),
+      placeholder: z
+        .string()
+        .default('Search pages, posts, collections, and videos…'),
+      showTabs: z.boolean().default(true),
+      showThumbnails: z.boolean().default(true),
+      showTypeBadges: z.boolean().default(true),
+      showSnippets: z.boolean().default(true),
+      pageSize: z.number().int().min(1).max(100).default(20),
+      emptyText: z.string().default('No matching results found.'),
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: SearchResults as any,
+  fields: {
+    eyebrow: { label: 'Eyebrow', group: CONTENT, type: 'text' },
+    title: { label: 'Heading', group: CONTENT, type: 'text' },
+    subtitle: { label: 'Subheading', group: CONTENT, type: 'textarea' },
+    placeholder: { label: 'Search input placeholder', group: CONTENT, type: 'text' },
+    showTabs: { label: 'Show content type tabs', group: CONTENT, type: 'toggle' },
+    showThumbnails: { label: 'Show thumbnails', group: CONTENT, type: 'toggle' },
+    showTypeBadges: { label: 'Show type badges', group: CONTENT, type: 'toggle' },
+    showSnippets: { label: 'Show highlighted snippets', group: CONTENT, type: 'toggle' },
+    pageSize: {
+      label: 'Results per page',
+      group: CONTENT,
+      type: 'number',
+      min: 1,
+      max: 100,
+    },
+    emptyText: { label: 'Empty state text', group: CONTENT, type: 'text' },
+    ...sectionControls(),
+  },
+  defaults: {
+    eyebrow: '',
+    title: 'Search',
+    subtitle: '',
+    placeholder: 'Search pages, posts, collections, and videos…',
+    showTabs: true,
+    showThumbnails: true,
+    showTypeBadges: true,
+    showSnippets: true,
+    pageSize: 20,
+    emptyText: 'No matching results found.',
+    section: DEFAULT_SECTION,
+  },
 });
 
 export const NATIVE_BLOCKS = [
@@ -3322,6 +3900,10 @@ export const NATIVE_BLOCKS = [
   BackToTopBlock,
   ThemeToggleBlock,
   LanguageSwitcherNativeBlock,
+  QueryLoopBlock,
+  LoopItemFieldBlock,
+  QueryFilterBlock,
+  SearchResultsBlock,
 ];
 export const PAGE_ROOT_FIELDS = {
   maxWidth: {
@@ -3515,7 +4097,16 @@ export const CATEGORIES = {
     ],
   },
   contact: { title: 'Contact form', components: ['ContactForm'] },
-  blog: { title: 'Blog', components: ['BlogPosts'] },
+  blog: {
+    title: 'Blog & Listings',
+    components: [
+      'QueryLoop',
+      'QueryFilter',
+      'LoopItemField',
+      'SearchResults',
+      'BlogPosts',
+    ],
+  },
   layout: {
     title: 'Layout',
     components: [

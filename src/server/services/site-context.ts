@@ -38,6 +38,9 @@ export type SiteMembership = {
   slug: string | null;
   roleId: string;
   primaryHost: string | null;
+  extraDomains: string[];
+  defaultLocale: string;
+  locales: SiteLocale[];
 };
 
 export type SiteContextSource =
@@ -344,13 +347,16 @@ export const siteContext = {
   }),
 
   memberships: cache(async (userId: string): Promise<SiteMembership[]> => {
-    return db
+    const rows = await db
       .select({
         siteId: siteMemberships.siteId,
         siteName: sites.name,
         slug: sites.slug,
         roleId: siteMemberships.roleId,
         primaryHost: sites.primaryHost,
+        extraDomains: sites.extraDomains,
+        defaultLocale: sites.defaultLocale,
+        locales: sites.locales,
       })
       .from(siteMemberships)
       .innerJoin(sites, eq(sites.id, siteMemberships.siteId))
@@ -358,6 +364,16 @@ export const siteContext = {
         and(eq(siteMemberships.userId, userId), isNull(siteMemberships.deletedAt))
       )
       .orderBy(asc(sites.name));
+
+    return rows.map(row => ({
+      ...row,
+      extraDomains: row.extraDomains ?? [],
+      defaultLocale: row.defaultLocale || 'en',
+      locales:
+        Array.isArray(row.locales) && row.locales.length
+          ? row.locales
+          : DEFAULT_SITE_LOCALES,
+    }));
   }),
 
   adminSiteId: cache(async (userId: string) => {

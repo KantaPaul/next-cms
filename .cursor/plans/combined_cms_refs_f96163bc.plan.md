@@ -1,2447 +1,2448 @@
 ---
+
 name: Combined CMS refs
 overview: One integrated checklist for CMS features, subscriber unlock, video/training/certificates, licensing, auth, admin themes, starter sites, full-site production optimization, commercial launch readiness, international website-builder market-gap audit, Elementor-style nested container/Flexbox/CSS Grid, dynamic content, global design styles, conditional display, and an ecommerce store builder. Numbered implementation steps R001–R812 include builder tasks, React-first differentiators, multisite reliability, market-gap builder features, docs sites, agency, local business, portfolio, and video library site packs, builder listing and search pages, ecommerce product, shop, cart, and checkout templates, site slug routing, container layout market gaps, a custom builder engine to replace Puck, a modern editor experience, builder data saving and fetching performance, a standalone builder package, a block extension API, builder rewrite robustness, and approval gates. Name a numbered step to implement only that piece.
 todos:
-  - id: R001
-    content: "P1-01 Register Slider, Tabs, and Accordion as builderConfig component keys"
-    status: completed
-  - id: R002
-    content: "P1-02 Confirm Slider, Tabs, and Accordion render on the public site"
-    status: completed
-  - id: R003
-    content: "P1-03 Show the contact-form options editor only for select and radio"
-    status: completed
-  - id: R004
-    content: "P1-04 Nullable page_id plus post_id on page_views; record post views"
-    status: completed
-  - id: R005
-    content: "P1-05 Mount the view beacon on post routes"
-    status: completed
-  - id: R006
-    content: "P1-06 Include posts on the analytics boards"
-    status: completed
-  - id: R007
-    content: "P1-07 Public language switcher using translationGroupId and hreflang"
-    status: completed
-  - id: R008
-    content: "P1-08 Wire UrlField on Hero, CTA, Pricing, and Image"
-    status: completed
-  - id: R009
-    content: "P1-09 Wire IconPickerField on Features"
-    status: completed
-  - id: R010
-    content: "P1-10 Turn off typescript.ignoreBuildErrors and fix the type errors"
-    status: completed
-  - id: R011
-    content: "P1-11 Replace README.md with real setup"
-    status: completed
-  - id: R012
-    content: "P2-01 form_submissions table with site_id defaulting to default"
-    status: completed
-  - id: R013
-    content: "P2-02 First-party contact-form submit route"
-    status: completed
-  - id: R014
-    content: "\"P2-03 Admin form inbox: list, read, archive\""
-    status: completed
-  - id: R015
-    content: "P2-04 CSV export of form submissions"
-    status: completed
-  - id: R016
-    content: "P2-05 Honeypot and optional Turnstile on form submit"
-    status: completed
-  - id: R017
-    content: "P2-06 Email site owner via SMTP or Resend"
-    status: completed
-  - id: R018
-    content: "P2-07 redirects table with site_id"
-    status: completed
-  - id: R019
-    content: "P2-08 Middleware resolves redirects before the catch-all page"
-    status: completed
-  - id: R020
-    content: "P2-09 Redirect CSV import"
-    status: completed
-  - id: R021
-    content: "P2-10 Publishing a slug change offers to create a redirect"
-    status: completed
-  - id: R022
-    content: "P2-11 Postgres full-text on published pages and posts"
-    status: completed
-  - id: R023
-    content: "P2-12 Public /search page"
-    status: completed
-  - id: R024
-    content: "P2-13 GET /api/v1/search"
-    status: completed
-  - id: R025
-    content: "P2-14 Email and password login; add users.password_hash and scrypt helper"
-    status: completed
-  - id: R026
-    content: "P2-15 Magic-link login"
-    status: completed
-  - id: R027
-    content: "P2-16 Invite flow for new users"
-    status: completed
-  - id: R028
-    content: "P2-17 Optional TOTP for Admins"
-    status: completed
-  - id: R029
-    content: "P2-18 Review queue for status=review"
-    status: completed
-  - id: R030
-    content: "P2-19 Email the author on review actions"
-    status: completed
-  - id: R031
-    content: "P2-20 OpenAPI spec from zod schemas"
-    status: completed
-  - id: R032
-    content: "P3-01 sites table"
-    status: completed
-  - id: R033
-    content: "P3-02 site_memberships"
-    status: completed
-  - id: R034
-    content: "P3-03 Add site_id to content tables and backfill default"
-    status: completed
-  - id: R035
-    content: "P3-04 Resolve the public site from the request host"
-    status: completed
-  - id: R036
-    content: "P3-05 Admin site switcher"
-    status: completed
-  - id: R037
-    content: "P3-06 Per-site locale list"
-    status: completed
-  - id: R038
-    content: "P3-07 Translated menus"
-    status: completed
-  - id: R039
-    content: "P3-08 Translated site name, description, and default SEO"
-    status: completed
-  - id: R040
-    content: "P4-01 collections and collection_fields tables"
-    status: completed
-  - id: R041
-    content: "P4-02 Validate collection entry JSON"
-    status: completed
-  - id: R042
-    content: "P4-03 Generated admin list and edit screens for collections"
-    status: completed
-  - id: R043
-    content: "P4-04 CollectionItem block and collection slug route"
-    status: completed
-  - id: R044
-    content: "P4-05 Scoped API keys"
-    status: completed
-  - id: R045
-    content: "P4-06 Draft-first write endpoints"
-    status: completed
-  - id: R046
-    content: "P4-07 Postgres rate limit"
-    status: completed
-  - id: R047
-    content: "P4-08 Signed webhooks and a delivery log"
-    status: completed
-  - id: R048
-    content: "P5-01 Video block"
-    status: completed
-  - id: R049
-    content: "P5-02 Embed block"
-    status: completed
-  - id: R050
-    content: "P5-03 Logo cloud block"
-    status: completed
-  - id: R051
-    content: "P5-04 Team block with photo, name, and role; same block as R317"
-    status: completed
-  - id: R052
-    content: "P5-05 Timeline block"
-    status: completed
-  - id: R053
-    content: "P5-06 Map block; Location is R318"
-    status: completed
-  - id: R054
-    content: "P5-07 Spacer block"
-    status: completed
-  - id: R055
-    content: "P5-08 Button block"
-    status: completed
-  - id: R056
-    content: "P5-09 Code block"
-    status: completed
-  - id: R057
-    content: "P5-10 Newsletter block wired to the form inbox"
-    status: completed
-  - id: R058
-    content: "P5-11 Image-morph block"
-    status: completed
-  - id: R059
-    content: "P5-12 Load Puck components from src/builder/custom/"
-    status: completed
-  - id: R060
-    content: "P5-13 Document the local plugin registration type"
-    status: completed
-  - id: R061
-    content: "P5-14 Soft lock and presence on pages and posts"
-    status: completed
-  - id: R062
-    content: "P5-15 One A/B variant per page"
-    status: completed
-  - id: R063
-    content: "P5-16 Analytics group by variant and manual pick winner"
-    status: completed
-  - id: R124
-    content: "V1-02 video_playlists, videos, video_progress, and video_settings"
-    status: completed
-  - id: R126
-    content: "V2-01 parseVideoUrl for YouTube, Vimeo, and direct MP4/WebM"
-    status: completed
-  - id: R127
-    content: "V2-02 buildEmbed allowlisted iframe src"
-    status: completed
-  - id: R128
-    content: "V2-03 videoSettingsSchema and defaults"
-    status: completed
-  - id: R129
-    content: "V2-04 clampProgress completion rule"
-    status: completed
-  - id: R130
-    content: "V2-05 node:test for video parsers plus a test script"
-    status: completed
-  - id: R131
-    content: "V2-06 Official oEmbed client for YouTube and Vimeo"
-    status: completed
-  - id: R132
-    content: "V3-01 Video permission keys"
-    status: completed
-  - id: R133
-    content: "V3-02 Audit target video"
-    status: completed
-  - id: R134
-    content: "V3-03 Persist videoSettings"
-    status: completed
-  - id: R135
-    content: "V3-04 Video library section on the settings form"
-    status: completed
-  - id: R136
-    content: "V4-01 Dashboard video routes and sidebar item"
-    status: completed
-  - id: R137
-    content: "V4-02 Playlist service and actions"
-    status: completed
-  - id: R138
-    content: "V4-03 Playlist panel on the videos page"
-    status: completed
-  - id: R139
-    content: "V4-04 Video create and update service"
-    status: completed
-  - id: R140
-    content: "V4-05 Publish, unpublish, soft-delete, and reorder"
-    status: completed
-  - id: R141
-    content: "V4-06 Video list table"
-    status: completed
-  - id: R142
-    content: "V4-07 Create and edit form with invalid-URL message"
-    status: completed
-  - id: R143
-    content: "V5-01 Native player controls for direct MP4 and WebM"
-    status: completed
-  - id: R144
-    content: "V5-02 YouTube and Vimeo iframe player"
-    status: completed
-  - id: R145
-    content: "V5-03 Native-only seek restriction"
-    status: completed
-  - id: R146
-    content: "V5-04 Video list with search, playlist filter, and load more"
-    status: completed
-  - id: R148
-    content: "V5-06 Admin preview dialog"
-    status: completed
-  - id: R123
-    content: "V1-01 Journal the existing page_views SQL"
-    status: completed
-  - id: R125
-    content: "V1-03 Generate the video Drizzle migration"
-    status: completed
-  - id: R147
-    content: "V5-05 Sidebar and stacked library layouts"
-    status: completed
-  - id: R149
-    content: "V6-01 Published-video query for the block"
-    status: completed
-  - id: R150
-    content: "V6-02 Register the VideoLibrary Puck block"
-    status: completed
-  - id: R151
-    content: "V6-03 saveVideoProgress for signed-in viewers"
-    status: completed
-  - id: R152
-    content: "V6-04 Resume start position"
-    status: completed
-  - id: R153
-    content: "V6-05 Wire progress into the widget"
-    status: completed
-  - id: R154
-    content: "V7-01 Permission matrix test for the four video keys"
-    status: completed
-  - id: R155
-    content: "V7-02 Lint and tsc on the video files"
-    status: completed
-  - id: R156
-    content: "V7-03 Browser check of the admin form and the public widget"
-    status: pending
-  - id: R463
-    content: "P3-09 Audit current multisite behavior and reproduce cross-site failures before fixes"
-    status: completed
-  - id: R464
-    content: "P3-10 Establish canonical typed site context for public, dashboard, preview, and system requests"
-    status: completed
-  - id: R465
-    content: "P3-11 Harden host/domain normalization, ownership, collisions, and unknown-host fallback policy"
-    status: completed
-  - id: R471
-    content: "P3-17 Audit and centralize site-aware data fetching for every admin dashboard route, server component, server action, and API"
-    status: completed
-  - id: R472
-    content: "P3-18 Fix admin site-switch refresh, query invalidation, loading/error/empty states, and stale response handling"
-    status: completed
-  - id: R473
-    content: "P3-19 Audit public page/post/layout/navigation/settings/SEO fetches against the resolved host and active locale"
-    status: completed
-  - id: R474
-    content: "P3-20 Make public route, metadata, search, redirect, preview, and published-content fetches site-scoped and cache-safe"
-    status: completed
-  - id: R466
-    content: "P3-12 Enforce site isolation across CRUD, relations, joins, aggregates, APIs, and background jobs"
-    status: completed
-  - id: R467
-    content: "P3-13 Verify membership, role permissions, site switching, cookies, and membership revocation"
-    status: completed
-  - id: R468
-    content: "P3-14 Make cache, revalidation, preview, and static/export output site-aware"
-    status: completed
-  - id: R469
-    content: "P3-15 Add cross-site unit, integration, and end-to-end isolation and routing tests"
-    status: completed
-  - id: R475
-    content: "P3-21 Add Site A/Site B fetch-contract tests for admin switching, public domains, cache isolation, and cross-site denial"
-    status: completed
-  - id: R470
-    content: "P3-16 Pass multisite security and regression approval gates before marking R032-R039 complete or starting P4"
-    status: completed
-  - id: R262
-    content: "A1-01 auth_settings on site_settings for login, registration, approval, session, and lockout"
-    status: pending
-  - id: R263
-    content: "A1-02 approved_at, failed_login_count, and locked_until on users, with a migration"
-    status: pending
-  - id: R264
-    content: "A2-01 assignDefaultRole always sets Viewer and ignores a client role"
-    status: pending
-  - id: R265
-    content: "A2-02 Google callback and AuthService.create use Viewer for a new user"
-    status: pending
-  - id: R266
-    content: "A2-03 Role changes stay on settings.manage and are audited"
-    status: pending
-  - id: R267
-    content: "A2-04 Server CLI auth:promote assigns Admin for a bootstrap email"
-    status: pending
-  - id: R268
-    content: "A3-01 Server helper that reads auth settings"
-    status: pending
-  - id: R269
-    content: "A3-02 Hide login links when login is disabled"
-    status: pending
-  - id: R270
-    content: "A3-03 Login page and Google routes reject when login is disabled"
-    status: pending
-  - id: R271
-    content: "A3-04 Reject new accounts when public registration is disabled"
-    status: pending
-  - id: R272
-    content: "A3-05 Admin approval leaves new users without a session until approved"
-    status: pending
-  - id: R273
-    content: "A3-06 Block session creation when email verification is required and missing"
-    status: pending
-  - id: R274
-    content: "A3-07 Reject inactive, unapproved, and locked users in validateSession"
-    status: pending
-  - id: R275
-    content: "A4-01 Session lifetime comes from auth settings"
-    status: pending
-  - id: R276
-    content: "A4-02 Rate limit and lockout on login attempts"
-    status: pending
-  - id: R277
-    content: "A4-03 Post-login redirect stays on a same-site path"
-    status: pending
-  - id: R278
-    content: "A4-04 Keep httpOnly SameSite cookies and check the request origin"
-    status: pending
-  - id: R279
-    content: "A5-01 Unauthenticated admin routes redirect to login or the disabled message"
-    status: pending
-  - id: R280
-    content: "A5-02 Server-side permission checks on users, settings, and licenses"
-    status: pending
-  - id: R281
-    content: "A5-03 Published public pages stay available without a session"
-    status: pending
-  - id: R282
-    content: "A6-01 Authentication and Access settings section"
-    status: pending
-  - id: R283
-    content: "A6-02 Approve pending users from the admin user list"
-    status: pending
-  - id: R284
-    content: "A7-01 CLI auth:enable-login turns login back on through the database"
-    status: pending
-  - id: R285
-    content: "A7-02 docs/auth.md for defaults, Viewer, and recovery"
-    status: pending
-  - id: R286
-    content: "A8-01 Tests that new and Google users receive Viewer"
-    status: pending
-  - id: R287
-    content: "A8-02 Tests that Viewer and Editor cannot perform admin operations"
-    status: pending
-  - id: R288
-    content: "A8-03 Tests for disabled login, disabled registration, and blocked accounts"
-    status: pending
-  - id: R289
-    content: "A8-04 Tests for lockout, audited role changes, public pages, and login recovery"
-    status: pending
-  - id: R290
-    content: "A8-05 Lint, tsc, and the auth tests"
-    status: pending
-  - id: R291
-    content: "A8-06 Browser check of the auth settings and a disabled login page"
-    status: pending
-  - id: R069
-    content: "P6-06 products and orders tables"
-    status: pending
-  - id: R070
-    content: "P6-07 Product grid block and Buy button"
-    status: pending
-  - id: R071
-    content: "P6-08 Stripe Checkout for one product and shared Stripe client"
-    status: pending
-  - id: R072
-    content: "P6-09 Stripe webhook marks the order paid; orders inbox"
-    status: pending
-  - id: R073
-    content: "P7-01 Per-site baked export"
-    status: pending
-  - id: R074
-    content: "P7-02 Export report for forms and checkout"
-    status: pending
-  - id: R075
-    content: "P7-03 Playwright sign-in, edit, publish, form, redirect"
-    status: pending
-  - id: R076
-    content: "P7-04 Vitest for routes, redirects, collections, and blocks"
-    status: pending
-  - id: R077
-    content: "P7-05 docker-compose for app, Postgres, and optional MinIO"
-    status: pending
-  - id: R078
-    content: "P7-06 Lighthouse CI"
-    status: pending
-  - id: R079
-    content: "P7-07 GitHub Actions"
-    status: pending
-  - id: R217
-    content: "L1-01 licenses table with hashed key, product id, and max installations fixed at 1"
-    status: pending
-  - id: R218
-    content: "L1-02 license_installations with a public key and one active binding per license"
-    status: pending
-  - id: R219
-    content: "L1-03 license_events and license_nonces, with no secrets stored"
-    status: pending
-  - id: R220
-    content: "L1-04 license_settings on site_settings for policy only"
-    status: pending
-  - id: R221
-    content: "L1-05 Drizzle migration for the license tables and license_settings"
-    status: pending
-  - id: R222
-    content: "L2-01 Generate a license key, store sha256, return plaintext once"
-    status: pending
-  - id: R223
-    content: "L2-02 Ed25519 license token signing with Node crypto"
-    status: pending
-  - id: R224
-    content: "L2-03 Installation key pair kept in server env, public key registered"
-    status: pending
-  - id: R225
-    content: "L2-04 Verify token signature, issuer, audience, expiry, product, and installation"
-    status: pending
-  - id: R226
-    content: "L2-05 Accept the current and previous signing public keys"
-    status: pending
-  - id: R227
-    content: "L2-06 node:test for hash, forged tokens, expiry, and key rotation"
-    status: pending
-  - id: R228
-    content: "L3-01 Atomic activate with row lock, idempotent for the same installation"
-    status: pending
-  - id: R229
-    content: "L3-02 Validate and heartbeat refresh a short-lived token"
-    status: pending
-  - id: R230
-    content: "L3-03 Deactivate only the bound installation"
-    status: pending
-  - id: R231
-    content: "L3-04 Admin reassign revokes the old binding in one transaction"
-    status: pending
-  - id: R232
-    content: "L3-05 Rate limit, nonce replay window, and generic activation errors"
-    status: pending
-  - id: R233
-    content: "L3-06 Cron marks expired licenses using CRON_SECRET"
-    status: pending
-  - id: R234
-    content: "L4-01 POST /api/licenses/activate"
-    status: pending
-  - id: R235
-    content: "L4-02 POST /api/licenses/validate and POST /api/licenses/heartbeat"
-    status: pending
-  - id: R236
-    content: "L4-03 POST /api/licenses/deactivate"
-    status: pending
-  - id: R237
-    content: "L4-04 GET /api/licenses/status for the signed installation"
-    status: pending
-  - id: R238
-    content: "L5-01 Central requireLicense guard"
-    status: pending
-  - id: R239
-    content: "L5-02 Dashboard layout fails closed without a valid installation token"
-    status: pending
-  - id: R240
-    content: "L5-03 Server actions call requireLicense"
-    status: pending
-  - id: R241
-    content: "L5-04 Cron and /api/v1 mutations call requireLicense; public published GET stays up"
-    status: pending
-  - id: R242
-    content: "L5-05 LICENSE_ENFORCEMENT=off is ignored when NODE_ENV is production"
-    status: pending
-  - id: R243
-    content: "L6-01 licenses.manage for Admin, audit target license"
-    status: pending
-  - id: R244
-    content: "L6-02 License routes and sidebar item"
-    status: pending
-  - id: R245
-    content: "L6-03 Issue a license for product next-cms and show the key once"
-    status: pending
-  - id: R246
-    content: "L6-04 Assign a license owner"
-    status: pending
-  - id: R247
-    content: "L6-05 License list with search, filter, sort, and pagination"
-    status: pending
-  - id: R248
-    content: "L6-06 License detail with bound installation and event history"
-    status: pending
-  - id: R249
-    content: "L6-07 Suspend, revoke, and renew with confirmation"
-    status: pending
-  - id: R250
-    content: "L6-08 Reassign and deactivate with confirmation, reason, and actor"
-    status: pending
-  - id: R251
-    content: "L6-09 License policy section on the settings form"
-    status: pending
-  - id: R252
-    content: "L7-01 Notify on conflict, revocation, and upcoming expiry"
-    status: pending
-  - id: R253
-    content: "L7-02 Record suspicious attempts without auto-revoke on IP change"
-    status: pending
-  - id: R254
-    content: "L8-01 Tests for valid, invalid, wrong product, second install, and idempotent activate"
-    status: pending
-  - id: R255
-    content: "L8-02 Test that two concurrent activations cannot both bind"
-    status: pending
-  - id: R256
-    content: "L8-03 Tests for expired, revoked, suspended, forged, and rotated tokens"
-    status: pending
-  - id: R257
-    content: "L8-04 Tests for reassignment authorization and concurrent reassignment"
-    status: pending
-  - id: R258
-    content: "L8-05 Tests for grace, rate limit, replay, the guard, and audit"
-    status: pending
-  - id: R259
-    content: "L8-06 docs/licensing.md for keys, environments, and limits"
-    status: pending
-  - id: R260
-    content: "L8-07 Lint, tsc, and the license tests"
-    status: pending
-  - id: R261
-    content: "L8-08 Browser check of issue, second install, revoke, and reassign"
-    status: pending
-  - id: R366
-    content: "COM-01 Define commercial offer, target buyer, product catalog, and sales model"
-    status: pending
-  - id: R370
-    content: "COM-05 Evaluate and select eligible payment provider(s) for Bangladesh and target international markets"
-    status: pending
-  - id: R386
-    content: "COM-21 Define product launch checklist, pricing hypotheses, and customer feedback validation"
-    status: pending
-  - id: R390
-    content: "COM-25 Gate 6 approval: commercial model, payment eligibility, and launch scope approved"
-    status: pending
-  - id: R367
-    content: "COM-02 Create conversion-focused product landing pages with demos, screenshots, FAQs, and clear deliverables"
-    status: pending
-  - id: R368
-    content: "COM-03 Implement product pricing, license tiers, bundles, upgrade paths, and version compatibility"
-    status: pending
-  - id: R369
-    content: "COM-04 Implement secure cart or direct checkout and minimize checkout friction"
-    status: pending
-  - id: R371
-    content: "COM-06 Implement verified payment webhooks, idempotency, reconciliation, and payment-failure recovery"
-    status: pending
-  - id: R372
-    content: "COM-07 Implement order lifecycle, receipts, invoices, refunds, cancellations, and admin order management"
-    status: pending
-  - id: R373
-    content: "COM-08 Implement secure digital fulfillment and expiring download links for purchased files"
-    status: pending
-  - id: R374
-    content: "COM-09 Integrate license issuance, activation, domain limits, renewal, revocation, and recovery with paid orders"
-    status: pending
-  - id: R375
-    content: "COM-10 Implement customer account portal for orders, downloads, invoices, licenses, and support"
-    status: pending
-  - id: R381
-    content: "COM-16 Create support, documentation, changelog, compatibility, update policy, and support entitlement workflows"
-    status: pending
-  - id: R382
-    content: "COM-17 Publish transparent terms of sale, privacy, refund, license, renewal, and support policies"
-    status: pending
-  - id: R383
-    content: "COM-18 Assess tax, invoicing, consumer-protection, privacy, and cross-border obligations for target markets"
-    status: pending
-  - id: R384
-    content: "COM-19 Threat-model fraud, chargebacks, refund abuse, license sharing, and account takeover"
-    status: pending
-  - id: R385
-    content: "COM-20 Run end-to-end test purchases for success, failure, duplicate webhook, refund, and fulfillment recovery"
-    status: pending
-  - id: R389
-    content: "COM-24 Verify checkout and customer portal accessibility, mobile UX, and performance"
-    status: pending
-  - id: R391
-    content: "COM-26 Gate 7 approval: end-to-end purchase, payment, fulfillment, and license lifecycle verified"
-    status: pending
-  - id: R378
-    content: "COM-13 Add sales funnel analytics, attribution, consent-aware tracking, and revenue reporting"
-    status: pending
-  - id: R387
-    content: "COM-22 Build a minimal conversion dashboard and establish baseline funnel metrics"
-    status: pending
-  - id: R388
-    content: "COM-23 Add product structured data and search snippets where eligible and truthful"
-    status: pending
-  - id: R392
-    content: "COM-27 Gate 8 approval: legal policies, customer support, analytics, and launch readiness verified"
-    status: pending
-  - id: R393
-    content: "BLD-01 Audit the existing Puck builder, Columns/Section components, stored page data, public renderer, and responsive controls before designing layout changes"
-    status: pending
-  - id: R394
-    content: "BLD-02 Define a strict typed, backward-compatible layout schema for container, flex, grid, sizing, and breakpoint settings"
-    status: pending
-  - id: R395
-    content: "BLD-03 Implement a nested Container component with a Puck slot/drop zone and safe default props"
-    status: pending
-  - id: R396
-    content: "BLD-04 Add Flexbox controls for direction, justify-content, align-items, align-content, gap, wrap, and child alignment"
-    status: pending
-  - id: R397
-    content: "BLD-05 Add container sizing controls for width, max/min width, height, min/max height, grow, shrink, basis, and box sizing"
-    status: in_progress
-  - id: R398
-    content: "BLD-06 Add CSS Grid controls for column/row tracks, repeat patterns, gaps, auto-flow, and responsive track definitions"
-    status: pending
-  - id: R399
-    content: "BLD-07 Add per-child grid placement controls for column/row start, span, and order with validated values"
-    status: pending
-  - id: R400
-    content: "BLD-08 Implement canvas resize handles for container width and flex/grid column proportions without breaking Puck drag-and-drop selection"
-    status: pending
-  - id: R401
-    content: "BLD-09 Add responsive breakpoint values and desktop/tablet/mobile preview, including inheritance and reset-to-inherited behavior"
-    status: in_progress
-  - id: R402
-    content: "BLD-10 Reuse existing section style controls for spacing, padding, margin, background, border, radius, and overflow where compatible"
-    status: pending
-  - id: R403
-    content: "BLD-11 Preserve existing Columns and Section content with a non-destructive compatibility path and normalization for legacy saved pages"
-    status: pending
-  - id: R404
-    content: "BLD-12 Render layout styles consistently in editor, preview, and published pages without unsafe arbitrary CSS or style injection"
-    status: pending
-  - id: R405
-    content: "BLD-13 Add unit tests for layout schema validation, defaults, legacy normalization, breakpoint inheritance, and CSS style generation"
-    status: pending
-  - id: R406
-    content: "BLD-14 Add integration/e2e tests for nesting, drag/drop, resize, save/reload, publish, and public-page rendering"
-    status: pending
-  - id: R407
-    content: "BLD-15 Make resize and layout controls accessible with keyboard operation, labels, focus states, and numeric alternatives to dragging"
-    status: pending
-  - id: R408
-    content: "BLD-16 Add starter layouts/templates demonstrating flex rows, responsive card grids, split hero sections, and nested containers"
-    status: pending
-  - id: R409
-    content: "BLD-17 Document container, flex, grid, responsive behavior, supported CSS constraints, and migration/rollback behavior"
-    status: pending
-  - id: R410
-    content: "BLD-18 Gate 13 approval: architecture audit, schema compatibility, and container/flex/grid foundations verified"
-    status: pending
-  - id: R411
-    content: "BLD-19 Gate 14 approval: visual resizing, responsive preview, accessibility, and legacy content compatibility verified"
-    status: pending
-  - id: R412
-    content: "BLD-20 Gate 15 approval: tests, save/publish/public rendering, performance, and release regression checks pass"
-    status: pending
-  - id: R413
-    content: "BLD-21 Audit current CMS entities, custom fields, public data access, cache boundaries, and Puck field/rendering APIs for safe dynamic content bindings"
-    status: completed
-  - id: R414
-    content: "BLD-22 Define a typed dynamic-value schema that distinguishes static values from approved dynamic source references"
-    status: completed
-  - id: R415
-    content: "BLD-23 Implement a dynamic-content picker for supported text, rich text, image, URL, date, author, taxonomy, and custom-field sources where available"
-    status: completed
-  - id: R416
-    content: "BLD-24 Resolve dynamic bindings on the server or through approved data loaders with tenant/site authorization, draft-preview rules, and cache-safe behavior"
-    status: completed
-  - id: R417
-    content: "BLD-25 Add safe fallback values, missing-data states, escaping, URL validation, and cycle/depth limits for dynamic bindings"
-    status: completed
-  - id: R418
-    content: "BLD-26 Support dynamic values consistently in editor preview, preview routes, published pages, and export paths where supported"
-    status: completed
-  - id: R419
-    content: "BLD-27 Add site-wide global design tokens for primary, secondary, text, accent, background, border, and custom colors"
-    status: completed
-  - id: R420
-    content: "BLD-28 Add global typography presets with font family, size, weight, line height, letter spacing, and responsive values"
-    status: completed
-  - id: R421
-    content: "BLD-29 Add global style references and per-element custom overrides with predictable inheritance and reset-to-global behavior"
-    status: completed
-  - id: R422
-    content: "BLD-30 Build a site settings/design-system interface for creating, editing, renaming, deleting, and previewing global tokens safely"
-    status: completed
-  - id: R423
-    content: "BLD-31 Resolve global style references consistently in editor and published CSS, including missing/deleted-token fallback behavior"
-    status: completed
-  - id: R428
-    content: "BLD-36 Add migration/normalization for static legacy values and graceful fallbacks for absent dynamic/global/conditional settings"
-    status: completed
-  - id: R429
-    content: "BLD-37 Add tests for dynamic binding resolution, global-token updates, condition logic, missing references, authorization, and cache isolation"
-    status: completed
-  - id: R430
-    content: "BLD-38 Add editor-to-published end-to-end tests for dynamic fields, global styles, conditional controls, and frontend visibility"
-    status: completed
-  - id: R431
-    content: "BLD-39 Document supported dynamic sources, global design tokens, condition operators, security boundaries, and unsupported cases"
-    status: completed
-  - id: R432
-    content: "BLD-40 Gate 16 approval: dynamic data sources and safe resolution verified"
-    status: completed
-  - id: R433
-    content: "BLD-41 Gate 17 approval: global style inheritance, overrides, and responsive typography verified"
-    status: completed
-  - id: R476
-    content: "MKT-01 Visible undo and redo buttons in the builder header, wired to Puck history with disabled states"
-    status: completed
-  - id: R477
-    content: "MKT-02 Builder keyboard shortcuts for undo, redo, duplicate, delete, and save, plus a shortcut help dialog"
-    status: completed
-  - id: R483
-    content: "MKT-08 Header and footer templates edited in the Puck builder and stored like global blocks"
-    status: completed
-  - id: R484
-    content: "MKT-09 Assign header and footer templates per site, locale, or page with a site default"
-    status: completed
-  - id: R485
-    content: "MKT-10 Public layout renders the assigned header and footer, falling back to the current menu header"
-    status: completed
-  - id: R571
-    content: "QRY-01 Typed listing query schema: source (posts, pages, collection entries, videos), filters, sort, limit, offset, and exclude-current, validated against allowlisted fields"
-    status: completed
-  - id: R572
-    content: "QRY-02 Server query resolver per source that only returns published, site-scoped, locale-scoped, access-checked items, with a hard maximum page size"
-    status: completed
-  - id: R573
-    content: "QRY-03 Namespaced URL parameters per listing block so two listings and their filters on one page never clash"
-    status: completed
-  - id: R574
-    content: "QRY-04 Database indexes for the filter and sort columns each source allows"
-    status: completed
-  - id: R575
-    content: "QRY-05 Query Loop block whose card is a slot designed in the builder, with item fields (title, image, excerpt, date, author, terms, collection field) read from the loop item"
-    status: pending
-  - id: R576
-    content: "QRY-06 Loop layouts: grid, list, masonry, carousel, and table, with per-device columns and gap"
-    status: pending
-  - id: R577
-    content: "QRY-07 Pagination styles: numbered, load more, and infinite scroll, always with crawlable page links underneath"
-    status: pending
-  - id: R578
-    content: "QRY-08 Empty-state slot and a loading skeleton for Query Loop"
-    status: pending
-  - id: R579
-    content: "QRY-09 Query Loop presets for latest posts, related posts, collection entries, and videos"
-    status: pending
-  - id: R580
-    content: "QRY-10 Keep BlogPosts and RelatedPosts rendering unchanged and offer a one-click convert to a Query Loop preset"
-    status: pending
-  - id: R581
-    content: "QRY-11 Filter blocks linked to a Query Loop by block id: keyword, taxonomy (select, checkboxes, chips), date range, number range, yes/no toggle, and sort"
-    status: pending
-  - id: R582
-    content: "QRY-12 Result count and active-filter chips with clear-one and clear-all"
-    status: pending
-  - id: R583
-    content: "QRY-13 Facet counts for each filter option computed on the server for the current query"
-    status: pending
-  - id: R584
-    content: "QRY-14 Filters work as a plain GET form with no JavaScript, and update results without a reload when JavaScript runs, keeping browser history"
-    status: pending
-  - id: R585
-    content: "QRY-15 Mobile filter drawer with an apply button"
-    status: pending
-  - id: R588
-    content: "QRY-18 Search quality: Postgres text config per locale instead of hard-coded english, prefix matching for type-ahead, unaccent, and title weighted above body"
-    status: pending
-  - id: R589
-    content: "QRY-19 Typo tolerance with pg_trgm similarity when full-text search returns nothing"
-    status: pending
-  - id: R586
-    content: "QRY-16 Search results template built in the builder and assigned per site, rendered by /search with the current page as fallback"
-    status: pending
-  - id: R587
-    content: "QRY-17 Search box block with live suggestions, keyboard navigation, and a link to the full results page"
-    status: pending
-  - id: R595
-    content: "QRY-25 Category, tag, author, and date archive templates built in the builder, with Query Loop bound to the current term"
-    status: pending
-  - id: R596
-    content: "QRY-26 Assign archive templates per site and locale with a built-in fallback"
-    status: pending
-  - id: R597
-    content: "QRY-27 Listing SEO: self-canonical paginated pages, noindex for filter combinations, ItemList JSON-LD, and archive pages in the sitemap"
-    status: pending
-  - id: R598
-    content: "QRY-28 Cache listing and search results per site, locale, and query, and revalidate on publish"
-    status: pending
-  - id: R599
-    content: "QRY-29 Accessible results: aria-live result counts, focus moves to results after filtering, and a combobox pattern for suggestions"
-    status: pending
-  - id: R600
-    content: "QRY-30 Tests for the query schema, site and access scoping, URL namespaces, facet counts, locale text configs, and archive resolution"
-    status: pending
-  - id: R601
-    content: "QRY-31 Lint, tsc, and a browser check of a blog listing, a filtered collection grid, site search, and a category archive"
-    status: pending
-  - id: R602
-    content: "QRY-32 Gate 29 approval: listing, filtering, search, archives, SEO, caching, and accessibility verified"
-    status: pending
-  - id: R435
-    content: "RFB-01 Audit the current component registry, Puck custom fields, server/client boundaries, rendering pipeline, export support, and developer extension points"
-    status: pending
-  - id: R436
-    content: "RFB-02 Design a typed React component adapter contract for component props, defaults, editor controls, slots, validation, and documentation"
-    status: pending
-  - id: R437
-    content: "RFB-03 Implement a first-party component registry that can register existing React components without duplicating rendering implementations"
-    status: pending
-  - id: R438
-    content: "RFB-04 Generate editor controls from safe typed component prop schemas, including enums, responsive values, tokens, and dynamic bindings"
-    status: pending
-  - id: R439
-    content: "RFB-05 Support reusable component variants and presets with explicit prop overrides and backward-compatible identifiers"
-    status: pending
-  - id: R440
-    content: "RFB-06 Add a developer workflow for wrapping existing project components with editor metadata and a live preview"
-    status: pending
-  - id: R441
-    content: "RFB-07 Define and enforce Server Component and Client Component boundaries for registered Next.js components"
-    status: pending
-  - id: R442
-    content: "RFB-08 Add clear diagnostics for unsupported imports, browser-only APIs, server-only dependencies, and invalid component registrations"
-    status: pending
-  - id: R456
-    content: "RFB-22 Add a component authoring starter kit with strict TypeScript examples, schema helpers, tests, and developer documentation"
-    status: pending
-  - id: R460
-    content: "RFB-26 Gate 19 approval: typed React component integration and Server/Client boundaries verified"
-    status: pending
-  - id: R328
-    content: "OZ-01 Record a reproducible production baseline for public routes and admin workflows"
-    status: pending
-  - id: R329
-    content: "OZ-02 Audit Next.js rendering, hydration, client boundaries, and server data access"
-    status: pending
-  - id: R331
-    content: "OZ-04 Audit images, fonts, video, embeds, and third-party assets"
-    status: pending
-  - id: R334
-    content: "OZ-07 Profile database queries, indexes, pagination, and connection usage"
-    status: pending
-  - id: R335
-    content: "OZ-08 Audit public routes for technical SEO and crawlability"
-    status: pending
-  - id: R337
-    content: "OZ-10 Audit accessibility and keyboard/screen-reader behavior across public and admin UI"
-    status: pending
-  - id: R338
-    content: "OZ-11 Audit responsive layouts and mobile interaction states"
-    status: pending
-  - id: R339
-    content: "OZ-12 Audit authentication, authorization, tenant isolation, and sessions"
-    status: pending
-  - id: R340
-    content: "OZ-13 Audit input validation, API abuse controls, headers, secrets, and dependencies"
-    status: pending
-  - id: R341
-    content: "OZ-14 Audit forms, email, uploads, media URLs, webhooks, and export safety"
-    status: pending
-  - id: R346
-    content: "OZ-19 Audit CMS publishing, preview, cache invalidation, redirects, and content integrity"
-    status: pending
-  - id: R347
-    content: "OZ-20 Audit multi-site, locale, subscriber, video, training, licensing, and payment boundaries"
-    status: pending
-  - id: R349
-    content: "OZ-22 Audit generated/exported sites for assets, links, SEO, forms, and reproducibility"
-    status: pending
-  - id: R351
-    content: "OZ-24 Produce a prioritized audit report with evidence, risks, and remediation scope"
-    status: pending
-  - id: R352
-    content: "OZ-25 Gate 1 approval: baseline and audit findings reviewed before broad refactoring"
-    status: pending
-  - id: R330
-    content: "OZ-03 Optimize Core Web Vitals and route-level loading performance"
-    status: pending
-  - id: R332
-    content: "OZ-05 Reduce JavaScript bundles and remove unused or duplicated dependencies"
-    status: pending
-  - id: R333
-    content: "OZ-06 Review caching, revalidation, and invalidation for public content"
-    status: pending
-  - id: R350
-    content: "OZ-23 Establish performance budgets and automated regression reporting"
-    status: pending
-  - id: R358
-    content: "OZ-31 Verify public pages render useful HTML without client-only content dependencies"
-    status: pending
-  - id: R359
-    content: "OZ-32 Verify route loading, error, empty, not-found, and unauthorized states"
-    status: pending
-  - id: R353
-    content: "OZ-26 Gate 2 approval: performance, rendering, assets, and caching targets verified"
-    status: pending
-  - id: R336
-    content: "OZ-09 Add metadata, canonical, sitemap, robots, redirect, and structured-data checks"
-    status: pending
-  - id: R348
-    content: "OZ-21 Improve admin dashboard, builder, tables, media library, and editor responsiveness"
-    status: pending
-  - id: R361
-    content: "OZ-34 Verify metadata and structured data reflect published content and access restrictions"
-    status: pending
-  - id: R362
-    content: "OZ-35 Verify reduced-motion, focus visibility, contrast, and touch target requirements"
-    status: pending
-  - id: R354
-    content: "OZ-27 Gate 3 approval: SEO, accessibility, responsive behavior, and content integrity verified"
-    status: pending
-  - id: R360
-    content: "OZ-33 Verify caching never leaks draft, private, subscriber-only, or cross-site content"
-    status: pending
-  - id: R363
-    content: "OZ-36 Verify rate limits and idempotency for high-risk write and webhook endpoints"
-    status: pending
-  - id: R355
-    content: "OZ-28 Gate 4 approval: security, authorization, data integrity, and abuse controls verified"
-    status: pending
-  - id: R342
-    content: "OZ-15 Add unit, integration, end-to-end, and regression coverage for critical flows"
-    status: pending
-  - id: R343
-    content: "OZ-16 Add CI quality gates, production build checks, and migration safety checks"
-    status: pending
-  - id: R344
-    content: "OZ-17 Add structured logging, error reporting, health checks, and operational runbooks"
-    status: pending
-  - id: R345
-    content: "OZ-18 Review deployment configuration, environment validation, backups, and recovery"
-    status: pending
-  - id: R364
-    content: "OZ-37 Verify migration recovery strategy and production backup restore"
-    status: pending
-  - id: R356
-    content: "OZ-29 Gate 5 approval: automated tests, CI, deployment, monitoring, and recovery verified"
-    status: pending
-  - id: R365
-    content: "OZ-38 Document baseline, before/after results, remaining risks, and deferred work"
-    status: pending
-  - id: R357
-    content: "OZ-30 Final production-readiness review and closeout report"
-    status: pending
-  - id: R064
-    content: "P6-01 Threaded post comments"
-    status: pending
-  - id: R065
-    content: "P6-02 Public comment form"
-    status: pending
-  - id: R066
-    content: "P6-03 Comment moderation queue"
-    status: pending
-  - id: R067
-    content: "P6-04 Comments post block"
-    status: pending
-  - id: R068
-    content: "P6-05 Email the post author when a comment is approved"
-    status: pending
-  - id: R080
-    content: "S1-01 subscribers_only on pages and posts"
-    status: pending
-  - id: R081
-    content: "S1-02 Confirm users.password_hash from R025"
-    status: pending
-  - id: R082
-    content: "S1-03 subscriptions table"
-    status: pending
-  - id: R083
-    content: "S1-04 subscription_enabled and subscription_label on site_settings"
-    status: pending
-  - id: R084
-    content: "S1-05 Subscriber role with no dashboard permissions"
-    status: pending
-  - id: R085
-    content: "S1-06 Optional Stripe env vars"
-    status: pending
-  - id: R086
-    content: "S2-01 Entitlement check for active or trialing subscriptions"
-    status: pending
-  - id: R087
-    content: "S2-02 Staff roles entitled; Subscriber role not"
-    status: pending
-  - id: R088
-    content: "S3-01 Reuse scrypt helper from R025"
-    status: pending
-  - id: R089
-    content: "S3-02 Signup assigns the Subscriber role directly"
-    status: pending
-  - id: R090
-    content: "S3-03 Public /subscribe page"
-    status: pending
-  - id: R091
-    content: "S3-04 Email and password login at /account/login"
-    status: pending
-  - id: R092
-    content: "S3-05 Account page showing subscription status"
-    status: pending
-  - id: R093
-    content: "S3-06 Subscriber logout"
-    status: pending
-  - id: R094
-    content: "S3-07 Redirect the Subscriber role away from the dashboard"
-    status: pending
-  - id: R095
-    content: "S3-08 Header link to Subscribe or Account"
-    status: pending
-  - id: R096
-    content: "S4-01 Reuse Stripe client from R071"
-    status: pending
-  - id: R097
-    content: "S4-02 Checkout session in subscription mode"
-    status: pending
-  - id: R098
-    content: "S4-03 Start checkout from /subscribe"
-    status: pending
-  - id: R099
-    content: "S4-04 Verify the Stripe webhook signature on the R072 route"
-    status: pending
-  - id: R100
-    content: "S4-05 Handle checkout.session.completed"
-    status: pending
-  - id: R101
-    content: "S4-06 Handle subscription updated and deleted"
-    status: pending
-  - id: R102
-    content: "S4-07 Keep past_due, canceled, incomplete, and unpaid locked"
-    status: pending
-  - id: R103
-    content: "S4-08 Stripe Customer Portal route"
-    status: pending
-  - id: R104
-    content: "S4-09 Clear message when Stripe env vars are missing"
-    status: pending
-  - id: R105
-    content: "S5-01 Expose subscribersOnly on public post and page loads"
-    status: pending
-  - id: R106
-    content: "S5-02 Strip locked post body and canvas before render"
-    status: pending
-  - id: R107
-    content: "S5-03 Strip locked page content before render"
-    status: pending
-  - id: R108
-    content: "S5-04 Paywall with title, excerpt, and subscribe or login links"
-    status: pending
-  - id: R109
-    content: "S5-05 Keep draft preview showing the full body"
-    status: pending
-  - id: R110
-    content: "S5-06 Omit locked post body and layout from /api/v1"
-    status: pending
-  - id: R111
-    content: "S5-07 Omit locked page content from /api/v1"
-    status: pending
-  - id: R112
-    content: "S5-08 Set isAccessibleForFree false on locked JSON-LD"
-    status: pending
-  - id: R113
-    content: "S6-01 Post form field and validation for subscribers only"
-    status: pending
-  - id: R114
-    content: "S6-02 Subscribers only switch on the post sidebar"
-    status: pending
-  - id: R115
-    content: "S6-03 Persist the post flag on save"
-    status: pending
-  - id: R116
-    content: "S6-04 Copy the post flag when duplicating a post"
-    status: pending
-  - id: R117
-    content: "S6-05 Page form field and validation for subscribers only"
-    status: pending
-  - id: R118
-    content: "S6-06 Subscribers only switch on the page sidebar"
-    status: pending
-  - id: R119
-    content: "S6-07 Persist the page flag on save"
-    status: pending
-  - id: R120
-    content: "S6-08 Copy the page flag when duplicating a page"
-    status: pending
-  - id: R121
-    content: "S6-09 Settings switch and price label"
-    status: pending
-  - id: R122
-    content: "S6-10 Subscribers list for settings.manage"
-    status: pending
-  - id: R376
-    content: "COM-11 Define subscription lifecycle including trials if offered, renewals, failed payments, cancellation, and grace periods"
-    status: pending
-  - id: R377
-    content: "COM-12 Implement coupons, campaign pricing, and abuse-resistant promotion rules"
-    status: pending
-  - id: R379
-    content: "COM-14 Add abandoned-checkout recovery and permission-based lifecycle email sequences"
-    status: pending
-  - id: R380
-    content: "COM-15 Add customer reviews and testimonials with authenticity and moderation controls"
-    status: pending
-  - id: R157
-    content: "T1-01 Confirm page_views journal from R123; do not repeat it"
-    status: pending
-  - id: R158
-    content: "T1-02 training_courses, training_course_items, and training_enrollments"
-    status: pending
-  - id: R159
-    content: "T1-03 training_video_progress and course_progress"
-    status: pending
-  - id: R160
-    content: "T1-04 training_questions and training_attempts"
-    status: pending
-  - id: R161
-    content: "T1-05 certificates with one issued row per user and course"
-    status: pending
-  - id: R162
-    content: "T1-06 notifications and site_settings.training_settings"
-    status: pending
-  - id: R163
-    content: "T1-07 Drizzle migration for the training tables only"
-    status: pending
-  - id: R164
-    content: "T2-01 Parse a course item via parseVideoUrl from R126"
-    status: pending
-  - id: R165
-    content: "T2-02 Merge watched ranges without counting seeks across a gap"
-    status: pending
-  - id: R166
-    content: "T2-03 Accept a playback event with stale, duplicate, and wall-clock guards"
-    status: pending
-  - id: R167
-    content: "T2-04 Course completion rules"
-    status: pending
-  - id: R168
-    content: "T2-05 Score a quiz on the server and enforce attempt limits"
-    status: pending
-  - id: R169
-    content: "T2-06 Certificate number, verify token, and eligibility"
-    status: pending
-  - id: R170
-    content: "T2-07 Notification dedupe keys"
-    status: pending
-  - id: R171
-    content: "T2-08 node:test for training rules; test script already exists"
-    status: pending
-  - id: R172
-    content: "T3-01 training.manage, training.learn, and the Learner role"
-    status: pending
-  - id: R173
-    content: "T3-02 Send a Learner to my-training; keep the Subscriber redirect"
-    status: pending
-  - id: R174
-    content: "T3-03 trainingSettingsSchema and defaults"
-    status: pending
-  - id: R175
-    content: "T3-04 Persist training settings"
-    status: pending
-  - id: R176
-    content: "T3-05 Training section on the settings form"
-    status: pending
-  - id: R177
-    content: "T3-06 Audit targets for course, enrollment, and certificate"
-    status: pending
-  - id: R178
-    content: "T4-01 Training routes and sidebar items"
-    status: pending
-  - id: R179
-    content: "T4-02 Course create, update, and publish service"
-    status: pending
-  - id: R180
-    content: "T4-03 Course list"
-    status: pending
-  - id: R181
-    content: "T4-04 Course editor"
-    status: pending
-  - id: R182
-    content: "T4-05 Ordered course items from media or a video URL"
-    status: pending
-  - id: R183
-    content: "T4-06 Per-course completion requirement fields"
-    status: pending
-  - id: R184
-    content: "T4-07 Assign and unassign individual users"
-    status: pending
-  - id: R185
-    content: "T4-08 Quiz question editor"
-    status: pending
-  - id: R186
-    content: "T5-01 HTML5 playback adapter using the native player"
-    status: pending
-  - id: R187
-    content: "T5-02 YouTube IFrame API adapter"
-    status: pending
-  - id: R188
-    content: "T5-03 Vimeo Player.js adapter"
-    status: pending
-  - id: R189
-    content: "T5-04 Heartbeat on play, pause, ended, and page leave"
-    status: pending
-  - id: R190
-    content: "T5-05 saveTrainingProgress server action"
-    status: pending
-  - id: R191
-    content: "T5-06 Resume from last position when the setting is on"
-    status: pending
-  - id: R192
-    content: "T5-07 Course player page for an enrolled learner"
-    status: pending
-  - id: R193
-    content: "T6-01 Recalculate course_progress in a transaction"
-    status: pending
-  - id: R194
-    content: "T6-02 Manual completion approval"
-    status: pending
-  - id: R195
-    content: "T6-03 Quiz submit action"
-    status: pending
-  - id: R196
-    content: "T6-04 Certificate PDF layout with pdf-lib and a QR code"
-    status: pending
-  - id: R197
-    content: "T6-05 Store the PDF through storage()"
-    status: pending
-  - id: R198
-    content: "T6-06 Auto-issue one certificate when eligibility passes"
-    status: pending
-  - id: R199
-    content: "T6-07 Revoke a certificate"
-    status: pending
-  - id: R200
-    content: "T6-08 Reissue a certificate"
-    status: pending
-  - id: R201
-    content: "T6-09 Public verification page"
-    status: pending
-  - id: R202
-    content: "T6-10 Learner certificate download"
-    status: pending
-  - id: R203
-    content: "T7-01 Admin overview counts from SQL aggregates"
-    status: pending
-  - id: R204
-    content: "T7-02 User progress table"
-    status: pending
-  - id: R205
-    content: "T7-03 Course progress table"
-    status: pending
-  - id: R206
-    content: "T7-04 CSV export of training progress"
-    status: pending
-  - id: R207
-    content: "T7-05 Learner training home"
-    status: pending
-  - id: R208
-    content: "T7-06 Learner course page"
-    status: pending
-  - id: R209
-    content: "T8-01 Idempotent notification insert"
-    status: pending
-  - id: R210
-    content: "T8-02 Notify on assign, complete, issue, and revoke"
-    status: pending
-  - id: R211
-    content: "T8-03 Cron reminders for due dates and expiring certificates"
-    status: pending
-  - id: R212
-    content: "T8-04 Unread notification list in the dashboard shell"
-    status: pending
-  - id: R213
-    content: "T8-05 Audit log on course, assignment, approval, issue, revoke, and reissue"
-    status: pending
-  - id: R214
-    content: "T8-06 docs/training.md with provider limits"
-    status: pending
-  - id: R215
-    content: "T8-07 Lint, tsc, and the test script"
-    status: pending
-  - id: R216
-    content: "T8-08 Browser check of admin, learner, download, and verify"
-    status: pending
-  - id: R292
-    content: "O1-01 Map Studio Crafted light and Obsidian Studio dark tokens and per-theme radius in globals.css"
-    status: pending
-  - id: R293
-    content: "O1-02 Per-theme shadows and status-pill colors"
-    status: pending
-  - id: R294
-    content: "O1-03 Inter for body; Hanken Grotesk for light headlines and Inter for dark headlines"
-    status: pending
-  - id: R295
-    content: "O2-01 Let admin, builder chrome, and auth follow the active theme; drop the builder light lock"
-    status: pending
-  - id: R296
-    content: "O2-02 Keep the header theme toggle wired to both token blocks"
-    status: pending
-  - id: R297
-    content: "O2-03 Toaster follows the active theme"
-    status: pending
-  - id: R298
-    content: "O3-01 Theme-aware button variants for both specs"
-    status: pending
-  - id: R299
-    content: "O3-02 Theme-aware inputs, checkboxes, and radios"
-    status: pending
-  - id: R300
-    content: "O3-03 Theme-aware badge and status badge"
-    status: pending
-  - id: R301
-    content: "O3-04 Theme-aware card, dialog, sheet, popover, and block cards"
-    status: pending
-  - id: R302
-    content: "O3-05 Sidebar width, divider, and nav items for both themes"
-    status: pending
-  - id: R303
-    content: "O3-06 Sticky header and breadcrumbs for both themes"
-    status: pending
-  - id: R304
-    content: "O4-01 Replace hardcoded steel and light pairs on admin routes"
-    status: pending
-  - id: R305
-    content: "O4-02 Restyle builder chrome so it follows the active theme"
-    status: pending
-  - id: R306
-    content: "O4-03 Restyle inspector controls and fields"
-    status: pending
-  - id: R307
-    content: "O4-04 Restyle tables, text editor chrome, media browser, and react-select"
-    status: pending
-  - id: R308
-    content: "O4-05 Restyle the login page and auth layout"
-    status: pending
-  - id: R309
-    content: "O4-06 Block-drawer category tints that read in both themes"
-    status: pending
-  - id: R310
-    content: "O5-01 Browser check of both themes and an unchanged public site theme"
-    status: pending
-  - id: R311
-    content: "M1-01 Add background, foreground, and muted to theme tokens"
-    status: pending
-  - id: R312
-    content: "M1-02 Add Instrument Sans and Newsreader to the font list"
-    status: pending
-  - id: R313
-    content: "M1-03 Consume the new color roles in theme.ts and site.css"
-    status: pending
-  - id: R314
-    content: "M1-04 Settings form fields for the new fonts and color roles"
-    status: pending
-  - id: R315
-    content: "M1-05 Seed a modern light theme only when tokens are still the defaults"
-    status: pending
-  - id: R316
-    content: "M2-01 Projects block with image, title, summary, link, and category"
-    status: pending
-  - id: R317
-    content: "M2-02 Team block with photo, name, and role; same block as R051"
-    status: pending
-  - id: R318
-    content: "M2-03 Location block with address, hours, and a map link"
-    status: pending
-  - id: R319
-    content: "M3-01 Restyle the six existing starter templates"
-    status: pending
-  - id: R320
-    content: "M3-02 Agency starter template"
-    status: pending
-  - id: R321
-    content: "M3-03 Portfolio starter template"
-    status: pending
-  - id: R322
-    content: "M3-04 Company starter template"
-    status: pending
-  - id: R323
-    content: "M3-05 Docs starter template"
-    status: pending
-  - id: R324
-    content: "M3-06 Local business starter template"
-    status: pending
-  - id: R325
-    content: "M4-01 Publish the multi-page demo when a user exists"
-    status: pending
-  - id: R326
-    content: "M4-02 Seed header and footer menus and wire them when empty"
-    status: pending
-  - id: R327
-    content: "M5-01 Browser check of the public demo, gallery, and unchanged admin chrome"
-    status: pending
-  - id: R424
-    content: "BLD-32 Define a typed conditional-rule schema supporting equality, inequality, membership, empty checks, and safe AND/OR groups"
-    status: pending
-  - id: R425
-    content: "BLD-33 Implement editor-only conditional controls so dependent settings appear only when relevant without deleting hidden field values"
-    status: pending
-  - id: R426
-    content: "BLD-34 Implement optional frontend visibility rules for approved conditions such as page type, content fields, authentication state, and feature flags"
-    status: pending
-  - id: R427
-    content: "BLD-35 Enforce secure conditional rendering server-side for access-sensitive content; never treat a visual hide rule as authorization"
-    status: pending
-  - id: R434
-    content: "BLD-42 Gate 18 approval: conditional controls and frontend visibility security/tests verified"
-    status: pending
-  - id: R478
-    content: "MKT-03 Copy and paste block style between blocks, keeping only allowlisted style keys"
-    status: pending
-  - id: R479
-    content: "MKT-04 Allowlisted custom CSS class names on each block's Advanced tab"
-    status: pending
-  - id: R480
-    content: "MKT-05 Site-wide and per-page custom CSS for settings.manage, scoped to the site root and audited"
-    status: pending
-  - id: R481
-    content: "MKT-06 Site-wide head and body code injection for analytics tags, settings.manage only and audited"
-    status: pending
-  - id: R482
-    content: "MKT-07 Export and import a section or page as versioned JSON validated against the block registry"
-    status: pending
-  - id: R486
-    content: "MKT-11 Sticky and transparent header options"
-    status: pending
-  - id: R487
-    content: "MKT-12 Mega menu panel for top-level header menu items"
-    status: pending
-  - id: R488
-    content: "MKT-13 404 page template edited in the Puck builder"
-    status: pending
-  - id: R489
-    content: "MKT-14 popups table and a popup editor that reuses the builder shell"
-    status: pending
-  - id: R490
-    content: "MKT-15 Popup triggers: on click, after a delay, at scroll depth, and on exit intent"
-    status: pending
-  - id: R491
-    content: "MKT-16 Popup targeting by page, locale, and device, with a cookie frequency cap"
-    status: pending
-  - id: R492
-    content: "MKT-17 Accessible popup modal with focus trap, Escape to close, focus return, and reduced motion"
-    status: pending
-  - id: R493
-    content: "MKT-18 Countdown block with an end date and an expired message"
-    status: pending
-  - id: R494
-    content: "MKT-19 Progress bar block"
-    status: pending
-  - id: R495
-    content: "MKT-20 Icon list block using IconPickerField"
-    status: pending
-  - id: R496
-    content: "MKT-21 Social icons block"
-    status: pending
-  - id: R497
-    content: "MKT-22 Table block with header row and responsive scroll"
-    status: pending
-  - id: R498
-    content: "MKT-23 Testimonial carousel built on the existing Slider"
-    status: pending
-  - id: R499
-    content: "MKT-24 Video background option on Section with a poster and reduced-motion fallback"
-    status: pending
-  - id: R500
-    content: "MKT-25 Parallax and scroll effects on Section with a reduced-motion guard"
-    status: pending
-  - id: R501
-    content: "MKT-26 Lottie block loaded lazily from a media URL"
-    status: pending
-  - id: R502
-    content: "MKT-27 Sticky element option on blocks"
-    status: pending
-  - id: R503
-    content: "MKT-28 Multi-step contact forms with a step indicator"
-    status: pending
-  - id: R504
-    content: "MKT-29 Conditional form fields shown from earlier answers, validated on the server"
-    status: pending
-  - id: R505
-    content: "MKT-30 File upload field with size and type limits, stored through storage()"
-    status: pending
-  - id: R506
-    content: "MKT-31 Send form submissions to a Mailchimp list or the existing signed webhooks"
-    status: pending
-  - id: R507
-    content: "MKT-32 Custom breakpoints beyond desktop, tablet, and mobile, building on BLD-09 (R401)"
-    status: pending
-  - id: R508
-    content: "MKT-33 Tests for section import and export, popup rules, header and footer resolution, and form steps"
-    status: pending
-  - id: R509
-    content: "MKT-34 Lint, tsc, and a browser check of undo, popups, header and footer templates, and the new blocks"
-    status: pending
-  - id: R510
-    content: "MKT-35 Gate 26 approval: editor basics, theme builder, popups, blocks, and forms verified"
-    status: pending
-  - id: R590
-    content: "QRY-20 Index collection entries and videos alongside pages and posts, with result type tabs"
-    status: pending
-  - id: R591
-    content: "QRY-21 Search results paging, highlighted snippets, type badges, and thumbnails"
-    status: pending
-  - id: R592
-    content: "QRY-22 Search analytics: top queries and zero-result queries on analytics boards, storing no personal data"
-    status: pending
-  - id: R593
-    content: "QRY-23 Per-site synonyms and pinned results managed in settings"
-    status: pending
-  - id: R594
-    content: "QRY-24 Search adapter interface with Postgres as the default, so Meilisearch or Typesense can be added later without block changes"
-    status: pending
-  - id: R603
-    content: "ECM-01 Gate 30 approval: confirm store scope, goods types, target markets, and payment providers"
-    status: pending
-  - id: R604
-    content: "ECM-02 Audit R069-R072 products and orders and the COM order lifecycle; extend them, never build a second order system"
-    status: pending
-  - id: R605
-    content: "ECM-03 Product catalog schema with variants, options, SKU, price, compare-at price, stock, weight, images, site_id, and locale"
-    status: pending
-  - id: R636
-    content: "ECM-34 Store permissions store.manage, products.edit, and orders.manage, a Shop Manager role, and site isolation for products, carts, and orders"
-    status: pending
-  - id: R606
-    content: "ECM-04 Product categories, tags, and manual or rule-based collections"
-    status: pending
-  - id: R607
-    content: "ECM-05 Inventory with stock levels, low-stock threshold, backorders, and stock reservation during checkout"
-    status: pending
-  - id: R608
-    content: "ECM-06 Money stored in integer minor units with per-site currency and price formatting by locale"
-    status: pending
-  - id: R609
-    content: "ECM-07 Admin product list and editor with variant matrix, media gallery, SEO fields, bulk edit, and CSV import and export"
-    status: pending
-  - id: R610
-    content: "ECM-08 Digital product type that reuses the R373 secure fulfillment and R374 license issuance"
-    status: pending
-  - id: R615
-    content: "ECM-13 Product dynamic fields for title, price, sale badge, gallery, description, stock status, and SKU on the BLD-22 dynamic-value schema"
-    status: pending
-  - id: R611
-    content: "ECM-09 Single product template built in the builder and assigned per site, locale, or category with a built-in fallback"
-    status: pending
-  - id: R612
-    content: "ECM-10 Shop and category archive templates using Query Loop with a products source"
-    status: pending
-  - id: R616
-    content: "ECM-14 Product gallery block with thumbnails, zoom, lightbox, and image switch on variant change"
-    status: pending
-  - id: R617
-    content: "ECM-15 Variant picker block with swatches, buttons, or dropdowns that updates price, stock, and image"
-    status: pending
-  - id: R618
-    content: "ECM-16 Add-to-cart block with quantity, variant validation, and a server-side stock check"
-    status: pending
-  - id: R619
-    content: "ECM-17 Product Query Loop presets for featured, on sale, new, best sellers, related, upsell, and cross-sell; keep R070 rendering"
-    status: pending
-  - id: R620
-    content: "ECM-18 Shop filters for price range, attributes, category, and in stock, with sort, using the QRY filter blocks and facet counts"
-    status: pending
-  - id: R621
-    content: "ECM-19 Product details tabs or accordion for description, specifications, and shipping info using the existing Tabs and Accordion"
-    status: pending
-  - id: R622
-    content: "ECM-20 Product breadcrumbs and Product JSON-LD with real price and availability, and no invented ratings"
-    status: pending
-  - id: R623
-    content: "ECM-21 Server-side cart with guest cookie, merge on login, site scope, and prices recalculated on the server"
-    status: pending
-  - id: R627
-    content: "ECM-25 Payment adapter interface with Stripe from R071, the provider chosen in R370, and optional cash on delivery"
-    status: pending
-  - id: R628
-    content: "ECM-26 Shipping zones with flat, weight-based, and free-over-threshold rates and local pickup"
-    status: pending
-  - id: R629
-    content: "ECM-27 Tax settings for inclusive or exclusive prices and rates by country or region, shown on cart and invoice"
-    status: pending
-  - id: R630
-    content: "ECM-28 Cart coupons for percent, fixed amount, and free shipping with limits and dates, extending R377"
-    status: pending
-  - id: R624
-    content: "ECM-22 Mini-cart block and slide-out cart drawer for header templates"
-    status: pending
-  - id: R625
-    content: "ECM-23 Cart block with line items, quantity change, remove, coupon field, and totals summary"
-    status: pending
-  - id: R626
-    content: "ECM-24 Checkout blocks for contact, address, shipping, payment, and summary with guest checkout and locked required fields"
-    status: pending
-  - id: R613
-    content: "ECM-11 Cart and checkout page templates built in the builder from the cart and checkout blocks"
-    status: pending
-  - id: R614
-    content: "ECM-12 Order-received page and customer account templates built in the builder"
-    status: pending
-  - id: R631
-    content: "ECM-29 Physical order lifecycle from paid to processing, shipped, delivered, canceled, and refunded, with stock returned on cancel or refund"
-    status: pending
-  - id: R632
-    content: "ECM-30 Admin orders inbox with fulfillment, tracking number, packing slip, partial refund, notes, and audit log"
-    status: pending
-  - id: R633
-    content: "ECM-31 Order confirmation, shipped, and refund emails from editable templates"
-    status: pending
-  - id: R634
-    content: "ECM-32 Customer account for order history, addresses, and reorder, extending the R375 portal"
-    status: pending
-  - id: R635
-    content: "ECM-33 Abandoned cart reminder emails with the R379 consent rules"
-    status: pending
-  - id: R637
-    content: "ECM-35 Store analytics for revenue, orders, average order value, top products, and the funnel, extending R378 and R387"
-    status: pending
-  - id: R638
-    content: "ECM-36 Store starter template with home, shop, product, cart, checkout, and account pages and demo products"
-    status: pending
-  - id: R639
-    content: "ECM-37 Cache product and shop pages, revalidate on price or stock change, and never cache cart, checkout, or account"
-    status: pending
-  - id: R640
-    content: "ECM-38 Accessible variant picker, cart drawer, and checkout forms"
-    status: pending
-  - id: R641
-    content: "ECM-39 Tests for money math, stock races, coupons, tax and shipping, webhook idempotency, cart tampering, and site isolation"
-    status: pending
-  - id: R642
-    content: "ECM-40 Lint, tsc, and a browser check from browse and filter to product, cart, sandbox checkout, email, fulfilment, and refund"
-    status: pending
-  - id: R643
-    content: "ECM-41 Gate 31 approval: catalog, product templates, cart, checkout, payments, orders, and store SEO verified"
-    status: pending
-  - id: R443
-    content: "RFB-09 Add reusable synced sections and shared components with an explicit detach/unlink action"
-    status: pending
-  - id: R444
-    content: "RFB-10 Add repeaters and collection-driven lists with typed item schemas, empty states, and safe item limits"
-    status: pending
-  - id: R445
-    content: "RFB-11 Add a visual CMS query builder for approved collections with filters, sorting, pagination, and relationship fields"
-    status: pending
-  - id: R446
-    content: "RFB-12 Add preview fixtures and real-data preview modes that respect draft permissions, roles, and site boundaries"
-    status: pending
-  - id: R447
-    content: "RFB-13 Improve React/Next.js export and portability with a documented output contract, stable component mapping, and no hidden runtime assumptions"
-    status: pending
-  - id: R454
-    content: "RFB-20 Add reusable page templates and route-level layout composition for headers, footers, and shared navigation"
-    status: pending
-  - id: R458
-    content: "RFB-24 Add migration-safe import/export tests for pages, components, tokens, templates, and dynamic bindings"
-    status: pending
-  - id: R461
-    content: "RFB-27 Gate 20 approval: CMS collections, reusable components, preview, and export portability verified"
-    status: pending
-  - id: R449
-    content: "RFB-15 Add visual regression snapshots for key routes and desktop/tablet/mobile viewports"
-    status: pending
-  - id: R450
-    content: "RFB-16 Add built-in accessibility diagnostics for labels, alt text, heading order, contrast warnings, keyboard reachability, and landmarks"
-    status: pending
-  - id: R451
-    content: "RFB-17 Add responsive layout diagnostics for overflow, clipped content, fixed-width conflicts, and breakpoint regressions"
-    status: pending
-  - id: R457
-    content: "RFB-23 Add performance diagnostics for excessive client components, large images, heavy blocks, and avoidable layout shifts"
-    status: pending
-  - id: R452
-    content: "RFB-18 Add design-token import/export for CSS variables and a documented mapping to the global style system"
-    status: pending
-  - id: R453
-    content: "RFB-19 Add localization-ready content fields, locale-specific page variants, and RTL-aware layout validation"
-    status: pending
-  - id: R459
-    content: "RFB-25 Document the React-first positioning, supported extension contract, Next.js compatibility matrix, and product limitations"
-    status: pending
-  - id: R462
-    content: "RFB-28 Gate 21 approval: accessibility, responsive diagnostics, visual regression, and performance checks verified"
-    status: pending
-  - id: R448
-    content: "RFB-14 Add Git-aware change review for supported project files with diffs and explicit confirmation before writing or committing changes"
-    status: pending
-  - id: R455
-    content: "RFB-21 Define a safe extension/marketplace contract for optional component packs with explicit dependencies, versioning, and permission boundaries"
-    status: pending
-  - id: R511
-    content: "DOC-01 Nullable parent_id on pages with an additive migration and a cycle guard"
-    status: pending
-  - id: R512
-    content: "DOC-02 Sort order among sibling pages, with drag-to-reorder in the pages list"
-    status: pending
-  - id: R513
-    content: "DOC-03 Nested URL paths from the page tree, with redirects when a slug or parent changes"
-    status: pending
-  - id: R514
-    content: "DOC-04 Docs sidebar block built from the page tree, collapsible, with the active page highlighted"
-    status: pending
-  - id: R515
-    content: "DOC-05 Docs layout template with sidebar, content, and on-this-page columns that collapse on mobile"
-    status: pending
-  - id: R516
-    content: "DOC-06 On-this-page contents list built from h2 and h3 headings"
-    status: pending
-  - id: R517
-    content: "DOC-07 Stable heading anchor ids with a copy-link button"
-    status: pending
-  - id: R518
-    content: "DOC-08 Previous and next links from the page tree order"
-    status: pending
-  - id: R519
-    content: "DOC-09 Breadcrumbs from the page tree with BreadcrumbList JSON-LD"
-    status: pending
-  - id: R520
-    content: "DOC-10 Server-side syntax highlighting on the Code block with a language select"
-    status: pending
-  - id: R521
-    content: "DOC-11 Copy button, filename title, and line highlights on the Code block"
-    status: pending
-  - id: R522
-    content: "DOC-12 Code group block with tabs for several languages"
-    status: pending
-  - id: R523
-    content: "DOC-13 Callout block for note, tip, warning, and danger"
-    status: pending
-  - id: R524
-    content: "DOC-14 Import Markdown and MDX into pages, mapping to registered blocks and never running JSX"
-    status: pending
-  - id: R525
-    content: "DOC-15 Export a docs page or section as Markdown"
-    status: pending
-  - id: R526
-    content: "DOC-16 Last-updated date, edit-this-page link, and a was-this-helpful vote on docs pages"
-    status: pending
-  - id: R527
-    content: "DOC-17 Docs versions with a version switcher, per-version URLs, latest as default, and canonical to latest"
-    status: pending
-  - id: R528
-    content: "DOC-18 Search scoped to the current docs section and version"
-    status: pending
-  - id: R529
-    content: "DOC-19 Cmd+K quick search dialog on public docs pages"
-    status: pending
-  - id: R530
-    content: "DOC-20 Docs starter template using the docs layout; fulfils R323 (M3-05)"
-    status: pending
-  - id: R531
-    content: "DOC-21 Tests for the page tree, nested URLs, redirects, anchors, Markdown import, and version routing"
-    status: pending
-  - id: R532
-    content: "DOC-22 Lint, tsc, and a browser check of a three-level docs site on desktop and mobile"
-    status: pending
-  - id: R533
-    content: "DOC-23 Gate 27 approval: docs page tree, navigation, code blocks, import, versions, and search verified"
-    status: pending
-  - id: R534
-    content: "AGY-01 All-sites overview listing each site with domain, last publish, page count, and 30-day views"
-    status: pending
-  - id: R535
-    content: "AGY-02 Clone a site from an existing site or a starter, copying pages, templates, globals, menus, and settings but not users or form data"
-    status: pending
-  - id: R536
-    content: "AGY-03 Domain setup instructions and a DNS check that shows each domain as pending, verified, or misconfigured"
-    status: pending
-  - id: R537
-    content: "AGY-04 Client role that can edit content and media on its own site but not settings, users, templates, or code"
-    status: pending
-  - id: R538
-    content: "AGY-05 Content-only editing: lock block layout and style so the Client role can change text and images only"
-    status: pending
-  - id: R539
-    content: "AGY-06 White-label admin: per-install logo, product name, and accent color on the dashboard and login"
-    status: pending
-  - id: R540
-    content: "AGY-07 Shared template library across sites, with an explicit sync or detach when the source template changes"
-    status: pending
-  - id: R541
-    content: "AGY-08 Client feedback comments on preview links, resolved by the agency in the review queue"
-    status: pending
-  - id: R542
-    content: "AGY-09 Handoff checklist per site covering SEO, forms, domain, analytics, and an invited client owner"
-    status: pending
-  - id: R543
-    content: "AGY-10 Per-site activity log view built on the existing audit log"
-    status: pending
-  - id: R544
-    content: "LOC-01 Opening hours with weekly hours, holiday overrides, and an open-now label in the site time zone"
-    status: pending
-  - id: R545
-    content: "LOC-02 Multiple locations stored per site and reused by the Location block from R318"
-    status: pending
-  - id: R546
-    content: "LOC-03 LocalBusiness JSON-LD built from site settings, locations, and hours"
-    status: pending
-  - id: R547
-    content: "LOC-04 Click-to-call, WhatsApp, and directions buttons on the Button block and a mobile sticky contact bar"
-    status: pending
-  - id: R548
-    content: "LOC-05 Services or menu block with categories, prices, and dietary or feature tags"
-    status: pending
-  - id: R549
-    content: "LOC-06 Appointment request form with preferred date and time, sent to the form inbox with no calendar sync"
-    status: pending
-  - id: R550
-    content: "LOC-07 Announcement bar for offers or closures with start and end dates"
-    status: pending
-  - id: R551
-    content: "LOC-08 Reviews block for owner-entered reviews, with no invented rating markup"
-    status: pending
-  - id: R552
-    content: "PRT-01 Projects collection with title, cover, gallery, client, year, role, tags, and an external link"
-    status: pending
-  - id: R553
-    content: "PRT-02 Project detail template with case-study sections and next and previous project links"
-    status: pending
-  - id: R554
-    content: "PRT-03 Filterable project grid by tag, without a full page reload, feeding the Projects block from R316"
-    status: pending
-  - id: R555
-    content: "PRT-04 Lightbox for Gallery and project images with keyboard and swipe navigation"
-    status: pending
-  - id: R556
-    content: "PRT-05 Masonry and justified layouts on the Gallery block"
-    status: pending
-  - id: R557
-    content: "PRT-06 Before and after image comparison block"
-    status: pending
-  - id: R558
-    content: "PRT-07 Image hover effects on project cards from an allowlist"
-    status: pending
-  - id: R559
-    content: "PRT-08 CreativeWork JSON-LD and social preview images on project pages"
-    status: pending
-  - id: R560
-    content: "VID-01 Public video detail pages at a per-site video path with title, description, and player"
-    status: pending
-  - id: R561
-    content: "VID-02 Public playlist pages listing their published videos in order"
-    status: pending
-  - id: R562
-    content: "VID-03 VideoObject JSON-LD and a video sitemap for published videos"
-    status: pending
-  - id: R563
-    content: "VID-04 Caption and subtitle tracks from VTT URLs on the native player, with the language label"
-    status: pending
-  - id: R564
-    content: "VID-05 Chapters from timestamps in the description, shown as a clickable list"
-    status: pending
-  - id: R565
-    content: "VID-06 Related videos by playlist and tag on the detail page"
-    status: pending
-  - id: R566
-    content: "VID-07 Video plays and completion rates in analytics boards, built on video_progress and page views"
-    status: pending
-  - id: R567
-    content: "VID-08 Subscriber-only flag on videos that reuses the S2 entitlement check"
-    status: pending
-  - id: R568
-    content: "SITE-01 Tests for site cloning, the Client role, content-only locks, hours and open-now, project filters, and video pages"
-    status: pending
-  - id: R569
-    content: "SITE-02 Lint, tsc, and a browser check of one agency, local, portfolio, and video site"
-    status: pending
-  - id: R570
-    content: "SITE-03 Gate 28 approval: agency, local business, portfolio, and video library site features verified"
-    status: pending
-  - id: R644
-    content: "SLG-01 Add a unique, URL-safe slug column to sites with an additive migration, backfilling existing sites from their name and giving the default site the slug main"
-    status: pending
-  - id: R645
-    content: "SLG-02 Validate site slugs: lowercase letters, numbers, and hyphens, 2–40 characters, not a reserved route (dashboard, api, login, blog, search, media, sitemap.xml, robots.txt, _next) and not an enabled locale code"
-    status: pending
-  - id: R646
-    content: "SLG-03 Slug field on the sites admin page with a live URL preview, and a redirect from the old prefix when a slug changes"
-    status: pending
-  - id: R647
-    content: "SLG-04 Routing mode setting per install: host (today), path (/{site}/...), or both, with path as the development default"
-    status: pending
-  - id: R648
-    content: "SLG-05 In path mode, choose whether the default site keeps unprefixed URLs or also gets /main/"
-    status: pending
-  - id: R649
-    content: "SLG-06 Root URL in path mode redirects to the default site, or shows a simple list of public sites when that option is on"
-    status: pending
-  - id: R650
-    content: "SLG-07 Proxy strips any client-sent x-cms-host and x-cms-site-slug headers, reads the first path segment as the site slug, and sets x-cms-site-slug itself"
-    status: pending
-  - id: R651
-    content: "SLG-08 siteContext.publicSite resolves the site from x-cms-site-slug in path mode before the host, with source 'path'; an unknown slug returns 404 and never falls back to another site"
-    status: pending
-  - id: R652
-    content: "SLG-09 resolveRoute and resolvePostRoute strip the site segment first, then the locale, then the page or post slug, in the order /{site}/{locale}/{slug}"
-    status: pending
-  - id: R653
-    content: "SLG-10 Collection routes, /blog, and /search parse correctly under the site prefix, with a route table that rejects ambiguous paths"
-    status: pending
-  - id: R654
-    content: "SLG-11 PAGES.SITE.page, post, and a new search builder take the site and add its prefix; update all 33 call sites"
-    status: pending
-  - id: R655
-    content: "SLG-12 A siteHref helper prefixes internal links in menus, buttons, rich text, and builder blocks at render time, leaving external links alone"
-    status: pending
-  - id: R656
-    content: "SLG-13 The language switcher, breadcrumbs, and previous/next links keep the site prefix"
-    status: pending
-  - id: R657
-    content: "SLG-14 Dashboard view-page links, the share panel, and builder preview links use the prefixed public URL"
-    status: pending
-  - id: R658
-    content: "SLG-15 Preview links carry the site slug, and exiting preview returns to the prefixed page"
-    status: pending
-  - id: R659
-    content: "SLG-16 Canonical, hreflang, Open Graph URLs, and JSON-LD include the site prefix in path mode and the primary host in host mode"
-    status: pending
-  - id: R660
-    content: "SLG-17 Per-site sitemaps at /{site}/sitemap.xml plus a sitemap index, and robots.txt pointing at them"
-    status: pending
-  - id: R661
-    content: "SLG-18 Redirects match after the site prefix is stripped, and redirect targets get the prefix added"
-    status: pending
-  - id: R662
-    content: "SLG-19 Form submit, newsletter, and the analytics beacon send the page or form id and the server derives the site from it, never from a client-sent site value"
-    status: pending
-  - id: R663
-    content: "SLG-20 /api/v1 accepts ?site={slug} as well as the host, and an API key only works for its own site"
-    status: pending
-  - id: R664
-    content: "SLG-21 revalidatePublicSite purges only the changed site's prefix in path mode"
-    status: pending
-  - id: R665
-    content: "SLG-22 Tests for slug validation, the route parsing table, URL builders, proxy header stripping, unknown-slug 404, and cross-site denial"
-    status: pending
-  - id: R666
-    content: "SLG-23 Lint, tsc, and a browser check of two sites in path mode: pages, posts, search, language switch, preview, forms, and sitemaps"
-    status: pending
-  - id: R667
-    content: "SLG-24 Gate 32 approval: site slug routing, links, SEO, redirects, endpoints, and tests verified"
-    status: pending
-  - id: R668
-    content: "CFG-01 Container HTML tag choice (div, section, article, header, footer, aside, nav, main) with a warning for duplicate main or nav landmarks"
-    status: pending
-  - id: R669
-    content: "CFG-02 Content width: full width or boxed, with the boxed width taken from a site setting and overridable per container"
-    status: pending
-  - id: R670
-    content: "CFG-03 Structure picker when a Container is added: one, two, three, and four columns, 1:2, 2:1, 1:1:2, and a bento grid"
-    status: pending
-  - id: R671
-    content: "CFG-04 Per-child flex settings on any block inside a flex container: grow, shrink, basis, align-self, and order, per device"
-    status: pending
-  - id: R672
-    content: "CFG-05 Auto-fit card grid: a minimum item width that fills the row without per-device column counts"
-    status: pending
-  - id: R673
-    content: "CFG-06 Responsive direction and wrap, so a row can stack or reverse on tablet and mobile"
-    status: pending
-  - id: R674
-    content: "CFG-07 Horizontal scroll row on mobile with scroll snap, as a container option instead of a carousel block"
-    status: pending
-  - id: R675
-    content: "CFG-08 Whole-container link that renders one anchor and blocks nested links and buttons inside it"
-    status: pending
-  - id: R676
-    content: "CFG-09 Wrap selected blocks in a Container and unwrap a Container while keeping its children, both undoable"
-    status: pending
-  - id: R677
-    content: "CFG-10 One-click convert of a Columns block into a Container that renders the same, keeping the original until saved"
-    status: pending
-  - id: R678
-    content: "CFG-11 Opt-in absolute position inside a container with offsets and z-index, off by default and hidden on mobile unless set"
-    status: pending
-  - id: R679
-    content: "CFG-12 Gate 33 approval: CFG-01 to CFG-11 verified in the editor, preview, published page, and two devices"
-    status: pending
-  - id: R680
-    content: "ENG-01 Record every Puck problem the team hits, each with repro steps, the page or block it breaks, and whether a Puck upgrade or setting already fixes it"
-    status: in_progress
-  - id: R681
-    content: "ENG-02 Inventory every Puck API, override, field type, and route in use (20 files, including Puck, Render, resolveAllData, createUsePuck, useGetPuck, slots, overrides, viewports) and map each to its replacement"
-    status: completed
-  - id: R682
-    content: "ENG-03 Define the versioned page document format: a node map keyed by id, named child slots per node, root props, and per-device prop values that match Responsive<T> in src/builder/style.ts"
-    status: completed
-  - id: R683
-    content: "ENG-04 Two-way converter between Puck Data (content, zones, slot props) and the new format, with round-trip tests on every seeded and stored page, post, template, and global block"
-    status: completed
-  - id: R684
-    content: "ENG-05 Server renderer that renders a document with the existing block components and no Puck, as React Server Components where a block allows it"
-    status: completed
-  - id: R685
-    content: "ENG-06 Server data loaders per block (blog posts, global refs, contact forms, query loops) replacing resolveAllData, scoped to the site and cache-safe"
-    status: completed
-  - id: R686
-    content: "ENG-07 Switch the public site, preview, /api/v1 pages and posts, and export to the new renderer behind a flag, with a screenshot diff against Puck Render on every seeded page"
-    status: completed
-  - id: R687
-    content: "ENG-08 Editor store: node map, selection, hover, clipboard, and dirty state on React context and useSyncExternalStore, so only changed nodes re-render; no new state library"
-    status: completed
-  - id: R688
-    content: "ENG-09 Command layer: insert, move, delete, duplicate, update props, wrap, and unwrap as commands with undo and redo, merging a drag or a typing burst into one undo step"
-    status: completed
-  - id: R689
-    content: "ENG-10 Canvas in an iframe with site styles and theme tokens injected, rendering the same block components; selection, hover, and labels drawn as an overlay outside block DOM"
-    status: completed
-  - id: R690
-    content: "ENG-11 Drag and drop with dnd-kit (already used by analytics boards): from the block library, within and between nested slots, with drop lines, auto-scroll, and allowed-children rules"
-    status: completed
-  - id: R691
-    content: "ENG-12 Keyboard control: select parent, child, and sibling; move up and down; delete, duplicate, copy, paste, undo, redo; Escape to deselect"
-    status: completed
-  - id: R692
-    content: "ENG-13 Layers panel on the new tree with drag reorder, expand and collapse, rename, hide, and lock"
-    status: completed
-  - id: R693
-    content: "ENG-14 Inspector with a field registry (text, textarea, select, number, url, color, image, icon, rich text, list, object, custom) reusing the controls in src/builder/controls and src/builder/fields, plus conditional fields"
-    status: completed
-  - id: R694
-    content: "ENG-15 Responsive editing: the device switch resizes the iframe; each field can hold per-device values with inheritance and reset to inherited"
-    status: completed
-  - id: R695
-    content: "ENG-16 Canvas resize handles for container width, spacing, and flex or grid tracks, each drag committing one undoable command, with numeric input as the keyboard alternative"
-    status: in_progress
-  - id: R696
-    content: "ENG-17 Inline text editing on the canvas for headings, buttons, and rich text using the project's Tiptap setup"
-    status: in_progress
-  - id: R697
-    content: "ENG-18 Block definition API: one definition per block with type, label, category, icon, fields, defaults, slots, allowed children, loader, and render; port every block now in src/builder/config.tsx"
-    status: in_progress
-  - id: R698
-    content: "ENG-19 Port the builder chrome: save draft, publish, autosave, editor lock, unsaved-changes guard, revisions and restore"
-    status: completed
-  - id: R699
-    content: "ENG-20 Port every builder kind: pages, posts, post templates, page templates, global blocks with GlobalRef, contact forms, and the save-as-template and save-as-global dialogs"
-    status: completed
-  - id: R700
-    content: "ENG-21 Port AI dialogs, motion and animation preview, theme tokens, and selection card actions"
-    status: completed
-  - id: R701
-    content: "ENG-22 Performance budget: a 500-block page keeps smooth drag and typing, the editor bundle stays under a set size, and the public renderer ships no editor code"
-    status: pending
-  - id: R702
-    content: "ENG-23 Per-site flag to choose the Puck or new editor during rollout, with both reading and writing the same stored format through the converter"
-    status: in_progress
-  - id: R703
-    content: "ENG-24 One-time migration of page_contents, post_contents, revisions, templates, and global blocks to the new format, with a backup and a tested rollback script"
-    status: in_progress
-  - id: R704
-    content: "ENG-25 Unit tests for the converter, commands and undo, nesting rules, responsive inheritance, and renderer output"
-    status: completed
-  - id: R705
-    content: "ENG-26 End-to-end tests: add, nest, drag between containers, resize, undo, save, publish, and public render on two sites"
-    status: pending
-  - id: R706
-    content: "ENG-27 Editor accessibility: keyboard alternative to every drag, visible focus, labelled controls, and screen reader announcements for moves"
-    status: pending
-  - id: R707
-    content: "ENG-28 Remove @measured/puck after rollout, and update the docs and plans that assume Puck (container rules, MKT, QRY)"
-    status: pending
-  - id: R708
-    content: "ENG-29 Gate 34 approval: document format, converter round trip, and the server renderer verified; the public site runs without Puck"
-    status: completed
-  - id: R709
-    content: "ENG-30 Gate 35 approval: editor core and every builder kind reach parity with the Puck editor"
-    status: completed
-  - id: R710
-    content: "ENG-31 Gate 36 approval: migration, rollback, tests, performance budget, and Puck removal verified"
-    status: pending
-  - id: R711
-    content: "UXE-01 Editor layout with insert panel, canvas, and inspector as resizable, collapsible panels whose sizes are remembered per user, plus a focus mode that hides every panel"
-    status: completed
-  - id: R712
-    content: "UXE-02 Command palette (Cmd/Ctrl+K) to insert any block, jump to a layer, run any editor action, open another page, and search settings"
-    status: completed
-  - id: R713
-    content: "UXE-03 Quick insert on the canvas: type / in an empty spot or click the + shown between blocks on hover, with search and keyboard selection"
-    status: completed
-  - id: R714
-    content: "UXE-04 Insert panel with search, categories, recent and favorite blocks, a live preview on hover, and click to insert at the selection or drag to place"
-    status: in_progress
-  - id: R715
-    content: "UXE-05 Patterns library of sections and full pages with live thumbnails and filters, inserted as editable copies; users save their own patterns to a per-site team library"
-    status: pending
-  - id: R716
-    content: "UXE-06 Canvas zoom and pan (fit, 25–200%, space-drag, pinch) and a multi-device view showing desktop, tablet, and mobile side by side with linked selection"
-    status: pending
-  - id: R717
-    content: "UXE-07 Smart guides: show padding, margin, and gap on hover, distances between elements, and alignment guides while dragging or resizing"
-    status: pending
-  - id: R718
-    content: "UXE-08 Breadcrumb of the selected block's parents under the canvas; click a crumb to select that parent"
-    status: completed
-  - id: R719
-    content: "UXE-09 Multi-select with Shift or Cmd click and a marquee inside a container, with group delete, duplicate, wrap, align, and shared style edits"
-    status: completed
-  - id: R720
-    content: "UXE-10 Floating toolbar beside the selection with the main actions for that block type, plus a right-click menu with every action and its shortcut"
-    status: completed
-  - id: R721
-    content: "UXE-11 Empty states and drop hints: an empty container offers layout presets and a + button, and a blocked drop says why it is not allowed"
-    status: completed
-  - id: R722
-    content: "UXE-12 Inspector tabs for Content, Style, and Advanced with search inside settings, a dot on every changed field, and reset per field and per device"
-    status: completed
-  - id: R723
-    content: "UXE-13 Visual style controls: a box-model widget for spacing, alignment pads for flex and grid, number inputs you drag to change, unit switching, and a design token picker in every color and size field"
-    status: completed
-  - id: R724
-    content: "UXE-14 Reusable style classes: save a block's style as a named class, apply it to other blocks, see where it is used, and detach it; builds on the global tokens in BLD-27 to BLD-31"
-    status: completed
-  - id: R725
-    content: "UXE-15 State styles: a switch in the inspector to edit hover, focus, and active styles, previewed on the canvas"
-    status: completed
-  - id: R726
-    content: "UXE-16 History panel listing named steps you can jump back to, a visible autosave status, and recovery of unsaved work after a crash or closed tab"
-    status: completed
-  - id: R727
-    content: "UXE-17 Version compare: two revisions side by side with changed blocks highlighted, and restore of a single block from an older version"
-    status: completed
-  - id: R728
-    content: "UXE-18 Comments pinned to blocks on the canvas with mentions, replies, resolve, and notifications; reviewers can comment without edit rights; shares storage with AGY-08 preview feedback"
-    status: completed
-  - id: R729
-    content: "UXE-19 Live presence: avatars of others on the page, their selection outlines, and a lock on the block someone is editing, extending the P5-14 soft lock; full real-time co-editing stays out of scope for the first release"
-    status: completed
-  - id: R730
-    content: "UXE-20 AI assist on the selection: generate a section from a prompt, rewrite, shorten, or translate text, write alt text, and suggest layout variants; every result is previewed first and undoable, building on the AI dialogs ported in R700"
-    status: completed
-  - id: R731
-    content: "UXE-21 Live checks panel while editing for accessibility (RFB-16), SEO, broken links, missing alt text, heading order, and heavy blocks (RFB-23); click an issue to select the block"
-    status: completed
-  - id: R732
-    content: "UXE-22 First-run experience: a start screen (blank, template, or AI), a short guided tour, contextual tips, and a keyboard shortcut sheet"
-    status: completed
-  - id: R733
-    content: "UXE-23 Editor preferences: light or dark editor theme, density, reduced motion, panel positions, default units, and a right-to-left editor UI"
-    status: completed
-  - id: R734
-    content: "UXE-24 Fast feel: selection under 50 ms, optimistic updates, skeletons instead of spinners, no layout jumps when panels open, and full use on a 13-inch laptop and a touch tablet"
-    status: completed
-  - id: R735
-    content: "UXE-25 Usability test with five real users on five tasks (build a hero, nest a grid, fix the mobile layout, reuse a section, publish), fix the top problems, and record time per task before and after"
-    status: completed
-  - id: R736
-    content: "UXE-26 Gate 37 approval: the modern editor experience passes the usability test, accessibility checks, and performance budget"
-    status: completed
-  - id: R737
-    content: "DAT-01 Baseline before changes: save payload size, save latency, revision table growth per hour of editing, editor load time, public page TTFB cached and uncached, and database queries per public request, recorded in this plan"
-    status: in_progress
-  - id: R738
-    content: "DAT-02 Version check on every save: each document has a version number, saves send the version they started from, and a stale save gets a conflict response that the editor shows as reload or compare, replacing today's silent last-write-wins"
-    status: completed
-  - id: R739
-    content: "DAT-03 Patch saves: the editor sends only the changed nodes, built from the R688 command log, and the server applies them in one transaction and validates the result; a full save remains the fallback"
-    status: completed
-  - id: R740
-    content: "DAT-04 Save queue: debounce typing (about 1 second), save at once on structural changes and when leaving the page, keep one request in flight and merge the rest, retry with backoff, and keep a local IndexedDB copy so offline or failed saves are never lost"
-    status: completed
-  - id: R741
-    content: "DAT-05 Validate and normalize once on save (schema, sanitize, size limits per document and per field), so render paths trust stored data and skip re-validation on every request"
-    status: in_progress
-  - id: R742
-    content: "DAT-06 Revision storage: full snapshots on publish and manual save, autosave revisions stored as patches against the last snapshot, a retention policy that keeps every named and published version, and rebuild of any revision on demand"
-    status: pending
-  - id: R743
-    content: "DAT-07 Store media as asset ids, never URLs or base64, in the document; resolve size, srcset, and alt text at render time"
-    status: pending
-  - id: R744
-    content: "DAT-08 Load the editor in one server round trip: page, draft, site settings, theme tokens, referenced global blocks, and block metadata fetched in parallel and streamed, with no client request waterfall"
-    status: completed
-  - id: R745
-    content: "DAT-09 Load secondary panels on open (patterns, media library, revisions, comments) with pagination, cached per session using TanStack Query, which is already installed"
-    status: pending
-  - id: R746
-    content: "DAT-10 Split editor code per block: field editors and heavy client code load on demand, and the canvas loads only the blocks the page uses until the insert panel opens"
-    status: pending
-  - id: R747
-    content: "DAT-11 Publish once, render fast: on publish, store a render-ready published document (normalized, style classes generated, global block versions pinned) so public requests skip that work; live data loaders still run per request"
-    status: pending
-  - id: R748
-    content: "DAT-12 Fine-grained public caching with the Next.js 16 cache APIs (use cache, cacheTag) per site, page, locale, and global block; publish revalidates only the tags it changed instead of the whole site layout, extending SLG-21 and OZ-06"
-    status: pending
-  - id: R749
-    content: "DAT-13 Static shell with streamed dynamic parts: cache the page HTML and stream forms, filtered query loops, and per-visitor parts inside Suspense"
-    status: pending
-  - id: R750
-    content: "DAT-14 Global block usage table updated on save, so editing a global block revalidates only the pages that use it"
-    status: pending
-  - id: R751
-    content: "DAT-15 Indexes for the editor and public reads: page_contents (page_id, kind), page_revisions (page_id, kind, created_at), pages (site_id, language, slug, status), and the post equivalents, checked with EXPLAIN on seeded data"
-    status: completed
-  - id: R752
-    content: "DAT-16 Batch block data loads per request with React cache so N blocks of the same type make one query, select only the needed columns, and cap document size"
-    status: completed
-  - id: R753
-    content: "DAT-17 Performance tests in CI on a seeded 500-block page: save under 300 ms at p95, editor ready under 2 s, cached public TTFB under 100 ms, plus slow-query logging in development"
-    status: pending
-  - id: R754
-    content: "DAT-18 Gate 38 approval: conflict-safe saving, patch saves, offline recovery, editor load, and public caching meet the R753 budgets"
-    status: pending
-  - id: R755
-    content: "PKG-01 Turn the repo into a pnpm workspace with the app at the root plus packages/* (moving the app to apps/cms is deferred), keep one lockfile by removing package-lock.json, use the @nextcms scope, and ship packages as TypeScript source compiled by the host (a tsup build is added for release in R771)"
-    status: completed
-  - id: R756
-    content: "PKG-02 Split the builder into packages: builder-core (document format, validation, commands, store, converter, renderer, no UI), builder-react (editor UI), builder-blocks (default block library, optional), and builder-next (Next.js helpers, optional)"
-    status: in_progress
-  - id: R757
-    content: "PKG-03 Decouple from the app: remove every import of the app's database, server actions, config, shadcn components, media, and video from builder code, replacing them with adapters; a lint rule blocks @/ imports inside packages"
-    status: in_progress
-  - id: R758
-    content: "PKG-04 Small public API: defineBlock, defineField, createBuilderConfig, BuilderEditor, BuilderRenderer, useBuilder hooks, and validateDocument, migrateDocument, and serializeDocument; everything else stays internal"
-    status: completed
-  - id: R759
-    content: "PKG-05 Adapters the host provides, each optional with a working default: storage (load, patch save, version conflict), media picker and upload, link picker, data sources for dynamic content and query loops, permissions, AI, translation, and comments and presence transport"
-    status: pending
-  - id: R760
-    content: "PKG-06 Custom blocks in a few lines: the host registers its own React component with a Zod props schema; fields, defaults, and validation are generated from it, with slots and server loaders; this is the RFB-02 and RFB-04 contract"
-    status: completed
-  - id: R761
-    content: "PKG-07 Plugin API for panels, toolbar actions, commands, field types, and canvas overlays; the CMS features (templates, global blocks, contact forms, AI, revisions) are built as plugins on it"
-    status: pending
-  - id: R762
-    content: "PKG-08 Exported document format version with migrate functions, so hosts upgrade stored data when they upgrade the package"
-    status: completed
-  - id: R763
-    content: "PKG-09 Self-contained styling: the editor UI ships compiled, prefixed CSS with CSS variables for theming, so the host needs no Tailwind or shadcn; light and dark themes; blocks read theme tokens"
-    status: pending
-  - id: R764
-    content: "PKG-10 Framework support: plain React 18 and 19 for the editor and renderer, an SSR-safe renderer with a React Server Components entry, and optional Next.js helpers; tested in a Vite React app and a Next.js app"
-    status: pending
-  - id: R765
-    content: "PKG-11 Editor UI text in English by default with host-supplied translations and right-to-left support"
-    status: pending
-  - id: R766
-    content: "PKG-12 Separate entry points (core, editor, renderer, blocks), ESM with type definitions, tree-shakeable, and a renderer entry with no editor code; bundle size budgets checked in CI"
-    status: pending
-  - id: R767
-    content: "PKG-13 The CMS app uses the packages exactly like an outside user, through the public API only, with no deep imports"
-    status: pending
-  - id: R768
-    content: "PKG-14 Examples folder: a Vite React example and a Next.js example, each getting an editor that saves to localStorage in under 50 lines"
-    status: pending
-  - id: R769
-    content: "PKG-15 Docs: getting started, config, blocks, fields, adapters, plugins, theming, document format, and upgrade guide, plus an API reference generated from the types with TypeDoc"
-    status: pending
-  - id: R770
-    content: "PKG-16 Tests per package, adapter contract tests any host can run against its own adapters, and both examples built and smoke-tested in CI"
-    status: pending
-  - id: R771
-    content: "PKG-17 Release with Changesets for versions and changelogs; decide public npm or a private registry and the package license together with the licensing plan (R217–R261), since the CMS is sold as licensed software"
-    status: pending
-  - id: R772
-    content: "PKG-18 Gate 39 approval: both examples and the CMS app run on the published packages through the public API, with docs, tests, and size budgets passing"
-    status: pending
-  - id: R773
-    content: "EXT-01 defineBlock with full type inference: props are inferred from the Zod schema, so render, defaults, loaders, and fields all autocomplete and type-check with no hand-written prop types"
-    status: completed
-  - id: R774
-    content: "EXT-02 Editor metadata on every block: label, icon, category, keywords for search, thumbnail, inline-editable props, and placeholder text, all optional with sensible defaults"
-    status: completed
-  - id: R775
-    content: "EXT-03 Defaults as a value or a function of context (site, locale, theme tokens, parent block), so new blocks start right for where they are dropped"
-    status: completed
-  - id: R776
-    content: "EXT-04 Named slots with allowed block types, min and max children, and default children, declared in the schema with slot()"
-    status: completed
-  - id: R777
-    content: "EXT-05 Prop traits: reusable prop groups such as withStyle, withLayout, withAnimation, withVisibility, withDynamic, and withA11y that any block opts into with traits: [...], each bringing its schema, fields, defaults, and render wrapper"
-    status: completed
-  - id: R778
-    content: "EXT-06 Schema helpers that wrap any field type: responsive(...) for per-device values, token(...) for design tokens, dynamic(...) for data bindings, and translatable(...) for per-locale text"
-    status: completed
-  - id: R779
-    content: "EXT-07 extendBlock to customize an existing block (built-in or third party): add or hide fields, change defaults, add presets, and wrap or replace render while receiving the original as Base"
-    status: completed
-  - id: R780
-    content: "EXT-08 Extend every block at once from a plugin (for example a tracking id or test id prop), with a clear order when several plugins extend the same block"
-    status: completed
-  - id: R781
-    content: "EXT-09 Presets and variants per block: named prop sets (for example Hero Split and Hero Centered) shown in the insert panel; the host can add presets to built-in blocks"
-    status: completed
-  - id: R782
-    content: "EXT-10 Safe escape hatches: allowlisted class names, data attributes, and token-based style overrides; never raw CSS strings or arbitrary HTML attributes"
-    status: completed
-  - id: R783
-    content: "EXT-11 defineField for custom field types: schema, input component, compact preview, and validation message, usable inside object, list, and responsive fields"
-    status: completed
-  - id: R784
-    content: "EXT-12 Field composition: object, list with sortable items, tabs and groups, conditional visibility (BLD-33), and computed read-only fields"
-    status: in_progress
-  - id: R785
-    content: "EXT-13 Typed UI overrides for editor parts (inspector header, block card, toolbar, empty state, canvas overlay) through a component map, replacing the Puck overrides pattern"
-    status: pending
-  - id: R786
-    content: "EXT-14 Per-block and per-field permissions: hide or lock fields by role, and lock props in templates so page editors cannot change them"
-    status: pending
-  - id: R787
-    content: "EXT-15 Wrap any existing React component as a block in one call, mapping its props to a schema; works with server components, and client components keep their use client boundary"
-    status: pending
-  - id: R788
-    content: "EXT-16 Typed server loaders per block with site, locale, preview, and cache context, batched per request (DAT-16), so custom blocks fetch data safely"
-    status: pending
-  - id: R789
-    content: "EXT-17 Block versioning: each block has a version and a migrate function, so props saved by old versions upgrade when the block changes"
-    status: pending
-  - id: R790
-    content: "EXT-18 Scaffold command that creates a new block with component, schema, presets, preview, and test in one step"
-    status: pending
-  - id: R791
-    content: "EXT-19 Block playground page that shows every block with its fields, presets, and devices, and checks that defaults pass the schema"
-    status: pending
-  - id: R792
-    content: "EXT-20 Development warnings for unknown props, schema mismatches in stored data, missing slots, and slow loaders, shown in the console and the editor"
-    status: pending
-  - id: R793
-    content: "EXT-21 Test helpers to render a block with props, build valid fixture props from the schema, and run the adapter contract tests"
-    status: pending
-  - id: R794
-    content: "EXT-22 Recipes in the docs: custom hero, card grid with a loader, extend a built-in block, add a trait, custom color field, lock fields in a template, and wrap a third-party component"
-    status: pending
-  - id: R795
-    content: "EXT-23 Gate 40 approval: a developer new to the project builds a custom block, extends a built-in block, and adds a trait using only the docs, and the CMS blocks themselves use this API"
-    status: pending
-  - id: R796
-    content: "ROB-01 Non-goals document for the whole builder rewrite: full OT/CRDT co-editing, native mobile editor, non-React hosts, visual page builder for non-developers, and headless-only usage without the React editor stay out of scope for Gates 34–41"
-    status: completed
-  - id: R797
-    content: "ROB-02 Editor error surfaces: what the user sees when a block loader fails, schema validation fails on load, a global block is missing, or the document is corrupt; include quarantine mode, open-as-read-only, and guided repair"
-    status: completed
-  - id: R798
-    content: "ROB-03 Network and API error UX while editing: retry, offline banner, conflict compare, and never lose the local command log"
-    status: completed
-  - id: R799
-    content: "ROB-04 Telemetry for the rewrite: editor error reporting, feature-flag usage (Puck vs new engine per site), save success and conflict rates, and Core Web Vitals impact after migration"
-    status: pending
-  - id: R800
-    content: "ROB-05 Permissions model: field-level and block-level permissions enforced in the command layer and UI, role-based insert/delete/publish restrictions, and how the permissions adapter (PKG-05) constrains actions"
-    status: pending
-  - id: R801
-    content: "ROB-06 Editor i18n: localize chrome, command palette, empty states, onboarding, and error messages; wire the RTL preference (R733) to real layout direction and test with at least one RTL locale"
-    status: pending
-  - id: R802
-    content: "ROB-07 Visual regression suite on the canvas that runs on every PR, plus contract tests for every adapter (storage, media, data sources, permissions, AI, comments)"
-    status: pending
-  - id: R803
-    content: "ROB-08 Property-based and fuzz tests on the converter, command layer, nesting rules, and responsive inheritance"
-    status: completed
-  - id: R804
-    content: "ROB-09 Dual-engine operational playbook: expected dual-mode duration, criteria to flip a site permanently, rollback after publish, monitoring, and a kill-switch if the new renderer produces bad public pages"
-    status: completed
-  - id: R805
-    content: "ROB-10 Security of the document format and extension surface: XSS surface in rich text and custom fields, size and DoS limits, and sandboxing expectations for untrusted custom blocks"
-    status: pending
-  - id: R806
-    content: "ROB-11 Large-document handling beyond the 500-block budget: progressive node-tree loading, virtualized layers panel, and deferred field editors"
-    status: pending
-  - id: R807
-    content: "ROB-12 Accessibility specifics for multi-select, smart guides, floating toolbar, and marquee selection (keyboard and screen-reader paths)"
-    status: completed
-  - id: R808
-    content: "ROB-13 Estimate and track migration cost for other plans that currently assume Puck (MKT, QRY, container/flex/grid, market-gap shortcuts)"
-    status: completed
-  - id: R809
-    content: "ROB-14 Minimum-viable packages first: land PKG-01–03 and a thin public surface before ENG work, then expand packages; avoid rewriting ENG code twice"
-    status: completed
-  - id: R810
-    content: "ROB-15 Dual-engine test matrix: both engines reading and writing the same pages, converter round-trips under concurrent edits, and screenshot + HTML/prop diffs"
-    status: in_progress
-  - id: R811
-    content: "ROB-16 Document recovery drills: restore from backup, rebuild a revision from patches, and open a partially migrated document safely"
-    status: pending
-  - id: R812
-    content: "ROB-17 Gate 41 approval: non-goals published, error recovery and telemetry live, permissions and i18n verified, dual-engine playbook rehearsed, security review passed, and large-document + a11y tests green"
-    status: pending
-isProject: false
+- id: R001
+  content: P1-01 Register Slider, Tabs, and Accordion as builderConfig component keys
+  status: completed
+- id: R002
+  content: P1-02 Confirm Slider, Tabs, and Accordion render on the public site
+  status: completed
+- id: R003
+  content: P1-03 Show the contact-form options editor only for select and radio
+  status: completed
+- id: R004
+  content: P1-04 Nullable page_id plus post_id on page_views; record post views
+  status: completed
+- id: R005
+  content: P1-05 Mount the view beacon on post routes
+  status: completed
+- id: R006
+  content: P1-06 Include posts on the analytics boards
+  status: completed
+- id: R007
+  content: P1-07 Public language switcher using translationGroupId and hreflang
+  status: completed
+- id: R008
+  content: P1-08 Wire UrlField on Hero, CTA, Pricing, and Image
+  status: completed
+- id: R009
+  content: P1-09 Wire IconPickerField on Features
+  status: completed
+- id: R010
+  content: P1-10 Turn off typescript.ignoreBuildErrors and fix the type errors
+  status: completed
+- id: R011
+  content: P1-11 Replace README.md with real setup
+  status: completed
+- id: R012
+  content: P2-01 form_submissions table with site_id defaulting to default
+  status: completed
+- id: R013
+  content: P2-02 First-party contact-form submit route
+  status: completed
+- id: R014
+  content: "\"P2-03 Admin form inbox: list, read, archive\""
+  status: completed
+- id: R015
+  content: P2-04 CSV export of form submissions
+  status: completed
+- id: R016
+  content: P2-05 Honeypot and optional Turnstile on form submit
+  status: completed
+- id: R017
+  content: P2-06 Email site owner via SMTP or Resend
+  status: completed
+- id: R018
+  content: P2-07 redirects table with site_id
+  status: completed
+- id: R019
+  content: P2-08 Middleware resolves redirects before the catch-all page
+  status: completed
+- id: R020
+  content: P2-09 Redirect CSV import
+  status: completed
+- id: R021
+  content: P2-10 Publishing a slug change offers to create a redirect
+  status: completed
+- id: R022
+  content: P2-11 Postgres full-text on published pages and posts
+  status: completed
+- id: R023
+  content: P2-12 Public /search page
+  status: completed
+- id: R024
+  content: P2-13 GET /api/v1/search
+  status: completed
+- id: R025
+  content: P2-14 Email and password login; add users.password_hash and scrypt helper
+  status: completed
+- id: R026
+  content: P2-15 Magic-link login
+  status: completed
+- id: R027
+  content: P2-16 Invite flow for new users
+  status: completed
+- id: R028
+  content: P2-17 Optional TOTP for Admins
+  status: completed
+- id: R029
+  content: P2-18 Review queue for status=review
+  status: completed
+- id: R030
+  content: P2-19 Email the author on review actions
+  status: completed
+- id: R031
+  content: P2-20 OpenAPI spec from zod schemas
+  status: completed
+- id: R032
+  content: P3-01 sites table
+  status: completed
+- id: R033
+  content: P3-02 site_memberships
+  status: completed
+- id: R034
+  content: P3-03 Add site_id to content tables and backfill default
+  status: completed
+- id: R035
+  content: P3-04 Resolve the public site from the request host
+  status: completed
+- id: R036
+  content: P3-05 Admin site switcher
+  status: completed
+- id: R037
+  content: P3-06 Per-site locale list
+  status: completed
+- id: R038
+  content: P3-07 Translated menus
+  status: completed
+- id: R039
+  content: P3-08 Translated site name, description, and default SEO
+  status: completed
+- id: R040
+  content: P4-01 collections and collection_fields tables
+  status: completed
+- id: R041
+  content: P4-02 Validate collection entry JSON
+  status: completed
+- id: R042
+  content: P4-03 Generated admin list and edit screens for collections
+  status: completed
+- id: R043
+  content: P4-04 CollectionItem block and collection slug route
+  status: completed
+- id: R044
+  content: P4-05 Scoped API keys
+  status: completed
+- id: R045
+  content: P4-06 Draft-first write endpoints
+  status: completed
+- id: R046
+  content: P4-07 Postgres rate limit
+  status: completed
+- id: R047
+  content: P4-08 Signed webhooks and a delivery log
+  status: completed
+- id: R048
+  content: P5-01 Video block
+  status: completed
+- id: R049
+  content: P5-02 Embed block
+  status: completed
+- id: R050
+  content: P5-03 Logo cloud block
+  status: completed
+- id: R051
+  content: P5-04 Team block with photo, name, and role; same block as R317
+  status: completed
+- id: R052
+  content: P5-05 Timeline block
+  status: completed
+- id: R053
+  content: P5-06 Map block; Location is R318
+  status: completed
+- id: R054
+  content: P5-07 Spacer block
+  status: completed
+- id: R055
+  content: P5-08 Button block
+  status: completed
+- id: R056
+  content: P5-09 Code block
+  status: completed
+- id: R057
+  content: P5-10 Newsletter block wired to the form inbox
+  status: completed
+- id: R058
+  content: P5-11 Image-morph block
+  status: completed
+- id: R059
+  content: P5-12 Load Puck components from src/builder/custom/
+  status: completed
+- id: R060
+  content: P5-13 Document the local plugin registration type
+  status: completed
+- id: R061
+  content: P5-14 Soft lock and presence on pages and posts
+  status: completed
+- id: R062
+  content: P5-15 One A/B variant per page
+  status: completed
+- id: R063
+  content: P5-16 Analytics group by variant and manual pick winner
+  status: completed
+- id: R124
+  content: V1-02 video_playlists, videos, video_progress, and video_settings
+  status: completed
+- id: R126
+  content: V2-01 parseVideoUrl for YouTube, Vimeo, and direct MP4/WebM
+  status: completed
+- id: R127
+  content: V2-02 buildEmbed allowlisted iframe src
+  status: completed
+- id: R128
+  content: V2-03 videoSettingsSchema and defaults
+  status: completed
+- id: R129
+  content: V2-04 clampProgress completion rule
+  status: completed
+- id: R130
+  content: V2-05 node:test for video parsers plus a test script
+  status: completed
+- id: R131
+  content: V2-06 Official oEmbed client for YouTube and Vimeo
+  status: completed
+- id: R132
+  content: V3-01 Video permission keys
+  status: completed
+- id: R133
+  content: V3-02 Audit target video
+  status: completed
+- id: R134
+  content: V3-03 Persist videoSettings
+  status: completed
+- id: R135
+  content: V3-04 Video library section on the settings form
+  status: completed
+- id: R136
+  content: V4-01 Dashboard video routes and sidebar item
+  status: completed
+- id: R137
+  content: V4-02 Playlist service and actions
+  status: completed
+- id: R138
+  content: V4-03 Playlist panel on the videos page
+  status: completed
+- id: R139
+  content: V4-04 Video create and update service
+  status: completed
+- id: R140
+  content: V4-05 Publish, unpublish, soft-delete, and reorder
+  status: completed
+- id: R141
+  content: V4-06 Video list table
+  status: completed
+- id: R142
+  content: V4-07 Create and edit form with invalid-URL message
+  status: completed
+- id: R143
+  content: V5-01 Native player controls for direct MP4 and WebM
+  status: completed
+- id: R144
+  content: V5-02 YouTube and Vimeo iframe player
+  status: completed
+- id: R145
+  content: V5-03 Native-only seek restriction
+  status: completed
+- id: R146
+  content: V5-04 Video list with search, playlist filter, and load more
+  status: completed
+- id: R148
+  content: V5-06 Admin preview dialog
+  status: completed
+- id: R123
+  content: V1-01 Journal the existing page_views SQL
+  status: completed
+- id: R125
+  content: V1-03 Generate the video Drizzle migration
+  status: completed
+- id: R147
+  content: V5-05 Sidebar and stacked library layouts
+  status: completed
+- id: R149
+  content: V6-01 Published-video query for the block
+  status: completed
+- id: R150
+  content: V6-02 Register the VideoLibrary Puck block
+  status: completed
+- id: R151
+  content: V6-03 saveVideoProgress for signed-in viewers
+  status: completed
+- id: R152
+  content: V6-04 Resume start position
+  status: completed
+- id: R153
+  content: V6-05 Wire progress into the widget
+  status: completed
+- id: R154
+  content: V7-01 Permission matrix test for the four video keys
+  status: completed
+- id: R155
+  content: V7-02 Lint and tsc on the video files
+  status: completed
+- id: R156
+  content: V7-03 Browser check of the admin form and the public widget
+  status: pending
+- id: R463
+  content: P3-09 Audit current multisite behavior and reproduce cross-site failures before fixes
+  status: completed
+- id: R464
+  content: P3-10 Establish canonical typed site context for public, dashboard, preview, and system requests
+  status: completed
+- id: R465
+  content: P3-11 Harden host/domain normalization, ownership, collisions, and unknown-host fallback policy
+  status: completed
+- id: R471
+  content: P3-17 Audit and centralize site-aware data fetching for every admin dashboard route, server component, server action, and API
+  status: completed
+- id: R472
+  content: P3-18 Fix admin site-switch refresh, query invalidation, loading/error/empty states, and stale response handling
+  status: completed
+- id: R473
+  content: P3-19 Audit public page/post/layout/navigation/settings/SEO fetches against the resolved host and active locale
+  status: completed
+- id: R474
+  content: P3-20 Make public route, metadata, search, redirect, preview, and published-content fetches site-scoped and cache-safe
+  status: completed
+- id: R466
+  content: P3-12 Enforce site isolation across CRUD, relations, joins, aggregates, APIs, and background jobs
+  status: completed
+- id: R467
+  content: P3-13 Verify membership, role permissions, site switching, cookies, and membership revocation
+  status: completed
+- id: R468
+  content: P3-14 Make cache, revalidation, preview, and static/export output site-aware
+  status: completed
+- id: R469
+  content: P3-15 Add cross-site unit, integration, and end-to-end isolation and routing tests
+  status: completed
+- id: R475
+  content: P3-21 Add Site A/Site B fetch-contract tests for admin switching, public domains, cache isolation, and cross-site denial
+  status: completed
+- id: R470
+  content: P3-16 Pass multisite security and regression approval gates before marking R032-R039 complete or starting P4
+  status: completed
+- id: R262
+  content: A1-01 auth_settings on site_settings for login, registration, approval, session, and lockout
+  status: pending
+- id: R263
+  content: A1-02 approved_at, failed_login_count, and locked_until on users, with a migration
+  status: pending
+- id: R264
+  content: A2-01 assignDefaultRole always sets Viewer and ignores a client role
+  status: pending
+- id: R265
+  content: A2-02 Google callback and AuthService.create use Viewer for a new user
+  status: pending
+- id: R266
+  content: A2-03 Role changes stay on settings.manage and are audited
+  status: pending
+- id: R267
+  content: A2-04 Server CLI auth:promote assigns Admin for a bootstrap email
+  status: pending
+- id: R268
+  content: A3-01 Server helper that reads auth settings
+  status: pending
+- id: R269
+  content: A3-02 Hide login links when login is disabled
+  status: pending
+- id: R270
+  content: A3-03 Login page and Google routes reject when login is disabled
+  status: pending
+- id: R271
+  content: A3-04 Reject new accounts when public registration is disabled
+  status: pending
+- id: R272
+  content: A3-05 Admin approval leaves new users without a session until approved
+  status: pending
+- id: R273
+  content: A3-06 Block session creation when email verification is required and missing
+  status: pending
+- id: R274
+  content: A3-07 Reject inactive, unapproved, and locked users in validateSession
+  status: pending
+- id: R275
+  content: A4-01 Session lifetime comes from auth settings
+  status: pending
+- id: R276
+  content: A4-02 Rate limit and lockout on login attempts
+  status: pending
+- id: R277
+  content: A4-03 Post-login redirect stays on a same-site path
+  status: pending
+- id: R278
+  content: A4-04 Keep httpOnly SameSite cookies and check the request origin
+  status: pending
+- id: R279
+  content: A5-01 Unauthenticated admin routes redirect to login or the disabled message
+  status: pending
+- id: R280
+  content: A5-02 Server-side permission checks on users, settings, and licenses
+  status: pending
+- id: R281
+  content: A5-03 Published public pages stay available without a session
+  status: pending
+- id: R282
+  content: A6-01 Authentication and Access settings section
+  status: pending
+- id: R283
+  content: A6-02 Approve pending users from the admin user list
+  status: pending
+- id: R284
+  content: A7-01 CLI auth:enable-login turns login back on through the database
+  status: pending
+- id: R285
+  content: A7-02 docs/auth.md for defaults, Viewer, and recovery
+  status: pending
+- id: R286
+  content: A8-01 Tests that new and Google users receive Viewer
+  status: pending
+- id: R287
+  content: A8-02 Tests that Viewer and Editor cannot perform admin operations
+  status: pending
+- id: R288
+  content: A8-03 Tests for disabled login, disabled registration, and blocked accounts
+  status: pending
+- id: R289
+  content: A8-04 Tests for lockout, audited role changes, public pages, and login recovery
+  status: pending
+- id: R290
+  content: A8-05 Lint, tsc, and the auth tests
+  status: pending
+- id: R291
+  content: A8-06 Browser check of the auth settings and a disabled login page
+  status: pending
+- id: R069
+  content: P6-06 products and orders tables
+  status: pending
+- id: R070
+  content: P6-07 Product grid block and Buy button
+  status: pending
+- id: R071
+  content: P6-08 Stripe Checkout for one product and shared Stripe client
+  status: pending
+- id: R072
+  content: P6-09 Stripe webhook marks the order paid; orders inbox
+  status: pending
+- id: R073
+  content: P7-01 Per-site baked export
+  status: completed
+- id: R074
+  content: P7-02 Export report for forms and checkout
+  status: completed
+- id: R075
+  content: P7-03 Playwright sign-in, edit, publish, form, redirect
+  status: completed
+- id: R076
+  content: P7-04 Vitest for routes, redirects, collections, and blocks
+  status: completed
+- id: R077
+  content: P7-05 docker-compose for app, Postgres, and optional MinIO
+  status: completed
+- id: R078
+  content: P7-06 Lighthouse CI
+  status: completed
+- id: R079
+  content: P7-07 GitHub Actions
+  status: completed
+- id: R217
+  content: L1-01 licenses table with hashed key, product id, and max installations fixed at 1
+  status: completed
+- id: R218
+  content: L1-02 license_installations with a public key and one active binding per license
+  status: completed
+- id: R219
+  content: L1-03 license_events and license_nonces, with no secrets stored
+  status: completed
+- id: R220
+  content: L1-04 license_settings on site_settings for policy only
+  status: completed
+- id: R221
+  content: L1-05 Drizzle migration for the license tables and license_settings
+  status: completed
+- id: R222
+  content: L2-01 Generate a license key, store sha256, return plaintext once
+  status: completed
+- id: R223
+  content: L2-02 Ed25519 license token signing with Node crypto
+  status: completed
+- id: R224
+  content: L2-03 Installation key pair kept in server env, public key registered
+  status: completed
+- id: R225
+  content: L2-04 Verify token signature, issuer, audience, expiry, product, and installation
+  status: completed
+- id: R226
+  content: L2-05 Accept the current and previous signing public keys
+  status: completed
+- id: R227
+  content: L2-06 node:test for hash, forged tokens, expiry, and key rotation
+  status: completed
+- id: R228
+  content: L3-01 Atomic activate with row lock, idempotent for the same installation
+  status: completed
+- id: R229
+  content: L3-02 Validate and heartbeat refresh a short-lived token
+  status: completed
+- id: R230
+  content: L3-03 Deactivate only the bound installation
+  status: completed
+- id: R231
+  content: L3-04 Admin reassign revokes the old binding in one transaction
+  status: completed
+- id: R232
+  content: L3-05 Rate limit, nonce replay window, and generic activation errors
+  status: completed
+- id: R233
+  content: L3-06 Cron marks expired licenses using CRON_SECRET
+  status: completed
+- id: R234
+  content: L4-01 POST /api/licenses/activate
+  status: completed
+- id: R235
+  content: L4-02 POST /api/licenses/validate and POST /api/licenses/heartbeat
+  status: completed
+- id: R236
+  content: L4-03 POST /api/licenses/deactivate
+  status: completed
+- id: R237
+  content: L4-04 GET /api/licenses/status for the signed installation
+  status: completed
+- id: R238
+  content: L5-01 Central requireLicense guard
+  status: completed
+- id: R239
+  content: L5-02 Dashboard layout fails closed without a valid installation token
+  status: completed
+- id: R240
+  content: L5-03 Server actions call requireLicense
+  status: completed
+- id: R241
+  content: L5-04 Cron and /api/v1 mutations call requireLicense; public published GET stays up
+  status: completed
+- id: R242
+  content: L5-05 LICENSE_ENFORCEMENT=off is ignored when NODE_ENV is production
+  status: completed
+- id: R243
+  content: L6-01 licenses.manage for Admin, audit target license
+  status: completed
+- id: R244
+  content: L6-02 License routes and sidebar item
+  status: completed
+- id: R245
+  content: L6-03 Issue a license for product next-cms and show the key once
+  status: completed
+- id: R246
+  content: L6-04 Assign a license owner
+  status: completed
+- id: R247
+  content: L6-05 License list with search, filter, sort, and pagination
+  status: completed
+- id: R248
+  content: L6-06 License detail with bound installation and event history
+  status: completed
+- id: R249
+  content: L6-07 Suspend, revoke, and renew with confirmation
+  status: completed
+- id: R250
+  content: L6-08 Reassign and deactivate with confirmation, reason, and actor
+  status: completed
+- id: R251
+  content: L6-09 License policy section on the settings form
+  status: completed
+- id: R252
+  content: L7-01 Notify on conflict, revocation, and upcoming expiry
+  status: completed
+- id: R253
+  content: L7-02 Record suspicious attempts without auto-revoke on IP change
+  status: completed
+- id: R254
+  content: L8-01 Tests for valid, invalid, wrong product, second install, and idempotent activate
+  status: completed
+- id: R255
+  content: L8-02 Test that two concurrent activations cannot both bind
+  status: completed
+- id: R256
+  content: L8-03 Tests for expired, revoked, suspended, forged, and rotated tokens
+  status: completed
+- id: R257
+  content: L8-04 Tests for reassignment authorization and concurrent reassignment
+  status: completed
+- id: R258
+  content: L8-05 Tests for grace, rate limit, replay, the guard, and audit
+  status: completed
+- id: R259
+  content: L8-06 docs/licensing.md for keys, environments, and limits
+  status: completed
+- id: R260
+  content: L8-07 Lint, tsc, and the license tests
+  status: completed
+- id: R261
+  content: L8-08 Browser check of issue, second install, revoke, and reassign
+  status: completed
+- id: R366
+  content: COM-01 Define commercial offer, target buyer, product catalog, and sales model
+  status: pending
+- id: R370
+  content: COM-05 Evaluate and select eligible payment provider(s) for Bangladesh and target international markets
+  status: pending
+- id: R386
+  content: COM-21 Define product launch checklist, pricing hypotheses, and customer feedback validation
+  status: pending
+- id: R390
+  content: "COM-25 Gate 6 approval: commercial model, payment eligibility, and launch scope approved"
+  status: pending
+- id: R367
+  content: COM-02 Create conversion-focused product landing pages with demos, screenshots, FAQs, and clear deliverables
+  status: pending
+- id: R368
+  content: COM-03 Implement product pricing, license tiers, bundles, upgrade paths, and version compatibility
+  status: pending
+- id: R369
+  content: COM-04 Implement secure cart or direct checkout and minimize checkout friction
+  status: pending
+- id: R371
+  content: COM-06 Implement verified payment webhooks, idempotency, reconciliation, and payment-failure recovery
+  status: pending
+- id: R372
+  content: COM-07 Implement order lifecycle, receipts, invoices, refunds, cancellations, and admin order management
+  status: pending
+- id: R373
+  content: COM-08 Implement secure digital fulfillment and expiring download links for purchased files
+  status: pending
+- id: R374
+  content: COM-09 Integrate license issuance, activation, domain limits, renewal, revocation, and recovery with paid orders
+  status: pending
+- id: R375
+  content: COM-10 Implement customer account portal for orders, downloads, invoices, licenses, and support
+  status: pending
+- id: R381
+  content: COM-16 Create support, documentation, changelog, compatibility, update policy, and support entitlement workflows
+  status: pending
+- id: R382
+  content: COM-17 Publish transparent terms of sale, privacy, refund, license, renewal, and support policies
+  status: pending
+- id: R383
+  content: COM-18 Assess tax, invoicing, consumer-protection, privacy, and cross-border obligations for target markets
+  status: pending
+- id: R384
+  content: COM-19 Threat-model fraud, chargebacks, refund abuse, license sharing, and account takeover
+  status: pending
+- id: R385
+  content: COM-20 Run end-to-end test purchases for success, failure, duplicate webhook, refund, and fulfillment recovery
+  status: pending
+- id: R389
+  content: COM-24 Verify checkout and customer portal accessibility, mobile UX, and performance
+  status: pending
+- id: R391
+  content: "COM-26 Gate 7 approval: end-to-end purchase, payment, fulfillment, and license lifecycle verified"
+  status: pending
+- id: R378
+  content: COM-13 Add sales funnel analytics, attribution, consent-aware tracking, and revenue reporting
+  status: pending
+- id: R387
+  content: COM-22 Build a minimal conversion dashboard and establish baseline funnel metrics
+  status: pending
+- id: R388
+  content: COM-23 Add product structured data and search snippets where eligible and truthful
+  status: pending
+- id: R392
+  content: "COM-27 Gate 8 approval: legal policies, customer support, analytics, and launch readiness verified"
+  status: pending
+- id: R393
+  content: BLD-01 Audit the existing Puck builder, Columns/Section components, stored page data, public renderer, and responsive controls before designing layout changes
+  status: pending
+- id: R394
+  content: BLD-02 Define a strict typed, backward-compatible layout schema for container, flex, grid, sizing, and breakpoint settings
+  status: pending
+- id: R395
+  content: BLD-03 Implement a nested Container component with a Puck slot/drop zone and safe default props
+  status: pending
+- id: R396
+  content: BLD-04 Add Flexbox controls for direction, justify-content, align-items, align-content, gap, wrap, and child alignment
+  status: pending
+- id: R397
+  content: BLD-05 Add container sizing controls for width, max/min width, height, min/max height, grow, shrink, basis, and box sizing
+  status: in_progress
+- id: R398
+  content: BLD-06 Add CSS Grid controls for column/row tracks, repeat patterns, gaps, auto-flow, and responsive track definitions
+  status: pending
+- id: R399
+  content: BLD-07 Add per-child grid placement controls for column/row start, span, and order with validated values
+  status: pending
+- id: R400
+  content: BLD-08 Implement canvas resize handles for container width and flex/grid column proportions without breaking Puck drag-and-drop selection
+  status: pending
+- id: R401
+  content: BLD-09 Add responsive breakpoint values and desktop/tablet/mobile preview, including inheritance and reset-to-inherited behavior
+  status: in_progress
+- id: R402
+  content: BLD-10 Reuse existing section style controls for spacing, padding, margin, background, border, radius, and overflow where compatible
+  status: pending
+- id: R403
+  content: BLD-11 Preserve existing Columns and Section content with a non-destructive compatibility path and normalization for legacy saved pages
+  status: pending
+- id: R404
+  content: BLD-12 Render layout styles consistently in editor, preview, and published pages without unsafe arbitrary CSS or style injection
+  status: pending
+- id: R405
+  content: BLD-13 Add unit tests for layout schema validation, defaults, legacy normalization, breakpoint inheritance, and CSS style generation
+  status: pending
+- id: R406
+  content: BLD-14 Add integration/e2e tests for nesting, drag/drop, resize, save/reload, publish, and public-page rendering
+  status: pending
+- id: R407
+  content: BLD-15 Make resize and layout controls accessible with keyboard operation, labels, focus states, and numeric alternatives to dragging
+  status: pending
+- id: R408
+  content: BLD-16 Add starter layouts/templates demonstrating flex rows, responsive card grids, split hero sections, and nested containers
+  status: pending
+- id: R409
+  content: BLD-17 Document container, flex, grid, responsive behavior, supported CSS constraints, and migration/rollback behavior
+  status: pending
+- id: R410
+  content: "BLD-18 Gate 13 approval: architecture audit, schema compatibility, and container/flex/grid foundations verified"
+  status: pending
+- id: R411
+  content: "BLD-19 Gate 14 approval: visual resizing, responsive preview, accessibility, and legacy content compatibility verified"
+  status: pending
+- id: R412
+  content: "BLD-20 Gate 15 approval: tests, save/publish/public rendering, performance, and release regression checks pass"
+  status: pending
+- id: R413
+  content: BLD-21 Audit current CMS entities, custom fields, public data access, cache boundaries, and Puck field/rendering APIs for safe dynamic content bindings
+  status: completed
+- id: R414
+  content: BLD-22 Define a typed dynamic-value schema that distinguishes static values from approved dynamic source references
+  status: completed
+- id: R415
+  content: BLD-23 Implement a dynamic-content picker for supported text, rich text, image, URL, date, author, taxonomy, and custom-field sources where available
+  status: completed
+- id: R416
+  content: BLD-24 Resolve dynamic bindings on the server or through approved data loaders with tenant/site authorization, draft-preview rules, and cache-safe behavior
+  status: completed
+- id: R417
+  content: BLD-25 Add safe fallback values, missing-data states, escaping, URL validation, and cycle/depth limits for dynamic bindings
+  status: completed
+- id: R418
+  content: BLD-26 Support dynamic values consistently in editor preview, preview routes, published pages, and export paths where supported
+  status: completed
+- id: R419
+  content: BLD-27 Add site-wide global design tokens for primary, secondary, text, accent, background, border, and custom colors
+  status: completed
+- id: R420
+  content: BLD-28 Add global typography presets with font family, size, weight, line height, letter spacing, and responsive values
+  status: completed
+- id: R421
+  content: BLD-29 Add global style references and per-element custom overrides with predictable inheritance and reset-to-global behavior
+  status: completed
+- id: R422
+  content: BLD-30 Build a site settings/design-system interface for creating, editing, renaming, deleting, and previewing global tokens safely
+  status: completed
+- id: R423
+  content: BLD-31 Resolve global style references consistently in editor and published CSS, including missing/deleted-token fallback behavior
+  status: completed
+- id: R428
+  content: BLD-36 Add migration/normalization for static legacy values and graceful fallbacks for absent dynamic/global/conditional settings
+  status: completed
+- id: R429
+  content: BLD-37 Add tests for dynamic binding resolution, global-token updates, condition logic, missing references, authorization, and cache isolation
+  status: completed
+- id: R430
+  content: BLD-38 Add editor-to-published end-to-end tests for dynamic fields, global styles, conditional controls, and frontend visibility
+  status: completed
+- id: R431
+  content: BLD-39 Document supported dynamic sources, global design tokens, condition operators, security boundaries, and unsupported cases
+  status: completed
+- id: R432
+  content: "BLD-40 Gate 16 approval: dynamic data sources and safe resolution verified"
+  status: completed
+- id: R433
+  content: "BLD-41 Gate 17 approval: global style inheritance, overrides, and responsive typography verified"
+  status: completed
+- id: R476
+  content: MKT-01 Visible undo and redo buttons in the builder header, wired to Puck history with disabled states
+  status: completed
+- id: R477
+  content: MKT-02 Builder keyboard shortcuts for undo, redo, duplicate, delete, and save, plus a shortcut help dialog
+  status: completed
+- id: R483
+  content: MKT-08 Header and footer templates edited in the Puck builder and stored like global blocks
+  status: completed
+- id: R484
+  content: MKT-09 Assign header and footer templates per site, locale, or page with a site default
+  status: completed
+- id: R485
+  content: MKT-10 Public layout renders the assigned header and footer, falling back to the current menu header
+  status: completed
+- id: R571
+  content: "QRY-01 Typed listing query schema: source (posts, pages, collection entries, videos), filters, sort, limit, offset, and exclude-current, validated against allowlisted fields"
+  status: completed
+- id: R572
+  content: QRY-02 Server query resolver per source that only returns published, site-scoped, locale-scoped, access-checked items, with a hard maximum page size
+  status: completed
+- id: R573
+  content: QRY-03 Namespaced URL parameters per listing block so two listings and their filters on one page never clash
+  status: completed
+- id: R574
+  content: QRY-04 Database indexes for the filter and sort columns each source allows
+  status: completed
+- id: R575
+  content: QRY-05 Query Loop block whose card is a slot designed in the builder, with item fields (title, image, excerpt, date, author, terms, collection field) read from the loop item
+  status: completed
+- id: R576
+  content: "QRY-06 Loop layouts: grid, list, masonry, carousel, and table, with per-device columns and gap"
+  status: completed
+- id: R577
+  content: "QRY-07 Pagination styles: numbered, load more, and infinite scroll, always with crawlable page links underneath"
+  status: completed
+- id: R578
+  content: QRY-08 Empty-state slot and a loading skeleton for Query Loop
+  status: completed
+- id: R579
+  content: QRY-09 Query Loop presets for latest posts, related posts, collection entries, and videos
+  status: completed
+- id: R580
+  content: QRY-10 Keep BlogPosts and RelatedPosts rendering unchanged and offer a one-click convert to a Query Loop preset
+  status: completed
+- id: R581
+  content: "QRY-11 Filter blocks linked to a Query Loop by block id: keyword, taxonomy (select, checkboxes, chips), date range, number range, yes/no toggle, and sort"
+  status: completed
+- id: R582
+  content: QRY-12 Result count and active-filter chips with clear-one and clear-all
+  status: completed
+- id: R583
+  content: QRY-13 Facet counts for each filter option computed on the server for the current query
+  status: completed
+- id: R584
+  content: QRY-14 Filters work as a plain GET form with no JavaScript, and update results without a reload when JavaScript runs, keeping browser history
+  status: completed
+- id: R585
+  content: QRY-15 Mobile filter drawer with an apply button
+  status: completed
+- id: R588
+  content: "QRY-18 Search quality: Postgres text config per locale instead of hard-coded english, prefix matching for type-ahead, unaccent, and title weighted above body"
+  status: completed
+- id: R589
+  content: QRY-19 Typo tolerance with pg_trgm similarity when full-text search returns nothing
+  status: completed
+- id: R586
+  content: QRY-16 Search results template built in the builder and assigned per site, rendered by /search with the current page as fallback
+  status: completed
+- id: R587
+  content: QRY-17 Search box block with live suggestions, keyboard navigation, and a link to the full results page
+  status: completed
+- id: R595
+  content: QRY-25 Category, tag, author, and date archive templates built in the builder, with Query Loop bound to the current term
+  status: completed
+- id: R596
+  content: QRY-26 Assign archive templates per site and locale with a built-in fallback
+  status: completed
+- id: R597
+  content: "QRY-27 Listing SEO: self-canonical paginated pages, noindex for filter combinations, ItemList JSON-LD, and archive pages in the sitemap"
+  status: completed
+- id: R598
+  content: QRY-28 Cache listing and search results per site, locale, and query, and revalidate on publish
+  status: completed
+- id: R599
+  content: "QRY-29 Accessible results: aria-live result counts, focus moves to results after filtering, and a combobox pattern for suggestions"
+  status: completed
+- id: R600
+  content: QRY-30 Tests for the query schema, site and access scoping, URL namespaces, facet counts, locale text configs, and archive resolution
+  status: completed
+- id: R601
+  content: QRY-31 Lint, tsc, and a browser check of a blog listing, a filtered collection grid, site search, and a category archive
+  status: completed
+- id: R602
+  content: "QRY-32 Gate 29 approval: listing, filtering, search, archives, SEO, caching, and accessibility verified"
+  status: completed
+- id: R435
+  content: RFB-01 Audit the current component registry, Puck custom fields, server/client boundaries, rendering pipeline, export support, and developer extension points
+  status: completed
+- id: R436
+  content: RFB-02 Design a typed React component adapter contract for component props, defaults, editor controls, slots, validation, and documentation
+  status: completed
+- id: R437
+  content: RFB-03 Implement a first-party component registry that can register existing React components without duplicating rendering implementations
+  status: completed
+- id: R438
+  content: RFB-04 Generate editor controls from safe typed component prop schemas, including enums, responsive values, tokens, and dynamic bindings
+  status: completed
+- id: R439
+  content: RFB-05 Support reusable component variants and presets with explicit prop overrides and backward-compatible identifiers
+  status: completed
+- id: R440
+  content: RFB-06 Add a developer workflow for wrapping existing project components with editor metadata and a live preview
+  status: completed
+- id: R441
+  content: RFB-07 Define and enforce Server Component and Client Component boundaries for registered Next.js components
+  status: completed
+- id: R442
+  content: RFB-08 Add clear diagnostics for unsupported imports, browser-only APIs, server-only dependencies, and invalid component registrations
+  status: completed
+- id: R456
+  content: RFB-22 Add a component authoring starter kit with strict TypeScript examples, schema helpers, tests, and developer documentation
+  status: completed
+- id: R460
+  content: "RFB-26 Gate 19 approval: typed React component integration and Server/Client boundaries verified"
+  status: completed
+- id: R328
+  content: OZ-01 Record a reproducible production baseline for public routes and admin workflows
+  status: pending
+- id: R329
+  content: OZ-02 Audit Next.js rendering, hydration, client boundaries, and server data access
+  status: pending
+- id: R331
+  content: OZ-04 Audit images, fonts, video, embeds, and third-party assets
+  status: pending
+- id: R334
+  content: OZ-07 Profile database queries, indexes, pagination, and connection usage
+  status: pending
+- id: R335
+  content: OZ-08 Audit public routes for technical SEO and crawlability
+  status: pending
+- id: R337
+  content: OZ-10 Audit accessibility and keyboard/screen-reader behavior across public and admin UI
+  status: pending
+- id: R338
+  content: OZ-11 Audit responsive layouts and mobile interaction states
+  status: pending
+- id: R339
+  content: OZ-12 Audit authentication, authorization, tenant isolation, and sessions
+  status: pending
+- id: R340
+  content: OZ-13 Audit input validation, API abuse controls, headers, secrets, and dependencies
+  status: pending
+- id: R341
+  content: OZ-14 Audit forms, email, uploads, media URLs, webhooks, and export safety
+  status: pending
+- id: R346
+  content: OZ-19 Audit CMS publishing, preview, cache invalidation, redirects, and content integrity
+  status: pending
+- id: R347
+  content: OZ-20 Audit multi-site, locale, subscriber, video, training, licensing, and payment boundaries
+  status: pending
+- id: R349
+  content: OZ-22 Audit generated/exported sites for assets, links, SEO, forms, and reproducibility
+  status: pending
+- id: R351
+  content: OZ-24 Produce a prioritized audit report with evidence, risks, and remediation scope
+  status: pending
+- id: R352
+  content: "OZ-25 Gate 1 approval: baseline and audit findings reviewed before broad refactoring"
+  status: pending
+- id: R330
+  content: OZ-03 Optimize Core Web Vitals and route-level loading performance
+  status: pending
+- id: R332
+  content: OZ-05 Reduce JavaScript bundles and remove unused or duplicated dependencies
+  status: pending
+- id: R333
+  content: OZ-06 Review caching, revalidation, and invalidation for public content
+  status: pending
+- id: R350
+  content: OZ-23 Establish performance budgets and automated regression reporting
+  status: pending
+- id: R358
+  content: OZ-31 Verify public pages render useful HTML without client-only content dependencies
+  status: pending
+- id: R359
+  content: OZ-32 Verify route loading, error, empty, not-found, and unauthorized states
+  status: pending
+- id: R353
+  content: "OZ-26 Gate 2 approval: performance, rendering, assets, and caching targets verified"
+  status: pending
+- id: R336
+  content: OZ-09 Add metadata, canonical, sitemap, robots, redirect, and structured-data checks
+  status: pending
+- id: R348
+  content: OZ-21 Improve admin dashboard, builder, tables, media library, and editor responsiveness
+  status: pending
+- id: R361
+  content: OZ-34 Verify metadata and structured data reflect published content and access restrictions
+  status: pending
+- id: R362
+  content: OZ-35 Verify reduced-motion, focus visibility, contrast, and touch target requirements
+  status: pending
+- id: R354
+  content: "OZ-27 Gate 3 approval: SEO, accessibility, responsive behavior, and content integrity verified"
+  status: pending
+- id: R360
+  content: OZ-33 Verify caching never leaks draft, private, subscriber-only, or cross-site content
+  status: pending
+- id: R363
+  content: OZ-36 Verify rate limits and idempotency for high-risk write and webhook endpoints
+  status: pending
+- id: R355
+  content: "OZ-28 Gate 4 approval: security, authorization, data integrity, and abuse controls verified"
+  status: pending
+- id: R342
+  content: OZ-15 Add unit, integration, end-to-end, and regression coverage for critical flows
+  status: pending
+- id: R343
+  content: OZ-16 Add CI quality gates, production build checks, and migration safety checks
+  status: pending
+- id: R344
+  content: OZ-17 Add structured logging, error reporting, health checks, and operational runbooks
+  status: pending
+- id: R345
+  content: OZ-18 Review deployment configuration, environment validation, backups, and recovery
+  status: pending
+- id: R364
+  content: OZ-37 Verify migration recovery strategy and production backup restore
+  status: pending
+- id: R356
+  content: "OZ-29 Gate 5 approval: automated tests, CI, deployment, monitoring, and recovery verified"
+  status: pending
+- id: R365
+  content: OZ-38 Document baseline, before/after results, remaining risks, and deferred work
+  status: pending
+- id: R357
+  content: OZ-30 Final production-readiness review and closeout report
+  status: pending
+- id: R064
+  content: P6-01 Threaded post comments
+  status: pending
+- id: R065
+  content: P6-02 Public comment form
+  status: pending
+- id: R066
+  content: P6-03 Comment moderation queue
+  status: pending
+- id: R067
+  content: P6-04 Comments post block
+  status: pending
+- id: R068
+  content: P6-05 Email the post author when a comment is approved
+  status: pending
+- id: R080
+  content: S1-01 subscribers_only on pages and posts
+  status: pending
+- id: R081
+  content: S1-02 Confirm users.password_hash from R025
+  status: pending
+- id: R082
+  content: S1-03 subscriptions table
+  status: pending
+- id: R083
+  content: S1-04 subscription_enabled and subscription_label on site_settings
+  status: pending
+- id: R084
+  content: S1-05 Subscriber role with no dashboard permissions
+  status: pending
+- id: R085
+  content: S1-06 Optional Stripe env vars
+  status: pending
+- id: R086
+  content: S2-01 Entitlement check for active or trialing subscriptions
+  status: pending
+- id: R087
+  content: S2-02 Staff roles entitled; Subscriber role not
+  status: pending
+- id: R088
+  content: S3-01 Reuse scrypt helper from R025
+  status: pending
+- id: R089
+  content: S3-02 Signup assigns the Subscriber role directly
+  status: pending
+- id: R090
+  content: S3-03 Public /subscribe page
+  status: pending
+- id: R091
+  content: S3-04 Email and password login at /account/login
+  status: pending
+- id: R092
+  content: S3-05 Account page showing subscription status
+  status: pending
+- id: R093
+  content: S3-06 Subscriber logout
+  status: pending
+- id: R094
+  content: S3-07 Redirect the Subscriber role away from the dashboard
+  status: pending
+- id: R095
+  content: S3-08 Header link to Subscribe or Account
+  status: pending
+- id: R096
+  content: S4-01 Reuse Stripe client from R071
+  status: pending
+- id: R097
+  content: S4-02 Checkout session in subscription mode
+  status: pending
+- id: R098
+  content: S4-03 Start checkout from /subscribe
+  status: pending
+- id: R099
+  content: S4-04 Verify the Stripe webhook signature on the R072 route
+  status: pending
+- id: R100
+  content: S4-05 Handle checkout.session.completed
+  status: pending
+- id: R101
+  content: S4-06 Handle subscription updated and deleted
+  status: pending
+- id: R102
+  content: S4-07 Keep past_due, canceled, incomplete, and unpaid locked
+  status: pending
+- id: R103
+  content: S4-08 Stripe Customer Portal route
+  status: pending
+- id: R104
+  content: S4-09 Clear message when Stripe env vars are missing
+  status: pending
+- id: R105
+  content: S5-01 Expose subscribersOnly on public post and page loads
+  status: pending
+- id: R106
+  content: S5-02 Strip locked post body and canvas before render
+  status: pending
+- id: R107
+  content: S5-03 Strip locked page content before render
+  status: pending
+- id: R108
+  content: S5-04 Paywall with title, excerpt, and subscribe or login links
+  status: pending
+- id: R109
+  content: S5-05 Keep draft preview showing the full body
+  status: pending
+- id: R110
+  content: S5-06 Omit locked post body and layout from /api/v1
+  status: pending
+- id: R111
+  content: S5-07 Omit locked page content from /api/v1
+  status: pending
+- id: R112
+  content: S5-08 Set isAccessibleForFree false on locked JSON-LD
+  status: pending
+- id: R113
+  content: S6-01 Post form field and validation for subscribers only
+  status: pending
+- id: R114
+  content: S6-02 Subscribers only switch on the post sidebar
+  status: pending
+- id: R115
+  content: S6-03 Persist the post flag on save
+  status: pending
+- id: R116
+  content: S6-04 Copy the post flag when duplicating a post
+  status: pending
+- id: R117
+  content: S6-05 Page form field and validation for subscribers only
+  status: pending
+- id: R118
+  content: S6-06 Subscribers only switch on the page sidebar
+  status: pending
+- id: R119
+  content: S6-07 Persist the page flag on save
+  status: pending
+- id: R120
+  content: S6-08 Copy the page flag when duplicating a page
+  status: pending
+- id: R121
+  content: S6-09 Settings switch and price label
+  status: pending
+- id: R122
+  content: S6-10 Subscribers list for settings.manage
+  status: pending
+- id: R376
+  content: COM-11 Define subscription lifecycle including trials if offered, renewals, failed payments, cancellation, and grace periods
+  status: pending
+- id: R377
+  content: COM-12 Implement coupons, campaign pricing, and abuse-resistant promotion rules
+  status: pending
+- id: R379
+  content: COM-14 Add abandoned-checkout recovery and permission-based lifecycle email sequences
+  status: pending
+- id: R380
+  content: COM-15 Add customer reviews and testimonials with authenticity and moderation controls
+  status: pending
+- id: R157
+  content: T1-01 Confirm page_views journal from R123; do not repeat it
+  status: pending
+- id: R158
+  content: T1-02 training_courses, training_course_items, and training_enrollments
+  status: pending
+- id: R159
+  content: T1-03 training_video_progress and course_progress
+  status: pending
+- id: R160
+  content: T1-04 training_questions and training_attempts
+  status: pending
+- id: R161
+  content: T1-05 certificates with one issued row per user and course
+  status: pending
+- id: R162
+  content: T1-06 notifications and site_settings.training_settings
+  status: pending
+- id: R163
+  content: T1-07 Drizzle migration for the training tables only
+  status: pending
+- id: R164
+  content: T2-01 Parse a course item via parseVideoUrl from R126
+  status: pending
+- id: R165
+  content: T2-02 Merge watched ranges without counting seeks across a gap
+  status: pending
+- id: R166
+  content: T2-03 Accept a playback event with stale, duplicate, and wall-clock guards
+  status: pending
+- id: R167
+  content: T2-04 Course completion rules
+  status: pending
+- id: R168
+  content: T2-05 Score a quiz on the server and enforce attempt limits
+  status: pending
+- id: R169
+  content: T2-06 Certificate number, verify token, and eligibility
+  status: pending
+- id: R170
+  content: T2-07 Notification dedupe keys
+  status: pending
+- id: R171
+  content: T2-08 node:test for training rules; test script already exists
+  status: pending
+- id: R172
+  content: T3-01 training.manage, training.learn, and the Learner role
+  status: pending
+- id: R173
+  content: T3-02 Send a Learner to my-training; keep the Subscriber redirect
+  status: pending
+- id: R174
+  content: T3-03 trainingSettingsSchema and defaults
+  status: pending
+- id: R175
+  content: T3-04 Persist training settings
+  status: pending
+- id: R176
+  content: T3-05 Training section on the settings form
+  status: pending
+- id: R177
+  content: T3-06 Audit targets for course, enrollment, and certificate
+  status: pending
+- id: R178
+  content: T4-01 Training routes and sidebar items
+  status: pending
+- id: R179
+  content: T4-02 Course create, update, and publish service
+  status: pending
+- id: R180
+  content: T4-03 Course list
+  status: pending
+- id: R181
+  content: T4-04 Course editor
+  status: pending
+- id: R182
+  content: T4-05 Ordered course items from media or a video URL
+  status: pending
+- id: R183
+  content: T4-06 Per-course completion requirement fields
+  status: pending
+- id: R184
+  content: T4-07 Assign and unassign individual users
+  status: pending
+- id: R185
+  content: T4-08 Quiz question editor
+  status: pending
+- id: R186
+  content: T5-01 HTML5 playback adapter using the native player
+  status: pending
+- id: R187
+  content: T5-02 YouTube IFrame API adapter
+  status: pending
+- id: R188
+  content: T5-03 Vimeo Player.js adapter
+  status: pending
+- id: R189
+  content: T5-04 Heartbeat on play, pause, ended, and page leave
+  status: pending
+- id: R190
+  content: T5-05 saveTrainingProgress server action
+  status: pending
+- id: R191
+  content: T5-06 Resume from last position when the setting is on
+  status: pending
+- id: R192
+  content: T5-07 Course player page for an enrolled learner
+  status: pending
+- id: R193
+  content: T6-01 Recalculate course_progress in a transaction
+  status: pending
+- id: R194
+  content: T6-02 Manual completion approval
+  status: pending
+- id: R195
+  content: T6-03 Quiz submit action
+  status: pending
+- id: R196
+  content: T6-04 Certificate PDF layout with pdf-lib and a QR code
+  status: pending
+- id: R197
+  content: T6-05 Store the PDF through storage()
+  status: pending
+- id: R198
+  content: T6-06 Auto-issue one certificate when eligibility passes
+  status: pending
+- id: R199
+  content: T6-07 Revoke a certificate
+  status: pending
+- id: R200
+  content: T6-08 Reissue a certificate
+  status: pending
+- id: R201
+  content: T6-09 Public verification page
+  status: pending
+- id: R202
+  content: T6-10 Learner certificate download
+  status: pending
+- id: R203
+  content: T7-01 Admin overview counts from SQL aggregates
+  status: pending
+- id: R204
+  content: T7-02 User progress table
+  status: pending
+- id: R205
+  content: T7-03 Course progress table
+  status: pending
+- id: R206
+  content: T7-04 CSV export of training progress
+  status: pending
+- id: R207
+  content: T7-05 Learner training home
+  status: pending
+- id: R208
+  content: T7-06 Learner course page
+  status: pending
+- id: R209
+  content: T8-01 Idempotent notification insert
+  status: pending
+- id: R210
+  content: T8-02 Notify on assign, complete, issue, and revoke
+  status: pending
+- id: R211
+  content: T8-03 Cron reminders for due dates and expiring certificates
+  status: pending
+- id: R212
+  content: T8-04 Unread notification list in the dashboard shell
+  status: pending
+- id: R213
+  content: T8-05 Audit log on course, assignment, approval, issue, revoke, and reissue
+  status: pending
+- id: R214
+  content: T8-06 docs/training.md with provider limits
+  status: pending
+- id: R215
+  content: T8-07 Lint, tsc, and the test script
+  status: pending
+- id: R216
+  content: T8-08 Browser check of admin, learner, download, and verify
+  status: pending
+- id: R292
+  content: O1-01 Map Studio Crafted light and Obsidian Studio dark tokens and per-theme radius in globals.css
+  status: pending
+- id: R293
+  content: O1-02 Per-theme shadows and status-pill colors
+  status: pending
+- id: R294
+  content: O1-03 Inter for body; Hanken Grotesk for light headlines and Inter for dark headlines
+  status: pending
+- id: R295
+  content: O2-01 Let admin, builder chrome, and auth follow the active theme; drop the builder light lock
+  status: pending
+- id: R296
+  content: O2-02 Keep the header theme toggle wired to both token blocks
+  status: pending
+- id: R297
+  content: O2-03 Toaster follows the active theme
+  status: pending
+- id: R298
+  content: O3-01 Theme-aware button variants for both specs
+  status: pending
+- id: R299
+  content: O3-02 Theme-aware inputs, checkboxes, and radios
+  status: pending
+- id: R300
+  content: O3-03 Theme-aware badge and status badge
+  status: pending
+- id: R301
+  content: O3-04 Theme-aware card, dialog, sheet, popover, and block cards
+  status: pending
+- id: R302
+  content: O3-05 Sidebar width, divider, and nav items for both themes
+  status: pending
+- id: R303
+  content: O3-06 Sticky header and breadcrumbs for both themes
+  status: pending
+- id: R304
+  content: O4-01 Replace hardcoded steel and light pairs on admin routes
+  status: pending
+- id: R305
+  content: O4-02 Restyle builder chrome so it follows the active theme
+  status: pending
+- id: R306
+  content: O4-03 Restyle inspector controls and fields
+  status: pending
+- id: R307
+  content: O4-04 Restyle tables, text editor chrome, media browser, and react-select
+  status: pending
+- id: R308
+  content: O4-05 Restyle the login page and auth layout
+  status: pending
+- id: R309
+  content: O4-06 Block-drawer category tints that read in both themes
+  status: pending
+- id: R310
+  content: O5-01 Browser check of both themes and an unchanged public site theme
+  status: pending
+- id: R311
+  content: M1-01 Add background, foreground, and muted to theme tokens
+  status: pending
+- id: R312
+  content: M1-02 Add Instrument Sans and Newsreader to the font list
+  status: pending
+- id: R313
+  content: M1-03 Consume the new color roles in theme.ts and site.css
+  status: pending
+- id: R314
+  content: M1-04 Settings form fields for the new fonts and color roles
+  status: pending
+- id: R315
+  content: M1-05 Seed a modern light theme only when tokens are still the defaults
+  status: pending
+- id: R316
+  content: M2-01 Projects block with image, title, summary, link, and category
+  status: pending
+- id: R317
+  content: M2-02 Team block with photo, name, and role; same block as R051
+  status: pending
+- id: R318
+  content: M2-03 Location block with address, hours, and a map link
+  status: pending
+- id: R319
+  content: M3-01 Restyle the six existing starter templates
+  status: pending
+- id: R320
+  content: M3-02 Agency starter template
+  status: pending
+- id: R321
+  content: M3-03 Portfolio starter template
+  status: pending
+- id: R322
+  content: M3-04 Company starter template
+  status: pending
+- id: R323
+  content: M3-05 Docs starter template
+  status: pending
+- id: R324
+  content: M3-06 Local business starter template
+  status: pending
+- id: R325
+  content: M4-01 Publish the multi-page demo when a user exists
+  status: pending
+- id: R326
+  content: M4-02 Seed header and footer menus and wire them when empty
+  status: pending
+- id: R327
+  content: M5-01 Browser check of the public demo, gallery, and unchanged admin chrome
+  status: pending
+- id: R424
+  content: BLD-32 Define a typed conditional-rule schema supporting equality, inequality, membership, empty checks, and safe AND/OR groups
+  status: pending
+- id: R425
+  content: BLD-33 Implement editor-only conditional controls so dependent settings appear only when relevant without deleting hidden field values
+  status: pending
+- id: R426
+  content: BLD-34 Implement optional frontend visibility rules for approved conditions such as page type, content fields, authentication state, and feature flags
+  status: pending
+- id: R427
+  content: BLD-35 Enforce secure conditional rendering server-side for access-sensitive content; never treat a visual hide rule as authorization
+  status: pending
+- id: R434
+  content: "BLD-42 Gate 18 approval: conditional controls and frontend visibility security/tests verified"
+  status: pending
+- id: R478
+  content: MKT-03 Copy and paste block style between blocks, keeping only allowlisted style keys
+  status: pending
+- id: R479
+  content: MKT-04 Allowlisted custom CSS class names on each block's Advanced tab
+  status: pending
+- id: R480
+  content: MKT-05 Site-wide and per-page custom CSS for settings.manage, scoped to the site root and audited
+  status: pending
+- id: R481
+  content: MKT-06 Site-wide head and body code injection for analytics tags, settings.manage only and audited
+  status: pending
+- id: R482
+  content: MKT-07 Export and import a section or page as versioned JSON validated against the block registry
+  status: pending
+- id: R486
+  content: MKT-11 Sticky and transparent header options
+  status: pending
+- id: R487
+  content: MKT-12 Mega menu panel for top-level header menu items
+  status: pending
+- id: R488
+  content: MKT-13 404 page template edited in the Puck builder
+  status: pending
+- id: R489
+  content: MKT-14 popups table and a popup editor that reuses the builder shell
+  status: pending
+- id: R490
+  content: "MKT-15 Popup triggers: on click, after a delay, at scroll depth, and on exit intent"
+  status: pending
+- id: R491
+  content: MKT-16 Popup targeting by page, locale, and device, with a cookie frequency cap
+  status: pending
+- id: R492
+  content: MKT-17 Accessible popup modal with focus trap, Escape to close, focus return, and reduced motion
+  status: pending
+- id: R493
+  content: MKT-18 Countdown block with an end date and an expired message
+  status: pending
+- id: R494
+  content: MKT-19 Progress bar block
+  status: pending
+- id: R495
+  content: MKT-20 Icon list block using IconPickerField
+  status: pending
+- id: R496
+  content: MKT-21 Social icons block
+  status: pending
+- id: R497
+  content: MKT-22 Table block with header row and responsive scroll
+  status: pending
+- id: R498
+  content: MKT-23 Testimonial carousel built on the existing Slider
+  status: pending
+- id: R499
+  content: MKT-24 Video background option on Section with a poster and reduced-motion fallback
+  status: pending
+- id: R500
+  content: MKT-25 Parallax and scroll effects on Section with a reduced-motion guard
+  status: pending
+- id: R501
+  content: MKT-26 Lottie block loaded lazily from a media URL
+  status: pending
+- id: R502
+  content: MKT-27 Sticky element option on blocks
+  status: pending
+- id: R503
+  content: MKT-28 Multi-step contact forms with a step indicator
+  status: pending
+- id: R504
+  content: MKT-29 Conditional form fields shown from earlier answers, validated on the server
+  status: pending
+- id: R505
+  content: MKT-30 File upload field with size and type limits, stored through storage()
+  status: pending
+- id: R506
+  content: MKT-31 Send form submissions to a Mailchimp list or the existing signed webhooks
+  status: pending
+- id: R507
+  content: MKT-32 Custom breakpoints beyond desktop, tablet, and mobile, building on BLD-09 (R401)
+  status: pending
+- id: R508
+  content: MKT-33 Tests for section import and export, popup rules, header and footer resolution, and form steps
+  status: pending
+- id: R509
+  content: MKT-34 Lint, tsc, and a browser check of undo, popups, header and footer templates, and the new blocks
+  status: pending
+- id: R510
+  content: "MKT-35 Gate 26 approval: editor basics, theme builder, popups, blocks, and forms verified"
+  status: pending
+- id: R590
+  content: QRY-20 Index collection entries and videos alongside pages and posts, with result type tabs
+  status: completed
+- id: R591
+  content: QRY-21 Search results paging, highlighted snippets, type badges, and thumbnails
+  status: completed
+- id: R592
+  content: "QRY-22 Search analytics: top queries and zero-result queries on analytics boards, storing no personal data"
+  status: completed
+- id: R593
+  content: QRY-23 Per-site synonyms and pinned results managed in settings
+  status: completed
+- id: R594
+  content: QRY-24 Search adapter interface with Postgres as the default, so Meilisearch or Typesense can be added later without block changes
+  status: completed
+- id: R603
+  content: "ECM-01 Gate 30 approval: confirm store scope, goods types, target markets, and payment providers"
+  status: pending
+- id: R604
+  content: ECM-02 Audit R069-R072 products and orders and the COM order lifecycle; extend them, never build a second order system
+  status: pending
+- id: R605
+  content: ECM-03 Product catalog schema with variants, options, SKU, price, compare-at price, stock, weight, images, site_id, and locale
+  status: pending
+- id: R636
+  content: ECM-34 Store permissions store.manage, products.edit, and orders.manage, a Shop Manager role, and site isolation for products, carts, and orders
+  status: pending
+- id: R606
+  content: ECM-04 Product categories, tags, and manual or rule-based collections
+  status: pending
+- id: R607
+  content: ECM-05 Inventory with stock levels, low-stock threshold, backorders, and stock reservation during checkout
+  status: pending
+- id: R608
+  content: ECM-06 Money stored in integer minor units with per-site currency and price formatting by locale
+  status: pending
+- id: R609
+  content: ECM-07 Admin product list and editor with variant matrix, media gallery, SEO fields, bulk edit, and CSV import and export
+  status: pending
+- id: R610
+  content: ECM-08 Digital product type that reuses the R373 secure fulfillment and R374 license issuance
+  status: pending
+- id: R615
+  content: ECM-13 Product dynamic fields for title, price, sale badge, gallery, description, stock status, and SKU on the BLD-22 dynamic-value schema
+  status: pending
+- id: R611
+  content: ECM-09 Single product template built in the builder and assigned per site, locale, or category with a built-in fallback
+  status: pending
+- id: R612
+  content: ECM-10 Shop and category archive templates using Query Loop with a products source
+  status: pending
+- id: R616
+  content: ECM-14 Product gallery block with thumbnails, zoom, lightbox, and image switch on variant change
+  status: pending
+- id: R617
+  content: ECM-15 Variant picker block with swatches, buttons, or dropdowns that updates price, stock, and image
+  status: pending
+- id: R618
+  content: ECM-16 Add-to-cart block with quantity, variant validation, and a server-side stock check
+  status: pending
+- id: R619
+  content: ECM-17 Product Query Loop presets for featured, on sale, new, best sellers, related, upsell, and cross-sell; keep R070 rendering
+  status: pending
+- id: R620
+  content: ECM-18 Shop filters for price range, attributes, category, and in stock, with sort, using the QRY filter blocks and facet counts
+  status: pending
+- id: R621
+  content: ECM-19 Product details tabs or accordion for description, specifications, and shipping info using the existing Tabs and Accordion
+  status: pending
+- id: R622
+  content: ECM-20 Product breadcrumbs and Product JSON-LD with real price and availability, and no invented ratings
+  status: pending
+- id: R623
+  content: ECM-21 Server-side cart with guest cookie, merge on login, site scope, and prices recalculated on the server
+  status: pending
+- id: R627
+  content: ECM-25 Payment adapter interface with Stripe from R071, the provider chosen in R370, and optional cash on delivery
+  status: pending
+- id: R628
+  content: ECM-26 Shipping zones with flat, weight-based, and free-over-threshold rates and local pickup
+  status: pending
+- id: R629
+  content: ECM-27 Tax settings for inclusive or exclusive prices and rates by country or region, shown on cart and invoice
+  status: pending
+- id: R630
+  content: ECM-28 Cart coupons for percent, fixed amount, and free shipping with limits and dates, extending R377
+  status: pending
+- id: R624
+  content: ECM-22 Mini-cart block and slide-out cart drawer for header templates
+  status: pending
+- id: R625
+  content: ECM-23 Cart block with line items, quantity change, remove, coupon field, and totals summary
+  status: pending
+- id: R626
+  content: ECM-24 Checkout blocks for contact, address, shipping, payment, and summary with guest checkout and locked required fields
+  status: pending
+- id: R613
+  content: ECM-11 Cart and checkout page templates built in the builder from the cart and checkout blocks
+  status: pending
+- id: R614
+  content: ECM-12 Order-received page and customer account templates built in the builder
+  status: pending
+- id: R631
+  content: ECM-29 Physical order lifecycle from paid to processing, shipped, delivered, canceled, and refunded, with stock returned on cancel or refund
+  status: pending
+- id: R632
+  content: ECM-30 Admin orders inbox with fulfillment, tracking number, packing slip, partial refund, notes, and audit log
+  status: pending
+- id: R633
+  content: ECM-31 Order confirmation, shipped, and refund emails from editable templates
+  status: pending
+- id: R634
+  content: ECM-32 Customer account for order history, addresses, and reorder, extending the R375 portal
+  status: pending
+- id: R635
+  content: ECM-33 Abandoned cart reminder emails with the R379 consent rules
+  status: pending
+- id: R637
+  content: ECM-35 Store analytics for revenue, orders, average order value, top products, and the funnel, extending R378 and R387
+  status: pending
+- id: R638
+  content: ECM-36 Store starter template with home, shop, product, cart, checkout, and account pages and demo products
+  status: pending
+- id: R639
+  content: ECM-37 Cache product and shop pages, revalidate on price or stock change, and never cache cart, checkout, or account
+  status: pending
+- id: R640
+  content: ECM-38 Accessible variant picker, cart drawer, and checkout forms
+  status: pending
+- id: R641
+  content: ECM-39 Tests for money math, stock races, coupons, tax and shipping, webhook idempotency, cart tampering, and site isolation
+  status: pending
+- id: R642
+  content: ECM-40 Lint, tsc, and a browser check from browse and filter to product, cart, sandbox checkout, email, fulfilment, and refund
+  status: pending
+- id: R643
+  content: "ECM-41 Gate 31 approval: catalog, product templates, cart, checkout, payments, orders, and store SEO verified"
+  status: pending
+- id: R443
+  content: RFB-09 Add reusable synced sections and shared components with an explicit detach/unlink action
+  status: pending
+- id: R444
+  content: RFB-10 Add repeaters and collection-driven lists with typed item schemas, empty states, and safe item limits
+  status: completed
+- id: R445
+  content: RFB-11 Add a visual CMS query builder for approved collections with filters, sorting, pagination, and relationship fields
+  status: completed
+- id: R446
+  content: RFB-12 Add preview fixtures and real-data preview modes that respect draft permissions, roles, and site boundaries
+  status: pending
+- id: R447
+  content: RFB-13 Improve React/Next.js export and portability with a documented output contract, stable component mapping, and no hidden runtime assumptions
+  status: pending
+- id: R454
+  content: RFB-20 Add reusable page templates and route-level layout composition for headers, footers, and shared navigation
+  status: pending
+- id: R458
+  content: RFB-24 Add migration-safe import/export tests for pages, components, tokens, templates, and dynamic bindings
+  status: pending
+- id: R461
+  content: "RFB-27 Gate 20 approval: CMS collections, reusable components, preview, and export portability verified"
+  status: pending
+- id: R449
+  content: RFB-15 Add visual regression snapshots for key routes and desktop/tablet/mobile viewports
+  status: pending
+- id: R450
+  content: RFB-16 Add built-in accessibility diagnostics for labels, alt text, heading order, contrast warnings, keyboard reachability, and landmarks
+  status: pending
+- id: R451
+  content: RFB-17 Add responsive layout diagnostics for overflow, clipped content, fixed-width conflicts, and breakpoint regressions
+  status: pending
+- id: R457
+  content: RFB-23 Add performance diagnostics for excessive client components, large images, heavy blocks, and avoidable layout shifts
+  status: pending
+- id: R452
+  content: RFB-18 Add design-token import/export for CSS variables and a documented mapping to the global style system
+  status: pending
+- id: R453
+  content: RFB-19 Add localization-ready content fields, locale-specific page variants, and RTL-aware layout validation
+  status: pending
+- id: R459
+  content: RFB-25 Document the React-first positioning, supported extension contract, Next.js compatibility matrix, and product limitations
+  status: pending
+- id: R462
+  content: "RFB-28 Gate 21 approval: accessibility, responsive diagnostics, visual regression, and performance checks verified"
+  status: pending
+- id: R448
+  content: RFB-14 Add Git-aware change review for supported project files with diffs and explicit confirmation before writing or committing changes
+  status: pending
+- id: R455
+  content: RFB-21 Define a safe extension/marketplace contract for optional component packs with explicit dependencies, versioning, and permission boundaries
+  status: pending
+- id: R511
+  content: DOC-01 Nullable parent_id on pages with an additive migration and a cycle guard
+  status: pending
+- id: R512
+  content: DOC-02 Sort order among sibling pages, with drag-to-reorder in the pages list
+  status: pending
+- id: R513
+  content: DOC-03 Nested URL paths from the page tree, with redirects when a slug or parent changes
+  status: pending
+- id: R514
+  content: DOC-04 Docs sidebar block built from the page tree, collapsible, with the active page highlighted
+  status: pending
+- id: R515
+  content: DOC-05 Docs layout template with sidebar, content, and on-this-page columns that collapse on mobile
+  status: pending
+- id: R516
+  content: DOC-06 On-this-page contents list built from h2 and h3 headings
+  status: pending
+- id: R517
+  content: DOC-07 Stable heading anchor ids with a copy-link button
+  status: pending
+- id: R518
+  content: DOC-08 Previous and next links from the page tree order
+  status: pending
+- id: R519
+  content: DOC-09 Breadcrumbs from the page tree with BreadcrumbList JSON-LD
+  status: pending
+- id: R520
+  content: DOC-10 Server-side syntax highlighting on the Code block with a language select
+  status: pending
+- id: R521
+  content: DOC-11 Copy button, filename title, and line highlights on the Code block
+  status: pending
+- id: R522
+  content: DOC-12 Code group block with tabs for several languages
+  status: pending
+- id: R523
+  content: DOC-13 Callout block for note, tip, warning, and danger
+  status: pending
+- id: R524
+  content: DOC-14 Import Markdown and MDX into pages, mapping to registered blocks and never running JSX
+  status: pending
+- id: R525
+  content: DOC-15 Export a docs page or section as Markdown
+  status: pending
+- id: R526
+  content: DOC-16 Last-updated date, edit-this-page link, and a was-this-helpful vote on docs pages
+  status: pending
+- id: R527
+  content: DOC-17 Docs versions with a version switcher, per-version URLs, latest as default, and canonical to latest
+  status: pending
+- id: R528
+  content: DOC-18 Search scoped to the current docs section and version
+  status: pending
+- id: R529
+  content: DOC-19 Cmd+K quick search dialog on public docs pages
+  status: pending
+- id: R530
+  content: DOC-20 Docs starter template using the docs layout; fulfils R323 (M3-05)
+  status: pending
+- id: R531
+  content: DOC-21 Tests for the page tree, nested URLs, redirects, anchors, Markdown import, and version routing
+  status: pending
+- id: R532
+  content: DOC-22 Lint, tsc, and a browser check of a three-level docs site on desktop and mobile
+  status: pending
+- id: R533
+  content: "DOC-23 Gate 27 approval: docs page tree, navigation, code blocks, import, versions, and search verified"
+  status: pending
+- id: R534
+  content: AGY-01 All-sites overview listing each site with domain, last publish, page count, and 30-day views
+  status: pending
+- id: R535
+  content: AGY-02 Clone a site from an existing site or a starter, copying pages, templates, globals, menus, and settings but not users or form data
+  status: pending
+- id: R536
+  content: AGY-03 Domain setup instructions and a DNS check that shows each domain as pending, verified, or misconfigured
+  status: pending
+- id: R537
+  content: AGY-04 Client role that can edit content and media on its own site but not settings, users, templates, or code
+  status: pending
+- id: R538
+  content: "AGY-05 Content-only editing: lock block layout and style so the Client role can change text and images only"
+  status: pending
+- id: R539
+  content: "AGY-06 White-label admin: per-install logo, product name, and accent color on the dashboard and login"
+  status: pending
+- id: R540
+  content: AGY-07 Shared template library across sites, with an explicit sync or detach when the source template changes
+  status: pending
+- id: R541
+  content: AGY-08 Client feedback comments on preview links, resolved by the agency in the review queue
+  status: pending
+- id: R542
+  content: AGY-09 Handoff checklist per site covering SEO, forms, domain, analytics, and an invited client owner
+  status: pending
+- id: R543
+  content: AGY-10 Per-site activity log view built on the existing audit log
+  status: pending
+- id: R544
+  content: LOC-01 Opening hours with weekly hours, holiday overrides, and an open-now label in the site time zone
+  status: pending
+- id: R545
+  content: LOC-02 Multiple locations stored per site and reused by the Location block from R318
+  status: pending
+- id: R546
+  content: LOC-03 LocalBusiness JSON-LD built from site settings, locations, and hours
+  status: pending
+- id: R547
+  content: LOC-04 Click-to-call, WhatsApp, and directions buttons on the Button block and a mobile sticky contact bar
+  status: pending
+- id: R548
+  content: LOC-05 Services or menu block with categories, prices, and dietary or feature tags
+  status: pending
+- id: R549
+  content: LOC-06 Appointment request form with preferred date and time, sent to the form inbox with no calendar sync
+  status: pending
+- id: R550
+  content: LOC-07 Announcement bar for offers or closures with start and end dates
+  status: pending
+- id: R551
+  content: LOC-08 Reviews block for owner-entered reviews, with no invented rating markup
+  status: pending
+- id: R552
+  content: PRT-01 Projects collection with title, cover, gallery, client, year, role, tags, and an external link
+  status: pending
+- id: R553
+  content: PRT-02 Project detail template with case-study sections and next and previous project links
+  status: pending
+- id: R554
+  content: PRT-03 Filterable project grid by tag, without a full page reload, feeding the Projects block from R316
+  status: pending
+- id: R555
+  content: PRT-04 Lightbox for Gallery and project images with keyboard and swipe navigation
+  status: pending
+- id: R556
+  content: PRT-05 Masonry and justified layouts on the Gallery block
+  status: pending
+- id: R557
+  content: PRT-06 Before and after image comparison block
+  status: pending
+- id: R558
+  content: PRT-07 Image hover effects on project cards from an allowlist
+  status: pending
+- id: R559
+  content: PRT-08 CreativeWork JSON-LD and social preview images on project pages
+  status: pending
+- id: R560
+  content: VID-01 Public video detail pages at a per-site video path with title, description, and player
+  status: pending
+- id: R561
+  content: VID-02 Public playlist pages listing their published videos in order
+  status: pending
+- id: R562
+  content: VID-03 VideoObject JSON-LD and a video sitemap for published videos
+  status: pending
+- id: R563
+  content: VID-04 Caption and subtitle tracks from VTT URLs on the native player, with the language label
+  status: pending
+- id: R564
+  content: VID-05 Chapters from timestamps in the description, shown as a clickable list
+  status: pending
+- id: R565
+  content: VID-06 Related videos by playlist and tag on the detail page
+  status: pending
+- id: R566
+  content: VID-07 Video plays and completion rates in analytics boards, built on video_progress and page views
+  status: pending
+- id: R567
+  content: VID-08 Subscriber-only flag on videos that reuses the S2 entitlement check
+  status: pending
+- id: R568
+  content: SITE-01 Tests for site cloning, the Client role, content-only locks, hours and open-now, project filters, and video pages
+  status: pending
+- id: R569
+  content: SITE-02 Lint, tsc, and a browser check of one agency, local, portfolio, and video site
+  status: pending
+- id: R570
+  content: "SITE-03 Gate 28 approval: agency, local business, portfolio, and video library site features verified"
+  status: pending
+- id: R644
+  content: SLG-01 Add a unique, URL-safe slug column to sites with an additive migration, backfilling existing sites from their name and giving the default site the slug main
+  status: pending
+- id: R645
+  content: "SLG-02 Validate site slugs: lowercase letters, numbers, and hyphens, 2–40 characters, not a reserved route (dashboard, api, login, blog, search, media, sitemap.xml, robots.txt, _next) and not an enabled locale code"
+  status: pending
+- id: R646
+  content: SLG-03 Slug field on the sites admin page with a live URL preview, and a redirect from the old prefix when a slug changes
+  status: pending
+- id: R647
+  content: "SLG-04 Routing mode setting per install: host (today), path (/{site}/...), or both, with path as the development default"
+  status: pending
+- id: R648
+  content: SLG-05 In path mode, choose whether the default site keeps unprefixed URLs or also gets /main/
+  status: pending
+- id: R649
+  content: SLG-06 Root URL in path mode redirects to the default site, or shows a simple list of public sites when that option is on
+  status: pending
+- id: R650
+  content: SLG-07 Proxy strips any client-sent x-cms-host and x-cms-site-slug headers, reads the first path segment as the site slug, and sets x-cms-site-slug itself
+  status: pending
+- id: R651
+  content: SLG-08 siteContext.publicSite resolves the site from x-cms-site-slug in path mode before the host, with source 'path'; an unknown slug returns 404 and never falls back to another site
+  status: pending
+- id: R652
+  content: SLG-09 resolveRoute and resolvePostRoute strip the site segment first, then the locale, then the page or post slug, in the order /{site}/{locale}/{slug}
+  status: pending
+- id: R653
+  content: SLG-10 Collection routes, /blog, and /search parse correctly under the site prefix, with a route table that rejects ambiguous paths
+  status: pending
+- id: R654
+  content: SLG-11 PAGES.SITE.page, post, and a new search builder take the site and add its prefix; update all 33 call sites
+  status: pending
+- id: R655
+  content: SLG-12 A siteHref helper prefixes internal links in menus, buttons, rich text, and builder blocks at render time, leaving external links alone
+  status: pending
+- id: R656
+  content: SLG-13 The language switcher, breadcrumbs, and previous/next links keep the site prefix
+  status: pending
+- id: R657
+  content: SLG-14 Dashboard view-page links, the share panel, and builder preview links use the prefixed public URL
+  status: pending
+- id: R658
+  content: SLG-15 Preview links carry the site slug, and exiting preview returns to the prefixed page
+  status: pending
+- id: R659
+  content: SLG-16 Canonical, hreflang, Open Graph URLs, and JSON-LD include the site prefix in path mode and the primary host in host mode
+  status: pending
+- id: R660
+  content: SLG-17 Per-site sitemaps at /{site}/sitemap.xml plus a sitemap index, and robots.txt pointing at them
+  status: pending
+- id: R661
+  content: SLG-18 Redirects match after the site prefix is stripped, and redirect targets get the prefix added
+  status: pending
+- id: R662
+  content: SLG-19 Form submit, newsletter, and the analytics beacon send the page or form id and the server derives the site from it, never from a client-sent site value
+  status: pending
+- id: R663
+  content: SLG-20 /api/v1 accepts ?site={slug} as well as the host, and an API key only works for its own site
+  status: pending
+- id: R664
+  content: SLG-21 revalidatePublicSite purges only the changed site's prefix in path mode
+  status: pending
+- id: R665
+  content: SLG-22 Tests for slug validation, the route parsing table, URL builders, proxy header stripping, unknown-slug 404, and cross-site denial
+  status: pending
+- id: R666
+  content: "SLG-23 Lint, tsc, and a browser check of two sites in path mode: pages, posts, search, language switch, preview, forms, and sitemaps"
+  status: pending
+- id: R667
+  content: "SLG-24 Gate 32 approval: site slug routing, links, SEO, redirects, endpoints, and tests verified"
+  status: pending
+- id: R668
+  content: CFG-01 Container HTML tag choice (div, section, article, header, footer, aside, nav, main) with a warning for duplicate main or nav landmarks
+  status: pending
+- id: R669
+  content: "CFG-02 Content width: full width or boxed, with the boxed width taken from a site setting and overridable per container"
+  status: pending
+- id: R670
+  content: "CFG-03 Structure picker when a Container is added: one, two, three, and four columns, 1:2, 2:1, 1:1:2, and a bento grid"
+  status: pending
+- id: R671
+  content: "CFG-04 Per-child flex settings on any block inside a flex container: grow, shrink, basis, align-self, and order, per device"
+  status: pending
+- id: R672
+  content: "CFG-05 Auto-fit card grid: a minimum item width that fills the row without per-device column counts"
+  status: pending
+- id: R673
+  content: CFG-06 Responsive direction and wrap, so a row can stack or reverse on tablet and mobile
+  status: pending
+- id: R674
+  content: CFG-07 Horizontal scroll row on mobile with scroll snap, as a container option instead of a carousel block
+  status: pending
+- id: R675
+  content: CFG-08 Whole-container link that renders one anchor and blocks nested links and buttons inside it
+  status: pending
+- id: R676
+  content: CFG-09 Wrap selected blocks in a Container and unwrap a Container while keeping its children, both undoable
+  status: pending
+- id: R677
+  content: CFG-10 One-click convert of a Columns block into a Container that renders the same, keeping the original until saved
+  status: pending
+- id: R678
+  content: CFG-11 Opt-in absolute position inside a container with offsets and z-index, off by default and hidden on mobile unless set
+  status: pending
+- id: R679
+  content: "CFG-12 Gate 33 approval: CFG-01 to CFG-11 verified in the editor, preview, published page, and two devices"
+  status: pending
+- id: R680
+  content: ENG-01 Record every Puck problem the team hits, each with repro steps, the page or block it breaks, and whether a Puck upgrade or setting already fixes it
+  status: in_progress
+- id: R681
+  content: ENG-02 Inventory every Puck API, override, field type, and route in use (20 files, including Puck, Render, resolveAllData, createUsePuck, useGetPuck, slots, overrides, viewports) and map each to its replacement
+  status: completed
+- id: R682
+  content: "ENG-03 Define the versioned page document format: a node map keyed by id, named child slots per node, root props, and per-device prop values that match Responsive<T> in src/builder/style.ts"
+  status: completed
+- id: R683
+  content: ENG-04 Two-way converter between Puck Data (content, zones, slot props) and the new format, with round-trip tests on every seeded and stored page, post, template, and global block
+  status: completed
+- id: R684
+  content: ENG-05 Server renderer that renders a document with the existing block components and no Puck, as React Server Components where a block allows it
+  status: completed
+- id: R685
+  content: ENG-06 Server data loaders per block (blog posts, global refs, contact forms, query loops) replacing resolveAllData, scoped to the site and cache-safe
+  status: completed
+- id: R686
+  content: ENG-07 Switch the public site, preview, /api/v1 pages and posts, and export to the new renderer behind a flag, with a screenshot diff against Puck Render on every seeded page
+  status: completed
+- id: R687
+  content: "ENG-08 Editor store: node map, selection, hover, clipboard, and dirty state on React context and useSyncExternalStore, so only changed nodes re-render; no new state library"
+  status: completed
+- id: R688
+  content: "ENG-09 Command layer: insert, move, delete, duplicate, update props, wrap, and unwrap as commands with undo and redo, merging a drag or a typing burst into one undo step"
+  status: completed
+- id: R689
+  content: ENG-10 Canvas in an iframe with site styles and theme tokens injected, rendering the same block components; selection, hover, and labels drawn as an overlay outside block DOM
+  status: completed
+- id: R690
+  content: "ENG-11 Drag and drop with dnd-kit (already used by analytics boards): from the block library, within and between nested slots, with drop lines, auto-scroll, and allowed-children rules"
+  status: completed
+- id: R691
+  content: "ENG-12 Keyboard control: select parent, child, and sibling; move up and down; delete, duplicate, copy, paste, undo, redo; Escape to deselect"
+  status: completed
+- id: R692
+  content: ENG-13 Layers panel on the new tree with drag reorder, expand and collapse, rename, hide, and lock
+  status: completed
+- id: R693
+  content: ENG-14 Inspector with a field registry (text, textarea, select, number, url, color, image, icon, rich text, list, object, custom) reusing the controls in src/builder/controls and src/builder/fields, plus conditional fields
+  status: completed
+- id: R694
+  content: "ENG-15 Responsive editing: the device switch resizes the iframe; each field can hold per-device values with inheritance and reset to inherited"
+  status: completed
+- id: R695
+  content: ENG-16 Canvas resize handles for container width, spacing, and flex or grid tracks, each drag committing one undoable command, with numeric input as the keyboard alternative
+  status: in_progress
+- id: R696
+  content: ENG-17 Inline text editing on the canvas for headings, buttons, and rich text using the project's Tiptap setup
+  status: in_progress
+- id: R697
+  content: "ENG-18 Block definition API: one definition per block with type, label, category, icon, fields, defaults, slots, allowed children, loader, and render; port every block now in src/builder/config.tsx"
+  status: in_progress
+- id: R698
+  content: "ENG-19 Port the builder chrome: save draft, publish, autosave, editor lock, unsaved-changes guard, revisions and restore"
+  status: completed
+- id: R699
+  content: "ENG-20 Port every builder kind: pages, posts, post templates, page templates, global blocks with GlobalRef, contact forms, and the save-as-template and save-as-global dialogs"
+  status: completed
+- id: R700
+  content: ENG-21 Port AI dialogs, motion and animation preview, theme tokens, and selection card actions
+  status: completed
+- id: R701
+  content: "ENG-22 Performance budget: a 500-block page keeps smooth drag and typing, the editor bundle stays under a set size, and the public renderer ships no editor code"
+  status: pending
+- id: R702
+  content: ENG-23 Per-site flag to choose the Puck or new editor during rollout, with both reading and writing the same stored format through the converter
+  status: in_progress
+- id: R703
+  content: ENG-24 One-time migration of page_contents, post_contents, revisions, templates, and global blocks to the new format, with a backup and a tested rollback script
+  status: in_progress
+- id: R704
+  content: ENG-25 Unit tests for the converter, commands and undo, nesting rules, responsive inheritance, and renderer output
+  status: completed
+- id: R705
+  content: "ENG-26 End-to-end tests: add, nest, drag between containers, resize, undo, save, publish, and public render on two sites"
+  status: pending
+- id: R706
+  content: "ENG-27 Editor accessibility: keyboard alternative to every drag, visible focus, labelled controls, and screen reader announcements for moves"
+  status: pending
+- id: R707
+  content: ENG-28 Remove @measured/puck after rollout, and update the docs and plans that assume Puck (container rules, MKT, QRY)
+  status: pending
+- id: R708
+  content: "ENG-29 Gate 34 approval: document format, converter round trip, and the server renderer verified; the public site runs without Puck"
+  status: completed
+- id: R709
+  content: "ENG-30 Gate 35 approval: editor core and every builder kind reach parity with the Puck editor"
+  status: completed
+- id: R710
+  content: "ENG-31 Gate 36 approval: migration, rollback, tests, performance budget, and Puck removal verified"
+  status: pending
+- id: R711
+  content: UXE-01 Editor layout with insert panel, canvas, and inspector as resizable, collapsible panels whose sizes are remembered per user, plus a focus mode that hides every panel
+  status: completed
+- id: R712
+  content: UXE-02 Command palette (Cmd/Ctrl+K) to insert any block, jump to a layer, run any editor action, open another page, and search settings
+  status: completed
+- id: R713
+  content: "UXE-03 Quick insert on the canvas: type / in an empty spot or click the + shown between blocks on hover, with search and keyboard selection"
+  status: completed
+- id: R714
+  content: UXE-04 Insert panel with search, categories, recent and favorite blocks, a live preview on hover, and click to insert at the selection or drag to place
+  status: in_progress
+- id: R715
+  content: UXE-05 Patterns library of sections and full pages with live thumbnails and filters, inserted as editable copies; users save their own patterns to a per-site team library
+  status: pending
+- id: R716
+  content: UXE-06 Canvas zoom and pan (fit, 25–200%, space-drag, pinch) and a multi-device view showing desktop, tablet, and mobile side by side with linked selection
+  status: pending
+- id: R717
+  content: "UXE-07 Smart guides: show padding, margin, and gap on hover, distances between elements, and alignment guides while dragging or resizing"
+  status: pending
+- id: R718
+  content: UXE-08 Breadcrumb of the selected block's parents under the canvas; click a crumb to select that parent
+  status: completed
+- id: R719
+  content: UXE-09 Multi-select with Shift or Cmd click and a marquee inside a container, with group delete, duplicate, wrap, align, and shared style edits
+  status: completed
+- id: R720
+  content: UXE-10 Floating toolbar beside the selection with the main actions for that block type, plus a right-click menu with every action and its shortcut
+  status: completed
+- id: R721
+  content: "UXE-11 Empty states and drop hints: an empty container offers layout presets and a + button, and a blocked drop says why it is not allowed"
+  status: completed
+- id: R722
+  content: UXE-12 Inspector tabs for Content, Style, and Advanced with search inside settings, a dot on every changed field, and reset per field and per device
+  status: completed
+- id: R723
+  content: "UXE-13 Visual style controls: a box-model widget for spacing, alignment pads for flex and grid, number inputs you drag to change, unit switching, and a design token picker in every color and size field"
+  status: completed
+- id: R724
+  content: "UXE-14 Reusable style classes: save a block's style as a named class, apply it to other blocks, see where it is used, and detach it; builds on the global tokens in BLD-27 to BLD-31"
+  status: completed
+- id: R725
+  content: "UXE-15 State styles: a switch in the inspector to edit hover, focus, and active styles, previewed on the canvas"
+  status: completed
+- id: R726
+  content: UXE-16 History panel listing named steps you can jump back to, a visible autosave status, and recovery of unsaved work after a crash or closed tab
+  status: completed
+- id: R727
+  content: "UXE-17 Version compare: two revisions side by side with changed blocks highlighted, and restore of a single block from an older version"
+  status: completed
+- id: R728
+  content: UXE-18 Comments pinned to blocks on the canvas with mentions, replies, resolve, and notifications; reviewers can comment without edit rights; shares storage with AGY-08 preview feedback
+  status: completed
+- id: R729
+  content: "UXE-19 Live presence: avatars of others on the page, their selection outlines, and a lock on the block someone is editing, extending the P5-14 soft lock; full real-time co-editing stays out of scope for the first release"
+  status: completed
+- id: R730
+  content: "UXE-20 AI assist on the selection: generate a section from a prompt, rewrite, shorten, or translate text, write alt text, and suggest layout variants; every result is previewed first and undoable, building on the AI dialogs ported in R700"
+  status: completed
+- id: R731
+  content: UXE-21 Live checks panel while editing for accessibility (RFB-16), SEO, broken links, missing alt text, heading order, and heavy blocks (RFB-23); click an issue to select the block
+  status: completed
+- id: R732
+  content: "UXE-22 First-run experience: a start screen (blank, template, or AI), a short guided tour, contextual tips, and a keyboard shortcut sheet"
+  status: completed
+- id: R733
+  content: "UXE-23 Editor preferences: light or dark editor theme, density, reduced motion, panel positions, default units, and a right-to-left editor UI"
+  status: completed
+- id: R734
+  content: "UXE-24 Fast feel: selection under 50 ms, optimistic updates, skeletons instead of spinners, no layout jumps when panels open, and full use on a 13-inch laptop and a touch tablet"
+  status: completed
+- id: R735
+  content: UXE-25 Usability test with five real users on five tasks (build a hero, nest a grid, fix the mobile layout, reuse a section, publish), fix the top problems, and record time per task before and after
+  status: completed
+- id: R736
+  content: "UXE-26 Gate 37 approval: the modern editor experience passes the usability test, accessibility checks, and performance budget"
+  status: completed
+- id: R737
+  content: "DAT-01 Baseline before changes: save payload size, save latency, revision table growth per hour of editing, editor load time, public page TTFB cached and uncached, and database queries per public request, recorded in this plan"
+  status: in_progress
+- id: R738
+  content: "DAT-02 Version check on every save: each document has a version number, saves send the version they started from, and a stale save gets a conflict response that the editor shows as reload or compare, replacing today's silent last-write-wins"
+  status: completed
+- id: R739
+  content: "DAT-03 Patch saves: the editor sends only the changed nodes, built from the R688 command log, and the server applies them in one transaction and validates the result; a full save remains the fallback"
+  status: completed
+- id: R740
+  content: "DAT-04 Save queue: debounce typing (about 1 second), save at once on structural changes and when leaving the page, keep one request in flight and merge the rest, retry with backoff, and keep a local IndexedDB copy so offline or failed saves are never lost"
+  status: completed
+- id: R741
+  content: DAT-05 Validate and normalize once on save (schema, sanitize, size limits per document and per field), so render paths trust stored data and skip re-validation on every request
+  status: in_progress
+- id: R742
+  content: "DAT-06 Revision storage: full snapshots on publish and manual save, autosave revisions stored as patches against the last snapshot, a retention policy that keeps every named and published version, and rebuild of any revision on demand"
+  status: pending
+- id: R743
+  content: DAT-07 Store media as asset ids, never URLs or base64, in the document; resolve size, srcset, and alt text at render time
+  status: pending
+- id: R744
+  content: "DAT-08 Load the editor in one server round trip: page, draft, site settings, theme tokens, referenced global blocks, and block metadata fetched in parallel and streamed, with no client request waterfall"
+  status: completed
+- id: R745
+  content: DAT-09 Load secondary panels on open (patterns, media library, revisions, comments) with pagination, cached per session using TanStack Query, which is already installed
+  status: pending
+- id: R746
+  content: "DAT-10 Split editor code per block: field editors and heavy client code load on demand, and the canvas loads only the blocks the page uses until the insert panel opens"
+  status: pending
+- id: R747
+  content: "DAT-11 Publish once, render fast: on publish, store a render-ready published document (normalized, style classes generated, global block versions pinned) so public requests skip that work; live data loaders still run per request"
+  status: pending
+- id: R748
+  content: DAT-12 Fine-grained public caching with the Next.js 16 cache APIs (use cache, cacheTag) per site, page, locale, and global block; publish revalidates only the tags it changed instead of the whole site layout, extending SLG-21 and OZ-06
+  status: pending
+- id: R749
+  content: "DAT-13 Static shell with streamed dynamic parts: cache the page HTML and stream forms, filtered query loops, and per-visitor parts inside Suspense"
+  status: pending
+- id: R750
+  content: DAT-14 Global block usage table updated on save, so editing a global block revalidates only the pages that use it
+  status: pending
+- id: R751
+  content: "DAT-15 Indexes for the editor and public reads: page_contents (page_id, kind), page_revisions (page_id, kind, created_at), pages (site_id, language, slug, status), and the post equivalents, checked with EXPLAIN on seeded data"
+  status: completed
+- id: R752
+  content: DAT-16 Batch block data loads per request with React cache so N blocks of the same type make one query, select only the needed columns, and cap document size
+  status: completed
+- id: R753
+  content: "DAT-17 Performance tests in CI on a seeded 500-block page: save under 300 ms at p95, editor ready under 2 s, cached public TTFB under 100 ms, plus slow-query logging in development"
+  status: pending
+- id: R754
+  content: "DAT-18 Gate 38 approval: conflict-safe saving, patch saves, offline recovery, editor load, and public caching meet the R753 budgets"
+  status: pending
+- id: R755
+  content: PKG-01 Turn the repo into a pnpm workspace with the app at the root plus packages/* (moving the app to apps/cms is deferred), keep one lockfile by removing package-lock.json, use the @nextcms scope, and ship packages as TypeScript source compiled by the host (a tsup build is added for release in R771)
+  status: completed
+- id: R756
+  content: "PKG-02 Split the builder into packages: builder-core (document format, validation, commands, store, converter, renderer, no UI), builder-react (editor UI), builder-blocks (default block library, optional), and builder-next (Next.js helpers, optional)"
+  status: in_progress
+- id: R757
+  content: "PKG-03 Decouple from the app: remove every import of the app's database, server actions, config, shadcn components, media, and video from builder code, replacing them with adapters; a lint rule blocks @/ imports inside packages"
+  status: in_progress
+- id: R758
+  content: "PKG-04 Small public API: defineBlock, defineField, createBuilderConfig, BuilderEditor, BuilderRenderer, useBuilder hooks, and validateDocument, migrateDocument, and serializeDocument; everything else stays internal"
+  status: completed
+- id: R759
+  content: "PKG-05 Adapters the host provides, each optional with a working default: storage (load, patch save, version conflict), media picker and upload, link picker, data sources for dynamic content and query loops, permissions, AI, translation, and comments and presence transport"
+  status: pending
+- id: R760
+  content: "PKG-06 Custom blocks in a few lines: the host registers its own React component with a Zod props schema; fields, defaults, and validation are generated from it, with slots and server loaders; this is the RFB-02 and RFB-04 contract"
+  status: completed
+- id: R761
+  content: PKG-07 Plugin API for panels, toolbar actions, commands, field types, and canvas overlays; the CMS features (templates, global blocks, contact forms, AI, revisions) are built as plugins on it
+  status: pending
+- id: R762
+  content: PKG-08 Exported document format version with migrate functions, so hosts upgrade stored data when they upgrade the package
+  status: completed
+- id: R763
+  content: "PKG-09 Self-contained styling: the editor UI ships compiled, prefixed CSS with CSS variables for theming, so the host needs no Tailwind or shadcn; light and dark themes; blocks read theme tokens"
+  status: pending
+- id: R764
+  content: "PKG-10 Framework support: plain React 18 and 19 for the editor and renderer, an SSR-safe renderer with a React Server Components entry, and optional Next.js helpers; tested in a Vite React app and a Next.js app"
+  status: pending
+- id: R765
+  content: PKG-11 Editor UI text in English by default with host-supplied translations and right-to-left support
+  status: pending
+- id: R766
+  content: PKG-12 Separate entry points (core, editor, renderer, blocks), ESM with type definitions, tree-shakeable, and a renderer entry with no editor code; bundle size budgets checked in CI
+  status: pending
+- id: R767
+  content: PKG-13 The CMS app uses the packages exactly like an outside user, through the public API only, with no deep imports
+  status: pending
+- id: R768
+  content: "PKG-14 Examples folder: a Vite React example and a Next.js example, each getting an editor that saves to localStorage in under 50 lines"
+  status: pending
+- id: R769
+  content: "PKG-15 Docs: getting started, config, blocks, fields, adapters, plugins, theming, document format, and upgrade guide, plus an API reference generated from the types with TypeDoc"
+  status: pending
+- id: R770
+  content: PKG-16 Tests per package, adapter contract tests any host can run against its own adapters, and both examples built and smoke-tested in CI
+  status: pending
+- id: R771
+  content: PKG-17 Release with Changesets for versions and changelogs; decide public npm or a private registry and the package license together with the licensing plan (R217–R261), since the CMS is sold as licensed software
+  status: pending
+- id: R772
+  content: "PKG-18 Gate 39 approval: both examples and the CMS app run on the published packages through the public API, with docs, tests, and size budgets passing"
+  status: pending
+- id: R773
+  content: "EXT-01 defineBlock with full type inference: props are inferred from the Zod schema, so render, defaults, loaders, and fields all autocomplete and type-check with no hand-written prop types"
+  status: completed
+- id: R774
+  content: "EXT-02 Editor metadata on every block: label, icon, category, keywords for search, thumbnail, inline-editable props, and placeholder text, all optional with sensible defaults"
+  status: completed
+- id: R775
+  content: EXT-03 Defaults as a value or a function of context (site, locale, theme tokens, parent block), so new blocks start right for where they are dropped
+  status: completed
+- id: R776
+  content: EXT-04 Named slots with allowed block types, min and max children, and default children, declared in the schema with slot()
+  status: completed
+- id: R777
+  content: "EXT-05 Prop traits: reusable prop groups such as withStyle, withLayout, withAnimation, withVisibility, withDynamic, and withA11y that any block opts into with traits: [...], each bringing its schema, fields, defaults, and render wrapper"
+  status: completed
+- id: R778
+  content: "EXT-06 Schema helpers that wrap any field type: responsive(...) for per-device values, token(...) for design tokens, dynamic(...) for data bindings, and translatable(...) for per-locale text"
+  status: completed
+- id: R779
+  content: "EXT-07 extendBlock to customize an existing block (built-in or third party): add or hide fields, change defaults, add presets, and wrap or replace render while receiving the original as Base"
+  status: completed
+- id: R780
+  content: EXT-08 Extend every block at once from a plugin (for example a tracking id or test id prop), with a clear order when several plugins extend the same block
+  status: completed
+- id: R781
+  content: "EXT-09 Presets and variants per block: named prop sets (for example Hero Split and Hero Centered) shown in the insert panel; the host can add presets to built-in blocks"
+  status: completed
+- id: R782
+  content: "EXT-10 Safe escape hatches: allowlisted class names, data attributes, and token-based style overrides; never raw CSS strings or arbitrary HTML attributes"
+  status: completed
+- id: R783
+  content: "EXT-11 defineField for custom field types: schema, input component, compact preview, and validation message, usable inside object, list, and responsive fields"
+  status: completed
+- id: R784
+  content: "EXT-12 Field composition: object, list with sortable items, tabs and groups, conditional visibility (BLD-33), and computed read-only fields"
+  status: in_progress
+- id: R785
+  content: EXT-13 Typed UI overrides for editor parts (inspector header, block card, toolbar, empty state, canvas overlay) through a component map, replacing the Puck overrides pattern
+  status: pending
+- id: R786
+  content: "EXT-14 Per-block and per-field permissions: hide or lock fields by role, and lock props in templates so page editors cannot change them"
+  status: pending
+- id: R787
+  content: EXT-15 Wrap any existing React component as a block in one call, mapping its props to a schema; works with server components, and client components keep their use client boundary
+  status: pending
+- id: R788
+  content: EXT-16 Typed server loaders per block with site, locale, preview, and cache context, batched per request (DAT-16), so custom blocks fetch data safely
+  status: pending
+- id: R789
+  content: "EXT-17 Block versioning: each block has a version and a migrate function, so props saved by old versions upgrade when the block changes"
+  status: pending
+- id: R790
+  content: EXT-18 Scaffold command that creates a new block with component, schema, presets, preview, and test in one step
+  status: pending
+- id: R791
+  content: EXT-19 Block playground page that shows every block with its fields, presets, and devices, and checks that defaults pass the schema
+  status: pending
+- id: R792
+  content: EXT-20 Development warnings for unknown props, schema mismatches in stored data, missing slots, and slow loaders, shown in the console and the editor
+  status: pending
+- id: R793
+  content: EXT-21 Test helpers to render a block with props, build valid fixture props from the schema, and run the adapter contract tests
+  status: pending
+- id: R794
+  content: "EXT-22 Recipes in the docs: custom hero, card grid with a loader, extend a built-in block, add a trait, custom color field, lock fields in a template, and wrap a third-party component"
+  status: pending
+- id: R795
+  content: "EXT-23 Gate 40 approval: a developer new to the project builds a custom block, extends a built-in block, and adds a trait using only the docs, and the CMS blocks themselves use this API"
+  status: pending
+- id: R796
+  content: "ROB-01 Non-goals document for the whole builder rewrite: full OT/CRDT co-editing, native mobile editor, non-React hosts, visual page builder for non-developers, and headless-only usage without the React editor stay out of scope for Gates 34–41"
+  status: completed
+- id: R797
+  content: "ROB-02 Editor error surfaces: what the user sees when a block loader fails, schema validation fails on load, a global block is missing, or the document is corrupt; include quarantine mode, open-as-read-only, and guided repair"
+  status: completed
+- id: R798
+  content: "ROB-03 Network and API error UX while editing: retry, offline banner, conflict compare, and never lose the local command log"
+  status: completed
+- id: R799
+  content: "ROB-04 Telemetry for the rewrite: editor error reporting, feature-flag usage (Puck vs new engine per site), save success and conflict rates, and Core Web Vitals impact after migration"
+  status: pending
+- id: R800
+  content: "ROB-05 Permissions model: field-level and block-level permissions enforced in the command layer and UI, role-based insert/delete/publish restrictions, and how the permissions adapter (PKG-05) constrains actions"
+  status: pending
+- id: R801
+  content: "ROB-06 Editor i18n: localize chrome, command palette, empty states, onboarding, and error messages; wire the RTL preference (R733) to real layout direction and test with at least one RTL locale"
+  status: pending
+- id: R802
+  content: ROB-07 Visual regression suite on the canvas that runs on every PR, plus contract tests for every adapter (storage, media, data sources, permissions, AI, comments)
+  status: pending
+- id: R803
+  content: ROB-08 Property-based and fuzz tests on the converter, command layer, nesting rules, and responsive inheritance
+  status: completed
+- id: R804
+  content: "ROB-09 Dual-engine operational playbook: expected dual-mode duration, criteria to flip a site permanently, rollback after publish, monitoring, and a kill-switch if the new renderer produces bad public pages"
+  status: completed
+- id: R805
+  content: "ROB-10 Security of the document format and extension surface: XSS surface in rich text and custom fields, size and DoS limits, and sandboxing expectations for untrusted custom blocks"
+  status: pending
+- id: R806
+  content: "ROB-11 Large-document handling beyond the 500-block budget: progressive node-tree loading, virtualized layers panel, and deferred field editors"
+  status: pending
+- id: R807
+  content: ROB-12 Accessibility specifics for multi-select, smart guides, floating toolbar, and marquee selection (keyboard and screen-reader paths)
+  status: completed
+- id: R808
+  content: ROB-13 Estimate and track migration cost for other plans that currently assume Puck (MKT, QRY, container/flex/grid, market-gap shortcuts)
+  status: completed
+- id: R809
+  content: "ROB-14 Minimum-viable packages first: land PKG-01–03 and a thin public surface before ENG work, then expand packages; avoid rewriting ENG code twice"
+  status: completed
+- id: R810
+  content: "ROB-15 Dual-engine test matrix: both engines reading and writing the same pages, converter round-trips under concurrent edits, and screenshot + HTML/prop diffs"
+  status: in_progress
+- id: R811
+  content: "ROB-16 Document recovery drills: restore from backup, rebuild a revision from patches, and open a partially migrated document safely"
+  status: pending
+- id: R812
+  content: "ROB-17 Gate 41 approval: non-goals published, error recovery and telemetry live, permissions and i18n verified, dual-engine playbook rehearsed, security review passed, and large-document + a11y tests green"
+  status: pending
+  isProject: false
+
 ---
 
-<!-- progress:start -->
 ## Progress
 
 Updated 2026-10-30 by `scripts/plan-progress.mjs`. Do not edit this block by hand.
@@ -2450,15 +2451,15 @@ Updated 2026-10-30 by `scripts/plan-progress.mjs`. Do not edit this block by han
 
 `███████░░░░░░░░░░░░░░░░░░░░░░░` 22.2%
 
-| Section | Refs | Total | Done | In progress | Pending | % done | Bar |
-|---|---|---|---|---|---|---|---|
-| Engine (ENG) | R680–R710 | 31 | 20 | 6 | 5 | 64.5% | `██████░░░░` |
-| Editor UX (UXE) | R711–R736 | 26 | 22 | 1 | 3 | 84.6% | `████████░░` |
-| Data saving (DAT) | R737–R754 | 18 | 6 | 2 | 10 | 33.3% | `███░░░░░░░` |
-| Packages (PKG) | R755–R772 | 18 | 4 | 2 | 12 | 22.2% | `██░░░░░░░░` |
-| Extension API (EXT) | R773–R795 | 23 | 11 | 1 | 11 | 47.8% | `█████░░░░░` |
-| Robustness (ROB) | R796–R812 | 17 | 8 | 1 | 8 | 47.1% | `█████░░░░░` |
-| **Total** | | **812** | **180** | **15** | **617** | **22.2%** | `██░░░░░░░░` |
+| Section             | Refs      | Total   | Done    | In progress | Pending | % done    | Bar          |
+| ------------------- | --------- | ------- | ------- | ----------- | ------- | --------- | ------------ |
+| Engine (ENG)        | R680–R710 | 31      | 20      | 6           | 5       | 64.5%     | `██████░░░░` |
+| Editor UX (UXE)     | R711–R736 | 26      | 22      | 1           | 3       | 84.6%     | `████████░░` |
+| Data saving (DAT)   | R737–R754 | 18      | 6       | 2           | 10      | 33.3%     | `███░░░░░░░` |
+| Packages (PKG)      | R755–R772 | 18      | 4       | 2           | 12      | 22.2%     | `██░░░░░░░░` |
+| Extension API (EXT) | R773–R795 | 23      | 11      | 1           | 11      | 47.8%     | `█████░░░░░` |
+| Robustness (ROB)    | R796–R812 | 17      | 8       | 1           | 8       | 47.1%     | `█████░░░░░` |
+| **Total**           |           | **812** | **180** | **15**      | **617** | **22.2%** | `██░░░░░░░░` |
 
 ```mermaid
 pie showData title Todos by status
@@ -2466,7 +2467,7 @@ pie showData title Todos by status
   "In progress" : 15
   "Pending" : 617
 ```
-<!-- progress:end -->
+
 
 
 # Combined refs R001–R812
@@ -2536,39 +2537,39 @@ The first release is a **developer-friendly, self-hostable React/Next.js visual 
 
 ### v1: build before launch
 
-| Area | Refs | Why it is in v1 |
-|---|---|---|
-| Finish the video library | R123, R125, R147, R149–R156 | Already started; leave nothing half done |
-| Multisite hardening | R463–R475 | P3 is not finished until isolation is proven; every later feature inherits it |
-| Login visibility and default Viewer | R262–R291 | Security fix for first-user-becomes-Admin |
-| One-product Stripe checkout | R069–R072 | Shared Stripe client and webhook that the sale flow uses |
-| Ship basics | R073–R079 | Export, tests, docker, Lighthouse, CI |
-| Single-install licensing | R217–R261 | The product is sold as licensed software |
-| Selling the product | R366–R375, R378, R381–R392 | One offer, verified payment, fulfillment, license issuance, customer portal, legal and support pages, funnel, Gates 6–8 |
-| Container, Flexbox, and Grid | R393–R412 (separate plan: container_flex_grid_refs.plan.md) | Core of a modern visual builder |
-| Dynamic content and global styles | R413–R423, R428–R433 | Design tokens are a launch must-have; dynamic values power listings |
-| Editor basics and header/footer templates | R476, R477, R483–R485 | Undo, redo, shortcuts; template storage that listing and search templates reuse |
-| Listing and search pages | R571–R589, R595–R602 | Blog, collection, archive, and search pages in the builder |
-| Typed React component bridge | R435–R442, R456, R460 | The differentiator: bring your own React components |
-| Production optimization | R328–R365 | Runs last so it audits everything above; R357 is the launch sign-off |
+| Area                                      | Refs                                                        | Why it is in v1                                                                                                         |
+| ----------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Finish the video library                  | R123, R125, R147, R149–R156                                 | Already started; leave nothing half done                                                                                |
+| Multisite hardening                       | R463–R475                                                   | P3 is not finished until isolation is proven; every later feature inherits it                                           |
+| Login visibility and default Viewer       | R262–R291                                                   | Security fix for first-user-becomes-Admin                                                                               |
+| One-product Stripe checkout               | R069–R072                                                   | Shared Stripe client and webhook that the sale flow uses                                                                |
+| Ship basics                               | R073–R079                                                   | Export, tests, docker, Lighthouse, CI                                                                                   |
+| Single-install licensing                  | R217–R261                                                   | The product is sold as licensed software                                                                                |
+| Selling the product                       | R366–R375, R378, R381–R392                                  | One offer, verified payment, fulfillment, license issuance, customer portal, legal and support pages, funnel, Gates 6–8 |
+| Container, Flexbox, and Grid              | R393–R412 (separate plan: container_flex_grid_refs.plan.md) | Core of a modern visual builder                                                                                         |
+| Dynamic content and global styles         | R413–R423, R428–R433                                        | Design tokens are a launch must-have; dynamic values power listings                                                     |
+| Editor basics and header/footer templates | R476, R477, R483–R485                                       | Undo, redo, shortcuts; template storage that listing and search templates reuse                                         |
+| Listing and search pages                  | R571–R589, R595–R602                                        | Blog, collection, archive, and search pages in the builder                                                              |
+| Typed React component bridge              | R435–R442, R456, R460                                       | The differentiator: bring your own React components                                                                     |
+| Production optimization                   | R328–R365                                                   | Runs last so it audits everything above; R357 is the launch sign-off                                                    |
 
 ### Later: only after launch and buyer feedback
 
-| Area | Refs | Start when |
-|---|---|---|
-| Comments | R064–R068 | Buyers ask for blog comments |
-| Subscriber-only content | R080–R122 | A buyer needs a paywall |
-| Commerce growth | R376, R377, R379, R380 | Subscriptions, coupons, abandoned checkout, reviews once sales data justifies them |
-| Training and certificates | R157–R216 | A validated course or LMS buyer |
-| Studio light and Obsidian dark admin restyle | R292–R310 | After v1; polish, not function |
-| Modern starter site | R311–R327 | After v1, or earlier if demos block sales |
-| Conditional display | R424–R427, R434 | After dynamic content and global styles have shipped |
-| Market-gap extras | R478–R482, R486–R510 | Popups, extra blocks, multi-step forms, custom breakpoints |
-| Search extras | R590–R594 | Collections and video in search, search analytics, synonyms, external engines |
-| Ecommerce store builder | R603–R643 | Only if Gate 30 (R603) confirms a store is part of the strategy |
-| React-first second and third tier | R443–R455, R457–R459, R461, R462 | Synced sections, query builder, diagnostics, Git review, extension packs |
-| Docs sites | R511–R533 | Docs-site buyers |
-| Agency, local, portfolio, and video site packs | R534–R570 | Each pack once that buyer type is confirmed |
+| Area                                           | Refs                             | Start when                                                                         |
+| ---------------------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------- |
+| Comments                                       | R064–R068                        | Buyers ask for blog comments                                                       |
+| Subscriber-only content                        | R080–R122                        | A buyer needs a paywall                                                            |
+| Commerce growth                                | R376, R377, R379, R380           | Subscriptions, coupons, abandoned checkout, reviews once sales data justifies them |
+| Training and certificates                      | R157–R216                        | A validated course or LMS buyer                                                    |
+| Studio light and Obsidian dark admin restyle   | R292–R310                        | After v1; polish, not function                                                     |
+| Modern starter site                            | R311–R327                        | After v1, or earlier if demos block sales                                          |
+| Conditional display                            | R424–R427, R434                  | After dynamic content and global styles have shipped                               |
+| Market-gap extras                              | R478–R482, R486–R510             | Popups, extra blocks, multi-step forms, custom breakpoints                         |
+| Search extras                                  | R590–R594                        | Collections and video in search, search analytics, synonyms, external engines      |
+| Ecommerce store builder                        | R603–R643                        | Only if Gate 30 (R603) confirms a store is part of the strategy                    |
+| React-first second and third tier              | R443–R455, R457–R459, R461, R462 | Synced sections, query builder, diagnostics, Git review, extension packs           |
+| Docs sites                                     | R511–R533                        | Docs-site buyers                                                                   |
+| Agency, local, portfolio, and video site packs | R534–R570                        | Each pack once that buyer type is confirmed                                        |
 
 ### Rules
 
@@ -3186,7 +3187,7 @@ flowchart LR
 
 - **R311** (M1-01) Extend `ThemeTokens` with background, foreground, and muted, in addition to primary and accent. Color mode stays light, dark, or system.
 - **R312** (M1-02) Keep Inter, Plus Jakarta Sans, JetBrains Mono, and System. Add Instrument Sans and Newsreader.
-- **R313** (M1-03) [src/builder/theme.ts](src/builder/theme.ts) and [src/builder/site.css](src/builder/site.css) consume background, foreground, and muted. Blocks keep using the existing `s-*` classes. Depends on R311.
+- **R313** (M1-03) [src/builder/theme.ts](src/builder/theme.ts) and [src/builder/site.css](src/builder/site.css) consume background, foreground, and muted. Blocks keep using the existing `s-`* classes. Depends on R311.
 - **R314** (M1-04) Settings form in [src/app/(admin)/dashboard/(shell)/settings/_components/settings-form.tsx](src/app/(admin)/dashboard/(shell)/settings/_components/settings-form.tsx) edits the new fonts and color roles. Depends on R311 and R312.
 - **R315** (M1-05) Write seeded defaults only when tokens still equal `DEFAULT_THEME_TOKENS`: Plus Jakarta Sans, large radius, primary `#4F46E5`, accent `#0EA5E9`, and neutral background and foreground. A custom theme stays as saved. The seeded demo is light. Dark remains a setting. Depends on R311 and R312.
 
@@ -3340,7 +3341,6 @@ Optimize the entire existing CMS, not just the landing page. Audit first, priori
 - CI, deployment, monitoring, and recovery: through **R356**.
 - Final production-readiness review: through **R365**.
 
-
 ## R366–R392 — Sales, checkout, and digital-product business readiness (COM-01–COM-27)
 
 The site must be capable of converting visitors into customers and fulfilling purchases reliably. Do not assume the product is a physical store: first confirm the intended commercial offer. For the current CMS project, prioritize selling software/CMS licenses, downloads, updates, support, and optional subscriptions if those are part of the actual business model. Do not implement every commerce feature by default.
@@ -3412,7 +3412,7 @@ The site must be capable of converting visitors into customers and fulfilling pu
 
 Source file: [international_builder_market_gap_audit.md](./international_builder_market_gap_audit.md)
 
-<!-- BEGIN: international_builder_market_gap_audit.md -->
+
 
 # International Website Builder Competitive Gap Audit
 
@@ -3440,59 +3440,51 @@ For each feature, record: shipped, partial, missing, not applicable, or intentio
    - Undo/redo, revision history, restore, and unsaved-change recovery.
    - Draft preview, publishing, rollback, and safe handling of preview links.
    - Clear loading, empty, error, and permission states.
-
 2. **Visual design system**
    - Reusable sections/components/patterns, including synced versus detached behavior.
    - Global design tokens for typography, colors, spacing, widths, borders, shadows, and buttons.
    - Responsive editing and preview across desktop, tablet, and mobile; configurable breakpoints if supported by architecture.
    - Predictable per-breakpoint overrides without accidental global regressions.
-
 3. **CMS content modeling**
    - Custom fields and reusable content types.
    - Relations/references, filters, pagination, dynamic templates, and predictable large-list behavior.
    - Stable media references and safe replacement of assets.
    - Versioned schema and migration safety.
-
 4. **International readiness**
    - Localized page and CMS content, locale-specific metadata and alt text.
    - Locale-aware URLs, canonical/hreflang behavior, and fallback rules.
    - Right-to-left layout support if validated target customers need it.
    - Never auto-translate published legal/product content without review.
-
 5. **SEO and content distribution**
    - Per-page title/description, canonical, robots/indexability, sitemap, structured data, social previews, redirects.
    - Correct metadata after publish, clone, locale changes, and slug updates.
    - Public routes return useful server-rendered HTML where appropriate.
    - Structured data matches visible content and must not invent reviews/ratings.
-
 6. **Accessibility**
    - Semantic HTML, keyboard editing, accessible labels, focus order, headings, alt-text workflow, contrast guidance, reduced motion.
    - Test rendered pages; do not claim automatic WCAG compliance.
-
 7. **Forms and media**
    - Form validation, spam/rate-limit controls, submission storage/export, delivery status, retry, and clear failure states.
    - Image metadata/alt text, responsive variants, focal points where useful, upload limits, and export-safe paths.
    - No silent loss of submitted form data.
-
 8. **Publishing, domains, and export**
    - Custom-domain instructions and status, HTTPS/SSL guidance, canonical host and redirects.
    - Repeatable static export with correct paths, assets, fonts, links, metadata, and no leaked secrets/admin code.
    - Explicitly document dynamic functionality that static export cannot support.
    - Backup/restore, content portability, and recovery procedures.
-
 9. **Agency workflows**
    - Site-scoped roles and permissions; Viewer is read-only on the server.
    - Safe client handoff, demo/starter templates, onboarding, empty states, and quick-start documentation.
    - Collaboration/comments, multi-site management, and shared template synchronization only after buyer validation.
-
 10. **Extensibility and AI**
-   - Stable, documented API/hooks/webhooks with scoped permissions if an extension model is justified.
-   - AI-assisted copy/layout generation only after core reliability, editor history, and user-controlled review are in place.
-   - Do not build a proprietary marketplace or complex plugin runtime before demand is proven.
+    - Stable, documented API/hooks/webhooks with scoped permissions if an extension model is justified.
+    - AI-assisted copy/layout generation only after core reliability, editor history, and user-controlled review are in place.
+    - Do not build a proprietary marketplace or complex plugin runtime before demand is proven.
 
 ## Recommended priority
 
 ### Must work before commercial launch
+
 - Reliable save/restore and publish/preview lifecycle.
 - Responsive output, reusable sections, and consistent design tokens.
 - SEO fundamentals and accessible rendered output.
@@ -3500,6 +3492,7 @@ For each feature, record: shipped, partial, missing, not applicable, or intentio
 - Permission-safe customer handoff and secure media/forms if those are advertised features.
 
 ### Strong differentiators after the audit
+
 - Synced components/global styles.
 - CMS relations and dynamic templates.
 - Reliable revision history and rollback.
@@ -3507,6 +3500,7 @@ For each feature, record: shipped, partial, missing, not applicable, or intentio
 - Client-safe role permissions and streamlined first-publish onboarding.
 
 ### Add only after validation
+
 - Localization/RTL, collaboration/comments, advanced animation controls, AI generation, multi-site agency controls, template marketplace, and extension ecosystem.
 - Hosted CDN, built-in ecommerce, booking, or managed hosting unless these are part of the validated product strategy.
 
@@ -3524,13 +3518,10 @@ For each feature, record: shipped, partial, missing, not applicable, or intentio
 - Do not add dependencies or large subsystems without demonstrated need.
 - Never expose drafts, preview tokens, private media, or another site's data through public routes or caches.
 - Optimize based on measured user impact and actual buyer feedback, not feature-count parity.
-<!-- END: international_builder_market_gap_audit.md -->
 
 ---
 
 # Elementor-style Container, Flexbox, and Grid Builder Extension
-
-<!-- BEGIN: container_flex_grid_builder_plan -->
 
 Also tracked in [container_flex_grid_refs.plan.md](container_flex_grid_refs.plan.md), with R668–R679 market-gap layout steps. Keep statuses in sync.
 
@@ -3596,13 +3587,9 @@ Extend the existing Puck-based builder in place. Do not replace Puck or rebuild 
 - Do not replace Puck, add a parallel editor state engine, or introduce a new drag library unless the audit proves existing APIs cannot meet a requirement.
 - Do not promise pixel-perfect parity with Elementor; prioritize reliable responsive output and compatibility with the existing CMS.
 
-<!-- END: container_flex_grid_builder_plan -->
-
 ---
 
 # Dynamic Content, Global Styles, and Conditional Display
-
-<!-- BEGIN: dynamic-global-conditional-builder-plan -->
 
 ## Goal
 
@@ -3660,13 +3647,9 @@ Extend the existing Puck-based CMS builder with three Elementor-inspired capabil
 - **Gate 17 (R433):** approve global styles only after token editing, inheritance, overrides, deletion/fallback behavior, and editor/public parity are verified.
 - **Gate 18 (R434):** approve conditional display only after editor conditions, frontend rules, security boundaries, and end-to-end tests pass.
 
-<!-- END: dynamic-global-conditional-builder-plan -->
-
 ---
 
 # React-First Page Builder Differentiators
-
-<!-- BEGIN: react-first-builder-differentiators -->
 
 ## Product direction
 
@@ -3749,14 +3732,9 @@ Position the product as a developer-friendly, self-hostable React/Next.js visual
 - Do not add Git write-back, component marketplaces, or large third-party dependency systems before validating the core React bridge.
 - Keep existing saved pages and public rendering backward compatible.
 
-<!-- END: react-first-builder-differentiators -->
-
-
 ---
 
 # WordPress-Inspired Multisite Reliability and Isolation
-
-<!-- BEGIN: wordpress-multisite-reliability -->
 
 Also kept as a separate plan: [multisite_hardening_refs.plan.md](multisite_hardening_refs.plan.md). Keep step statuses in both files in sync.
 
@@ -3864,16 +3842,16 @@ Make the existing multisite foundation (R032–R039) behave reliably across the 
 - Do not start P4 collections work until the relevant isolation and authorization gates are passed, because collections will inherit these tenant boundaries.
 - Preserve the unjournaled `src/db/migrations/20261022070000_page_views.sql`; if `page_views` needs `site_id`, use a new migration and the project's normal Drizzle journal workflow.
 
-<!-- END: wordpress-multisite-reliability -->
-
 ---
 
 # Market-gap builder features (MKT-01–MKT-35)
-<!-- BEGIN: market-gap-builder-features -->
+
 ## Goal
+
 Close builder gaps that Elementor, Webflow, Framer, Wix Studio, and Builder.io users expect and that no earlier ref covers. Container/flex/grid (BLD-01–20), global styles, dynamic content, conditional display (BLD-21–42), locales, RTL, accessibility diagnostics, ecommerce, and export are already planned and are not repeated here.
 
 ## R476–R482 — Editor basics
+
 - **R476 (MKT-01):** Visible undo and redo buttons in the builder header, wired to Puck history with disabled states.
 - **R477 (MKT-02):** Builder keyboard shortcuts for undo, redo, duplicate, delete, and save, plus a shortcut help dialog.
 - **R478 (MKT-03):** Copy and paste block style between blocks, keeping only allowlisted style keys.
@@ -3883,6 +3861,7 @@ Close builder gaps that Elementor, Webflow, Framer, Wix Studio, and Builder.io u
 - **R482 (MKT-07):** Export and import a section or page as versioned JSON validated against the block registry.
 
 ## R483–R488 — Theme builder: header, footer, and 404
+
 - **R483 (MKT-08):** Header and footer templates edited in the Puck builder and stored like global blocks.
 - **R484 (MKT-09):** Assign header and footer templates per site, locale, or page with a site default.
 - **R485 (MKT-10):** Public layout renders the assigned header and footer, falling back to the current menu header.
@@ -3891,12 +3870,14 @@ Close builder gaps that Elementor, Webflow, Framer, Wix Studio, and Builder.io u
 - **R488 (MKT-13):** 404 page template edited in the Puck builder.
 
 ## R489–R492 — Popups
+
 - **R489 (MKT-14):** popups table and a popup editor that reuses the builder shell.
 - **R490 (MKT-15):** Popup triggers: on click, after a delay, at scroll depth, and on exit intent.
 - **R491 (MKT-16):** Popup targeting by page, locale, and device, with a cookie frequency cap.
 - **R492 (MKT-17):** Accessible popup modal with focus trap, Escape to close, focus return, and reduced motion.
 
 ## R493–R502 — Blocks
+
 - **R493 (MKT-18):** Countdown block with an end date and an expired message.
 - **R494 (MKT-19):** Progress bar block.
 - **R495 (MKT-20):** Icon list block using IconPickerField.
@@ -3909,15 +3890,18 @@ Close builder gaps that Elementor, Webflow, Framer, Wix Studio, and Builder.io u
 - **R502 (MKT-27):** Sticky element option on blocks.
 
 ## R503–R506 — Forms
+
 - **R503 (MKT-28):** Multi-step contact forms with a step indicator.
 - **R504 (MKT-29):** Conditional form fields shown from earlier answers, validated on the server.
 - **R505 (MKT-30):** File upload field with size and type limits, stored through storage().
 - **R506 (MKT-31):** Send form submissions to a Mailchimp list or the existing signed webhooks.
 
 ## R507 — Breakpoints
+
 - **R507 (MKT-32):** Custom breakpoints beyond desktop, tablet, and mobile, building on BLD-09 (R401).
 
 ## R508–R510 — Checks
+
 - **R508 (MKT-33):** Tests for section import and export, popup rules, header and footer resolution, and form steps.
 - **R509 (MKT-34):** Lint, tsc, and a browser check of undo, popups, header and footer templates, and the new blocks.
 - **R510 (MKT-35):** Gate 26 approval: editor basics, theme builder, popups, blocks, and forms verified.
@@ -3935,21 +3919,22 @@ Close builder gaps that Elementor, Webflow, Framer, Wix Studio, and Builder.io u
 
 - **Gate 26 (R510):** approve only after tests, typecheck, lint, and the browser check pass for editor basics, the theme builder, popups, blocks, and forms.
 
-<!-- END: market-gap-builder-features -->
-
 ---
 
 # Documentation sites (DOC-01–DOC-23)
-<!-- BEGIN: docs-site-features -->
+
 ## Goal
+
 Let customers build a documentation site with the builder: pages in a tree, a docs sidebar, an on-this-page list, highlighted code, callouts, Markdown import, versions, and docs search. Today a docs site needs a hand-built menu and plain code blocks. Site search (R022–R024), redirects (R018–R021), nested menus, collections, and locales already exist and are reused, not rebuilt.
 
 ## R511–R513 — Page tree
+
 - **R511 (DOC-01):** Nullable parent_id on pages with an additive migration and a cycle guard.
 - **R512 (DOC-02):** Sort order among sibling pages, with drag-to-reorder in the pages list.
 - **R513 (DOC-03):** Nested URL paths from the page tree, with redirects when a slug or parent changes.
 
 ## R514–R519 — Docs navigation
+
 - **R514 (DOC-04):** Docs sidebar block built from the page tree, collapsible, with the active page highlighted.
 - **R515 (DOC-05):** Docs layout template with sidebar, content, and on-this-page columns that collapse on mobile.
 - **R516 (DOC-06):** On-this-page contents list built from h2 and h3 headings.
@@ -3958,25 +3943,30 @@ Let customers build a documentation site with the builder: pages in a tree, a do
 - **R519 (DOC-09):** Breadcrumbs from the page tree with BreadcrumbList JSON-LD.
 
 ## R520–R523 — Docs content blocks
+
 - **R520 (DOC-10):** Server-side syntax highlighting on the Code block with a language select.
 - **R521 (DOC-11):** Copy button, filename title, and line highlights on the Code block.
 - **R522 (DOC-12):** Code group block with tabs for several languages.
 - **R523 (DOC-13):** Callout block for note, tip, warning, and danger.
 
 ## R524–R526 — Authoring
+
 - **R524 (DOC-14):** Import Markdown and MDX into pages, mapping to registered blocks and never running JSX.
 - **R525 (DOC-15):** Export a docs page or section as Markdown.
 - **R526 (DOC-16):** Last-updated date, edit-this-page link, and a was-this-helpful vote on docs pages.
 
 ## R527–R529 — Versions and search
+
 - **R527 (DOC-17):** Docs versions with a version switcher, per-version URLs, latest as default, and canonical to latest.
 - **R528 (DOC-18):** Search scoped to the current docs section and version.
 - **R529 (DOC-19):** Cmd+K quick search dialog on public docs pages.
 
 ## R530 — Starter
+
 - **R530 (DOC-20):** Docs starter template using the docs layout; fulfils R323 (M3-05).
 
 ## R531–R533 — Checks
+
 - **R531 (DOC-21):** Tests for the page tree, nested URLs, redirects, anchors, Markdown import, and version routing.
 - **R532 (DOC-22):** Lint, tsc, and a browser check of a three-level docs site on desktop and mobile.
 - **R533 (DOC-23):** Gate 27 approval: docs page tree, navigation, code blocks, import, versions, and search verified.
@@ -3995,18 +3985,18 @@ Let customers build a documentation site with the builder: pages in a tree, a do
 
 - **Gate 27 (R533):** approve only after tests, typecheck, lint, and the browser check pass for a three-level docs site with two versions.
 
-<!-- END: docs-site-features -->
-
 ---
 
 # Site-type packs: agency, local business, portfolio, and video library
-<!-- BEGIN: site-type-packs -->
+
 ## Goal
+
 Make four kinds of site work well, not just partly: agencies running several client sites, small local businesses, portfolios, and video libraries. These steps only add what earlier refs do not cover. They build on multi-site (R032–R039) and its hardening (R463–R475), the Location, Projects, and Team blocks (R316–R318), the agency, portfolio, and local business starters (R320, R321, R324), the video library (R123–R156), and subscriber entitlement (R086–R087).
 
 Do the multisite hardening gates (R463–R475) before the agency steps, because cloning and the Client role depend on site isolation. Do the video library block (R149–R150) before the VID steps.
 
 ## R534–R543 — Agency running several client sites (AGY-01–AGY-10)
+
 - **R534 (AGY-01):** All-sites overview listing each site with domain, last publish, page count, and 30-day views.
 - **R535 (AGY-02):** Clone a site from an existing site or a starter, copying pages, templates, globals, menus, and settings but not users or form data.
 - **R536 (AGY-03):** Domain setup instructions and a DNS check that shows each domain as pending, verified, or misconfigured.
@@ -4019,6 +4009,7 @@ Do the multisite hardening gates (R463–R475) before the agency steps, because 
 - **R543 (AGY-10):** Per-site activity log view built on the existing audit log.
 
 ## R544–R551 — Small business and local sites (LOC-01–LOC-08)
+
 - **R544 (LOC-01):** Opening hours with weekly hours, holiday overrides, and an open-now label in the site time zone.
 - **R545 (LOC-02):** Multiple locations stored per site and reused by the Location block from R318.
 - **R546 (LOC-03):** LocalBusiness JSON-LD built from site settings, locations, and hours.
@@ -4029,6 +4020,7 @@ Do the multisite hardening gates (R463–R475) before the agency steps, because 
 - **R551 (LOC-08):** Reviews block for owner-entered reviews, with no invented rating markup.
 
 ## R552–R559 — Portfolio sites (PRT-01–PRT-08)
+
 - **R552 (PRT-01):** Projects collection with title, cover, gallery, client, year, role, tags, and an external link.
 - **R553 (PRT-02):** Project detail template with case-study sections and next and previous project links.
 - **R554 (PRT-03):** Filterable project grid by tag, without a full page reload, feeding the Projects block from R316.
@@ -4039,6 +4031,7 @@ Do the multisite hardening gates (R463–R475) before the agency steps, because 
 - **R559 (PRT-08):** CreativeWork JSON-LD and social preview images on project pages.
 
 ## R560–R567 — Video library sites (VID-01–VID-08)
+
 - **R560 (VID-01):** Public video detail pages at a per-site video path with title, description, and player.
 - **R561 (VID-02):** Public playlist pages listing their published videos in order.
 - **R562 (VID-03):** VideoObject JSON-LD and a video sitemap for published videos.
@@ -4049,6 +4042,7 @@ Do the multisite hardening gates (R463–R475) before the agency steps, because 
 - **R567 (VID-08):** Subscriber-only flag on videos that reuses the S2 entitlement check.
 
 ## R568–R570 — Checks (SITE-01–SITE-03)
+
 - **R568 (SITE-01):** Tests for site cloning, the Client role, content-only locks, hours and open-now, project filters, and video pages.
 - **R569 (SITE-02):** Lint, tsc, and a browser check of one agency, local, portfolio, and video site.
 - **R570 (SITE-03):** Gate 28 approval: agency, local business, portfolio, and video library site features verified.
@@ -4068,24 +4062,23 @@ Do the multisite hardening gates (R463–R475) before the agency steps, because 
 
 - **Gate 28 (R570):** approve only after tests, typecheck, lint, and a browser check pass for one agency, local business, portfolio, and video library site.
 
-<!-- END: site-type-packs -->
-
 ---
 
 # Listing and search pages in the builder (QRY-01–QRY-32)
-<!-- BEGIN: listing-and-search-pages -->
+
 ## Goal
+
 Let users build any listing page (blog, collection, portfolio, videos, archives) and the site search page in the builder, with filters, sorting, and pagination, the way market builders do. Today the only listing is the posts-only BlogPosts block with fixed cards, and /search is a hard-coded route outside the builder that searches pages and posts in English only, with 20 results and no paging.
 
 ## Market reference
 
-| Builder | Listing | Filters | Search |
-|---|---|---|---|
-| Elementor Pro | Loop Grid and Loop Carousel with a designed loop item template | Taxonomy Filter widget linked to a loop | Search widget and a search results archive template |
-| WordPress blocks | Query Loop with a designable post template, pagination, and no-results block | Mostly plugins | Search block and a search template |
-| Webflow | Collection List bound to a collection, with filter, sort, and limit | Commonly added with Finsweet Attributes | Site search with a search results page |
-| Wix Studio | Dataset connected to a repeater | Input elements connected to the dataset without code | Wix Site Search |
-| Framer | CMS collection list with filter, sort, and limit | Limited | Search component |
+| Builder          | Listing                                                                      | Filters                                              | Search                                              |
+| ---------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------------- |
+| Elementor Pro    | Loop Grid and Loop Carousel with a designed loop item template               | Taxonomy Filter widget linked to a loop              | Search widget and a search results archive template |
+| WordPress blocks | Query Loop with a designable post template, pagination, and no-results block | Mostly plugins                                       | Search block and a search template                  |
+| Webflow          | Collection List bound to a collection, with filter, sort, and limit          | Commonly added with Finsweet Attributes              | Site search with a search results page              |
+| Wix Studio       | Dataset connected to a repeater                                              | Input elements connected to the dataset without code | Wix Site Search                                     |
+| Framer           | CMS collection list with filter, sort, and limit                             | Limited                                              | Search component                                    |
 
 The common pattern: one query-driven loop block, a card designed visually, filter controls linked to that loop, and search and archive pages that are templates in the builder.
 
@@ -4107,12 +4100,14 @@ The common pattern: one query-driven loop block, a card designed visually, filte
 6. SEO, caching, accessibility, and checks (R597–R602).
 
 ## R571–R574 — Query foundation
+
 - **R571 (QRY-01):** Typed listing query schema: source (posts, pages, collection entries, videos), filters, sort, limit, offset, and exclude-current, validated against allowlisted fields.
 - **R572 (QRY-02):** Server query resolver per source that only returns published, site-scoped, locale-scoped, access-checked items, with a hard maximum page size.
 - **R573 (QRY-03):** Namespaced URL parameters per listing block so two listings and their filters on one page never clash.
 - **R574 (QRY-04):** Database indexes for the filter and sort columns each source allows.
 
 ## R575–R580 — Listing blocks
+
 - **R575 (QRY-05):** Query Loop block whose card is a slot designed in the builder, with item fields (title, image, excerpt, date, author, terms, collection field) read from the loop item.
 - **R576 (QRY-06):** Loop layouts: grid, list, masonry, carousel, and table, with per-device columns and gap.
 - **R577 (QRY-07):** Pagination styles: numbered, load more, and infinite scroll, always with crawlable page links underneath.
@@ -4121,6 +4116,7 @@ The common pattern: one query-driven loop block, a card designed visually, filte
 - **R580 (QRY-10):** Keep BlogPosts and RelatedPosts rendering unchanged and offer a one-click convert to a Query Loop preset.
 
 ## R581–R585 — Filter blocks
+
 - **R581 (QRY-11):** Filter blocks linked to a Query Loop by block id: keyword, taxonomy (select, checkboxes, chips), date range, number range, yes/no toggle, and sort.
 - **R582 (QRY-12):** Result count and active-filter chips with clear-one and clear-all.
 - **R583 (QRY-13):** Facet counts for each filter option computed on the server for the current query.
@@ -4128,6 +4124,7 @@ The common pattern: one query-driven loop block, a card designed visually, filte
 - **R585 (QRY-15):** Mobile filter drawer with an apply button.
 
 ## R586–R594 — Site search
+
 - **R586 (QRY-16):** Search results template built in the builder and assigned per site, rendered by /search with the current page as fallback.
 - **R587 (QRY-17):** Search box block with live suggestions, keyboard navigation, and a link to the full results page.
 - **R588 (QRY-18):** Search quality: Postgres text config per locale instead of hard-coded english, prefix matching for type-ahead, unaccent, and title weighted above body.
@@ -4139,15 +4136,18 @@ The common pattern: one query-driven loop block, a card designed visually, filte
 - **R594 (QRY-24):** Search adapter interface with Postgres as the default, so Meilisearch or Typesense can be added later without block changes.
 
 ## R595–R596 — Archive pages
+
 - **R595 (QRY-25):** Category, tag, author, and date archive templates built in the builder, with Query Loop bound to the current term.
 - **R596 (QRY-26):** Assign archive templates per site and locale with a built-in fallback.
 
 ## R597–R599 — SEO, performance, and accessibility
+
 - **R597 (QRY-27):** Listing SEO: self-canonical paginated pages, noindex for filter combinations, ItemList JSON-LD, and archive pages in the sitemap.
 - **R598 (QRY-28):** Cache listing and search results per site, locale, and query, and revalidate on publish.
 - **R599 (QRY-29):** Accessible results: aria-live result counts, focus moves to results after filtering, and a combobox pattern for suggestions.
 
 ## R600–R602 — Checks
+
 - **R600 (QRY-30):** Tests for the query schema, site and access scoping, URL namespaces, facet counts, locale text configs, and archive resolution.
 - **R601 (QRY-31):** Lint, tsc, and a browser check of a blog listing, a filtered collection grid, site search, and a category archive.
 - **R602 (QRY-32):** Gate 29 approval: listing, filtering, search, archives, SEO, caching, and accessibility verified.
@@ -4167,24 +4167,23 @@ The common pattern: one query-driven loop block, a card designed visually, filte
 
 - **Gate 29 (R602):** approve only after tests, typecheck, lint, and a browser check pass for a blog listing, a filtered collection grid, site search in two locales, and a category archive.
 
-<!-- END: listing-and-search-pages -->
-
 ---
 
 # Ecommerce store builder (ECM-01–ECM-41)
-<!-- BEGIN: ecommerce-store-builder -->
+
 ## Goal
+
 Let users build a full online store in the builder, the way market builders do: a product catalog with variants and stock, single-product and shop templates designed visually, product blocks with dynamic fields, a cart and checkout built from locked blocks, payments through an adapter, and an order lifecycle with fulfilment and refunds. This extends the one-product checkout (R069–R072) and the digital-product commerce work (R366–R392); it does not replace them.
 
 ## Market reference
 
-| Builder | Catalog | Product and shop pages | Cart and checkout |
-|---|---|---|---|
-| Elementor Pro with WooCommerce | WooCommerce products, variations, stock | Single Product and Products Archive templates with product widgets | Cart, Checkout, and My Account widgets, menu cart |
-| Wix Studio | Wix Stores with options and inventory | Product page and shop pages editable in the editor | Side cart, cart page, customizable checkout |
-| Webflow | Ecommerce products and SKUs as CMS collections | Product and category template pages | Cart element, checkout and order confirmation pages |
-| Shopify themes | Products, variants, inventory, collections | Product and collection templates with sections and blocks | Cart drawer and page; checkout is locked to the platform |
-| Framer | Third-party only | Third-party only | Third-party only |
+| Builder                        | Catalog                                        | Product and shop pages                                             | Cart and checkout                                        |
+| ------------------------------ | ---------------------------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------- |
+| Elementor Pro with WooCommerce | WooCommerce products, variations, stock        | Single Product and Products Archive templates with product widgets | Cart, Checkout, and My Account widgets, menu cart        |
+| Wix Studio                     | Wix Stores with options and inventory          | Product page and shop pages editable in the editor                 | Side cart, cart page, customizable checkout              |
+| Webflow                        | Ecommerce products and SKUs as CMS collections | Product and category template pages                                | Cart element, checkout and order confirmation pages      |
+| Shopify themes                 | Products, variants, inventory, collections     | Product and collection templates with sections and blocks          | Cart drawer and page; checkout is locked to the platform |
+| Framer                         | Third-party only                               | Third-party only                                                   | Third-party only                                         |
 
 The common pattern: products are data, product and shop pages are templates bound to that data, cart and checkout are blocks with fixed rules and editable layout, and payment and order state are trusted only on the server.
 
@@ -4209,10 +4208,12 @@ The common pattern: products are data, product and shop pages are templates boun
 6. Analytics, starter, caching, accessibility, tests, and Gate 31 (R637–R643).
 
 ## R603–R604 — Scope and audit
+
 - **R603 (ECM-01):** Gate 30 approval before any store code: confirm from COM-01 (R366) and COM-05 (R370) whether the store sells physical goods, digital goods, or both, which countries and currencies it serves, and which payment providers are eligible. Record what is out of scope for the first release.
 - **R604 (ECM-02):** Audit the products and orders tables from R069, the Product grid and Buy button from R070, Stripe Checkout and the webhook from R071-R072, and the order lifecycle from R371-R372. The store extends these tables and routes. Do not add a second orders table, a second Stripe client, or a second webhook route.
 
 ## R605–R610 — Catalog and inventory
+
 - **R605 (ECM-03):** Product catalog schema: products with draft and published status, options (such as size and color), variants with SKU, price, compare-at price, stock, weight, and dimensions, plus product images. Every table has site_id and follows the locale model already used by pages. Additive Drizzle migration only.
 - **R606 (ECM-04):** Product categories (nested), tags, and collections that are either hand-picked or rule-based (category, tag, price, on sale, in stock).
 - **R607 (ECM-05):** Inventory tracking: stock per variant, low-stock threshold and admin notice, backorder on or off, and a short stock reservation while a checkout is open, released on expiry, failure, or cancel. Stock changes run in a transaction with a row lock so two buyers cannot take the last item.
@@ -4221,6 +4222,7 @@ The common pattern: products are data, product and shop pages are templates boun
 - **R610 (ECM-08):** Digital product type: no shipping, files delivered through the secure fulfillment from R373, and optional license issuance through R374. A cart can mix digital and physical items when Gate 30 allows it.
 
 ## R611–R622 — Product and shop templates and blocks
+
 - **R611 (ECM-09):** Single product template designed in the builder, stored like the header and footer templates from MKT-08 (R483), assigned per site, locale, or product category, with a built-in fallback template.
 - **R612 (ECM-10):** Shop page and product category archive templates designed in the builder, using the Query Loop from QRY-05 (R575) with a new products source added to the QRY-01 (R571) schema and the QRY-02 (R572) resolver.
 - **R613 (ECM-11):** Cart page and checkout page templates designed in the builder from the ECM-22 to ECM-24 blocks, assigned per site with a built-in fallback that always works.
@@ -4235,6 +4237,7 @@ The common pattern: products are data, product and shop pages are templates boun
 - **R622 (ECM-20):** Product breadcrumbs from the category tree and Product JSON-LD with real price, currency, and availability for the selected variant. Ratings appear only from real, moderated reviews (COM-15, R380 rules).
 
 ## R623–R630 — Cart, checkout, payments, shipping, tax, and coupons
+
 - **R623 (ECM-21):** Server-side cart: guest cart id in an httpOnly cookie, merge into the account cart on login, scoped by site, and every price, discount, and total recalculated on the server. The client never sends a trusted price.
 - **R624 (ECM-22):** Mini-cart block for header templates with item count and a slide-out cart drawer that lists items, subtotal, and links to cart and checkout.
 - **R625 (ECM-23):** Cart block with line items, quantity change, remove, coupon field, shipping estimate, and a totals summary, all updated from the server cart.
@@ -4245,6 +4248,7 @@ The common pattern: products are data, product and shop pages are templates boun
 - **R630 (ECM-28):** Cart coupons: percent off, fixed amount, and free shipping, with minimum spend, product or category limits, usage limits per coupon and per customer, and start and end dates. Extends the abuse rules from COM-12 (R377).
 
 ## R631–R635 — Orders and customers
+
 - **R631 (ECM-29):** Order lifecycle for physical goods: pending, paid, processing, shipped, delivered, canceled, and full or partial refund, extending R372. Stock returns on cancel or refund; every change is audited.
 - **R632 (ECM-30):** Admin orders inbox upgrade: filter by status, mark fulfilled with carrier and tracking number, printable packing slip and invoice, partial refunds through the payment adapter, internal notes, and the audit log.
 - **R633 (ECM-31):** Transactional emails for order confirmation, shipped with tracking, and refund, sent through the existing SMTP or Resend mailer from editable templates, with one send per event.
@@ -4252,10 +4256,12 @@ The common pattern: products are data, product and shop pages are templates boun
 - **R635 (ECM-33):** Abandoned cart reminders for carts with a consented email, following the COM-14 (R379) consent and frequency rules, with an unsubscribe link.
 
 ## R636–R637 — Permissions and analytics
+
 - **R636 (ECM-34):** Permissions store.manage, products.edit, and orders.manage, a Shop Manager role, and server-side site isolation for products, carts, orders, and customers, following the multisite hardening rules from R463-R475. A Shop Manager cannot change settings, users, or licenses.
 - **R637 (ECM-35):** Store analytics boards: revenue, orders, average order value, refunds, top products, and the product view to cart to checkout to paid funnel, extending R378 and R387 and storing no card data.
 
 ## R638–R643 — Starter, quality, and checks
+
 - **R638 (ECM-36):** Store starter template: home, shop, product, cart, checkout, and account pages with a few demo products, header mini-cart, and footer, seeded only when the user picks it.
 - **R639 (ECM-37):** Store performance and SEO: cache product and shop pages per site and locale, revalidate on publish, price change, or stock change, never cache cart, checkout, or account responses, and use one canonical URL per product with variant parameters.
 - **R640 (ECM-38):** Accessibility for the variant picker, gallery, cart drawer, and checkout: labels, errors tied to fields, focus management, keyboard use, and announced cart updates.
@@ -4280,13 +4286,9 @@ The common pattern: products are data, product and shop pages are templates boun
 - **Gate 30 (R603):** approve store scope, goods types, markets, and payment providers before any store code.
 - **Gate 31 (R643):** approve only after tests, typecheck, lint, and a browser check pass for browse, filter, product, cart, sandbox checkout, email, fulfilment, and refund on desktop and mobile.
 
-<!-- END: ecommerce-store-builder -->
-
 ---
 
 # Site slug in every public route (SLG-01–SLG-24)
-
-<!-- BEGIN: site-slug-routing -->
 
 ## Goal
 
@@ -4364,13 +4366,9 @@ None of this is built yet, so every SLG step is pending:
 
 - **Gate 32 (R667):** approve only after the tests, typecheck, lint, and the two-site browser check pass in path mode and host mode.
 
-<!-- END: site-slug-routing -->
-
 ---
 
 # Container layout market gaps R668–R679
-
-<!-- BEGIN: container-layout-market-gaps -->
 
 Also tracked in [container_flex_grid_refs.plan.md](container_flex_grid_refs.plan.md). Builds on the Container (R395) and layout schema (R394); start after Gate 13 (R410).
 
@@ -4391,21 +4389,19 @@ Also tracked in [container_flex_grid_refs.plan.md](container_flex_grid_refs.plan
 
 - **Gate 33 (R679):** approve only after each CFG step works in the editor, preview, and published page on desktop and mobile, and the R405 and R406 tests cover it.
 
-<!-- END: container-layout-market-gaps -->
-
 ---
 
 # Custom builder engine R680–R710
 
 Also tracked in [custom_builder_engine_refs.plan.md](custom_builder_engine_refs.plan.md), which has the Puck inventory, approach, rules, and risks.
 
-<!-- BEGIN: custom-builder-engine -->
+
 
 Replace the Puck editor and renderer with an in-house engine; keep the block components, style system, and controls. Renderer first, then editor core, parity, and rollout. Do not start the editor core before Gate 34 (R708) or remove Puck before Gate 36 (R710).
 
 - **R680 (ENG-01):** Record every Puck problem the team hits, each with repro steps, the page or block it breaks, and whether a Puck upgrade or setting already fixes it.
 - **R681 (ENG-02):** Inventory every Puck API, override, field type, and route in use (20 files, including Puck, Render, resolveAllData, createUsePuck, useGetPuck, slots, overrides, viewports) and map each to its replacement.
-- **R682 (ENG-03):** Define the versioned page document format: a node map keyed by id, named child slots per node, root props, and per-device prop values that match Responsive<T> in src/builder/style.ts.
+- **R682 (ENG-03):** Define the versioned page document format: a node map keyed by id, named child slots per node, root props, and per-device prop values that match Responsive in src/builder/style.ts.
 - **R683 (ENG-04):** Two-way converter between Puck Data (content, zones, slot props) and the new format, with round-trip tests on every seeded and stored page, post, template, and global block.
 - **R684 (ENG-05):** Server renderer that renders a document with the existing block components and no Puck, as React Server Components where a block allows it.
 - **R685 (ENG-06):** Server data loaders per block (blog posts, global refs, contact forms, query loops) replacing resolveAllData, scoped to the site and cache-safe.
@@ -4441,13 +4437,9 @@ Replace the Puck editor and renderer with an in-house engine; keep the block com
 - **Gate 35 (R709):** every builder kind reaches parity in the new editor.
 - **Gate 36 (R710):** migration, rollback, tests, performance budget, and Puck removal verified.
 
-<!-- END: custom-builder-engine -->
-
 ---
 
 # Modern editor experience refs R711–R736
-
-<!-- BEGIN: modern-editor-ux -->
 
 Also tracked in [custom_builder_engine_refs.plan.md](custom_builder_engine_refs.plan.md).
 
@@ -4521,13 +4513,9 @@ Already planned elsewhere and not repeated: undo and redo buttons and shortcuts 
 
 - **Gate 37 (R736):** approve only after the usability test shows faster task times than the Puck editor, the editor UI passes WCAG 2.2 AA checks, and the R701 performance budget still holds.
 
-<!-- END: modern-editor-ux -->
-
 ---
 
 # Builder data saving and fetching refs R737–R754
-
-<!-- BEGIN: builder-data-performance -->
 
 Also tracked in [custom_builder_engine_refs.plan.md](custom_builder_engine_refs.plan.md).
 
@@ -4596,13 +4584,9 @@ Use current best practice for how the builder saves and loads page data, and how
 
 OZ-06 and OZ-07 (site-wide caching and query profiling), QRY-28 (listing cache), ECM-37 (shop cache), ENG-06 (block data loaders), ENG-22 (editor performance budget), UXE-16 (autosave status and crash recovery).
 
-<!-- END: builder-data-performance -->
-
 ---
 
 # Standalone builder package refs R755–R772
-
-<!-- BEGIN: builder-package -->
 
 Also tracked in [custom_builder_engine_refs.plan.md](custom_builder_engine_refs.plan.md).
 
@@ -4687,13 +4671,9 @@ Do R755–R757 before the engine work starts, so ENG code is written inside the 
 
 RFB-02 and RFB-04 (component adapter contract), RFB-06 (wrapping project components), RFB-21 (extension packs), MKT-07 (JSON import and export), DAT-02 and DAT-03 (version checks and patch saves, which the storage adapter carries).
 
-<!-- END: builder-package -->
-
 ---
 
 # Block extension and custom components refs R773–R795
-
-<!-- BEGIN: builder-extension-api -->
 
 Also tracked in [custom_builder_engine_refs.plan.md](custom_builder_engine_refs.plan.md).
 
@@ -4705,7 +4685,13 @@ Make blocks easy to customize: extend props without forking, reuse prop groups a
 
 ```tsx
 import { z } from 'zod';
-import { defineBlock, extendBlock, slot, responsive, token } from '@nextcms/builder-core';
+import {
+  defineBlock,
+  extendBlock,
+  slot,
+  responsive,
+  token,
+} from '@nextcms/builder-core';
 import { withStyle, withAnimation } from '@nextcms/builder-core/traits';
 import { Hero } from '@nextcms/builder-blocks';
 
@@ -4718,13 +4704,20 @@ export const PricingCard = defineBlock({
     title: z.string().default('Pro'),
     price: z.number().min(0).default(29),
     accent: token('color').default('primary'),
-    columns: responsive(z.number().int().min(1).max(4)).default({ desktop: 3, mobile: 1 }),
+    columns: responsive(z.number().int().min(1).max(4)).default({
+      desktop: 3,
+      mobile: 1,
+    }),
     features: slot({ allow: ['Text', 'IconList'], max: 10 }),
   }),
   traits: [withStyle(), withAnimation()],
   presets: { Highlighted: { accent: 'accent' } },
   render: ({ title, price, features }) => (
-    <article><h3>{title}</h3><p>${price}</p>{features}</article>
+    <article>
+      <h3>{title}</h3>
+      <p>${price}</p>
+      {features}
+    </article>
   ),
 });
 
@@ -4733,7 +4726,10 @@ export const BrandHero = extendBlock(Hero, {
   fields: { add: { badge: z.string().optional() }, hide: ['secondaryButton'] },
   defaults: { align: 'center' },
   render: (props, Base) => (
-    <>{props.badge && <span>{props.badge}</span>}<Base {...props} /></>
+    <>
+      {props.badge && <span>{props.badge}</span>}
+      <Base {...props} />
+    </>
   ),
 });
 ```
@@ -4798,13 +4794,9 @@ Build R773–R776 with ENG-18 (block definition API), R777–R782 and R783–R78
 
 PKG-04, PKG-06, PKG-07 (public API, custom blocks, plugins), RFB-02, RFB-04, RFB-06 (component adapter contract), BLD-22 and BLD-27 to BLD-31 (dynamic values and tokens, used by dynamic() and token()), BLD-33 (conditional fields), MKT-04 (allowlisted classes), DAT-16 (batched loaders).
 
-<!-- END: builder-extension-api -->
-
 ---
 
 # Builder rewrite robustness R796–R812
-
-<!-- BEGIN: builder-robustness -->
 
 Also tracked in [custom_builder_engine_refs.plan.md](custom_builder_engine_refs.plan.md), which also has the implementation batches (B0–B14) for R680–R812 and B15, the shared editor UI package ([editor_ui_package_implementation.md](editor_ui_package_implementation.md)).
 
@@ -4825,5 +4817,3 @@ Also tracked in [custom_builder_engine_refs.plan.md](custom_builder_engine_refs.
 - **R810 (ROB-15):** Dual-engine test matrix: both engines reading and writing the same pages, converter round-trips under concurrent edits, and screenshot + HTML/prop diffs.
 - **R811 (ROB-16):** Document recovery drills: restore from backup, rebuild a revision from patches, and open a partially migrated document safely.
 - **R812 (ROB-17):** Gate 41 approval: non-goals published, error recovery and telemetry live, permissions and i18n verified, dual-engine playbook rehearsed, security review passed, and large-document + a11y tests green.
-
-<!-- END: builder-robustness -->

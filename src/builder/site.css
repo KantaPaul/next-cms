@@ -7,11 +7,11 @@
   --site-accent: #ec4899;
   --site-radius: 0.75rem;
   --site-font: inherit;
-  --site-bg: #ffffff;
-  --site-fg: #0f172a;
-  --site-muted: #64748b;
-  --site-surface: #f8fafc;
-  --site-border: #e2e8f0;
+  --site-bg: var(--site-color-background, #ffffff);
+  --site-fg: var(--site-color-text, #0f172a);
+  --site-muted: var(--site-color-text-muted, var(--site-color-secondary, #64748b));
+  --site-surface: var(--site-color-surface, #f8fafc);
+  --site-border: var(--site-color-border, #e2e8f0);
   --site-on-primary: #ffffff;
 
   background: var(--site-bg);

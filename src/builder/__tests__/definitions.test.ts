@@ -36,6 +36,36 @@ describe('page block definitions', () => {
     }
   });
 
+  it('accept element-level and section-level styles on every block that supports them', () => {
+    for (const type of nativeBlockTypes) {
+      const base = defaultProps(pageDefinitions[type]) as Record<string, unknown>;
+      const withStyles: Record<string, unknown> = {
+        ...base,
+        elements: {
+          title: {
+            typography: {
+              fontFamily: 'Inter',
+              fontSize: { desktop: 48, tablet: 36, mobile: 28 },
+              lineHeight: 56,
+              lineHeightUnit: 'px',
+            },
+            fill: { type: 'color', color: '#111827' },
+          },
+        },
+      };
+      if ('section' in base) {
+        withStyles.section = {
+          ...(typeof base.section === 'object' && base.section ? base.section : {}),
+          width: 1200,
+          widthUnit: 'px',
+          typography: { fontFamily: 'Inter', fontSize: 16, lineHeight: 24, lineHeightUnit: 'px' },
+          fill: { type: 'color', color: '#ffffff' },
+        };
+      }
+      assert.deepEqual(validateProps(pageDefinitions[type], withStyles), { ok: true }, type);
+    }
+  });
+
   it('keep slots and nesting rules', () => {
     assert.deepEqual(pageSchemas.Columns.slots?.column1, { allow: undefined, disallow: ['Columns', 'GlobalRef'] });
     assert.ok(pageSchemas.Container.slots?.content);

@@ -14,8 +14,11 @@ import {
   type UserAccess,
 } from '@/server/services/access.service';
 import { auditService } from '@/server/services/audit.service';
-import { normalizeHost, siteContext } from '@/server/services/site-context';
-import { slugifySiteName } from '@/lib/utils/site-slug';
+import {
+  normalizeHost,
+  siteContext,
+} from '@/server/services/site-context';
+import { slugifySiteName, validateSiteSlug } from '@/lib/utils/site-slug';
 
 export type CreateSiteInput = {
   name: string;
@@ -25,6 +28,8 @@ export type CreateSiteInput = {
   defaultLocale: string;
   locales: SiteLocale[];
 };
+
+export type UpdateSiteInput = CreateSiteInput;
 
 function domains(value: string | null | undefined) {
   return (value ?? '')
@@ -98,6 +103,85 @@ export const sitesService = {
       targetId: siteId,
       targetName: input.name.trim(),
     });
+    return siteContext.getById(siteId);
+  },
+
+  update: async (
+    siteId: string,
+    input: UpdateSiteInput,
+    access: UserAccess
+  ) => {
+    await accessService.assertPermission(
+      access.userId,
+      PERMISSIONS.SETTINGS_MANAGE
+    );
+
+    const existing = await siteContext.getById(siteId);
+    if (!existing) {
+      throw new ApplicationException('Site not found.');
+    }
+
+    const memberships = await siteContext.memberships(access.userId);
+    if (!memberships.some(m => m.siteId === siteId)) {
+      throw new ApplicationException('You do not have access to this site.');
+    }
+
+    const locales = input.locales.filter(locale => locale.code && locale.label);
+    if (!locales.length) {
+      throw new ApplicationException('Choose at least one language.');
+    }
+    if (!locales.some(locale => locale.code === input.defaultLocale)) {
+      throw new ApplicationException(
+        'The default language has to be one of the site languages.'
+      );
+    }
+
+    const rawSlug = input.slug?.trim() || slugifySiteName(input.name);
+    const slugValidation = validateSiteSlug(rawSlug);
+    if (!slugValidation.ok) {
+      throw new ApplicationException(
+        'Invalid site slug. Use lowercase letters, numbers and hyphens (2–40 chars), not a reserved route or locale code.'
+      );
+    }
+
+    const primaryHost = normalizeHost(input.primaryHost) || null;
+
+    try {
+      await db
+        .update(sites)
+        .set({
+          name: input.name.trim(),
+          slug: slugValidation.slug,
+          primaryHost,
+          extraDomains: domains(input.extraDomains),
+          defaultLocale: input.defaultLocale,
+          locales,
+          updatedAt: new Date(),
+        })
+        .where(eq(sites.id, siteId));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      if (message.includes('sites_primary_host_unique')) {
+        throw new ApplicationException(
+          'That host is already used by another site.'
+        );
+      }
+      if (message.includes('sites_slug_unique')) {
+        throw new ApplicationException(
+          'That slug is already used by another site.'
+        );
+      }
+      throw error;
+    }
+
+    await auditService.log({
+      actorId: access.userId,
+      action: 'update',
+      targetType: 'site',
+      targetId: siteId,
+      targetName: input.name.trim(),
+    });
+
     return siteContext.getById(siteId);
   },
 

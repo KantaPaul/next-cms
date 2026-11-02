@@ -1,29 +1,25 @@
 'use client';
 
-import { useId, useState, useTransition, type FormEvent } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useId, useState } from 'react';
+import { useForm, FormProvider, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Loader2, Plus, RotateCcw, Save, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Save, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { themeStyle } from '@/builder/theme';
 import { MediaField } from '@/components/media/media-picker';
 import { Button } from '@/components/ui/button';
 import { PAGES } from '@/config/pages';
 import { cn } from '@/lib/utils/cn';
-import { handleActionResponse } from '@/lib/utils/handle-action-response';
-import { updateSiteSettings, updateVideoSettings } from '../_modules/settings.actions';
+import { updateSiteSettings } from '../_modules/settings.actions';
 import { useFormAction } from '@/hooks/use-form-action';
 import { settingsSchema } from '../_modules/settings.schemas';
-import { ColorInput } from '@/builder/controls/primitives';
-import { DEFAULT_THEME_TOKENS, type ThemeTokens } from '@/db/schemas/pages.schema';
+import { type ThemeTokens } from '@/db/schemas/pages.schema';
 import { FormInput as Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Controller } from 'react-hook-form';
-import { Select } from '@/components/ui/select';
 import {
+  Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -32,15 +28,6 @@ import {
 import { FormItem, FormMessage } from '@/components/ui/form';
 
 type SettingsInput = z.infer<typeof settingsSchema>;
-
-const FONTS: ThemeTokens['fontFamily'][] = [
-  'Inter',
-  'Plus Jakarta Sans',
-  'JetBrains Mono',
-  'System',
-];
-const RADII: ThemeTokens['borderRadius'][] = ['none', 'sm', 'md', 'lg', 'full'];
-const MODES: ThemeTokens['colorMode'][] = ['light', 'dark', 'system'];
 
 const inputClass =
   'h-9 w-full rounded-md border border-steel-200 bg-transparent px-3 text-sm dark:border-dark-300 dark:bg-dark-100';
@@ -150,6 +137,8 @@ export function SettingsForm({
     footerMenuId: string | null;
     headerTemplateId?: string | null;
     footerTemplateId?: string | null;
+    searchTemplateId?: string | null;
+    archiveTemplateId?: string | null;
     robotsTxt: string | null;
     googleAnalyticsId: string | null;
     seoTitle: string | null;
@@ -163,10 +152,22 @@ export function SettingsForm({
         seoDescription?: string;
         headerTemplateId?: string | null;
         footerTemplateId?: string | null;
+        searchTemplateId?: string | null;
+        archiveTemplateId?: string | null;
       }
     > | null;
-    themeTokens: ThemeTokens;
+    themeTokens?: ThemeTokens;
     videoSettings: { providers: Record<string, boolean> } | null;
+    searchSettings?: {
+      synonyms: Array<{ term: string; synonyms: string[] }>;
+      pinnedResults: Array<{
+        query: string;
+        title: string;
+        path: string;
+        snippet?: string | null;
+        kind?: 'page' | 'post' | 'collection' | 'video';
+      }>;
+    } | null;
   };
   menus: { id: string; title: string; location: string; language: string }[];
   templates?: { id: string; name: string; category: string }[];
@@ -175,7 +176,6 @@ export function SettingsForm({
   defaultLocale: string;
 }) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
 
   const form = useForm<SettingsInput>({
     resolver: zodResolver(settingsSchema) as any,
@@ -194,62 +194,6 @@ export function SettingsForm({
       },
     }
   );
-
-  const [customName, setCustomName] = useState('');
-  const [customColor, setCustomColor] = useState('#8b5cf6');
-
-  const addCustomToken = () => {
-    if (!customName.trim()) {
-      toast.error('Please enter a token name');
-      return;
-    }
-    const currentTokens = form.getValues('themeTokens');
-    const colors = currentTokens.colors ?? {};
-    const custom = [...(colors.custom ?? [])];
-    const id = customName.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
-    if (custom.some(c => c.id === id)) {
-      toast.error('A token with this name already exists');
-      return;
-    }
-    custom.push({ id, name: customName.trim(), value: customColor });
-    form.setValue('themeTokens', {
-      ...currentTokens,
-      colors: {
-        ...colors,
-        custom,
-      },
-    }, { shouldDirty: true });
-    setCustomName('');
-    toast.success(`Token "${customName.trim()}" added`);
-  };
-
-  const removeCustomToken = (id: string, name: string) => {
-    const currentTokens = form.getValues('themeTokens');
-    const colors = currentTokens.colors ?? {};
-    const custom = (colors.custom ?? []).filter(c => c.id !== id);
-    form.setValue('themeTokens', {
-      ...currentTokens,
-      colors: {
-        ...colors,
-        custom,
-      },
-    }, { shouldDirty: true });
-    toast.info(`Token "${name}" removed. References will fall back to default.`);
-  };
-
-  const { submit: submitVideoSettings, isPending: videoSettingsPending } =
-    useFormAction(
-      async (data: { providers: Record<string, boolean> }) => {
-        const result = await updateVideoSettings(data);
-        return result as Record<string, unknown>;
-      },
-      {
-        onSuccess: () => {
-          toast.success('Video settings saved.');
-          router.refresh();
-        },
-      }
-    );
 
   const menuSelect = (key: 'headerMenuId' | 'footerMenuId') => (
     <Controller
@@ -277,9 +221,118 @@ export function SettingsForm({
     />
   );
 
+  const [synonymTerm, setSynonymTerm] = useState('');
+  const [synonymWords, setSynonymWords] = useState('');
+  const [pinQuery, setPinQuery] = useState('');
+  const [pinTitle, setPinTitle] = useState('');
+  const [pinPath, setPinPath] = useState('');
+  const [pinSnippet, setPinSnippet] = useState('');
+
+  const addSynonymGroup = () => {
+    const term = synonymTerm.trim().toLowerCase();
+    const synonyms = synonymWords
+      .split(',')
+      .map(s => s.trim().toLowerCase())
+      .filter(Boolean);
+    if (!term || synonyms.length === 0) {
+      toast.error('Enter a base term and at least one comma-separated synonym');
+      return;
+    }
+    const current = form.getValues('searchSettings') ?? {
+      synonyms: [],
+      pinnedResults: [],
+    };
+    const nextSynonyms = [
+      ...(current.synonyms ?? []).filter(item => item.term.toLowerCase() !== term),
+      { term, synonyms },
+    ];
+    form.setValue(
+      'searchSettings',
+      {
+        synonyms: nextSynonyms,
+        pinnedResults: current.pinnedResults ?? [],
+      },
+      { shouldDirty: true }
+    );
+    setSynonymTerm('');
+    setSynonymWords('');
+    toast.success(`Synonym rule for "${term}" added`);
+  };
+
+  const removeSynonymGroup = (term: string) => {
+    const current = form.getValues('searchSettings') ?? {
+      synonyms: [],
+      pinnedResults: [],
+    };
+    form.setValue(
+      'searchSettings',
+      {
+        synonyms: (current.synonyms ?? []).filter(item => item.term !== term),
+        pinnedResults: current.pinnedResults ?? [],
+      },
+      { shouldDirty: true }
+    );
+  };
+
+  const addPinnedResult = () => {
+    const query = pinQuery.trim().toLowerCase();
+    const title = pinTitle.trim();
+    const path = pinPath.trim();
+    if (!query || !title || !path) {
+      toast.error('Query, title, and path are required for a pinned result');
+      return;
+    }
+    const current = form.getValues('searchSettings') ?? {
+      synonyms: [],
+      pinnedResults: [],
+    };
+    form.setValue(
+      'searchSettings',
+      {
+        synonyms: current.synonyms ?? [],
+        pinnedResults: [
+          ...(current.pinnedResults ?? []),
+          {
+            query,
+            title,
+            path,
+            snippet: pinSnippet.trim() || null,
+            kind: 'page' as const,
+          },
+        ],
+      },
+      { shouldDirty: true }
+    );
+    setPinQuery('');
+    setPinTitle('');
+    setPinPath('');
+    setPinSnippet('');
+    toast.success(`Pinned result for "${query}" added`);
+  };
+
+  const removePinnedResult = (index: number) => {
+    const current = form.getValues('searchSettings') ?? {
+      synonyms: [],
+      pinnedResults: [],
+    };
+    form.setValue(
+      'searchSettings',
+      {
+        synonyms: current.synonyms ?? [],
+        pinnedResults: (current.pinnedResults ?? []).filter((_, i) => i !== index),
+      },
+      { shouldDirty: true }
+    );
+  };
+
   const templateSelect = (
-    key: 'headerTemplateId' | 'footerTemplateId',
-    filterCategory?: 'header' | 'footer'
+    key:
+      | 'headerTemplateId'
+      | 'footerTemplateId'
+      | 'searchTemplateId'
+      | 'archiveTemplateId',
+    filterCategory?: 'header' | 'footer',
+    noneLabel = 'None (use menu layout)'
   ) => {
     const relevant = templates.filter(
       t =>
@@ -300,7 +353,7 @@ export function SettingsForm({
                     id={id}
                     value={field.value}
                     onChange={field.onChange}
-                    noneLabel="None (use menu layout)"
+                    noneLabel={noneLabel}
                     options={relevant.map(t => ({ value: t.id, label: t.name }))}
                   />
                 </div>
@@ -322,13 +375,6 @@ export function SettingsForm({
         }}
       />
     );
-  };
-
-  const setToken = (key: keyof ThemeTokens, value: string | number) => {
-    form.setValue('themeTokens', {
-      ...form.getValues('themeTokens'),
-      [key]: value,
-    });
   };
 
   return (
@@ -493,8 +539,28 @@ export function SettingsForm({
             </span>
             {templateSelect('footerTemplateId', 'footer')}
           </div>
+          <div className="space-y-1">
+            <span className="text-xs font-semibold text-steel-700">
+              Search Results Template (visual builder)
+            </span>
+            {templateSelect(
+              'searchTemplateId',
+              undefined,
+              'None (use default search layout)'
+            )}
+          </div>
+          <div className="space-y-1">
+            <span className="text-xs font-semibold text-steel-700">
+              Archive Template (categories, tags, authors, dates)
+            </span>
+            {templateSelect(
+              'archiveTemplateId',
+              undefined,
+              'None (use default archive layout)'
+            )}
+          </div>
           <p className="text-xs text-steel-500 sm:col-span-2">
-            Header and footer templates override the default menu navigation. Manage templates in{' '}
+            Header, footer, search, and archive templates override the default layouts. Manage templates in{' '}
             <Link
               href={PAGES.DASHBOARD.HEADER_FOOTER}
               className="font-medium text-indigo-600 hover:underline"
@@ -506,275 +572,162 @@ export function SettingsForm({
         </Section>
 
         <Section
-          title="Theme"
-          description="Design tokens applied to every public page and builder block."
+          title="Site Search (Synonyms & Pinned Results)"
+          description="Configure query synonyms and pinned featured results for the public site search."
         >
-          <Controller
-            name="themeTokens.primaryColor"
-            render={({ field, fieldState }) => {
-              const id = useId();
-              return (
-                <Field group label="Primary colour">
-                  <ColorInput
-                    label="Primary colour"
-                    value={field.value}
-                    onChange={v => field.onChange(v)}
-                  />
-                  {fieldState.error && (
-                    <FormMessage>{fieldState.error.message}</FormMessage>
-                  )}
-                </Field>
-              );
-            }}
-          />
-          <Controller
-            name="themeTokens.accentColor"
-            render={({ field, fieldState }) => {
-              const id = useId();
-              return (
-                <Field group label="Accent colour">
-                  <ColorInput
-                    label="Accent colour"
-                    value={field.value}
-                    onChange={v => field.onChange(v)}
-                  />
-                  {fieldState.error && (
-                    <FormMessage>{fieldState.error.message}</FormMessage>
-                  )}
-                </Field>
-              );
-            }}
-          />
-          <Controller
-            name="themeTokens.colors.secondary"
-            render={({ field }) => (
-              <Field group label="Secondary colour">
-                <ColorInput
-                  label="Secondary colour"
-                  value={field.value ?? '#64748b'}
-                  onChange={v => field.onChange(v)}
-                />
-              </Field>
-            )}
-          />
-          <Controller
-            name="themeTokens.colors.text"
-            render={({ field }) => (
-              <Field group label="Text colour">
-                <ColorInput
-                  label="Text colour"
-                  value={field.value ?? '#0f172a'}
-                  onChange={v => field.onChange(v)}
-                />
-              </Field>
-            )}
-          />
-          <Controller
-            name="themeTokens.colors.background"
-            render={({ field }) => (
-              <Field group label="Background colour">
-                <ColorInput
-                  label="Background colour"
-                  value={field.value ?? '#ffffff'}
-                  onChange={v => field.onChange(v)}
-                />
-              </Field>
-            )}
-          />
-          <Controller
-            name="themeTokens.colors.surface"
-            render={({ field }) => (
-              <Field group label="Surface colour">
-                <ColorInput
-                  label="Surface colour"
-                  value={field.value ?? '#f8fafc'}
-                  onChange={v => field.onChange(v)}
-                />
-              </Field>
-            )}
-          />
-          <Controller
-            name="themeTokens.colors.border"
-            render={({ field }) => (
-              <Field group label="Border colour">
-                <ColorInput
-                  label="Border colour"
-                  value={field.value ?? '#e2e8f0'}
-                  onChange={v => field.onChange(v)}
-                />
-              </Field>
-            )}
-          />
-          <Controller
-            name="themeTokens.fontFamily"
-            render={({ field, fieldState }) => {
-              const id = useId();
-              return (
-                <FormItem>
-                  <Label htmlFor={id}>Font</Label>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger id={id} className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {FONTS.map(f => (
-                        <SelectItem key={f} value={f}>
-                          {f}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {fieldState.error && (
-                    <FormMessage>{fieldState.error.message}</FormMessage>
-                  )}
-                </FormItem>
-              );
-            }}
-          />
-          <Controller
-            name="themeTokens.borderRadius"
-            render={({ field }) => {
-              const id = useId();
-              return (
-                <Field group label="Corner radius">
-                  <div role="radiogroup" aria-label="Corner radius" className="flex gap-1">
-                    {RADII.map(r => (
-                      <button
-                        key={r}
-                        type="button"
-                        role="radio"
-                        aria-checked={field.value === r}
-                        onClick={() => field.onChange(r)}
-                        className={cn(
-                          'h-9 flex-1 rounded-md border text-xs capitalize transition',
-                          field.value === r
-                            ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-200'
-                            : 'border-steel-200 hover:border-steel-400 dark:border-dark-300'
-                        )}
-                      >
-                        {r}
-                      </button>
-                    ))}
-                  </div>
-                </Field>
-              );
-            }}
-          />
-          <Controller
-            name="themeTokens.colorMode"
-            render={({ field, fieldState }) => {
-              const id = useId();
-              return (
-                <FormItem>
-                  <Label htmlFor={id}>Colour mode</Label>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger id={id} className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MODES.map(m => (
-                        <SelectItem key={m} value={m}>
-                          {m[0].toUpperCase() + m.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {fieldState.error && (
-                    <FormMessage>{fieldState.error.message}</FormMessage>
-                  )}
-                </FormItem>
-              );
-            }}
-          />
           <div className="sm:col-span-2 rounded-lg border border-steel-200 dark:border-dark-300 p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="text-sm font-semibold">Custom Design Tokens</h4>
-                <p className="text-xs text-steel-500">
-                  Reusable custom design tokens accessible across builder blocks.
-                </p>
-              </div>
+            <div>
+              <h4 className="text-sm font-semibold">Search Synonyms</h4>
+              <p className="text-xs text-steel-500">
+                Expand user queries with equivalent terms (e.g. &ldquo;cms&rdquo; &rarr; &ldquo;builder, editor&rdquo;).
+              </p>
             </div>
-
             <div className="space-y-2">
-              {(form.watch('themeTokens.colors.custom') ?? []).map(token => (
+              {(form.watch('searchSettings.synonyms') ?? []).map(item => (
                 <div
-                  key={token.id}
+                  key={item.term}
                   className="flex items-center justify-between gap-3 p-2 rounded-md border border-steel-100 dark:border-dark-400 bg-steel-50/50 dark:bg-dark-200/50 text-xs"
                 >
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="w-4 h-4 rounded-full border border-black/10 shrink-0"
-                      style={{ backgroundColor: token.value }}
-                    />
-                    <span className="font-medium">{token.name}</span>
-                    <span className="font-mono text-steel-400">({token.value})</span>
+                  <div>
+                    <span className="font-semibold">{item.term}</span>
+                    <span className="mx-1.5 text-steel-400">&rarr;</span>
+                    <span className="text-steel-600 dark:text-steel-300">
+                      {item.synonyms.join(', ')}
+                    </span>
                   </div>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     className="h-7 w-7 p-0 text-red-500 hover:text-red-700"
-                    onClick={() => removeCustomToken(token.id, token.name)}
-                    title="Delete token"
+                    onClick={() => removeSynonymGroup(item.term)}
+                    title="Delete synonym rule"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
                 </div>
               ))}
-              {(form.watch('themeTokens.colors.custom') ?? []).length === 0 && (
-                <p className="text-xs text-steel-400 italic">No custom tokens defined yet.</p>
+              {(form.watch('searchSettings.synonyms') ?? []).length === 0 && (
+                <p className="text-xs text-steel-400 italic">No search synonyms configured.</p>
               )}
             </div>
-
             <div className="flex flex-wrap items-end gap-2 pt-2 border-t border-steel-100 dark:border-dark-400">
-              <div className="flex-1 min-w-[120px]">
-                <Label className="text-xs">Token Name</Label>
+              <div className="w-40">
+                <Label className="text-xs">Term</Label>
                 <Input
-                  value={customName}
-                  placeholder="e.g. Brand Highlight"
-                  onChange={e => setCustomName(e.target.value)}
+                  value={synonymTerm}
+                  placeholder="e.g. pricing"
+                  onChange={e => setSynonymTerm(e.target.value)}
                   className="h-8 text-xs"
                 />
               </div>
-              <div className="w-32">
-                <ColorInput
-                  label="Color"
-                  value={customColor}
-                  onChange={value => setCustomColor(value ?? '#8b5cf6')}
+              <div className="flex-1 min-w-[160px]">
+                <Label className="text-xs">Synonyms (comma-separated)</Label>
+                <Input
+                  value={synonymWords}
+                  placeholder="e.g. plans, cost, billing"
+                  onChange={e => setSynonymWords(e.target.value)}
+                  className="h-8 text-xs"
                 />
               </div>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={addCustomToken}
+                onClick={addSynonymGroup}
                 className="h-8 gap-1 text-xs"
               >
-                <Plus className="w-3.5 h-3.5" /> Add Token
+                <Plus className="w-3.5 h-3.5" /> Add Synonym
               </Button>
             </div>
           </div>
 
-          <div className="flex items-end">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => form.setValue('themeTokens', DEFAULT_THEME_TOKENS)}
-            >
-              <RotateCcw /> Reset theme
-            </Button>
+          <div className="sm:col-span-2 rounded-lg border border-steel-200 dark:border-dark-300 p-4 space-y-3">
+            <div>
+              <h4 className="text-sm font-semibold">Pinned Search Results</h4>
+              <p className="text-xs text-steel-500">
+                Pin specific pages or links to the top of results when a visitor searches for a matching query.
+              </p>
+            </div>
+            <div className="space-y-2">
+              {(form.watch('searchSettings.pinnedResults') ?? []).map((item, idx) => (
+                <div
+                  key={`${item.query}-${item.path}-${idx}`}
+                  className="flex items-center justify-between gap-3 p-2 rounded-md border border-steel-100 dark:border-dark-400 bg-steel-50/50 dark:bg-dark-200/50 text-xs"
+                >
+                  <div className="min-w-0">
+                    <span className="inline-block rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[11px] text-amber-800 mr-2">
+                      {item.query}
+                    </span>
+                    <span className="font-semibold">{item.title}</span>
+                    <span className="ml-2 text-steel-400">({item.path})</span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 text-red-500 hover:text-red-700"
+                    onClick={() => removePinnedResult(idx)}
+                    title="Delete pinned result"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ))}
+              {(form.watch('searchSettings.pinnedResults') ?? []).length === 0 && (
+                <p className="text-xs text-steel-400 italic">No pinned search results configured.</p>
+              )}
+            </div>
+            <div className="grid gap-2 pt-2 border-t border-steel-100 dark:border-dark-400 sm:grid-cols-3">
+              <div>
+                <Label className="text-xs">Trigger Query</Label>
+                <Input
+                  value={pinQuery}
+                  placeholder="e.g. contact"
+                  onChange={e => setPinQuery(e.target.value)}
+                  className="h-8 text-xs"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Result Title</Label>
+                <Input
+                  value={pinTitle}
+                  placeholder="e.g. Contact Support"
+                  onChange={e => setPinTitle(e.target.value)}
+                  className="h-8 text-xs"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Target Path</Label>
+                <Input
+                  value={pinPath}
+                  placeholder="e.g. /contact"
+                  onChange={e => setPinPath(e.target.value)}
+                  className="h-8 text-xs"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Label className="text-xs">Snippet (optional)</Label>
+                <Input
+                  value={pinSnippet}
+                  placeholder="Short description shown on the pinned card"
+                  onChange={e => setPinSnippet(e.target.value)}
+                  className="h-8 text-xs"
+                />
+              </div>
+              <div className="flex items-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addPinnedResult}
+                  className="h-8 w-full gap-1 text-xs"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add Pinned Result
+                </Button>
+              </div>
+            </div>
           </div>
-          <Controller
-            name="themeTokens"
-            render={({ field }) => (
-              <ThemePreview
-                tokens={field.value as ThemeTokens}
-                siteName={form.getValues('siteName')}
-              />
-            )}
-          />
         </Section>
 
         <Section
@@ -898,6 +851,217 @@ export function SettingsForm({
               );
             }}
           />
+        </Section>
+
+        <Section
+          title="Licensing policy"
+          description="Authority policy for single-install licenses. Max installations is fixed at 1 and enforcement cannot be turned off in production."
+        >
+          <Controller
+            name="licenseSettings.heartbeatIntervalSeconds"
+            render={({ field, fieldState }) => {
+              const id = useId();
+              return (
+                <FormItem>
+                  <Label htmlFor={id}>Heartbeat interval (seconds)</Label>
+                  <Input
+                    id={id}
+                    type="number"
+                    min="60"
+                    {...field}
+                    value={field.value ?? 86400}
+                    onChange={e => field.onChange(parseInt(e.target.value, 10))}
+                  />
+                  <span className="text-xs text-steel-500">
+                    How often installations check in (default: 86400s / 24h).
+                  </span>
+                  {fieldState.error && (
+                    <FormMessage>{fieldState.error.message}</FormMessage>
+                  )}
+                </FormItem>
+              );
+            }}
+          />
+
+          <Controller
+            name="licenseSettings.gracePeriodSeconds"
+            render={({ field, fieldState }) => {
+              const id = useId();
+              return (
+                <FormItem>
+                  <Label htmlFor={id}>Grace period (seconds, max 604800s / 7d)</Label>
+                  <Input
+                    id={id}
+                    type="number"
+                    min="0"
+                    max="604800"
+                    {...field}
+                    value={field.value ?? 259200}
+                    onChange={e => field.onChange(parseInt(e.target.value, 10))}
+                  />
+                  <span className="text-xs text-steel-500">
+                    Offline leeway before enforcement fails closed (capped at 7 days).
+                  </span>
+                  {fieldState.error && (
+                    <FormMessage>{fieldState.error.message}</FormMessage>
+                  )}
+                </FormItem>
+              );
+            }}
+          />
+
+          <Controller
+            name="licenseSettings.defaultExpiryDays"
+            render={({ field, fieldState }) => {
+              const id = useId();
+              return (
+                <FormItem>
+                  <Label htmlFor={id}>Default expiry (days)</Label>
+                  <Input
+                    id={id}
+                    type="number"
+                    min="1"
+                    {...field}
+                    value={field.value ?? 365}
+                    onChange={e => field.onChange(parseInt(e.target.value, 10))}
+                  />
+                  <span className="text-xs text-steel-500">
+                    Standard duration for newly issued licenses.
+                  </span>
+                  {fieldState.error && (
+                    <FormMessage>{fieldState.error.message}</FormMessage>
+                  )}
+                </FormItem>
+              );
+            }}
+          />
+
+          <Controller
+            name="licenseSettings.reassignmentCooldownHours"
+            render={({ field, fieldState }) => {
+              const id = useId();
+              return (
+                <FormItem>
+                  <Label htmlFor={id}>Reassignment cooldown (hours)</Label>
+                  <Input
+                    id={id}
+                    type="number"
+                    min="0"
+                    {...field}
+                    value={field.value ?? 24}
+                    onChange={e => field.onChange(parseInt(e.target.value, 10))}
+                  />
+                  <span className="text-xs text-steel-500">
+                    Minimum waiting period between server migrations.
+                  </span>
+                  {fieldState.error && (
+                    <FormMessage>{fieldState.error.message}</FormMessage>
+                  )}
+                </FormItem>
+              );
+            }}
+          />
+
+          <Controller
+            name="licenseSettings.maxReassignments"
+            render={({ field, fieldState }) => {
+              const id = useId();
+              return (
+                <FormItem>
+                  <Label htmlFor={id}>Max reassignments per license</Label>
+                  <Input
+                    id={id}
+                    type="number"
+                    min="0"
+                    {...field}
+                    value={field.value ?? 5}
+                    onChange={e => field.onChange(parseInt(e.target.value, 10))}
+                  />
+                  <span className="text-xs text-steel-500">
+                    Maximum allowed hardware/server transfers per license.
+                  </span>
+                  {fieldState.error && (
+                    <FormMessage>{fieldState.error.message}</FormMessage>
+                  )}
+                </FormItem>
+              );
+            }}
+          />
+
+          <Controller
+            name="licenseSettings.rateLimitMaxAttempts"
+            render={({ field, fieldState }) => {
+              const id = useId();
+              return (
+                <FormItem>
+                  <Label htmlFor={id}>Rate limit max attempts</Label>
+                  <Input
+                    id={id}
+                    type="number"
+                    min="1"
+                    {...field}
+                    value={field.value ?? 10}
+                    onChange={e => field.onChange(parseInt(e.target.value, 10))}
+                  />
+                  <span className="text-xs text-steel-500">
+                    Max activation attempts per IP window.
+                  </span>
+                  {fieldState.error && (
+                    <FormMessage>{fieldState.error.message}</FormMessage>
+                  )}
+                </FormItem>
+              );
+            }}
+          />
+
+          <div className="sm:col-span-2 pt-2 border-t border-steel-100 dark:border-dark-300">
+            <div className="text-xs font-semibold uppercase text-steel-500 tracking-wider mb-2">
+              Notification & Abuse Policies
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Controller
+                name="licenseSettings.notifyOnConflict"
+                render={({ field }) => {
+                  const id = useId();
+                  return (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id={id}
+                        checked={field.value ?? true}
+                        onChange={e => field.onChange(e.target.checked)}
+                        className="rounded border-steel-300 dark:border-dark-300 text-primary focus:ring-primary"
+                      />
+                      <Label htmlFor={id} className="text-xs cursor-pointer">
+                        Alert on second-installation attempt conflict
+                      </Label>
+                    </div>
+                  );
+                }}
+              />
+
+              <Controller
+                name="licenseSettings.notifyOnRevocation"
+                render={({ field }) => {
+                  const id = useId();
+                  return (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id={id}
+                        checked={field.value ?? true}
+                        onChange={e => field.onChange(e.target.checked)}
+                        className="rounded border-steel-300 dark:border-dark-300 text-primary focus:ring-primary"
+                      />
+                      <Label htmlFor={id} className="text-xs cursor-pointer">
+                        Alert on license revocation
+                      </Label>
+                    </div>
+                  );
+                }}
+              />
+            </div>
+          </div>
         </Section>
         {locales.filter(locale => locale.code !== defaultLocale).length > 0 && (
           <Section
@@ -1036,119 +1200,5 @@ export function SettingsForm({
         </div>
       </form>
     </FormProvider>
-  );
-}
-
-function ThemePreview({
-  tokens,
-  siteName,
-}: {
-  tokens: ThemeTokens;
-  siteName: string;
-}) {
-  const dark = tokens.colorMode === 'dark';
-  const customTokens = tokens.colors?.custom ?? [];
-
-  return (
-    <div className="sm:col-span-2">
-      <span className="mb-1 block text-sm font-medium">Design System Preview</span>
-      <div
-        style={{ ...themeStyle(tokens), fontFamily: 'var(--site-font)' }}
-        className={cn(
-          'rounded-lg border p-6 space-y-6',
-          dark
-            ? 'border-slate-700 bg-slate-900 text-slate-100'
-            : 'border-steel-200 bg-white text-slate-900'
-        )}
-      >
-        <div>
-          <p
-            className="text-xs font-semibold uppercase tracking-wider"
-            style={{ color: 'var(--site-accent)' }}
-          >
-            {siteName || 'Your site'} · Global Tokens
-          </p>
-          <h2 className="mt-1 text-2xl font-bold" style={{ fontSize: 'var(--site-type-h2-size, 1.75rem)' }}>
-            Ship pages your team is proud of.
-          </h2>
-          <p
-            className={cn(
-              'mt-1 text-sm',
-              dark ? 'text-slate-400' : 'text-slate-500'
-            )}
-            style={{ fontSize: 'var(--site-type-body-size, 1rem)' }}
-          >
-            Design tokens provide site-wide consistency for colors, typography, and dynamic data bindings.
-          </p>
-        </div>
-
-        {/* Global Color Swatches */}
-        <div>
-          <span className="text-xs font-medium text-steel-500 block mb-2">Token Palette</span>
-          <div className="flex flex-wrap gap-2 text-xs">
-            <span
-              className="px-3 py-1.5 rounded font-medium text-white shadow-sm"
-              style={{ backgroundColor: 'var(--site-color-primary, #4f46e5)' }}
-            >
-              Primary
-            </span>
-            <span
-              className="px-3 py-1.5 rounded font-medium text-white shadow-sm"
-              style={{ backgroundColor: 'var(--site-color-accent, #0ea5e9)' }}
-            >
-              Accent
-            </span>
-            <span
-              className="px-3 py-1.5 rounded font-medium text-white shadow-sm"
-              style={{ backgroundColor: 'var(--site-color-secondary, #64748b)' }}
-            >
-              Secondary
-            </span>
-            <span
-              className="px-3 py-1.5 rounded font-medium border"
-              style={{
-                backgroundColor: 'var(--site-color-surface, #f8fafc)',
-                color: 'var(--site-color-text, #0f172a)',
-                borderColor: 'var(--site-color-border, #e2e8f0)',
-              }}
-            >
-              Surface
-            </span>
-            {customTokens.map(c => (
-              <span
-                key={c.id}
-                className="px-3 py-1.5 rounded font-medium text-white shadow-sm"
-                style={{ backgroundColor: `var(--site-token-${c.id.toLowerCase().replace(/[^a-z0-9_-]/g, '-')}, ${c.value})` }}
-              >
-                {c.name}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Interactive Components Demo */}
-        <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
-          <span
-            className="px-4 py-2 text-sm font-semibold text-white cursor-pointer"
-            style={{
-              background: 'var(--site-primary)',
-              borderRadius: 'var(--site-radius)',
-            }}
-          >
-            Primary action
-          </span>
-          <span
-            className="border px-4 py-2 text-sm font-semibold cursor-pointer"
-            style={{
-              borderColor: 'var(--site-primary)',
-              color: 'var(--site-primary)',
-              borderRadius: 'var(--site-radius)',
-            }}
-          >
-            Secondary
-          </span>
-        </div>
-      </div>
-    </div>
   );
 }

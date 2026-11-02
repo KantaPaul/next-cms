@@ -16,7 +16,10 @@ export interface DynamicContext {
   post?: Record<string, unknown>;
   site?: Record<string, unknown>;
   author?: Record<string, unknown>;
+  loopItem?: Record<string, unknown>;
   custom?: Record<string, unknown>;
+  /** When true, leaves `{ $dynamic: 'loopItem' }` bindings intact until per-item loop rendering. */
+  preserveLoopBindings?: boolean;
   [key: string]: unknown;
 }
 
@@ -100,6 +103,14 @@ export function resolveDynamicValue(
   depth = 0
 ): unknown {
   if (!isDynamicBinding(value)) {
+    return value;
+  }
+
+  if (
+    value.$dynamic === 'loopItem' &&
+    context.loopItem === undefined &&
+    context.preserveLoopBindings === true
+  ) {
     return value;
   }
 

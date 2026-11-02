@@ -52,10 +52,13 @@ export const PAGES = {
     REVIEW: '/dashboard/review',
     ACCOUNT: '/dashboard/account',
     SETTINGS: '/dashboard/settings',
+    THEME: '/dashboard/theme',
     SITES: '/dashboard/sites',
     USERS: '/dashboard/users',
     API: '/dashboard/api',
     VIDEOS: '/dashboard/videos',
+    LICENSES: '/dashboard/licenses',
+    LICENSE: (id: string) => `/dashboard/licenses/${id}`,
   },
   SITE: {
     page: (

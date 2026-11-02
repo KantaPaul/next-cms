@@ -685,10 +685,16 @@ export const pagesServices = {
         throw new ApplicationException(`The page could not be saved: ${plan.problems.slice(0, 3).join('; ')}`);
       }
 
+      const nextTitle =
+        typeof plan.document.root.props?.title === 'string' &&
+        plan.document.root.props.title.trim()
+          ? plan.document.root.props.title.trim()
+          : undefined;
+
       const saved = await writeDraft(
         page,
         plan.content,
-        { autosave: true },
+        { title: nextTitle, autosave: true },
         access,
         tx
       );

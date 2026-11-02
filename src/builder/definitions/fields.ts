@@ -12,6 +12,7 @@ import {
   type ElementPart,
   ElementStyleControl,
 } from '../controls/element-style';
+import { ColorPicker } from '../controls/color-picker';
 import {
   GROUP_CONTROLS,
   type GroupKind,
@@ -93,17 +94,19 @@ export function groupControl<T = any>(
     states: opts.states,
     render: (props: any) => {
       const isSectionContainer =
-        props.value &&
-        typeof props.value === 'object' &&
-        ('paddingY' in props.value ||
-          'background' in props.value ||
-          ('fill' in props.value && kind === 'background') ||
-          ('border' in props.value && kind === 'border') ||
-          ('typography' in props.value && kind === 'typography') ||
-          ('filter' in props.value && kind === 'cssFilter'));
+        opts.path === 'section' ||
+        (props.value &&
+          typeof props.value === 'object' &&
+          ('paddingY' in props.value ||
+            'background' in props.value ||
+            ('fill' in props.value && kind === 'background') ||
+            ('border' in props.value && kind === 'border') ||
+            ('typography' in props.value && kind === 'typography') ||
+            ('filter' in props.value && kind === 'cssFilter')));
 
       if (isSectionContainer) {
-        const s = props.value;
+        const s =
+          props.value && typeof props.value === 'object' ? props.value : {};
         const setSection = props.onChange;
 
         if (kind === 'background') {
@@ -262,6 +265,19 @@ export function sectionControls(opts?: { omit?: string[] }): Fields {
       section: 'Typography',
       path: 'section',
     }),
+    section_text_color: {
+      type: 'custom',
+      label: 'Text color',
+      tab: 'style',
+      section: 'Typography',
+      path: 'section.textColor',
+      render: (props: any) =>
+        createElement(ColorPicker, {
+          label: 'Text color',
+          value: props.value,
+          onChange: props.onChange,
+        }),
+    },
     section_filter: groupControl('cssFilter', {
       label: 'CSS Filters',
       tab: 'style',

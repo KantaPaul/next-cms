@@ -24,6 +24,7 @@ import {
   type UserAccess,
 } from '@/server/services/access.service';
 import { auditService } from '@/server/services/audit.service';
+import { searchIndex } from '@/server/services/search.service';
 import { adminSiteId, siteContext } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 import { parseVideoUrl } from '@/lib/video/parse';
@@ -373,6 +374,7 @@ export const videoService = {
       targetId: row.id,
       targetName: row.title,
     });
+    await searchIndex.syncVideo(row.id);
     revalidatePublicSite();
     return row as unknown as VideoItem;
   },
@@ -462,6 +464,7 @@ export const videoService = {
       targetId: row.id,
       targetName: row.title,
     });
+    await searchIndex.syncVideo(row.id);
     revalidatePublicSite();
     return row as unknown as VideoItem;
   },

@@ -9,14 +9,16 @@ import { siteSettingsService } from '@/server/services/site-settings.service';
 export const dynamic = 'force-dynamic';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [settings, pages, posts, site] = await Promise.all([
+  const [settings, pages, posts, site, taxonomy] = await Promise.all([
     siteSettingsService.getPublic(),
     publicSiteService.listPublishedForSitemap(),
     blogService.listPublishedForSitemap(),
     siteContext.publicSite(),
+    blogService.taxonomy(),
   ]);
   const base = (settings.siteUrl || env.SITE_URL).replace(/\/$/, '');
   const siteSlug = siteSlugPrefix(site);
+  const sitePrefix = siteSlug ? `/${siteSlug}` : '';
   const url = (p: { slug: string; language: string; isHome: boolean }) =>
     `${base}${PAGES.SITE.page(p.slug, p.language, p.isHome, site.defaultLocale, siteSlug)}`;
   const postUrl = (p: { slug: string; language: string }) =>
@@ -64,5 +66,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     };
   });
 
-  return [...pageEntries, ...postEntries];
+  const categoryEntries: MetadataRoute.Sitemap = taxonomy.categories.map(cat => ({
+    url: `${base}${sitePrefix}/blog/category/${cat.slug}`,
+    changeFrequency: 'weekly',
+    priority: 0.5,
+  }));
+
+  const tagEntries: MetadataRoute.Sitemap = taxonomy.tags.map(tag => ({
+    url: `${base}${sitePrefix}/blog/tag/${tag.slug}`,
+    changeFrequency: 'weekly',
+    priority: 0.5,
+  }));
+
+  return [...pageEntries, ...postEntries, ...categoryEntries, ...tagEntries];
 }

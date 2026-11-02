@@ -15,6 +15,7 @@ export * from './patch';
 export * from './public-api';
 export * from './puck-data';
 export * from './query';
+export * from './react-bridge';
 export * from './renderer';
 export * from './schema-helpers';
 export * from './style-schemas';

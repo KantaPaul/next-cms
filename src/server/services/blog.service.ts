@@ -33,9 +33,15 @@ import {
 } from '@/db/schema';
 import { DEFAULT_LANGUAGE, LANGUAGE_CODES } from '@/db/schemas/shared.schema';
 import {
+  type ArchiveRoute,
+  resolveArchiveRoute,
+} from '@/lib/listing-seo';
+import {
   siteContext,
   siteSlugPrefix,
 } from '@/server/services/site-context';
+
+export { type ArchiveRoute, resolveArchiveRoute };
 
 type LocaleSite = {
   defaultLocale: string;
@@ -515,8 +521,121 @@ export const blogService = {
       .from(posts)
       .leftJoin(postSeo, eq(postSeo.postId, posts.id))
       .where(await published()),
+
+  /** Resolves archive metadata for category, tag, author, or date archives (R595). */
+  getArchive: cache(async (route: ArchiveRoute) => {
+    const site = await siteContext.publicSite();
+    const prefix = siteSlugPrefix(site);
+    const langPrefix =
+      route.language && route.language !== site.defaultLocale
+        ? `/${route.language}`
+        : '';
+    const sitePrefix = prefix ? `/${prefix}` : '';
+
+    if (route.kind === 'category') {
+      const [cat] = await db
+        .select({
+          id: categories.id,
+          name: categories.name,
+          slug: categories.slug,
+          description: categories.description,
+        })
+        .from(categories)
+        .where(
+          and(
+            eq(categories.siteId, site.id),
+            or(eq(categories.slug, route.slug), eq(categories.id, route.slug)),
+            isNull(categories.deletedAt)
+          )
+        )
+        .limit(1);
+      if (!cat) return null;
+      return {
+        kind: 'category' as const,
+        language: route.language,
+        id: cat.id,
+        slug: cat.slug,
+        title: cat.name,
+        description: cat.description ?? null,
+        path: `${sitePrefix}${langPrefix}/blog/category/${cat.slug}`,
+      };
+    }
+
+    if (route.kind === 'tag') {
+      const [tagRow] = await db
+        .select({
+          id: tags.id,
+          name: tags.name,
+          slug: tags.slug,
+        })
+        .from(tags)
+        .where(
+          and(
+            eq(tags.siteId, site.id),
+            or(eq(tags.slug, route.slug), eq(tags.id, route.slug)),
+            isNull(tags.deletedAt)
+          )
+        )
+        .limit(1);
+      if (!tagRow) return null;
+      return {
+        kind: 'tag' as const,
+        language: route.language,
+        id: tagRow.id,
+        slug: tagRow.slug,
+        title: `#${tagRow.name}`,
+        description: null,
+        path: `${sitePrefix}${langPrefix}/blog/tag/${tagRow.slug}`,
+      };
+    }
+
+    if (route.kind === 'author') {
+      const [author] = await db
+        .select({
+          id: users.id,
+          name: users.name,
+        })
+        .from(users)
+        .where(eq(users.id, route.authorId))
+        .limit(1);
+      if (!author) return null;
+      return {
+        kind: 'author' as const,
+        language: route.language,
+        id: author.id,
+        slug: author.id,
+        title: author.name || 'Author Archive',
+        description: `Articles by ${author.name || 'Author'}`,
+        path: `${sitePrefix}${langPrefix}/blog/author/${author.id}`,
+      };
+    }
+
+    if (route.kind === 'date') {
+      const dateSegment = route.month
+        ? `${route.year}/${String(route.month).padStart(2, '0')}`
+        : `${route.year}`;
+      return {
+        kind: 'date' as const,
+        language: route.language,
+        id: dateSegment,
+        slug: dateSegment,
+        title: `Archive: ${route.label}`,
+        description: `Posts published in ${route.label}`,
+        year: route.year,
+        month: route.month,
+        dateAfter: route.dateAfter,
+        dateBefore: route.dateBefore,
+        path: `${sitePrefix}${langPrefix}/blog/archive/${dateSegment}`,
+      };
+    }
+
+    return null;
+  }),
 };
 
 export type PublicPost = NonNullable<
   Awaited<ReturnType<typeof blogService.getPublished>>
+>;
+export type PublicArchive = NonNullable<
+  Awaited<ReturnType<typeof blogService.getArchive>>
 >;

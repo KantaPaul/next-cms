@@ -1,7 +1,9 @@
 import 'server-only';
 import {
+  type ListingFacets,
   type ListingQueryConfig,
   type ListingQueryResult,
+  type ListingSource,
   listingQuerySchema,
   MAX_PAGE_SIZE,
   DEFAULT_PAGE_SIZE,
@@ -17,6 +19,7 @@ import {
   gte,
   ilike,
   inArray,
+  isNotNull,
   isNull,
   lte,
   ne,
@@ -24,6 +27,7 @@ import {
   sql,
   type SQL,
 } from 'drizzle-orm';
+import { revalidateTag } from 'next/cache';
 import { PAGES } from '@/config/pages';
 import { db } from '@/db';
 import {
@@ -51,6 +55,70 @@ export interface ListingQueryOptions {
   site?: ResolvedSite;
   language?: string;
   currentId?: string;
+  includeFacets?: boolean;
+  skipCache?: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Listing & Search Result Cache (R598 / QRY-28)
+// ---------------------------------------------------------------------------
+
+interface CacheEntry {
+  result: ListingQueryResult;
+  expiresAt: number;
+  siteId: string;
+  language: string;
+  source: ListingSource;
+}
+
+const LISTING_CACHE_TTL_MS = 60_000;
+const listingCache = new Map<string, CacheEntry>();
+
+export function buildListingCacheKey(
+  siteId: string,
+  language: string,
+  config: ListingQueryConfig,
+  currentId?: string,
+  includeFacets?: boolean
+): string {
+  return JSON.stringify({
+    siteId,
+    language,
+    config,
+    currentId: currentId ?? null,
+    includeFacets: Boolean(includeFacets),
+  });
+}
+
+/**
+ * Revalidates cached listing and search results for a site (and optional source)
+ * when content is published, updated, or deleted (R598 / QRY-28).
+ */
+export function invalidateListingCache(
+  siteId?: string,
+  source?: ListingSource
+): void {
+  for (const [key, entry] of listingCache.entries()) {
+    if (!siteId || entry.siteId === siteId) {
+      if (!source || entry.source === source) {
+        listingCache.delete(key);
+      }
+    }
+  }
+  try {
+    if (siteId) {
+      revalidateTag(`listing:${siteId}`, 'max');
+      revalidateTag(`search:${siteId}`, 'max');
+      if (source) {
+        revalidateTag(`listing:${siteId}:${source}`, 'max');
+      }
+    } else {
+      revalidateTag('listing', 'max');
+      revalidateTag('search', 'max');
+    }
+  } catch {
+    // Next.js revalidateTag may throw outside request/action contexts (e.g. unit tests)
+  }
 }
 
 export const listingQueryService = {
@@ -66,6 +134,22 @@ export const listingQueryService = {
     const site = options?.site ?? (await siteContext.publicSite());
     const language = options?.language ?? site.defaultLocale;
     const currentId = options?.currentId ?? config.currentId;
+    const includeFacets = options?.includeFacets ?? false;
+
+    const cacheKey = buildListingCacheKey(
+      site.id,
+      language,
+      config,
+      currentId,
+      includeFacets
+    );
+
+    if (!options?.skipCache) {
+      const cached = listingCache.get(cacheKey);
+      if (cached && cached.expiresAt > Date.now()) {
+        return cached.result;
+      }
+    }
 
     const pageSize = Math.min(
       Math.max(config.limit ?? DEFAULT_PAGE_SIZE, 1),
@@ -74,23 +158,65 @@ export const listingQueryService = {
     const page = Math.max(config.page ?? 1, 1);
     const offset = config.offset > 0 ? config.offset : (page - 1) * pageSize;
 
+    let result: ListingQueryResult;
     switch (config.source) {
       case 'posts':
-        return resolvePosts(config, site, language, currentId, pageSize, offset);
+        result = await resolvePosts(
+          config,
+          site,
+          language,
+          currentId,
+          pageSize,
+          offset,
+          includeFacets
+        );
+        break;
       case 'pages':
-        return resolvePages(config, site, language, currentId, pageSize, offset);
+        result = await resolvePages(
+          config,
+          site,
+          language,
+          currentId,
+          pageSize,
+          offset,
+          includeFacets
+        );
+        break;
       case 'collection-entries':
-        return resolveCollectionEntries(
+        result = await resolveCollectionEntries(
           config,
           site,
           currentId,
           pageSize,
-          offset
+          offset,
+          includeFacets
         );
+        break;
       case 'videos':
-        return resolveVideos(config, site, currentId, pageSize, offset);
+        result = await resolveVideos(
+          config,
+          site,
+          currentId,
+          pageSize,
+          offset,
+          includeFacets
+        );
+        break;
     }
+
+    if (!options?.skipCache) {
+      listingCache.set(cacheKey, {
+        result,
+        expiresAt: Date.now() + LISTING_CACHE_TTL_MS,
+        siteId: site.id,
+        language,
+        source: config.source,
+      });
+    }
+
+    return result;
   },
+  invalidateCache: invalidateListingCache,
 };
 
 // ---------------------------------------------------------------------------
@@ -103,10 +229,11 @@ async function resolvePosts(
   language: string,
   currentId: string | undefined,
   pageSize: number,
-  offset: number
+  offset: number,
+  includeFacets = false
 ): Promise<ListingQueryResult> {
   const now = new Date();
-  const conditions: (SQL | undefined)[] = [
+  const baseConditions: (SQL | undefined)[] = [
     eq(posts.siteId, site.id),
     eq(posts.language, language),
     eq(posts.status, 'published'),
@@ -116,8 +243,10 @@ async function resolvePosts(
   ];
 
   if (config.excludeCurrent && currentId) {
-    conditions.push(ne(posts.id, currentId));
+    baseConditions.push(ne(posts.id, currentId));
   }
+
+  const conditions: (SQL | undefined)[] = [...baseConditions];
 
   for (const filter of config.filters) {
     applyFilter(conditions, filter, {
@@ -129,6 +258,10 @@ async function resolvePosts(
       authorId: val => eq(posts.createdBy, String(val)),
       publishedAfter: val => gte(posts.publishedAt, new Date(String(val))),
       publishedBefore: val => lte(posts.publishedAt, new Date(String(val))),
+      hasImage: val => {
+        const wantImage = val === true || val === 'true' || val === '1' || val === 1;
+        return wantImage ? isNotNull(posts.featuredImage) : isNull(posts.featuredImage);
+      },
       categories: val => {
         const values = Array.isArray(val) ? val.map(String) : [String(val)];
         const subquery = db
@@ -176,7 +309,7 @@ async function resolvePosts(
     orderByClause = [sortOrder(posts.publishedAt), sortOrder(posts.createdAt)];
   }
 
-  const [rows, [{ total }]] = await Promise.all([
+  const [rows, [{ total }], facets] = await Promise.all([
     db
       .select({
         id: posts.id,
@@ -199,6 +332,7 @@ async function resolvePosts(
       .limit(pageSize)
       .offset(offset),
     db.select({ total: count() }).from(posts).where(where),
+    includeFacets ? computePostFacets(and(...baseConditions)) : Promise.resolve(undefined),
   ]);
 
   const postIds = rows.map(r => r.id);
@@ -236,6 +370,7 @@ async function resolvePosts(
     pageSize,
     totalPages,
     hasMore: offset + items.length < total,
+    ...(facets ? { facets } : {}),
   };
 }
 
@@ -245,9 +380,10 @@ async function resolvePages(
   language: string,
   currentId: string | undefined,
   pageSize: number,
-  offset: number
+  offset: number,
+  includeFacets = false
 ): Promise<ListingQueryResult> {
-  const conditions: (SQL | undefined)[] = [
+  const baseConditions: (SQL | undefined)[] = [
     eq(pages.siteId, site.id),
     eq(pages.language, language),
     eq(pages.status, 'published'),
@@ -256,8 +392,10 @@ async function resolvePages(
   ];
 
   if (config.excludeCurrent && currentId) {
-    conditions.push(ne(pages.id, currentId));
+    baseConditions.push(ne(pages.id, currentId));
   }
+
+  const conditions: (SQL | undefined)[] = [...baseConditions];
 
   for (const filter of config.filters) {
     applyFilter(conditions, filter, {
@@ -265,6 +403,10 @@ async function resolvePages(
       authorId: val => eq(pages.createdBy, String(val)),
       publishedAfter: val => gte(pages.publishedAt, new Date(String(val))),
       publishedBefore: val => lte(pages.publishedAt, new Date(String(val))),
+      isHome: val => {
+        const wantHome = val === true || val === 'true' || val === '1' || val === 1;
+        return eq(pages.isHome, wantHome);
+      },
       categories: val => {
         const values = Array.isArray(val) ? val.map(String) : [String(val)];
         const subquery = db
@@ -310,7 +452,7 @@ async function resolvePages(
     orderByClause = [sortOrder(pages.publishedAt), sortOrder(pages.createdAt)];
   }
 
-  const [rows, [{ total }]] = await Promise.all([
+  const [rows, [{ total }], facets] = await Promise.all([
     db
       .select({
         id: pages.id,
@@ -332,6 +474,7 @@ async function resolvePages(
       .limit(pageSize)
       .offset(offset),
     db.select({ total: count() }).from(pages).where(where),
+    includeFacets ? computePageFacets(and(...baseConditions)) : Promise.resolve(undefined),
   ]);
 
   const prefix = siteSlugPrefix(site);
@@ -373,6 +516,7 @@ async function resolvePages(
     pageSize,
     totalPages,
     hasMore: offset + items.length < total,
+    ...(facets ? { facets } : {}),
   };
 }
 
@@ -381,7 +525,8 @@ async function resolveCollectionEntries(
   site: ResolvedSite,
   currentId: string | undefined,
   pageSize: number,
-  offset: number
+  offset: number,
+  _includeFacets = false
 ): Promise<ListingQueryResult> {
   const collectionId = config.collectionId!;
 
@@ -425,6 +570,18 @@ async function resolveCollectionEntries(
         gte(collectionEntries.publishedAt, new Date(String(val))),
       publishedBefore: val =>
         lte(collectionEntries.publishedAt, new Date(String(val))),
+      hasImage: val => {
+        const wantImage = val === true || val === 'true' || val === '1' || val === 1;
+        return wantImage
+          ? sql`(${collectionEntries.data}->>'image' IS NOT NULL OR ${collectionEntries.data}->>'thumbnail' IS NOT NULL OR ${collectionEntries.data}->>'cover' IS NOT NULL)`
+          : sql`(${collectionEntries.data}->>'image' IS NULL AND ${collectionEntries.data}->>'thumbnail' IS NULL AND ${collectionEntries.data}->>'cover' IS NULL)`;
+      },
+      booleanToggle: val => {
+        const wantTrue = val === true || val === 'true' || val === '1' || val === 1;
+        return wantTrue
+          ? sql`(${collectionEntries.data}->>'featured' = 'true' OR ${collectionEntries.data}->>'active' = 'true')`
+          : undefined;
+      },
     });
   }
 
@@ -502,9 +659,10 @@ async function resolveVideos(
   site: ResolvedSite,
   currentId: string | undefined,
   pageSize: number,
-  offset: number
+  offset: number,
+  includeFacets = false
 ): Promise<ListingQueryResult> {
-  const conditions: (SQL | undefined)[] = [
+  const baseConditions: (SQL | undefined)[] = [
     eq(videos.siteId, site.id),
     eq(videos.status, 'published'),
     isNull(videos.deletedAt),
@@ -512,8 +670,10 @@ async function resolveVideos(
   ];
 
   if (config.excludeCurrent && currentId) {
-    conditions.push(ne(videos.id, currentId));
+    baseConditions.push(ne(videos.id, currentId));
   }
+
+  const conditions: (SQL | undefined)[] = [...baseConditions];
 
   for (const filter of config.filters) {
     applyFilter(conditions, filter, {
@@ -522,6 +682,29 @@ async function resolveVideos(
       provider: val => eq(videos.provider, String(val)),
       publishedAfter: val => gte(videos.publishedAt, new Date(String(val))),
       publishedBefore: val => lte(videos.publishedAt, new Date(String(val))),
+      hasImage: val => {
+        const wantImage = val === true || val === 'true' || val === '1' || val === 1;
+        return wantImage ? isNotNull(videos.thumbnailUrl) : isNull(videos.thumbnailUrl);
+      },
+      minNumber: val => {
+        const num = Number(val);
+        return !Number.isNaN(num) ? gte(videos.duration, num) : undefined;
+      },
+      maxNumber: val => {
+        const num = Number(val);
+        return !Number.isNaN(num) ? lte(videos.duration, num) : undefined;
+      },
+      duration: val => {
+        if (Array.isArray(val) && val.length === 2) {
+          const min = Number(val[0]);
+          const max = Number(val[1]);
+          if (!Number.isNaN(min) && !Number.isNaN(max)) {
+            return and(gte(videos.duration, min), lte(videos.duration, max));
+          }
+        }
+        const num = Number(val);
+        return !Number.isNaN(num) ? lte(videos.duration, num) : undefined;
+      },
     });
   }
 
@@ -540,7 +723,7 @@ async function resolveVideos(
     orderByClause = [sortOrder(videos.publishedAt), sortOrder(videos.createdAt)];
   }
 
-  const [rows, [{ total }]] = await Promise.all([
+  const [rows, [{ total }], facets] = await Promise.all([
     db
       .select({
         id: videos.id,
@@ -561,6 +744,7 @@ async function resolveVideos(
       .limit(pageSize)
       .offset(offset),
     db.select({ total: count() }).from(videos).where(where),
+    includeFacets ? computeVideoFacets(and(...baseConditions)) : Promise.resolve(undefined),
   ]);
 
   const prefix = siteSlugPrefix(site);
@@ -592,6 +776,131 @@ async function resolveVideos(
     pageSize,
     totalPages,
     hasMore: offset + items.length < total,
+    ...(facets ? { facets } : {}),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Facet Counters (R583 / QRY-13)
+// ---------------------------------------------------------------------------
+
+async function computePostFacets(baseScope: SQL | undefined): Promise<ListingFacets> {
+  const [catRows, tagRows, authorRows] = await Promise.all([
+    db
+      .select({
+        slug: categories.slug,
+        name: categories.name,
+        total: count(posts.id),
+      })
+      .from(categories)
+      .innerJoin(postCategories, eq(postCategories.categoryId, categories.id))
+      .innerJoin(posts, eq(posts.id, postCategories.postId))
+      .where(and(baseScope, isNull(categories.deletedAt)))
+      .groupBy(categories.id, categories.slug, categories.name)
+      .orderBy(asc(categories.name)),
+    db
+      .select({
+        slug: tags.slug,
+        name: tags.name,
+        total: count(posts.id),
+      })
+      .from(tags)
+      .innerJoin(postTags, eq(postTags.tagId, tags.id))
+      .innerJoin(posts, eq(posts.id, postTags.postId))
+      .where(and(baseScope, isNull(tags.deletedAt)))
+      .groupBy(tags.id, tags.slug, tags.name)
+      .orderBy(asc(tags.name)),
+    db
+      .select({
+        id: users.id,
+        name: users.name,
+        total: count(posts.id),
+      })
+      .from(users)
+      .innerJoin(posts, eq(posts.createdBy, users.id))
+      .where(baseScope)
+      .groupBy(users.id, users.name)
+      .orderBy(asc(users.name)),
+  ]);
+
+  return {
+    categories: catRows.map(r => ({
+      value: r.slug,
+      label: r.name,
+      count: Number(r.total),
+    })),
+    tags: tagRows.map(r => ({
+      value: r.slug,
+      label: r.name,
+      count: Number(r.total),
+    })),
+    authors: authorRows.map(r => ({
+      value: r.id,
+      label: r.name ?? 'Anonymous',
+      count: Number(r.total),
+    })),
+  };
+}
+
+async function computePageFacets(baseScope: SQL | undefined): Promise<ListingFacets> {
+  const [catRows, tagRows] = await Promise.all([
+    db
+      .select({
+        slug: categories.slug,
+        name: categories.name,
+        total: count(pages.id),
+      })
+      .from(categories)
+      .innerJoin(pageCategories, eq(pageCategories.categoryId, categories.id))
+      .innerJoin(pages, eq(pages.id, pageCategories.pageId))
+      .where(and(baseScope, isNull(categories.deletedAt)))
+      .groupBy(categories.id, categories.slug, categories.name)
+      .orderBy(asc(categories.name)),
+    db
+      .select({
+        slug: tags.slug,
+        name: tags.name,
+        total: count(pages.id),
+      })
+      .from(tags)
+      .innerJoin(pageTags, eq(pageTags.tagId, tags.id))
+      .innerJoin(pages, eq(pages.id, pageTags.pageId))
+      .where(and(baseScope, isNull(tags.deletedAt)))
+      .groupBy(tags.id, tags.slug, tags.name)
+      .orderBy(asc(tags.name)),
+  ]);
+
+  return {
+    categories: catRows.map(r => ({
+      value: r.slug,
+      label: r.name,
+      count: Number(r.total),
+    })),
+    tags: tagRows.map(r => ({
+      value: r.slug,
+      label: r.name,
+      count: Number(r.total),
+    })),
+  };
+}
+
+async function computeVideoFacets(baseScope: SQL | undefined): Promise<ListingFacets> {
+  const providerRows = await db
+    .select({
+      provider: videos.provider,
+      total: count(videos.id),
+    })
+    .from(videos)
+    .where(baseScope)
+    .groupBy(videos.provider)
+    .orderBy(asc(videos.provider));
+
+  return {
+    providers: providerRows.map(r => ({
+      value: r.provider,
+      label: r.provider,
+      count: Number(r.total),
+    })),
   };
 }
 

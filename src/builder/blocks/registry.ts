@@ -1,4 +1,5 @@
 import { VideoLibrary } from '@/components/video/video-library';
+import { customComponents } from '../custom';
 import { Example } from '../custom/example';
 
 import { BlogPosts } from './blog';
@@ -32,6 +33,9 @@ import {
   Timeline,
 } from './marketing';
 import { Newsletter } from './newsletter';
+import { QueryFilter } from './query-filters';
+import { LoopItemField, QueryLoop } from './query-loop';
+import { SearchResults } from './search-results';
 import {
   HeaderBar,
   HeaderColumns,
@@ -99,11 +103,15 @@ const builtInComponents = {
   BackToTop,
   ThemeToggle,
   LanguageSwitcher: LanguageSwitcherBlock,
+  QueryLoop,
+  LoopItemField,
+  QueryFilter,
+  SearchResults,
 };
 
 export const getBlockComponents = () => ({
   ...builtInComponents,
-  example: Example,
+  ...customComponents,
 });
 
 export type BlockType = keyof ReturnType<typeof getBlockComponents>;

@@ -18,9 +18,10 @@ import {
   PAGE_ROOT_FIELDS,
 } from './native';
 import { withInfo } from './info';
+import { customBlockDefinitions } from '../custom';
 
 export const pageDefinitions: Record<string, BlockDefinition> = Object.fromEntries(
-  NATIVE_BLOCKS.map(block => [block.type, withInfo(block)])
+  [...NATIVE_BLOCKS, ...customBlockDefinitions].map(block => [block.type, withInfo(block)])
 );
 
 export const nativeBlockTypes = NATIVE_BLOCKS.map(block => block.type);
@@ -47,12 +48,22 @@ export const pageInspectorBlocks: Record<string, InspectorBlock> = Object.fromEn
 
 export const pageRootFields = PAGE_ROOT_FIELDS as Record<string, FieldDef>;
 
-export const pageBlockGroups: BlockGroup[] = Object.entries(CATEGORIES)
-  .filter(([key]) => key !== 'post' && key !== 'header' && key !== 'footer')
-  .map(([, category]: any) => ({
-    title: category.title ?? '',
-    types: (category.components ?? []).map(String),
-  }));
+const customGroups: BlockGroup[] = [
+  {
+    title: 'Custom UI Components',
+    types: customBlockDefinitions.map(b => b.type),
+  },
+];
+
+export const pageBlockGroups: BlockGroup[] = [
+  ...Object.entries(CATEGORIES)
+    .filter(([key]) => key !== 'post' && key !== 'header' && key !== 'footer')
+    .map(([, category]: any) => ({
+      title: category.title ?? '',
+      types: (category.components ?? []).map(String),
+    })),
+  ...customGroups,
+];
 
 const postDefinitions: Record<string, BlockDefinition> = Object.fromEntries(
   NATIVE_BLOCKS.map(block => [block.type, withInfo(block)])

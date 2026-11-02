@@ -1,5 +1,6 @@
 'use client';
 
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   FONT_FAMILIES,
   FONT_STYLES,
@@ -22,6 +23,11 @@ const cap = (v: string) => v.charAt(0).toUpperCase() + v.slice(1);
 const opts = <T extends string>(list: readonly T[]) =>
   list.map(value => ({ value, label: cap(value) }));
 
+const FAMILY_OPTIONS = [
+  { value: '', label: 'Default' },
+  ...opts(FONT_FAMILIES),
+];
+
 const WEIGHT_OPTIONS = [
   { value: '', label: 'Default' },
   { value: '100', label: '100 (Thin)' },
@@ -39,10 +45,18 @@ export type TypographyControlProps = {
   value: Typography | undefined;
   onChange: (value: Typography | undefined) => void;
   exclude?: string[];
+  defaultFamily?: string;
+  defaultWeight?: string | number;
 };
 
 /** Elementor-style typography group. */
-export function TypographyControl({ value, onChange, exclude }: TypographyControlProps) {
+export function TypographyControl({
+  value,
+  onChange,
+  exclude,
+  defaultFamily,
+  defaultWeight,
+}: TypographyControlProps) {
   const t = value ?? {};
   const set = (patch: Partial<Typography>) => {
     const next: Typography = { ...t, ...patch };
@@ -62,143 +76,158 @@ export function TypographyControl({ value, onChange, exclude }: TypographyContro
   const isExcluded = (field: string) => exclude?.includes(field);
 
   // Normalize weight value for display
-  const currentWeight =
+  const resolvedWeight =
     t.fontWeight !== undefined
-      ? String(t.fontWeight)
-      : typeof t.weight === 'number'
-        ? String(t.weight)
-        : typeof t.weight === 'string'
-          ? (t.weight === 'regular' ? '400' : t.weight === 'medium' ? '500' : t.weight === 'bold' ? '700' : t.weight)
-          : (t.weight?.desktop ? String(t.weight.desktop) : '');
+      ? t.fontWeight
+      : t.weight !== undefined
+        ? t.weight
+        : defaultWeight;
 
+  const currentWeight =
+    resolvedWeight !== undefined
+      ? typeof resolvedWeight === 'number'
+        ? String(resolvedWeight)
+        : typeof resolvedWeight === 'string'
+          ? resolvedWeight === 'regular'
+            ? '400'
+            : resolvedWeight === 'medium'
+              ? '500'
+              : resolvedWeight === 'bold'
+                ? '700'
+                : resolvedWeight
+          : (resolvedWeight as any)?.desktop
+            ? String((resolvedWeight as any).desktop)
+            : ''
+      : '';
   return (
-    <div className="space-y-4">
-      {!isExcluded('family') && (
-        <SelectInput
-          label="Family"
-          value={t.family ?? ''}
-          options={[
-            { value: '' as never, label: 'Default' },
-            ...opts(FONT_FAMILIES),
-          ]}
-          onChange={family =>
-            set({ family: (family || undefined) as Typography['family'] })
-          }
-        />
-      )}
-
-      {!isExcluded('fontSize') && (
-        <>
-          <UnitSlider
-            label="Size"
-            value={t.fontSize}
-            unit={t.fontSizeUnit}
-            units={fsUnits}
-            limits={{
-              ...unitLimits(fsUnits),
-              px: { min: 8, max: 160, step: 1 },
-              rem: { min: 0.5, max: 10, step: 0.05 },
-              em: { min: 0.5, max: 10, step: 0.05 },
-              vw: { min: 1, max: 20, step: 0.1 },
-            }}
-            onChange={(fontSize, fontSizeUnit) => set({ fontSize, fontSizeUnit })}
+    <ScrollArea className="max-h-96">
+      <div className="space-y-4 pr-3">
+        {!isExcluded('family') && (
+          <SelectInput
+            label="Family"
+            value={t.family ?? defaultFamily ?? ''}
+            options={FAMILY_OPTIONS}
+            onChange={family =>
+              set({ family: (family || undefined) as Typography['family'] })
+            }
           />
-          <Description>Overrides the Base size preset when set.</Description>
-        </>
-      )}
+        )}
 
-      {!isExcluded('size') && (
-        <ResponsiveChoose
-          label="Base size (preset)"
-          value={t.size}
-          options={[
-            { value: '', label: 'Auto' },
-            { value: 'sm', label: 'S' },
-            { value: 'md', label: 'M' },
-            { value: 'lg', label: 'L' },
-            { value: 'xl', label: 'XL' },
-          ]}
-          onChange={size => set({ size: size || undefined })}
-        />
-      )}
+        {!isExcluded('fontSize') && (
+          <>
+            {!isExcluded('size') && (
+              <ResponsiveChoose
+                label="Base size (preset)"
+                value={t.size}
+                options={[
+                  { value: '', label: 'Auto' },
+                  { value: 'sm', label: 'S' },
+                  { value: 'md', label: 'M' },
+                  { value: 'lg', label: 'L' },
+                  { value: 'xl', label: 'XL' },
+                ]}
+                onChange={size => set({ size: size || undefined })}
+              />
+            )}
 
-      {!isExcluded('weight') && (
-        <SelectInput
-          label="Weight"
-          value={currentWeight}
-          options={WEIGHT_OPTIONS}
-          onChange={weight => {
-            const num = weight ? parseInt(weight, 10) : undefined;
-            set({ weight: num ?? (weight as any), fontWeight: num });
-          }}
-        />
-      )}
+            <UnitSlider
+              label="Size"
+              value={t.fontSize}
+              unit={t.fontSizeUnit}
+              units={fsUnits}
+              limits={{
+                ...unitLimits(fsUnits),
+                px: { min: 8, max: 160, step: 1 },
+                rem: { min: 0.5, max: 10, step: 0.05 },
+                em: { min: 0.5, max: 10, step: 0.05 },
+                vw: { min: 1, max: 20, step: 0.1 },
+              }}
+              onChange={(fontSize, fontSizeUnit) =>
+                set({ fontSize, fontSizeUnit })
+              }
+            />
+            <Description>Overrides the Base size preset when set.</Description>
+          </>
+        )}
 
-      {!isExcluded('transform') && (
-        <SelectInput
-          label="Transform"
-          value={t.transform ?? 'none'}
-          options={opts(TEXT_TRANSFORMS)}
-          onChange={transform => set({ transform })}
-        />
-      )}
+        {!isExcluded('weight') && (
+          <SelectInput
+            label="Weight"
+            value={currentWeight}
+            options={WEIGHT_OPTIONS}
+            onChange={weight => {
+              const num = weight ? parseInt(weight, 10) : undefined;
+              set({ weight: num ?? (weight as any), fontWeight: num });
+            }}
+          />
+        )}
 
-      {!isExcluded('fontStyle') && (
-        <SelectInput
-          label="Style"
-          value={t.fontStyle ?? 'normal'}
-          options={opts(FONT_STYLES)}
-          onChange={fontStyle => set({ fontStyle })}
-        />
-      )}
+        {!isExcluded('transform') && (
+          <SelectInput
+            label="Transform"
+            value={t.transform ?? 'none'}
+            options={opts(TEXT_TRANSFORMS)}
+            onChange={transform => set({ transform })}
+          />
+        )}
 
-      {!isExcluded('decoration') && (
-        <SelectInput
-          label="Decoration"
-          value={t.decoration ?? 'none'}
-          options={opts(TEXT_DECORATIONS)}
-          onChange={decoration => set({ decoration })}
-        />
-      )}
+        {!isExcluded('fontStyle') && (
+          <SelectInput
+            label="Style"
+            value={t.fontStyle ?? 'normal'}
+            options={opts(FONT_STYLES)}
+            onChange={fontStyle => set({ fontStyle })}
+          />
+        )}
 
-      {!isExcluded('lineHeight') && (
-        <UnitSlider
-          label="Line height"
-          value={t.lineHeight}
-          unit={t.lineHeightUnit}
-          units={lhUnits}
-          limits={unitLimits(lhUnits)}
-          onChange={(lineHeight, lineHeightUnit) =>
-            set({ lineHeight, lineHeightUnit })
-          }
-        />
-      )}
+        {!isExcluded('decoration') && (
+          <SelectInput
+            label="Decoration"
+            value={t.decoration ?? 'none'}
+            options={opts(TEXT_DECORATIONS)}
+            onChange={decoration => set({ decoration })}
+          />
+        )}
 
-      {!isExcluded('letterSpacing') && (
-        <UnitSlider
-          label="Letter spacing"
-          value={t.letterSpacing}
-          unit={t.letterSpacingUnit}
-          units={lsUnits}
-          limits={unitLimits(lsUnits, true)}
-          onChange={(letterSpacing, letterSpacingUnit) =>
-            set({ letterSpacing, letterSpacingUnit })
-          }
-        />
-      )}
+        {!isExcluded('lineHeight') && (
+          <UnitSlider
+            label="Line height"
+            value={t.lineHeight}
+            unit={t.lineHeightUnit}
+            units={lhUnits}
+            limits={unitLimits(lhUnits)}
+            onChange={(lineHeight, lineHeightUnit) =>
+              set({ lineHeight, lineHeightUnit })
+            }
+          />
+        )}
 
-      {!isExcluded('wordSpacing') && (
-        <UnitSlider
-          label="Word spacing"
-          value={t.wordSpacing}
-          unit={t.wordSpacingUnit}
-          units={wsUnits}
-          limits={unitLimits(wsUnits, true)}
-          onChange={(wordSpacing, wordSpacingUnit) =>
-            set({ wordSpacing, wordSpacingUnit })
-          }
-        />
-      )}
-    </div>
+        {!isExcluded('letterSpacing') && (
+          <UnitSlider
+            label="Letter spacing"
+            value={t.letterSpacing}
+            unit={t.letterSpacingUnit}
+            units={lsUnits}
+            limits={unitLimits(lsUnits, true)}
+            onChange={(letterSpacing, letterSpacingUnit) =>
+              set({ letterSpacing, letterSpacingUnit })
+            }
+          />
+        )}
+
+        {!isExcluded('wordSpacing') && (
+          <UnitSlider
+            label="Word spacing"
+            value={t.wordSpacing}
+            unit={t.wordSpacingUnit}
+            units={wsUnits}
+            limits={unitLimits(wsUnits, true)}
+            onChange={(wordSpacing, wordSpacingUnit) =>
+              set({ wordSpacing, wordSpacingUnit })
+            }
+          />
+        )}
+      </div>
+    </ScrollArea>
   );
 }

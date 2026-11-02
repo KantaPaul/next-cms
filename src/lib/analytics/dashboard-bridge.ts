@@ -58,6 +58,16 @@ export function pageViewsSource(content: {
       { id: 'page', label: 'Page', widgetTypes: ['chart', 'table'] },
       { id: 'path', label: 'Path', widgetTypes: ['chart', 'table'] },
       { id: 'referrer', label: 'Referrer', widgetTypes: ['chart', 'table'] },
+      {
+        id: 'searchQuery',
+        label: 'Top search queries',
+        widgetTypes: ['chart', 'table'],
+      },
+      {
+        id: 'zeroResultQuery',
+        label: 'Zero-result search queries',
+        widgetTypes: ['chart', 'table'],
+      },
     ],
     ranges: [7, 30],
     filters: [

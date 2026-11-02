@@ -118,6 +118,7 @@ import {
 } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.actions';
 import { POST_REVISION_ACTIONS } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-revision-actions';
 import { EditorBridgeProvider } from '@/builder/controls/editor-bridge';
+import { convertBlogBlockToQueryLoop } from '@/builder/blocks/query-loop';
 import type { BuilderData } from '@/builder/data';
 import { editorSetup } from '@/builder/definitions';
 import { cmsInlineProps, cmsResizeHandles } from '@/builder/editor-handles';
@@ -877,6 +878,25 @@ export function NewEditor({
   });
   const blockActions = useCallback(
     (node: BuilderNode): BlockAction[] => [
+      ...(node.type === 'BlogPosts' || node.type === 'RelatedPosts'
+        ? [
+            {
+              id: 'convert-query-loop',
+              label: 'Convert to Query Loop',
+              icon: '⇄',
+              run: () => {
+                const next = convertBlogBlockToQueryLoop(
+                  store.getState().doc,
+                  node.id
+                );
+                store.replaceDocument(next, {
+                  label: 'Convert to Query Loop',
+                });
+                toast.success('Converted block to Query Loop');
+              },
+            },
+          ]
+        : []),
       ...(aiEnabled
         ? [
             {
@@ -898,7 +918,7 @@ export function NewEditor({
           ]
         : []),
     ],
-    [aiEnabled, savesGoLive]
+    [aiEnabled, savesGoLive, store]
   );
 
   /** Saves pending changes; false when they could not be saved. */
@@ -1370,8 +1390,9 @@ export function NewEditor({
     return (
       <E12ControlsProvider value={true}>
         <EditorProvider store={store}>
-        <DynamicRefsProvider value={refChoices}>
-          <SharedChrome
+          <DynamicRefsProvider value={refChoices}>
+            <NewEditorBridge themeTokens={themeTokens}>
+              <SharedChrome
           queue={queue}
           title={documentTitle}
           onRenameDocument={handleRenameDocument}
@@ -1468,8 +1489,9 @@ export function NewEditor({
           commandPalette={commandPalette}
         />
         {dialogs}
-      </DynamicRefsProvider>
-      </EditorProvider>
+            </NewEditorBridge>
+          </DynamicRefsProvider>
+        </EditorProvider>
       </E12ControlsProvider>
     );
   }
@@ -1478,6 +1500,7 @@ export function NewEditor({
     <E12ControlsProvider value={true}>
       <EditorProvider store={store}>
         <DynamicRefsProvider value={refChoices}>
+          <NewEditorBridge themeTokens={themeTokens}>
       <div className="flex h-screen flex-col bg-steel-50 dark:bg-dark-50">
         <header className="flex h-12 shrink-0 items-center gap-2 border-b border-steel-200 bg-white px-3 dark:border-dark-300 dark:bg-dark-100">
           <Button
@@ -1727,7 +1750,8 @@ export function NewEditor({
       </div>
       {commandPalette}
       {dialogs}
-    </DynamicRefsProvider>
+          </NewEditorBridge>
+        </DynamicRefsProvider>
       </EditorProvider>
     </E12ControlsProvider>
   );

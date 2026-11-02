@@ -16,6 +16,7 @@ import {
   dynamicInner,
   responsiveInner,
   tokenKind,
+  translatableInner,
 } from './schema-helpers';
 import type { PropTrait } from './traits';
 
@@ -198,6 +199,11 @@ export function fieldFromZod(key: string, schema: z.ZodType): FieldDef | null {
     const inner = fieldFromZod(key, dynamicOf);
     return inner ? { ...inner, dynamic: true } : null;
   }
+  const translatableOf = translatableInner(plain);
+  if (translatableOf) {
+    const inner = fieldFromZod(key, translatableOf);
+    return inner ? { ...inner, translatable: true } : null;
+  }
   const classes = allowedClassList(plain);
   if (classes) {
     return {
@@ -214,22 +220,59 @@ export function fieldFromZod(key: string, schema: z.ZodType): FieldDef | null {
   }
   const def = defOf(plain);
   const label = startCase(key);
+  const description =
+    (plain as { description?: string }).description ||
+    (def as { description?: string } | undefined)?.description;
+  const withMeta = (f: FieldDef): FieldDef => {
+    if (description && !f.description) return { ...f, description };
+    return f;
+  };
+
   switch (def?.type) {
     case 'string':
-      return { type: 'text', label };
+      return withMeta({ type: 'text', label });
     case 'number':
-      return { type: 'number', label };
+      return withMeta({ type: 'number', label });
     case 'boolean':
-      return { type: 'toggle', label };
+      return withMeta({ type: 'toggle', label });
     case 'enum':
-      return {
+      return withMeta({
         type: 'select',
         label,
         options: Object.values(def.entries ?? {}).map(value => ({
           label: startCase(String(value)),
           value,
         })),
-      };
+      });
+    case 'union': {
+      const options = (def as { options?: z.ZodType[] }).options ?? [];
+      const isLiteralUnion =
+        options.length > 0 &&
+        options.every(opt => {
+          const d = defOf(opt);
+          return d?.type === 'literal' || (opt as { type?: string }).type === 'literal';
+        });
+      if (isLiteralUnion) {
+        const literalValues: (string | number | boolean)[] = options.map(opt => {
+          const d = defOf(opt) as { values?: unknown } | undefined;
+          if (Array.isArray(d?.values)) return d.values[0] as string | number | boolean;
+          if (d?.values instanceof Set) return Array.from(d.values)[0] as string | number | boolean;
+          const optRaw = opt as unknown as { values?: Set<unknown>; value?: unknown };
+          if (optRaw.values instanceof Set)
+            return Array.from(optRaw.values)[0] as string | number | boolean;
+          return (optRaw.value ?? '') as string | number | boolean;
+        });
+        return withMeta({
+          type: 'select',
+          label,
+          options: literalValues.map(v => ({
+            label: startCase(String(v)),
+            value: v,
+          })),
+        });
+      }
+      return null;
+    }
     default:
       return null;
   }

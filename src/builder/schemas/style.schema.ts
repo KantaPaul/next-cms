@@ -140,7 +140,7 @@ export const typographySchema = z.object({
   fontWeight: z.number().min(100).max(900).optional(),
   transform: z.enum(TEXT_TRANSFORMS as any).optional(),
   decoration: z.enum(TEXT_DECORATIONS as any).optional(),
-  lineHeight: responsive(z.number().min(0).max(12)).optional(),
+  lineHeight: responsive(z.number().min(0).max(200)).optional(),
   lineHeightUnit: lengthUnitSchema.optional(),
   letterSpacing: responsive(z.number().min(-50).max(50)).optional(),
   letterSpacingUnit: lengthUnitSchema.optional(),
@@ -242,7 +242,7 @@ export const sectionSettingsSchema = z.object({
     .optional(),
   margin: responsive(sidesSchema).optional(),
   marginUnit: spacingUnitSchema.optional(),
-  width: responsive(z.number().min(0).max(100)).optional(),
+  width: responsive(z.number().min(0).max(5000)).optional(),
   widthUnit: lengthUnitSchema.optional(),
   zIndex: z.number().min(0).max(50).optional(),
 });

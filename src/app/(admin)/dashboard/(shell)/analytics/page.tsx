@@ -4,6 +4,7 @@ import {
   analyticsService,
   type TrendsList,
 } from '@/server/services/analytics.service';
+import { searchIndex } from '@/server/services/search.service';
 import { DualBars } from './_components/dual-bars';
 import { TrendCard } from './_components/trend-card';
 
@@ -47,11 +48,14 @@ export default async function AnalyticsPage({
   const pageId = params.pageId?.trim() || null;
   const postId = pageId ? null : params.postId?.trim() || null;
 
-  const trends = await analyticsService.trends(rangeDays, {
-    pageId,
-    postId,
-    list,
-  });
+  const [trends, searchStats] = await Promise.all([
+    analyticsService.trends(rangeDays, {
+      pageId,
+      postId,
+      list,
+    }),
+    searchIndex.getAnalytics({ days: rangeDays, limit: 8 }),
+  ]);
 
   const hasTraffic = trends.views > 0 || trends.previousViews > 0;
   const viewsPerVisitor =
@@ -353,6 +357,61 @@ export default async function AnalyticsPage({
           </section>
         </>
       )}
+
+      {/* Search Analytics: Top Queries & Zero-Result Queries (R592 / QRY-22) */}
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="rounded-lg border border-steel-200 p-4 dark:border-dark-300">
+          <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-steel-400">
+            Top Search Queries ({rangeDays}d)
+          </h2>
+          {searchStats.topQueries.length === 0 ? (
+            <p className="py-4 text-xs text-steel-500">
+              No search queries recorded in this period.
+            </p>
+          ) : (
+            <ul className="divide-y divide-steel-100 text-sm dark:divide-dark-300">
+              {searchStats.topQueries.map(item => (
+                <li
+                  key={item.query}
+                  className="flex items-center justify-between py-2"
+                >
+                  <span className="font-medium">{item.query}</span>
+                  <span className="text-xs text-steel-500">
+                    {item.searches} searches · {item.avgResults} avg hits
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="rounded-lg border border-steel-200 p-4 dark:border-dark-300">
+          <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-steel-400">
+            Zero-Result Search Queries ({rangeDays}d)
+          </h2>
+          {searchStats.zeroResultQueries.length === 0 ? (
+            <p className="py-4 text-xs text-steel-500">
+              No zero-result queries recorded in this period.
+            </p>
+          ) : (
+            <ul className="divide-y divide-steel-100 text-sm dark:divide-dark-300">
+              {searchStats.zeroResultQueries.map(item => (
+                <li
+                  key={item.query}
+                  className="flex items-center justify-between py-2"
+                >
+                  <span className="font-medium text-rose-600 dark:text-rose-400">
+                    {item.query}
+                  </span>
+                  <span className="text-xs text-steel-500">
+                    {item.searches} searches
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

@@ -89,7 +89,12 @@ export function ElementStyleControl({
           onChange={typography => set({ typography })}
         >
           {({ value: val, onChange: onValChange }) => (
-            <TypographyControl value={val} onChange={onValChange} />
+            <TypographyControl
+              value={val}
+              onChange={onValChange}
+              defaultFamily="Inter"
+              defaultWeight="400"
+            />
           )}
         </GroupShell>
       )}

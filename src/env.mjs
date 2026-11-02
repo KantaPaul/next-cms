@@ -45,6 +45,17 @@ export const env = createEnv({
     SMTP_USER: z.string().optional(),
     SMTP_PASS: z.string().optional(),
     TURNSTILE_SECRET_KEY: z.string().optional(),
+
+    /* Licensing (R217-R261 / L1-L8) */
+    LICENSE_ROLE: z.enum(['authority', 'installation']).default('installation'),
+    LICENSE_ENFORCEMENT: z.enum(['on', 'off']).default('on'),
+    LICENSE_SIGNING_PRIVATE_KEY: z.string().optional(),
+    LICENSE_SIGNING_PUBLIC_KEY: z.string().optional(),
+    LICENSE_SIGNING_PREVIOUS_PUBLIC_KEY: z.string().optional(),
+    LICENSE_INSTALLATION_PRIVATE_KEY: z.string().optional(),
+    LICENSE_INSTALLATION_PUBLIC_KEY: z.string().optional(),
+    LICENSE_AUTHORITY_URL: z.string().url().optional(),
+    LICENSE_KEY: z.string().optional(),
   },
   client: {
     NEXT_PUBLIC_APP_NAME: z.string().default('Next CMS'),
@@ -92,6 +103,16 @@ export const env = createEnv({
     SMTP_USER: process.env.SMTP_USER,
     SMTP_PASS: process.env.SMTP_PASS,
     TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY,
+
+    LICENSE_ROLE: process.env.LICENSE_ROLE,
+    LICENSE_ENFORCEMENT: process.env.LICENSE_ENFORCEMENT,
+    LICENSE_SIGNING_PRIVATE_KEY: process.env.LICENSE_SIGNING_PRIVATE_KEY,
+    LICENSE_SIGNING_PUBLIC_KEY: process.env.LICENSE_SIGNING_PUBLIC_KEY,
+    LICENSE_SIGNING_PREVIOUS_PUBLIC_KEY: process.env.LICENSE_SIGNING_PREVIOUS_PUBLIC_KEY,
+    LICENSE_INSTALLATION_PRIVATE_KEY: process.env.LICENSE_INSTALLATION_PRIVATE_KEY,
+    LICENSE_INSTALLATION_PUBLIC_KEY: process.env.LICENSE_INSTALLATION_PUBLIC_KEY,
+    LICENSE_AUTHORITY_URL: process.env.LICENSE_AUTHORITY_URL,
+    LICENSE_KEY: process.env.LICENSE_KEY,
 
     NEXT_PUBLIC_APP_VERSION: process.env.NEXT_PUBLIC_APP_VERSION,
     NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,

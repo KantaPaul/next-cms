@@ -10,6 +10,7 @@ import {
   type CollectionFieldType,
 } from '@/db/schema';
 import { accessService } from '@/server/services/access.service';
+import { searchIndex } from '@/server/services/search.service';
 import { adminSiteId } from '@/server/services/site-context';
 import { auditService } from './audit.service';
 import { PERMISSIONS } from '@/config/permissions';
@@ -665,6 +666,7 @@ export const collectionsService = {
       targetId: id,
       targetName: entry.slug,
     });
+    await searchIndex.syncCollectionEntry(id);
     return row;
   },
 
@@ -699,6 +701,7 @@ export const collectionsService = {
       targetId: id,
       targetName: entry.slug,
     });
+    await searchIndex.removeCollectionEntry(id);
     return row;
   },
 
@@ -724,5 +727,6 @@ export const collectionsService = {
       targetId: id,
       targetName: entry.slug,
     });
+    await searchIndex.removeCollectionEntry(id);
   },
 };

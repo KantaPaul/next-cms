@@ -32,6 +32,8 @@ export type SiteCopy = {
   seoDescription?: string;
   headerTemplateId?: string | null;
   footerTemplateId?: string | null;
+  searchTemplateId?: string | null;
+  archiveTemplateId?: string | null;
 };
 
 export const sites = pgTable(

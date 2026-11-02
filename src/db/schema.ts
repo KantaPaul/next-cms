@@ -8,3 +8,4 @@ export * from '@/db/schemas/personalization.schema';
 export * from '@/db/schemas/shared.schema';
 export * from '@/db/schemas/video.schema';
 export * from '@/db/schemas/webhooks.schema';
+export * from '@/db/schemas/licenses.schema';

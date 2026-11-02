@@ -2,6 +2,7 @@ import { and, eq, isNull } from 'drizzle-orm';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
+import { getGlobalBlockContent } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
 import { renderBuilderContent } from '@/builder/render-content';
 import { sanitizeRichText } from '@/builder/sanitize';
 import {
@@ -14,15 +15,19 @@ import { PAGES } from '@/config/pages';
 import { db } from '@/db';
 import { pageContents, pageExperiments, pages } from '@/db/schema';
 import { env } from '@/env.mjs';
+import { buildListingSeoMetadata } from '@/lib/listing-seo';
 import {
   blogService,
+  type PublicArchive,
   type PublicPost,
+  resolveArchiveRoute,
   resolvePostRoute,
 } from '@/server/services/blog.service';
 import { collectionsService } from '@/server/services/collections.service';
 import {
   getPreviewPageId,
   getPreviewPostId,
+  getPreviewSession,
 } from '@/server/services/preview-session';
 import {
   type PublicPage,
@@ -80,6 +85,12 @@ async function loadPost(segments?: string[]) {
   }
 
   return blogService.getPublished(route.language, route.slug);
+}
+
+async function loadArchive(segments?: string[]) {
+  const route = resolveArchiveRoute(segments, await siteContext.publicSite());
+  if (!route) return null;
+  return blogService.getArchive(route);
 }
 
 const absolute = (base: string, path: string) =>
@@ -146,8 +157,11 @@ function postMetadata(
   };
 }
 
-export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const { slug } = await params;
+export async function generateMetadata({
+  params,
+  searchParams,
+}: Params): Promise<Metadata> {
+  const [{ slug }, queryParams] = await Promise.all([params, searchParams]);
   const site = await siteContext.publicSite();
   const siteSlug = siteSlugPrefix(site);
   const segments = sitePathSegments((slug?.join('/') ?? '/'), site);
@@ -159,6 +173,35 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       site.defaultLocale,
       siteSlug ?? ''
     );
+
+  const archive = await loadArchive(segments);
+  if (archive) {
+    const settings = await siteSettingsService.getPublic();
+    const copy = localizedSettings(settings, archive.language, site.defaultLocale);
+    const base = settings.siteUrl || env.SITE_URL;
+    const baseCanonical = absolute(base, archive.path);
+    const listingSeo = buildListingSeoMetadata({
+      baseCanonicalUrl: baseCanonical,
+      searchParams: queryParams,
+    });
+    return {
+      title: `${archive.title} | ${copy.siteName}`,
+      description: archive.description || copy.seoDescription || undefined,
+      alternates: {
+        canonical: listingSeo.canonicalUrl,
+      },
+      robots: listingSeo.noIndex ? { index: false, follow: true } : undefined,
+      openGraph: {
+        title: `${archive.title} | ${copy.siteName}`,
+        description: archive.description || copy.seoDescription || undefined,
+        type: 'website',
+        url: listingSeo.canonicalUrl,
+        siteName: copy.siteName,
+        locale: archive.language,
+      },
+      ...(settings.favicon && { icons: { icon: settings.favicon } }),
+    };
+  }
 
   const [page, settings] = await Promise.all([
     loadPage(segments),
@@ -195,6 +238,13 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     ])
   );
 
+  const baseCanonical = seo?.canonicalUrl || absolute(base, path);
+  const listingSeo = buildListingSeoMetadata({
+    baseCanonicalUrl: baseCanonical,
+    searchParams: queryParams,
+    baseNoIndex: Boolean(seo?.noIndex || page.isDraft),
+  });
+
   return {
     title:
       page.isHome && !seo?.title
@@ -203,18 +253,20 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     description,
     keywords: seo?.keywords || undefined,
     alternates: {
-      canonical: seo?.canonicalUrl || absolute(base, path),
+      canonical: listingSeo.canonicalUrl,
       ...(Object.keys(languages).length > 1 && { languages }),
     },
     robots:
       seo?.noIndex || page.isDraft
         ? { index: false, follow: false }
-        : undefined,
+        : listingSeo.noIndex
+          ? { index: false, follow: true }
+          : undefined,
     openGraph: {
       title: seo?.ogTitle || title,
       description: seo?.ogDescription || description,
       type: seo?.ogType === 'article' ? 'article' : 'website',
-      url: absolute(base, path),
+      url: listingSeo.canonicalUrl,
       siteName: copy.siteName,
       locale: page.language,
       ...(image && { images: [{ url: image }] }),
@@ -345,6 +397,137 @@ async function PostRoute({
   );
 }
 
+async function ArchiveRouteView({
+  archive,
+  settings,
+  siteId,
+  siteSlug,
+  defaultLocale,
+  searchParams,
+}: {
+  archive: PublicArchive;
+  settings: Settings;
+  siteId: string;
+  siteSlug: string;
+  defaultLocale: string;
+  searchParams: SearchParams;
+}) {
+  const copy = localizedSettings(settings, archive.language, defaultLocale);
+  const archiveTemplateId =
+    copy.archiveTemplateId ?? settings.archiveTemplateId ?? null;
+  const preview = await getPreviewSession();
+
+  const archiveLoaderContext = {
+    kind: archive.kind,
+    id: archive.id,
+    slug: archive.slug,
+    title: archive.title,
+    description: archive.description,
+    year: archive.kind === 'date' ? archive.year : undefined,
+    month: archive.kind === 'date' ? archive.month : undefined,
+  };
+
+  let templateContent: unknown = null;
+  if (archiveTemplateId) {
+    try {
+      const templateBlock = await getGlobalBlockContent(archiveTemplateId, {
+        siteId,
+        draft: !!preview,
+      });
+      if (
+        templateBlock &&
+        (templateBlock.blocks?.length ||
+          (templateBlock.content &&
+            typeof templateBlock.content === 'object' &&
+            Object.keys(templateBlock.content).length > 0))
+      ) {
+        templateContent = templateBlock.content;
+      }
+    } catch {
+      templateContent = null;
+    }
+  }
+
+  // Fallback default builder archive template with QueryFilter + QueryLoop
+  const defaultArchiveContent = {
+    root: {
+      props: {
+        maxWidth: 'xl',
+        paddingY: 'md',
+      },
+    },
+    content: [
+      {
+        type: 'QueryFilter',
+        props: {
+          id: 'archive-filter',
+          targetLoopId: 'archive-loop',
+          urlNamespace: 'archive-loop',
+          source: 'posts',
+          showSearch: true,
+          showCategories: archive.kind !== 'category',
+          showTags: archive.kind !== 'tag',
+          showSort: true,
+          showResultCount: true,
+          showActiveChips: true,
+          showFacetCounts: true,
+          mobileDrawer: true,
+        },
+      },
+      {
+        type: 'QueryLoop',
+        props: {
+          id: 'archive-loop',
+          source: 'posts',
+          heading: archive.title,
+          layout: 'grid',
+          columns: 3,
+          gap: 'md',
+          pageSize: 9,
+          sortField: 'publishedAt',
+          sortDirection: 'desc',
+          paginationMode: 'numbered',
+          urlNamespace: 'archive-loop',
+          showExcerpt: true,
+          showImage: true,
+          showDate: true,
+          showAuthor: true,
+          showCategories: true,
+          emptyHeading: 'No posts in this archive yet.',
+          emptyBody: 'Try adjusting your filters or check back soon.',
+        },
+      },
+    ],
+  };
+
+  const rendered = await renderBuilderContent({
+    content: templateContent ?? defaultArchiveContent,
+    metadata: {
+      themeTokens: settings.themeTokens,
+      language: archive.language,
+      searchParams,
+      archive: archiveLoaderContext,
+      siteId,
+      siteSlug,
+      site: {
+        name: settings.siteName,
+        description: settings.siteDescription,
+        url: settings.siteUrl,
+        logo: settings.logo,
+      },
+    },
+  });
+
+  return (
+    <div className="mx-auto w-full max-w-6xl px-5 py-8 md:px-8">
+      {!templateContent && archive.description && (
+        <p className="s-muted mb-4 text-base">{archive.description}</p>
+      )}
+      {rendered}
+    </div>
+  );
+}
+
 export default async function SitePage({ params, searchParams }: Params) {
   const { slug } = await params;
   const settings = await siteSettingsService.getPublic();
@@ -360,6 +543,20 @@ export default async function SitePage({ params, searchParams }: Params) {
     !slug?.length
   ) {
     redirect(`/${site.slug}`);
+  }
+
+  const archive = await loadArchive(segments);
+  if (archive) {
+    return (
+      <ArchiveRouteView
+        archive={archive}
+        settings={settings}
+        siteId={site.id}
+        siteSlug={siteSlug ?? ''}
+        defaultLocale={site.defaultLocale}
+        searchParams={await searchParams}
+      />
+    );
   }
 
   const post = await loadPost(segments);

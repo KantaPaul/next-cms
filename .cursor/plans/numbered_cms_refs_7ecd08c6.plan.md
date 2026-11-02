@@ -221,25 +221,25 @@ todos:
   status: pending
 - id: P7-01
   content: Per-site baked export of published content, menus, theme, and media
-  status: pending
+  status: completed
 - id: P7-02
   content: "Export report: forms and checkout need external URLs"
-  status: pending
+  status: completed
 - id: P7-03
   content: "Playwright: sign in, edit, publish, view, submit a form, follow a redirect"
-  status: pending
+  status: completed
 - id: P7-04
   content: Vitest for routes, redirects, collection validation, and the block registry
-  status: pending
+  status: completed
 - id: P7-05
   content: docker-compose for app, Postgres, and optional MinIO
-  status: pending
+  status: completed
 - id: P7-06
   content: Lighthouse CI on the home page and a blog post
-  status: pending
+  status: completed
 - id: P7-07
   content: GitHub Actions for lint, typecheck, unit tests, and Playwright
-  status: pending
+  status: completed
   isProject: false
 
 ---

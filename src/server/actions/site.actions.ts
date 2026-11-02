@@ -68,4 +68,35 @@ export const createSite = permissionProcedure(PERMISSIONS.SETTINGS_MANAGE)
     return site;
   });
 
+export const updateSite = permissionProcedure(PERMISSIONS.SETTINGS_MANAGE)
+  .input(
+    z.object({
+      siteId: z.string().trim().min(1),
+      name: z.string().trim().min(1).max(120),
+      slug: z.string().trim().min(1).max(40),
+      primaryHost: z.string().trim().max(255).nullish(),
+      extraDomains: z.string().trim().max(1000).nullish(),
+      defaultLocale: z.string().trim().min(2).max(12),
+      locales: z.array(locale).min(1),
+    })
+  )
+  .action(async ({ input, ctx }) => {
+    const site = await sitesService.update(
+      input.siteId,
+      {
+        name: input.name,
+        slug: input.slug || undefined,
+        primaryHost: input.primaryHost,
+        extraDomains: input.extraDomains,
+        defaultLocale: input.defaultLocale,
+        locales: input.locales.length ? input.locales : DEFAULT_SITE_LOCALES,
+      },
+      ctx.access
+    );
+    revalidatePath(PAGES.DASHBOARD.ROOT, 'layout');
+    revalidatePath(PAGES.DASHBOARD.SITES);
+    revalidatePublicSite();
+    return site;
+  });
+
 

@@ -248,6 +248,14 @@ export function SearchBoxClient({
 
   const searchPath = siteSlug ? `/${siteSlug}/search` : '/search';
   const fullSearchUrl = `${searchPath}?q=${encodeURIComponent(query.trim())}`;
+  const listboxId = 'site-search-suggestions-listbox';
+  const isFlyoutVisible = Boolean(
+    showFlyout && liveResults && query.trim().length >= 2
+  );
+  const activeOptionId =
+    isFlyoutVisible && activeIndex >= 0
+      ? `site-search-opt-${activeIndex}`
+      : undefined;
 
   useEffect(() => {
     if (modalOpen) {
@@ -362,10 +370,11 @@ export function SearchBoxClient({
   };
 
   const renderDropdownContent = () => {
-    if (!showFlyout || !liveResults || query.trim().length < 2) return null;
+    if (!isFlyoutVisible) return null;
 
     return (
       <div
+        id={listboxId}
         role="listbox"
         aria-label="Search suggestions"
         className={cn(
@@ -400,7 +409,12 @@ export function SearchBoxClient({
               {hits.map((hit, idx) => {
                 const isSelected = activeIndex === idx;
                 return (
-                  <li key={`${hit.kind}-${hit.path}`}>
+                  <li
+                    key={`${hit.kind}-${hit.path}`}
+                    id={`site-search-opt-${idx}`}
+                    role="option"
+                    aria-selected={isSelected}
+                  >
                     <Link
                       href={hit.path}
                       onClick={() => {
@@ -439,7 +453,12 @@ export function SearchBoxClient({
                 );
               })}
             </ul>
-            <div className="mt-1 border-t border-steel-200 dark:border-dark-300 pt-1">
+            <div
+              id={`site-search-opt-${hits.length}`}
+              role="option"
+              aria-selected={activeIndex === hits.length}
+              className="mt-1 border-t border-steel-200 dark:border-dark-300 pt-1"
+            >
               <Link
                 href={fullSearchUrl}
                 onClick={() => {
@@ -496,6 +515,11 @@ export function SearchBoxClient({
                   ref={inputRef}
                   type="search"
                   name="q"
+                  role="combobox"
+                  aria-expanded={isFlyoutVisible}
+                  aria-controls={listboxId}
+                  aria-activedescendant={activeOptionId}
+                  aria-autocomplete="list"
                   value={query}
                   onChange={handleInputChange}
                   onKeyDown={handleKeyDown}
@@ -534,6 +558,11 @@ export function SearchBoxClient({
           ref={inputRef}
           type="search"
           name="q"
+          role="combobox"
+          aria-expanded={isFlyoutVisible}
+          aria-controls={listboxId}
+          aria-activedescendant={activeOptionId}
+          aria-autocomplete="list"
           value={query}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}

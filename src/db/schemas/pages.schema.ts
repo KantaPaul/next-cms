@@ -18,6 +18,11 @@ import { baseColumns, relationConfig } from '@/db/helpers/base.columns';
 import { users } from '@/db/schemas/auth.schema';
 import { DEFAULT_SITE_ID } from '@/db/schemas/sites.schema';
 import { type VideoSettings, DEFAULT_VIDEO_SETTINGS } from '@/db/schemas/video.schema';
+import {
+  type LicenseSettings,
+  DEFAULT_LICENSE_SETTINGS,
+  licenseSettingsSchema,
+} from '@/db/schemas/licenses.schema';
 import type { SiteCopy } from '@/db/schemas/sites.schema';
 import {
   ContentKind,
@@ -411,6 +416,24 @@ export const DEFAULT_THEME_TOKENS: ThemeTokens = {
   typography: DEFAULT_TYPOGRAPHY_PRESETS,
 };
 
+export type SearchPinnedResult = {
+  query: string;
+  path: string;
+  title: string;
+  snippet?: string | null;
+  kind?: 'page' | 'post' | 'collection' | 'video';
+};
+
+export type SearchSettings = {
+  synonyms: Record<string, string[]>;
+  pinnedResults: SearchPinnedResult[];
+};
+
+export const DEFAULT_SEARCH_SETTINGS: SearchSettings = {
+  synonyms: {},
+  pinnedResults: [],
+};
+
 export const SITE_SETTINGS_ID = 'default';
 
 export const siteSettings = pgTable('site_settings', {
@@ -429,6 +452,8 @@ export const siteSettings = pgTable('site_settings', {
   footerMenuId: text('footer_menu_id').references(() => menus.id, setNull),
   headerTemplateId: text('header_template_id'),
   footerTemplateId: text('footer_template_id'),
+  searchTemplateId: text('search_template_id'),
+  archiveTemplateId: text('archive_template_id'),
   themeTokens: jsonb('theme_tokens')
     .$type<ThemeTokens>()
     .default(DEFAULT_THEME_TOKENS)
@@ -436,6 +461,14 @@ export const siteSettings = pgTable('site_settings', {
   videoSettings: jsonb('video_settings')
     .$type<VideoSettings>()
     .default(DEFAULT_VIDEO_SETTINGS)
+    .notNull(),
+  searchSettings: jsonb('search_settings')
+    .$type<SearchSettings>()
+    .default(DEFAULT_SEARCH_SETTINGS)
+    .notNull(),
+  licenseSettings: jsonb('license_settings')
+    .$type<LicenseSettings>()
+    .default(DEFAULT_LICENSE_SETTINGS)
     .notNull(),
   robotsTxt: text('robots_txt'),
   googleAnalyticsId: varchar('google_analytics_id', { length: 50 }),

@@ -8,6 +8,7 @@ import { apiRateWindows } from '@/db/schema';
 import { apiKeysService } from '@/server/services/api-keys.service';
 import { siteContext, siteBySlug } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
+import { licenseService } from '@/server/services/license.service';
 
 const RATE_LIMIT = 60;
 const WINDOW_MS = 60_000;
@@ -133,6 +134,14 @@ export function apiHandler<P = Record<string, never>>(
     const keyScopes = apiKey.scopes ?? [];
     if (requiredScopes.length && !requiredScopes.some(s => keyScopes.includes(s))) {
       return apiError(403, 'API key missing required scope.', limitHeadersPlaceholder());
+    }
+
+    // R241 / L5-04: Mutating /api/v1 handlers call requireLicense; published public GET stays up
+    if (request.method !== 'GET' && request.method !== 'HEAD' && request.method !== 'OPTIONS') {
+      const licenseCheck = await licenseService.requireLicense();
+      if (!licenseCheck.ok) {
+        return apiError(403, 'License verification required to execute mutations.');
+      }
     }
 
     const limit = await rateLimit(apiKey.id);

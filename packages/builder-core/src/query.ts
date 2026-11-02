@@ -25,6 +25,10 @@ export const ALLOWED_FILTER_FIELDS: Record<ListingSource, readonly string[]> = {
     'search',
     'publishedAfter',
     'publishedBefore',
+    'hasImage',
+    'booleanToggle',
+    'minNumber',
+    'maxNumber',
   ],
   pages: [
     'categories',
@@ -33,12 +37,20 @@ export const ALLOWED_FILTER_FIELDS: Record<ListingSource, readonly string[]> = {
     'search',
     'publishedAfter',
     'publishedBefore',
+    'isHome',
+    'hasImage',
+    'minNumber',
+    'maxNumber',
   ],
   'collection-entries': [
     'collectionId',
     'search',
     'publishedAfter',
     'publishedBefore',
+    'hasImage',
+    'booleanToggle',
+    'minNumber',
+    'maxNumber',
   ],
   videos: [
     'playlistId',
@@ -46,6 +58,10 @@ export const ALLOWED_FILTER_FIELDS: Record<ListingSource, readonly string[]> = {
     'search',
     'publishedAfter',
     'publishedBefore',
+    'duration',
+    'hasImage',
+    'minNumber',
+    'maxNumber',
   ],
 } as const;
 
@@ -157,6 +173,20 @@ export interface NormalizedListingItem {
   raw?: Record<string, unknown>;
 }
 
+export interface FacetOption {
+  value: string;
+  label: string;
+  count: number;
+}
+
+export interface ListingFacets {
+  categories?: FacetOption[];
+  tags?: FacetOption[];
+  authors?: FacetOption[];
+  providers?: FacetOption[];
+  hasImage?: FacetOption[];
+}
+
 export interface ListingQueryResult {
   items: NormalizedListingItem[];
   total: number;
@@ -164,6 +194,7 @@ export interface ListingQueryResult {
   pageSize: number;
   totalPages: number;
   hasMore: boolean;
+  facets?: ListingFacets;
 }
 
 // ---------------------------------------------------------------------------
@@ -180,7 +211,15 @@ export interface ParsedListingParams {
   page?: number;
   search?: string;
   category?: string;
+  categories?: string[];
   tag?: string;
+  tags?: string[];
+  author?: string;
+  from?: string;
+  to?: string;
+  min?: number;
+  max?: number;
+  toggle?: boolean;
   sort?: string;
   order?: 'asc' | 'desc';
 }
@@ -200,13 +239,53 @@ export function parseNamespacedParams(
     return val;
   };
 
+  const getMultiParam = (key: string): string[] => {
+    const namespacedKey = formatNamespacedParam(key, namespace);
+    if (rawParams instanceof URLSearchParams) {
+      return rawParams
+        .getAll(namespacedKey)
+        .flatMap(v => v.split(','))
+        .map(v => v.trim())
+        .filter(Boolean);
+    }
+    const val = rawParams[namespacedKey];
+    if (!val) return [];
+    const arr = Array.isArray(val) ? val : [val];
+    return arr
+      .flatMap(v => v.split(','))
+      .map(v => v.trim())
+      .filter(Boolean);
+  };
+
   const rawPage = getParam('page');
   const pageNum = rawPage ? parseInt(rawPage, 10) : undefined;
   const page = pageNum && !Number.isNaN(pageNum) && pageNum > 0 ? pageNum : undefined;
 
   const search = getParam('q') || getParam('search');
-  const category = getParam('category');
-  const tag = getParam('tag');
+  const categoriesList = getMultiParam('category');
+  const category = categoriesList[0];
+  const tagsList = getMultiParam('tag');
+  const tag = tagsList[0];
+  const author = getParam('author');
+  const from = getParam('from');
+  const to = getParam('to');
+
+  const rawMin = getParam('min');
+  const minNum = rawMin !== undefined && rawMin !== '' ? Number(rawMin) : undefined;
+  const min = minNum !== undefined && !Number.isNaN(minNum) ? minNum : undefined;
+
+  const rawMax = getParam('max');
+  const maxNum = rawMax !== undefined && rawMax !== '' ? Number(rawMax) : undefined;
+  const max = maxNum !== undefined && !Number.isNaN(maxNum) ? maxNum : undefined;
+
+  const rawToggle = getParam('toggle')?.toLowerCase();
+  const toggle =
+    rawToggle === '1' || rawToggle === 'true'
+      ? true
+      : rawToggle === '0' || rawToggle === 'false'
+        ? false
+        : undefined;
+
   const sort = getParam('sort');
   const rawOrder = getParam('order')?.toLowerCase();
   const order = rawOrder === 'asc' || rawOrder === 'desc' ? rawOrder : undefined;
@@ -214,8 +293,16 @@ export function parseNamespacedParams(
   return {
     ...(page !== undefined && { page }),
     ...(search && { search: search.trim() }),
-    ...(category && { category: category.trim() }),
-    ...(tag && { tag: tag.trim() }),
+    ...(category && { category }),
+    ...(categoriesList.length > 1 && { categories: categoriesList }),
+    ...(tag && { tag }),
+    ...(tagsList.length > 1 && { tags: tagsList }),
+    ...(author && { author: author.trim() }),
+    ...(from && { from: from.trim() }),
+    ...(to && { to: to.trim() }),
+    ...(min !== undefined && { min }),
+    ...(max !== undefined && { max }),
+    ...(toggle !== undefined && { toggle }),
     ...(sort && { sort: sort.trim() }),
     ...(order && { order }),
   };
@@ -233,11 +320,36 @@ export function encodeNamespacedParams(
   if (params.search) {
     encoded[formatNamespacedParam('q', namespace)] = params.search;
   }
-  if (params.category) {
+  if (params.categories && params.categories.length > 0) {
+    encoded[formatNamespacedParam('category', namespace)] =
+      params.categories.join(',');
+  } else if (params.category) {
     encoded[formatNamespacedParam('category', namespace)] = params.category;
   }
-  if (params.tag) {
+  if (params.tags && params.tags.length > 0) {
+    encoded[formatNamespacedParam('tag', namespace)] = params.tags.join(',');
+  } else if (params.tag) {
     encoded[formatNamespacedParam('tag', namespace)] = params.tag;
+  }
+  if (params.author) {
+    encoded[formatNamespacedParam('author', namespace)] = params.author;
+  }
+  if (params.from) {
+    encoded[formatNamespacedParam('from', namespace)] = params.from;
+  }
+  if (params.to) {
+    encoded[formatNamespacedParam('to', namespace)] = params.to;
+  }
+  if (params.min !== undefined) {
+    encoded[formatNamespacedParam('min', namespace)] = String(params.min);
+  }
+  if (params.max !== undefined) {
+    encoded[formatNamespacedParam('max', namespace)] = String(params.max);
+  }
+  if (params.toggle !== undefined) {
+    encoded[formatNamespacedParam('toggle', namespace)] = params.toggle
+      ? '1'
+      : '0';
   }
   if (params.sort) {
     encoded[formatNamespacedParam('sort', namespace)] = params.sort;

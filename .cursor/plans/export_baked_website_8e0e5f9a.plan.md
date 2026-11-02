@@ -5,16 +5,16 @@ overview: Add an export that snapshots published pages, posts, menus, theme, and
 todos:
 - id: render-split
   content: Split a database-free Puck render map from builder config so the export can render blocks without admin or DB imports.
-  status: pending
+  status: completed
 - id: snapshot
   content: "Write the export script: published pages, posts, menus, settings, resolved globals, post catalog, and copied media."
-  status: pending
+  status: completed
 - id: template
   content: Add the standalone Next.js export template (routes, local blog filter, sitemap, robots, Dockerfile, README).
-  status: pending
+  status: completed
 - id: ui
   content: Add pnpm export:site and a settings download for users who can manage settings.
-  status: pending
+  status: completed
   isProject: false
 
 ---

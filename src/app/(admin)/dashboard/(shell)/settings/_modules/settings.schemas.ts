@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { parseVideoSettings } from '@/lib/video/settings';
+import { licenseSettingsSchema } from '@/db/schemas/licenses.schema';
 
 const optionalText = (max: number) =>
   z
@@ -12,6 +13,69 @@ const optionalText = (max: number) =>
 const hex = z
   .string()
   .regex(/^#[0-9a-fA-F]{6}$/, 'Use a hex colour like #4f46e5');
+export const themeTokensSchema = z.object({
+  primaryColor: hex,
+  accentColor: hex,
+  fontFamily: z.enum([
+    'Inter',
+    'Plus Jakarta Sans',
+    'JetBrains Mono',
+    'System',
+  ]),
+  borderRadius: z.enum(['none', 'sm', 'md', 'lg', 'full']),
+  colorMode: z.enum(['light', 'dark', 'system']),
+  colors: z
+    .object({
+      primary: hex.optional(),
+      secondary: hex.optional(),
+      text: hex.optional(),
+      textMuted: hex.optional(),
+      accent: hex.optional(),
+      background: hex.optional(),
+      surface: hex.optional(),
+      border: hex.optional(),
+      custom: z
+        .array(
+          z.object({
+            id: z.string().max(50),
+            name: z.string().max(50),
+            value: hex,
+          })
+        )
+        .optional(),
+    })
+    .optional(),
+  typography: z
+    .array(
+      z.object({
+        id: z.string().max(50),
+        name: z.string().max(50),
+        fontFamily: z.string().max(100).optional(),
+        fontSize: z
+          .union([
+            z.string().max(50),
+            z.number(),
+            z.object({
+              desktop: z.union([z.string().max(50), z.number()]).optional(),
+              tablet: z.union([z.string().max(50), z.number()]).optional(),
+              mobile: z.union([z.string().max(50), z.number()]).optional(),
+            }),
+          ])
+          .optional(),
+        fontWeight: z.union([z.string().max(20), z.number()]).optional(),
+        lineHeight: z.union([z.string().max(20), z.number()]).optional(),
+        letterSpacing: z.string().max(20).optional(),
+      })
+    )
+    .optional(),
+});
+
+export const themeFormSchema = z.object({
+  themeTokens: themeTokensSchema,
+});
+
+export type ThemeFormInput = z.infer<typeof themeFormSchema>;
+
 export const settingsSchema = z.object({
   siteName: z.string().trim().min(1, 'Site name is required').max(100),
   siteDescription: optionalText(500),
@@ -26,6 +90,8 @@ export const settingsSchema = z.object({
   footerMenuId: optionalText(50),
   headerTemplateId: optionalText(50),
   footerTemplateId: optionalText(50),
+  searchTemplateId: optionalText(50),
+  archiveTemplateId: optionalText(50),
   robotsTxt: optionalText(5000),
   seoTitle: optionalText(160),
   seoDescription: optionalText(300),
@@ -39,69 +105,41 @@ export const settingsSchema = z.object({
         seoDescription: z.string().trim().max(300).optional(),
         headerTemplateId: optionalText(50),
         footerTemplateId: optionalText(50),
+        searchTemplateId: optionalText(50),
+        archiveTemplateId: optionalText(50),
       })
     )
+    .nullish(),
+  searchSettings: z
+    .object({
+      synonyms: z
+        .array(
+          z.object({
+            term: z.string().trim().min(1).max(100),
+            synonyms: z.array(z.string().trim().min(1).max(100)).max(20),
+          })
+        )
+        .max(100)
+        .default([]),
+      pinnedResults: z
+        .array(
+          z.object({
+            query: z.string().trim().min(1).max(120),
+            title: z.string().trim().min(1).max(200),
+            path: z.string().trim().min(1).max(500),
+            snippet: z.string().trim().max(400).nullish(),
+            kind: z.enum(['page', 'post', 'collection', 'video']).optional(),
+          })
+        )
+        .max(100)
+        .default([]),
+    })
     .nullish(),
   googleAnalyticsId: optionalText(50).refine(
     v => !v || /^G-[A-Z0-9]+$/i.test(v),
     'Use a GA4 measurement ID like G-XXXXXXX'
   ),
-  themeTokens: z.object({
-    primaryColor: hex,
-    accentColor: hex,
-    fontFamily: z.enum([
-      'Inter',
-      'Plus Jakarta Sans',
-      'JetBrains Mono',
-      'System',
-    ]),
-    borderRadius: z.enum(['none', 'sm', 'md', 'lg', 'full']),
-    colorMode: z.enum(['light', 'dark', 'system']),
-    colors: z
-      .object({
-        primary: hex.optional(),
-        secondary: hex.optional(),
-        text: hex.optional(),
-        textMuted: hex.optional(),
-        accent: hex.optional(),
-        background: hex.optional(),
-        surface: hex.optional(),
-        border: hex.optional(),
-        custom: z
-          .array(
-            z.object({
-              id: z.string().max(50),
-              name: z.string().max(50),
-              value: hex,
-            })
-          )
-          .optional(),
-      })
-      .optional(),
-    typography: z
-      .array(
-        z.object({
-          id: z.string().max(50),
-          name: z.string().max(50),
-          fontFamily: z.string().max(100).optional(),
-          fontSize: z
-            .union([
-              z.string().max(50),
-              z.number(),
-              z.object({
-                desktop: z.union([z.string().max(50), z.number()]).optional(),
-                tablet: z.union([z.string().max(50), z.number()]).optional(),
-                mobile: z.union([z.string().max(50), z.number()]).optional(),
-              }),
-            ])
-            .optional(),
-          fontWeight: z.union([z.string().max(20), z.number()]).optional(),
-          lineHeight: z.union([z.string().max(20), z.number()]).optional(),
-          letterSpacing: z.string().max(20).optional(),
-        })
-      )
-      .optional(),
-  }),
+  themeTokens: themeTokensSchema.optional(),
   videoSettings: z
     .object({
       enabled: z.boolean().optional(),
@@ -125,6 +163,7 @@ export const settingsSchema = z.object({
       preferCaptions: z.boolean().optional(),
     })
     .nullish(),
+  licenseSettings: licenseSettingsSchema.optional(),
 });
 
 export type SettingsInput = z.infer<typeof settingsSchema>;

@@ -10,12 +10,20 @@
  */
 
 import {
+  ALLOWED_SORT_FIELDS,
   type BuilderDocument,
   type BlockLoader as CoreBlockLoader,
   collectDynamicRefs,
   createLoaderRegistry,
   documentToPuck,
+  encodeNamespacedParams,
+  formatNamespacedParam,
+  LISTING_SOURCES,
+  type ListingSource,
+  MAX_PAGE_SIZE,
+  parseNamespacedParams,
   puckToDocument,
+  type QueryFilter,
   resolveDynamicDocument,
 } from '@nextcms/builder-core';
 import type { VideoLibraryVideoItem } from '@/components/video/video-library';
@@ -28,6 +36,16 @@ import type { PostView } from './post-template';
 
 /* ---------- context ---------- */
 
+export type ArchiveLoaderContext = {
+  kind: 'category' | 'tag' | 'author' | 'date';
+  slug?: string;
+  id?: string;
+  title?: string;
+  description?: string | null;
+  year?: number;
+  month?: number;
+};
+
 export type LoaderContext = {
   /** Active site id when available (multisite). */
   siteId?: string;
@@ -37,6 +55,10 @@ export type LoaderContext = {
   searchParams?: Record<string, string | string[] | undefined>;
   /** Current post when rendering a post template. */
   post?: PostView;
+  /** Current page id when rendering a page. */
+  pageId?: string;
+  /** Archive route context when rendering a category, tag, author, or date archive (R595). */
+  archive?: ArchiveLoaderContext;
   /** Preview / draft mode. */
   preview?: boolean;
   /** Theme tokens and other pass-through metadata. */
@@ -265,15 +287,377 @@ const loadCopyright: BlockLoader = async (_props, _ctx) => {
   }
 };
 
+function buildFiltersFromPropsAndParams(
+  props: Record<string, unknown>,
+  ctx: LoaderContext,
+  loopId: string
+): {
+  source: ListingSource;
+  filters: QueryFilter[];
+  activeParams: ReturnType<typeof parseNamespacedParams>;
+  sortField: string;
+  sortOrder: 'asc' | 'desc';
+  limit: number;
+  offset: number;
+  page: number;
+} {
+  const rawSource = typeof props.source === 'string' ? props.source : 'posts';
+  const source: ListingSource = (LISTING_SOURCES as readonly string[]).includes(
+    rawSource
+  )
+    ? (rawSource as ListingSource)
+    : 'posts';
+
+  const activeParams = parseNamespacedParams(ctx.searchParams ?? {}, loopId);
+  const filters: QueryFilter[] = [];
+
+  if (source === 'posts' || source === 'pages') {
+    const lockedCat =
+      (typeof props.lockedCategory === 'string' && props.lockedCategory.trim()) ||
+      (ctx.archive?.kind === 'category' ? ctx.archive.slug : undefined);
+    const cats = lockedCat
+      ? [lockedCat]
+      : activeParams.categories ??
+        (activeParams.category ? [activeParams.category] : []);
+    if (cats.length > 0) {
+      filters.push({ field: 'categories', operator: 'in', value: cats });
+    }
+
+    const lockedTag =
+      (typeof props.lockedTag === 'string' && props.lockedTag.trim()) ||
+      (ctx.archive?.kind === 'tag' ? ctx.archive.slug : undefined);
+    const tagList = lockedTag
+      ? [lockedTag]
+      : activeParams.tags ?? (activeParams.tag ? [activeParams.tag] : []);
+    if (tagList.length > 0) {
+      filters.push({ field: 'tags', operator: 'in', value: tagList });
+    }
+
+    const authorId =
+      (typeof props.lockedAuthorId === 'string' && props.lockedAuthorId.trim()) ||
+      (ctx.archive?.kind === 'author' ? ctx.archive.id : undefined) ||
+      activeParams.author;
+    if (authorId) {
+      filters.push({ field: 'authorId', operator: 'eq', value: authorId });
+    }
+  }
+
+  if (source === 'videos' && typeof props.playlistId === 'string' && props.playlistId.trim()) {
+    filters.push({
+      field: 'playlistId',
+      operator: 'eq',
+      value: props.playlistId.trim(),
+    });
+  }
+
+  if (activeParams.search) {
+    filters.push({
+      field: 'search',
+      operator: 'contains',
+      value: activeParams.search,
+    });
+  }
+
+  // Date archive or date-range filter
+  if (ctx.archive?.kind === 'date' && ctx.archive.year) {
+    const y = ctx.archive.year;
+    const m = ctx.archive.month;
+    const start = m
+      ? new Date(Date.UTC(y, m - 1, 1, 0, 0, 0))
+      : new Date(Date.UTC(y, 0, 1, 0, 0, 0));
+    const end = m
+      ? new Date(Date.UTC(y, m, 0, 23, 59, 59, 999))
+      : new Date(Date.UTC(y, 11, 31, 23, 59, 59, 999));
+    filters.push({
+      field: 'publishedAfter',
+      operator: 'gte',
+      value: start.toISOString(),
+    });
+    filters.push({
+      field: 'publishedBefore',
+      operator: 'lte',
+      value: end.toISOString(),
+    });
+  } else {
+    if (activeParams.from) {
+      filters.push({
+        field: 'publishedAfter',
+        operator: 'gte',
+        value: activeParams.from,
+      });
+    }
+    if (activeParams.to) {
+      filters.push({
+        field: 'publishedBefore',
+        operator: 'lte',
+        value: activeParams.to,
+      });
+    }
+  }
+
+  if (activeParams.min !== undefined) {
+    filters.push({
+      field: 'minNumber',
+      operator: 'gte',
+      value: activeParams.min,
+    });
+  }
+  if (activeParams.max !== undefined) {
+    filters.push({
+      field: 'maxNumber',
+      operator: 'lte',
+      value: activeParams.max,
+    });
+  }
+  if (activeParams.toggle !== undefined) {
+    filters.push({
+      field: 'hasImage',
+      operator: 'eq',
+      value: activeParams.toggle,
+    });
+  }
+
+  const allowedSorts = ALLOWED_SORT_FIELDS[source] ?? ['publishedAt'];
+  const requestedSort =
+    activeParams.sort ??
+    (typeof props.sortField === 'string' ? props.sortField : 'publishedAt');
+  const sortField = allowedSorts.includes(requestedSort)
+    ? requestedSort
+    : allowedSorts[0]!;
+  const sortOrder: 'asc' | 'desc' =
+    activeParams.order ??
+    (props.sortOrder === 'asc' ? 'asc' : 'desc');
+
+  const limit = Math.min(
+    Math.max(Number(props.pageSize) || 9, 1),
+    MAX_PAGE_SIZE
+  );
+  const offset = Math.max(Number(props.offset) || 0, 0);
+  const page = activeParams.page ?? 1;
+
+  return {
+    source,
+    filters,
+    activeParams,
+    sortField,
+    sortOrder,
+    limit,
+    offset,
+    page,
+  };
+}
+
+function buildPreservedParams(
+  rawParams: Record<string, string | string[] | undefined> | undefined,
+  loopId: string
+): Record<string, string> {
+  if (!rawParams) return {};
+  const ownKeys = new Set(
+    [
+      'page',
+      'q',
+      'search',
+      'category',
+      'tag',
+      'author',
+      'from',
+      'to',
+      'min',
+      'max',
+      'toggle',
+      'sort',
+      'order',
+    ].map(k => formatNamespacedParam(k, loopId))
+  );
+  const preserved: Record<string, string> = {};
+  for (const [k, v] of Object.entries(rawParams)) {
+    if (ownKeys.has(k) || v === undefined) continue;
+    preserved[k] = Array.isArray(v) ? (v[0] ?? '') : v;
+  }
+  return preserved;
+}
+
+const loadQueryLoop: BlockLoader = async (props, ctx) => {
+  const loopId = typeof props.loopId === 'string' ? props.loopId.trim() : '';
+  const {
+    source,
+    filters,
+    activeParams,
+    sortField,
+    sortOrder,
+    limit,
+    offset,
+    page,
+  } = buildFiltersFromPropsAndParams(props, ctx, loopId);
+
+  if (
+    source === 'collection-entries' &&
+    (!props.collectionId || typeof props.collectionId !== 'string')
+  ) {
+    return {
+      items: [],
+      total: 0,
+      page: 1,
+      totalPages: 1,
+      activeParams,
+      language: ctx.language ?? 'en',
+    };
+  }
+
+  const currentId =
+    (ctx.post?.id as string | undefined) ??
+    (ctx.pageId as string | undefined);
+
+  const { resolveListingQuery } = await import(
+    '@/server/actions/listing.actions'
+  );
+  const result = await resolveListingQuery(
+    {
+      source,
+      ...(typeof props.collectionId === 'string' && props.collectionId
+        ? { collectionId: props.collectionId }
+        : {}),
+      filters,
+      sortField,
+      sortOrder,
+      limit,
+      offset,
+      page,
+      excludeCurrent: Boolean(props.excludeCurrent),
+      ...(currentId ? { currentId } : {}),
+    },
+    {
+      language: typeof ctx.language === 'string' ? ctx.language : undefined,
+      currentId,
+      includeFacets: true,
+    }
+  );
+
+  // Build crawlable page hrefs preserving other namespaces' params (R577 / QRY-07)
+  const preserved = buildPreservedParams(ctx.searchParams, loopId);
+  const pageHrefs: Record<number, string> = {};
+  for (let p = 1; p <= result.totalPages; p++) {
+    const encoded = encodeNamespacedParams({ ...activeParams, page: p }, loopId);
+    const sp = new URLSearchParams({ ...preserved, ...encoded });
+    const qs = sp.toString();
+    pageHrefs[p] = qs ? `?${qs}` : '?';
+  }
+  const clearSp = new URLSearchParams(preserved);
+  const clearQs = clearSp.toString();
+
+  return {
+    items: result.items,
+    total: result.total,
+    page: result.page,
+    totalPages: result.totalPages,
+    facets: result.facets,
+    activeParams,
+    pageHrefs,
+    clearFiltersHref: clearQs ? `?${clearQs}` : '?',
+    language: typeof ctx.language === 'string' ? ctx.language : 'en',
+  };
+};
+
+const loadQueryFilter: BlockLoader = async (props, ctx) => {
+  const targetLoopId =
+    typeof props.targetLoopId === 'string' ? props.targetLoopId.trim() : '';
+  const {
+    source,
+    filters,
+    activeParams,
+    sortField,
+    sortOrder,
+  } = buildFiltersFromPropsAndParams(props, ctx, targetLoopId);
+  const preservedHiddenParams = buildPreservedParams(
+    ctx.searchParams,
+    targetLoopId
+  );
+
+  const { resolveListingQuery } = await import(
+    '@/server/actions/listing.actions'
+  );
+  const result = await resolveListingQuery(
+    {
+      source,
+      filters,
+      sortField,
+      sortOrder,
+      limit: 1,
+      page: 1,
+    },
+    {
+      language: typeof ctx.language === 'string' ? ctx.language : undefined,
+      includeFacets: true,
+    }
+  );
+
+  return {
+    activeParams,
+    facets: result.facets,
+    totalResults: result.total,
+    preservedHiddenParams,
+  };
+};
+
+const loadSearchResults: BlockLoader = async (props, ctx) => {
+  const params = ctx.searchParams ?? {};
+  const q = (oneParam(params, 'q') ?? '').trim();
+  const rawKind = oneParam(params, 'kind');
+  const activeKind =
+    rawKind === 'page' ||
+    rawKind === 'post' ||
+    rawKind === 'collection' ||
+    rawKind === 'video'
+      ? rawKind
+      : 'all';
+  const page = Math.max(Number(oneParam(params, 'page')) || 1, 1);
+  const limit = Math.min(Math.max(Number(props.pageSize) || 20, 1), 100);
+
+  if (!q) {
+    return {
+      query: '',
+      activeKind,
+      items: [],
+      total: 0,
+      page: 1,
+      totalPages: 1,
+    };
+  }
+
+  const { resolvePaginatedSearch } = await import(
+    '@/server/actions/listing.actions'
+  );
+  const res = await resolvePaginatedSearch({
+    q,
+    language: typeof ctx.language === 'string' ? ctx.language : undefined,
+    kind: activeKind,
+    page,
+    limit,
+  });
+
+  return {
+    query: q,
+    activeKind,
+    items: res.items,
+    total: res.total,
+    page: res.page,
+    totalPages: res.totalPages,
+    countsByKind: res.countsByKind,
+  };
+};
+
 /**
  * Registry of block type → loader.
- * ContactForm stores fields inline today; query-loop blocks will register here
- * when QRY lands. Hosts / plugins can extend via `registerBlockLoader`.
+ * ContactForm stores fields inline today; query-loop blocks register here.
+ * Hosts / plugins can extend via `registerBlockLoader`.
  */
 const registry = createLoaderRegistry<LoaderContext>(
   {
     BlogPosts: loadBlogPosts,
     RelatedPosts: loadRelatedPosts,
+    QueryLoop: loadQueryLoop,
+    QueryFilter: loadQueryFilter,
+    SearchResults: loadSearchResults,
     VideoLibrary: loadVideoLibrary,
     NavMenu: loadNavMenu,
     MobileMenu: loadMobileMenu,
@@ -313,7 +697,11 @@ export async function resolveDocumentData(
         )
       : undefined,
   ]);
-  return resolveDynamicDocument(resolved, { ...ctx, ...picked });
+  return resolveDynamicDocument(resolved, {
+    ...ctx,
+    ...picked,
+    preserveLoopBindings: true,
+  });
 }
 
 /**

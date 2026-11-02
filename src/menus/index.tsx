@@ -15,6 +15,7 @@ import {
   Newspaper,
   Palette,
   Play,
+  Settings,
   Share2,
   ShieldCheck,
 } from 'lucide-react';
@@ -94,15 +95,15 @@ export function getMenuItems(): {
       permission: PERMISSIONS.SETTINGS_MANAGE,
     },
     {
-      name: 'Sites',
-      href: PAGES.DASHBOARD.SITES,
-      icon: <Globe className="w-[18px]" />,
+      name: 'Theme',
+      href: PAGES.DASHBOARD.THEME,
+      icon: <Palette className="w-[18px]" />,
       permission: PERMISSIONS.SETTINGS_MANAGE,
     },
     {
-      name: 'Settings & Theme',
+      name: 'Settings',
       href: PAGES.DASHBOARD.SETTINGS,
-      icon: <Palette className="w-[18px]" />,
+      icon: <Settings className="w-[18px]" />,
       permission: PERMISSIONS.SETTINGS_MANAGE,
     },
     {
@@ -116,6 +117,12 @@ export function getMenuItems(): {
       href: PAGES.DASHBOARD.API,
       icon: <KeyRound className="w-[18px]" />,
       permission: PERMISSIONS.API_MANAGE,
+    },
+    {
+      name: 'Licenses',
+      href: PAGES.DASHBOARD.LICENSES,
+      icon: <ShieldCheck className="w-[18px]" />,
+      permission: PERMISSIONS.LICENSES_MANAGE,
     },
     {
       name: 'Collections',

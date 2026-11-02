@@ -1,6 +1,6 @@
 'use client';
 
-import { KeyRound, LogOut } from 'lucide-react';
+import { Globe, KeyRound, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import * as React from 'react';
 import { MenuTrigger } from '@/components/molecules/auth-dropdown/menu-trigger';
@@ -13,7 +13,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { PAGES } from '@/config/pages';
+import { PERMISSIONS } from '@/config/permissions';
 import type { User } from '@/db/schema';
+import { Can } from '@/providers/access.provider';
 import { signOut } from '@/server/actions/auth.actions';
 
 export default function AuthDropdown({ user }: { user: User }) {
@@ -53,6 +55,14 @@ export default function AuthDropdown({ user }: { user: User }) {
             <span>Account</span>
           </Link>
         </DropdownMenuItem>
+        <Can permission={PERMISSIONS.SETTINGS_MANAGE}>
+          <DropdownMenuItem asChild>
+            <Link href={PAGES.DASHBOARD.SITES} className="cursor-pointer">
+              <Globe className="mr-2 size-4" />
+              <span>Sites</span>
+            </Link>
+          </DropdownMenuItem>
+        </Can>
         <DropdownMenuItem
           onClick={handleLogOut}
           className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive"

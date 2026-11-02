@@ -12,7 +12,7 @@ import {
   sum,
 } from 'drizzle-orm';
 import { db } from '@/db';
-import { media, pages, pageViews, posts, users } from '@/db/schema';
+import { media, pages, pageViews, posts, searchQueries, users } from '@/db/schema';
 import type { WidgetQuery } from '@/db/schemas/analytics.schema';
 import { PageStatus, VisibilityStatus } from '@/db/schemas/shared.schema';
 import { adminSiteId, siteContext } from '@/server/services/site-context';
@@ -690,6 +690,46 @@ export const analyticsService = {
           key: r.path,
           label: r.path,
           detail: null,
+          value: Number(r.currentValue),
+          previous: compare ? Number(r.previousValue) : null,
+        })),
+      };
+    }
+
+    if (
+      query.dimension === 'searchQuery' ||
+      query.dimension === 'zeroResultQuery'
+    ) {
+      const zeroOnly = query.dimension === 'zeroResultQuery';
+      const rows = await db
+        .select({
+          searchTerm: searchQueries.query,
+          currentValue: sql<number>`count(*) filter (where ${searchQueries.createdAt} >= ${since})`,
+          previousValue: sql<number>`count(*) filter (where ${searchQueries.createdAt} >= ${previousSince} and ${searchQueries.createdAt} < ${since})`,
+          avgResults: sql<number>`round(avg(${searchQueries.resultCount}))::int`,
+        })
+        .from(searchQueries)
+        .where(
+          and(
+            eq(searchQueries.siteId, siteId),
+            gte(searchQueries.createdAt, previousSince),
+            zeroOnly ? eq(searchQueries.resultCount, 0) : undefined
+          )
+        )
+        .groupBy(searchQueries.query)
+        .orderBy(
+          desc(
+            sql`count(*) filter (where ${searchQueries.createdAt} >= ${since})`
+          )
+        )
+        .limit(limit);
+
+      return {
+        kind: 'rows',
+        rows: rows.map(r => ({
+          key: r.searchTerm,
+          label: r.searchTerm,
+          detail: zeroOnly ? '0 results' : `${r.avgResults ?? 0} avg results`,
           value: Number(r.currentValue),
           previous: compare ? Number(r.previousValue) : null,
         })),

@@ -57,5 +57,14 @@ describe('video permissions', () => {
         );
       }
     }
+
+    // License permissions (R243 / L6-01)
+    assert.equal(PERMISSIONS.LICENSES_MANAGE, 'licenses.manage');
+    const licenseRow = matrix[PERMISSIONS.LICENSES_MANAGE];
+    assert.ok(licenseRow, 'missing matrix row for licenses.manage');
+    assert.equal(licenseRow.roles.Admin, true);
+    assert.equal(licenseRow.roles.Editor, false);
+    assert.equal(licenseRow.roles.Author, false);
+    assert.equal(licenseRow.roles.Viewer, false);
   });
 });

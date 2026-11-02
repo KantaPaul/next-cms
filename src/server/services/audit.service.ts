@@ -15,7 +15,12 @@ export type AuditAction =
   | 'settings_change'
   | 'media_upload'
   | 'role_change'
-  | 'revoke';
+  | 'revoke'
+  | 'activate'
+  | 'deactivate'
+  | 'suspend'
+  | 'renew'
+  | 'reassign';
 
 export type AuditTarget =
   | 'page'
@@ -33,7 +38,8 @@ export type AuditTarget =
   | 'collection'
   | 'collection_field'
   | 'collection_entry'
-  | 'video';
+  | 'video'
+  | 'license';
 
 export const auditService = {
   log: async (

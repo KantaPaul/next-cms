@@ -62,6 +62,8 @@ export const widgetDimensionSchema = z.enum([
   'page',
   'path',
   'referrer',
+  'searchQuery',
+  'zeroResultQuery',
 ]);
 export type WidgetDimension = z.infer<typeof widgetDimensionSchema>;
 
