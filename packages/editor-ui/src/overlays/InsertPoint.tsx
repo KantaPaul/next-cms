@@ -13,6 +13,8 @@ export interface InsertPointProps {
   line?: { left: number; width: number };
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
   className?: string;
+  onMouseEnter?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  onMouseLeave?: (event: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
 export const InsertPoint: React.FC<InsertPointProps> = ({
@@ -22,6 +24,8 @@ export const InsertPoint: React.FC<InsertPointProps> = ({
   line,
   onClick,
   className,
+  onMouseEnter,
+  onMouseLeave,
 }) => (
   <>
     {line && (
@@ -41,6 +45,8 @@ export const InsertPoint: React.FC<InsertPointProps> = ({
       aria-label={label}
       title={label}
       onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       style={{ left: x - 11, top: y - 11 }}
       className={cn(
         'ne-motion-pop-in pointer-events-auto absolute z-[45] flex h-[22px] w-[22px] cursor-pointer items-center justify-center rounded-full bg-[var(--ne-primary)] text-white shadow-md transition-[scale,background-color] hover:scale-110 hover:bg-[var(--ne-primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ne-focus-ring)] active:scale-95',

@@ -94,6 +94,48 @@ describe('SettingsView', () => {
   it('can hide the built-in filter for a host-driven chip', () => {
     assert.doesNotMatch(render({ hideChangedFilter: true }), /Show only changed/);
   });
+
+  it('renders Layout order list only when the block schema declares reorder', () => {
+    assert.doesNotMatch(render(), /data-testid="part-order-field"/);
+
+    const schemasWithReorder = {
+      Card: {
+        ...SCHEMAS.Card,
+        reorder: {
+          parts: [
+            { id: 'title', label: 'Headline' },
+            { id: 'icon', label: 'Icon' },
+          ],
+        },
+      },
+    };
+    const store = createEditorStore({
+      document: {
+        ...doc,
+        nodes: {
+          c1: {
+            ...doc.nodes.c1,
+            props: { ...PROPS, partOrder: ['icon', 'title'] },
+          },
+        },
+      } as any,
+      schemas: schemasWithReorder as any,
+    });
+    store.select('c1');
+    const html = renderToStaticMarkup(
+      <EditorProvider store={store}>
+        <SettingsView blocks={schemasWithReorder as any} />
+      </EditorProvider>
+    );
+    assert.match(html, /data-testid="part-order-field"/);
+    assert.match(html, /Layout order/);
+    assert.match(html, /Reset order/);
+    assert.ok(
+      html.indexOf('data-part-row="icon"') <
+        html.indexOf('data-part-row="title"'),
+      'renders parts in saved partOrder'
+    );
+  });
 });
 
 describe('settings tab shortcuts', () => {

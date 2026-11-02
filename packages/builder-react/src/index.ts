@@ -25,6 +25,8 @@ export * from './keyboard';
 export * from './layers';
 export * from './live-checks';
 export * from './onboarding';
+export * from './part-order-field';
+export * from './part-reorder';
 export * from './preferences';
 export * from './preferences-ui';
 export * from './presence';

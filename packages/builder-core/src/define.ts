@@ -7,7 +7,7 @@
 
 import type { ComponentType } from 'react';
 import { z } from 'zod';
-import type { BlockInfo, BlockSchema, SlotRules } from './blocks';
+import type { BlockInfo, BlockReorder, BlockSchema, SlotRules } from './blocks';
 import type { FieldDef, Fields } from './fields';
 import type { InspectorTabDef } from './inspector-layout';
 import type { BlockLoader, LoaderContext } from './loaders';
@@ -45,7 +45,38 @@ export type BlockMeta = BlockInfo & {
   /** Props edited directly on the canvas (R696). */
   inlineProps?: string[];
   placeholder?: string;
+  /** Parts the user may reorder; omit to disable reordering. */
+  reorder?: BlockReorder;
 };
+
+/**
+ * Pure helper that resolves a saved part order against a widget's default part ids:
+ * keeps only known ids (deduplicated) and appends any missing default ids in their default order.
+ */
+export function reorderParts(
+  order: readonly string[] | undefined | null,
+  defaultIds: readonly string[]
+): string[] {
+  if (!order || !Array.isArray(order) || order.length === 0) {
+    return [...defaultIds];
+  }
+  const knownSet = new Set(defaultIds);
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const id of order) {
+    if (typeof id === 'string' && knownSet.has(id) && !seen.has(id)) {
+      seen.add(id);
+      result.push(id);
+    }
+  }
+  for (const id of defaultIds) {
+    if (!seen.has(id)) {
+      seen.add(id);
+      result.push(id);
+    }
+  }
+  return result;
+}
 
 export type BlockDefinition<
   P extends Record<string, unknown> = Record<string, unknown>,
@@ -75,13 +106,24 @@ function effectiveSchema<P extends Record<string, unknown>>(
   definition: BlockDefinition<P>
 ): z.ZodType | undefined {
   const traits = definition.traits ?? [];
-  if (traits.length === 0) return definition.schema;
-  const shape: Record<string, z.ZodType> = { ...shapeOf(definition.schema) };
+  const reorderProp = definition.reorder
+    ? (definition.reorder.prop ?? 'partOrder')
+    : null;
+  const baseShape = shapeOf(definition.schema);
+  const needsReorderProp =
+    reorderProp !== null &&
+    definition.schema !== undefined &&
+    !(reorderProp in baseShape);
+  if (traits.length === 0 && !needsReorderProp) return definition.schema;
+  const shape: Record<string, z.ZodType> = { ...baseShape };
   for (const trait of traits) {
     const traitShape = trait.schema ? shapeOf(trait.schema) : {};
     for (const [key, prop] of Object.entries(traitShape)) {
       shape[key] = prop;
     }
+  }
+  if (reorderProp && !(reorderProp in shape)) {
+    shape[reorderProp] = z.array(z.string()).optional();
   }
   return z.object(shape);
 }
@@ -97,6 +139,19 @@ export function defineBlock<S extends z.ZodObject<Shape>>(
     'schema'
   > & { schema: S }
 ): BlockDefinition {
+  if (definition.reorder && definition.schema) {
+    const prop = definition.reorder.prop ?? 'partOrder';
+    const baseShape = shapeOf(definition.schema);
+    if (!(prop in baseShape)) {
+      const extended = (definition.schema as z.ZodObject<Shape>).extend({
+        [prop]: z.array(z.string()).optional(),
+      });
+      return {
+        ...definition,
+        schema: extended,
+      } as unknown as BlockDefinition;
+    }
+  }
   return definition as unknown as BlockDefinition;
 }
 
@@ -284,6 +339,7 @@ const INFO_KEYS = [
   'semanticTag',
   'nesting',
   'defaultSize',
+  'reorder',
 ] as const satisfies readonly (keyof BlockInfo)[];
 
 /** Checks props against the block's schema, including opted-in traits (R777); blocks without a schema always pass. */

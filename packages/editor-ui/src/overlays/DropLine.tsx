@@ -22,7 +22,7 @@ export const DropLine: React.FC<DropLineProps> = ({
   className = '',
 }) => {
   const isHorizontal = orientation === 'horizontal';
-  const label = tooltip || (allowed ? 'Drop here' : undefined);
+  const label = noop ? undefined : (tooltip || (allowed ? 'Drop here' : undefined));
 
   return (
     <div

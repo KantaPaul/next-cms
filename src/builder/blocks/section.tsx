@@ -8,6 +8,7 @@ import {
   type SectionSettings,
   type UrlValue,
 } from '../style';
+import { orderedParts } from './element';
 
 export { MotionItem } from '../motion';
 export type { SectionSettings } from '../style';
@@ -122,11 +123,15 @@ export function SectionHeading({
   title,
   subtitle,
   align = 'center',
+  partOrder,
+  editing,
 }: {
   eyebrow?: string;
   title?: string;
   subtitle?: string;
   align?: 'left' | 'center';
+  partOrder?: string[];
+  editing?: boolean;
 }) {
   if (!eyebrow && !title && !subtitle) return null;
   return (
@@ -136,18 +141,23 @@ export function SectionHeading({
         align === 'center' && 'mx-auto text-center'
       )}
     >
-      {eyebrow && (
-        <p className="s-primary-text mb-3 text-sm font-semibold uppercase tracking-wider">
-          {eyebrow}
-        </p>
-      )}
-      {title && (
-        <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-          {title}
-        </h2>
-      )}
-      {subtitle && (
-        <p className="s-muted mt-4 text-lg leading-relaxed">{subtitle}</p>
+      {orderedParts(
+        { partOrder, editing },
+        {
+          eyebrow: eyebrow ? (
+            <p className="s-primary-text mb-3 text-sm font-semibold uppercase tracking-wider">
+              {eyebrow}
+            </p>
+          ) : null,
+          title: title ? (
+            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+              {title}
+            </h2>
+          ) : null,
+          subtitle: subtitle ? (
+            <p className="s-muted mt-4 text-lg leading-relaxed">{subtitle}</p>
+          ) : null,
+        }
       )}
     </div>
   );

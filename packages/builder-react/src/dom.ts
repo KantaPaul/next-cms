@@ -34,7 +34,11 @@ export function contentsRect(element: Element): Rect | null {
 }
 
 export function nodeElement(doc: Document, id: NodeId): Element | null {
-  return doc.querySelector(`[${NODE_ATTR}="${CSS.escape(id)}"]`);
+  const escaped =
+    typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+      ? CSS.escape(id)
+      : id.replace(/["\\]/g, '\\$&');
+  return doc.querySelector(`[${NODE_ATTR}="${escaped}"]`);
 }
 
 export function nodeRect(doc: Document, id: NodeId): Rect | null {
@@ -155,26 +159,16 @@ function distanceToRect(p: Point, r: Rect): number {
   return Math.hypot(dx, dy);
 }
 
-/**
- * The gap nearest the pointer, for the "+" quick-insert affordance shown
- * between blocks on hover (R713). Only returns a gap within `threshold`
- * pixels, so the button does not fight with block selection.
- * If `avoid` rects are provided and the default center point is within 18px of any,
- * shifts x along the line (try centre, then centre ± 40px, else left+24).
- */
-export function hoverInsertTarget(
-  doc: Document,
+function gapInSlot(
+  element: Element,
   point: Point,
-  threshold = 10,
-  avoid: Rect[] = []
+  threshold: number,
+  avoid: Rect[]
 ): {
   position: SlotPosition;
   buttonPoint: Point;
   line: { left: number; width: number };
 } | null {
-  const hit = doc.elementFromPoint(point.x, point.y);
-  const element = hit?.closest(`[${SLOT_ATTR}]`);
-  if (!element) return null;
   const ref = slotRefOf(element);
   const children = slotChildRects(element);
   if (children.length === 0) return null;
@@ -227,4 +221,41 @@ export function hoverInsertTarget(
       width: line.width,
     },
   };
+}
+
+/**
+ * The gap nearest the pointer, for the "+" quick-insert affordance shown
+ * between blocks on hover (R713). Only returns a gap within `threshold`
+ * pixels, so the button does not fight with block selection.
+ * If `avoid` rects are provided and the default center point is within 18px of any,
+ * shifts x along the line (try centre, then centre ± 40px, else left+24).
+ */
+export function hoverInsertTarget(
+  doc: Document,
+  point: Point,
+  threshold = 10,
+  avoid: Rect[] = []
+): {
+  position: SlotPosition;
+  buttonPoint: Point;
+  line: { left: number; width: number };
+} | null {
+  const hit = doc.elementFromPoint(point.x, point.y);
+  let element: Element | null = hit?.closest(`[${SLOT_ATTR}]`) ?? null;
+  let testedRoot = false;
+  while (element) {
+    if (!element.getAttribute(SLOT_PARENT_ATTR)) {
+      testedRoot = true;
+    }
+    const target = gapInSlot(element, point, threshold, avoid);
+    if (target) return target;
+    element = element.parentElement?.closest(`[${SLOT_ATTR}]`) ?? null;
+  }
+  if (!testedRoot) {
+    const root = doc.querySelector(`[${SLOT_ATTR}][${SLOT_PARENT_ATTR}=""]`);
+    if (root) {
+      return gapInSlot(root, point, threshold, avoid);
+    }
+  }
+  return null;
 }

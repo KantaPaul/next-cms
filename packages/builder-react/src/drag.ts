@@ -129,6 +129,7 @@ export function createDragController(store: EditorStore) {
       onClick?: () => void
     ) {
       if (event.button !== 0) return;
+      event.preventDefault();
       const origin = { x: event.clientX, y: event.clientY };
       let last = origin;
       let scrolling = 0;
@@ -168,10 +169,24 @@ export function createDragController(store: EditorStore) {
         }
         update();
       };
+      const frameWin = frame?.contentWindow;
+      const onFrameMove = (move: PointerEvent) => {
+        const box = frame?.getBoundingClientRect();
+        if (box) {
+          onMove({
+            clientX: move.clientX + box.left,
+            clientY: move.clientY + box.top,
+          } as PointerEvent);
+        }
+      };
       const finish = (drop: boolean) => {
         window.removeEventListener('pointermove', onMove);
         window.removeEventListener('pointerup', onUp);
+        window.removeEventListener('pointercancel', onCancel);
         window.removeEventListener('keydown', onKey, true);
+        frameWin?.removeEventListener('pointermove', onFrameMove);
+        frameWin?.removeEventListener('pointerup', onUp);
+        frameWin?.removeEventListener('pointercancel', onCancel);
         cancelAnimationFrame(scrolling);
         const { active, target } = state;
         set(IDLE);
@@ -184,6 +199,7 @@ export function createDragController(store: EditorStore) {
         }
       };
       const onUp = () => finish(true);
+      const onCancel = () => finish(false);
       const onKey = (key: KeyboardEvent) => {
         if (key.key !== 'Escape') return;
         key.preventDefault();
@@ -192,7 +208,11 @@ export function createDragController(store: EditorStore) {
       };
       window.addEventListener('pointermove', onMove);
       window.addEventListener('pointerup', onUp);
+      window.addEventListener('pointercancel', onCancel);
       window.addEventListener('keydown', onKey, true);
+      frameWin?.addEventListener('pointermove', onFrameMove);
+      frameWin?.addEventListener('pointerup', onUp);
+      frameWin?.addEventListener('pointercancel', onCancel);
     },
   };
   return controller;

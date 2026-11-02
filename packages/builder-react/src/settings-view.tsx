@@ -38,6 +38,7 @@ import {
 } from './fields';
 import { DeviceSwitch, type InspectorBlock } from './inspector';
 import { SETTINGS_TAB_EVENT, type SettingsTabId } from './keyboard';
+import { PartOrderField } from './part-order-field';
 
 export { fieldChanged, fieldSectionTitle, fieldTabId };
 
@@ -127,6 +128,7 @@ export function SettingsView({
   const [openSection, setOpenSection] = useState<string | null>(null);
 
   const block = node ? blocks[node.type] : null;
+  const reorder = node ? store.schemas[node.type]?.reorder : undefined;
   const props = node ? node.props : {};
   const defaultProps = block?.defaultProps ?? {};
   const isLocked = !!node?.meta?.locked;
@@ -387,6 +389,18 @@ export function SettingsView({
                       }}
                     >
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 6 }}>
+                        {reorder &&
+                          activeTab === 'content' &&
+                          sectionIndex === 0 &&
+                          !isSearching &&
+                          !changedOnly && (
+                            <PartOrderField
+                              nodeId={node.id}
+                              reorder={reorder}
+                              props={props}
+                              readOnly={isLocked}
+                            />
+                          )}
                         {fields.map(([name, field]) => {
                           const access = fieldValueAccess(field, name);
                           const val = access.read(props);

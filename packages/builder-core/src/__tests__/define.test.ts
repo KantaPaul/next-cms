@@ -5,6 +5,7 @@ import {
   defaultProps,
   defineBlock,
   fieldsOf,
+  reorderParts,
   slot,
   toBlockSchema,
   validateProps,
@@ -153,5 +154,67 @@ describe('per-device values', () => {
     assert.deepEqual(value, { desktop: 3, mobile: 1 });
     assert.deepEqual(resetDeviceValue(value, 'mobile'), { desktop: 3 });
     assert.equal(resetDeviceValue({ desktop: 3 }, 'desktop'), undefined);
+  });
+});
+
+describe('reorderParts and block reorder opt-in', () => {
+  const defaultIds = ['badge', 'title', 'subtitle', 'buttons'];
+
+  it('returns defaultIds when order is undefined or empty', () => {
+    assert.deepEqual(reorderParts(undefined, defaultIds), defaultIds);
+    assert.deepEqual(reorderParts(null, defaultIds), defaultIds);
+    assert.deepEqual(reorderParts([], defaultIds), defaultIds);
+  });
+
+  it('keeps only known ids, deduplicates, and appends missing default ids in order', () => {
+    assert.deepEqual(
+      reorderParts(['title', 'unknown', 'badge', 'title'], defaultIds),
+      ['title', 'badge', 'subtitle', 'buttons']
+    );
+    assert.deepEqual(
+      reorderParts(['buttons', 'subtitle', 'title', 'badge'], defaultIds),
+      ['buttons', 'subtitle', 'title', 'badge']
+    );
+  });
+
+  it('extends non-passthrough schemas with partOrder and exposes reorder on BlockSchema', () => {
+    const StrictHero = defineBlock({
+      type: 'StrictHero',
+      label: 'Strict Hero',
+      reorder: {
+        parts: [
+          { id: 'badge', label: 'Badge' },
+          { id: 'title', label: 'Title' },
+        ],
+      },
+      schema: z.object({
+        badge: z.string().optional(),
+        title: z.string().default('Hello'),
+      }),
+      render: () => null as never,
+    });
+
+    const schema = toBlockSchema(StrictHero);
+    assert.deepEqual(schema.reorder?.parts, [
+      { id: 'badge', label: 'Badge' },
+      { id: 'title', label: 'Title' },
+    ]);
+
+    assert.deepEqual(
+      validateProps(StrictHero, {
+        title: 'Hi',
+        partOrder: ['title', 'badge'],
+      }),
+      { ok: true }
+    );
+
+    const parsed = StrictHero.schema?.safeParse({
+      title: 'Hi',
+      partOrder: ['title', 'badge'],
+    });
+    assert.equal(parsed?.success, true);
+    if (parsed?.success) {
+      assert.deepEqual(parsed.data.partOrder, ['title', 'badge']);
+    }
   });
 });

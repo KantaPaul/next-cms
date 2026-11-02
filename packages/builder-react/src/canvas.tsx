@@ -92,6 +92,7 @@ import { type InlinePropsFor, useInlineEditing } from './inline';
 import { isTypingTarget } from './keyboard';
 import { propsForState } from './state-styles';
 import { QuickInsertPopover, type QuickInsertTarget } from './quick-insert';
+import { PartReorderOverlay } from './part-reorder';
 import { ResizeHandles, type ResizeHandlesFor } from './resize';
 import {
   copyBlockStyle,
@@ -971,6 +972,20 @@ function CanvasOverlay({
           handlesFor={resizeHandles}
         />
       )}
+      {primary &&
+        !multi &&
+        !dragState.active &&
+        !doc.nodes[primary[0]]?.meta?.locked &&
+        store.schemas[doc.nodes[primary[0]]?.type ?? '']?.reorder && (
+          <PartReorderOverlay
+            id={primary[0]}
+            reorder={store.schemas[doc.nodes[primary[0]]!.type]!.reorder!}
+            frame={frame}
+            frameDoc={frameDoc}
+            tick={tick}
+            bounds={overlayBounds}
+          />
+        )}
       {dragState.active && dragState.target && (
         <>
           <DropZone bounds={dragState.target.slot} />
@@ -1025,6 +1040,7 @@ export function EditorCanvas({
     line?: { left: number; width: number };
   } | null>(null);
   const chromeRectsRef = useRef<Rect[]>([]);
+  const isOverInsertRef = useRef(false);
   const [quickInsert, setQuickInsert] = useState<QuickInsertTarget | null>(
     null
   );
@@ -1146,8 +1162,9 @@ export function EditorCanvas({
           const currentSelection = store.getState().selection;
           if (validHit && currentSelection.length === 1) {
             const selId = currentSelection[0];
+            const isInsideSelBlock = validHit.position.parentId === selId;
             const selEl = nodeElement(doc, selId);
-            if (selEl) {
+            if (isInsideSelBlock && selEl) {
               const el = selEl.firstElementChild ?? selEl;
               const view = doc.defaultView;
               const style = view ? view.getComputedStyle(el) : null;
@@ -1171,21 +1188,50 @@ export function EditorCanvas({
             }
           }
 
-          setHoverInsert(
-            validHit
-              ? {
-                  point: validHit.buttonPoint,
-                  position: validHit.position,
-                  line: validHit.line,
-                }
-              : null
-          );
+          const nextInsert = validHit
+            ? {
+                point: validHit.buttonPoint,
+                position: validHit.position,
+                line: validHit.line,
+              }
+            : null;
+
+          setHoverInsert(prev => {
+            if (!nextInsert && !prev) return null;
+            if (!nextInsert || !prev) return nextInsert;
+            if (
+              prev.position.parentId === nextInsert.position.parentId &&
+              prev.position.slot === nextInsert.position.slot &&
+              prev.position.index === nextInsert.position.index &&
+              Math.abs(prev.point.x - nextInsert.point.x) < 1 &&
+              Math.abs(prev.point.y - nextInsert.point.y) < 1 &&
+              prev.line?.left === nextInsert.line?.left &&
+              prev.line?.width === nextInsert.line?.width
+            ) {
+              return prev;
+            }
+            return nextInsert;
+          });
         } else {
           setHoverInsert(null);
         }
       });
     };
-    const onLeave = () => {
+    const onLeave = (event: PointerEvent) => {
+      if (isOverInsertRef.current) return;
+      const box = frame?.getBoundingClientRect();
+      if (box && event) {
+        const clientX = event.clientX + box.left;
+        const clientY = event.clientY + box.top;
+        if (
+          clientX >= box.left &&
+          clientX <= box.right &&
+          clientY >= box.top &&
+          clientY <= box.bottom
+        ) {
+          return;
+        }
+      }
       store.hover(null);
       setHoverInsert(null);
     };
@@ -1593,6 +1639,10 @@ export function EditorCanvas({
         {/* Page canvas iframe body */}
         <div
           data-device={device}
+          onPointerLeave={() => {
+            isOverInsertRef.current = false;
+            setHoverInsert(null);
+          }}
           style={{
             position: 'relative',
             width: '100%',
@@ -1634,13 +1684,29 @@ export function EditorCanvas({
             !resizing &&
             !isPreview && (
               // `.ne-ui`: styled by editor-ui in the old chrome too.
-              <span className="ne-ui" style={{ display: 'contents' }}>
+              <span
+                className="ne-ui"
+                style={{ display: 'contents' }}
+                onPointerEnter={() => {
+                  isOverInsertRef.current = true;
+                }}
+                onPointerLeave={() => {
+                  isOverInsertRef.current = false;
+                }}
+              >
                 <InsertPoint
                   x={hoverInsert.point.x}
                   y={hoverInsert.point.y}
                   line={hoverInsert.line}
                   label="Insert a block here"
+                  onMouseEnter={() => {
+                    isOverInsertRef.current = true;
+                  }}
+                  onMouseLeave={() => {
+                    isOverInsertRef.current = false;
+                  }}
                   onClick={event => {
+                    isOverInsertRef.current = false;
                     setQuickInsert({
                       point: { x: event.clientX, y: event.clientY },
                       position: hoverInsert.position,
@@ -1660,7 +1726,6 @@ export function EditorCanvas({
             inset: 0,
             zIndex: 2147483647,
             cursor: 'grabbing',
-            pointerEvents: 'none',
           }}
         >
           {dragState.pointer && (

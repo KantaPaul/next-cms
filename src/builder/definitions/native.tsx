@@ -136,6 +136,14 @@ export const HeroBlock = defineBlock({
   category: 'heroes',
   icon: 'hero',
   inlineProps: ['title', 'subtitle'],
+  reorder: {
+    parts: [
+      { id: 'badge', label: 'Badge' },
+      { id: 'title', label: 'Headline' },
+      { id: 'subtitle', label: 'Subheadline' },
+      { id: 'buttons', label: 'Buttons' },
+    ],
+  },
   schema: z.object({
     badge: z.string().optional(),
     title: z.string().optional(),
@@ -233,6 +241,13 @@ export const FeaturesBlock = defineBlock({
   label: 'Feature grid',
   category: 'marketing',
   icon: 'features',
+  reorder: {
+    parts: [
+      { id: 'eyebrow', label: 'Eyebrow' },
+      { id: 'title', label: 'Title' },
+      { id: 'subtitle', label: 'Subtitle' },
+    ],
+  },
   schema: z.object({
     section: sectionSettingsSchema.optional(),
     elements: z.record(elementStyleSchema).optional(),
@@ -314,6 +329,13 @@ export const StatsBlock = defineBlock({
   label: 'Stats',
   category: 'marketing',
   icon: 'stats',
+  reorder: {
+    parts: [
+      { id: 'value', label: 'Value' },
+      { id: 'label', label: 'Label' },
+      { id: 'change', label: 'Note' },
+    ],
+  },
   schema: z.object({
     section: sectionSettingsSchema.optional(),
     elements: z.record(elementStyleSchema).optional(),
@@ -360,6 +382,13 @@ export const PricingBlock = defineBlock({
   label: 'Pricing table',
   category: 'marketing',
   icon: 'pricing',
+  reorder: {
+    parts: [
+      { id: 'eyebrow', label: 'Eyebrow' },
+      { id: 'title', label: 'Title' },
+      { id: 'subtitle', label: 'Subtitle' },
+    ],
+  },
   schema: z.object({
     section: sectionSettingsSchema.optional(),
     elements: z.record(elementStyleSchema).optional(),
@@ -485,6 +514,12 @@ export const TestimonialsBlock = defineBlock({
   label: 'Testimonials',
   category: 'marketing',
   icon: 'testimonials',
+  reorder: {
+    parts: [
+      { id: 'quote', label: 'Quote' },
+      { id: 'author', label: 'Author' },
+    ],
+  },
   schema: z.object({
     section: sectionSettingsSchema.optional(),
     elements: z.record(elementStyleSchema).optional(),
@@ -556,6 +591,12 @@ export const FAQBlock = defineBlock({
   label: 'FAQ',
   category: 'marketing',
   icon: 'faq',
+  reorder: {
+    parts: [
+      { id: 'eyebrow', label: 'Eyebrow' },
+      { id: 'title', label: 'Title' },
+    ],
+  },
   schema: z.object({
     section: sectionSettingsSchema.optional(),
     elements: z.record(elementStyleSchema).optional(),
@@ -607,6 +648,14 @@ export const CTABlock = defineBlock({
   label: 'Call to action',
   category: 'heroes',
   icon: 'cta',
+  reorder: {
+    parts: [
+      { id: 'badge', label: 'Badge' },
+      { id: 'title', label: 'Title' },
+      { id: 'description', label: 'Description' },
+      { id: 'buttons', label: 'Buttons' },
+    ],
+  },
   schema: z.object({
     section: sectionSettingsSchema.optional(),
     elements: z.record(elementStyleSchema).optional(),
@@ -1466,6 +1515,13 @@ export const LogoCloudBlock = defineBlock({
   label: 'Logo cloud',
   category: 'marketing',
   icon: 'logocloud',
+  reorder: {
+    parts: [
+      { id: 'eyebrow', label: 'Eyebrow' },
+      { id: 'title', label: 'Title' },
+      { id: 'subtitle', label: 'Subtitle' },
+    ],
+  },
   schema: z.object({
     section: sectionSettingsSchema.optional(),
     elements: z.record(elementStyleSchema).optional(),
@@ -1519,6 +1575,12 @@ export const TeamBlock = defineBlock({
   label: 'Team',
   category: 'marketing',
   icon: 'team',
+  reorder: {
+    parts: [
+      { id: 'eyebrow', label: 'Eyebrow' },
+      { id: 'title', label: 'Title' },
+    ],
+  },
   schema: z.object({
     section: sectionSettingsSchema.optional(),
     elements: z.record(elementStyleSchema).optional(),
@@ -1565,6 +1627,12 @@ export const TimelineBlock = defineBlock({
   label: 'Timeline',
   category: 'marketing',
   icon: 'timeline',
+  reorder: {
+    parts: [
+      { id: 'eyebrow', label: 'Eyebrow' },
+      { id: 'title', label: 'Title' },
+    ],
+  },
   schema: z.object({
     section: sectionSettingsSchema.optional(),
     elements: z.record(elementStyleSchema).optional(),

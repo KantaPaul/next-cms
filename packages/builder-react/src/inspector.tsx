@@ -34,6 +34,7 @@ import {
   fieldControlId,
   fieldValueAccess,
 } from './fields';
+import { PartOrderField } from './part-order-field';
 
 export type InspectorBlock = {
   label: string;
@@ -265,7 +266,7 @@ export function Inspector({
 
 type InspectorTabsProps = {
   block: InspectorBlock;
-  node: { id: string } | null;
+  node: { id: string; type?: string } | null;
   props: Record<string, unknown>;
   defaultProps?: Record<string, unknown>;
   device: Device;
@@ -285,6 +286,8 @@ function InspectorTabs({
   const store = useEditorStore();
   const [query, setQuery] = useState('');
   const [pickedTab, setPickedTab] = useState<string | null>(null);
+  const reorder =
+    !isRoot && node?.type ? store.schemas[node.type]?.reorder : undefined;
 
   const layoutResult = useMemo(
     () =>
@@ -347,7 +350,15 @@ function InspectorTabs({
           gridTemplateColumns: 'minmax(0, 1fr)',
         }}
       >
-        {shownFields.length === 0 && (
+        {reorder && activeTab === 'content' && !query.trim() && node && (
+          <PartOrderField
+            nodeId={node.id}
+            reorder={reorder}
+            props={props}
+            readOnly={readOnly}
+          />
+        )}
+        {shownFields.length === 0 && !reorder && (
           <p
             style={{
               margin: 0,

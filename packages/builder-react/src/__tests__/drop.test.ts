@@ -8,6 +8,13 @@ import {
   type Rect,
 } from '../drop';
 import { hoverInsertTarget, NODE_ATTR, SLOT_ATTR, SLOT_NAME_ATTR, SLOT_PARENT_ATTR } from '../dom';
+import { isPartEmpty } from '../part-order-field';
+import {
+  measureBlockParts,
+  movePartInOrder,
+  PART_ATTR,
+  partDropOrder,
+} from '../part-reorder';
 import { clamp, isSnapped, type ResizeHandle } from '../resize';
 
 describe('dropIndex hysteresis', () => {
@@ -229,5 +236,198 @@ describe('hoverInsertTarget avoid shift', () => {
     const hit = hoverInsertTarget(doc, { x: 200, y: 100 }, 10, [broadRect]);
     assert.ok(hit);
     assert.equal(hit.buttonPoint.x, 24);
+  });
+
+  it('walks up from inner element without a gap to root slot to find section boundary', () => {
+    // Root slot has 2 sections: sec-1 (0-200) and sec-2 (200-400)
+    const sectionRects: Rect[] = [
+      { left: 0, top: 0, width: 400, height: 200 },
+      { left: 0, top: 200, width: 400, height: 200 },
+    ];
+    const rootChildren = sectionRects.map((r, i) => ({
+      hasAttribute: (attr: string) => attr === NODE_ATTR,
+      getAttribute: () => `sec-${i + 1}`,
+      children: [
+        {
+          getBoundingClientRect: () => ({
+            left: r.left,
+            top: r.top,
+            width: r.width,
+            height: r.height,
+          }),
+        },
+      ],
+    }));
+
+    const rootSlot: any = {
+      getAttribute: (attr: string) => {
+        if (attr === SLOT_PARENT_ATTR) return '';
+        if (attr === SLOT_NAME_ATTR) return 'root';
+        return null;
+      },
+      hasAttribute: (attr: string) => attr === SLOT_ATTR,
+      closest: (selector: string) => (selector.includes(SLOT_ATTR) ? rootSlot : null),
+      children: rootChildren,
+      getBoundingClientRect: () => ({ left: 0, top: 0, width: 400, height: 400 }),
+      ownerDocument: {
+        defaultView: {
+          getComputedStyle: () => ({ display: 'block', flexDirection: 'column' }),
+        },
+      },
+    };
+
+    // Inner element inside sec-1: child block far from pointer
+    const innerChildRect: Rect = { left: 20, top: 20, width: 360, height: 40 };
+    const innerSlot: any = {
+      getAttribute: (attr: string) => {
+        if (attr === SLOT_PARENT_ATTR) return 'sec-1';
+        if (attr === SLOT_NAME_ATTR) return 'content';
+        return null;
+      },
+      hasAttribute: (attr: string) => attr === SLOT_ATTR,
+      parentElement: rootSlot,
+      closest: (selector: string) => (selector.includes(SLOT_ATTR) ? innerSlot : null),
+      children: [
+        {
+          hasAttribute: (attr: string) => attr === NODE_ATTR,
+          getAttribute: () => 'heading-1',
+          children: [
+            {
+              getBoundingClientRect: () => ({
+                left: innerChildRect.left,
+                top: innerChildRect.top,
+                width: innerChildRect.width,
+                height: innerChildRect.height,
+              }),
+            },
+          ],
+        },
+      ],
+      getBoundingClientRect: () => ({ left: 10, top: 10, width: 380, height: 180 }),
+      ownerDocument: rootSlot.ownerDocument,
+    };
+
+    const doc = {
+      elementFromPoint: () => innerSlot,
+      querySelector: (selector: string) => (selector.includes(SLOT_PARENT_ATTR) ? rootSlot : null),
+    } as unknown as Document;
+
+    // Pointer is at y: 198 (2px away from boundary between sec-1 and sec-2 at y: 200)
+    // The inner slot only has a heading at y: 20-60 (distance > 10).
+    // hoverInsertTarget should walk up to rootSlot and find the boundary at y: 200.
+    const hit = hoverInsertTarget(doc, { x: 200, y: 198 }, 10, []);
+    assert.ok(hit, 'Should find the section boundary in root slot');
+    assert.equal(hit.position.parentId, null);
+    assert.equal(hit.position.index, 1);
+    assert.equal(hit.buttonPoint.y, 200);
+  });
+});
+
+describe('part reorder helpers', () => {
+  const allIds = ['badge', 'title', 'subtitle', 'buttons'];
+
+  it('reorders visible parts and preserves hidden part slots', () => {
+    // All visible: move title (1) before badge (0)
+    assert.deepEqual(movePartInOrder(allIds, allIds, 1, 0), [
+      'title',
+      'badge',
+      'subtitle',
+      'buttons',
+    ]);
+
+    // Badge hidden: visibleIds = ['title', 'subtitle', 'buttons'], move subtitle (1) before title (0)
+    assert.deepEqual(
+      movePartInOrder(allIds, ['title', 'subtitle', 'buttons'], 1, 0),
+      ['badge', 'subtitle', 'title', 'buttons']
+    );
+  });
+
+  it('marks drops into the source slot as noop and computes new order otherwise', () => {
+    assert.equal(partDropOrder(allIds, allIds, 1, 1).noop, true);
+    assert.equal(partDropOrder(allIds, allIds, 1, 2).noop, true);
+
+    const movedUp = partDropOrder(allIds, allIds, 1, 0);
+    assert.equal(movedUp.noop, false);
+    assert.deepEqual(movedUp.nextOrder, [
+      'title',
+      'badge',
+      'subtitle',
+      'buttons',
+    ]);
+
+    const movedDown = partDropOrder(allIds, allIds, 0, 3);
+    assert.equal(movedDown.noop, false);
+    assert.deepEqual(movedDown.nextOrder, [
+      'title',
+      'subtitle',
+      'badge',
+      'buttons',
+    ]);
+  });
+
+  it('detects empty vs populated parts in props', () => {
+    assert.equal(isPartEmpty('badge', { badge: '' }), true);
+    assert.equal(isPartEmpty('badge', { badge: 'New' }), false);
+    assert.equal(
+      isPartEmpty('buttons', {
+        primaryButtonText: '',
+        secondaryButtonText: '',
+      }),
+      true
+    );
+    assert.equal(
+      isPartEmpty('buttons', {
+        primaryButtonText: 'Start',
+        secondaryButtonText: '',
+      }),
+      false
+    );
+  });
+
+  it('measures [data-part] children belonging to the selected block', () => {
+    const blockEl: any = {};
+    const makePartEl = (partId: string, top: number) => ({
+      getAttribute: (attr: string) => (attr === PART_ATTR ? partId : null),
+      closest: (sel: string) => (sel.includes(NODE_ATTR) ? blockEl : null),
+      parentElement: blockEl,
+      children: [
+        {
+          getBoundingClientRect: () => ({
+            left: 10,
+            top,
+            width: 300,
+            height: 30,
+          }),
+        },
+      ],
+    });
+    const partEls = [
+      makePartEl('badge', 10),
+      makePartEl('title', 50),
+      makePartEl('subtitle', 90),
+    ];
+    blockEl.querySelectorAll = () => partEls;
+    blockEl.ownerDocument = {
+      defaultView: {
+        getComputedStyle: () => ({ display: 'block', flexDirection: 'column' }),
+      },
+    };
+    const doc = {
+      querySelector: () => blockEl,
+    } as unknown as Document;
+
+    const measured = measureBlockParts(doc, 'hero-1', {
+      parts: [
+        { id: 'badge', label: 'Badge' },
+        { id: 'title', label: 'Headline' },
+        { id: 'subtitle', label: 'Subheadline' },
+      ],
+    });
+    assert.equal(measured.parts.length, 3);
+    assert.equal(measured.axis, 'y');
+    assert.deepEqual(
+      measured.parts.map(p => p.id),
+      ['badge', 'title', 'subtitle']
+    );
   });
 });

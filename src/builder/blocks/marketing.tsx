@@ -2,7 +2,7 @@ import { Check, Quote } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { BlockIcon } from '../icons';
 import { resolveLinkProps, type UrlValue } from '../style';
-import { el, type WithSection } from './element';
+import { el, orderedParts, type WithSection } from './element';
 import { PricingToggle } from './pricing-toggle';
 import {
   ButtonLink,
@@ -48,43 +48,48 @@ export function Hero(p: HeroProps) {
         className={cn('grid items-center gap-12', split && 'lg:grid-cols-2')}
       >
         <div className={cn(centered && 'mx-auto max-w-3xl text-center')}>
-          {p.badge && (
-            <span className={badgeEl.className} style={badgeEl.style}>
-              {p.badge}
-            </span>
-          )}
-          <h1 className={titleEl.className} style={titleEl.style}>
-            {p.title}
-          </h1>
-          {p.subtitle && (
-            <p className={subtitleEl.className} style={subtitleEl.style}>
-              {p.subtitle}
-            </p>
-          )}
-          {(p.primaryButtonText || p.secondaryButtonText) && (
-            <div
-              className={cn(
-                'mt-8 flex flex-wrap gap-3',
-                centered && 'justify-center'
-              )}
-            >
-              <ButtonLink
-                href={p.primaryButtonLink}
-                className={primaryBtnEl.className}
-                style={primaryBtnEl.style}
-              >
-                {p.primaryButtonText}
-              </ButtonLink>
-              <ButtonLink
-                href={p.secondaryButtonLink}
-                variant="secondary"
-                className={secondaryBtnEl.className}
-                style={secondaryBtnEl.style}
-              >
-                {p.secondaryButtonText}
-              </ButtonLink>
-            </div>
-          )}
+          {orderedParts(p, {
+            badge: p.badge ? (
+              <span className={badgeEl.className} style={badgeEl.style}>
+                {p.badge}
+              </span>
+            ) : null,
+            title: p.title ? (
+              <h1 className={titleEl.className} style={titleEl.style}>
+                {p.title}
+              </h1>
+            ) : null,
+            subtitle: p.subtitle ? (
+              <p className={subtitleEl.className} style={subtitleEl.style}>
+                {p.subtitle}
+              </p>
+            ) : null,
+            buttons:
+              p.primaryButtonText || p.secondaryButtonText ? (
+                <div
+                  className={cn(
+                    'mt-8 flex flex-wrap gap-3',
+                    centered && 'justify-center'
+                  )}
+                >
+                  <ButtonLink
+                    href={p.primaryButtonLink}
+                    className={primaryBtnEl.className}
+                    style={primaryBtnEl.style}
+                  >
+                    {p.primaryButtonText}
+                  </ButtonLink>
+                  <ButtonLink
+                    href={p.secondaryButtonLink}
+                    variant="secondary"
+                    className={secondaryBtnEl.className}
+                    style={secondaryBtnEl.style}
+                  >
+                    {p.secondaryButtonText}
+                  </ButtonLink>
+                </div>
+              ) : null,
+          })}
         </div>
         {p.imageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -124,6 +129,8 @@ export function Features(p: FeaturesProps) {
         eyebrow={p.eyebrow}
         title={p.title}
         subtitle={p.subtitle}
+        partOrder={p.partOrder}
+        editing={p.editing}
       />
       <div className={cn('grid gap-6', GRID_COLS[p.columns ?? 3])}>
         {(p.items ?? []).map((item, i) => (
@@ -157,8 +164,8 @@ export type StatsProps = WithSection & {
 };
 
 export function Stats(p: StatsProps) {
-  const valueEl = el(p, 'value', 's-primary-text order-1 text-3xl font-extrabold md:text-4xl');
-  const labelEl = el(p, 'label', 'order-2 mt-1 text-sm font-medium');
+  const valueEl = el(p, 'value', 's-primary-text text-3xl font-extrabold md:text-4xl');
+  const labelEl = el(p, 'label', 'mt-1 text-sm font-medium');
 
   return (
     <Section section={p.section} editing={p.editing} hasItems>
@@ -170,14 +177,23 @@ export function Stats(p: StatsProps) {
       <dl className="grid grid-cols-2 gap-6 lg:grid-cols-4">
         {(p.items ?? []).map((item, i) => (
           <MotionItem key={i} className="flex flex-col text-center">
-            <dt className={labelEl.className} style={labelEl.style}>
-              {item.label}
-            </dt>
-            <dd className={valueEl.className} style={valueEl.style}>
-              {item.value}
-            </dd>
-            {item.change && (
-              <dd className="s-muted order-3 mt-1 text-xs">{item.change}</dd>
+            {orderedParts(
+              { partOrder: p.partOrder, editing: p.editing && i === 0 },
+              {
+                value: (
+                  <dd className={valueEl.className} style={valueEl.style}>
+                    {item.value}
+                  </dd>
+                ),
+                label: (
+                  <dt className={labelEl.className} style={labelEl.style}>
+                    {item.label}
+                  </dt>
+                ),
+                change: item.change ? (
+                  <dd className="s-muted mt-1 text-xs">{item.change}</dd>
+                ) : null,
+              }
             )}
           </MotionItem>
         ))}
@@ -289,6 +305,8 @@ export function Pricing(p: PricingProps) {
         eyebrow={p.eyebrow}
         title={p.title}
         subtitle={p.subtitle}
+        partOrder={p.partOrder}
+        editing={p.editing}
       />
       {p.showToggle && hasYearly ? (
         <PricingToggle monthly={cards(false)} yearly={cards(true)} />
@@ -325,30 +343,49 @@ export function Testimonials(p: TestimonialsProps) {
             key={i}
             className="s-surface s-border s-radius flex flex-col border p-7"
           >
-            <Quote className="s-primary-text mb-4 size-6" aria-hidden />
-            <blockquote className={quoteEl.className} style={quoteEl.style}>
-              “{item.quote}”
-            </blockquote>
-            <figcaption className="mt-6 flex items-center gap-3">
-              {item.avatar && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={item.avatar}
-                  alt=""
-                  className="size-11 rounded-full object-cover"
-                />
-              )}
-              <div>
-                <p className={authorEl.className} style={authorEl.style}>
-                  {item.author}
-                </p>
-                {(item.role || item.company) && (
-                  <p className="s-muted text-sm">
-                    {[item.role, item.company].filter(Boolean).join(', ')}
-                  </p>
-                )}
-              </div>
-            </figcaption>
+            {orderedParts(
+              { partOrder: p.partOrder, editing: p.editing && i === 0 },
+              {
+                quote: (
+                  <>
+                    <Quote
+                      className="s-primary-text mb-4 size-6"
+                      aria-hidden
+                    />
+                    <blockquote
+                      className={quoteEl.className}
+                      style={quoteEl.style}
+                    >
+                      “{item.quote}”
+                    </blockquote>
+                  </>
+                ),
+                author: (
+                  <figcaption className="mt-6 flex items-center gap-3">
+                    {item.avatar && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.avatar}
+                        alt=""
+                        className="size-11 rounded-full object-cover"
+                      />
+                    )}
+                    <div>
+                      <p className={authorEl.className} style={authorEl.style}>
+                        {item.author}
+                      </p>
+                      {(item.role || item.company) && (
+                        <p className="s-muted text-sm">
+                          {[item.role, item.company]
+                            .filter(Boolean)
+                            .join(', ')}
+                        </p>
+                      )}
+                    </div>
+                  </figcaption>
+                ),
+              }
+            )}
           </MotionItem>
         ))}
       </div>
@@ -373,7 +410,12 @@ export function Faq(p: FaqProps) {
       innerClassName="max-w-3xl"
       hasItems
     >
-      <SectionHeading eyebrow={p.eyebrow} title={p.title} />
+      <SectionHeading
+        eyebrow={p.eyebrow}
+        title={p.title}
+        partOrder={p.partOrder}
+        editing={p.editing}
+      />
       <div className="s-border divide-y divide-[color:var(--site-border)] border-y">
         {(p.items ?? []).map((item, i) => (
           <MotionItem
@@ -445,37 +487,44 @@ export function Cta(p: CtaProps) {
           variant === 'subtle' && 's-surface s-border border'
         )}
       >
-        {p.badge && (
-          <span className={badgeEl.className} style={badgeEl.style}>
-            {p.badge}
-          </span>
-        )}
-        <h2 className={titleEl.className} style={titleEl.style}>
-          {p.title}
-        </h2>
-        {p.description && (
-          <p className={descEl.className} style={descEl.style}>
-            {p.description}
-          </p>
-        )}
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <ButtonLink
-            href={p.primaryButtonLink}
-            variant={onColor ? 'light' : 'primary'}
-            className={primaryBtnEl.className}
-            style={primaryBtnEl.style}
-          >
-            {p.primaryButtonText}
-          </ButtonLink>
-          <ButtonLink
-            href={p.secondaryButtonLink}
-            variant={onColor ? 'ghost-light' : 'secondary'}
-            className={secondaryBtnEl.className}
-            style={secondaryBtnEl.style}
-          >
-            {p.secondaryButtonText}
-          </ButtonLink>
-        </div>
+        {orderedParts(p, {
+          badge: p.badge ? (
+            <span className={badgeEl.className} style={badgeEl.style}>
+              {p.badge}
+            </span>
+          ) : null,
+          title: p.title ? (
+            <h2 className={titleEl.className} style={titleEl.style}>
+              {p.title}
+            </h2>
+          ) : null,
+          description: p.description ? (
+            <p className={descEl.className} style={descEl.style}>
+              {p.description}
+            </p>
+          ) : null,
+          buttons:
+            p.primaryButtonText || p.secondaryButtonText ? (
+              <div className="mt-8 flex flex-wrap justify-center gap-3">
+                <ButtonLink
+                  href={p.primaryButtonLink}
+                  variant={onColor ? 'light' : 'primary'}
+                  className={primaryBtnEl.className}
+                  style={primaryBtnEl.style}
+                >
+                  {p.primaryButtonText}
+                </ButtonLink>
+                <ButtonLink
+                  href={p.secondaryButtonLink}
+                  variant={onColor ? 'ghost-light' : 'secondary'}
+                  className={secondaryBtnEl.className}
+                  style={secondaryBtnEl.style}
+                >
+                  {p.secondaryButtonText}
+                </ButtonLink>
+              </div>
+            ) : null,
+        })}
       </div>
     </Section>
   );
@@ -508,6 +557,8 @@ export function LogoCloud(p: LogoCloudProps) {
         title={p.title}
         subtitle={p.subtitle}
         align="center"
+        partOrder={p.partOrder}
+        editing={p.editing}
       />
       <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
         {items.map((item, i) => (
@@ -560,7 +611,12 @@ export function Team(p: TeamProps) {
 
   return (
     <Section section={p.section} editing={p.editing} hasItems>
-      <SectionHeading eyebrow={p.eyebrow} title={p.title} />
+      <SectionHeading
+        eyebrow={p.eyebrow}
+        title={p.title}
+        partOrder={p.partOrder}
+        editing={p.editing}
+      />
       {items.length ? (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item, i) => (
@@ -618,7 +674,12 @@ export function Timeline(p: TimelineProps) {
 
   return (
     <Section section={p.section} editing={p.editing} hasItems>
-      <SectionHeading eyebrow={p.eyebrow} title={p.title} />
+      <SectionHeading
+        eyebrow={p.eyebrow}
+        title={p.title}
+        partOrder={p.partOrder}
+        editing={p.editing}
+      />
       {items.length ? (
         <ol className="relative space-y-8 border-l border-[color:var(--site-border)] pl-8">
           {items.map((item, i) => (

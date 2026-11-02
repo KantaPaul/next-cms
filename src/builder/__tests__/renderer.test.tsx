@@ -93,4 +93,55 @@ describe('BuilderRenderer renders', () => {
     assert.ok(html.includes('Dynamic Site Name'), 'HTML contains resolved dynamic site name');
     assert.ok(html.includes('--site-color-primary'), 'HTML contains theme CSS variable');
   });
+
+  it('renders Hero parts in partOrder and only emits data-part wrappers in editing mode', () => {
+    const doc: any = {
+      version: 1,
+      root: { props: {} },
+      nodes: {
+        hero1: {
+          id: 'hero1',
+          type: 'Hero',
+          props: {
+            badge: 'BADGE_TEXT',
+            title: 'TITLE_TEXT',
+            subtitle: 'SUBTITLE_TEXT',
+            primaryButtonText: 'BTN_TEXT',
+            primaryButtonLink: '#',
+            partOrder: ['title', 'badge', 'buttons', 'subtitle'],
+          },
+          slots: {},
+        },
+      },
+      rootSlot: ['hero1'],
+    };
+
+    const publishedHtml = renderToStaticMarkup(
+      createElement(BuilderRenderer, { document: doc })
+    );
+    assert.ok(
+      !publishedHtml.includes('data-part='),
+      'Published HTML must not contain data-part wrappers'
+    );
+    const titleIdx = publishedHtml.indexOf('TITLE_TEXT');
+    const badgeIdx = publishedHtml.indexOf('BADGE_TEXT');
+    const btnIdx = publishedHtml.indexOf('BTN_TEXT');
+    const subIdx = publishedHtml.indexOf('SUBTITLE_TEXT');
+    assert.ok(titleIdx > -1 && badgeIdx > -1 && btnIdx > -1 && subIdx > -1);
+    assert.ok(titleIdx < badgeIdx, 'title rendered before badge');
+    assert.ok(badgeIdx < btnIdx, 'badge rendered before buttons');
+    assert.ok(btnIdx < subIdx, 'buttons rendered before subtitle');
+
+    const editingHtml = renderToStaticMarkup(
+      createElement(BuilderRenderer, {
+        document: doc,
+        metadata: { editing: true },
+      })
+    );
+    assert.ok(
+      editingHtml.includes('data-part="title"'),
+      'Editing HTML includes data-part wrappers'
+    );
+    assert.ok(editingHtml.includes('data-part="badge"'));
+  });
 });

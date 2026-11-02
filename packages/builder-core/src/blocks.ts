@@ -14,6 +14,19 @@ export type SlotRules = { allow?: string[]; disallow?: string[] };
 export type BlockNesting = 'children' | 'leaf';
 
 /** Descriptive metadata the insert panel shows for a block (cards, hover preview). */
+export type BlockReorderPart = {
+  id: string;
+  label: string;
+};
+
+export type BlockReorder = {
+  /** Prop holding the ordered part ids; defaults to `'partOrder'`. */
+  prop?: string;
+  /** Heading for the reorder control; defaults to `'Layout order'`. */
+  label?: string;
+  parts: BlockReorderPart[];
+};
+
 export type BlockInfo = {
   category?: string;
   /** Icon name or short text the host's insert panel understands. */
@@ -28,6 +41,8 @@ export type BlockInfo = {
   nesting?: BlockNesting;
   /** Typical rendered size, such as `100% × auto`. */
   defaultSize?: string;
+  /** Parts the user may reorder; omit to disable reordering. */
+  reorder?: BlockReorder;
 };
 
 export type BlockSchema = BlockInfo & {
