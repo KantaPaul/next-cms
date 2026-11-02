@@ -15,8 +15,8 @@ import {
   LoopItemProvider,
   QueryLoopCarousel,
   QueryLoopPagination,
-  useLoopItem,
 } from './query-loop-client';
+import { formatLoopDate, SAMPLE_LOOP_ITEMS } from './loop-shared';
 import {
   MotionItem,
   Section,
@@ -28,62 +28,7 @@ import {
 // Sample Items for Editor Canvas (R575 / QRY-05)
 // ---------------------------------------------------------------------------
 
-export const SAMPLE_LOOP_ITEMS: NormalizedListingItem[] = [
-  {
-    id: 'sample-1',
-    title: 'Designing composable content architectures',
-    slug: 'designing-composable-content',
-    url: '/blog/designing-composable-content',
-    excerpt:
-      'How structured content models, reusable blocks, and server-rendered queries keep multi-site teams fast.',
-    image:
-      'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&auto=format&fit=crop&q=80',
-    publishedAt: '2026-03-10T00:00:00.000Z',
-    author: { id: 'author-1', name: 'Alex Morgan', image: null },
-    terms: [
-      { id: 'cat-1', name: 'Engineering', slug: 'engineering', taxonomy: 'category' },
-      { id: 'tag-1', name: 'Architecture', slug: 'architecture', taxonomy: 'tag' },
-    ],
-    source: 'posts',
-    raw: { readingTime: '5 min read', featured: true },
-  },
-  {
-    id: 'sample-2',
-    title: 'Localized publishing workflows at scale',
-    slug: 'localized-publishing-workflows',
-    url: '/blog/localized-publishing-workflows',
-    excerpt:
-      'Best practices for translation groups, locale-aware search, and regional templates across global sites.',
-    image:
-      'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=80',
-    publishedAt: '2026-03-04T00:00:00.000Z',
-    author: { id: 'author-2', name: 'Jamie Chen', image: null },
-    terms: [
-      { id: 'cat-2', name: 'Product', slug: 'product', taxonomy: 'category' },
-      { id: 'tag-2', name: 'Localization', slug: 'localization', taxonomy: 'tag' },
-    ],
-    source: 'posts',
-    raw: { readingTime: '4 min read', featured: false },
-  },
-  {
-    id: 'sample-3',
-    title: 'Accessible design systems for modern web apps',
-    slug: 'accessible-design-systems',
-    url: '/blog/accessible-design-systems',
-    excerpt:
-      'Building keyboard-navigable components, live region announcements, and high-contrast themes by default.',
-    image:
-      'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&auto=format&fit=crop&q=80',
-    publishedAt: '2026-02-24T00:00:00.000Z',
-    author: { id: 'author-3', name: 'Sam Rivera', image: null },
-    terms: [
-      { id: 'cat-3', name: 'Design', slug: 'design', taxonomy: 'category' },
-      { id: 'tag-3', name: 'Accessibility', slug: 'accessibility', taxonomy: 'tag' },
-    ],
-    source: 'posts',
-    raw: { readingTime: '6 min read', featured: true },
-  },
-];
+export { SAMPLE_LOOP_ITEMS };
 
 // ---------------------------------------------------------------------------
 // Dynamic Context & JSON-LD Helpers (R575, R597)
@@ -202,144 +147,7 @@ export function QueryLoopSkeleton({
   );
 }
 
-// ---------------------------------------------------------------------------
-// LoopItemField Block (R575 / QRY-05)
-// ---------------------------------------------------------------------------
-
-export interface LoopItemFieldProps {
-  field?:
-    | 'title'
-    | 'excerpt'
-    | 'image'
-    | 'publishedAt'
-    | 'author'
-    | 'terms'
-    | 'readMore'
-    | 'custom';
-  customKey?: string;
-  linkToItem?: boolean;
-  readMoreLabel?: string;
-  language?: string;
-  editing?: boolean;
-}
-
-const formatLoopDate = (iso: string | null | undefined, language = 'en') => {
-  if (!iso) return null;
-  const parsed = new Date(iso);
-  if (Number.isNaN(parsed.getTime())) return iso;
-  return parsed.toLocaleDateString(language, {
-    dateStyle: 'medium',
-    timeZone: 'UTC',
-  });
-};
-
-export function LoopItemField({
-  field = 'title',
-  customKey = '',
-  linkToItem = true,
-  readMoreLabel = 'Read more',
-  language = 'en',
-}: LoopItemFieldProps) {
-  const item = useLoopItem() ?? SAMPLE_LOOP_ITEMS[0];
-
-  switch (field) {
-    case 'image':
-      if (!item.image) return null;
-      return linkToItem ? (
-        <a href={item.url} className="block overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={item.image}
-            alt={item.title}
-            loading="lazy"
-            className="aspect-video size-full object-cover"
-          />
-        </a>
-      ) : (
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img
-          src={item.image}
-          alt={item.title}
-          loading="lazy"
-          className="aspect-video size-full object-cover"
-        />
-      );
-
-    case 'title':
-      return (
-        <h3 className="text-lg font-bold leading-snug">
-          {linkToItem ? (
-            <a href={item.url} className="hover:underline">
-              {item.title}
-            </a>
-          ) : (
-            item.title
-          )}
-        </h3>
-      );
-
-    case 'excerpt':
-      if (!item.excerpt) return null;
-      return (
-        <p className="s-muted line-clamp-3 text-sm leading-relaxed">
-          {item.excerpt}
-        </p>
-      );
-
-    case 'publishedAt': {
-      const formatted = formatLoopDate(item.publishedAt, language);
-      if (!formatted) return null;
-      return (
-        <time
-          dateTime={item.publishedAt ?? undefined}
-          className="s-muted text-xs"
-        >
-          {formatted}
-        </time>
-      );
-    }
-
-    case 'author':
-      if (!item.author?.name) return null;
-      return <span className="s-muted text-xs">{item.author.name}</span>;
-
-    case 'terms': {
-      const terms = item.terms ?? [];
-      if (terms.length === 0) return null;
-      return (
-        <div className="flex flex-wrap gap-1.5">
-          {terms.map(t => (
-            <span
-              key={`${t.taxonomy}-${t.id}`}
-              className="s-primary-text text-xs font-semibold uppercase tracking-wider"
-            >
-              {t.name}
-            </span>
-          ))}
-        </div>
-      );
-    }
-
-    case 'readMore':
-      return (
-        <a
-          href={item.url}
-          className="s-primary-text inline-flex items-center gap-1 text-sm font-semibold hover:underline"
-        >
-          {readMoreLabel} →
-        </a>
-      );
-
-    case 'custom': {
-      const rawVal = customKey ? item.raw?.[customKey] : undefined;
-      if (rawVal === undefined || rawVal === null) return null;
-      return <span className="text-sm">{String(rawVal)}</span>;
-    }
-
-    default:
-      return null;
-  }
-}
+export { LoopItemField, type LoopItemFieldProps } from './loop-item-field';
 
 // ---------------------------------------------------------------------------
 // Default Item Card & Table Row (R575, R576)

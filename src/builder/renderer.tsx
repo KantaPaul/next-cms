@@ -29,6 +29,7 @@ import {
 import { renderSlot, type SlotValue } from './blocks/content';
 import { getBlockComponents } from './blocks/registry';
 import { type LoaderContext, resolveDocumentData } from './loaders';
+import { prefixDocumentLinks, prefixHtmlLinks } from './site-links';
 import { MotionItem, MotionScope } from './motion';
 import { type PostView, SAMPLE_POST } from './post-template';
 import { fontStylesheetUrl, resolveThemeTokens, themeStyle } from './theme';
@@ -288,12 +289,18 @@ export async function renderDocumentWithLoaders(
 ): Promise<ReactNode> {
   const mergedCtx: LoaderContext = { ...metadata, ...ctx };
   const resolved = await resolveDocumentData(doc, mergedCtx);
+  // Path routing: add the site slug to links typed into content.
+  const siteSlug = typeof mergedCtx.siteSlug === 'string' ? mergedCtx.siteSlug : '';
+  const prefix = Boolean(siteSlug) && !metadata.editing;
+  const document = prefix ? prefixDocumentLinks(resolved, siteSlug) : resolved;
+  const post = metadata.post as PostView | undefined;
   return (
     <BuilderRenderer
       kind={kind}
-      document={resolved}
+      document={document}
       metadata={{
         ...metadata,
+        ...(prefix && post?.body ? { post: { ...post, body: prefixHtmlLinks(post.body, siteSlug) } } : {}),
         language: metadata.language ?? mergedCtx.language,
         themeTokens: metadata.themeTokens ?? mergedCtx.themeTokens,
       }}

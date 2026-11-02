@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   // (`/{site}/from` matches stored `from`), then re-prefix the target.
   const lookupPath =
     siteSlug && path.startsWith(`/${siteSlug}/`)
-      ? path.slice(siteSlug.length)
+      ? path.slice(siteSlug.length + 1)
       : path;
   try {
     const row = await redirectsService.find(lookupPath);

@@ -21,7 +21,8 @@ export async function getSiteMenu(input: z.input<typeof menuSchema>) {
 }
 
 export async function getSiteBranding() {
-  const settings = await siteSettingsService.get();
+  // Public read: get() resolves the admin site from the session and fails for visitors.
+  const settings = await siteSettingsService.getPublic();
   return { siteName: settings.siteName, siteLogo: settings.logo };
 }
 

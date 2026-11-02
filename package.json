@@ -28,7 +28,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:drop": "drizzle-kit drop",
     "db:check": "drizzle-kit check",
-    "db:seed": "tsx src/db/seed/index.ts",
+    "db:seed": "tsx --import ./scripts/server-only-stub.mjs src/db/seed/index.ts",
+    "guide:pdf": "tsx scripts/build-user-guide-pdf.ts",
     "auth:promote": "tsx src/db/scripts/promote-admin.ts",
     "auth:enable-login": "tsx src/db/scripts/enable-login.ts",
     "plan:progress": "node scripts/plan-progress.mjs"

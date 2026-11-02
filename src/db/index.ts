@@ -17,11 +17,14 @@ const getEnvConfig = () => {
 };
 
 /** Create pg.Pool config based on environment */
+// In development the dev server compiles on the same event loop, which can
+// stall a new connection for many seconds; a 5s limit then fails requests
+// that would have succeeded. Keep the short limit in production.
 const createPoolConfig = (env: TEnv, url: string): PoolConfig => ({
   connectionString: url,
   max: 10,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
+  idleTimeoutMillis: env === 'development' ? 300000 : 30000,
+  connectionTimeoutMillis: env === 'development' ? 30000 : 5000,
   statement_timeout: 30000,
 });
 

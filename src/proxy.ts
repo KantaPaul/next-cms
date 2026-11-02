@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { ADMIN_BAR_HINT_COOKIE } from '@/lib/admin-bar';
+import { RESERVED_SITE_SLUGS } from '@/lib/utils/site-slug';
 
 function skip(pathname: string) {
   return (
@@ -11,10 +12,22 @@ function skip(pathname: string) {
   );
 }
 
-/** First path segment, e.g. `/main/about` → `main`. Empty for `/`. */
-function firstPathSegment(pathname: string): string | null {
-  const segments = pathname.split('/').filter(Boolean);
-  return segments.length ? segments[0] : null;
+/**
+ * Site slug from the first path segment, e.g. `/main/about` → `main`.
+ * Null for `/` and for reserved routes such as `/search`, which are never sites.
+ */
+function siteSlugFromPath(pathname: string): string | null {
+  const first = pathname.split('/').filter(Boolean)[0];
+  return first && !RESERVED_SITE_SLUGS.has(first) ? first : null;
+}
+
+/** Top-level routes that also answer under a site prefix, e.g. `/main/search`. */
+const GLOBAL_ROUTES = new Set(['/search', '/user-guide/print']);
+
+function rewriteTarget(pathname: string, siteSlug: string | null): string | null {
+  if (!siteSlug) return null;
+  const rest = `/${pathname.split('/').filter(Boolean).slice(1).join('/')}`;
+  return GLOBAL_ROUTES.has(rest) ? rest : null;
 }
 
 /** Mirrors whether a session cookie exists into a readable hint for the admin bar. */
@@ -35,8 +48,13 @@ function syncSignedInHint(request: NextRequest, response: NextResponse) {
   return response;
 }
 
-function continueRequest(request: NextRequest, headers: Headers) {
+function continueRequest(request: NextRequest, headers: Headers, rewrite: string | null) {
   headers.set('x-pathname', request.nextUrl.pathname);
+  if (rewrite) {
+    const url = request.nextUrl.clone();
+    url.pathname = rewrite;
+    return syncSignedInHint(request, NextResponse.rewrite(url, { request: { headers } }));
+  }
   return syncSignedInHint(
     request,
     NextResponse.next({ request: { headers } })
@@ -55,8 +73,9 @@ export async function proxy(request: NextRequest) {
   headers.delete('x-cms-site-slug');
   headers.set('x-cms-host', request.headers.get('host') ?? '');
 
-  const siteSlug = firstPathSegment(pathname);
+  const siteSlug = siteSlugFromPath(pathname);
   if (siteSlug) headers.set('x-cms-site-slug', siteSlug);
+  const rewrite = rewriteTarget(pathname, siteSlug);
 
   try {
     const lookup = new URL('/api/internal/redirect', request.url);
@@ -72,15 +91,15 @@ export async function proxy(request: NextRequest) {
         ...(cookie ? { cookie } : {}),
       },
     });
-    if (!response.ok) return continueRequest(request, headers);
+    if (!response.ok) return continueRequest(request, headers, rewrite);
     const data = (await response.json()) as { to?: string | null; status?: number };
-    if (!data.to) return continueRequest(request, headers);
+    if (!data.to) return continueRequest(request, headers, rewrite);
     return syncSignedInHint(
       request,
       NextResponse.redirect(new URL(data.to, request.url), data.status ?? 301)
     );
   } catch {
-    return continueRequest(request, headers);
+    return continueRequest(request, headers, rewrite);
   }
 }
 

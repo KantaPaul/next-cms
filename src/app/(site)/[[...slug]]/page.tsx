@@ -346,6 +346,7 @@ async function PostRoute({
   const layout = await blogService.layoutFor(post);
   const metadata = {
     themeTokens: settings.themeTokens,
+    siteSlug,
     post: view,
     language: view.language,
     site: {
@@ -641,6 +642,7 @@ export default async function SitePage({ params, searchParams }: Params) {
 
             const metadata = {
               themeTokens: settings.themeTokens,
+              siteSlug,
               searchParams: await searchParams,
               language: templatePage.language,
               custom: entry?.data,
@@ -747,6 +749,7 @@ export default async function SitePage({ params, searchParams }: Params) {
 
     const metadata = {
       themeTokens: settings.themeTokens,
+      siteSlug,
       searchParams: await searchParams,
       language: page.language,
       custom: collectionEntry?.data,
