@@ -154,7 +154,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                 if (e.key === 'Enter') handleCommitTitle();
                 if (e.key === 'Escape') setEditingTitle(false);
               }}
-              autoFocus
+              // autoFocus
               className="h-6 px-1.5 text-xs font-semibold bg-[var(--ne-surface-subtle)] border border-[var(--ne-primary)] rounded-[var(--ne-radius-sm)] text-[var(--ne-text)] focus:outline-none w-44 font-sans"
             />
           ) : onRenameDocument ? (
