@@ -75,7 +75,12 @@ export type Fill = {
   videoFallback?: string;
 };
 
-export type ImageSizePreset = 'thumbnail' | 'medium' | 'large' | 'full' | 'custom';
+export type ImageSizePreset =
+  | 'thumbnail'
+  | 'medium'
+  | 'large'
+  | 'full'
+  | 'custom';
 
 export type ImageSize = {
   size?: ImageSizePreset;
@@ -124,7 +129,9 @@ export function resolveImageSize(
       const url = new URL(src, 'http://localhost');
       if (width !== undefined) url.searchParams.set('w', String(width));
       if (height !== undefined) url.searchParams.set('h', String(height));
-      transformedSrc = isRelative ? `${url.pathname}${url.search}` : url.toString();
+      transformedSrc = isRelative
+        ? `${url.pathname}${url.search}`
+        : url.toString();
     } catch {
       transformedSrc = src;
     }
@@ -206,7 +213,10 @@ export type TextShadowSettings = {
   blur?: number;
   color?: string;
 };
-export type TextStrokeSettings = { width?: MaybeResponsive<number>; color?: string };
+export type TextStrokeSettings = {
+  width?: MaybeResponsive<number>;
+  color?: string;
+};
 export type HoverSettings = {
   fill?: Fill;
   textColor?: string;
@@ -262,7 +272,9 @@ export const TEXT_DECORATIONS = [
 
 export type Typography = {
   size?: MaybeResponsive<'' | 'sm' | 'md' | 'lg' | 'xl'>;
-  weight?: MaybeResponsive<'' | 'regular' | 'medium' | 'bold' | number | string>;
+  weight?: MaybeResponsive<
+    '' | 'regular' | 'medium' | 'bold' | number | string
+  >;
   family?: string;
   fontStyle?: (typeof FONT_STYLES)[number];
   fontSize?: Responsive<number>;
@@ -288,14 +300,15 @@ export type DisplaySettings = {
 };
 
 export {
-  ENTRANCES,
-  EXITS,
-  HOVERS,
-  ENTRANCE_CLASS,
-  EXIT_CLASS,
-  HOVER_CLASS,
   ATTENTION_SEEKERS,
+  ENTRANCE_CLASS,
+  ENTRANCES,
+  EXIT_CLASS,
+  EXITS,
+  HOVER_CLASS,
+  HOVERS,
 } from './animation-catalog';
+
 import type { ENTRANCES, EXITS, HOVERS } from './animation-catalog';
 
 export const TRIGGERS = ['load', 'scroll', 'hover', 'click'] as const;
@@ -432,7 +445,12 @@ export type FlexWrap = 'nowrap' | 'wrap' | 'wrap-reverse';
 export const FLEX_WRAPS: FlexWrap[] = ['nowrap', 'wrap', 'wrap-reverse'];
 
 export type JustifyContent =
-  'start' | 'center' | 'end' | 'between' | 'around' | 'evenly';
+  | 'start'
+  | 'center'
+  | 'end'
+  | 'between'
+  | 'around'
+  | 'evenly';
 export const JUSTIFY_CONTENTS: JustifyContent[] = [
   'start',
   'center',
@@ -452,7 +470,12 @@ export const ALIGN_ITEMS_VALUES: AlignItems[] = [
 ];
 
 export type AlignContent =
-  'start' | 'center' | 'end' | 'between' | 'around' | 'evenly';
+  | 'start'
+  | 'center'
+  | 'end'
+  | 'between'
+  | 'around'
+  | 'evenly';
 export const ALIGN_CONTENTS: AlignContent[] = [
   'start',
   'center',
@@ -522,7 +545,8 @@ export type ResolvedContainerStyle = {
 };
 
 export type UrlValue =
-  string | { url?: string; newTab?: boolean; nofollow?: boolean };
+  | string
+  | { url?: string; newTab?: boolean; nofollow?: boolean };
 
 export function normalizeUrlValue(value: UrlValue | undefined): {
   url: string;
@@ -805,29 +829,33 @@ export function fillValue(fill: Fill | undefined) {
   if (fill.type === 'video') {
     if (fill.videoFallback) {
       const fb = safeUrl(fill.videoFallback);
-      if (fb) return { light: `url("${fb}") center / cover no-repeat`, dark: `url("${fb}") center / cover no-repeat` };
+      if (fb)
+        return {
+          light: `url("${fb}") center / cover no-repeat`,
+          dark: `url("${fb}") center / cover no-repeat`,
+        };
     }
     return null;
   }
 
   const url = safeUrl(fill.image);
   if (!url) return null;
-  const rawSize = typeof fill.size === 'string' ? fill.size : (fill.size?.desktop ?? 'cover');
+  const rawSize =
+    typeof fill.size === 'string' ? fill.size : (fill.size?.desktop ?? 'cover');
   const size =
-    pick(rawSize, ['cover', 'contain', 'auto'] as const) ?? (rawSize || 'cover');
+    pick(rawSize, ['cover', 'contain', 'auto'] as const) ??
+    (rawSize || 'cover');
   const posX = clamp(fill.posX, 0, 100);
   const posY = clamp(fill.posY, 0, 100);
-  const rawPos = typeof fill.position === 'string' ? fill.position : (fill.position?.desktop ?? 'center');
+  const rawPos =
+    typeof fill.position === 'string'
+      ? fill.position
+      : (fill.position?.desktop ?? 'center');
   const position =
     posX !== undefined || posY !== undefined
       ? `${posX ?? 50}% ${posY ?? 50}%`
-      : (pick(rawPos, [
-          'center',
-          'top',
-          'bottom',
-          'left',
-          'right',
-        ] as const) ?? (rawPos || 'center'));
+      : (pick(rawPos, ['center', 'top', 'bottom', 'left', 'right'] as const) ??
+        (rawPos || 'center'));
   const attachment =
     pick(fill.attachment, ['scroll', 'fixed'] as const) ?? 'scroll';
   const repeat =
@@ -1006,7 +1034,9 @@ export function resolveSectionStyle(
   }
 
   const hasWeight =
-    (typeof ty?.fontWeight === 'number' && ty.fontWeight >= 100 && ty.fontWeight <= 900) ||
+    (typeof ty?.fontWeight === 'number' &&
+      ty.fontWeight >= 100 &&
+      ty.fontWeight <= 900) ||
     DEVICES.some(
       d => resolveResponsive(ty?.weight, d, resolveFontWeight) !== undefined
     );
@@ -1018,8 +1048,7 @@ export function resolveSectionStyle(
       const resolved =
         resolveResponsive(ty?.weight, d, resolveFontWeight) ??
         (ty?.fontWeight ? String(ty.fontWeight) : undefined);
-      if (resolved)
-        style[`--s-fw-${DEVICE_SUFFIX[d]}`] = String(resolved);
+      if (resolved) style[`--s-fw-${DEVICE_SUFFIX[d]}`] = String(resolved);
     }
   }
 
@@ -1027,10 +1056,8 @@ export function resolveSectionStyle(
     if (typeof s.fill.position === 'object' && s.fill.position !== null) {
       outerClasses.push('s-bg-pos');
       for (const d of DEVICES) {
-        const pos = resolveResponsive(
-          s.fill.position,
-          d,
-          v => (typeof v === 'string' && v.trim() ? v.trim() : undefined)
+        const pos = resolveResponsive(s.fill.position, d, v =>
+          typeof v === 'string' && v.trim() ? v.trim() : undefined
         );
         if (pos) style[`--s-bg-pos-${DEVICE_SUFFIX[d]}`] = pos;
       }
@@ -1038,10 +1065,8 @@ export function resolveSectionStyle(
     if (typeof s.fill.size === 'object' && s.fill.size !== null) {
       outerClasses.push('s-bg-size');
       for (const d of DEVICES) {
-        const sz = resolveResponsive(
-          s.fill.size,
-          d,
-          v => (typeof v === 'string' && v.trim() ? v.trim() : undefined)
+        const sz = resolveResponsive(s.fill.size, d, v =>
+          typeof v === 'string' && v.trim() ? v.trim() : undefined
         );
         if (sz) style[`--s-bg-size-${DEVICE_SUFFIX[d]}`] = sz;
       }
@@ -1375,7 +1400,8 @@ export function resolveElementStyle(
             typeof v === 'number' && Number.isFinite(v) ? v : undefined
           );
           if (resolved !== undefined) {
-            const u = pick(ty.letterSpacingUnit, PROP_UNITS.letterSpacing) ?? 'px';
+            const u =
+              pick(ty.letterSpacingUnit, PROP_UNITS.letterSpacing) ?? 'px';
             style[key] = `${resolved}${u}`;
           }
         }
@@ -1421,7 +1447,9 @@ export function resolveElementStyle(
     if (decoration && decoration !== 'none') classes.push(`s-td-${decoration}`);
 
     const hasWeight =
-      (typeof ty.fontWeight === 'number' && ty.fontWeight >= 100 && ty.fontWeight <= 900) ||
+      (typeof ty.fontWeight === 'number' &&
+        ty.fontWeight >= 100 &&
+        ty.fontWeight <= 900) ||
       DEVICES.some(
         d => resolveResponsive(ty.weight, d, resolveFontWeight) !== undefined
       );
@@ -1677,7 +1705,12 @@ export function resolveChromeStyle(
 
   if (!effective.background && legacy?.background) {
     const bg = legacy.background === 'inverted' ? 'dark' : legacy.background;
-    if (bg === 'default' || bg === 'muted' || bg === 'primary' || bg === 'dark') {
+    if (
+      bg === 'default' ||
+      bg === 'muted' ||
+      bg === 'primary' ||
+      bg === 'dark'
+    ) {
       effective.background = bg;
     }
   }
@@ -1712,10 +1745,16 @@ export function resolveChromeStyle(
 
   const base = resolveSectionStyle(sectionSettings);
   const classes: string[] = [...base.outerClasses];
-  if (!base.hasFill && effective.background && effective.background !== 'default') {
+  if (
+    !base.hasFill &&
+    effective.background &&
+    effective.background !== 'default'
+  ) {
     classes.push(`s-section-${effective.background}`);
   }
-  const vars: Record<string, string> = { ...(base.style as Record<string, string>) };
+  const vars: Record<string, string> = {
+    ...(base.style as Record<string, string>),
+  };
 
   const linkColor = safeColor(effective.linkColor);
   if (linkColor) {
@@ -1753,10 +1792,14 @@ export function resolveChromeStyle(
   }
 
   if (effective.minHeight && typeof effective.minHeight === 'object') {
-    const mhUnit = pick(effective.minHeightUnit, ['px', 'rem', 'em', 'vh', 'vw'] as const) ?? 'px';
+    const mhUnit =
+      pick(effective.minHeightUnit, ['px', 'rem', 'em', 'vh', 'vw'] as const) ??
+      'px';
     let anyMh = false;
     for (const d of DEVICES) {
-      const val = resolveResponsive(effective.minHeight, d, v => (typeof v === 'number' && Number.isFinite(v) ? v : undefined));
+      const val = resolveResponsive(effective.minHeight, d, v =>
+        typeof v === 'number' && Number.isFinite(v) ? v : undefined
+      );
       if (val !== undefined && val >= 0) {
         const clamped = clamp(val, 0, mhUnit === 'px' ? 2000 : 100);
         if (clamped !== undefined) {
@@ -1773,13 +1816,17 @@ export function resolveChromeStyle(
   if (effective.contentWidth === 'boxed') {
     classes.push('is-boxed');
     if (effective.maxWidth && typeof effective.maxWidth === 'object') {
-      const mwUnit = pick(effective.maxWidthUnit, ['px', 'rem', '%', 'vw'] as const) ?? 'px';
+      const mwUnit =
+        pick(effective.maxWidthUnit, ['px', 'rem', '%', 'vw'] as const) ?? 'px';
       for (const d of DEVICES) {
-        const val = resolveResponsive(effective.maxWidth, d, v => (typeof v === 'number' && Number.isFinite(v) ? v : undefined));
+        const val = resolveResponsive(effective.maxWidth, d, v =>
+          typeof v === 'number' && Number.isFinite(v) ? v : undefined
+        );
         if (val !== undefined && val > 0) {
           const clamped = clamp(val, 100, mwUnit === 'px' ? 3000 : 100);
           if (clamped !== undefined) {
-            vars[`--chrome-max-width-${DEVICE_SUFFIX[d]}`] = `${clamped}${mwUnit}`;
+            vars[`--chrome-max-width-${DEVICE_SUFFIX[d]}`] =
+              `${clamped}${mwUnit}`;
           }
         }
       }
@@ -2045,7 +2092,10 @@ export function normalizeContainerSettings(value: unknown): ContainerSettings {
     basisUnit,
     boxSizing:
       typeof c.boxSizing === 'object' && c.boxSizing !== null
-        ? (normalizeResponsiveEnum(c.boxSizing, ['border-box', 'content-box']) ?? 'border-box')
+        ? (normalizeResponsiveEnum(c.boxSizing, [
+            'border-box',
+            'content-box',
+          ]) ?? 'border-box')
         : (pick(c.boxSizing, ['border-box', 'content-box']) ?? 'border-box'),
     gridTemplateColumns: normalizeResponsiveTrack(c.gridTemplateColumns),
     gridTemplateRows: normalizeResponsiveTrack(c.gridTemplateRows),
@@ -2296,7 +2346,8 @@ export function resolveContainerStyle(
     for (const d of DEVICES) {
       const n = resolveResponsive(s.grow, d, validFinite);
       if (n !== undefined) {
-        style[`--s-c-grw-${DEVICE_SUFFIX[d]}`] = `${clampNumber(n, FLEX_NUMBER_LIMITS.min, FLEX_NUMBER_LIMITS.max) ?? 0}`;
+        style[`--s-c-grw-${DEVICE_SUFFIX[d]}`] =
+          `${clampNumber(n, FLEX_NUMBER_LIMITS.min, FLEX_NUMBER_LIMITS.max) ?? 0}`;
       }
     }
   }
@@ -2309,7 +2360,8 @@ export function resolveContainerStyle(
     for (const d of DEVICES) {
       const n = resolveResponsive(s.shrink, d, validFinite);
       if (n !== undefined) {
-        style[`--s-c-grs-${DEVICE_SUFFIX[d]}`] = `${clampNumber(n, FLEX_NUMBER_LIMITS.min, FLEX_NUMBER_LIMITS.max) ?? 0}`;
+        style[`--s-c-grs-${DEVICE_SUFFIX[d]}`] =
+          `${clampNumber(n, FLEX_NUMBER_LIMITS.min, FLEX_NUMBER_LIMITS.max) ?? 0}`;
       }
     }
   }
@@ -2322,7 +2374,8 @@ export function resolveContainerStyle(
     for (const d of DEVICES) {
       const n = resolveResponsive(s.basis, d, validFinite);
       if (n !== undefined) {
-        style[`--s-c-grb-${DEVICE_SUFFIX[d]}`] = `${clampNumber(n, basisLim.min, basisLim.max) ?? 0}${basisUnit}`;
+        style[`--s-c-grb-${DEVICE_SUFFIX[d]}`] =
+          `${clampNumber(n, basisLim.min, basisLim.max) ?? 0}${basisUnit}`;
       }
     }
   }

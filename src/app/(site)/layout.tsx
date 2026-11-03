@@ -5,23 +5,18 @@ import { getGlobalBlockContent } from '@/app/(admin)/dashboard/(shell)/templates
 import { renderBuilderContent } from '@/builder/render-content';
 import { fontStylesheetUrl, themeStyle } from '@/builder/theme';
 import { AdminBar } from '@/components/site/admin-bar';
+import { HeaderShell } from '@/components/site/header-shell';
 import { LanguageSwitcher } from '@/components/site/language-switcher';
 import { MenuLinks, menuHref } from '@/components/site/menu-links';
-import { HeaderShell } from '@/components/site/header-shell';
 import { PAGES } from '@/config/pages';
 import { siteHref } from '@/lib/utils/site-href';
+import { blogService, resolvePostRoute } from '@/server/services/blog.service';
 import { getPreviewSession } from '@/server/services/preview-session';
 import {
   type MenuWithItems,
   publicSiteService,
   resolveRoute,
 } from '@/server/services/public-site.service';
-import { blogService, resolvePostRoute } from '@/server/services/blog.service';
-import {
-  resolveTemplate,
-  templateResolverService,
-  type ResolvableEntity,
-} from '@/server/services/template-resolver.service';
 import { maybePublishScheduled } from '@/server/services/scheduler';
 import {
   siteContext,
@@ -32,6 +27,11 @@ import {
   localizedSettings,
   siteSettingsService,
 } from '@/server/services/site-settings.service';
+import {
+  type ResolvableEntity,
+  resolveTemplate,
+  templateResolverService,
+} from '@/server/services/template-resolver.service';
 
 export default async function SiteLayout({
   children,
@@ -51,9 +51,7 @@ export default async function SiteLayout({
   const postRoute = resolvePostRoute(segments, site);
   const pageRoute = resolveRoute(segments, site);
   const language =
-    postRoute?.language ??
-    pageRoute?.language ??
-    site.defaultLocale;
+    postRoute?.language ?? pageRoute?.language ?? site.defaultLocale;
   const copy = localizedSettings(settings, language, site.defaultLocale);
 
   // Resolve page or post entity for templates
@@ -138,7 +136,9 @@ export default async function SiteLayout({
             typeof headerBlock.content === 'object' &&
             Object.keys(headerBlock.content).length > 0))
       ) {
-        const root = (headerBlock.content as { root?: { props?: Record<string, unknown> } })?.root;
+        const root = (
+          headerBlock.content as { root?: { props?: Record<string, unknown> } }
+        )?.root;
         if (root?.props && typeof root.props === 'object') {
           headerRootProps = root.props;
         }
@@ -222,15 +222,19 @@ export default async function SiteLayout({
           </a>
         </div>
       )}
-      {!hideHeader && (
-        customHeader ? (
+      {!hideHeader &&
+        (customHeader ? (
           <HeaderShell
             sticky={headerRootProps.sticky as any}
             transparent={headerRootProps.transparent as any}
             shrinkOnScroll={headerRootProps.shrinkOnScroll as any}
             hideOnScrollDown={headerRootProps.hideOnScrollDown as any}
             shadow={headerRootProps.shadow as any}
-            zIndex={typeof headerRootProps.zIndex === 'number' ? headerRootProps.zIndex : 50}
+            zIndex={
+              typeof headerRootProps.zIndex === 'number'
+                ? headerRootProps.zIndex
+                : 50
+            }
           >
             {customHeader}
           </HeaderShell>
@@ -240,7 +244,10 @@ export default async function SiteLayout({
               aria-label="Main"
               className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-4 md:px-8"
             >
-              <Link href={siteHref('/', siteSlug)} className="flex items-center gap-2 text-lg font-bold">
+              <Link
+                href={siteHref('/', siteSlug)}
+                className="flex items-center gap-2 text-lg font-bold"
+              >
                 {settings.logo && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -261,11 +268,10 @@ export default async function SiteLayout({
               </div>
             </nav>
           </header>
-        )
-      )}
+        ))}
       <main className="flex-1">{children}</main>
-      {!hideFooter && (
-        customFooter ? (
+      {!hideFooter &&
+        (customFooter ? (
           <footer className="site-footer">{customFooter}</footer>
         ) : (
           <footer className="s-border s-surface border-t">
@@ -288,8 +294,7 @@ export default async function SiteLayout({
               © {new Date().getFullYear()} {copy.siteName}
             </p>
           </footer>
-        )
-      )}
+        ))}
       {settings.googleAnalyticsId &&
         /^G-[A-Z0-9]+$/i.test(settings.googleAnalyticsId) && (
           <>

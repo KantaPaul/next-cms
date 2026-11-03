@@ -73,7 +73,7 @@ export function Section({
     className
   );
   const inner = cn(
-    'mx-auto w-full max-w-[var(--site-max-width,72rem)] px-5 md:px-8',
+    'mx-auto w-full max-w-[var(--site-max-width,72rem)]',
     styles.innerClasses,
     innerClassName
   );

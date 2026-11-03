@@ -347,7 +347,7 @@ export function FooterColumns({
       >
         <div className={cn('grid', gridColsClass, GAP_STYLES[gap] || GAP_STYLES.lg)}>
           {slots.map((slot, index) => (
-            <div key={index} className="min-w-0 flex flex-col space-y-3">
+            <div key={`footer-col-${index}`} className="min-w-0 flex flex-col space-y-3">
               {renderSlot(slot, zones)}
             </div>
           ))}

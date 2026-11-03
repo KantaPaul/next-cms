@@ -200,7 +200,9 @@
 .site-root .s-bl {
   border-left-width: var(--s-bl-m);
 }
-
+.site-footer .site-chrome.s-pb {
+  padding-bottom: 0;
+}
 .site-root .s-fs {
   font-size: var(--s-fs-m);
 }

@@ -1427,10 +1427,12 @@ export const ButtonBlock = defineBlock({
   category: 'layout',
   icon: 'button',
   inlineProps: ['label'],
-  schema: z.object({
-    section: sectionSettingsSchema.optional(),
-    elements: z.record(z.string(), elementStyleSchema).optional(),
-  }).passthrough(),
+  schema: z
+    .object({
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
   render: Button,
   fields: {
     label: { label: 'Label', group: CONTENT, type: 'text' },
@@ -1448,8 +1450,8 @@ export const ButtonBlock = defineBlock({
     ...sectionControls(),
   },
   defaults: {
-    label: '',
-    link: '',
+    label: 'Button',
+    link: 'https://www.example.com/',
     alignment: 'center',
     section: {
       paddingY: 'md',
