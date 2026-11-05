@@ -172,7 +172,6 @@ export function SiteRoot({
   const chrome = isChrome
     ? resolveChromeStyle(rootProps.style, {
         background: rootProps.background,
-        paddingY: rootProps.paddingY,
       })
     : null;
 

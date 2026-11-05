@@ -414,7 +414,6 @@ export const FOOTER_STARTER_COLUMNS_4: StarterTemplate = {
     root: {
       props: {
         background: 'default',
-        paddingY: 'lg',
       },
     },
     content: [
@@ -557,7 +556,6 @@ export const FOOTER_STARTER_CENTERED: StarterTemplate = {
     root: {
       props: {
         background: 'default',
-        paddingY: 'lg',
       },
     },
     content: [
@@ -637,7 +635,6 @@ export const FOOTER_STARTER_DARK_NEWSLETTER: StarterTemplate = {
     root: {
       props: {
         background: 'inverted',
-        paddingY: 'lg',
       },
     },
     content: [

@@ -1695,7 +1695,7 @@ export type ResolvedChromeStyle = {
 
 export function resolveChromeStyle(
   style?: ChromeStyle,
-  legacy?: { background?: string; paddingY?: string }
+  legacy?: { background?: string }
 ): ResolvedChromeStyle {
   if (!style && !legacy) {
     return { classes: [], style: {} };
@@ -1715,23 +1715,8 @@ export function resolveChromeStyle(
     }
   }
 
-  if (!effective.spacing && legacy?.paddingY && legacy.paddingY !== 'none') {
-    const map: Record<string, number> = {
-      sm: 16,
-      md: 32,
-      lg: 64,
-      xl: 96,
-    };
-    const val = map[legacy.paddingY];
-    if (val !== undefined) {
-      effective.spacing = {
-        desktop: { top: val, bottom: val },
-        tablet: { top: val, bottom: val },
-        mobile: { top: val, bottom: val },
-      };
-      effective.spacingUnit = 'px';
-    }
-  }
+  // Legacy root `paddingY` is ignored: there is no control for it, so it
+  // forced 64px around every footer. Spacing comes from "Footer style".
 
   const sectionSettings: SectionSettings = {
     background: effective.background,

@@ -90,7 +90,6 @@ const DEFAULT_FOOTER_CONTENT = {
   root: {
     props: {
       background: 'default',
-      paddingY: 'lg',
     },
   },
   content: [

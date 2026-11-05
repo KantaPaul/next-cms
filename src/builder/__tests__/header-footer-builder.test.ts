@@ -314,18 +314,17 @@ describe('resolveChromeStyle', () => {
     assert.equal(s['--chrome-scrolled-link'], '#445566');
   });
 
-  it('maps legacy footer background and paddingY', () => {
+  it('maps legacy footer background without adding padding', () => {
     const resLegacy = resolveChromeStyle(undefined, {
       background: 'inverted',
-      paddingY: 'lg',
     });
 
     assert.ok(resLegacy.classes.includes('s-section-dark'));
-    assert.ok(resLegacy.classes.includes('s-pt'));
-    assert.ok(resLegacy.classes.includes('s-pb'));
+    assert.ok(!resLegacy.classes.includes('s-pt'));
+    assert.ok(!resLegacy.classes.includes('s-pb'));
     const s = resLegacy.style as Record<string, string>;
-    assert.equal(s['--s-pt-d'], '64px');
-    assert.equal(s['--s-pb-d'], '64px');
+    assert.equal(s['--s-pt-d'], undefined);
+    assert.equal(s['--s-pb-d'], undefined);
   });
 
   it('handles responsive minHeight and boxed contentWidth', () => {
