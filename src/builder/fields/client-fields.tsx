@@ -575,10 +575,10 @@ export function CollectionSelectField({
       >
         <option value="">
           {options === null
-            ? 'Loading collections…'
+            ? 'Loading post types…'
             : options.length
-              ? 'Select a collection'
-              : 'No collections found'}
+              ? 'Select a post type'
+              : 'No post types found'}
         </option>
         {options?.map(o => (
           <option key={o.id} value={o.id}>

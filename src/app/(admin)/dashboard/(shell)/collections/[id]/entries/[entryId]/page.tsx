@@ -8,6 +8,7 @@ import { requirePermission } from '@/server/services/require-permission';
 import { collectionsService } from '@/server/services/collections.service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EditEntryForm } from '../../../components/edit-entry-form';
+import { toEntryFieldConfigs } from '../../../_modules/entry-fields';
 import { EntryStatusCard } from '../../../components/entry-status-card';
 import { DeleteEntryForm } from '../../../components/entry-status-card';
 
@@ -25,9 +26,8 @@ export default async function CollectionEntryPage({
 
   const breadcrumbs = [
     { title: 'Dashboard', href: PAGES.DASHBOARD.ROOT },
-    { title: 'Collections', href: PAGES.DASHBOARD.COLLECTIONS },
-    { title: collection.name, href: PAGES.DASHBOARD.COLLECTION(id) },
-    { title: 'Entries', href: PAGES.DASHBOARD.COLLECTION_ENTRIES(id) },
+    { title: 'Post types', href: PAGES.DASHBOARD.COLLECTIONS },
+    { title: collection.name, href: PAGES.DASHBOARD.COLLECTION_ENTRIES(id) },
     { title: entry.slug, href: PAGES.DASHBOARD.COLLECTION_ENTRY(id, entryId) },
   ];
 
@@ -41,6 +41,7 @@ export default async function CollectionEntryPage({
   }
 
   const fields = await collectionsService.getFields(id);
+  const fieldConfigs = await toEntryFieldConfigs(fields);
   const entryData = entry.data as Record<string, unknown> | undefined;
 
   return (
@@ -49,7 +50,7 @@ export default async function CollectionEntryPage({
       <div className="grid gap-6 lg:grid-cols-12">
         <Card className="lg:col-span-8">
           <CardHeader>
-            <CardTitle>Entry</CardTitle>
+            <CardTitle>{collection.singularName || 'Entry'}</CardTitle>
           </CardHeader>
           <CardContent>
             <EditEntryForm
@@ -57,12 +58,7 @@ export default async function CollectionEntryPage({
               collectionId={collection.id}
               entrySlug={entry.slug}
               entryData={entryData}
-              fields={fields.map(f => ({
-                key: f.key,
-                label: f.label,
-                type: f.type,
-                required: f.required,
-              }))}
+              fields={fieldConfigs}
             />
           </CardContent>
         </Card>

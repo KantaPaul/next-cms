@@ -2,9 +2,17 @@
 
 import { useFormContext } from 'react-hook-form';
 import { z } from 'zod';
+import { TextEditor } from '@/components/atoms/text-editor';
+import { MediaField } from '@/components/media/media-picker';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FormInput as Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   FormControl,
   FormField,
@@ -18,6 +26,10 @@ export type EntryFieldConfig = {
   label: string;
   type: string;
   required: boolean;
+  /** Choices for select fields. */
+  choices?: string[];
+  /** Entries of the related post type, for relation fields. */
+  options?: { id: string; label: string }[];
 };
 
 // Slug plus one `data-{key}` value per field; data values are validated server-side.
@@ -27,14 +39,15 @@ export const entryFormSchema = z
 
 export type EntryFormValues = z.infer<typeof entryFormSchema>;
 
-/** Renders one shadcn form control per collection field, named `data-{key}`. */
+// Radix Select reserves the empty string, so "None" uses a sentinel value.
+const NONE = '__none__';
+
+/** Renders one form control per post type field, named `data-{key}`. */
 export function EntryDataFields({
   fields,
-  richtextRows = 6,
   onFieldChange,
 }: {
   fields: EntryFieldConfig[];
-  richtextRows?: number;
   onFieldChange?: (key: string, value: unknown) => void;
 }) {
   const { control } = useFormContext();
@@ -51,6 +64,11 @@ export function EntryDataFields({
             {config.required && <span className="text-destructive"> *</span>}
           </FormLabel>
         );
+        const set = (value: unknown) => {
+          field.onChange(value);
+          onFieldChange?.(config.key, value);
+        };
+        const text = String(field.value ?? '');
 
         if (config.type === 'boolean') {
           return (
@@ -58,14 +76,63 @@ export function EntryDataFields({
               <FormControl>
                 <Checkbox
                   checked={field.value === true || field.value === 'true'}
-                  onCheckedChange={value => {
-                    const checked = value === true;
-                    field.onChange(checked);
-                    onFieldChange?.(config.key, checked);
-                  }}
+                  onCheckedChange={value => set(value === true)}
                 />
               </FormControl>
               {label}
+              <FormMessage />
+            </FormItem>
+          );
+        }
+
+        if (config.type === 'select' || config.type === 'relation') {
+          const options =
+            config.type === 'select'
+              ? (config.choices ?? []).map(c => ({ id: c, label: c }))
+              : (config.options ?? []);
+          return (
+            <FormItem>
+              {label}
+              <Select
+                value={text || NONE}
+                onValueChange={value => set(value === NONE ? '' : value)}
+              >
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value={NONE}>None</SelectItem>
+                  {options.map(o => (
+                    <SelectItem key={o.id} value={o.id}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          );
+        }
+
+        if (config.type === 'media') {
+          return (
+            <FormItem>
+              {label}
+              <MediaField value={text} onChange={set} />
+              <FormMessage />
+            </FormItem>
+          );
+        }
+
+        if (config.type === 'richtext') {
+          return (
+            <FormItem>
+              {label}
+              <div className="rounded-md border">
+                <TextEditor value={text} onChange={set} />
+              </div>
               <FormMessage />
             </FormItem>
           );
@@ -75,33 +142,22 @@ export function EntryDataFields({
           <FormItem>
             {label}
             <FormControl>
-              {config.type === 'richtext' ? (
-                <Textarea
-                  {...field}
-                  value={String(field.value ?? '')}
-                  rows={richtextRows}
-                  onChange={e => {
-                    field.onChange(e);
-                    onFieldChange?.(config.key, e.target.value);
-                  }}
-                />
-              ) : (
-                <Input
-                  {...field}
-                  value={String(field.value ?? '')}
-                  type={
-                    config.type === 'number'
-                      ? 'number'
-                      : config.type === 'date'
-                        ? 'date'
+              <Input
+                {...field}
+                value={text}
+                type={
+                  config.type === 'number'
+                    ? 'number'
+                    : config.type === 'date'
+                      ? 'date'
+                      : config.type === 'url'
+                        ? 'url'
                         : 'text'
-                  }
-                  onChange={e => {
-                    field.onChange(e);
-                    onFieldChange?.(config.key, e.target.value);
-                  }}
-                />
-              )}
+                }
+                step={config.type === 'number' ? 'any' : undefined}
+                placeholder={config.type === 'url' ? 'https://' : undefined}
+                onChange={e => set(e.target.value)}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>

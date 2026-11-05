@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FormInput as Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -21,6 +22,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { fieldKeyFromLabel } from '@/config/post-types';
 import { addCollectionField } from '../_modules/collections.actions';
 import {
   collectionFieldSchema,
@@ -33,28 +35,40 @@ type CollectionFieldInput = z.input<typeof collectionFieldSchema>;
 
 interface AddFieldFormProps {
   collectionId: string;
+  /** Other post types a relation field can point at. */
+  postTypes: { id: string; name: string }[];
 }
 
-export function AddFieldForm({ collectionId }: AddFieldFormProps) {
+const DEFAULTS: CollectionFieldInput = {
+  label: '',
+  key: '',
+  type: 'text',
+  required: false,
+  choices: '',
+  relationCollectionId: '',
+};
+
+export function AddFieldForm({ collectionId, postTypes }: AddFieldFormProps) {
   const form = useForm<CollectionFieldInput>({
     resolver: zodResolver(collectionFieldSchema),
-    defaultValues: {
-      key: '',
-      label: '',
-      type: 'text',
-      required: false,
-      config: '{}',
-    },
+    defaultValues: DEFAULTS,
   });
+  const type = form.watch('type');
 
   const { submit, isPending, error } = useFormAction(addCollectionField, {
     onSuccess: () => {
-      form.reset();
+      form.reset(DEFAULTS);
     },
   });
 
   const onSubmit = (data: CollectionFieldInput) => {
-    submit(objectToFormData({ collectionId, ...data }));
+    submit(
+      objectToFormData({
+        collectionId,
+        ...data,
+        required: data.required ? 'on' : 'off',
+      })
+    );
   };
 
   return (
@@ -65,12 +79,20 @@ export function AddFieldForm({ collectionId }: AddFieldFormProps) {
       >
         <FormField
           control={form.control}
-          name="key"
+          name="label"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Key</FormLabel>
+              <FormLabel>Label</FormLabel>
               <FormControl>
-                <Input {...field} required placeholder="key" />
+                <Input
+                  {...field}
+                  required
+                  placeholder="e.g. Job title"
+                  onChange={e => {
+                    field.onChange(e);
+                    form.setValue('key', fieldKeyFromLabel(e.target.value));
+                  }}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -78,12 +100,22 @@ export function AddFieldForm({ collectionId }: AddFieldFormProps) {
         />
         <FormField
           control={form.control}
-          name="label"
+          name="key"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Label</FormLabel>
+              <FormLabel className="flex items-center justify-between">
+                <span>Key</span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  Auto-generated
+                </span>
+              </FormLabel>
               <FormControl>
-                <Input {...field} required placeholder="Label" />
+                <Input
+                  {...field}
+                  value={field.value ?? ''}
+                  placeholder="job_title"
+                  className="bg-muted/50 font-mono text-xs"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -95,7 +127,12 @@ export function AddFieldForm({ collectionId }: AddFieldFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Type</FormLabel>
-              <Select value={field.value} onValueChange={field.onChange}>
+              <Select
+                value={field.value}
+                onValueChange={value =>
+                  field.onChange(value as CollectionFieldInput['type'])
+                }
+              >
                 <FormControl>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a type" />
@@ -105,6 +142,9 @@ export function AddFieldForm({ collectionId }: AddFieldFormProps) {
                   {FIELD_TYPES.map(option => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        {option.hint}
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -128,6 +168,58 @@ export function AddFieldForm({ collectionId }: AddFieldFormProps) {
             </FormItem>
           )}
         />
+        {type === 'select' && (
+          <FormField
+            control={form.control}
+            name="choices"
+            render={({ field }) => (
+              <FormItem className="sm:col-span-2">
+                <FormLabel>Choices</FormLabel>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    value={field.value ?? ''}
+                    rows={3}
+                    placeholder={'One per line, e.g.\nDesign\nEngineering'}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+        {type === 'relation' && (
+          <FormField
+            control={form.control}
+            name="relationCollectionId"
+            render={({ field }) => (
+              <FormItem className="sm:col-span-2">
+                <FormLabel>Links to</FormLabel>
+                <Select value={field.value ?? ''} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger className="w-full">
+                      <SelectValue
+                        placeholder={
+                          postTypes.length
+                            ? 'Pick a post type'
+                            : 'Create another post type first'
+                        }
+                      />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {postTypes.map(pt => (
+                      <SelectItem key={pt.id} value={pt.id}>
+                        {pt.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
         <div className="sm:col-span-2">
           <Button type="submit" disabled={isPending}>
             {isPending ? 'Adding…' : 'Add field'}

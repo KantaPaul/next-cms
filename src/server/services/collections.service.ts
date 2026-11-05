@@ -17,6 +17,7 @@ import { auditService } from './audit.service';
 import { PERMISSIONS } from '@/config/permissions';
 import { ApplicationException, NotFoundException } from '@/lib/utils/error';
 import { sanitizeRichText } from '@/builder/sanitize';
+import { entryTitle, POST_TYPE_PRESETS } from '@/config/post-types';
 
 const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -46,6 +47,49 @@ function assertSlugValid(slug: string) {
   }
 }
 
+/** Throws unless the actor may create post types and edit their fields. */
+async function assertCanManagePostTypes(actorId: string) {
+  const access = await accessService.getUserAccess(actorId);
+  if (
+    !accessService.can(access, PERMISSIONS.POST_TYPES_MANAGE) &&
+    !accessService.can(access, PERMISSIONS.SETTINGS_MANAGE)
+  ) {
+    throw new ApplicationException(
+      'You do not have permission to manage post types.'
+    );
+  }
+}
+
+/**
+ * Normalises raw form values (strings from FormData) to the JSON shape each
+ * field type stores: numbers, booleans, and omitted empty optional values.
+ */
+export function coerceEntryData(
+  fields: typeof collectionFields.$inferSelect[],
+  data: unknown
+): Record<string, unknown> {
+  const input = (data && typeof data === 'object' ? data : {}) as Record<
+    string,
+    unknown
+  >;
+  const out: Record<string, unknown> = {};
+  for (const field of fields) {
+    let value = input[field.key];
+    if (value === undefined || value === null) continue;
+    if (field.type === 'boolean') {
+      value = value === true || value === 'true' || value === 'on';
+    } else if (typeof value === 'string') {
+      const trimmed = field.type === 'richtext' ? value : value.trim();
+      if (trimmed === '' || (field.type === 'richtext' && value === '<p></p>')) {
+        continue;
+      }
+      value = field.type === 'number' ? Number(trimmed) : trimmed;
+    }
+    out[field.key] = value;
+  }
+  return out;
+}
+
 /** Builds a Zod object schema from collection field rows and parses entry data. */
 export function buildEntrySchema(fields: typeof collectionFields.$inferSelect[]) {
   const shape: Record<string, z.ZodTypeAny> = {};
@@ -73,11 +117,21 @@ export function buildEntrySchema(fields: typeof collectionFields.$inferSelect[])
       case 'select': {
         const config = field.config as { choices?: string[] } | undefined;
         const choices = Array.isArray(config?.choices) ? config.choices : [];
-        base = z.enum(choices as [string, ...string[]]);
+        base = choices.length
+          ? z.enum(choices as [string, ...string[]])
+          : z.string();
         break;
       }
       case 'media':
         base = z.string();
+        break;
+      case 'url':
+        base = z
+          .string()
+          .refine(
+            v => /^(https?:\/\/|mailto:|tel:|\/)/i.test(v),
+            'Must be a URL starting with http(s)://, mailto:, tel: or /.'
+          );
         break;
       case 'relation': {
         base = z.string();
@@ -99,7 +153,7 @@ export function parseEntryData(
   data: unknown
 ): { data: Record<string, unknown>; error: z.ZodError | null } {
   const schema = buildEntrySchema(fields);
-  const result = schema.safeParse(data ?? {});
+  const result = schema.safeParse(coerceEntryData(fields, data));
   if (!result.success) {
     return { data: {}, error: result.error };
   }
@@ -268,17 +322,19 @@ export const collectionsService = {
       .orderBy(collectionFields.position);
   },
 
-  /** Create a collection. Requires settings.manage. */
+  /** Create a collection. Requires post_types.manage. */
   async create(
-    input: { name: string; slug: string; templatePageId?: string | null },
+    input: {
+      name: string;
+      slug: string;
+      singularName?: string | null;
+      icon?: string | null;
+      description?: string | null;
+      templatePageId?: string | null;
+    },
     actorId: string
   ) {
-    const access = await accessService.getUserAccess(actorId);
-    if (!accessService.can(access, PERMISSIONS.SETTINGS_MANAGE)) {
-      throw new ApplicationException(
-        'You do not have permission to manage collections.'
-      );
-    }
+    await assertCanManagePostTypes(actorId);
 
     const siteId = await adminSiteId();
     assertSlugValid(input.slug);
@@ -296,7 +352,7 @@ export const collectionsService = {
       .limit(1);
     if (existing) {
       throw new ApplicationException(
-        `A collection with slug "${input.slug}" already exists.`
+        `A post type with slug "${input.slug}" already exists.`
       );
     }
 
@@ -306,6 +362,9 @@ export const collectionsService = {
         siteId,
         name: input.name,
         slug: input.slug,
+        singularName: input.singularName || null,
+        icon: input.icon || null,
+        description: input.description || null,
         templatePageId: input.templatePageId ?? null,
       })
       .returning();
@@ -320,18 +379,20 @@ export const collectionsService = {
     return row;
   },
 
-  /** Update a collection's name/slug/template. Requires settings.manage. */
+  /** Update a collection's name/slug/template. Requires post_types.manage. */
   async update(
     id: string,
-    input: { name?: string; slug?: string; templatePageId?: string | null },
+    input: {
+      name?: string;
+      slug?: string;
+      singularName?: string | null;
+      icon?: string | null;
+      description?: string | null;
+      templatePageId?: string | null;
+    },
     actorId: string
   ) {
-    const access = await accessService.getUserAccess(actorId);
-    if (!accessService.can(access, PERMISSIONS.SETTINGS_MANAGE)) {
-      throw new ApplicationException(
-        'You do not have permission to manage collections.'
-      );
-    }
+    await assertCanManagePostTypes(actorId);
 
     const collection = await this.get(id);
     const siteId = await adminSiteId();
@@ -352,7 +413,7 @@ export const collectionsService = {
         .limit(1);
       if (existing) {
         throw new ApplicationException(
-          `A collection with slug "${input.slug}" already exists.`
+          `A post type with slug "${input.slug}" already exists.`
         );
       }
     }
@@ -362,6 +423,13 @@ export const collectionsService = {
       .set({
         ...(input.name !== undefined ? { name: input.name } : {}),
         ...(input.slug !== undefined ? { slug: input.slug } : {}),
+        ...(input.singularName !== undefined
+          ? { singularName: input.singularName || null }
+          : {}),
+        ...(input.icon !== undefined ? { icon: input.icon || null } : {}),
+        ...(input.description !== undefined
+          ? { description: input.description || null }
+          : {}),
         ...(input.templatePageId !== undefined
           ? { templatePageId: input.templatePageId }
           : {}),
@@ -380,14 +448,9 @@ export const collectionsService = {
     return row;
   },
 
-  /** Soft-delete a collection. Requires settings.manage. */
+  /** Soft-delete a collection. Requires post_types.manage. */
   async delete(id: string, actorId: string) {
-    const access = await accessService.getUserAccess(actorId);
-    if (!accessService.can(access, PERMISSIONS.SETTINGS_MANAGE)) {
-      throw new ApplicationException(
-        'You do not have permission to manage collections.'
-      );
-    }
+    await assertCanManagePostTypes(actorId);
 
     const collection = await this.get(id);
     await db
@@ -404,7 +467,7 @@ export const collectionsService = {
     });
   },
 
-  /** Add a field to a collection. Requires settings.manage. */
+  /** Add a field to a collection. Requires post_types.manage. */
   async addField(
     collectionId: string,
     input: {
@@ -416,12 +479,7 @@ export const collectionsService = {
     },
     actorId: string
   ) {
-    const access = await accessService.getUserAccess(actorId);
-    if (!accessService.can(access, PERMISSIONS.SETTINGS_MANAGE)) {
-      throw new ApplicationException(
-        'You do not have permission to manage collections.'
-      );
-    }
+    await assertCanManagePostTypes(actorId);
 
     const siteId = await adminSiteId();
     const [collection] = await db
@@ -479,18 +537,13 @@ export const collectionsService = {
     return row;
   },
 
-  /** Update a field. Requires settings.manage. */
+  /** Update a field. Requires post_types.manage. */
   async updateField(
     fieldId: string,
     input: { label?: string; type?: CollectionFieldType; required?: boolean; config?: Record<string, unknown>; position?: number },
     actorId: string
   ) {
-    const access = await accessService.getUserAccess(actorId);
-    if (!accessService.can(access, PERMISSIONS.SETTINGS_MANAGE)) {
-      throw new ApplicationException(
-        'You do not have permission to manage collections.'
-      );
-    }
+    await assertCanManagePostTypes(actorId);
 
     const siteId = await adminSiteId();
     const [field] = await db
@@ -524,14 +577,9 @@ export const collectionsService = {
     return row;
   },
 
-  /** Delete a field. Does not rewrite existing entry JSON. Requires settings.manage. */
+  /** Delete a field. Does not rewrite existing entry JSON. Requires post_types.manage. */
   async deleteField(fieldId: string, actorId: string) {
-    const access = await accessService.getUserAccess(actorId);
-    if (!accessService.can(access, PERMISSIONS.SETTINGS_MANAGE)) {
-      throw new ApplicationException(
-        'You do not have permission to manage collections.'
-      );
-    }
+    await assertCanManagePostTypes(actorId);
 
     const siteId = await adminSiteId();
     const owned = await db
@@ -878,5 +926,58 @@ export const collectionsService = {
       targetName: entry.slug,
     });
     await searchIndex.removeCollectionEntry(id);
+  },
+
+  /** Creates a post type and its fields from a ready-made preset. */
+  async createFromPreset(presetId: string, actorId: string) {
+    const preset = POST_TYPE_PRESETS.find(p => p.id === presetId);
+    if (!preset) throw new NotFoundException('Preset not found');
+    await assertCanManagePostTypes(actorId);
+
+    // Pick a free slug so a second "Team" install doesn't fail.
+    const siteId = await adminSiteId();
+    let slug = preset.slug;
+    for (let i = 2; ; i++) {
+      const [taken] = await db
+        .select({ id: collections.id })
+        .from(collections)
+        .where(
+          and(
+            eq(collections.slug, slug),
+            eq(collections.siteId, siteId),
+            isNull(collections.deletedAt)
+          )
+        )
+        .limit(1);
+      if (!taken) break;
+      slug = `${preset.slug}-${i}`;
+    }
+
+    const collection = await this.create(
+      {
+        name: preset.name,
+        singularName: preset.singularName,
+        slug,
+        icon: preset.icon,
+        description: preset.description,
+      },
+      actorId
+    );
+    for (const field of preset.fields) {
+      await this.addField(collection.id, field, actorId);
+    }
+    return collection;
+  },
+
+  /** Entry choices for a relation field pointing at `collectionId`. */
+  async listEntryOptions(collectionId: string) {
+    const [rows, fields] = await Promise.all([
+      this.listEntries(collectionId),
+      this.getFields(collectionId),
+    ]);
+    return rows.map(r => ({
+      id: r.id,
+      label: entryTitle(r.data, fields) || r.slug,
+    }));
   },
 };

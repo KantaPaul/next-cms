@@ -18,6 +18,7 @@ import { updateCollectionSchema } from '../_modules/collections.schemas';
 import { objectToFormData } from '../_modules/form-helpers';
 import { useFormAction } from '@/hooks/use-form-action';
 import type { TemplatePageOption } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
+import { PostTypeMetaFields } from './post-type-meta-fields';
 import { TemplatePageSelect } from './template-page-select';
 
 type CollectionSettingsInput = z.infer<typeof updateCollectionSchema>;
@@ -27,6 +28,9 @@ interface CollectionSettingsFormProps {
     id: string;
     name: string;
     slug: string;
+    singularName: string | null;
+    icon: string | null;
+    description: string | null;
     templatePageId: string | null;
   };
   templatePages: TemplatePageOption[];
@@ -41,6 +45,9 @@ export function CollectionSettingsForm({
     defaultValues: {
       name: collection.name,
       slug: collection.slug,
+      singularName: collection.singularName ?? '',
+      icon: (collection.icon ?? 'database') as CollectionSettingsInput['icon'],
+      description: collection.description ?? '',
       templatePageId: collection.templatePageId ?? '',
     },
   });
@@ -64,7 +71,7 @@ export function CollectionSettingsForm({
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Name</FormLabel>
+              <FormLabel>Name (plural)</FormLabel>
               <FormControl>
                 <Input {...field} value={field.value ?? ''} required />
               </FormControl>
@@ -85,6 +92,7 @@ export function CollectionSettingsForm({
             </FormItem>
           )}
         />
+        <PostTypeMetaFields />
         <TemplatePageSelect templatePages={templatePages} />
         <Button type="submit" disabled={isPending}>
           {isPending ? 'Saving…' : 'Save'}
