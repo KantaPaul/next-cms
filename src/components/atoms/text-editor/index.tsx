@@ -36,7 +36,8 @@ export function TextEditor({
 }: TextEditorProps) {
   const editor = useEditor({
     content: value,
-    immediatelyRender: true,
+    // Render after mount: these components also SSR (e.g. post type entry forms).
+    immediatelyRender: false,
     onUpdate: ({ editor }) => {
       if (typeof onChange === 'function') {
         const textContent = editor.getText().trim();

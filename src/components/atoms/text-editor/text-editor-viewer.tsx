@@ -25,7 +25,8 @@ export function TextEditorViewer({
     {
       content,
       editable: false,
-      immediatelyRender: true,
+      // Render after mount: these components also SSR (e.g. post type entry forms).
+      immediatelyRender: false,
       editorProps: {
         attributes: {
           class:
