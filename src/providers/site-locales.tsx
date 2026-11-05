@@ -11,7 +11,10 @@ export type LocaleOption = { value: string; label: string };
 export type SiteLocalesContextValue = {
   locales: LocaleOption[];
   defaultLocale: string;
+  /** The dashboard's working language: the chosen one, else the default. */
   currentLocale: string;
+  /** The language picked in the header (cms_locale cookie); null until one is picked. */
+  chosenLocale: string | null;
   setCurrentLocale: (locale: string) => void;
 };
 
@@ -22,6 +25,7 @@ const fallback: SiteLocalesContextValue = {
   })),
   defaultLocale: DEFAULT_LANGUAGE,
   currentLocale: DEFAULT_LANGUAGE,
+  chosenLocale: null,
   setCurrentLocale: () => {},
 };
 
@@ -30,18 +34,30 @@ const SiteLocalesContext = createContext<SiteLocalesContextValue>(fallback);
 export function SiteLocalesProvider({
   locales,
   defaultLocale,
+  initialLocale = null,
   children,
 }: {
   locales: { code: string; label: string }[];
   defaultLocale: string;
+  /** From the cms_locale cookie, already checked against `locales`. */
+  initialLocale?: string | null;
   children: React.ReactNode;
 }) {
   const effectiveDefault = defaultLocale || fallback.defaultLocale;
-  const [currentLocale, setCurrentLocale] = useState(effectiveDefault);
+  const [chosenLocale, setChosenLocale] = useState<string | null>(
+    initialLocale
+  );
 
+  // A site switch can make the chosen language unknown: drop it then.
   useEffect(() => {
-    setCurrentLocale(effectiveDefault);
-  }, [effectiveDefault]);
+    setChosenLocale(current =>
+      current && locales.some(locale => locale.code === current)
+        ? current
+        : initialLocale
+    );
+  }, [locales, initialLocale]);
+
+  const currentLocale = chosenLocale ?? effectiveDefault;
 
   const value = useMemo(
     () => ({
@@ -49,10 +65,11 @@ export function SiteLocalesProvider({
         ? locales.map(locale => ({ value: locale.code, label: locale.label }))
         : fallback.locales,
       defaultLocale: effectiveDefault,
-      currentLocale: currentLocale || effectiveDefault,
-      setCurrentLocale,
+      currentLocale,
+      chosenLocale,
+      setCurrentLocale: setChosenLocale,
     }),
-    [locales, effectiveDefault, currentLocale]
+    [locales, effectiveDefault, currentLocale, chosenLocale]
   );
 
   return (

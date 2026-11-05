@@ -196,10 +196,10 @@ export function MenusManager({
 
 function NewMenuForm({ onCreated }: { onCreated: (id: string) => void }) {
   const router = useRouter();
-  const { locales, defaultLocale } = useSiteLocales();
+  const { locales, currentLocale } = useSiteLocales();
   const [title, setTitle] = useState('');
   const [location, setLocation] = useState<MenuLocationType>('header');
-  const [language, setLanguage] = useState(defaultLocale);
+  const [language, setLanguage] = useState(currentLocale);
   const [isPending, startTransition] = useTransition();
 
   const submit = (e: FormEvent) => {

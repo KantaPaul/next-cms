@@ -4,6 +4,7 @@
 
 import { toDocument, toPuckData } from '@nextcms/builder-core';
 import type { ReactNode } from 'react';
+import { localeLinksService } from '@/server/services/locale-links.service';
 import type { ResolvedSite } from '@/server/services/site-context';
 import { type LoaderContext, resolvePuckData } from './loaders';
 import {
@@ -26,9 +27,15 @@ export async function renderBuilderContent({
   kind = 'page',
   metadata,
 }: RenderInput): Promise<ReactNode> {
+  // Links to content with a translation in this page's language keep the visitor in it.
+  const localeLinks = metadata.editing
+    ? null
+    : await localeLinksService.forLanguage(
+        typeof metadata.language === 'string' ? metadata.language : undefined
+      );
   return renderDocumentWithLoaders(
     toDocument(content),
-    metadata as LoaderContext,
+    { ...(metadata as LoaderContext), localeLinks },
     metadata,
     kind
   );
