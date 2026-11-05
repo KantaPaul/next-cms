@@ -97,16 +97,17 @@ export const saveLoopTemplate = accessProcedure
     })
   )
   .action(async ({ input, ctx }) => {
+    // Called by the editor's autosave: no revalidatePath, which would make
+    // Next re-render the open editor route. The list page is dynamic anyway.
     const row = await loopTemplatesService.update(input, ctx.access);
-    revalidatePath(PAGES.DASHBOARD.LOOP_TEMPLATES);
     return { id: row.id, updatedAt: row.updatedAt };
   });
 
 export const publishLoopTemplate = accessProcedure
   .input(z.object({ id: z.string().min(1) }))
   .action(async ({ input, ctx }) => {
+    // The service revalidates the public site; the open editor stays as is.
     const row = await loopTemplatesService.publish(input.id, ctx.access);
-    revalidatePath(PAGES.DASHBOARD.LOOP_TEMPLATES);
     return { id: row.id, publishedAt: row.publishedAt };
   });
 
