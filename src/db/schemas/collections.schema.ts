@@ -39,6 +39,7 @@ export const collectionFieldTypeEnum = pgEnum('collection_field_type', [
   'select',
   'media',
   'relation',
+  'url',
 ]);
 export type CollectionFieldType = (typeof collectionFieldTypeEnum.enumValues)[number];
 
@@ -48,8 +49,14 @@ export const collections = pgTable(
   {
     id,
     siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
+    /** Plural label shown in the dashboard ("Team members"). */
     name: varchar('name', { length: 150 }).notNull(),
+    /** Singular label used for buttons and headings ("Team member"). */
+    singularName: varchar('singular_name', { length: 150 }),
     slug: varchar('slug', { length: 150 }).notNull(),
+    /** Lucide icon key shown next to the type in the dashboard. */
+    icon: varchar('icon', { length: 50 }),
+    description: text('description'),
     /** Optional page that renders entries of this collection. */
     templatePageId: text('template_page_id').references(() => pages.id, {
       onDelete: 'set null',

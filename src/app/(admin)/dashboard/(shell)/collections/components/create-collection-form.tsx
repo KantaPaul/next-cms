@@ -19,23 +19,37 @@ import { createCollectionSchema } from '../_modules/collections.schemas';
 import { objectToFormData } from '../_modules/form-helpers';
 import { useFormAction } from '@/hooks/use-form-action';
 import type { TemplatePageOption } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
+import { useRouter } from 'next/navigation';
+import { PAGES } from '@/config/pages';
+import { PostTypeMetaFields } from './post-type-meta-fields';
 import { TemplatePageSelect } from './template-page-select';
 
 type CreateCollectionInput = z.infer<typeof createCollectionSchema>;
+
+const EMPTY: CreateCollectionInput = {
+  name: '',
+  singularName: '',
+  slug: '',
+  icon: 'database',
+  description: '',
+  templatePageId: '',
+};
 
 export function CreateCollectionForm({
   templatePages,
 }: {
   templatePages: TemplatePageOption[];
 }) {
+  const router = useRouter();
   const form = useForm<CreateCollectionInput>({
     resolver: zodResolver(createCollectionSchema),
-    defaultValues: { name: '', slug: '', templatePageId: '' },
+    defaultValues: EMPTY,
   });
 
   const { submit, isPending, error } = useFormAction(createCollection, {
-    onSuccess: () => {
-      form.reset({ name: '', slug: '', templatePageId: '' });
+    onSuccess: result => {
+      form.reset(EMPTY);
+      if (result.id) router.push(PAGES.DASHBOARD.COLLECTION(String(result.id)));
     },
   });
 
@@ -55,12 +69,12 @@ export function CreateCollectionForm({
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Name</FormLabel>
+              <FormLabel>Name (plural)</FormLabel>
               <FormControl>
                 <Input
                   {...field}
                   required
-                  placeholder="Collection name"
+                  placeholder="e.g. Team members"
                   onChange={e => {
                     field.onChange(e);
                     form.setValue('slug', slugify(e.target.value));
@@ -88,15 +102,16 @@ export function CreateCollectionForm({
                 />
               </FormControl>
               <p className="text-xs text-muted-foreground">
-                URL identifier generated dynamically from the name.
+                Used in entry URLs: /collections/{"<slug>"}/{"<entry>"}.
               </p>
               <FormMessage />
             </FormItem>
           )}
         />
+        <PostTypeMetaFields />
         <TemplatePageSelect templatePages={templatePages} />
         <Button type="submit" disabled={isPending}>
-          {isPending ? 'Creating…' : 'Create'}
+          {isPending ? 'Creating…' : 'Create post type'}
         </Button>
         {error && <p className="text-sm text-destructive">{error}</p>}
       </form>

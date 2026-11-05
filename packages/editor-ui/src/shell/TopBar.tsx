@@ -1,9 +1,12 @@
 import {
+  AlertCircle,
+  Check,
   Columns2,
   Command,
   Edit3,
   Eye,
   Keyboard,
+  Loader2,
   Maximize2,
   Minimize2,
   Monitor,
@@ -19,9 +22,14 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
-import React from 'react';
-import { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { type SaveState, SaveStatus } from '../feedback/SaveStatus';
+import { MOTION, flashValue, playMotion } from '../lib/motion/play';
+import { RollingNumber } from '../lib/motion/RollingNumber';
+import {
+  SlidingIndicator,
+  useSlidingIndicator,
+} from '../lib/motion/useSlidingIndicator';
 import type { DeviceType } from '../inspector/DeviceValueBadge';
 import { Button } from '../primitives/Button';
 import { IconButton } from '../primitives/IconButton';
@@ -53,6 +61,13 @@ export interface TopBarProps {
   /** Label for the primary action, e.g. "Update live page" or "Submit for review". */
   publishLabel?: string;
   publishDisabled?: boolean;
+  /**
+   * Drives the primary action's motion: a progress shimmer while
+   * `publishing`, then a short success (or error) flash on the way out.
+   */
+  publishState?: PublishState;
+  /** Label flashed after a successful publish. */
+  publishSuccessLabel?: string;
   focusMode?: boolean;
   onToggleFocusMode?: () => void;
   isDark?: boolean;
@@ -70,6 +85,35 @@ export interface TopBarProps {
   extraActions?: React.ReactNode;
 }
 
+export type PublishState = 'idle' | 'publishing' | 'success' | 'error';
+
+/** How long the success / error flash stays on the primary action. */
+export const PUBLISH_FLASH_MS = 1600;
+
+/** True when a key event should be left to a text field's own undo. */
+function inEditable(target: EventTarget | null) {
+  const el = target as HTMLElement | null;
+  return !!el?.closest?.('input, textarea, select, [contenteditable="true"]');
+}
+
+/**
+ * Shows `success` / `error` for PUBLISH_FLASH_MS after the host reports it,
+ * then falls back to idle even if the host keeps the value.
+ */
+export function usePublishFlash(state: PublishState): PublishState {
+  const [flash, setFlash] = useState<PublishState>('idle');
+  useEffect(() => {
+    if (state !== 'success' && state !== 'error') {
+      setFlash('idle');
+      return;
+    }
+    setFlash(state);
+    const t = setTimeout(() => setFlash('idle'), PUBLISH_FLASH_MS);
+    return () => clearTimeout(t);
+  }, [state]);
+  return state === 'publishing' ? 'publishing' : flash;
+}
+
 const segment = (active: boolean) =>
   `flex items-center gap-1.5 px-2.5 py-1 rounded-[var(--ne-radius-sm)] text-[11px] transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--ne-focus-ring)] ${
     active
@@ -81,7 +125,7 @@ const pill =
   'flex items-center gap-0.5 p-0.5 bg-[var(--ne-surface-subtle)] border border-[var(--ne-border)] rounded-[var(--ne-radius-lg)]';
 
 const pillButton =
-  'p-1.5 rounded-[var(--ne-radius-md)] transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--ne-focus-ring)] text-[var(--ne-text)] hover:text-[var(--ne-primary)] hover:bg-[var(--ne-surface)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[var(--ne-text)]';
+  'p-1.5 rounded-[var(--ne-radius-md)] transition-[color,background-color,opacity] duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--ne-focus-ring)] text-[var(--ne-text)] hover:text-[var(--ne-primary)] hover:bg-[var(--ne-surface)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[var(--ne-text)]';
 
 const DEVICES: { id: DeviceType; label: string; Icon: typeof Monitor }[] = [
   { id: 'desktop', label: 'Desktop view', Icon: Monitor },
@@ -110,6 +154,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   onPublish,
   publishLabel = 'Publish',
   publishDisabled = false,
+  publishState = 'idle',
+  publishSuccessLabel = 'Live',
   focusMode = false,
   onToggleFocusMode,
   isDark = false,
@@ -125,6 +171,37 @@ export const TopBar: React.FC<TopBarProps> = ({
 }) => {
   const [editingTitle, setEditingTitle] = useState(false);
   const [tempTitle, setTempTitle] = useState(title);
+  const undoIcon = useRef<HTMLSpanElement>(null);
+  const redoIcon = useRef<HTMLSpanElement>(null);
+  const paletteKbd = useRef<HTMLElement>(null);
+  const shown = usePublishFlash(publishState);
+  const deviceGroup = useRef<HTMLDivElement>(null);
+  useSlidingIndicator(deviceGroup, device);
+
+  const nudgeUndo = () => playMotion(undoIcon.current, MOTION.nudgeLeft);
+  const nudgeRedo = () => playMotion(redoIcon.current, MOTION.nudgeRight);
+
+  // Mirror the host's keyboard shortcuts visually; the host still owns
+  // the actions themselves.
+  const latest = useRef({ canUndo, canRedo });
+  latest.current = { canUndo, canRedo };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
+      const key = e.key.toLowerCase();
+      if (key === 'k') {
+        playMotion(paletteKbd.current, MOTION.keyBounce, { duration: 'fast' });
+        return;
+      }
+      if (inEditable(e.target)) return;
+      const redo = (key === 'z' && e.shiftKey) || key === 'y';
+      if (redo && latest.current.canRedo) nudgeRedo();
+      else if (key === 'z' && !e.shiftKey && latest.current.canUndo) nudgeUndo();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: refs only
+  }, []);
 
   const handleCommitTitle = () => {
     if (tempTitle.trim() && onRenameDocument) {
@@ -193,23 +270,33 @@ export const TopBar: React.FC<TopBarProps> = ({
         <div className={pill}>
           <button
             type="button"
-            className={pillButton}
+            className={`${pillButton} ne-press`}
             disabled={!canUndo}
-            onClick={onUndo}
+            onClick={() => {
+              nudgeUndo();
+              onUndo?.();
+            }}
             aria-label="Undo"
             title="Undo (⌘Z)"
           >
-            <Undo2 className="w-3.5 h-3.5" />
+            <span ref={undoIcon} className="flex">
+              <Undo2 className="w-3.5 h-3.5" />
+            </span>
           </button>
           <button
             type="button"
-            className={pillButton}
+            className={`${pillButton} ne-press`}
             disabled={!canRedo}
-            onClick={onRedo}
+            onClick={() => {
+              nudgeRedo();
+              onRedo?.();
+            }}
             aria-label="Redo"
             title="Redo (⌘⇧Z)"
           >
-            <Redo2 className="w-3.5 h-3.5" />
+            <span ref={redoIcon} className="flex">
+              <Redo2 className="w-3.5 h-3.5" />
+            </span>
           </button>
         </div>
       </div>
@@ -247,7 +334,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             onClick={() => onDockSideChange(dockSide === 'left' ? 'right' : 'left')}
             aria-label={dockSide === 'left' ? 'Dock panel to right' : 'Dock panel to left'}
             title={dockSide === 'left' ? 'Dock panel to right' : 'Dock panel to left'}
-            className="p-1.5 rounded-[var(--ne-radius-md)] border border-[var(--ne-border)] text-[var(--ne-text-muted)] hover:text-[var(--ne-text)] hover:bg-[var(--ne-surface-hover)] transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--ne-focus-ring)]"
+            className="ne-press p-1.5 rounded-[var(--ne-radius-md)] border border-[var(--ne-border)] text-[var(--ne-text-muted)] hover:text-[var(--ne-text)] hover:bg-[var(--ne-surface-hover)] transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--ne-focus-ring)]"
           >
             {dockSide === 'left' ? (
               <PanelRight className="w-3.5 h-3.5" />
@@ -261,10 +348,12 @@ export const TopBar: React.FC<TopBarProps> = ({
           <>
             <div className="h-3.5 w-[1px] bg-[var(--ne-border)] shrink-0" />
             <div
+              ref={deviceGroup}
               role="group"
               aria-label="Device preview"
-              className="flex items-center p-0.5 bg-[var(--ne-surface-subtle)] border border-[var(--ne-border)] rounded-[var(--ne-radius-md)]"
+              className="relative flex items-center p-0.5 bg-[var(--ne-surface-subtle)] border border-[var(--ne-border)] rounded-[var(--ne-radius-md)]"
             >
+              <SlidingIndicator />
               {DEVICES.map(({ id, label, Icon }) => (
                 <button
                   key={id}
@@ -272,14 +361,18 @@ export const TopBar: React.FC<TopBarProps> = ({
                   onClick={() => onDeviceChange(id)}
                   aria-label={label}
                   aria-pressed={device === id}
+                  data-ne-active={device === id ? 'true' : undefined}
                   title={label}
-                  className={`p-1 rounded-[var(--ne-radius-sm)] transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--ne-focus-ring)] ${
+                  className={`ne-press p-1 rounded-[var(--ne-radius-sm)] transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--ne-focus-ring)] ${
                     device === id
-                      ? 'bg-[var(--ne-surface)] text-[var(--ne-primary)] shadow-2xs font-medium'
+                      ? 'text-[var(--ne-primary)] font-medium'
                       : 'text-[var(--ne-text-muted)] hover:text-[var(--ne-text)]'
                   }`}
                 >
-                  <Icon className="w-3.5 h-3.5" />
+                  <Icon
+                    aria-hidden
+                    className={`w-3.5 h-3.5 ${device === id ? 'ne-motion-pop-in' : ''}`}
+                  />
                 </button>
               ))}
             </div>
@@ -301,12 +394,15 @@ export const TopBar: React.FC<TopBarProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => onZoomChange(100)}
-                className="w-8 text-center tabular-nums hover:text-[var(--ne-text)] cursor-pointer"
+                onClick={e => {
+                  if (zoom !== 100) flashValue(e.currentTarget);
+                  onZoomChange(100);
+                }}
+                className="ne-press min-w-8 rounded-[var(--ne-radius-sm)] text-center tabular-nums hover:text-[var(--ne-text)] cursor-pointer"
                 aria-live="polite"
                 title="Reset zoom to 100%"
               >
-                {zoom}%
+                <RollingNumber value={`${zoom}%`} />
               </button>
               <button
                 type="button"
@@ -332,11 +428,13 @@ export const TopBar: React.FC<TopBarProps> = ({
             onClick={onOpenCommandPalette}
             title="Command Palette (⌘K)"
             aria-label="Command palette"
-            className="hidden 2xl:flex items-center gap-1.5 px-2 py-1 text-[11px] font-sans text-[var(--ne-text-muted)] hover:text-[var(--ne-text)] bg-[var(--ne-surface-subtle)] border border-[var(--ne-border)] rounded-[var(--ne-radius-md)] cursor-pointer hover:border-[var(--ne-border-strong)] transition-colors"
+            className="ne-press hidden 2xl:flex items-center gap-1.5 px-2 py-1 text-[11px] font-sans text-[var(--ne-text-muted)] hover:text-[var(--ne-text)] bg-[var(--ne-surface-subtle)] border border-[var(--ne-border)] rounded-[var(--ne-radius-md)] cursor-pointer hover:border-[var(--ne-border-strong)] transition-colors"
           >
             <Command className="w-3 h-3 text-[var(--ne-text-subtle)]" />
             <span>Search</span>
-            <kbd className="font-mono text-[9px] bg-[var(--ne-surface)] px-1 py-0.5 rounded border border-[var(--ne-border)]">
+            <kbd
+              ref={paletteKbd}
+              className="font-mono text-[9px] bg-[var(--ne-surface)] px-1 py-0.5 rounded border border-[var(--ne-border)]">
               ⌘K
             </kbd>
           </button>
@@ -350,7 +448,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             onClick={onOpenShortcuts}
             title="Keyboard shortcuts (?)"
             aria-label="Keyboard shortcuts"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-[var(--ne-text-muted)] hover:text-[var(--ne-text)] border border-[var(--ne-border)] hover:bg-[var(--ne-surface-hover)] rounded-[var(--ne-radius-md)] transition-colors cursor-pointer"
+            className="ne-press flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-[var(--ne-text-muted)] hover:text-[var(--ne-text)] border border-[var(--ne-border)] hover:bg-[var(--ne-surface-hover)] rounded-[var(--ne-radius-md)] transition-colors cursor-pointer"
           >
             <Keyboard className="w-3.5 h-3.5" />
             <span className="hidden 2xl:inline">Shortcuts</span>
@@ -366,11 +464,11 @@ export const TopBar: React.FC<TopBarProps> = ({
             tooltip={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             onClick={onToggleTheme}
           >
-            {isDark ? (
-              <Sun className="w-3.5 h-3.5 text-amber-400" />
-            ) : (
-              <Moon className="w-3.5 h-3.5" />
-            )}
+            {/* Both icons stay mounted so they can cross-rotate. */}
+            <span className="ne-swap" data-on={isDark ? 'b' : 'a'}>
+              <Moon aria-hidden className="ne-swap-a w-3.5 h-3.5" />
+              <Sun aria-hidden className="ne-swap-b w-3.5 h-3.5 text-amber-400" />
+            </span>
           </IconButton>
         )}
 
@@ -382,6 +480,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             }
             active={focusMode}
             onClick={onToggleFocusMode}
+            className="ne-hover-grow"
           >
             {focusMode ? (
               <Minimize2 className="w-3.5 h-3.5" />
@@ -395,7 +494,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           <Button
             variant={isPreview ? 'primary' : 'secondary'}
             size="sm"
-            leftIcon={<Eye className="w-3.5 h-3.5" />}
+            leftIcon={<Eye className="ne-blink w-3.5 h-3.5" />}
             onClick={onPreview}
           >
             {isPreview ? 'Editing' : 'Preview'}
@@ -406,11 +505,31 @@ export const TopBar: React.FC<TopBarProps> = ({
           <Button
             variant="primary"
             size="sm"
-            leftIcon={<UploadCloud className="w-3.5 h-3.5" />}
+            data-publish-state={shown}
+            aria-busy={shown === 'publishing' || undefined}
+            className={`ne-publish ${shown === 'error' ? 'ne-shake' : ''}`}
+            leftIcon={
+              shown === 'publishing' ? (
+                <Loader2 aria-hidden className="w-3.5 h-3.5 animate-spin" />
+              ) : shown === 'success' ? (
+                <Check aria-hidden className="ne-motion-pop-in w-3.5 h-3.5" />
+              ) : shown === 'error' ? (
+                <AlertCircle aria-hidden className="ne-motion-pop-in w-3.5 h-3.5" />
+              ) : (
+                <UploadCloud aria-hidden className="w-3.5 h-3.5" />
+              )
+            }
             disabled={publishDisabled}
             onClick={onPublish}
           >
-            {publishLabel}
+            {/* Keyed so each label slides in when the state changes. */}
+            <span key={shown} className="ne-motion-enter-up">
+              {shown === 'success'
+                ? publishSuccessLabel
+                : shown === 'error'
+                  ? 'Try again'
+                  : publishLabel}
+            </span>
           </Button>
         )}
       </div>

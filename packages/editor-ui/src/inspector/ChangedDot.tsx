@@ -6,17 +6,19 @@ export interface ChangedDotProps {
   className?: string;
 }
 
+/**
+ * Modified-from-default marker. It stays mounted and scales in or out, so
+ * resetting a field visibly shrinks the dot instead of dropping it.
+ */
 export const ChangedDot: React.FC<ChangedDotProps> = ({
   changed = false,
   tooltip = 'Modified from default',
   className = '',
-}) => {
-  if (!changed) return <span className="w-1.5 h-1.5" />; // spacer
-
-  return (
-    <span
-      title={tooltip}
-      className={`ne-motion-pop-in inline-block w-1.5 h-1.5 rounded-full bg-[var(--ne-primary)] shrink-0 ${className}`}
-    />
-  );
-};
+}) => (
+  <span
+    title={changed ? tooltip : undefined}
+    aria-hidden={changed ? undefined : true}
+    data-on={changed ? 'true' : 'false'}
+    className={`ne-changed-dot inline-block w-1.5 h-1.5 rounded-full bg-[var(--ne-primary)] shrink-0 ${className}`}
+  />
+);

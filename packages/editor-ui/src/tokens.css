@@ -103,7 +103,10 @@
   /* Motion */
   --ne-duration-fast: 150ms;
   --ne-duration-normal: 200ms;
+  --ne-duration-slow: 320ms;
   --ne-easing: cubic-bezier(0.16, 1, 0.3, 1);
+  --ne-ease-out: cubic-bezier(.22,1,.36,1);
+  --ne-spring: cubic-bezier(.34,1.56,.64,1);
   --ne-transition-fast: var(--ne-duration-fast) var(--ne-easing);
   --ne-transition-base: var(--ne-duration-normal) var(--ne-easing);
 }
@@ -143,6 +146,10 @@
   :root {
     --ne-duration-fast: 0ms;
     --ne-duration-normal: 0ms;
+    --ne-duration-slow: 0ms;
+    --ne-easing: linear;
+    --ne-ease-out: linear;
+    --ne-spring: linear;
   }
 }
 

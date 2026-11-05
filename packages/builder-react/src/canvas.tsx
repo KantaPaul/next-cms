@@ -788,6 +788,16 @@ function CanvasOverlay({
   const hovered = useEditor(state => state.hovered);
   const dragState = useDragState(drag);
   const tick = useFrameLayoutTick(frame, frameDoc);
+  // Blocks that weren't in the document last render (insert, paste,
+  // duplicate) glow once when selected. Nothing glows on first load.
+  const seenNodes = useRef<Set<string> | null>(null);
+  const freshNodes = useMemo(() => {
+    const seen = seenNodes.current;
+    return new Set(seen ? Object.keys(doc.nodes).filter(id => !seen.has(id)) : []);
+  }, [doc.nodes]);
+  useEffect(() => {
+    seenNodes.current = new Set(Object.keys(doc.nodes));
+  }, [doc.nodes]);
   const store = useEditorStore();
   const labelOf = (id: NodeId) => {
     const node = doc.nodes[id];
@@ -909,14 +919,17 @@ function CanvasOverlay({
       {rects.hovered && hovered && !dragState.active && (
         <HoverBox bounds={rects.hovered} label={labelOf(hovered)} />
       )}
-      {rects.selected.map(([id, rect]) => {
+      {rects.selected.map(([id, rect], index) => {
         const isMovingSource =
           dragState.active &&
           dragState.payload?.kind === 'move' &&
           dragState.payload.id === id;
         return (
           <SelectionBox
-            key={id}
+            // Keyed by slot, not block, so one box glides to the next block
+            // you select instead of a new box appearing there.
+            key={index}
+            className={freshNodes.has(id) ? 'ne-insert-glow' : undefined}
             bounds={rect}
             label={labelOf(id)}
             showHandles={
@@ -1086,7 +1099,15 @@ export function EditorCanvas({
   const toViewportPoint = useCallback(
     (point: Point): Point => {
       const box = frame?.getBoundingClientRect();
-      return box ? { x: point.x + box.left, y: point.y + box.top } : point;
+      if (!box || !frame) return point;
+      // A zoomed canvas scales the iframe with a CSS transform; its own
+      // coordinates are unscaled, so scale them to the host's.
+      const scaleX = frame.clientWidth ? box.width / frame.clientWidth : 1;
+      const scaleY = frame.clientHeight ? box.height / frame.clientHeight : 1;
+      return {
+        x: box.left + point.x * scaleX,
+        y: box.top + point.y * scaleY,
+      };
     },
     [frame]
   );
@@ -1388,9 +1409,12 @@ export function EditorCanvas({
               run: () => store.updateMeta(id, { locked: true }),
             },
           ];
+      // The event comes from inside the canvas iframe, so its clientX/Y are
+      // relative to the iframe; the menu is fixed-positioned in the host page.
+      const at = toViewportPoint({ x: event.clientX, y: event.clientY });
       setContextMenu({
-        x: event.clientX,
-        y: event.clientY,
+        x: at.x,
+        y: at.y,
         items: [
           { id: 'label', label, disabled: true, run: () => {} },
           ...items,
@@ -1417,7 +1441,7 @@ export function EditorCanvas({
       doc.documentElement?.removeEventListener('pointerleave', onLeave);
       doc.removeEventListener('submit', onSubmit, true);
     };
-  }, [frame, frameDoc, store, insertGroups, dragState.active]);
+  }, [frame, frameDoc, store, insertGroups, dragState.active, toViewportPoint]);
 
   // "/" opens quick insert at the default position (after the selection, or
   // at the end of the page), matching where a click on the insert panel goes.
@@ -1522,7 +1546,12 @@ export function EditorCanvas({
           boxShadow:
             '0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04)',
           overflow: 'hidden',
-          transition: 'width .2s ease, max-width .2s ease',
+          // The page visibly narrows or widens on a device switch. Off while
+          // dragging, so drop targets never move under the pointer. The
+          // editor's motion level and reduced motion override this.
+          transition: dragState.active
+            ? 'none'
+            : 'width var(--ne-duration-slow, .32s) var(--ne-ease-out, ease), max-width var(--ne-duration-slow, .32s) var(--ne-ease-out, ease)',
           flex: width ? '0 0 auto' : '1 1 auto',
           minHeight: '700px',
         }}
@@ -1619,6 +1648,8 @@ export function EditorCanvas({
             }}
           >
             <span
+              key={device}
+              className="ne-motion-enter-up"
               style={{
                 borderRadius: 4,
                 padding: '2px 6px',

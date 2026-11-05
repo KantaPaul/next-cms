@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import {
+  POST_TYPE_FIELD_TYPES,
+  POST_TYPE_FIELD_TYPE_VALUES,
+  POST_TYPE_ICONS,
+} from '@/config/post-types';
 
 const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -30,37 +35,30 @@ export const createCollectionSchema = z.object({
       v => !v || !RESERVED_COLLECTION_SLUGS.includes(v),
       'This slug is reserved.'
     ),
+  singularName: z.string().trim().max(150).optional(),
+  icon: z.enum(POST_TYPE_ICONS).optional(),
+  description: z.string().trim().max(500).optional(),
   templatePageId: z.string().nullish().optional(),
 });
 
 export type CreateCollectionInput = z.infer<typeof createCollectionSchema>;
 
-export const FIELD_TYPES = [
-  { value: 'text', label: 'Text' },
-  { value: 'richtext', label: 'Rich text' },
-  { value: 'number', label: 'Number' },
-  { value: 'boolean', label: 'Boolean' },
-  { value: 'date', label: 'Date' },
-  { value: 'select', label: 'Select' },
-  { value: 'media', label: 'Media' },
-  { value: 'relation', label: 'Relation' },
-] as const;
+export const FIELD_TYPES = POST_TYPE_FIELD_TYPES;
 
 export const collectionFieldSchema = z.object({
-  key: z.string().trim().min(1, 'Key is required').max(100),
+  key: z
+    .string()
+    .trim()
+    .max(100)
+    .regex(/^[a-z0-9_]*$/, 'Use lowercase letters, numbers and underscores.')
+    .optional(),
   label: z.string().trim().min(1, 'Label is required').max(150),
-  type: z.enum([
-    'text',
-    'richtext',
-    'number',
-    'boolean',
-    'date',
-    'select',
-    'media',
-    'relation',
-  ]),
+  type: z.enum(POST_TYPE_FIELD_TYPE_VALUES),
   required: z.boolean().default(false),
-  config: z.string().default('{}'),
+  /** Select choices, one per line or comma-separated. */
+  choices: z.string().optional(),
+  /** Related post type id for relation fields. */
+  relationCollectionId: z.string().optional(),
 });
 
 export type CollectionFieldInput = z.infer<typeof collectionFieldSchema>;
@@ -69,6 +67,9 @@ export const updateCollectionSchema = z.object({
   id: z.string().min(1).optional(),
   name: z.string().trim().min(1).max(150).optional(),
   slug: z.string().trim().min(1).max(150).optional(),
+  singularName: z.string().trim().max(150).optional(),
+  icon: z.enum(POST_TYPE_ICONS).optional(),
+  description: z.string().trim().max(500).optional(),
   templatePageId: z.string().nullish().optional(),
 });
 

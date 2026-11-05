@@ -3,19 +3,27 @@ import { PageHeader } from '@/components/organisms/page-header';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import { metaObject } from '@/lib/utils/metadata';
+import { accessService } from '@/server/services/access.service';
 import { requirePermission } from '@/server/services/require-permission';
 import { pagesServices } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
 import { collectionsService } from '@/server/services/collections.service';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { CollectionList } from './components/collection-list';
 import { CreateCollectionForm } from './components/create-collection-form';
+import { PresetPicker } from './components/preset-picker';
 
-const TITLE = 'Collections';
+const TITLE = 'Post types';
 
 export const metadata = { ...metaObject(TITLE) };
 
 export default async function CollectionsPage() {
-  const { allowed } = await requirePermission(PERMISSIONS.PAGES_EDIT);
+  const { allowed, access } = await requirePermission(PERMISSIONS.PAGES_EDIT);
   const breadcrumbs = [
     { title: 'Dashboard', href: PAGES.DASHBOARD.ROOT },
     { title: TITLE, href: PAGES.DASHBOARD.COLLECTIONS },
@@ -25,14 +33,18 @@ export default async function CollectionsPage() {
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="collections" />
+        <AccessDenied what="post types" />
       </>
     );
   }
 
+  const canManage =
+    accessService.can(access, PERMISSIONS.POST_TYPES_MANAGE) ||
+    accessService.can(access, PERMISSIONS.SETTINGS_MANAGE);
+
   const [rows, templatePages] = await Promise.all([
     collectionsService.list(),
-    pagesServices.listTemplateOptions(),
+    canManage ? pagesServices.listTemplateOptions() : Promise.resolve([]),
   ]);
 
   const rowsWithTemplate = rows.map(r => ({
@@ -44,17 +56,33 @@ export default async function CollectionsPage() {
   return (
     <>
       <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-      <div className="grid gap-6 lg:grid-cols-12">
-        <Card className="lg:col-span-4">
+      {canManage && (
+        <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Create collection</CardTitle>
+            <CardTitle>Start from a preset</CardTitle>
+            <CardDescription>
+              Adds the post type with its fields ready to fill in. Show the
+              entries on any page with the “Post type entries” block.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <CreateCollectionForm templatePages={templatePages} />
+            <PresetPicker />
           </CardContent>
         </Card>
-        <div className="lg:col-span-8">
-          <CollectionList rows={rowsWithTemplate} />
+      )}
+      <div className="grid gap-6 lg:grid-cols-12">
+        {canManage && (
+          <Card className="lg:col-span-4">
+            <CardHeader>
+              <CardTitle>Create a custom post type</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CreateCollectionForm templatePages={templatePages} />
+            </CardContent>
+          </Card>
+        )}
+        <div className={canManage ? 'lg:col-span-8' : 'lg:col-span-12'}>
+          <CollectionList rows={rowsWithTemplate} canManage={canManage} />
         </div>
       </div>
     </>

@@ -3,6 +3,11 @@ import { PAGES } from '@/config/pages';
 import { validateSession } from '@/lib/auth';
 import { AccessProvider } from '@/providers/access.provider';
 import { SiteLocalesProvider } from '@/providers/site-locales';
+import { cookies } from 'next/headers';
+import {
+  ADMIN_LOCALE_COOKIE,
+  pickAdminLocale,
+} from '@/lib/locale/admin-locale';
 import { accessService } from '@/server/services/access.service';
 import { siteContext } from '@/server/services/site-context';
 import { licenseService } from '@/server/services/license.service';
@@ -62,6 +67,10 @@ export default async function DashboardLayout({
       <SiteLocalesProvider
         locales={site.locales}
         defaultLocale={site.defaultLocale}
+        initialLocale={pickAdminLocale(
+          (await cookies()).get(ADMIN_LOCALE_COOKIE)?.value,
+          site.locales
+        )}
       >
         {children}
       </SiteLocalesProvider>

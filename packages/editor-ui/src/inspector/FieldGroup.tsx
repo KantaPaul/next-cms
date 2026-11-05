@@ -2,6 +2,7 @@ import * as Collapsible from '@radix-ui/react-collapsible';
 import { ChevronRight } from 'lucide-react';
 import React from 'react';
 import { useState } from 'react';
+import { RollingNumber } from '../lib/motion/RollingNumber';
 import { cn } from '../lib/cn';
 
 /**
@@ -77,7 +78,7 @@ export const FieldGroup: React.FC<FieldGroupProps> = ({
               title={`${changedCount} modified`}
               className="rounded-full bg-[var(--ne-primary-soft)] px-1.5 text-[10px] font-semibold leading-4 text-[var(--ne-primary)]"
             >
-              {changedCount}
+              <RollingNumber value={changedCount} />
             </span>
           )}
           {action && <div>{action}</div>}

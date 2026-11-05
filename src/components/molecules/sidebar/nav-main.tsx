@@ -13,10 +13,13 @@ import {
 } from '@/components/ui/sidebar';
 import { getMenuItems } from '@/menus';
 import { useAccess } from '@/providers/access.provider';
+import { useSiteLocales } from '@/providers/site-locales';
+import { withAdminLanguage } from '@/lib/locale/admin-locale';
 
 export function NavMain() {
   const pathname = usePathname();
   const { permissions } = useAccess();
+  const { chosenLocale } = useSiteLocales();
 
   const menuItems = getMenuItems().filter(
     item => !item.permission || permissions.includes(item.permission)
@@ -45,7 +48,7 @@ export function NavMain() {
                       tooltip={name}
                       isActive={isActive}
                     >
-                      <Link href={href}>
+                      <Link href={withAdminLanguage(href, chosenLocale)}>
                         {icon}
                         <span>{name}</span>
                       </Link>

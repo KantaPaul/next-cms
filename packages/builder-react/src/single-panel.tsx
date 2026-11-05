@@ -13,6 +13,7 @@ import {
   FloatingLayersWindow,
   type PanelDockSide,
   PinnedBlockStrip,
+  RollingNumber,
   ToolRail,
   type ToolRailItem,
 } from '@nextcms/editor-ui';
@@ -271,7 +272,7 @@ export function SinglePanel({
               className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--ne-primary-soft-hover)] bg-[var(--ne-primary-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--ne-primary)] hover:bg-[var(--ne-primary-soft-hover)]"
             >
               <span className="h-1.5 w-1.5 rounded-full bg-[var(--ne-primary)] animate-pulse" />
-              {selectedChanges} modified
+              <RollingNumber value={selectedChanges} /> modified
             </button>
           ) : pageChanges > 0 ? (
             <span
@@ -279,7 +280,7 @@ export function SinglePanel({
               className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--ne-border)] bg-[var(--ne-surface)] px-2 py-0.5 text-[10px] font-medium text-[var(--ne-text-muted)]"
             >
               <span className="h-1.5 w-1.5 rounded-full bg-[var(--ne-text-subtle)]" />
-              {pageChanges} changes
+              <RollingNumber value={pageChanges} /> changes
             </span>
           ) : null}
           {onOpenCommandPalette && (
