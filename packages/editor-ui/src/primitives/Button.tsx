@@ -47,7 +47,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         disabled={disabled}
-        className={`inline-flex items-center justify-center font-sans tracking-tight transition-all duration-150 select-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-inherit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ne-focus-ring)] focus-visible:ring-offset-1 shrink-0 ${sizeClasses} ${variantClasses} ${fullWidth ? 'w-full' : ''} ${className}`}
+        className={`inline-flex items-center justify-center font-sans tracking-tight ne-press transition-all duration-150 select-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-inherit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ne-focus-ring)] focus-visible:ring-offset-1 shrink-0 ${sizeClasses} ${variantClasses} ${fullWidth ? 'w-full' : ''} ${className}`}
         {...props}
       >
         {leftIcon && (

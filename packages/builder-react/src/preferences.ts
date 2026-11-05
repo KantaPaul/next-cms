@@ -10,7 +10,10 @@ export type EditorDensity = 'compact' | 'comfortable' | 'spacious';
 export type EditorPreferences = {
   theme: EditorTheme;
   density: EditorDensity;
+  /** @deprecated Use `motion`. `true` still forces `motion: 'off'`. */
   reducedMotion: boolean;
+  /** How much editor chrome animates: full, subtle (no decorative effects) or off. */
+  motion: 'full' | 'subtle' | 'off';
   defaultUnit: 'px' | 'rem' | 'em';
   rtl: boolean;
   fontSize: number;
@@ -26,6 +29,7 @@ const DEFAULTS: EditorPreferences = {
   theme: 'system',
   density: 'comfortable',
   reducedMotion: false,
+  motion: 'full',
   defaultUnit: 'px',
   rtl: false,
   fontSize: 13,

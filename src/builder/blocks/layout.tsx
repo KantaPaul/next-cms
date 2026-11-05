@@ -12,7 +12,7 @@ export type ButtonProps = WithSection & {
 export function Button(p: ButtonProps) {
   const btnEl = el(p, 'button');
   return (
-    <Section section={p.section} editing={p.editing}>
+    <Section section={p.section} editing={p.editing} className='py-0 md:py-0'>
       <div
         className={cn(
           'flex w-full',

@@ -453,7 +453,7 @@ export function RelatedPosts(
   }
 
   return (
-    <Section section={p.section} editing={p.editing} hasItems>
+    <Section section={p.section} editing={p.editing} className='py-0 md:py-0' hasItems>
       <SectionHeading title={p.title} />
       <PostGrid
         posts={posts}

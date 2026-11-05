@@ -29,10 +29,96 @@ export interface ExportReportData {
   externalUrlNotice: string;
 }
 
+/**
+ * What the exported Next.js project is set up for:
+ * - `standalone`: `output: 'standalone'` plus a Dockerfile, for any Node host.
+ * - `vercel`: no standalone output or Dockerfile, a `vercel.json` with the
+ *   site's redirects, and a README with Vercel deploy steps.
+ */
+export type ExportTarget = 'standalone' | 'vercel';
+
+export const EXPORT_TARGETS: readonly ExportTarget[] = ['standalone', 'vercel'];
+
+export function isExportTarget(value: unknown): value is ExportTarget {
+  return typeof value === 'string' && (EXPORT_TARGETS as readonly string[]).includes(value);
+}
+
 export interface ExportSiteOptions {
   siteId?: string;
   outDir?: string;
   zipPath?: string;
+  /** Defaults to `standalone`. */
+  target?: ExportTarget;
+}
+
+/**
+ * Versions for the exported project. Caret ranges so a fresh install picks up
+ * patched releases: Vercel refuses to deploy Next.js/React versions with known
+ * critical vulnerabilities (e.g. the December 2025 React Server Components fix).
+ */
+const EXPORT_DEPENDENCIES = {
+  next: '^16.0.10',
+  react: '^19.2.3',
+  'react-dom': '^19.2.3',
+};
+const EXPORT_DEV_DEPENDENCIES = {
+  typescript: '^5.9.3',
+  '@types/node': '^20',
+  '@types/react': '^19',
+  '@types/react-dom': '^19',
+};
+
+const STANDALONE_DEPLOY_STEPS = `## Deploy (self-hosted)
+Build and run with Node.js 20.9+:
+\`\`\`bash
+pnpm install
+pnpm build
+pnpm start
+\`\`\`
+Or run with Docker:
+\`\`\`bash
+docker build -t baked-site .
+docker run -p 3000:3000 baked-site
+\`\`\`
+`;
+
+const VERCEL_DEPLOY_STEPS = `## Deploy to Vercel
+This folder is a ready-to-deploy Next.js project. Vercel detects Next.js and
+builds it with \`next build\`; no environment variables or database are needed.
+Redirects from the CMS are in \`vercel.json\`.
+
+**Option A: Vercel CLI**
+\`\`\`bash
+npm i -g vercel
+vercel          # first run links or creates the project and makes a preview deployment
+vercel --prod   # production deployment
+\`\`\`
+
+**Option B: Git**
+1. Push this folder to a new GitHub, GitLab or Bitbucket repository.
+2. In Vercel, choose **Add New → Project**, import the repository and click **Deploy**.
+   Keep the detected framework preset (Next.js) and the default build settings.
+
+To try it locally first: \`pnpm install && pnpm build && pnpm start\`.
+`;
+
+/**
+ * vercel.json for the export: the site's CMS redirects. `statusCode` 301 is a
+ * permanent redirect; anything else (302) is temporary.
+ */
+function vercelConfig(redirectsData: Array<Record<string, unknown>>) {
+  const redirectRules = redirectsData
+    .map(row => ({
+      source: String(row.fromPath ?? ''),
+      destination: String(row.toPath ?? ''),
+      permanent: row.statusCode === 301,
+    }))
+    .filter(rule => rule.source.startsWith('/') && rule.destination.length > 0);
+  return {
+    $schema: 'https://openapi.vercel.sh/vercel.json',
+    framework: 'nextjs',
+    ...(redirectRules.length ? { redirects: redirectRules } : {}),
+  };
 }
 
 const EXTERNAL_URL_NOTICE =
@@ -47,6 +133,11 @@ export class ExportSiteService {
     const baseDir = process.cwd();
     const outDir = options.outDir || path.join(baseDir, 'export', 'site');
     const zipPath = options.zipPath || path.join(baseDir, 'export', 'site.zip');
+    const target: ExportTarget = options.target ?? 'standalone';
+
+    // Start clean so files from an export for another target (e.g. a
+    // Dockerfile) never leak into this one.
+    fs.rmSync(outDir, { recursive: true, force: true });
 
     // Ensure output directories exist
     fs.mkdirSync(outDir, { recursive: true });
@@ -252,23 +343,11 @@ Site ID: ${siteInfo.id}
 ## Important Notice on Forms & Checkout
 > **Warning**: ${EXTERNAL_URL_NOTICE}
 
-### Standalone Deployment
-Run the following in \`${path.relative(baseDir, outDir)}\`:
-\`\`\`bash
-pnpm install
-pnpm build
-pnpm start
-\`\`\`
-Or run with Docker:
-\`\`\`bash
-docker build -t baked-site .
-docker run -p 3000:3000 baked-site
-\`\`\`
-`;
+${target === 'vercel' ? VERCEL_DEPLOY_STEPS : STANDALONE_DEPLOY_STEPS}`;
     fs.writeFileSync(path.join(outDir, 'EXPORT_REPORT.md'), reportMarkdown);
 
     // Create standalone Next.js template files
-    this.writeStandaloneAppTemplate(outDir, siteInfo.name);
+    this.writeStandaloneAppTemplate(outDir, siteInfo.name, target, redirectsData);
 
     // Create zip archive
     await this.createZipArchive(outDir, zipPath);
@@ -277,11 +356,17 @@ docker run -p 3000:3000 baked-site
       success: true,
       outDir,
       zipPath,
+      target,
       report: reportData,
     };
   }
 
-  private writeStandaloneAppTemplate(outDir: string, siteName: string) {
+  private writeStandaloneAppTemplate(
+    outDir: string,
+    siteName: string,
+    target: ExportTarget,
+    redirectsData: Array<Record<string, unknown>>
+  ) {
     const pkgJson = {
       name: 'baked-cms-site',
       version: '1.0.0',
@@ -291,24 +376,68 @@ docker run -p 3000:3000 baked-site
         build: 'next build',
         start: 'next start -p 3000',
       },
-      dependencies: {
-        next: '15.1.3',
-        react: '^19.0.0',
-        'react-dom': '^19.0.0',
-      },
+      engines: { node: '>=20.9.0' },
+      dependencies: EXPORT_DEPENDENCIES,
+      devDependencies: EXPORT_DEV_DEPENDENCIES,
     };
     fs.writeFileSync(path.join(outDir, 'package.json'), JSON.stringify(pkgJson, null, 2));
 
+    // Written up front so `next build` never has to generate it (and so JSON
+    // imports type-check).
+    const tsconfig = {
+      compilerOptions: {
+        target: 'ES2017',
+        lib: ['dom', 'dom.iterable', 'esnext'],
+        allowJs: true,
+        skipLibCheck: true,
+        strict: false,
+        noEmit: true,
+        esModuleInterop: true,
+        module: 'esnext',
+        moduleResolution: 'bundler',
+        resolveJsonModule: true,
+        isolatedModules: true,
+        jsx: 'react-jsx',
+        incremental: true,
+        plugins: [{ name: 'next' }],
+      },
+      include: [
+        'next-env.d.ts',
+        '**/*.ts',
+        '**/*.tsx',
+        '.next/types/**/*.ts',
+        '.next/dev/types/**/*.ts',
+      ],
+      exclude: ['node_modules'],
+    };
+    fs.writeFileSync(path.join(outDir, 'tsconfig.json'), JSON.stringify(tsconfig, null, 2));
+    fs.writeFileSync(
+      path.join(outDir, 'next-env.d.ts'),
+      '/// <reference types="next" />\n/// <reference types="next/image-types/global" />\n'
+    );
+    fs.writeFileSync(
+      path.join(outDir, '.gitignore'),
+      ['node_modules', '.next', 'out', '.vercel', '*.tsbuildinfo', ''].join('\n')
+    );
+
+    // Vercel builds Next.js natively; `output: 'standalone'` is only for
+    // self-hosting (Docker / `node server.js`).
     const nextConfig = `/** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
-  images: {
+${target === 'standalone' ? "  output: 'standalone',\n" : ''}  images: {
     unoptimized: true,
   },
 };
 export default nextConfig;
 `;
     fs.writeFileSync(path.join(outDir, 'next.config.mjs'), nextConfig);
+
+    if (target === 'vercel') {
+      fs.writeFileSync(
+        path.join(outDir, 'vercel.json'),
+        JSON.stringify(vercelConfig(redirectsData), null, 2) + '\n'
+      );
+    }
 
     const dockerfile = `FROM node:20-alpine AS base
 
@@ -332,14 +461,18 @@ COPY --from=builder /app/.next/static ./.next/static
 EXPOSE 3000
 CMD ["node", "server.js"]
 `;
-    fs.writeFileSync(path.join(outDir, 'Dockerfile'), dockerfile);
+    if (target === 'standalone') {
+      fs.writeFileSync(path.join(outDir, 'Dockerfile'), dockerfile);
+    }
 
     const appDir = path.join(outDir, 'app');
     fs.mkdirSync(appDir, { recursive: true });
 
     const layoutTsx = `import React from 'react';
 import site from '../content/site.json';
-import menus from '../content/menus.json';
+import menusJson from '../content/menus.json';
+
+const menus = menusJson as any[];
 
 export const metadata = {
   title: site.name || 'Exported Website',
@@ -370,7 +503,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     fs.writeFileSync(path.join(appDir, 'layout.tsx'), layoutTsx);
 
     const catchAllTsx = `import React from 'react';
-import pages from '../../content/pages.json';
+import pagesJson from '../../content/pages.json';
+
+const pages = pagesJson as any[];
 
 export default async function Page({ params }: { params: Promise<{ slug?: string[] }> }) {
   const resolved = await params;
@@ -402,7 +537,9 @@ export default async function Page({ params }: { params: Promise<{ slug?: string
     fs.mkdirSync(blogDir, { recursive: true });
 
     const blogListTsx = `import React from 'react';
-import posts from '../../content/posts.json';
+import postsJson from '../../content/posts.json';
+
+const posts = postsJson as any[];
 
 export default function BlogList() {
   return (
@@ -428,7 +565,9 @@ export default function BlogList() {
     fs.mkdirSync(blogSlugDir, { recursive: true });
 
     const blogPostTsx = `import React from 'react';
-import posts from '../../../content/posts.json';
+import postsJson from '../../../content/posts.json';
+
+const posts = postsJson as any[];
 
 export default async function BlogPost({ params }: { params: Promise<{ slug: string }> }) {
   const resolved = await params;
@@ -460,12 +599,8 @@ ${EXTERNAL_URL_NOTICE}
 pnpm install
 pnpm dev
 \`\`\`
-Or build for production:
-\`\`\`bash
-pnpm build
-pnpm start
-\`\`\`
-`;
+
+${target === 'vercel' ? VERCEL_DEPLOY_STEPS : STANDALONE_DEPLOY_STEPS}`;
     fs.writeFileSync(path.join(outDir, 'README.md'), readmeMd);
   }
 

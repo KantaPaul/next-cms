@@ -79,6 +79,7 @@ import { PreferencesPanel } from '@nextcms/builder-react';
 import {
   Button as ChromeButton,
   IconButton as ChromeIconButton,
+  type PublishState,
   ShortcutHelpDialog,
   Tabs as ChromeTabs,
 } from '@nextcms/editor-ui';
@@ -696,6 +697,10 @@ export function NewEditor({
 
   const [status, setStatus] = useState(page.status);
   const [busy, setBusy] = useState<string | null>(null);
+  // How the last go-live action ended; drives the top bar's success/error flash.
+  const [liveOutcome, setLiveOutcome] = useState<'success' | 'error' | null>(
+    null
+  );
   const [revisionsOpen, setRevisionsOpen] = useState(false);
   const [motionPreview, setMotionPreview] = useState(false);
   const [frameWindow, setFrameWindow] = useState<Window | null>(null);
@@ -964,8 +969,13 @@ export function NewEditor({
 
   const saveSnapshot = () =>
     run('save', async () => {
-      if (!(await saveNow())) return;
+      if (savesGoLive) setLiveOutcome(null);
+      if (!(await saveNow())) {
+        if (savesGoLive) setLiveOutcome('error');
+        return;
+      }
       if (savesGoLive) {
+        setLiveOutcome('success');
         toast.success(
           kind === 'contact-form'
             ? 'Contact form saved. Pages embedding it show this version.'
@@ -994,8 +1004,12 @@ export function NewEditor({
 
   const publish = () =>
     run('publish', async () => {
-      if (!(await saveNow())) return;
-      await handleActionResponse((await adapter.publish()) as never, data => {
+      setLiveOutcome(null);
+      if (!(await saveNow())) {
+        setLiveOutcome('error');
+        return;
+      }
+      const ok = await handleActionResponse((await adapter.publish()) as never, data => {
         void maybeOfferRedirect(data);
         setStatus('published');
         toast.success(
@@ -1006,18 +1020,25 @@ export function NewEditor({
               : 'Template published'
         );
       });
+      setLiveOutcome(ok ? 'success' : 'error');
     });
 
   const submitForReview = () =>
     run('review', async () => {
-      if (!adapter.submitForReview || !(await saveNow())) return;
-      await handleActionResponse(
+      if (!adapter.submitForReview) return;
+      setLiveOutcome(null);
+      if (!(await saveNow())) {
+        setLiveOutcome('error');
+        return;
+      }
+      const ok = await handleActionResponse(
         (await adapter.submitForReview()) as never,
         () => {
           setStatus('review');
           toast.success('Submitted for review');
         }
       );
+      setLiveOutcome(ok ? 'success' : 'error');
     });
 
   const extraCommands = useMemo<Command[]>(
@@ -1376,15 +1397,31 @@ export function NewEditor({
   );
 
   if (shell === 'shared') {
+    const liveState = (action: string): PublishState =>
+      busy === action ? 'publishing' : (liveOutcome ?? 'idle');
     const primaryAction: PrimaryAction | null = savesGoLive
-      ? { label: adapter.liveLabel, disabled: busy !== null, run: saveSnapshot }
+      ? {
+          label: adapter.liveLabel,
+          disabled: busy !== null,
+          run: saveSnapshot,
+          state: liveState('save'),
+          successLabel: 'Saved',
+        }
       : canPublish
-        ? { label: adapter.liveLabel, disabled: busy !== null, run: publish }
+        ? {
+            label: adapter.liveLabel,
+            disabled: busy !== null,
+            run: publish,
+            state: liveState('publish'),
+            successLabel: 'Live',
+          }
         : adapter.submitForReview
           ? {
               label: 'Submit for review',
               disabled: busy !== null || status === 'review',
               run: submitForReview,
+              state: liveState('review'),
+              successLabel: 'Submitted',
             }
           : null;
     const selection = store.getState().selection;
