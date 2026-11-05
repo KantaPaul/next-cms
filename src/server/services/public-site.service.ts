@@ -5,6 +5,8 @@ import { normalizeContent } from '@/builder/data';
 import { db } from '@/db';
 import { menuItems, menus, pageContents, pages, seoMeta } from '@/db/schema';
 import { DEFAULT_LANGUAGE, LANGUAGE_CODES } from '@/db/schemas/shared.schema';
+import { type LocaleLinkMap, localizeHref } from '@/lib/utils/locale-links';
+import { localeLinksService } from '@/server/services/locale-links.service';
 import { siteContext, type ResolvedSite } from '@/server/services/site-context';
 
 export type SiteRoute = { language: string; slug: string | null };
@@ -258,12 +260,28 @@ export const publicSiteService = {
           .limit(1);
         if (!menu) continue;
         const loaded = await publicSiteService.getMenusById([menu.id]);
-        if (loaded[menu.id]) return loaded[menu.id];
+        const found = loaded[menu.id];
+        if (!found) continue;
+        // Keep visitors in their language: point items at translations.
+        const localeLinks = await localeLinksService.forLanguage(language, resolved);
+        return localeLinks?.size ? localizeMenu(found, localeLinks) : found;
       }
       return null;
     }
   ),
 };
+
+function localizeMenu(menu: MenuWithItems, map: LocaleLinkMap): MenuWithItems {
+  const fix = <T extends { url: string | null }>(item: T): T =>
+    item.url ? { ...item, url: localizeHref(item.url, map) } : item;
+  return {
+    ...menu,
+    items: menu.items.map(item => ({
+      ...fix(item),
+      children: item.children.map(fix),
+    })),
+  };
+}
 
 export type MenuItemNode = typeof menuItems.$inferSelect & {
   children: (typeof menuItems.$inferSelect)[];
