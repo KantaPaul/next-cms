@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import { flashValue } from '../lib/motion/play';
 import { ChangedDot } from './ChangedDot';
 import { type DeviceType, DeviceValueBadge } from './DeviceValueBadge';
 import { ResetButton } from './ResetButton';
@@ -59,9 +60,18 @@ export const FieldRow: React.FC<FieldRowProps> = ({
   error,
   onDeviceClick,
 }) => {
+  const rowRef = useRef<HTMLDivElement>(null);
+  // The reset button disappears with the change, so the row itself flashes.
+  const handleReset = onReset
+    ? () => {
+        flashValue(rowRef.current);
+        onReset();
+      }
+    : undefined;
   const row = (
     <div
-      className={`py-1.5 ${layout === 'horizontal' ? 'flex items-center justify-between gap-2 min-h-[32px]' : 'space-y-1'} ${footer ? '' : className}`}
+      ref={rowRef}
+      className={`rounded-[var(--ne-radius-sm)] py-1.5 ${layout === 'horizontal' ? 'flex items-center justify-between gap-2 min-h-[32px]' : 'space-y-1'} ${footer ? '' : className}`}
     >
       <div
         className={`flex items-center gap-1.5 min-w-0 ${layout === 'horizontal' ? 'w-2/5 shrink-0' : 'w-full'}`}
@@ -84,8 +94,8 @@ export const FieldRow: React.FC<FieldRowProps> = ({
             onClick={onDeviceClick}
           />
         )}
-        {changed && onReset && (
-          <ResetButton onReset={onReset} label={`Reset ${label}`} />
+        {changed && handleReset && (
+          <ResetButton onReset={handleReset} label={`Reset ${label}`} />
         )}
       </div>
 
@@ -97,7 +107,12 @@ export const FieldRow: React.FC<FieldRowProps> = ({
         </FieldRowLabelContext.Provider>
       </div>
       {error && (
-        <p className="m-0 text-[11px] text-[var(--ne-danger,#ef4444)] font-medium">
+        // Keyed by message so each new error shakes once.
+        <p
+          key={typeof error === 'string' ? error : undefined}
+          role="alert"
+          className="ne-shake m-0 text-[11px] text-[var(--ne-danger,#ef4444)] font-medium"
+        >
           {error}
         </p>
       )}

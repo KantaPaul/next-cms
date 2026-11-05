@@ -78,7 +78,8 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
       {/* Label Badge */}
       {label && !hideLabel && (
         <div
-          className={`absolute -top-6 ${
+          key={label}
+          className={`ne-motion-enter-up absolute -top-6 ${
             isRight ? 'right-0' : 'left-0'
           } px-1.5 py-0.5 text-[10px] font-sans font-medium rounded-t-[var(--ne-radius-sm)] flex items-center gap-1 text-white shadow-xs pointer-events-auto select-none ${
             locked

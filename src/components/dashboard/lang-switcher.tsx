@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useMemo, useTransition } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Globe } from 'lucide-react';
 import {
   handleSelected,
@@ -11,6 +11,10 @@ import {
 import { useSiteLocales } from '@/providers/site-locales';
 import { DEFAULT_SITE_LOCALES } from '@/db/schemas/sites.schema';
 import { cn } from '@/lib/utils/cn';
+import {
+  ADMIN_LOCALE_COOKIE,
+  LANGUAGE_FILTERED_ROUTES,
+} from '@/lib/locale/admin-locale';
 
 export function LangSwitcher({
   locales,
@@ -23,6 +27,8 @@ export function LangSwitcher({
 }) {
   const context = useSiteLocales();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [pending, startTransition] = useTransition();
 
   const effectiveDefaultLocale =
@@ -42,14 +48,9 @@ export function LangSwitcher({
     }));
   }, [rawLocales]);
 
-  // Default site language is always set as the default value
-  const [selected, setSelected] = useState<string>(effectiveDefaultLocale);
-
-  useEffect(() => {
-    // Whenever defaultLocale changes (e.g. site switch), reset to default site language
-    setSelected(effectiveDefaultLocale);
-    context.setCurrentLocale?.(effectiveDefaultLocale);
-  }, [effectiveDefaultLocale]);
+  // The chosen language (cms_locale cookie, read by the dashboard layout)
+  // survives navigation; until one is picked, the site's default.
+  const selected = context.chosenLocale ?? effectiveDefaultLocale;
 
   const selectedOption =
     handleSelected(options, selected) ||
@@ -68,11 +69,18 @@ export function LangSwitcher({
       disabled={pending || options.length < 2}
       onChange={event => {
         const code = (event as Option).value;
-        setSelected(code);
         context.setCurrentLocale?.(code);
-        document.cookie = `cms_locale=${encodeURIComponent(code)}; path=/; max-age=31536000; SameSite=Lax`;
+        document.cookie = `${ADMIN_LOCALE_COOKIE}=${encodeURIComponent(code)}; path=/; max-age=31536000; SameSite=Lax`;
         startTransition(() => {
-          router.refresh();
+          // On a list that filters by language, show the new language's items.
+          if (LANGUAGE_FILTERED_ROUTES.has(pathname)) {
+            const params = new URLSearchParams(searchParams.toString());
+            params.set('language', code);
+            params.delete('page');
+            router.replace(`${pathname}?${params.toString()}`);
+          } else {
+            router.refresh();
+          }
         });
       }}
       options={options}

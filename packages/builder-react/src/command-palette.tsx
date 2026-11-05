@@ -14,6 +14,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { SlidingIndicator, useSlidingIndicator } from '@nextcms/editor-ui';
 import type { BlockGroup } from './block-list';
 import { useEditor, useEditorStore } from './context';
 
@@ -173,6 +174,8 @@ export function CommandPalette({
   );
 
   useEffect(() => setActive(0), [filtered.length === 0]);
+  // One highlight slides between rows as you arrow or hover.
+  useSlidingIndicator(listRef, active, { deep: true });
 
   if (!open) return null;
 
@@ -203,11 +206,16 @@ export function CommandPalette({
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: overlay close is a pointer-only convenience; Escape is the keyboard path
     // biome-ignore lint/a11y/noStaticElementInteractions: same as above
-    <div style={overlayStyle} onClick={() => onOpenChange(false)}>
+    <div
+      style={overlayStyle}
+      className="ne-motion-enter"
+      onClick={() => onOpenChange(false)}
+    >
       <div
         role="dialog"
         aria-label="Command palette"
         style={panelStyle}
+        className="ne-palette-in"
         onClick={event => event.stopPropagation()}
         onKeyDown={onKeyDown}
       >
@@ -230,8 +238,19 @@ export function CommandPalette({
           ref={listRef}
           role="listbox"
           aria-label="Commands"
-          style={{ overflowY: 'auto', padding: 6 }}
+          className="ne-stagger"
+          style={
+            {
+              position: 'relative',
+              overflowY: 'auto',
+              padding: 6,
+              '--ne-ind-bg': 'rgba(79,70,229,.3)',
+              '--ne-ind-shadow': 'none',
+              '--ne-ind-radius': '6px',
+            } as CSSProperties
+          }
         >
+          <SlidingIndicator />
           {filtered.length === 0 && (
             <p style={{ padding: '10px 10px', opacity: 0.6 }}>No matches.</p>
           )}
@@ -257,6 +276,7 @@ export function CommandPalette({
                   type="button"
                   role="option"
                   aria-selected={index === active}
+                  data-ne-active={index === active ? 'true' : undefined}
                   onMouseEnter={() => setActive(index)}
                   onClick={() => run(command)}
                   style={{
@@ -269,8 +289,9 @@ export function CommandPalette({
                     padding: '7px 10px',
                     borderRadius: 6,
                     cursor: 'pointer',
-                    background:
-                      index === active ? 'rgba(79,70,229,.3)' : 'transparent',
+                    // The sliding indicator draws the active row's background.
+                    background: 'transparent',
+                    position: 'relative',
                   }}
                 >
                   <span

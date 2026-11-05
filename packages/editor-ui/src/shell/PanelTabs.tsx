@@ -1,5 +1,9 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { cn } from '../lib/cn';
+import {
+  SlidingIndicator,
+  useSlidingIndicator,
+} from '../lib/motion/useSlidingIndicator';
 
 export interface PanelTabItem {
   id: string;
@@ -35,6 +39,8 @@ export const PanelTabs: React.FC<PanelTabsProps> = ({
   ariaLabel = 'Panel tabs',
   className,
 }) => {
+  const listRef = useRef<HTMLDivElement>(null);
+  useSlidingIndicator(listRef, activeTab);
   const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const enabledTabs = tabs.filter(t => !t.disabled);
     const currentIndex = enabledTabs.findIndex(t => t.id === activeTab);
@@ -59,16 +65,22 @@ export const PanelTabs: React.FC<PanelTabsProps> = ({
 
   return (
     <div
+      ref={listRef}
       role="tablist"
       aria-label={ariaLabel}
       onKeyDown={onKeyDown}
       className={cn(
-        'flex items-center gap-1 border-b border-[var(--ne-border)] bg-[var(--ne-surface)] px-2',
+        'relative flex items-center gap-1 border-b border-[var(--ne-border)] bg-[var(--ne-surface)] px-2',
         variant === 'segmented' &&
           'mx-2 my-1.5 rounded-md border border-[var(--ne-border)] bg-[var(--ne-surface-subtle)] p-0.5',
         className
       )}
     >
+      {variant !== 'compact' && (
+        <SlidingIndicator
+          className={variant === 'default' ? 'ne-indicator-line' : undefined}
+        />
+      )}
       {tabs.map(tab => {
         const isSelected = tab.id === activeTab;
         return (
@@ -83,13 +95,14 @@ export const PanelTabs: React.FC<PanelTabsProps> = ({
             tabIndex={isSelected ? 0 : -1}
             title={tab.shortcut ? `${tab.label} (${tab.shortcut})` : undefined}
             aria-keyshortcuts={tab.shortcut ? ariaShortcut(tab.shortcut) : undefined}
+            data-ne-active={isSelected ? 'true' : undefined}
             onClick={() => onChange(tab.id)}
             className={cn(
-              'relative flex h-8 items-center gap-1.5 px-2.5 text-xs font-medium transition-colors select-none',
+              'ne-press relative flex h-8 items-center gap-1.5 px-2.5 text-xs font-medium transition-colors select-none',
               variant === 'segmented'
                 ? isSelected
-                  ? 'rounded bg-[var(--ne-surface)] text-[var(--ne-text)] shadow-sm'
-                  : 'text-[var(--ne-text-muted)] hover:text-[var(--ne-text)]'
+                  ? 'rounded text-[var(--ne-text)]'
+                  : 'rounded text-[var(--ne-text-muted)] hover:text-[var(--ne-text)]'
                 : isSelected
                   ? 'text-[var(--ne-primary)] font-semibold'
                   : 'text-[var(--ne-text-muted)] hover:text-[var(--ne-text)]',
@@ -107,7 +120,7 @@ export const PanelTabs: React.FC<PanelTabsProps> = ({
                 data-modified-dot=""
                 aria-label="Has changes"
                 className={cn(
-                  'h-1.5 w-1.5 shrink-0 rounded-full',
+                  'ne-motion-pop-in h-1.5 w-1.5 shrink-0 rounded-full transition-colors',
                   isSelected
                     ? 'bg-[var(--ne-primary)]'
                     : 'bg-[var(--ne-text-muted)]'
@@ -127,10 +140,6 @@ export const PanelTabs: React.FC<PanelTabsProps> = ({
               </span>
             )}
 
-            {/* Bottom active indicator line for default variant */}
-            {variant === 'default' && isSelected && (
-              <div className="absolute inset-x-1 -bottom-px h-[2px] bg-[var(--ne-primary)] rounded-t-sm" />
-            )}
           </button>
         );
       })}

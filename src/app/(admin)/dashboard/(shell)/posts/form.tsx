@@ -89,6 +89,8 @@ function PostFormInner({ id }: { id: string }) {
   const { initialValues, taxonomy } = useDataProvider<PostFormData>();
   const markSavedRef = useRef<(snapshot: string) => void>(() => {});
 
+  // New items start in the dashboard's working language (header switcher).
+  const { currentLocale } = useSiteLocales();
   const defaultValues = useMemo<CreatePostInput>(
     () => ({
       title: initialValues?.title ?? '',
@@ -97,7 +99,7 @@ function PostFormInner({ id }: { id: string }) {
       featuredImage: initialValues?.featuredImage ?? '',
       status: initialValues?.status ?? 'draft',
       visibility: initialValues?.visibility ?? 'public',
-      language: initialValues?.language ?? 'en',
+      language: initialValues?.language ?? currentLocale,
       scheduledAt: toDateTimeLocal(initialValues?.scheduledAt),
       body: initialValues?.body ?? '',
       categories: initialValues?.categories ?? [],
@@ -117,7 +119,7 @@ function PostFormInner({ id }: { id: string }) {
           initialValues?.seo?.structuredDataType ?? 'BlogPosting',
       },
     }),
-    [initialValues]
+    [initialValues, currentLocale]
   );
 
   function onSubmit(inputs: CreatePostInput) {

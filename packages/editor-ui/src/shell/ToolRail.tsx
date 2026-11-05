@@ -1,4 +1,9 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import { RollingNumber } from '../lib/motion/RollingNumber';
+import {
+  SlidingIndicator,
+  useSlidingIndicator,
+} from '../lib/motion/useSlidingIndicator';
 import { cn } from '../lib/cn';
 import { Tooltip } from '../primitives/Tooltip';
 
@@ -30,6 +35,13 @@ export interface ToolRailProps {
   className?: string;
 }
 
+/** Soft primary highlight, no shadow, matching the old active background. */
+const indicatorLook = {
+  '--ne-ind-bg': 'var(--ne-primary-soft)',
+  '--ne-ind-shadow': 'none',
+  '--ne-ind-radius': 'var(--ne-radius-md)',
+} as React.CSSProperties;
+
 const Divider = () => (
   <div aria-hidden className="mx-1 h-4 w-px shrink-0 bg-[var(--ne-border)]" />
 );
@@ -45,6 +57,13 @@ export const ToolRail: React.FC<ToolRailProps> = ({
   className,
 }) => {
   const horizontal = orientation === 'horizontal';
+  const itemsRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const activeKey = (list?: ToolRailItem[]) =>
+    list?.find(i => i.active ?? (activeId ? i.id === activeId : false))?.id ??
+    '';
+  useSlidingIndicator(itemsRef, activeKey(items));
+  useSlidingIndicator(bottomRef, activeKey(bottomItems));
 
   const renderItem = (item: ToolRailItem) => {
     const isActive = item.active ?? (activeId ? item.id === activeId : false);
@@ -70,23 +89,22 @@ export const ToolRail: React.FC<ToolRailProps> = ({
           type="button"
           aria-label={item.label}
           aria-pressed={isActive}
+          data-ne-active={isActive ? 'true' : undefined}
           disabled={item.disabled}
           onClick={item.onClick}
           className={cn(
             'group relative flex items-center justify-center rounded-[var(--ne-radius-md)] transition-colors focus-visible:outline-2 focus-visible:outline-[var(--ne-focus-ring)]',
             horizontal ? 'h-7 w-7' : 'h-9 w-9',
+            'ne-press',
+            // The group's sliding indicator draws the active background.
             isActive
-              ? 'bg-[var(--ne-primary-soft)] text-[var(--ne-primary)]'
+              ? 'text-[var(--ne-primary)]'
               : 'text-[var(--ne-text-muted)] hover:bg-[var(--ne-surface-hover)] hover:text-[var(--ne-text)]',
             item.disabled && 'cursor-not-allowed opacity-40'
           )}
         >
           {item.icon}
 
-          {/* Active side indicator pill (side rail only) */}
-          {isActive && !horizontal && (
-            <div className="absolute -left-1 top-1.5 bottom-1.5 w-1 rounded-r bg-[var(--ne-primary)]" />
-          )}
 
           {/* Badge */}
           {item.badge !== undefined && (
@@ -96,7 +114,7 @@ export const ToolRail: React.FC<ToolRailProps> = ({
                 horizontal ? '-top-1 -right-1' : 'top-1 right-1'
               )}
             >
-              {item.badge}
+              <RollingNumber value={item.badge} />
             </span>
           )}
         </button>
@@ -121,7 +139,8 @@ export const ToolRail: React.FC<ToolRailProps> = ({
             <Divider />
           </>
         )}
-        <div className="flex min-w-0 items-center gap-0.5">
+        <div ref={itemsRef} className="relative flex min-w-0 items-center gap-0.5" style={indicatorLook}>
+          <SlidingIndicator />
           {items.map(renderItem)}
         </div>
         {(trailing || (bottomItems && bottomItems.length > 0)) && <Divider />}
@@ -142,12 +161,14 @@ export const ToolRail: React.FC<ToolRailProps> = ({
         className
       )}
     >
-      <div className="flex flex-col items-center gap-1.5 w-full px-1.5">
+      <div ref={itemsRef} className="relative flex flex-col items-center gap-1.5 w-full px-1.5" style={indicatorLook}>
+        <SlidingIndicator />
         {items.map(renderItem)}
       </div>
 
       {bottomItems && bottomItems.length > 0 && (
-        <div className="flex flex-col items-center gap-1.5 w-full px-1.5 border-t border-[var(--ne-border)] pt-2">
+        <div ref={bottomRef} className="relative flex flex-col items-center gap-1.5 w-full px-1.5 border-t border-[var(--ne-border)] pt-2" style={indicatorLook}>
+          <SlidingIndicator />
           {bottomItems.map(renderItem)}
         </div>
       )}
