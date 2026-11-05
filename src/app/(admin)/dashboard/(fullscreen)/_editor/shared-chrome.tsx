@@ -22,12 +22,16 @@ import {
   type EditorTheme,
   FloatingDeviceBar,
   Kbd,
+  type MenuItem,
   Panel,
   type SaveState,
   StatusBar,
   TopBar,
 } from '@nextcms/editor-ui';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Triangle } from 'lucide-react';
+import { toast } from 'sonner';
+import { PERMISSIONS } from '@/config/permissions';
+import { useCan } from '@/providers/access.provider';
 import Link from 'next/link';
 import { type ReactNode, useSyncExternalStore } from 'react';
 
@@ -187,6 +191,31 @@ export function SharedChrome({
   const store = useEditorStore();
   const save = useSaveState(queue);
   const history = useEditor(state => state.history);
+  const canExportSite = useCan(PERMISSIONS.SETTINGS_MANAGE);
+  // Whole-site export (published content, not this document) as a Next.js
+  // project ready for Vercel. Built by exportSiteService on the server.
+  const siteExportItems: MenuItem[] = canExportSite
+    ? [
+        {
+          id: 'export-vercel',
+          label: 'Vercel (site .zip)',
+          icon: <Triangle size={14} />,
+          onClick: () => {
+            const link = document.createElement('a');
+            link.href = '/api/v1/export/site?target=vercel';
+            link.download = 'site-vercel.zip';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            toast.info('Exporting your published site for Vercel', {
+              description:
+                'Unzip site-vercel.zip, then run `vercel --prod` in that folder, or push it to a Git repository and import it in Vercel. The README inside has the steps.',
+              duration: 12000,
+            });
+          },
+        },
+      ]
+    : [];
   const device = useEditor(state => state.device);
   const blockCount = useEditor(state => Object.keys(state.doc.nodes).length);
   const selected = useEditor(state => state.selection.length);
@@ -264,7 +293,12 @@ export function SharedChrome({
           onLayoutChange={onLayoutChange}
           dockSide={singlePanelDockSide}
           onDockSideChange={onDockSideChange}
-          exportAction={<JsonExportButton documentName={title} />}
+          exportAction={
+            <JsonExportButton
+              documentName={title}
+              extraItems={siteExportItems}
+            />
+          }
           extraActions={actions}
           onPublish={primaryAction?.run}
           publishLabel={primaryAction?.label}
