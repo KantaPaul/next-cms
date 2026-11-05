@@ -54,7 +54,7 @@ export function Newsletter(p: NewsletterProps) {
   }
 
   return (
-    <Section section={p.section} editing={p.editing}>
+    <Section section={p.section} editing={p.editing} className='py-0 md:py-0'>
       <div className="mx-auto max-w-2xl text-center">
         {p.title ? (
           <h2 className="text-3xl font-bold tracking-tight md:text-4xl">{p.title}</h2>
