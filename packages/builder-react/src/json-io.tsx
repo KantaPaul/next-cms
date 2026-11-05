@@ -16,11 +16,14 @@ import { useEditor, useEditorStore } from './context';
 export interface JsonExportButtonProps {
   documentName?: string;
   className?: string;
+  /** Host-specific export choices (e.g. a whole-site export), listed after the JSON ones. */
+  extraItems?: MenuItem[];
 }
 
 export function JsonExportButton({
   documentName = 'page-document',
   className = '',
+  extraItems = [],
 }: JsonExportButtonProps) {
   const store = useEditorStore();
   const doc = useEditor(state => state.doc);
@@ -85,6 +88,9 @@ export function JsonExportButton({
         setModalOpen(true);
       },
     },
+    ...extraItems.map((item, index) =>
+      index === 0 ? { ...item, divider: true } : item
+    ),
   ];
 
   return (
