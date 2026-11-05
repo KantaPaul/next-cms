@@ -1099,7 +1099,15 @@ export function EditorCanvas({
   const toViewportPoint = useCallback(
     (point: Point): Point => {
       const box = frame?.getBoundingClientRect();
-      return box ? { x: point.x + box.left, y: point.y + box.top } : point;
+      if (!box || !frame) return point;
+      // A zoomed canvas scales the iframe with a CSS transform; its own
+      // coordinates are unscaled, so scale them to the host's.
+      const scaleX = frame.clientWidth ? box.width / frame.clientWidth : 1;
+      const scaleY = frame.clientHeight ? box.height / frame.clientHeight : 1;
+      return {
+        x: box.left + point.x * scaleX,
+        y: box.top + point.y * scaleY,
+      };
     },
     [frame]
   );
@@ -1401,9 +1409,12 @@ export function EditorCanvas({
               run: () => store.updateMeta(id, { locked: true }),
             },
           ];
+      // The event comes from inside the canvas iframe, so its clientX/Y are
+      // relative to the iframe; the menu is fixed-positioned in the host page.
+      const at = toViewportPoint({ x: event.clientX, y: event.clientY });
       setContextMenu({
-        x: event.clientX,
-        y: event.clientY,
+        x: at.x,
+        y: at.y,
         items: [
           { id: 'label', label, disabled: true, run: () => {} },
           ...items,
@@ -1430,7 +1441,7 @@ export function EditorCanvas({
       doc.documentElement?.removeEventListener('pointerleave', onLeave);
       doc.removeEventListener('submit', onSubmit, true);
     };
-  }, [frame, frameDoc, store, insertGroups, dragState.active]);
+  }, [frame, frameDoc, store, insertGroups, dragState.active, toViewportPoint]);
 
   // "/" opens quick insert at the default position (after the selection, or
   // at the end of the page), matching where a click on the insert panel goes.
