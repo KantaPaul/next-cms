@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { FormInput as Input } from '@/components/ui/input';
@@ -26,12 +28,16 @@ import {
 interface CreateEntryFormProps {
   collectionId: string;
   fields: EntryFieldConfig[];
+  singularName?: string;
 }
 
 export function CreateEntryForm({
   collectionId,
   fields,
+  singularName = 'entry',
 }: CreateEntryFormProps) {
+  // Bumped after each save so uncontrolled editors (rich text) remount empty.
+  const [resetKey, setResetKey] = useState(0);
   const defaultValues: EntryFormValues = { slug: '' };
   fields.forEach(f => {
     defaultValues[`data-${f.key}`] = f.type === 'boolean' ? false : '';
@@ -45,11 +51,13 @@ export function CreateEntryForm({
   const { submit, isPending, error } = useFormAction(createCollectionEntry, {
     onSuccess: () => {
       form.reset(defaultValues);
+      setResetKey(k => k + 1);
+      toast.success(`${singularName} saved as draft.`);
     },
   });
 
   const primaryField =
-    fields.find(f => ['title', 'name', 'label', 'heading'].includes(f.key))?.key ||
+    fields.find(f => ['title', 'name', 'label', 'heading', 'question', 'author'].includes(f.key))?.key ||
     fields.find(f => f.type === 'text')?.key;
 
   const handleFieldChange = (key: string, value: unknown) => {
@@ -74,8 +82,8 @@ export function CreateEntryForm({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
         <EntryDataFields
+          key={resetKey}
           fields={fields}
-          richtextRows={4}
           onFieldChange={handleFieldChange}
         />
         <FormField
@@ -104,7 +112,7 @@ export function CreateEntryForm({
         />
         <div>
           <Button type="submit" disabled={isPending}>
-            {isPending ? 'Creating…' : 'Create entry'}
+            {isPending ? 'Creating…' : `Create ${singularName.toLowerCase()}`}
           </Button>
         </div>
         {error && <p className="text-sm text-destructive">{error}</p>}

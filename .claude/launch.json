@@ -6,6 +6,12 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["exec", "next", "dev", "-p", "3100"],
       "port": 3100
+    },
+    {
+      "name": "verify-worktree",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd /private/tmp/claude-501/-Users-pobon-Documents-testing-cms-next-cms/b73c539e-dee5-4b9c-a8c5-b6b899952a69/scratchpad/wt && exec ./node_modules/.bin/next dev --webpack -p 3002"],
+      "port": 3002
     }
   ]
 }

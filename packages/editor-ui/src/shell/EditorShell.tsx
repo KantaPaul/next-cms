@@ -1,6 +1,7 @@
 import React from 'react';
 import { LiveAnnouncerProvider } from '../a11y/LiveAnnouncer';
 import { cn } from '../lib/cn';
+import type { MotionLevel } from '../lib/motion/motionLevel';
 import { ToastProvider } from '../primitives/Toast';
 import { EditorUIScope } from '../theme/EditorUIProvider';
 
@@ -23,6 +24,8 @@ export interface EditorShellProps {
   focusMode?: boolean;
   theme?: 'light' | 'dark';
   dir?: 'ltr' | 'rtl';
+  /** Editor chrome animation level; the OS reduced-motion setting still wins. */
+  motion?: MotionLevel;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -38,6 +41,7 @@ export const EditorShell: React.FC<EditorShellProps> = ({
   focusMode = false,
   theme,
   dir,
+  motion = 'full',
   className,
   style,
 }) => (
@@ -46,6 +50,7 @@ export const EditorShell: React.FC<EditorShellProps> = ({
       <ToastProvider>
         <div
           data-ne-theme={theme}
+          data-ne-motion={motion}
           dir={dir}
           className={cn(
             'ne-editor-root flex h-screen w-full flex-col overflow-hidden bg-[var(--ne-bg)] text-[var(--ne-text)]',

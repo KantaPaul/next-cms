@@ -29,6 +29,7 @@ import {
 import { renderSlot, type SlotValue } from './blocks/content';
 import { getBlockComponents } from './blocks/registry';
 import { type LoaderContext, resolveDocumentData } from './loaders';
+import type { LocaleLinkMap } from '@/lib/utils/locale-links';
 import { prefixDocumentLinks, prefixHtmlLinks } from './site-links';
 import { MotionItem, MotionScope } from './motion';
 import { type PostView, SAMPLE_POST } from './post-template';
@@ -289,10 +290,13 @@ export async function renderDocumentWithLoaders(
 ): Promise<ReactNode> {
   const mergedCtx: LoaderContext = { ...metadata, ...ctx };
   const resolved = await resolveDocumentData(doc, mergedCtx);
-  // Path routing: add the site slug to links typed into content.
+  // Path routing: add the site slug to links typed into content; on a
+  // non-default locale, point links at their translations (localeLinks).
   const siteSlug = typeof mergedCtx.siteSlug === 'string' ? mergedCtx.siteSlug : '';
-  const prefix = Boolean(siteSlug) && !metadata.editing;
-  const document = prefix ? prefixDocumentLinks(resolved, siteSlug) : resolved;
+  const localeLinks =
+    mergedCtx.localeLinks instanceof Map ? (mergedCtx.localeLinks as LocaleLinkMap) : null;
+  const prefix = (Boolean(siteSlug) || Boolean(localeLinks?.size)) && !metadata.editing;
+  const document = prefix ? prefixDocumentLinks(resolved, siteSlug, localeLinks) : resolved;
   const post = metadata.post as PostView | undefined;
   return (
     <BuilderRenderer
@@ -300,7 +304,7 @@ export async function renderDocumentWithLoaders(
       document={document}
       metadata={{
         ...metadata,
-        ...(prefix && post?.body ? { post: { ...post, body: prefixHtmlLinks(post.body, siteSlug) } } : {}),
+        ...(prefix && post?.body ? { post: { ...post, body: prefixHtmlLinks(post.body, siteSlug, localeLinks) } } : {}),
         language: metadata.language ?? mergedCtx.language,
         themeTokens: metadata.themeTokens ?? mergedCtx.themeTokens,
       }}

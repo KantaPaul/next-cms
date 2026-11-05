@@ -56,6 +56,7 @@ import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import { maybeOfferRedirect } from '@/components/dashboard/redirect-offer';
 import { useCan } from '@/providers/access.provider';
 import { useDataProvider } from '@/providers/data.provider';
+import { useSiteLocales } from '@/providers/site-locales';
 
 type PageFormData = {
   initialValues?: PageDetail | null;
@@ -94,6 +95,8 @@ function PageForm({ id }: { id: string }) {
     ? templates.find(t => t.id === templateParam)
     : undefined;
 
+  // New items start in the dashboard's working language (header switcher).
+  const { currentLocale } = useSiteLocales();
   const defaultValues = useMemo<CreatePagesInput>(
     () => ({
       title: initialValues?.title ?? '',
@@ -104,7 +107,7 @@ function PageForm({ id }: { id: string }) {
       visibility: initialValues?.visibility ?? 'public',
       editorType:
         initialValues?.editorType ?? presetTemplate?.editorType ?? 'richtext',
-      language: initialValues?.language ?? 'en',
+      language: initialValues?.language ?? currentLocale,
       isHome: initialValues?.isHome ?? false,
       isBlogIndex:
         initialValues?.isBlogIndex ?? isBlogIndexTemplate(presetTemplate),
@@ -132,7 +135,7 @@ function PageForm({ id }: { id: string }) {
         structuredDataType: initialValues?.seo?.structuredDataType ?? 'WebPage',
       },
     }),
-    [initialValues, presetTemplate]
+    [initialValues, presetTemplate, currentLocale]
   );
 
   function onSubmit(inputs: CreatePagesInput) {

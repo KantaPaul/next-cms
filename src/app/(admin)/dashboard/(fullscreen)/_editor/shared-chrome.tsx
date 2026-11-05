@@ -19,15 +19,23 @@ import {
 } from '@nextcms/builder-react';
 import {
   EditorShell,
+  type MotionLevel,
+  type PublishState,
+  RollingNumber,
+  resolveMotionLevel,
   type EditorTheme,
   FloatingDeviceBar,
   Kbd,
+  type MenuItem,
   Panel,
   type SaveState,
   StatusBar,
   TopBar,
 } from '@nextcms/editor-ui';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Triangle } from 'lucide-react';
+import { toast } from 'sonner';
+import { PERMISSIONS } from '@/config/permissions';
+import { useCan } from '@/providers/access.provider';
 import Link from 'next/link';
 import { type ReactNode, useSyncExternalStore } from 'react';
 
@@ -61,6 +69,7 @@ function appIsDark() {
 function useEditorChromePreferences(): {
   theme?: EditorTheme;
   dir: 'ltr' | 'rtl';
+  motion: MotionLevel;
 } {
   const store = getPreferencesStore();
   const prefs = useSyncExternalStore(
@@ -83,6 +92,7 @@ function useEditorChromePreferences(): {
           ? 'dark'
           : 'light',
     dir: prefs?.rtl ? 'rtl' : 'ltr',
+    motion: resolveMotionLevel(prefs),
   };
 }
 
@@ -92,11 +102,12 @@ function useEditorChromePreferences(): {
  * same theme and direction the new shell would use (B15 E4).
  */
 export function EditorUIScopeBox({ children }: { children: ReactNode }) {
-  const { theme, dir } = useEditorChromePreferences();
+  const { theme, dir, motion } = useEditorChromePreferences();
   return (
     <div
       className="ne-ui"
       data-ne-theme={theme}
+      data-ne-motion={motion}
       dir={dir}
       // The old chrome's panels are white whatever the admin theme, so paint
       // the editor surface here to keep text readable in dark mode.
@@ -115,6 +126,10 @@ export type PrimaryAction = {
   label: string;
   disabled: boolean;
   run: () => void;
+  /** Progress and outcome of the action, for the button's motion. */
+  state?: PublishState;
+  /** Label flashed after the action succeeds. */
+  successLabel?: string;
 };
 
 export type SharedChromeProps = {
@@ -187,10 +202,35 @@ export function SharedChrome({
   const store = useEditorStore();
   const save = useSaveState(queue);
   const history = useEditor(state => state.history);
+  const canExportSite = useCan(PERMISSIONS.SETTINGS_MANAGE);
+  // Whole-site export (published content, not this document) as a Next.js
+  // project ready for Vercel. Built by exportSiteService on the server.
+  const siteExportItems: MenuItem[] = canExportSite
+    ? [
+        {
+          id: 'export-vercel',
+          label: 'Vercel (site .zip)',
+          icon: <Triangle size={14} />,
+          onClick: () => {
+            const link = document.createElement('a');
+            link.href = '/api/v1/export/site?target=vercel';
+            link.download = 'site-vercel.zip';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            toast.info('Exporting your published site for Vercel', {
+              description:
+                'Unzip site-vercel.zip, then run `vercel --prod` in that folder, or push it to a Git repository and import it in Vercel. The README inside has the steps.',
+              duration: 12000,
+            });
+          },
+        },
+      ]
+    : [];
   const device = useEditor(state => state.device);
   const blockCount = useEditor(state => Object.keys(state.doc.nodes).length);
   const selected = useEditor(state => state.selection.length);
-  const { theme, dir } = useEditorChromePreferences();
+  const { theme, dir, motion } = useEditorChromePreferences();
   const isDarkCurrent = isDark !== undefined ? isDark : theme === 'dark';
   const handleToggleTheme =
     onToggleTheme ??
@@ -209,6 +249,7 @@ export function SharedChrome({
     <EditorShell
       theme={theme}
       dir={dir}
+      motion={motion}
       focusMode={focusMode || isPreview}
       topBar={
         <TopBar
@@ -264,11 +305,18 @@ export function SharedChrome({
           onLayoutChange={onLayoutChange}
           dockSide={singlePanelDockSide}
           onDockSideChange={onDockSideChange}
-          exportAction={<JsonExportButton documentName={title} />}
+          exportAction={
+            <JsonExportButton
+              documentName={title}
+              extraItems={siteExportItems}
+            />
+          }
           extraActions={actions}
           onPublish={primaryAction?.run}
           publishLabel={primaryAction?.label}
           publishDisabled={primaryAction?.disabled}
+          publishState={primaryAction?.state}
+          publishSuccessLabel={primaryAction?.successLabel}
         />
       }
       notices={notices}
@@ -337,7 +385,13 @@ export function SharedChrome({
             }
             right={
               <span>
-                {blockCount} blocks{selected ? ` · ${selected} selected` : ''}
+                <RollingNumber value={blockCount} /> blocks
+                {selected ? (
+                  <>
+                    {' · '}
+                    <RollingNumber value={selected} /> selected
+                  </>
+                ) : null}
               </span>
             }
           />

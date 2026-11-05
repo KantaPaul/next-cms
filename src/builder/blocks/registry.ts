@@ -33,6 +33,7 @@ import {
   Timeline,
 } from './marketing';
 import { Newsletter } from './newsletter';
+import { PostTypeEntries } from './post-type-entries';
 import { QueryFilter } from './query-filters';
 import { LoopItemField, QueryLoop } from './query-loop';
 import { SearchResults } from './search-results';
@@ -69,6 +70,7 @@ const builtInComponents = {
   Image: ImageBlock,
   Gallery,
   CollectionItem,
+  PostTypeEntries,
   ContactForm,
   GlobalRef,
   BlogPosts,

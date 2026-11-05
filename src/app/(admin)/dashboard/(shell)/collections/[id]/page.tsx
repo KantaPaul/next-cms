@@ -4,7 +4,10 @@ import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import { metaObject } from '@/lib/utils/metadata';
 import { notFound } from 'next/navigation';
+import { accessService } from '@/server/services/access.service';
 import { requirePermission } from '@/server/services/require-permission';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 import { pagesServices } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
 import { collectionsService } from '@/server/services/collections.service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,14 +21,18 @@ export default async function CollectionPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { allowed } = await requirePermission(PERMISSIONS.SETTINGS_MANAGE);
+  const { allowed: canManage, access } = await requirePermission(
+    PERMISSIONS.POST_TYPES_MANAGE
+  );
+  const allowed =
+    canManage || accessService.can(access, PERMISSIONS.SETTINGS_MANAGE);
   const collection = await collectionsService.get(id).catch(() => null);
 
   if (!collection) return notFound();
 
   const breadcrumbs = [
     { title: 'Dashboard', href: PAGES.DASHBOARD.ROOT },
-    { title: 'Collections', href: PAGES.DASHBOARD.COLLECTIONS },
+    { title: 'Post types', href: PAGES.DASHBOARD.COLLECTIONS },
     { title: collection.name, href: PAGES.DASHBOARD.COLLECTION(id) },
   ];
 
@@ -33,19 +40,27 @@ export default async function CollectionPage({
     return (
       <>
         <PageHeader title={collection.name} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="collection fields" />
+        <AccessDenied what="post type fields" />
       </>
     );
   }
 
-  const [fields, templatePages] = await Promise.all([
+  const [fields, templatePages, allTypes] = await Promise.all([
     collectionsService.getFields(id),
     pagesServices.listTemplateOptions(),
+    collectionsService.list(),
   ]);
 
   return (
     <>
       <PageHeader title={collection.name} breadcrumbs={breadcrumbs} />
+      <div className="mb-4 flex justify-end">
+        <Button asChild>
+          <Link href={PAGES.DASHBOARD.COLLECTION_ENTRIES(id)}>
+            Manage {collection.name.toLowerCase()}
+          </Link>
+        </Button>
+      </div>
       <div className="grid gap-6 lg:grid-cols-12">
         <Card className="lg:col-span-4">
           <CardHeader>
@@ -64,7 +79,12 @@ export default async function CollectionPage({
               <CardTitle>Add field</CardTitle>
             </CardHeader>
             <CardContent>
-              <AddFieldForm collectionId={collection.id} />
+              <AddFieldForm
+                collectionId={collection.id}
+                postTypes={allTypes
+                  .filter(t => t.id !== collection.id)
+                  .map(t => ({ id: t.id, name: t.name }))}
+              />
             </CardContent>
           </Card>
           <Card>

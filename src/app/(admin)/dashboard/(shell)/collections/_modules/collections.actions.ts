@@ -6,7 +6,9 @@ import { collectionsService } from '@/server/services/collections.service';
 import { slugify } from '@/lib/utils/slugify';
 import { revalidatePath } from 'next/cache';
 import { PAGES } from '@/config/pages';
+import { fieldKeyFromLabel } from '@/config/post-types';
 import {
+  collectionFieldSchema,
   createCollectionSchema,
   updateCollectionSchema,
 } from './collections.schemas';
@@ -20,30 +22,58 @@ export async function createCollection(formData: FormData) {
   const name = String(formData.get('name') ?? '').trim();
   let slug = String(formData.get('slug') ?? '').trim();
   const templatePageId = formData.get('templatePageId') || undefined;
+  const singularName = String(formData.get('singularName') ?? '').trim() || undefined;
+  const icon = formData.get('icon') || undefined;
+  const description = String(formData.get('description') ?? '').trim() || undefined;
 
   if (!slug && name) {
     slug = slugify(name);
   }
 
-  const parsed = createCollectionSchema.safeParse({ name, slug, templatePageId });
+  const parsed = createCollectionSchema.safeParse({
+    name,
+    slug,
+    templatePageId,
+    singularName,
+    icon,
+    description,
+  });
   if (!parsed.success) {
     return { ok: false, error: 'Invalid name or slug.' };
   }
 
   try {
     const finalSlug = parsed.data.slug || slugify(parsed.data.name);
-    await collectionsService.create(
+    const row = await collectionsService.create(
       {
         name: parsed.data.name,
         slug: finalSlug,
+        singularName: parsed.data.singularName,
+        icon: parsed.data.icon,
+        description: parsed.data.description,
         templatePageId: parsed.data.templatePageId,
       },
       await actorId()
     );
     revalidatePath(PAGES.DASHBOARD.COLLECTIONS);
-    return { ok: true };
+    return { ok: true, id: row.id };
   } catch (error: any) {
     return { ok: false, error: error.message ?? 'Failed to create collection.' };
+  }
+}
+
+/** One-click install of a ready-made post type (Team, Testimonials, FAQ). */
+export async function createPostTypeFromPreset(formData: FormData) {
+  const presetId = String(formData.get('presetId') ?? '');
+  try {
+    const row = await collectionsService.createFromPreset(
+      presetId,
+      await actorId()
+    );
+    revalidatePath(PAGES.DASHBOARD.COLLECTIONS);
+    return { ok: true, id: row.id };
+  } catch (error: any) {
+    return { ok: false, error: error.message ?? 'Failed to add post type.' };
   }
 }
 
@@ -51,6 +81,14 @@ export async function updateCollection(formData: FormData) {
   const id = formData.get('id');
   const name = formData.get('name') || undefined;
   const slug = formData.get('slug') || undefined;
+  // Missing keys leave the value unchanged; an empty string clears it.
+  const optional = (key: string) => {
+    const v = formData.get(key);
+    return v === null ? undefined : String(v);
+  };
+  const singularName = optional('singularName');
+  const icon = optional('icon') || undefined;
+  const description = optional('description');
   // An empty selection ("None") clears the template; a missing key leaves it unchanged.
   const rawTemplatePageId = formData.get('templatePageId');
   const templatePageId =
@@ -60,6 +98,9 @@ export async function updateCollection(formData: FormData) {
     id: id ?? undefined,
     name,
     slug,
+    singularName,
+    icon,
+    description,
     templatePageId,
   });
   if (!parsed.success) {
@@ -74,6 +115,13 @@ export async function updateCollection(formData: FormData) {
     await collectionsService.update(parsed.data.id, {
       ...(parsed.data.name !== undefined ? { name: parsed.data.name } : {}),
       ...(parsed.data.slug !== undefined ? { slug: parsed.data.slug } : {}),
+      ...(parsed.data.singularName !== undefined
+        ? { singularName: parsed.data.singularName }
+        : {}),
+      ...(parsed.data.icon !== undefined ? { icon: parsed.data.icon } : {}),
+      ...(parsed.data.description !== undefined
+        ? { description: parsed.data.description }
+        : {}),
       ...(parsed.data.templatePageId !== undefined
         ? { templatePageId: parsed.data.templatePageId }
         : {}),
@@ -96,58 +144,60 @@ export async function deleteCollection(collectionId: string) {
   }
 }
 
-const addFieldSchema = z.object({
-  collectionId: z.string().min(1),
-  key: z.string().trim().min(1).max(100),
-  label: z.string().trim().min(1).max(150),
-  type: z.enum(['text', 'richtext', 'number', 'boolean', 'date', 'select', 'media', 'relation']),
-  required: z.boolean().default(false),
-  config: z.string().default('{}'),
-});
-
 function isChecked(value: FormDataEntryValue | null) {
   return value === 'on' || value === 'true';
 }
 
 export async function addCollectionField(formData: FormData) {
-  const collectionId = formData.get('collectionId');
-  const key = formData.get('key');
-  const label = formData.get('label');
-  const type = formData.get('type');
-  const required = isChecked(formData.get('required'));
-  const configRaw = formData.get('config') || '{}';
-  let config: Record<string, unknown> = {};
-  try {
-    config = JSON.parse(String(configRaw));
-  } catch {
-    config = {};
+  const collectionId = String(formData.get('collectionId') ?? '');
+  const raw = Object.fromEntries(
+    ['key', 'label', 'type', 'choices', 'relationCollectionId'].map(k => [
+      k,
+      formData.get(k) ? String(formData.get(k)) : undefined,
+    ])
+  );
+  const parsed = collectionFieldSchema.safeParse({
+    ...raw,
+    required: isChecked(formData.get('required')),
+  });
+  if (!collectionId || !parsed.success) {
+    return {
+      ok: false,
+      error: parsed.success
+        ? 'Missing post type id.'
+        : (parsed.error.issues[0]?.message ?? 'Invalid field input.'),
+    };
   }
 
-  const parsed = addFieldSchema.safeParse({
-    collectionId,
-    key,
-    label,
-    type,
-    required,
-    config: JSON.stringify(config),
-  });
-  if (!parsed.success) {
-    return { ok: false, error: 'Invalid field input.' };
+  const { label, type, required, choices, relationCollectionId } = parsed.data;
+  const key = parsed.data.key || fieldKeyFromLabel(label);
+  if (!key) return { ok: false, error: 'Field key could not be derived.' };
+
+  const config: Record<string, unknown> = {};
+  if (type === 'select') {
+    const list = (choices ?? '')
+      .split(/[\n,]/)
+      .map(c => c.trim())
+      .filter(Boolean);
+    if (!list.length) {
+      return { ok: false, error: 'Add at least one choice for a select field.' };
+    }
+    config.choices = Array.from(new Set(list));
+  }
+  if (type === 'relation') {
+    if (!relationCollectionId) {
+      return { ok: false, error: 'Pick the post type this field links to.' };
+    }
+    config.collectionId = relationCollectionId;
   }
 
   try {
     await collectionsService.addField(
-      parsed.data.collectionId,
-      {
-        key: parsed.data.key,
-        label: parsed.data.label,
-        type: parsed.data.type,
-        required: parsed.data.required,
-        config: config,
-      },
+      collectionId,
+      { key, label, type, required, config },
       await actorId()
     );
-    revalidatePath(PAGES.DASHBOARD.COLLECTION(parsed.data.collectionId));
+    revalidatePath(PAGES.DASHBOARD.COLLECTION(collectionId));
     return { ok: true };
   } catch (error: any) {
     return { ok: false, error: error.message ?? 'Failed to add field.' };
@@ -311,7 +361,12 @@ export async function deleteCollectionEntry(formData: FormData): Promise<void> {
 export async function listCollectionOptions() {
   try {
     const list = await collectionsService.list();
-    return list.map(c => ({ id: c.id, name: c.name, slug: c.slug }));
+    return list.map(c => ({
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+      icon: c.icon,
+    }));
   } catch {
     return [];
   }

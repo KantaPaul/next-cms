@@ -586,6 +586,22 @@ const loadQueryLoop: BlockLoader = async (props, ctx) => {
   };
 };
 
+/** Published entries of one post type, by id or (for block presets) by slug. */
+const loadPostTypeEntries: BlockLoader = async (props, ctx) => {
+  const { resolvePostTypeEntries } = await import(
+    '@/server/actions/listing.actions'
+  );
+  return resolvePostTypeEntries({
+    collectionId:
+      typeof props.collectionId === 'string' ? props.collectionId : '',
+    postTypeSlug:
+      typeof props.postTypeSlug === 'string' ? props.postTypeSlug : '',
+    limit: Number(props.limit) || 12,
+    newestFirst: props.sortOrder === 'newest',
+    language: typeof ctx.language === 'string' ? ctx.language : undefined,
+  });
+};
+
 /**
  * Replaces `{archive_title}` / `{archive_description}` in a Query Loop's
  * heading props with the current archive term, so one archive template
@@ -705,6 +721,7 @@ const registry = createLoaderRegistry<LoaderContext>(
     BlogPosts: loadBlogPosts,
     RelatedPosts: loadRelatedPosts,
     QueryLoop: loadQueryLoop,
+    PostTypeEntries: loadPostTypeEntries,
     QueryFilter: loadQueryFilter,
     SearchResults: loadSearchResults,
     VideoLibrary: loadVideoLibrary,
