@@ -19,6 +19,10 @@ import {
 } from '@nextcms/builder-react';
 import {
   EditorShell,
+  type MotionLevel,
+  type PublishState,
+  RollingNumber,
+  resolveMotionLevel,
   type EditorTheme,
   FloatingDeviceBar,
   Kbd,
@@ -61,6 +65,7 @@ function appIsDark() {
 function useEditorChromePreferences(): {
   theme?: EditorTheme;
   dir: 'ltr' | 'rtl';
+  motion: MotionLevel;
 } {
   const store = getPreferencesStore();
   const prefs = useSyncExternalStore(
@@ -83,6 +88,7 @@ function useEditorChromePreferences(): {
           ? 'dark'
           : 'light',
     dir: prefs?.rtl ? 'rtl' : 'ltr',
+    motion: resolveMotionLevel(prefs),
   };
 }
 
@@ -92,11 +98,12 @@ function useEditorChromePreferences(): {
  * same theme and direction the new shell would use (B15 E4).
  */
 export function EditorUIScopeBox({ children }: { children: ReactNode }) {
-  const { theme, dir } = useEditorChromePreferences();
+  const { theme, dir, motion } = useEditorChromePreferences();
   return (
     <div
       className="ne-ui"
       data-ne-theme={theme}
+      data-ne-motion={motion}
       dir={dir}
       // The old chrome's panels are white whatever the admin theme, so paint
       // the editor surface here to keep text readable in dark mode.
@@ -115,6 +122,10 @@ export type PrimaryAction = {
   label: string;
   disabled: boolean;
   run: () => void;
+  /** Progress and outcome of the action, for the button's motion. */
+  state?: PublishState;
+  /** Label flashed after the action succeeds. */
+  successLabel?: string;
 };
 
 export type SharedChromeProps = {
@@ -190,7 +201,7 @@ export function SharedChrome({
   const device = useEditor(state => state.device);
   const blockCount = useEditor(state => Object.keys(state.doc.nodes).length);
   const selected = useEditor(state => state.selection.length);
-  const { theme, dir } = useEditorChromePreferences();
+  const { theme, dir, motion } = useEditorChromePreferences();
   const isDarkCurrent = isDark !== undefined ? isDark : theme === 'dark';
   const handleToggleTheme =
     onToggleTheme ??
@@ -209,6 +220,7 @@ export function SharedChrome({
     <EditorShell
       theme={theme}
       dir={dir}
+      motion={motion}
       focusMode={focusMode || isPreview}
       topBar={
         <TopBar
@@ -269,6 +281,8 @@ export function SharedChrome({
           onPublish={primaryAction?.run}
           publishLabel={primaryAction?.label}
           publishDisabled={primaryAction?.disabled}
+          publishState={primaryAction?.state}
+          publishSuccessLabel={primaryAction?.successLabel}
         />
       }
       notices={notices}
@@ -337,7 +351,13 @@ export function SharedChrome({
             }
             right={
               <span>
-                {blockCount} blocks{selected ? ` · ${selected} selected` : ''}
+                <RollingNumber value={blockCount} /> blocks
+                {selected ? (
+                  <>
+                    {' · '}
+                    <RollingNumber value={selected} /> selected
+                  </>
+                ) : null}
               </span>
             }
           />

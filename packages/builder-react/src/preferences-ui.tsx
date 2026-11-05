@@ -16,12 +16,13 @@ const smallButton: CSSProperties = {
   cursor: 'pointer',
 };
 
-/** Preferences UI: theme, density, reduced motion, units, RTL, font size. */
+/** Preferences UI: theme, density, motion level, units, RTL, font size. */
 export function PreferencesPanel() {
   const [state, setState] = useState(() => getPreferencesStore()?.getState() ?? {
     theme: 'system',
     density: 'comfortable',
     reducedMotion: false,
+    motion: 'full',
     defaultUnit: 'px',
     rtl: false,
     fontSize: 13,
@@ -53,6 +54,15 @@ export function PreferencesPanel() {
     { value: 'comfortable', label: 'Comfortable' },
     { value: 'spacious', label: 'Spacious' },
   ];
+  const motionOptions: { value: EditorPreferences['motion']; label: string }[] = [
+    { value: 'full', label: 'Full' },
+    { value: 'subtle', label: 'Subtle' },
+    { value: 'off', label: 'Off' },
+  ];
+  // The old boolean still forces Off until the user picks a level here.
+  const motionLevel: EditorPreferences['motion'] = prefs.reducedMotion
+    ? 'off'
+    : (prefs.motion ?? 'full');
   const unitOptions: { value: EditorPreferences['defaultUnit']; label: string }[] = [
     { value: 'px', label: 'px' },
     { value: 'rem', label: 'rem' },
@@ -139,16 +149,35 @@ export function PreferencesPanel() {
           ))}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <input
-            type="checkbox"
-            checked={prefs.reducedMotion}
-            onChange={event => setPref('reducedMotion', event.target.checked)}
-            style={{ width: 16, height: 16, cursor: 'pointer' }}
-          />
-          <label style={{ font: '13px/1.4 system-ui, sans-serif', cursor: 'pointer', userSelect: 'none' }}>
-            Reduce motion
-          </label>
+        <div style={{ font: '600 11px/1.4 system-ui, sans-serif', opacity: 0.7, textTransform: 'uppercase', letterSpacing: '.04em' }}>Motion</div>
+        <div role="group" aria-label="Editor motion" style={{ display: 'flex', gap: 4 }}>
+          {motionOptions.map(opt => (
+            <button
+              key={opt.value}
+              type="button"
+              aria-pressed={motionLevel === opt.value}
+              onClick={() =>
+                getPreferencesStore()?.setMultiple({
+                  motion: opt.value,
+                  reducedMotion: false,
+                })
+              }
+              style={{
+                all: 'unset',
+                flex: 1,
+                padding: '6px 8px',
+                borderRadius: 6,
+                border: `1px solid ${motionLevel === opt.value ? '#4f46e5' : 'rgba(127,127,127,.35)'}`,
+                background: motionLevel === opt.value ? 'rgba(79,70,229,.15)' : 'transparent',
+                color: motionLevel === opt.value ? '#4f46e5' : 'inherit',
+                font: '600 12px/1.4 system-ui, sans-serif',
+                cursor: 'pointer',
+                textAlign: 'center',
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

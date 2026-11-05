@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import { SlidingIndicator, useSlidingIndicator } from '../lib/motion';
 
 export interface TabItem {
   id: string;
@@ -64,14 +65,24 @@ export const Tabs: React.FC<TabsProps> = ({
   ariaLabel,
   className = '',
 }) => {
+  const listRef = useRef<HTMLDivElement | null>(null);
+  useSlidingIndicator(listRef, activeId);
   if (variant === 'segmented') {
     return (
       <div
+        ref={listRef}
         role="tablist"
         aria-label={ariaLabel}
         onKeyDown={e => onTabKeyDown(e, items, activeId, onChange)}
-        className={`inline-flex items-center p-0.5 bg-[var(--ne-surface-subtle)] border border-[var(--ne-border)] rounded-[var(--ne-radius-md)] ${fullWidth ? 'w-full' : ''} ${className}`}
+        className={`relative inline-flex items-center p-0.5 bg-[var(--ne-surface-subtle)] border border-[var(--ne-border)] rounded-[var(--ne-radius-md)] ${fullWidth ? 'w-full' : ''} ${className}`}
+        style={
+          {
+            '--ne-ind-shadow':
+              '0 0 0 1px var(--ne-border), var(--ne-shadow-sm)',
+          } as React.CSSProperties
+        }
       >
+        <SlidingIndicator />
         {items.map(tab => {
           const isActive = tab.id === activeId;
           return (
@@ -82,12 +93,13 @@ export const Tabs: React.FC<TabsProps> = ({
               aria-selected={isActive}
               aria-label={tab.ariaLabel}
               tabIndex={isActive ? 0 : -1}
+              data-ne-active={isActive ? 'true' : undefined}
               onClick={() => onChange(tab.id)}
-              className={`flex items-center justify-center gap-1.5 px-2.5 transition-all text-xs font-sans rounded-[var(--ne-radius-sm)] cursor-pointer select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--ne-focus-ring)] ${
+              className={`ne-press flex items-center justify-center gap-1.5 px-2.5 transition-colors text-xs font-sans rounded-[var(--ne-radius-sm)] cursor-pointer select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--ne-focus-ring)] ${
                 fullWidth ? 'min-w-0 flex-1' : ''
               } ${size === 'sm' ? 'h-5 text-[11px]' : 'h-6'} ${
                 isActive
-                  ? 'bg-[var(--ne-surface)] text-[var(--ne-text)] font-medium shadow-xs border border-[var(--ne-border)]'
+                  ? 'text-[var(--ne-text)] font-medium border border-transparent'
                   : 'text-[var(--ne-text-muted)] hover:text-[var(--ne-text)] border border-transparent'
               }`}
             >

@@ -1,5 +1,6 @@
 import { Filter, Search, X } from 'lucide-react';
 import React from 'react';
+import { RollingNumber } from '../lib/motion';
 import { cn } from '../lib/cn';
 
 /** The inspector's "Search settings…" box; clears with the X or Escape. */
@@ -50,7 +51,7 @@ export const SettingsSearch: React.FC<SettingsSearchProps> = ({
       </button>
     ) : matchesCount !== undefined && matchesCount > 0 ? (
       <span className="pointer-events-none absolute end-2 top-1/2 -translate-y-1/2 font-mono text-[10px] text-[var(--ne-text-muted)]">
-        {matchesCount}
+        <RollingNumber value={matchesCount} />
       </span>
     ) : null}
   </div>
@@ -96,7 +97,7 @@ export const ChangedFilter: React.FC<ChangedFilterProps> = ({
             : 'bg-[var(--ne-surface-subtle)] text-[var(--ne-text-muted)]'
         )}
       >
-        {changedTotal}
+        <RollingNumber value={changedTotal} />
       </span>
     )}
   </button>

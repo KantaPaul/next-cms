@@ -26,7 +26,7 @@ import {
   SettingsSearch,
 } from '@nextcms/editor-ui';
 import { Copy, FileText, Paintbrush, Sliders, Trash2 } from 'lucide-react';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useEditor, useEditorStore } from './context';
 import {
   DeviceProvider,
@@ -171,6 +171,19 @@ export function SettingsView({
     window.addEventListener(SETTINGS_TAB_EVENT, onTab);
     return () => window.removeEventListener(SETTINGS_TAB_EVENT, onTab);
   }, [availableTabIds]);
+
+  // Which way the panel body slides: towards later tabs, or back.
+  const tabIndex = availableTabIds.indexOf(activeTab);
+  const lastTab = useRef({ index: tabIndex, block: selectedId });
+  const slide =
+    lastTab.current.block !== selectedId || lastTab.current.index === tabIndex
+      ? 'none'
+      : tabIndex > lastTab.current.index
+        ? 'next'
+        : 'prev';
+  useEffect(() => {
+    lastTab.current = { index: tabIndex, block: selectedId };
+  }, [tabIndex, selectedId]);
 
   const currentTab = layoutResult.tabs.find(t => t.def.id === activeTab);
   const sections = searchQuery.trim()
@@ -360,7 +373,15 @@ export function SettingsView({
           </div>
 
           {/* Accordion Sections: first section is open by default, others collapsed (Elementor style) */}
-          <div style={{ flex: 1, overflow: 'auto', padding: '8px 12px' }} className="ne-scrollbar">
+          <div
+            // Remounts per block, tab and "Show only changed", so the body
+            // slides in from the tab's side and its sections cascade in
+            // (editor motion level applies). Search keeps it mounted.
+            key={`${selectedId}:${activeTab}:${changedOnly ? 'changed' : 'all'}`}
+            data-ne-slide={slide}
+            style={{ flex: 1, overflow: 'auto', padding: '8px 12px' }}
+            className="ne-scrollbar ne-tab-panel ne-stagger"
+          >
             {sections.length === 0 ? (
               <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--ne-text-muted)', margin: '24px 0' }}>
                 {searchQuery || changedOnly

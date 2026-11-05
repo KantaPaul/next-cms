@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  Check,
-  Loader2,
-  CloudOff,
-  AlertTriangle,
-  AlertCircle,
-  RefreshCw,
-} from 'lucide-react';
+import { AlertCircle, AlertTriangle, Check, CloudOff } from 'lucide-react';
 
 export type SaveState =
   | 'saved'
@@ -46,8 +39,8 @@ const SaveStatusContent: React.FC<SaveStatusProps> = ({
         <div
           className={`inline-flex items-center gap-1.5 text-xs text-[var(--ne-text-muted)] ${className}`}
         >
-          <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--ne-primary)]" />
-          <span>Saving...</span>
+          <span aria-hidden className="ne-save-pulse" />
+          <span className="ne-motion-enter-up">Saving…</span>
         </div>
       );
     case 'unsaved':
@@ -55,8 +48,8 @@ const SaveStatusContent: React.FC<SaveStatusProps> = ({
         <div
           className={`inline-flex items-center gap-1.5 text-xs text-[var(--ne-warning)] ${className}`}
         >
-          <span className="w-2 h-2 rounded-full bg-[var(--ne-warning)]" />
-          <span>Unsaved changes</span>
+          <span className="ne-motion-pop-in w-2 h-2 rounded-full bg-[var(--ne-warning)]" />
+          <span className="ne-motion-enter-up">Unsaved changes</span>
         </div>
       );
     case 'offline':
@@ -64,7 +57,7 @@ const SaveStatusContent: React.FC<SaveStatusProps> = ({
         <div
           className={`inline-flex items-center gap-1.5 text-xs text-[var(--ne-text-muted)] ${className}`}
         >
-          <CloudOff className="w-3.5 h-3.5 text-[var(--ne-text-muted)]" />
+          <CloudOff className="ne-motion-pop-in w-3.5 h-3.5 text-[var(--ne-text-muted)]" />
           <span>Offline (cached locally)</span>
         </div>
       );
@@ -73,7 +66,7 @@ const SaveStatusContent: React.FC<SaveStatusProps> = ({
         <button
           type="button"
           onClick={onResolveConflict}
-          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[var(--ne-radius-sm)] bg-[var(--ne-danger-soft)] text-xs font-medium text-[var(--ne-danger)] cursor-pointer hover:underline ${className}`}
+          className={`ne-press inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[var(--ne-radius-sm)] bg-[var(--ne-danger-soft)] text-xs font-medium text-[var(--ne-danger)] cursor-pointer hover:underline ${className}`}
         >
           <AlertTriangle className="w-3.5 h-3.5" />
           <span>Version Conflict</span>
@@ -82,7 +75,7 @@ const SaveStatusContent: React.FC<SaveStatusProps> = ({
     case 'failed':
       return (
         <div
-          className={`inline-flex items-center gap-1.5 text-xs text-[var(--ne-danger)] ${className}`}
+          className={`inline-flex items-center gap-1.5 text-xs text-[var(--ne-danger)] ne-shake ${className}`}
         >
           <AlertCircle className="w-3.5 h-3.5" />
           <span>Save failed</span>
@@ -90,7 +83,7 @@ const SaveStatusContent: React.FC<SaveStatusProps> = ({
             <button
               type="button"
               onClick={onRetry}
-              className="underline text-[11px] font-medium hover:opacity-80 cursor-pointer ml-1"
+              className="ne-press underline text-[11px] font-medium hover:opacity-80 cursor-pointer ml-1"
             >
               Retry
             </button>
@@ -103,14 +96,27 @@ const SaveStatusContent: React.FC<SaveStatusProps> = ({
         <div
           className={`inline-flex items-center gap-1.5 text-xs text-[var(--ne-text-muted)] ${className}`}
         >
-          <Check className="w-3.5 h-3.5 text-[var(--ne-success)]" />
-          <span>Saved {formattedTime ? `at ${formattedTime}` : ''}</span>
+          <Check
+            aria-hidden
+            className="w-3.5 h-3.5 text-[var(--ne-success)] ne-check-draw"
+          />
+          <span className="ne-motion-enter-up">Saved</span>
+          {formattedTime && (
+            // Keyed so a new time crossfades in instead of swapping.
+            <span key={formattedTime} className="ne-motion-enter">
+              at {formattedTime}
+            </span>
+          )}
         </div>
       );
   }
 };
 
-/** Save state indicator; each change of state fades in (B15 E2b). */
+/**
+ * Save state indicator. Each state remounts (keyed), so its entry motion
+ * replays: a pulse while saving, a check that draws in when saved, a shake
+ * on failure (B15 E2b).
+ */
 export const SaveStatus: React.FC<SaveStatusProps> = props => (
   <span
     key={props.status}

@@ -1,6 +1,10 @@
 import React from 'react';
-import { useId } from 'react';
+import { useId, useRef } from 'react';
 import { cn } from '../lib/cn';
+import {
+  SlidingIndicator,
+  useSlidingIndicator,
+} from '../lib/motion/useSlidingIndicator';
 import { type ControlDeviceState, ControlRow } from './ControlRow';
 
 export interface ChooseOption<T extends string = string> {
@@ -79,18 +83,22 @@ export function ChooseField<T extends string = string>({
     }
   };
 
+  const groupRef = useRef<HTMLDivElement>(null);
+  useSlidingIndicator(groupRef, String(value));
   const content = (
     <div
+      ref={groupRef}
       id={fieldId}
       role="radiogroup"
       aria-label={label ?? 'Choose option'}
       onKeyDown={handleKeyDown}
       className={cn(
-        'inline-flex items-center rounded-[var(--ne-radius-md)] border border-[var(--ne-border)] bg-[var(--ne-surface-subtle)] p-0.5 gap-0.5',
+        'relative inline-flex items-center rounded-[var(--ne-radius-md)] border border-[var(--ne-border)] bg-[var(--ne-surface-subtle)] p-0.5 gap-0.5',
         fullWidth && 'w-full',
         disabled && 'opacity-50 cursor-not-allowed'
       )}
     >
+      <SlidingIndicator />
       {options.map(option => {
         const isSelected = option.value === value;
         const isItemDisabled = disabled || option.disabled;
@@ -100,6 +108,7 @@ export function ChooseField<T extends string = string>({
             type="button"
             role="radio"
             aria-checked={isSelected}
+            data-ne-active={isSelected ? 'true' : undefined}
             tabIndex={isSelected ? 0 : -1}
             disabled={isItemDisabled}
             title={option.title ?? option.label ?? option.value}
@@ -110,7 +119,7 @@ export function ChooseField<T extends string = string>({
               fullWidth ? 'flex-1' : 'px-2',
               size === 'sm' ? 'h-6 text-[11px] px-1.5' : 'h-7 text-xs px-2.5',
               isSelected
-                ? 'bg-[var(--ne-surface)] text-[var(--ne-text)] shadow-xs font-semibold'
+                ? 'text-[var(--ne-text)] font-semibold'
                 : 'text-[var(--ne-text-muted)] hover:bg-[var(--ne-surface-hover)] hover:text-[var(--ne-text)]'
             )}
           >

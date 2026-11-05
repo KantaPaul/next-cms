@@ -11,7 +11,8 @@ import {
   Unlock,
 } from 'lucide-react';
 import React from 'react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useFlip } from '../lib/motion/useFlip';
 
 export interface LayerNode {
   id: string;
@@ -126,6 +127,32 @@ export const LayersTree: React.FC<LayersTreeProps> = ({
   const [editName, setEditName] = useState('');
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const treeRef = useRef<HTMLDivElement>(null);
+  // Top-level layers slide to their new place when reordered.
+  useFlip(
+    treeRef,
+    nodes.map(n => n.id)
+  );
+  // Layers that weren't in the previous render flash once (insert, paste,
+  // duplicate). Nothing flashes on the first render.
+  const allIds = useMemo(() => {
+    const ids: string[] = [];
+    const walk = (list: LayerNode[]) => {
+      for (const n of list) {
+        ids.push(n.id);
+        if (n.children) walk(n.children);
+      }
+    };
+    walk(nodes);
+    return ids;
+  }, [nodes]);
+  const seenIds = useRef<Set<string> | null>(null);
+  const freshIds = useMemo(() => {
+    const seen = seenIds.current;
+    return new Set(seen ? allIds.filter(id => !seen.has(id)) : []);
+  }, [allIds]);
+  useEffect(() => {
+    seenIds.current = new Set(allIds);
+  }, [allIds]);
 
   const selected = useMemo(
     () => new Set(selectedIds ?? (selectedId ? [selectedId] : [])),
@@ -280,7 +307,7 @@ export const LayersTree: React.FC<LayersTreeProps> = ({
           style={{ paddingInlineStart: `${depth * 14 + 6}px` }}
           className={`group flex h-7 cursor-pointer items-center justify-between rounded-[var(--ne-radius-sm)] pe-2 text-xs transition-colors ${
             onRowPointerDown ? 'touch-none' : ''
-          } ${
+          } ${freshIds.has(node.id) ? 'ne-flash-new' : ''} ${
             isSelected
               ? 'bg-[var(--ne-primary-soft)] font-medium text-[var(--ne-primary)]'
               : isHovered
@@ -452,7 +479,7 @@ export const LayersTree: React.FC<LayersTreeProps> = ({
         {hasChildren && isExpanded && (
           <div
             role="group"
-            className="ne-motion-enter ms-3 border-s border-[var(--ne-border)]"
+            className="ne-motion-enter-up ms-3 border-s border-[var(--ne-border)]"
           >
             {(node.children ?? []).map((child, i, list) =>
               renderNode(child, depth + 1, list.length, i + 1)
