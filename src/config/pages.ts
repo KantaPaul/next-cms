@@ -45,10 +45,14 @@ export const PAGES = {
     CONTACT_FORM_SUBMISSION: (id: string) =>
       `/dashboard/contact-forms/inbox/${id}`,
     COLLECTIONS: '/dashboard/collections',
-    COLLECTION: (id: string) => `/dashboard/collections/${id}`,
-    COLLECTION_ENTRIES: (id: string) => `/dashboard/collections/${id}/entries`,
-    COLLECTION_ENTRY: (id: string, entryId: string) =>
-      `/dashboard/collections/${id}/entries/${entryId}`,
+    /** One post type's entries, by its slug (like Pages: index, create, edit). */
+    COLLECTION: (slug: string) => `/dashboard/collections/${slug}`,
+    COLLECTION_CREATE: (slug: string) => `/dashboard/collections/${slug}/create`,
+    COLLECTION_ENTRY_EDIT: (slug: string, entryId: string) =>
+      `/dashboard/collections/${slug}/${entryId}/edit`,
+    /** The post type's fields and settings. */
+    COLLECTION_SETTINGS: (slug: string) =>
+      `/dashboard/collections/${slug}/settings`,
     WEBHOOKS: '/dashboard/webhooks',
     REDIRECTS: '/dashboard/redirects',
     REVIEW: '/dashboard/review',

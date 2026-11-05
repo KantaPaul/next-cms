@@ -88,13 +88,13 @@ export function CollectionList({
                 <TableCell>
                   <div className="flex justify-end gap-2">
                     <Button size="sm" asChild>
-                      <Link href={PAGES.DASHBOARD.COLLECTION_ENTRIES(row.id)}>
+                      <Link href={PAGES.DASHBOARD.COLLECTION(row.slug)}>
                         Entries
                       </Link>
                     </Button>
                     {canManage && (
                       <Button size="sm" variant="outline" asChild>
-                        <Link href={PAGES.DASHBOARD.COLLECTION(row.id)}>
+                        <Link href={PAGES.DASHBOARD.COLLECTION_SETTINGS(row.slug)}>
                           Fields & settings
                         </Link>
                       </Button>

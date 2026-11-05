@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,6 +17,7 @@ import {
 import { updateCollection } from '../_modules/collections.actions';
 import { updateCollectionSchema } from '../_modules/collections.schemas';
 import { objectToFormData } from '../_modules/form-helpers';
+import { PAGES } from '@/config/pages';
 import { useFormAction } from '@/hooks/use-form-action';
 import type { TemplatePageOption } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
 import { PostTypeMetaFields } from './post-type-meta-fields';
@@ -52,10 +54,15 @@ export function CollectionSettingsForm({
     },
   });
 
+  const router = useRouter();
   const { submit, isPending, error } = useFormAction(updateCollection, {
-    onSuccess: () => {
+    onSuccess: result => {
       // Keep the saved values as the new baseline.
       form.reset(form.getValues());
+      // The URL uses the slug, so follow a renamed slug.
+      if (typeof result.slug === 'string' && result.slug !== collection.slug) {
+        router.replace(PAGES.DASHBOARD.COLLECTION_SETTINGS(result.slug));
+      }
     },
   });
 

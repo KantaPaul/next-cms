@@ -9,26 +9,36 @@ import { collectionsService } from '@/server/services/collections.service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EditEntryForm } from '../../../components/edit-entry-form';
 import { toEntryFieldConfigs } from '../../../_modules/entry-fields';
+import { loadPostTypeRoute } from '../../../_modules/post-type-route';
 import { EntryStatusCard } from '../../../components/entry-status-card';
 import { DeleteEntryForm } from '../../../components/entry-status-card';
 
 export default async function CollectionEntryPage({
   params,
 }: {
-  params: Promise<{ id: string; entryId: string }>;
+  params: Promise<{ slug: string; entryId: string }>;
 }) {
-  const { id, entryId } = await params;
+  const { slug, entryId } = await params;
+  const collection = await loadPostTypeRoute(slug, s =>
+    PAGES.DASHBOARD.COLLECTION_ENTRY_EDIT(s, entryId)
+  );
   const { allowed } = await requirePermission(PERMISSIONS.PAGES_EDIT);
-  const collection = await collectionsService.get(id).catch(() => null);
   const entry = await collectionsService.getEntry(entryId).catch(() => null);
 
-  if (!collection || !entry) return notFound();
+  // The entry must belong to the post type in the URL.
+  if (!entry || entry.collectionId !== collection.id) return notFound();
 
   const breadcrumbs = [
     { title: 'Dashboard', href: PAGES.DASHBOARD.ROOT },
     { title: 'Post types', href: PAGES.DASHBOARD.COLLECTIONS },
-    { title: collection.name, href: PAGES.DASHBOARD.COLLECTION_ENTRIES(id) },
-    { title: entry.slug, href: PAGES.DASHBOARD.COLLECTION_ENTRY(id, entryId) },
+    {
+      title: collection.name,
+      href: PAGES.DASHBOARD.COLLECTION(collection.slug),
+    },
+    {
+      title: entry.slug,
+      href: PAGES.DASHBOARD.COLLECTION_ENTRY_EDIT(collection.slug, entryId),
+    },
   ];
 
   if (!allowed) {
@@ -40,7 +50,7 @@ export default async function CollectionEntryPage({
     );
   }
 
-  const fields = await collectionsService.getFields(id);
+  const fields = await collectionsService.getFields(collection.id);
   const fieldConfigs = await toEntryFieldConfigs(fields);
   const entryData = entry.data as Record<string, unknown> | undefined;
 

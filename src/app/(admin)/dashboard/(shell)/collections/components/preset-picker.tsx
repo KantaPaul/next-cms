@@ -20,12 +20,12 @@ export function PresetPicker() {
     fd.append('presetId', presetId);
     const result = await createPostTypeFromPreset(fd);
     setPending(null);
-    if (!result.ok || !result.id) {
+    if (!result.ok || !result.slug) {
       toast.error(result.error ?? 'Failed to add post type.');
       return;
     }
     toast.success('Post type added. Add your first entry.');
-    router.push(PAGES.DASHBOARD.COLLECTION_ENTRIES(result.id));
+    router.push(PAGES.DASHBOARD.COLLECTION(result.slug));
   };
 
   return (

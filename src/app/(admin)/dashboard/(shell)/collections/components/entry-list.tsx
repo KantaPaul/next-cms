@@ -43,11 +43,13 @@ export function EntryList({
   textFields,
   fields,
   collectionId,
+  collectionSlug,
 }: {
   entries: EntryRow[];
   textFields: string[];
   fields: { key: string; label: string }[];
   collectionId: string;
+  collectionSlug: string;
 }) {
   return (
     <div className="rounded-lg border">
@@ -96,8 +98,8 @@ export function EntryList({
                   <div className="flex justify-end gap-2">
                     <Button size="sm" variant="outline" asChild>
                       <Link
-                        href={PAGES.DASHBOARD.COLLECTION_ENTRY(
-                          collectionId,
+                        href={PAGES.DASHBOARD.COLLECTION_ENTRY_EDIT(
+                          collectionSlug,
                           entry.id
                         )}
                       >

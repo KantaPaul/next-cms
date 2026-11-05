@@ -3,7 +3,6 @@ import { PageHeader } from '@/components/organisms/page-header';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import { metaObject } from '@/lib/utils/metadata';
-import { notFound } from 'next/navigation';
 import { accessService } from '@/server/services/access.service';
 import { requirePermission } from '@/server/services/require-permission';
 import { Button } from '@/components/ui/button';
@@ -11,29 +10,38 @@ import Link from 'next/link';
 import { pagesServices } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
 import { collectionsService } from '@/server/services/collections.service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CollectionSettingsForm } from '../components/collection-settings-form';
-import { AddFieldForm } from '../components/add-field-form';
-import { FieldList } from '../components/field-list';
+import { CollectionSettingsForm } from '../../components/collection-settings-form';
+import { AddFieldForm } from '../../components/add-field-form';
+import { FieldList } from '../../components/field-list';
+import { loadPostTypeRoute } from '../../_modules/post-type-route';
 
 export default async function CollectionPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }) {
-  const { id } = await params;
+  const { slug } = await params;
+  const collection = await loadPostTypeRoute(
+    slug,
+    PAGES.DASHBOARD.COLLECTION_SETTINGS
+  );
   const { allowed: canManage, access } = await requirePermission(
     PERMISSIONS.POST_TYPES_MANAGE
   );
   const allowed =
     canManage || accessService.can(access, PERMISSIONS.SETTINGS_MANAGE);
-  const collection = await collectionsService.get(id).catch(() => null);
-
-  if (!collection) return notFound();
 
   const breadcrumbs = [
     { title: 'Dashboard', href: PAGES.DASHBOARD.ROOT },
     { title: 'Post types', href: PAGES.DASHBOARD.COLLECTIONS },
-    { title: collection.name, href: PAGES.DASHBOARD.COLLECTION(id) },
+    {
+      title: collection.name,
+      href: PAGES.DASHBOARD.COLLECTION(collection.slug),
+    },
+    {
+      title: 'Fields & settings',
+      href: PAGES.DASHBOARD.COLLECTION_SETTINGS(collection.slug),
+    },
   ];
 
   if (!allowed) {
@@ -46,7 +54,7 @@ export default async function CollectionPage({
   }
 
   const [fields, templatePages, allTypes] = await Promise.all([
-    collectionsService.getFields(id),
+    collectionsService.getFields(collection.id),
     pagesServices.listTemplateOptions(),
     collectionsService.list(),
   ]);
@@ -56,7 +64,7 @@ export default async function CollectionPage({
       <PageHeader title={collection.name} breadcrumbs={breadcrumbs} />
       <div className="mb-4 flex justify-end">
         <Button asChild>
-          <Link href={PAGES.DASHBOARD.COLLECTION_ENTRIES(id)}>
+          <Link href={PAGES.DASHBOARD.COLLECTION(collection.slug)}>
             Manage {collection.name.toLowerCase()}
           </Link>
         </Button>

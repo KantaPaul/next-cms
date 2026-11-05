@@ -5,6 +5,7 @@ import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { collectionsService } from '@/server/services/collections.service';
 import { slugify } from '@/lib/utils/slugify';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { PAGES } from '@/config/pages';
 import { fieldKeyFromLabel } from '@/config/post-types';
 import {
@@ -12,6 +13,11 @@ import {
   createCollectionSchema,
   updateCollectionSchema,
 } from './collections.schemas';
+
+/** Every post type screen (list, entries, create, edit, settings). */
+function revalidatePostTypes() {
+  revalidatePath(PAGES.DASHBOARD.COLLECTIONS, 'layout');
+}
 
 async function actorId() {
   const { userId } = await getCurrentUserAndTeamId();
@@ -55,8 +61,8 @@ export async function createCollection(formData: FormData) {
       },
       await actorId()
     );
-    revalidatePath(PAGES.DASHBOARD.COLLECTIONS);
-    return { ok: true, id: row.id };
+    revalidatePostTypes();
+    return { ok: true, id: row.id, slug: row.slug };
   } catch (error: any) {
     return { ok: false, error: error.message ?? 'Failed to create collection.' };
   }
@@ -70,8 +76,8 @@ export async function createPostTypeFromPreset(formData: FormData) {
       presetId,
       await actorId()
     );
-    revalidatePath(PAGES.DASHBOARD.COLLECTIONS);
-    return { ok: true, id: row.id };
+    revalidatePostTypes();
+    return { ok: true, id: row.id, slug: row.slug };
   } catch (error: any) {
     return { ok: false, error: error.message ?? 'Failed to add post type.' };
   }
@@ -112,7 +118,7 @@ export async function updateCollection(formData: FormData) {
   }
 
   try {
-    await collectionsService.update(parsed.data.id, {
+    const updated = await collectionsService.update(parsed.data.id, {
       ...(parsed.data.name !== undefined ? { name: parsed.data.name } : {}),
       ...(parsed.data.slug !== undefined ? { slug: parsed.data.slug } : {}),
       ...(parsed.data.singularName !== undefined
@@ -126,9 +132,8 @@ export async function updateCollection(formData: FormData) {
         ? { templatePageId: parsed.data.templatePageId }
         : {}),
     }, await actorId());
-    revalidatePath(PAGES.DASHBOARD.COLLECTIONS);
-    revalidatePath(PAGES.DASHBOARD.COLLECTION(parsed.data.id));
-    return { ok: true };
+    revalidatePostTypes();
+    return { ok: true, slug: updated.slug };
   } catch (error: any) {
     return { ok: false, error: error.message ?? 'Failed to update collection.' };
   }
@@ -137,7 +142,7 @@ export async function updateCollection(formData: FormData) {
 export async function deleteCollection(collectionId: string) {
   try {
     await collectionsService.delete(collectionId, await actorId());
-    revalidatePath(PAGES.DASHBOARD.COLLECTIONS);
+    revalidatePostTypes();
     return { ok: true };
   } catch (error: any) {
     return { ok: false, error: error.message ?? 'Failed to delete collection.' };
@@ -197,7 +202,7 @@ export async function addCollectionField(formData: FormData) {
       { key, label, type, required, config },
       await actorId()
     );
-    revalidatePath(PAGES.DASHBOARD.COLLECTION(collectionId));
+    revalidatePostTypes();
     return { ok: true };
   } catch (error: any) {
     return { ok: false, error: error.message ?? 'Failed to add field.' };
@@ -223,7 +228,7 @@ export async function updateCollectionField(formData: FormData) {
       ...(type !== undefined ? { type: type as any } : {}),
       ...(required !== undefined ? { required } : {}),
     }, await actorId());
-    revalidatePath(PAGES.DASHBOARD.COLLECTION(String(collectionId)));
+    revalidatePostTypes();
     return { ok: true };
   } catch (error: any) {
     return { ok: false, error: error.message ?? 'Failed to update field.' };
@@ -235,7 +240,7 @@ export async function deleteCollectionField(formData: FormData) {
   const collectionId = formData.get('collectionId') as string;
   try {
     await collectionsService.deleteField(fieldId, await actorId());
-    revalidatePath(PAGES.DASHBOARD.COLLECTION(collectionId));
+    revalidatePostTypes();
     return { ok: true };
   } catch (error: any) {
     return { ok: false, error: error.message ?? 'Failed to delete field.' };
@@ -273,13 +278,13 @@ export async function createCollectionEntry(formData: FormData) {
   }
 
   try {
-    await collectionsService.createEntry(
+    const entry = await collectionsService.createEntry(
       parsed.data.collectionId,
       { slug: parsed.data.slug || slug, data },
       await actorId()
     );
-    revalidatePath(PAGES.DASHBOARD.COLLECTION_ENTRIES(parsed.data.collectionId));
-    return { ok: true };
+    revalidatePostTypes();
+    return { ok: true, id: entry.id };
   } catch (error: any) {
     return { ok: false, error: error.message ?? 'Failed to create entry.' };
   }
@@ -315,8 +320,7 @@ export async function updateCollectionEntry(formData: FormData) {
       },
       await actorId()
     );
-    revalidatePath(PAGES.DASHBOARD.COLLECTION_ENTRY(parsed.data.collectionId, parsed.data.entryId));
-    revalidatePath(PAGES.DASHBOARD.COLLECTION_ENTRIES(parsed.data.collectionId));
+    revalidatePostTypes();
     return { ok: true };
   } catch (error: any) {
     return { ok: false, error: error.message ?? 'Failed to update entry.' };
@@ -328,8 +332,7 @@ export async function publishCollectionEntry(formData: FormData): Promise<void> 
   const collectionId = formData.get('collectionId') as string;
   try {
     await collectionsService.publishEntry(entryId, await actorId());
-    revalidatePath(PAGES.DASHBOARD.COLLECTION_ENTRY(collectionId, entryId));
-    revalidatePath(PAGES.DASHBOARD.COLLECTION_ENTRIES(collectionId));
+    revalidatePostTypes();
   } catch (error) {
     console.error('Failed to publish collection entry:', error);
   }
@@ -340,8 +343,7 @@ export async function unpublishCollectionEntry(formData: FormData): Promise<void
   const collectionId = formData.get('collectionId') as string;
   try {
     await collectionsService.unpublishEntry(entryId, await actorId());
-    revalidatePath(PAGES.DASHBOARD.COLLECTION_ENTRY(collectionId, entryId));
-    revalidatePath(PAGES.DASHBOARD.COLLECTION_ENTRIES(collectionId));
+    revalidatePostTypes();
   } catch (error) {
     console.error('Failed to unpublish collection entry:', error);
   }
@@ -350,12 +352,18 @@ export async function unpublishCollectionEntry(formData: FormData): Promise<void
 export async function deleteCollectionEntry(formData: FormData): Promise<void> {
   const entryId = formData.get('entryId') as string;
   const collectionId = formData.get('collectionId') as string;
+  let listHref: string | null = null;
   try {
     await collectionsService.deleteEntry(entryId, await actorId());
-    revalidatePath(PAGES.DASHBOARD.COLLECTION_ENTRIES(collectionId));
+    revalidatePostTypes();
+    const collection = await collectionsService.get(collectionId);
+    listHref = PAGES.DASHBOARD.COLLECTION(collection.slug);
   } catch (error) {
     console.error('Failed to delete collection entry:', error);
   }
+  // The edit screen is gone; go back to the post type's list (like Pages).
+  // redirect() throws, so it runs outside the try.
+  if (listHref) redirect(listHref);
 }
 
 export async function listCollectionOptions() {

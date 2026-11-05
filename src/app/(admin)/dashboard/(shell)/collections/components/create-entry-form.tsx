@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -14,6 +15,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { PAGES } from '@/config/pages';
 import { slugify } from '@/lib/utils/slugify';
 import { createCollectionEntry } from '../_modules/collections.actions';
 import { objectToFormData } from '../_modules/form-helpers';
@@ -27,12 +29,15 @@ import {
 
 interface CreateEntryFormProps {
   collectionId: string;
+  /** Post type slug, for the edit URL the form opens after saving. */
+  collectionSlug: string;
   fields: EntryFieldConfig[];
   singularName?: string;
 }
 
 export function CreateEntryForm({
   collectionId,
+  collectionSlug,
   fields,
   singularName = 'entry',
 }: CreateEntryFormProps) {
@@ -48,11 +53,17 @@ export function CreateEntryForm({
     defaultValues,
   });
 
+  const router = useRouter();
   const { submit, isPending, error } = useFormAction(createCollectionEntry, {
-    onSuccess: () => {
+    onSuccess: result => {
+      toast.success(`${singularName} saved as draft.`);
+      // Like Pages: continue on the new entry's edit screen.
+      if (typeof result.id === 'string') {
+        router.push(PAGES.DASHBOARD.COLLECTION_ENTRY_EDIT(collectionSlug, result.id));
+        return;
+      }
       form.reset(defaultValues);
       setResetKey(k => k + 1);
-      toast.success(`${singularName} saved as draft.`);
     },
   });
 

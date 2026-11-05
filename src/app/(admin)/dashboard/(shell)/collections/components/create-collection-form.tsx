@@ -49,7 +49,8 @@ export function CreateCollectionForm({
   const { submit, isPending, error } = useFormAction(createCollection, {
     onSuccess: result => {
       form.reset(EMPTY);
-      if (result.id) router.push(PAGES.DASHBOARD.COLLECTION(String(result.id)));
+      if (result.slug)
+        router.push(PAGES.DASHBOARD.COLLECTION_SETTINGS(String(result.slug)));
     },
   });
 

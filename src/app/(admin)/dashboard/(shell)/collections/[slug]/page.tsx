@@ -1,34 +1,32 @@
-import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { PostTypeIcon } from '@/components/atoms/post-type-icon';
 import { AccessDenied } from '@/components/organisms/access-denied';
 import { PageHeader } from '@/components/organisms/page-header';
+import { Button } from '@/components/ui/button';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
-import { metaObject } from '@/lib/utils/metadata';
-import { notFound } from 'next/navigation';
-import Link from 'next/link';
-import { requirePermission } from '@/server/services/require-permission';
 import { collectionsService } from '@/server/services/collections.service';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { EntryList } from '../../components/entry-list';
-import { CreateEntryForm } from '../../components/create-entry-form';
-import { toEntryFieldConfigs } from '../../_modules/entry-fields';
-import { PostTypeIcon } from '@/components/atoms/post-type-icon';
+import { requirePermission } from '@/server/services/require-permission';
+import { loadPostTypeRoute } from '../_modules/post-type-route';
+import { EntryList } from '../components/entry-list';
 
+/** One post type's entries: `/dashboard/collections/{slug}` (like Pages). */
 export default async function CollectionEntriesPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }) {
-  const { id } = await params;
+  const { slug } = await params;
+  const collection = await loadPostTypeRoute(slug, PAGES.DASHBOARD.COLLECTION);
   const { allowed } = await requirePermission(PERMISSIONS.PAGES_EDIT);
-  const collection = await collectionsService.get(id).catch(() => null);
-
-  if (!collection) return notFound();
 
   const breadcrumbs = [
     { title: 'Dashboard', href: PAGES.DASHBOARD.ROOT },
     { title: 'Post types', href: PAGES.DASHBOARD.COLLECTIONS },
-    { title: collection.name, href: PAGES.DASHBOARD.COLLECTION_ENTRIES(id) },
+    {
+      title: collection.name,
+      href: PAGES.DASHBOARD.COLLECTION(collection.slug),
+    },
   ];
 
   if (!allowed) {
@@ -40,10 +38,9 @@ export default async function CollectionEntriesPage({
     );
   }
 
-  const fields = await collectionsService.getFields(id);
-  const [entries, fieldConfigs] = await Promise.all([
-    collectionsService.listEntries(id),
-    toEntryFieldConfigs(fields),
+  const [fields, entries] = await Promise.all([
+    collectionsService.getFields(collection.id),
+    collectionsService.listEntries(collection.id),
   ]);
   const singular = collection.singularName || 'Entry';
   const entriesData = entries.map(e => ({
@@ -60,7 +57,7 @@ export default async function CollectionEntriesPage({
   return (
     <>
       <PageHeader title={collection.name} breadcrumbs={breadcrumbs} />
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary">
             <PostTypeIcon name={collection.icon} className="size-4" />
@@ -73,15 +70,24 @@ export default async function CollectionEntriesPage({
             </p>
           </div>
         </div>
-        <Button asChild>
-          <Link href="#new-entry">New {singular.toLowerCase()}</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href={PAGES.DASHBOARD.COLLECTION_SETTINGS(collection.slug)}>
+              Fields & settings
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href={PAGES.DASHBOARD.COLLECTION_CREATE(collection.slug)}>
+              New {singular.toLowerCase()}
+            </Link>
+          </Button>
+        </div>
       </div>
       {fields.length === 0 && (
         <p className="mb-4 rounded-md border border-dashed p-4 text-sm text-muted-foreground">
           This post type has no fields yet.{' '}
           <Link
-            href={PAGES.DASHBOARD.COLLECTION(id)}
+            href={PAGES.DASHBOARD.COLLECTION_SETTINGS(collection.slug)}
             className="text-primary underline"
           >
             Add fields
@@ -90,24 +96,12 @@ export default async function CollectionEntriesPage({
         </p>
       )}
 
-      <Card id="new-entry" className="mb-6 scroll-mt-20">
-        <CardHeader>
-          <CardTitle>New {singular.toLowerCase()}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CreateEntryForm
-            collectionId={id}
-            fields={fieldConfigs}
-            singularName={singular}
-          />
-        </CardContent>
-      </Card>
-
       <EntryList
         entries={entriesData}
         textFields={textFields}
         fields={fields.map(f => ({ key: f.key, label: f.label }))}
-        collectionId={id}
+        collectionId={collection.id}
+        collectionSlug={collection.slug}
       />
     </>
   );

@@ -225,6 +225,28 @@ export const collectionsService = {
     return row;
   },
 
+  /**
+   * A post type for the dashboard by its slug, or by its id for old links.
+   * Archived types are included so they can still be managed.
+   */
+  async findForAdmin(slugOrId: string) {
+    if (!slugOrId) return null;
+    const siteId = await adminSiteId();
+    const base = and(eq(collections.siteId, siteId), isNull(collections.deletedAt));
+    const [bySlug] = await db
+      .select()
+      .from(collections)
+      .where(and(base, eq(collections.slug, slugOrId)))
+      .limit(1);
+    if (bySlug) return { collection: bySlug, matchedBy: 'slug' as const };
+    const [byId] = await db
+      .select()
+      .from(collections)
+      .where(and(base, eq(collections.id, slugOrId)))
+      .limit(1);
+    return byId ? { collection: byId, matchedBy: 'id' as const } : null;
+  },
+
   /** Find active collection linked to a template page. */
   async findByTemplatePageId(templatePageId: string, siteIdOverride?: string) {
     const siteId = siteIdOverride ?? (await adminSiteId());
