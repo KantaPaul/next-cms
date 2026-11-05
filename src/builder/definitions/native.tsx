@@ -51,6 +51,7 @@ import {
 import { Newsletter } from '../blocks/newsletter';
 import { QueryFilter } from '../blocks/query-filters';
 import { LoopItemField, QueryLoop } from '../blocks/query-loop';
+import { PostTypeEntries } from '../blocks/post-type-entries';
 import { SearchResults } from '../blocks/search-results';
 import { DEFAULT_SECTION as _DS, DEFAULT_SECTION } from '../blocks/section';
 import {
@@ -3353,6 +3354,109 @@ export const LanguageSwitcherNativeBlock = defineBlock({
   defaults: {},
 });
 
+export const PostTypeEntriesBlock = defineBlock({
+  type: 'PostTypeEntries',
+  label: 'Post type entries',
+  category: 'collections',
+  icon: 'collectionitem',
+  schema: z
+    .object({
+      collectionId: z.string().optional(),
+      /** Fallback used by presets: the post type with this slug on the site. */
+      postTypeSlug: z.string().optional(),
+      display: z
+        .enum(['cards', 'team', 'testimonials', 'testimonial-slider', 'faq'])
+        .default('cards'),
+      eyebrow: z.string().optional(),
+      title: z.string().optional(),
+      limit: z.number().int().min(1).max(100).default(12),
+      sortOrder: z.enum(['oldest', 'newest']).default('oldest'),
+      linkToEntry: z.boolean().default(false),
+      emptyText: z.string().default('Nothing to show yet.'),
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: PostTypeEntries as any,
+  presets: {
+    'Team grid': {
+      postTypeSlug: 'team',
+      display: 'team',
+      eyebrow: 'Our people',
+      title: 'Meet the team',
+    },
+    'Testimonial slider': {
+      postTypeSlug: 'testimonials',
+      display: 'testimonial-slider',
+      eyebrow: 'Testimonials',
+      title: 'What our customers say',
+    },
+    'FAQ list': {
+      postTypeSlug: 'faq',
+      display: 'faq',
+      title: 'Frequently asked questions',
+    },
+  },
+  fields: {
+    collectionId: {
+      label: 'Post type',
+      group: CONTENT,
+      type: 'custom',
+      render: CollectionSelectField,
+    },
+    display: {
+      label: 'Display as',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Cards', value: 'cards' },
+        { label: 'Team grid', value: 'team' },
+        { label: 'Testimonial grid', value: 'testimonials' },
+        { label: 'Testimonial slider', value: 'testimonial-slider' },
+        { label: 'FAQ accordion', value: 'faq' },
+      ],
+    },
+    eyebrow: { label: 'Eyebrow', group: CONTENT, type: 'text' },
+    title: { label: 'Heading', group: CONTENT, type: 'text' },
+    limit: {
+      label: 'Number of entries (max 100)',
+      group: CONTENT,
+      type: 'number',
+      min: 1,
+      max: 100,
+    },
+    sortOrder: {
+      label: 'Order',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Oldest first', value: 'oldest' },
+        { label: 'Newest first', value: 'newest' },
+      ],
+    },
+    linkToEntry: {
+      label: 'Link cards to the entry page',
+      group: CONTENT,
+      type: 'toggle',
+      when: (props: any) => (props.display ?? 'cards') === 'cards',
+    },
+    emptyText: { label: 'Empty state text', group: CONTENT, type: 'text' },
+    ...sectionControls(),
+  },
+  defaults: {
+    collectionId: '',
+    postTypeSlug: '',
+    display: 'cards',
+    eyebrow: '',
+    title: '',
+    limit: 12,
+    sortOrder: 'oldest',
+    linkToEntry: false,
+    emptyText: 'Nothing to show yet.',
+    section: DEFAULT_SECTION,
+  },
+});
+
 export const QueryLoopBlock = defineBlock({
   type: 'QueryLoop',
   label: 'Query Loop',
@@ -3954,6 +4058,7 @@ export const NATIVE_BLOCKS = [
   ButtonBlock,
   SpacerBlock,
   CollectionItemBlock,
+  PostTypeEntriesBlock,
   GlobalRefBlock,
   LogoCloudBlock,
   TeamBlock,
@@ -4202,7 +4307,10 @@ export const CATEGORIES = {
       'Spacer',
     ],
   },
-  collections: { title: 'Collections', components: ['CollectionItem'] },
+  collections: {
+    title: 'Post types',
+    components: ['PostTypeEntries', 'CollectionItem'],
+  },
   global: { title: 'Global blocks', components: ['GlobalRef'] },
   custom: { title: 'Custom', components: ['example'] },
   post: {

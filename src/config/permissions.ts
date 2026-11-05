@@ -12,6 +12,7 @@ export const PERMISSIONS = {
   VIDEOS_PUBLISH: 'videos.publish',
   VIDEOS_DELETE: 'videos.delete',
   LICENSES_MANAGE: 'licenses.manage',
+  POST_TYPES_MANAGE: 'post_types.manage',
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -88,6 +89,11 @@ export const PERMISSION_MATRIX: {
     key: PERMISSIONS.LICENSES_MANAGE,
     label: 'Manage single-install licenses and bindings',
     roles: { Admin: true, Editor: false, Author: false, Viewer: false },
+  },
+  {
+    key: PERMISSIONS.POST_TYPES_MANAGE,
+    label: 'Create post types and edit their fields',
+    roles: { Admin: true, Editor: true, Author: false, Viewer: false },
   },
 ];
 

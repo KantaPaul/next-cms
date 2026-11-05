@@ -119,7 +119,7 @@ export function getMenuItems(): {
       permission: PERMISSIONS.API_MANAGE,
     },
     {
-      name: 'Collections',
+      name: 'Post types',
       href: PAGES.DASHBOARD.COLLECTIONS,
       icon: <Database className="w-[18px]" />,
       permission: PERMISSIONS.PAGES_EDIT,

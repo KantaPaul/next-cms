@@ -33,6 +33,7 @@ import { db } from '@/db';
 import {
   categories,
   collectionEntries,
+  collectionFields,
   collections,
   pageCategories,
   pages,
@@ -45,6 +46,7 @@ import {
   videos,
 } from '@/db/schema';
 import { siteHref } from '@/lib/utils/site-href';
+import { entryTitle } from '@/config/post-types';
 import {
   type ResolvedSite,
   siteContext,
@@ -617,13 +619,23 @@ async function resolveCollectionEntries(
     db.select({ total: count() }).from(collectionEntries).where(where),
   ]);
 
+  const fieldRows = await db
+    .select({ key: collectionFields.key, type: collectionFields.type })
+    .from(collectionFields)
+    .where(eq(collectionFields.collectionId, collectionId))
+    .orderBy(collectionFields.position);
+  const firstMediaKey = fieldRows.find(f => f.type === 'media')?.key;
+
   const prefix = siteSlugPrefix(site);
   const items: NormalizedListingItem[] = rows.map(r => {
     const data = (r.data as Record<string, unknown>) ?? {};
-    const title =
-      String(data.title || data.name || data.label || r.slug || 'Untitled');
+    const title = entryTitle(data, fieldRows) || r.slug || 'Untitled';
     const excerpt = data.description || data.excerpt || data.summary;
-    const image = data.image || data.thumbnail || data.cover;
+    const image =
+      data.image ||
+      data.thumbnail ||
+      data.cover ||
+      (firstMediaKey ? data[firstMediaKey] : undefined);
 
     return {
       id: r.id,
