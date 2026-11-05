@@ -72,3 +72,5 @@ export * from './theme/EditorUIProvider';
 export * from './tokens/tokens';
 // Tree
 export * from './tree/LayersTree';
+
+export * from './lib/motion';
