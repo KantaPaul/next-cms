@@ -190,6 +190,17 @@ export const BLOCK_INFO: Record<string, BlockInfo> = {
     nesting: 'leaf',
     defaultSize: FULL,
   },
+  LoopGrid: {
+    description: 'Repeat a saved Loop Item template over posts or a post type',
+    capabilities: [
+      'Blog posts or any custom post type',
+      'Reusable Loop Item templates with dynamic fields',
+      'Field filters, ordering, and pagination',
+      'Grid, list, masonry, or carousel',
+    ],
+    semanticTag: 'section',
+    defaultSize: FULL,
+  },
   BlogPosts: {
     description: 'List of recent posts',
     capabilities: ['Category and tag filters', 'Grid or list layout', 'Pagination'],

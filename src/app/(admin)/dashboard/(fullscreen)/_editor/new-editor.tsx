@@ -38,6 +38,8 @@ import {
   DeviceSwitch,
   EditorCanvas,
   DynamicRefsProvider,
+  DynamicSourcesProvider,
+  type DynamicSourcesValue,
   EditorProvider,
   type EditorStore,
   Inspector,
@@ -105,6 +107,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useSyncExternalStore,
 } from 'react';
 import { toast } from 'sonner';
 import { RevisionsDrawer } from '@/app/(admin)/dashboard/(shell)/pages/_components/revisions-drawer';
@@ -119,7 +122,18 @@ import {
 } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.actions';
 import { POST_REVISION_ACTIONS } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-revision-actions';
 import { EditorBridgeProvider } from '@/builder/controls/editor-bridge';
-import { convertBlogBlockToQueryLoop } from '@/builder/blocks/query-loop';
+import {
+  convertBlogBlockToQueryLoop,
+  toLoopItemContext,
+} from '@/builder/blocks/query-loop';
+import { LoopItemProvider } from '@/builder/blocks/query-loop-client';
+import { useLiveLoaded } from './use-live-loaded';
+import {
+  LoopPreviewProvider,
+  loopItemDynamicSources,
+  pickPreviewItem,
+} from '@/builder/controls/loop-preview';
+import { APPROVED_DYNAMIC_SOURCES, type NormalizedListingItem } from '@nextcms/builder-core';
 import type { BuilderData } from '@/builder/data';
 import { editorSetup } from '@/builder/definitions';
 import { cmsInlineProps, cmsResizeHandles } from '@/builder/editor-handles';
@@ -199,17 +213,32 @@ function actionError(result: unknown): string | null {
 function EditorSiteRoot({
   metadata,
   collectionEntry,
+  loopPreviewItem,
   children,
 }: {
   metadata: Record<string, unknown>;
   collectionEntry?: any;
+  /** Loop Item templates: the item the canvas renders, in a card-sized frame. */
+  loopPreviewItem?: NormalizedListingItem | null;
   children: ReactNode;
 }) {
   const rootProps = useEditor(state => state.doc.root.props);
+  const width = Number(rootProps?.previewWidth) || 400;
   return (
     <EntryProvider entry={collectionEntry ?? null}>
       <SiteRoot rootProps={rootProps} metadata={{ ...metadata, editing: true }}>
-        {children}
+        {loopPreviewItem ? (
+          <LoopItemProvider item={loopPreviewItem}>
+            <div
+              data-loop-item-frame
+              style={{ maxWidth: width, margin: '40px auto', minHeight: 120 }}
+            >
+              {children}
+            </div>
+          </LoopItemProvider>
+        ) : (
+          children
+        )}
       </SiteRoot>
     </EntryProvider>
   );
@@ -607,6 +636,14 @@ function useEditorLock(targetType: 'page' | 'post' | null, id: string) {
 
 const NO_DYNAMIC_REFS: DynamicRefOptions = { pages: [], posts: [] };
 
+const NO_PREVIEW_ITEMS: NormalizedListingItem[] = [];
+
+const DEFAULT_DYNAMIC_SOURCES: DynamicSourcesValue = {
+  sources: APPROVED_DYNAMIC_SOURCES,
+  defaultSource: 'page',
+  defaultPath: 'title',
+};
+
 const recordsById = (items: DynamicRefItem[]) =>
   Object.fromEntries(items.map(item => [item.id, item]));
 
@@ -617,6 +654,8 @@ export function NewEditor({
   post,
   category,
   collectionEntry,
+  previewItems = NO_PREVIEW_ITEMS,
+  loopItemFields,
   document,
   loaded,
   draftVersion = 0,
@@ -656,6 +695,7 @@ export function NewEditor({
     setPreferencesStore(createPreferencesStore());
   }, []);
   const drag = useDragController(store);
+  const liveLoaded = useLiveLoaded(store, loaded, page.language);
 
   const save = useCallback(
     async (input: SaveInput): Promise<SaveResult> => {
@@ -857,8 +897,33 @@ export function NewEditor({
     () => cmsTransformProps(metadata, setup.renderKind),
     [metadata, setup.renderKind]
   );
+  const isLoopItem = kind === 'loop-item';
+  const previewItemId = useSyncExternalStore(
+    store.subscribe,
+    () => store.getState().doc.root.props?.previewItemId,
+    () => store.getState().doc.root.props?.previewItemId
+  );
+  const loopPreviewItem = useMemo(
+    () => (isLoopItem ? pickPreviewItem(previewItems, previewItemId) : null),
+    [isLoopItem, previewItems, previewItemId]
+  );
+  const dynamicSources = useMemo<DynamicSourcesValue>(
+    () =>
+      isLoopItem
+        ? {
+            sources: loopItemDynamicSources(loopItemFields ?? []),
+            defaultSource: 'loopItem',
+            defaultPath: 'title',
+          }
+        : DEFAULT_DYNAMIC_SOURCES,
+    [isLoopItem, loopItemFields]
+  );
   const dynamicContext = useMemo(
     () => ({
+      ...(loopPreviewItem && {
+        loopItem: toLoopItemContext(loopPreviewItem),
+        custom: loopPreviewItem.raw ?? {},
+      }),
       language: page.language,
       page: { title: page.title, slug: page.slug, language: page.language },
       ...(setup.renderKind === 'post' && { post: post ?? SAMPLE_POST }),
@@ -869,7 +934,7 @@ export function NewEditor({
       pageRef: recordsById(dynamicRefs.pages),
       postRef: recordsById(dynamicRefs.posts),
     }),
-    [page.title, page.slug, page.language, setup.renderKind, post, collectionEntry, dynamicRefs]
+    [page.title, page.slug, page.language, setup.renderKind, post, collectionEntry, dynamicRefs, loopPreviewItem]
   );
   const refChoices = useMemo(
     () => ({ page: dynamicRefs.pages, post: dynamicRefs.posts }),
@@ -880,11 +945,12 @@ export function NewEditor({
       <EditorSiteRoot
         metadata={metadata}
         collectionEntry={collectionEntry}
+        loopPreviewItem={loopPreviewItem}
       >
         {children}
       </EditorSiteRoot>
     ),
-    [metadata, collectionEntry]
+    [metadata, collectionEntry, loopPreviewItem]
   );
   const onFrame = useCallback(
     (frame: HTMLIFrameElement) => setFrameWindow(frame.contentWindow),
@@ -1137,7 +1203,7 @@ export function NewEditor({
       components={components}
       drag={drag}
       transformProps={transformProps}
-      loaded={loaded}
+      loaded={liveLoaded}
       renderRoot={renderRoot}
       onFrame={onFrame}
       resizeHandles={cmsResizeHandles}
@@ -1443,6 +1509,8 @@ export function NewEditor({
       <E12ControlsProvider value={true}>
         <EditorProvider store={store}>
           <DynamicRefsProvider value={refChoices}>
+          <DynamicSourcesProvider value={dynamicSources}>
+          <LoopPreviewProvider items={previewItems} fields={loopItemFields ?? []}>
             <EntryProvider entry={collectionEntry ?? null}>
               <NewEditorBridge themeTokens={themeTokens}>
                 <SharedChrome
@@ -1544,6 +1612,8 @@ export function NewEditor({
         {dialogs}
               </NewEditorBridge>
             </EntryProvider>
+          </LoopPreviewProvider>
+          </DynamicSourcesProvider>
           </DynamicRefsProvider>
         </EditorProvider>
       </E12ControlsProvider>
@@ -1554,6 +1624,8 @@ export function NewEditor({
     <E12ControlsProvider value={true}>
       <EditorProvider store={store}>
         <DynamicRefsProvider value={refChoices}>
+          <DynamicSourcesProvider value={dynamicSources}>
+          <LoopPreviewProvider items={previewItems} fields={loopItemFields ?? []}>
           <EntryProvider entry={collectionEntry ?? null}>
             <NewEditorBridge themeTokens={themeTokens}>
       <div className="flex h-screen flex-col bg-steel-50 dark:bg-dark-50">
@@ -1812,7 +1884,9 @@ export function NewEditor({
       {dialogs}
             </NewEditorBridge>
           </EntryProvider>
-        </DynamicRefsProvider>
+        </LoopPreviewProvider>
+          </DynamicSourcesProvider>
+          </DynamicRefsProvider>
       </EditorProvider>
     </E12ControlsProvider>
   );

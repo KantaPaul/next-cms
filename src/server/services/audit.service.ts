@@ -32,6 +32,7 @@ export type AuditTarget =
   | 'taxonomy'
   | 'template'
   | 'global_block'
+  | 'loop_template'
   | 'api_key'
   | 'user'
   | 'site'

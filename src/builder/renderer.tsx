@@ -26,8 +26,8 @@ import {
   PostTitle,
   RelatedPosts,
 } from './blocks/blog';
-import { renderSlot, type SlotValue } from './blocks/content';
 import { getBlockComponents } from './blocks/registry';
+import { resolvePanels } from './resolve-panels';
 import { type LoaderContext, resolveDocumentData } from './loaders';
 import type { LocaleLinkMap } from '@/lib/utils/locale-links';
 import { prefixDocumentLinks, prefixHtmlLinks } from './site-links';
@@ -63,9 +63,6 @@ const ROOT_PADDING: Record<string, string> = {
   xl: 'py-24',
 };
 
-/** Client blocks that receive resolved `panels` instead of `items` with slots. */
-const PANEL_TYPES = new Set(['Slider', 'Tabs', 'Accordion']);
-
 /** Blocks bound to the post being rendered, like `renderPostBlock` in config.tsx. */
 const POST_BLOCKS = { PostTitle, PostFeaturedImage, PostMeta, PostContent };
 
@@ -77,25 +74,6 @@ export function rendererComponents(kind: RenderKind): BlockComponents {
     ...page,
     ...(POST_BLOCKS as unknown as BlockComponents),
     RelatedPosts: RelatedPosts as unknown as BlockComponents[string],
-  };
-}
-
-/** Same as `renderPanels` in config.tsx: resolve each item's slot to a node. */
-function resolvePanels(
-  node: BuilderNode,
-  props: Record<string, unknown>
-): Record<string, unknown> {
-  if (!PANEL_TYPES.has(node.type)) return props;
-  const { items, ...rest } = props;
-  const list = Array.isArray(items)
-    ? (items as { label?: string; title?: string; content?: SlotValue }[])
-    : [];
-  return {
-    ...rest,
-    panels: list.map(item => ({
-      label: item?.label ?? item?.title,
-      node: renderSlot(item?.content),
-    })),
   };
 }
 

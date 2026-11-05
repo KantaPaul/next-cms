@@ -54,7 +54,7 @@ export async function loadEditorData({
 }): Promise<EditorData> {
   const document = toDocument(content);
   const [loaded, options, picked] = await Promise.all([
-    loadDocumentData(document, { language, themeTokens, post }),
+    loadDocumentData(document, { language, themeTokens, post, editor: true }),
     dynamicRefsService.options(),
     dynamicRefsService.load(collectDynamicRefs(document)),
   ]);

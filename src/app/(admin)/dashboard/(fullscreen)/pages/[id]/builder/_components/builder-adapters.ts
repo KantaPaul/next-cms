@@ -23,6 +23,11 @@ import {
   updateTemplate,
 } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
 
+import {
+  publishLoopTemplate,
+  saveLoopTemplate,
+} from '@/app/(admin)/dashboard/(shell)/templates/loop/_modules/loop-templates.actions';
+import type { NormalizedListingItem } from '@nextcms/builder-core';
 import type { BuilderData, BuilderItem } from '@/builder/data';
 import type { PostView } from '@/builder/post-template';
 import { PAGES } from '@/config/pages';
@@ -49,6 +54,10 @@ export type BuilderPageProps = {
   category?: string;
   /** Collection entry rendered by collection-bound blocks in template pages. */
   collectionEntry?: any;
+  /** Loop Item templates: posts or entries the canvas can preview. */
+  previewItems?: NormalizedListingItem[];
+  /** Loop Item templates: fields offered by the `loopItem` dynamic source. */
+  loopItemFields?: { path: string; label: string; type?: string }[];
 };
 
 /** Config for global blocks: no GlobalRef and no Global category so a global cannot nest another. */
@@ -153,6 +162,30 @@ export function adapterFor(
         });
       },
       publish: async () => null,
+      submitForReview: null,
+    };
+  }
+
+  if (kind === 'loop-item') {
+    return {
+      label: `Loop item: ${page.title}`,
+      backHref: PAGES.DASHBOARD.LOOP_TEMPLATES,
+      backLabel: 'Loop items',
+      headerPath: '',
+      previewHref: null,
+      liveLabel: 'Publish template',
+      saveDraft: async content =>
+        saveLoopTemplate({
+          id: page.id,
+          content: {
+            root: (content.root ?? { props: {} }) as {
+              props?: Record<string, unknown>;
+            },
+            content: (content.content ?? []) as BuilderItem[],
+            zones: (content.zones ?? {}) as Record<string, BuilderItem[]>,
+          },
+        }),
+      publish: () => publishLoopTemplate({ id: page.id }),
       submitForReview: null,
     };
   }

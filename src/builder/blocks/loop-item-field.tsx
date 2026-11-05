@@ -123,7 +123,10 @@ export function LoopItemField({
       );
 
     case 'custom': {
-      const rawVal = customKey ? item.raw?.[customKey] : undefined;
+      const rawVal = customKey
+        ? (item.raw?.[customKey] ??
+          (item as unknown as Record<string, unknown>)[customKey])
+        : undefined;
       if (rawVal === undefined || rawVal === null) return null;
       return <span className="text-sm">{String(rawVal)}</span>;
     }

@@ -35,6 +35,8 @@ export const PAGES = {
     TEMPLATES: '/dashboard/templates',
     TEMPLATE: (id: string) => `/dashboard/templates/${id}`,
     GLOBAL_BLOCK: (id: string) => `/dashboard/templates/globals/${id}`,
+    LOOP_TEMPLATES: '/dashboard/templates/loop',
+    LOOP_TEMPLATE: (id: string) => `/dashboard/templates/loop/${id}`,
     HEADER_FOOTER: '/dashboard/header-footer',
     HEADER_FOOTER_EDIT: (id: string) => `/dashboard/header-footer/${id}`,
     CONTACT_FORMS: '/dashboard/contact-forms',

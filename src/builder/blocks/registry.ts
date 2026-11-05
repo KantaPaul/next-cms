@@ -35,6 +35,7 @@ import {
 import { Newsletter } from './newsletter';
 import { PostTypeEntries } from './post-type-entries';
 import { QueryFilter } from './query-filters';
+import { LoopGrid } from './loop-grid';
 import { LoopItemField, QueryLoop } from './query-loop';
 import { SearchResults } from './search-results';
 import {
@@ -106,6 +107,7 @@ const builtInComponents = {
   ThemeToggle,
   LanguageSwitcher: LanguageSwitcherBlock,
   QueryLoop,
+  LoopGrid,
   LoopItemField,
   QueryFilter,
   SearchResults,

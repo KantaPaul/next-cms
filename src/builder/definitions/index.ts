@@ -19,6 +19,7 @@ import {
 } from './native';
 import { withInfo } from './info';
 import { customBlockDefinitions } from '../custom';
+import { LoopPreviewItemField } from '../controls/loop-preview';
 
 export const pageDefinitions: Record<string, BlockDefinition> = Object.fromEntries(
   [...NATIVE_BLOCKS, ...customBlockDefinitions].map(block => [block.type, withInfo(block)])
@@ -109,7 +110,65 @@ export type EditorSetup = {
   renderKind: 'page' | 'post';
 };
 
+/** Blocks that can't sit inside a Loop Item: other loops, listings and global refs. */
+const LOOP_ITEM_EXCLUDED = new Set([
+  'LoopGrid',
+  'QueryLoop',
+  'QueryFilter',
+  'SearchResults',
+  'BlogPosts',
+  'PostTypeEntries',
+  'GlobalRef',
+]);
+
+/** Root settings for the Loop Item editor: which item to preview, and how wide. */
+const LOOP_ITEM_ROOT_FIELDS: Record<string, FieldDef> = {
+  previewItemId: {
+    label: 'Preview with',
+    type: 'custom',
+    render: LoopPreviewItemField,
+  } as FieldDef,
+  previewWidth: {
+    label: 'Preview width',
+    type: 'select',
+    options: [
+      { label: 'Narrow card (320px)', value: '320' },
+      { label: 'Card (400px)', value: '400' },
+      { label: 'Wide card (560px)', value: '560' },
+      { label: 'List row (960px)', value: '960' },
+    ],
+  } as FieldDef,
+};
+
 export function editorSetup(kind: string): EditorSetup {
+  if (kind === 'loop-item') {
+    const definitions = Object.fromEntries(
+      Object.entries(pageDefinitions).filter(
+        ([type]) => !LOOP_ITEM_EXCLUDED.has(type)
+      )
+    );
+    const groups = groupsOf(['global', 'post'])
+      .map(group => ({
+        ...group,
+        types: group.types.filter(type => !LOOP_ITEM_EXCLUDED.has(type)),
+      }))
+      .filter(group => group.types.length > 0);
+    return {
+      definitions,
+      schemas: schemasOf(definitions),
+      inspectorBlocks: inspectorOf(definitions),
+      rootFields: LOOP_ITEM_ROOT_FIELDS,
+      groups: [
+        { title: 'Loop Item', types: ['LoopItemField'] },
+        ...groups.map(group => ({
+          ...group,
+          types: group.types.filter(type => type !== 'LoopItemField'),
+        })),
+      ].filter(group => group.types.length > 0),
+      renderKind: 'page',
+    };
+  }
+
   if (kind === 'header' || kind === 'footer') {
     const { GlobalRef: _globalRef, ...definitions } = pageDefinitions;
     const headerGroup: BlockGroup = {

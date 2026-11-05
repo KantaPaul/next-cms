@@ -9,7 +9,9 @@ import {
   DEFAULT_PAGE_SIZE,
   type NormalizedListingItem,
   type QueryFilter,
+  fieldSortKey,
 } from '@nextcms/builder-core';
+import { fieldFilterSql, fieldSortSql } from '@/server/services/listing-field-filters';
 import {
   and,
   asc,
@@ -587,10 +589,28 @@ async function resolveCollectionEntries(
     });
   }
 
+  const fieldRows = await db
+    .select({ key: collectionFields.key, type: collectionFields.type })
+    .from(collectionFields)
+    .where(eq(collectionFields.collectionId, collectionId))
+    .orderBy(collectionFields.position);
+  const firstMediaKey = fieldRows.find(f => f.type === 'media')?.key;
+
+  for (const filter of config.fieldFilters ?? []) {
+    const cond = fieldFilterSql(collectionEntries.data, fieldRows, filter);
+    if (cond) conditions.push(cond);
+  }
+
   const where = and(...conditions);
   const sortOrder = config.sortOrder === 'asc' ? asc : desc;
+  const customSortKey = fieldSortKey(config.sortField);
+  const customSort = customSortKey
+    ? fieldSortSql(collectionEntries.data, fieldRows, customSortKey, config.sortOrder)
+    : undefined;
   let orderByClause: SQL[];
-  if (config.sortField === 'createdAt') {
+  if (customSort) {
+    orderByClause = [customSort, desc(collectionEntries.publishedAt)];
+  } else if (config.sortField === 'createdAt') {
     orderByClause = [sortOrder(collectionEntries.createdAt)];
   } else if (config.sortField === 'updatedAt') {
     orderByClause = [sortOrder(collectionEntries.updatedAt)];
@@ -618,13 +638,6 @@ async function resolveCollectionEntries(
       .offset(offset),
     db.select({ total: count() }).from(collectionEntries).where(where),
   ]);
-
-  const fieldRows = await db
-    .select({ key: collectionFields.key, type: collectionFields.type })
-    .from(collectionFields)
-    .where(eq(collectionFields.collectionId, collectionId))
-    .orderBy(collectionFields.position);
-  const firstMediaKey = fieldRows.find(f => f.type === 'media')?.key;
 
   const prefix = siteSlugPrefix(site);
   const items: NormalizedListingItem[] = rows.map(r => {

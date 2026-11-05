@@ -150,3 +150,44 @@ export const collectionEntriesRelations = relations(
     }),
   })
 );
+
+export const loopTemplateSourceEnum = pgEnum('loop_template_source', [
+  'posts',
+  'collection',
+]);
+export type LoopTemplateSource =
+  (typeof loopTemplateSourceEnum.enumValues)[number];
+
+/**
+ * A reusable Loop Item design: the builder layout repeated once per item by
+ * the Loop Grid block. Bound to blog posts or to one collection (post type).
+ */
+export const loopTemplates = pgTable(
+  'loop_templates',
+  {
+    id,
+    siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
+    name: varchar('name', { length: 150 }).notNull(),
+    sourceType: loopTemplateSourceEnum('source_type').default('posts').notNull(),
+    collectionId: text('collection_id').references(() => collections.id, {
+      onDelete: 'set null',
+      onUpdate: 'cascade',
+    }),
+    /** Draft builder JSON (Puck-shaped, like global blocks). */
+    content: jsonb('content').notNull().default({}),
+    publishedContent: jsonb('published_content'),
+    publishedAt: timestamp('published_at', { withTimezone: true }),
+    ...timestampColumns,
+  },
+  t => [
+    index('loop_templates_site_id_index').on(t.siteId),
+    index('loop_templates_collection_id_index').on(t.collectionId),
+  ]
+);
+
+export const loopTemplatesRelations = relations(loopTemplates, ({ one }) => ({
+  collection: one(collections, {
+    fields: [loopTemplates.collectionId],
+    references: [collections.id],
+  }),
+}));

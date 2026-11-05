@@ -134,6 +134,13 @@
       "when": 1793866930286,
       "tag": "20261105082210_post_types",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793898459448,
+      "tag": "20261105170739_loop_templates",
+      "breakpoints": true
     }
   ]
 }

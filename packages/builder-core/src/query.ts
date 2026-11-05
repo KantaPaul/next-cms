@@ -95,12 +95,55 @@ export const queryFilterSchema = z.object({
 
 export type QueryFilter = z.infer<typeof queryFilterSchema>;
 
+/** Custom-field key on a collection entry (`data->>key`). */
+export const FIELD_KEY_PATTERN = /^[a-zA-Z0-9_]{1,100}$/;
+
+/** Prefix that marks a sort on a collection entry's custom field (`field:price`). */
+export const FIELD_SORT_PREFIX = 'field:';
+
+export const FIELD_FILTER_OPERATORS = [
+  'eq',
+  'neq',
+  'contains',
+  'gt',
+  'gte',
+  'lt',
+  'lte',
+  'in',
+  'exists',
+] as const;
+
+export type FieldFilterOperator = (typeof FIELD_FILTER_OPERATORS)[number];
+
+/**
+ * Filter on a collection entry's custom field. Keys are checked again on the
+ * server against the collection's real fields before any SQL is built.
+ */
+export const fieldFilterSchema = z.object({
+  key: z.string().regex(FIELD_KEY_PATTERN),
+  operator: z.enum(FIELD_FILTER_OPERATORS),
+  value: z
+    .union([z.string(), z.number(), z.boolean(), z.array(z.string())])
+    .optional(),
+});
+
+export type FieldFilter = z.infer<typeof fieldFilterSchema>;
+
+/** Custom field key from a `field:<key>` sort, or null. */
+export function fieldSortKey(sortField: string): string | null {
+  if (!sortField.startsWith(FIELD_SORT_PREFIX)) return null;
+  const key = sortField.slice(FIELD_SORT_PREFIX.length);
+  return FIELD_KEY_PATTERN.test(key) ? key : null;
+}
+
 /** Validates and clamps a listing query configuration against allowlists. */
 export const listingQuerySchema = z
   .object({
     source: z.enum(LISTING_SOURCES),
     collectionId: z.string().optional(),
     filters: z.array(queryFilterSchema).default([]),
+    /** Custom-field filters; collection-entries only. */
+    fieldFilters: z.array(fieldFilterSchema).max(20).default([]),
     sortField: z.string().default('publishedAt'),
     sortOrder: z.enum(['asc', 'desc']).default('desc'),
     limit: z
@@ -126,11 +169,21 @@ export const listingQuerySchema = z
 
     // 2. Validate sortField is allowlisted for the source
     const allowedSorts = ALLOWED_SORT_FIELDS[val.source] ?? [];
-    if (!allowedSorts.includes(val.sortField)) {
+    const isFieldSort =
+      val.source === 'collection-entries' && fieldSortKey(val.sortField) !== null;
+    if (!isFieldSort && !allowedSorts.includes(val.sortField)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['sortField'],
         message: `Sort field '${val.sortField}' is not allowed for source '${val.source}'. Allowed: ${allowedSorts.join(', ')}`,
+      });
+    }
+
+    if (val.fieldFilters.length > 0 && val.source !== 'collection-entries') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['fieldFilters'],
+        message: 'fieldFilters are only supported for collection-entries',
       });
     }
 

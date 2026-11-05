@@ -20,7 +20,8 @@ export type BuilderKind =
   | 'global'
   | 'contact-form'
   | 'header'
-  | 'footer';
+  | 'footer'
+  | 'loop-item';
 
 export type BuilderContextValue = {
   kind: BuilderKind;

@@ -11,6 +11,7 @@ import {
   isDynamicBinding,
   type Device,
   type DynamicBinding,
+  type DynamicSourceDef,
   type FieldDef,
   getPath,
   setPath,
@@ -1178,6 +1179,26 @@ const DynamicRefsContext = createContext<DynamicRefChoices>({
 /** Gives dynamic bindings the pages and posts to choose from. */
 export const DynamicRefsProvider = DynamicRefsContext.Provider;
 
+export type DynamicSourcesValue = {
+  /** Sources offered by the binding picker. */
+  sources: Record<string, DynamicSourceDef>;
+  /** Source and field a new binding starts with. */
+  defaultSource: string;
+  defaultPath: string;
+};
+
+const DynamicSourcesContext = createContext<DynamicSourcesValue>({
+  sources: APPROVED_DYNAMIC_SOURCES,
+  defaultSource: 'page',
+  defaultPath: 'title',
+});
+
+/**
+ * Overrides the dynamic sources for one editor, e.g. a Loop Item template
+ * that lists its post type's own fields under "Loop Item".
+ */
+export const DynamicSourcesProvider = DynamicSourcesContext.Provider;
+
 /** Dynamic content source and field picker (R415 / BLD-23). */
 export function DynamicBindingField({
   value,
@@ -1188,9 +1209,10 @@ export function DynamicBindingField({
   onChange: (next: DynamicBinding) => void;
   onSwitchToStatic: () => void;
 }) {
+  const { sources } = useContext(DynamicSourcesContext);
   const currentSource = value.$dynamic || 'page';
   const currentPath = value.path || '';
-  const sourceDef = APPROVED_DYNAMIC_SOURCES[currentSource];
+  const sourceDef = sources[currentSource] ?? APPROVED_DYNAMIC_SOURCES[currentSource];
   const availableFields = sourceDef?.fields ?? [];
   const refChoices = useContext(DynamicRefsContext);
   const pickKind = sourceDef?.pick;
@@ -1246,14 +1268,14 @@ export function DynamicBindingField({
             value={currentSource}
             onChange={e => {
               const newSource = e.target.value;
-              const def = APPROVED_DYNAMIC_SOURCES[newSource];
+              const def = sources[newSource];
               const firstField = def?.fields[0]?.key ?? '';
               const { ref: _ref, ...rest } = value;
               onChange({ ...rest, $dynamic: newSource, path: firstField });
             }}
             style={inputStyle}
           >
-            {Object.values(APPROVED_DYNAMIC_SOURCES).map(src => (
+            {Object.values(sources).map(src => (
               <option key={src.id} value={src.id}>
                 {src.label}
               </option>
@@ -1271,6 +1293,9 @@ export function DynamicBindingField({
               onChange={e => onChange({ ...value, path: e.target.value })}
               style={inputStyle}
             >
+              {currentPath && !availableFields.some(f => f.key === currentPath) && (
+                <option value={currentPath}>{currentPath}</option>
+              )}
               {availableFields.map(f => (
                 <option key={f.key} value={f.key}>
                   {f.label}
@@ -1413,6 +1438,7 @@ export function FieldControl({
 }) {
   const types = useContext(FieldTypesContext);
   const device = useContext(DeviceContext);
+  const dynamicDefaults = useContext(DynamicSourcesContext);
   const e12 = useE12Controls();
   if (field.when && !field.when(props)) return null;
   const activeTypes = e12
@@ -1457,9 +1483,17 @@ export function FieldControl({
                     ? withDeviceValue(
                         value,
                         device,
-                        createDynamicBinding('page', 'title', '')
+                        createDynamicBinding(
+                          dynamicDefaults.defaultSource,
+                          dynamicDefaults.defaultPath,
+                          ''
+                        )
                       )
-                    : createDynamicBinding('page', 'title', '')
+                    : createDynamicBinding(
+                        dynamicDefaults.defaultSource,
+                        dynamicDefaults.defaultPath,
+                        ''
+                      )
                 )
               }
               style={{

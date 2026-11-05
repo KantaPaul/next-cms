@@ -18,6 +18,7 @@ import {
   Settings,
   Share2,
   ShieldCheck,
+  LayoutGrid,
 } from 'lucide-react';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS, type PermissionKey } from '@/config/permissions';
@@ -59,6 +60,11 @@ export function getMenuItems(): {
       name: 'Templates & Globals',
       href: PAGES.DASHBOARD.TEMPLATES,
       icon: <LayoutTemplate className="w-[18px]" />,
+    },
+    {
+      name: 'Loop items',
+      href: PAGES.DASHBOARD.LOOP_TEMPLATES,
+      icon: <LayoutGrid className="w-[18px]" />,
     },
     {
       name: 'Site templates',

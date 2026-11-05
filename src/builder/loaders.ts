@@ -17,6 +17,9 @@ import {
   createLoaderRegistry,
   documentToPuck,
   encodeNamespacedParams,
+  type FieldFilter,
+  fieldFilterSchema,
+  fieldSortKey,
   formatNamespacedParam,
   LISTING_SOURCES,
   type ListingSource,
@@ -448,9 +451,12 @@ function buildFiltersFromPropsAndParams(
   const requestedSort =
     activeParams.sort ??
     (typeof props.sortField === 'string' ? props.sortField : 'publishedAt');
-  const sortField = allowedSorts.includes(requestedSort)
-    ? requestedSort
-    : allowedSorts[0]!;
+  const isFieldSort =
+    source === 'collection-entries' && fieldSortKey(requestedSort) !== null;
+  const sortField =
+    allowedSorts.includes(requestedSort) || isFieldSort
+      ? requestedSort
+      : allowedSorts[0]!;
   const sortOrder: 'asc' | 'desc' =
     activeParams.order ??
     (props.sortOrder === 'asc' ? 'asc' : 'desc');
@@ -545,6 +551,9 @@ const loadQueryLoop: BlockLoader = async (props, ctx) => {
         ? { collectionId: props.collectionId }
         : {}),
       filters,
+      ...(source === 'collection-entries'
+        ? { fieldFilters: sanitizeFieldFilters(props.fieldFilters) }
+        : {}),
       sortField,
       sortOrder,
       limit,
@@ -584,6 +593,49 @@ const loadQueryLoop: BlockLoader = async (props, ctx) => {
     language: typeof ctx.language === 'string' ? ctx.language : 'en',
     ...archiveTokenPatch(props, ctx),
   };
+};
+
+/** Drops malformed or half-filled custom-field filters from block props. */
+export function sanitizeFieldFilters(value: unknown): FieldFilter[] {
+  if (!Array.isArray(value)) return [];
+  const out: FieldFilter[] = [];
+  for (const raw of value.slice(0, 20)) {
+    const parsed = fieldFilterSchema.safeParse(raw);
+    if (!parsed.success) continue;
+    const f = parsed.data;
+    if (f.operator !== 'exists' && (f.value === undefined || f.value === '')) {
+      continue;
+    }
+    out.push(f);
+  }
+  return out;
+}
+
+/**
+ * Loop Grid: the Query Loop listing plus the chosen Loop Item template. The
+ * editor (and preview) render the template's draft; the site its published
+ * version.
+ */
+const loadLoopGrid: BlockLoader = async (props, ctx) => {
+  const templateId =
+    typeof props.templateId === 'string' ? props.templateId : '';
+  const draft = Boolean(ctx.editor || ctx.preview);
+  const [listing, template] = await Promise.all([
+    loadQueryLoop(props, ctx),
+    templateId
+      ? import('@/server/actions/loop-template.actions')
+          .then(m => m.getLoopTemplateDocument(templateId, draft))
+          .catch(err => {
+            console.error('[builder/loaders] loop template failed:', err);
+            return null;
+          })
+      : null,
+  ]);
+  if (!template) return { ...listing, template: null, templateName: '' };
+  // Run loaders inside the template (menus, global blocks…) once; per-item
+  // `loopItem` bindings stay for the grid to fill in.
+  const document = await resolveDocumentData(template.document, ctx);
+  return { ...listing, template: document, templateName: template.name };
 };
 
 /** Published entries of one post type, by id or (for block presets) by slug. */
@@ -721,6 +773,7 @@ const registry = createLoaderRegistry<LoaderContext>(
     BlogPosts: loadBlogPosts,
     RelatedPosts: loadRelatedPosts,
     QueryLoop: loadQueryLoop,
+    LoopGrid: loadLoopGrid,
     PostTypeEntries: loadPostTypeEntries,
     QueryFilter: loadQueryFilter,
     SearchResults: loadSearchResults,

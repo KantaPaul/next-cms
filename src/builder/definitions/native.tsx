@@ -50,6 +50,7 @@ import {
 } from '../blocks/marketing';
 import { Newsletter } from '../blocks/newsletter';
 import { QueryFilter } from '../blocks/query-filters';
+import { LoopGrid } from '../blocks/loop-grid';
 import { LoopItemField, QueryLoop } from '../blocks/query-loop';
 import { PostTypeEntries } from '../blocks/post-type-entries';
 import { SearchResults } from '../blocks/search-results';
@@ -74,6 +75,12 @@ import {
 } from '../blocks/site-chrome';
 import { FooterStyleField, HeaderStyleField } from '../controls/chrome-style';
 import { ContainerLayoutControl } from '../controls/container-layout';
+import { LoopCustomKeyField } from '../controls/loop-preview';
+import {
+  CptFieldFiltersField,
+  LoopSortField,
+  LoopTemplatePickerField,
+} from '../controls/loop-grid-fields';
 import { ImageMorphField } from '../controls/image-morph';
 import { PageTransitionField } from '../controls/page-transition';
 import { SectionField } from '../controls/section-inspector';
@@ -3744,6 +3751,190 @@ export const QueryLoopBlock = defineBlock({
   },
 });
 
+const qlf = QueryLoopBlock.fields as Record<string, any>;
+const isCollectionGrid = (props: any) => props.source === 'collection-entries';
+
+/**
+ * Loop Grid: Elementor-style Loop Builder. Repeats a saved Loop Item
+ * template over blog posts or one post type's entries.
+ */
+export const LoopGridBlock = defineBlock({
+  type: 'LoopGrid',
+  label: 'Loop Grid',
+  category: 'blog',
+  icon: 'layout-grid',
+  inlineProps: ['eyebrow', 'title', 'subtitle'],
+  schema: z
+    .object({
+      loopId: z.string().default(''),
+      source: z.enum(['posts', 'collection-entries']).default('posts'),
+      collectionId: z.string().optional(),
+      templateId: z.string().optional(),
+      lockedCategory: z.string().optional(),
+      lockedTag: z.string().optional(),
+      lockedAuthorId: z.string().optional(),
+      fieldFilters: z
+        .array(
+          z.object({
+            key: z.string(),
+            operator: z.string(),
+            value: z.unknown().optional(),
+          })
+        )
+        .optional(),
+      sortField: z.string().default('publishedAt'),
+      sortOrder: z.enum(['asc', 'desc']).default('desc'),
+      pageSize: z.number().int().min(1).max(100).default(9),
+      offset: z.number().int().min(0).default(0),
+      excludeCurrent: z.boolean().default(false),
+      eyebrow: z.string().optional(),
+      title: z.string().optional(),
+      subtitle: z.string().optional(),
+      layout: z.enum(['grid', 'list', 'masonry', 'carousel']).default('grid'),
+      columnsDesktop: z.number().int().min(1).max(4).default(3),
+      columnsTablet: z.number().int().min(1).max(3).default(2),
+      columnsMobile: z.number().int().min(1).max(2).default(1),
+      gap: z.enum(['sm', 'md', 'lg', 'xl']).default('md'),
+      equalHeight: z.boolean().default(true),
+      pagination: z
+        .enum(['numbered', 'load-more', 'infinite-scroll', 'none'])
+        .default('numbered'),
+      loadMoreLabel: z.string().default('Load more'),
+      emptyText: z.string().default('No matching items found.'),
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: LoopGrid as any,
+  slots: {
+    emptyState: {
+      label: 'Empty State',
+      disallow: ['QueryLoop', 'LoopGrid', 'GlobalRef'],
+    },
+  },
+  presets: {
+    'Blog grid': {
+      source: 'posts',
+      title: 'Latest posts',
+      layout: 'grid',
+      columnsDesktop: 3,
+      pageSize: 6,
+      pagination: 'numbered',
+    },
+    'Post type grid': {
+      source: 'collection-entries',
+      title: '',
+      layout: 'grid',
+      columnsDesktop: 3,
+      pageSize: 9,
+      pagination: 'numbered',
+    },
+  },
+  fields: {
+    source: {
+      label: 'Source',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Blog posts', value: 'posts' },
+        { label: 'Custom post type', value: 'collection-entries' },
+      ],
+    },
+    collectionId: {
+      label: 'Post type',
+      group: CONTENT,
+      type: 'custom',
+      render: CollectionSelectField,
+      when: isCollectionGrid,
+    },
+    templateId: {
+      label: 'Loop Item template',
+      group: CONTENT,
+      type: 'custom',
+      render: LoopTemplatePickerField,
+    },
+    eyebrow: qlf.eyebrow,
+    title: qlf.title,
+    subtitle: qlf.subtitle,
+    layout: {
+      label: 'Layout',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Grid', value: 'grid' },
+        { label: 'List', value: 'list' },
+        { label: 'Masonry', value: 'masonry' },
+        { label: 'Carousel', value: 'carousel' },
+      ],
+    },
+    columnsDesktop: qlf.columnsDesktop,
+    columnsTablet: qlf.columnsTablet,
+    columnsMobile: qlf.columnsMobile,
+    gap: qlf.gap,
+    equalHeight: { label: 'Equal height items', group: CONTENT, type: 'toggle' },
+    pageSize: qlf.pageSize,
+    offset: {
+      label: 'Offset (skip first items)',
+      group: CONTENT,
+      type: 'number',
+      min: 0,
+      max: 100,
+    },
+    sortField: {
+      label: 'Order by',
+      group: CONTENT,
+      type: 'custom',
+      render: LoopSortField,
+    },
+    sortOrder: qlf.sortOrder,
+    lockedCategory: {
+      ...qlf.lockedCategory,
+      when: (props: any) => !isCollectionGrid(props),
+    },
+    lockedTag: {
+      ...qlf.lockedTag,
+      when: (props: any) => !isCollectionGrid(props),
+    },
+    fieldFilters: {
+      label: 'Field filters',
+      group: CONTENT,
+      type: 'custom',
+      render: CptFieldFiltersField,
+      when: isCollectionGrid,
+    },
+    excludeCurrent: qlf.excludeCurrent,
+    loopId: qlf.loopId,
+    pagination: qlf.pagination,
+    loadMoreLabel: qlf.loadMoreLabel,
+    emptyText: qlf.emptyText,
+    ...sectionControls(),
+  },
+  defaults: {
+    loopId: '',
+    source: 'posts',
+    sortField: 'publishedAt',
+    sortOrder: 'desc',
+    pageSize: 9,
+    offset: 0,
+    excludeCurrent: false,
+    fieldFilters: [],
+    eyebrow: '',
+    title: '',
+    subtitle: '',
+    layout: 'grid',
+    columnsDesktop: 3,
+    columnsTablet: 2,
+    columnsMobile: 1,
+    gap: 'md',
+    equalHeight: true,
+    pagination: 'numbered',
+    loadMoreLabel: 'Load more',
+    emptyText: 'No matching items found.',
+    emptyState: [],
+    section: DEFAULT_SECTION,
+  },
+});
+
 export const LoopItemFieldBlock = defineBlock({
   type: 'LoopItemField',
   label: 'Loop Item Field',
@@ -3786,9 +3977,10 @@ export const LoopItemFieldBlock = defineBlock({
       ],
     },
     customKey: {
-      label: 'Custom field key',
+      label: 'Custom field',
       group: CONTENT,
-      type: 'text',
+      type: 'custom',
+      render: LoopCustomKeyField,
       when: (props: any) => props.field === 'custom',
     },
     linkToItem: {
@@ -4089,6 +4281,7 @@ export const NATIVE_BLOCKS = [
   ThemeToggleBlock,
   LanguageSwitcherNativeBlock,
   QueryLoopBlock,
+  LoopGridBlock,
   LoopItemFieldBlock,
   QueryFilterBlock,
   SearchResultsBlock,
@@ -4288,6 +4481,7 @@ export const CATEGORIES = {
   blog: {
     title: 'Blog & Listings',
     components: [
+      'LoopGrid',
       'QueryLoop',
       'QueryFilter',
       'LoopItemField',

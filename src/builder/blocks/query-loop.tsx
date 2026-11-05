@@ -291,6 +291,8 @@ export interface QueryLoopProps {
   emptyState?: SlotRender;
   hasCustomCard?: boolean;
   hasCustomEmptyState?: boolean;
+  /** Class for the wrapper around each custom card (Loop Grid drops the default chrome). */
+  cardClassName?: string;
   // Server-loaded data
   items?: NormalizedListingItem[];
   total?: number;
@@ -388,6 +390,7 @@ export function QueryLoop({
   emptyState,
   hasCustomCard = false,
   hasCustomEmptyState = false,
+  cardClassName = 's-surface s-border s-radius h-full overflow-hidden border p-4',
   items: loadedItems,
   total: loadedTotal,
   page = 1,
@@ -433,7 +436,7 @@ export function QueryLoop({
     if (typeof card === 'function' && hasCustomCard) {
       return (
         <LoopItemProvider key={item.id} item={item}>
-          <article className="s-surface s-border s-radius h-full overflow-hidden border p-4">
+          <article className={cardClassName}>
             {card({
               itemContext: {
                 loopItem: loopItemData,
