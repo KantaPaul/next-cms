@@ -28,7 +28,8 @@ import {
   reorderParts,
 } from '@nextcms/builder-core';
 import { ArrowDown, ArrowUp, GripVertical, RotateCcw } from 'lucide-react';
-import React from 'react';
+import React, { useRef } from 'react';
+import { useFlip } from '@nextcms/editor-ui';
 import { useEditorStore } from './context';
 
 /** Checks whether a part currently has no content in the block's props. */
@@ -239,6 +240,12 @@ export function PartOrderField({
   const orderedPartsList = orderedIds
     .map(id => partById.get(id))
     .filter((p): p is BlockReorderPart => !!p);
+  // Keys must match the rendered rows, so take them from the filtered list.
+  const listRef = useRef<HTMLDivElement | null>(null);
+  useFlip(
+    listRef,
+    orderedPartsList.map(p => p.id)
+  );
 
   const isCustomOrder =
     rawOrder !== undefined &&
@@ -333,7 +340,7 @@ export function PartOrderField({
           items={orderedIds}
           strategy={verticalListSortingStrategy}
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div ref={listRef} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {orderedPartsList.map((part, index) => (
               <SortablePartRow
                 key={part.id}

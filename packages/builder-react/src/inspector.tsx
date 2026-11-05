@@ -21,10 +21,12 @@ import {
   FieldRow as FieldRowFrame,
   IconButton,
   InspectorTabs as InspectorTabsBar,
+  SlidingIndicator,
+  useSlidingIndicator,
 } from '@nextcms/editor-ui';
 import { Monitor, Smartphone, Tablet } from 'lucide-react';
 import type { CSSProperties, ReactNode } from 'react';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useEditor, useEditorStore } from './context';
 import {
   DeviceProvider,
@@ -55,18 +57,27 @@ const DEVICE_ICONS: Record<Device, typeof Monitor> = {
 export function DeviceSwitch({ style }: { style?: CSSProperties }) {
   const store = useEditorStore();
   const device = useEditor(state => state.device);
+  const groupRef = useRef<HTMLFieldSetElement>(null);
+  useSlidingIndicator(groupRef, device);
   return (
     <fieldset
+      ref={groupRef}
       aria-label="Edit for device"
-      style={{
-        display: 'inline-flex',
-        gap: 2,
-        border: 0,
-        margin: 0,
-        padding: 0,
-        ...style,
-      }}
+      style={
+        {
+          position: 'relative',
+          display: 'inline-flex',
+          gap: 2,
+          border: 0,
+          margin: 0,
+          padding: 0,
+          '--ne-ind-bg': 'var(--ne-primary-soft)',
+          '--ne-ind-shadow': 'none',
+          ...style,
+        } as CSSProperties
+      }
     >
+      <SlidingIndicator />
       {DEVICES.map(d => {
         const Icon = DEVICE_ICONS[d];
         const label = d[0].toUpperCase() + d.slice(1);
@@ -74,7 +85,9 @@ export function DeviceSwitch({ style }: { style?: CSSProperties }) {
           <IconButton
             key={d}
             size="sm"
-            active={device === d}
+            // The sliding indicator draws the active background.
+            style={device === d ? { color: 'var(--ne-primary)' } : undefined}
+            data-ne-active={device === d ? 'true' : undefined}
             aria-pressed={device === d}
             aria-label={label}
             tooltip={label}

@@ -119,7 +119,7 @@ export function JsonExportButton({
               title="Export and import options"
               className="px-1.5 py-1.5 text-[var(--ne-text-muted)] hover:text-[var(--ne-text)] hover:bg-[var(--ne-surface-hover)] rounded-r-[var(--ne-radius-md)] transition-colors cursor-pointer"
             >
-              <ChevronDown size={13} />
+              <ChevronDown size={13} className="ne-chevron" />
             </button>
           }
           items={menuItems}

@@ -9,6 +9,7 @@ import {
   Unlock,
 } from 'lucide-react';
 import React from 'react';
+import { MOTION, playMotion } from '../lib/motion/play';
 import { cn } from '../lib/cn';
 import { IconButton } from '../primitives/IconButton';
 
@@ -273,6 +274,7 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = props => {
           key={action.id}
           size="sm"
           variant={action.danger ? 'danger' : 'ghost'}
+          className={action.danger ? 'ne-danger-wiggle' : undefined}
           disabled={action.disabled}
           aria-label={action.label}
           tooltip={
@@ -280,7 +282,11 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = props => {
               ? `${action.label} (${action.shortcut})`
               : action.label
           }
-          onClick={action.onClick}
+          onClick={e => {
+            // A copy "pops" off the duplicate button.
+            if (action.id === 'duplicate') playMotion(e.currentTarget, MOTION.pop);
+            action.onClick();
+          }}
         >
           {action.icon}
         </IconButton>

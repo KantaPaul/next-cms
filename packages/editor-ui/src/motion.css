@@ -99,3 +99,337 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Editor chrome micro-interactions */
+.ne-press:active {
+  transform: scale(0.96);
+}
+
+.ne-hover-lift {
+  transition: transform var(--ne-duration-fast) var(--ne-ease-out);
+}
+.ne-hover-lift:hover {
+  transform: translateY(-1px);
+}
+
+.ne-icon-nudge-l:hover svg,
+.ne-icon-nudge-l:active svg {
+  transition: transform var(--ne-duration-fast) var(--ne-ease-out);
+}
+.ne-icon-nudge-l:active svg {
+  transform: translateX(-2px);
+}
+.ne-icon-nudge-r:hover svg,
+.ne-icon-nudge-r:active svg {
+  transition: transform var(--ne-duration-fast) var(--ne-ease-out);
+}
+.ne-icon-nudge-r:active svg {
+  transform: translateX(2px);
+}
+
+@keyframes ne-spin-once {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+/* Plays while its button is pressed, or once when `data-spin` is set. */
+:active > .ne-spin-once,
+.ne-spin-once[data-spin] {
+  animation: ne-spin-once var(--ne-duration-slow) var(--ne-ease-out);
+}
+
+.ne-sweep {
+  position: relative;
+  overflow: hidden;
+}
+.ne-sweep::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+  transform: translateX(-100%);
+}
+.ne-sweep:hover::after {
+  transition: transform var(--ne-duration-slow) var(--ne-ease-out);
+  transform: translateX(100%);
+}
+
+@keyframes ne-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.ne-shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.25) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: ne-shimmer 1.2s linear infinite;
+}
+
+@keyframes ne-check-draw {
+  to { stroke-dashoffset: 0; }
+}
+/* 24 covers lucide's check path (~22.6 units). */
+.ne-check-draw {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: ne-check-draw var(--ne-duration-normal) var(--ne-ease-out) forwards;
+}
+
+@keyframes ne-stagger-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+.ne-stagger > :not(.ne-indicator) {
+  animation: ne-stagger-in var(--ne-duration-normal) var(--ne-ease-out) both;
+}
+.ne-stagger > *:nth-child(1){ animation-delay: 0ms; }
+.ne-stagger > *:nth-child(2){ animation-delay: 20ms; }
+.ne-stagger > *:nth-child(3){ animation-delay: 40ms; }
+.ne-stagger > *:nth-child(4){ animation-delay: 60ms; }
+.ne-stagger > *:nth-child(5){ animation-delay: 80ms; }
+.ne-stagger > *:nth-child(6){ animation-delay: 100ms; }
+.ne-stagger > *:nth-child(7){ animation-delay: 120ms; }
+.ne-stagger > *:nth-child(8){ animation-delay: 140ms; }
+.ne-stagger > *:nth-child(9){ animation-delay: 160ms; }
+.ne-stagger > *:nth-child(10){ animation-delay: 180ms; }
+
+@keyframes ne-shake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-4px); }
+  40%, 60% { transform: translateX(4px); }
+}
+.ne-shake {
+  animation: ne-shake 400ms var(--ne-ease-out);
+}
+
+@keyframes ne-flash {
+  0% { background-color: var(--ne-primary-soft); }
+  100% { background-color: transparent; }
+}
+.ne-flash {
+  animation: ne-flash var(--ne-duration-normal) var(--ne-ease-out);
+}
+
+/* Shared highlight for segmented controls (useSlidingIndicator). Hidden
+   until the first measurement, then slides between items. Override the look
+   with --ne-ind-bg / --ne-ind-shadow / --ne-ind-radius on the container. */
+.ne-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  width: var(--ne-ind-w, 0);
+  height: var(--ne-ind-h, 0);
+  transform: translate(var(--ne-ind-x, 0), var(--ne-ind-y, 0));
+  border-radius: var(--ne-ind-radius, var(--ne-radius-sm));
+  background: var(--ne-ind-bg, var(--ne-surface));
+  box-shadow: var(--ne-ind-shadow, var(--ne-shadow-sm));
+  opacity: 0;
+  pointer-events: none;
+}
+[data-ne-ind-ready] > .ne-indicator {
+  opacity: 1;
+  transition-property: transform, width, height;
+  transition-duration: var(--ne-duration-slow);
+  transition-timing-function: var(--ne-spring);
+}
+/* Items sit above the indicator, including ones it slides past. */
+[data-ne-ind-ready] > :not(.ne-indicator) { position: relative; z-index: 1; }
+
+/* RollingNumber */
+.ne-roll { display: inline-flex; font-variant-numeric: tabular-nums; }
+.ne-roll-slot {
+  display: inline-block;
+  height: 1lh;
+  overflow: hidden;
+  vertical-align: top;
+}
+.ne-roll-column { display: flex; flex-direction: column; }
+.ne-roll-column[data-dir='up'] { animation: ne-roll-up var(--ne-duration-normal) var(--ne-ease-out) forwards; }
+.ne-roll-column[data-dir='down'] { animation: ne-roll-down var(--ne-duration-normal) var(--ne-ease-out) forwards; }
+@keyframes ne-roll-up { from { transform: translateY(0); } to { transform: translateY(-50%); } }
+@keyframes ne-roll-down { from { transform: translateY(-50%); } to { transform: translateY(0); } }
+
+/* Top bar ---------------------------------------------------------- */
+
+/* Save status: a soft pulse while saving. */
+.ne-save-pulse {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: var(--ne-primary);
+  animation: ne-save-pulse 1s var(--ne-ease-out) infinite;
+}
+@keyframes ne-save-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ne-primary) 55%, transparent); }
+  100% { box-shadow: 0 0 0 6px transparent; }
+}
+
+/* Primary action: light sweep on hover, progress shimmer while publishing. */
+.ne-publish { position: relative; overflow: hidden; isolation: isolate; }
+.ne-publish::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.28) 50%, transparent 70%);
+  transform: translateX(-110%);
+  pointer-events: none;
+}
+.ne-publish:hover:not(:disabled)::after {
+  transform: translateX(110%);
+  transition: transform 600ms var(--ne-ease-out);
+}
+.ne-publish[data-publish-state='publishing']::before {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+  background-size: 50% 100%;
+  background-repeat: no-repeat;
+  animation: ne-publish-progress 1.1s linear infinite;
+}
+@keyframes ne-publish-progress {
+  from { background-position: -50% 0; }
+  to { background-position: 150% 0; }
+}
+.ne-publish[data-publish-state='success'] {
+  background-color: var(--ne-success);
+  border-color: var(--ne-success);
+}
+.ne-publish[data-publish-state='error'] {
+  background-color: var(--ne-danger);
+  border-color: var(--ne-danger);
+}
+
+/* Two icons that cross-rotate (theme toggle). data-on="a" | "b". */
+.ne-swap { position: relative; display: inline-grid; }
+.ne-swap > * {
+  grid-area: 1 / 1;
+  transition: transform var(--ne-duration-slow) var(--ne-spring), opacity var(--ne-duration-normal) var(--ne-ease-out);
+}
+.ne-swap[data-on='a'] > .ne-swap-b,
+.ne-swap[data-on='b'] > .ne-swap-a {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.5);
+}
+
+/* Small icon hovers. */
+.ne-hover-grow svg { transition: transform var(--ne-duration-fast) var(--ne-ease-out); }
+.ne-hover-grow:hover svg { transform: scale(1.15); }
+:hover > * > .ne-blink,
+:hover > .ne-blink { animation: ne-blink 360ms var(--ne-ease-out); }
+@keyframes ne-blink {
+  0%, 100% { transform: scaleY(1); }
+  45% { transform: scaleY(0.1); }
+}
+
+/* Dropdown chevrons turn while their menu is open. */
+.ne-chevron { transition: transform var(--ne-duration-normal) var(--ne-ease-out); }
+[aria-expanded='true'] .ne-chevron,
+[data-state='open'] .ne-chevron { transform: rotate(180deg); }
+
+/* Inspector ------------------------------------------------------- */
+
+/* Underline variant of the sliding indicator (default PanelTabs). */
+.ne-indicator.ne-indicator-line {
+  height: 2px;
+  transform: translate(var(--ne-ind-x, 0), calc(var(--ne-ind-y, 0px) + var(--ne-ind-h, 0px) - 1px));
+  border-radius: 2px 2px 0 0;
+  background: var(--ne-primary);
+  box-shadow: none;
+}
+
+/* Panel body slides in from the side of the tab you moved to. */
+.ne-tab-panel[data-ne-slide='next'] { animation: ne-tab-from-right var(--ne-duration-normal) var(--ne-ease-out); }
+.ne-tab-panel[data-ne-slide='prev'] { animation: ne-tab-from-left var(--ne-duration-normal) var(--ne-ease-out); }
+@keyframes ne-tab-from-right { from { opacity: 0; transform: translateX(6px); } to { opacity: 1; transform: none; } }
+@keyframes ne-tab-from-left { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+[dir='rtl'] .ne-tab-panel[data-ne-slide='next'] { animation-name: ne-tab-from-left; }
+[dir='rtl'] .ne-tab-panel[data-ne-slide='prev'] { animation-name: ne-tab-from-right; }
+
+/* Changed-from-default dot grows in and shrinks out. */
+.ne-changed-dot {
+  transition: transform var(--ne-duration-normal) var(--ne-spring), opacity var(--ne-duration-fast) var(--ne-ease-out);
+}
+.ne-changed-dot[data-on='false'] { transform: scale(0); opacity: 0; }
+
+/* Text inputs ease their border and focus ring in. Kept at :where()
+   specificity so components that turn the ring off still win. */
+:where(.ne-editor-root, .ne-ui) :where(input:not([type='checkbox'], [type='radio'], [type='range']), textarea, select) {
+  transition-property: border-color, box-shadow, background-color;
+  transition-duration: var(--ne-duration-fast);
+  transition-timing-function: var(--ne-ease-out);
+}
+
+/* Rows moving in a FLIP reorder lift slightly while they travel. */
+[data-ne-flipping] {
+  position: relative;
+  z-index: 1;
+  box-shadow: var(--ne-shadow-md);
+}
+
+/* Range thumbs grow under the pointer. */
+:where(.ne-editor-root, .ne-ui) input[type='range']::-webkit-slider-thumb {
+  transition: transform var(--ne-duration-fast) var(--ne-spring);
+}
+:where(.ne-editor-root, .ne-ui) input[type='range']:hover::-webkit-slider-thumb { transform: scale(1.15); }
+:where(.ne-editor-root, .ne-ui) input[type='range']:active::-webkit-slider-thumb { transform: scale(1.3); }
+:where(.ne-editor-root, .ne-ui) input[type='range']::-moz-range-thumb {
+  transition: transform var(--ne-duration-fast) var(--ne-spring);
+}
+:where(.ne-editor-root, .ne-ui) input[type='range']:active::-moz-range-thumb { transform: scale(1.3); }
+
+/* Other chrome ---------------------------------------------------- */
+
+/* A block that was just inserted glows once around its selection box. */
+.ne-insert-glow { animation: ne-insert-glow 900ms var(--ne-ease-out); }
+@keyframes ne-insert-glow {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ne-primary) 55%, transparent); }
+  100% { box-shadow: 0 0 0 10px transparent; }
+}
+
+/* New layer rows flash once. */
+.ne-flash-new { animation: ne-flash-new var(--ne-duration-slow) var(--ne-ease-out) 2; }
+@keyframes ne-flash-new {
+  0% { background-color: var(--ne-primary-soft); }
+  100% { background-color: transparent; }
+}
+
+/* Destructive toolbar buttons wiggle on hover. */
+.ne-danger-wiggle:hover svg { animation: ne-wiggle 360ms var(--ne-ease-out); }
+@keyframes ne-wiggle {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-10deg); }
+  75% { transform: rotate(10deg); }
+}
+
+/* Command palette panel. */
+.ne-palette-in { animation: ne-dialog-in var(--ne-duration-normal) var(--ne-easing); }
+
+/* Motion level control */
+[data-ne-motion="off"],
+[data-ne-motion="off"] *,
+[data-ne-motion="off"] *::before,
+[data-ne-motion="off"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+[data-ne-motion="subtle"] .ne-sweep::after,
+[data-ne-motion="subtle"] .ne-shimmer,
+[data-ne-motion="subtle"] .ne-shake,
+[data-ne-motion="subtle"] .ne-publish::after,
+[data-ne-motion="subtle"] .ne-blink,
+[data-ne-motion="subtle"] .ne-save-pulse,
+[data-ne-motion="subtle"] .ne-stagger > :not(.ne-indicator),
+[data-ne-motion="subtle"] .ne-insert-glow,
+[data-ne-motion="subtle"] .ne-danger-wiggle:hover svg,
+[data-ne-motion="subtle"] .ne-motion-pop-in {
+  animation: none !important;
+  transition: none !important;
+}
+[data-ne-motion="subtle"] .ne-hover-lift:hover,
+[data-ne-motion="subtle"] .ne-press:active {
+  transform: none;
+}
