@@ -390,7 +390,7 @@ export function QueryLoop({
   emptyState,
   hasCustomCard = false,
   hasCustomEmptyState = false,
-  cardClassName = 's-surface s-border s-radius h-full overflow-hidden border p-4',
+  cardClassName = '',
   items: loadedItems,
   total: loadedTotal,
   page = 1,
