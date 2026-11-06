@@ -12,6 +12,7 @@ import {
   deleteTermAction,
   saveTermAction,
 } from '../_modules/collection-taxonomies.actions';
+import { generateTermSuffix } from '../_modules/collections.schemas';
 import type { CollectionTermNode } from '@/server/services/collection-taxonomies.service';
 
 const inputClass =
@@ -54,15 +55,25 @@ function Field({
   );
 }
 
-function useSlugSync(initialName: string, initialSlug: string) {
+export function useSlugSync(initialName: string, initialSlug: string) {
   const [name, setName] = useState(initialName);
-  const [slug, setSlug] = useState(initialSlug || slugify(initialName));
+  const [suffix] = useState(() => {
+    const match = initialSlug ? initialSlug.match(/-(TC\d+)$/i) : null;
+    return match ? match[1].toUpperCase() : generateTermSuffix();
+  });
+  const [slug, setSlug] = useState(() => {
+    if (initialSlug) return initialSlug;
+    const base = slugify(initialName);
+    return base ? `${base}-${suffix}` : '';
+  });
   return {
     name,
     slug,
+    suffix,
     setName: (value: string) => {
       setName(value);
-      setSlug(slugify(value));
+      const base = slugify(value);
+      setSlug(base ? `${base}-${suffix}` : '');
     },
     setSlug,
   };
@@ -270,7 +281,7 @@ function TermForm({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const { name, slug, setName, setSlug } = useSlugSync(
+  const { name, slug, suffix, setName } = useSlugSync(
     term?.name ?? '',
     term?.slug ?? ''
   );
@@ -300,7 +311,9 @@ function TermForm({
       toast.error('Term name is required');
       return;
     }
-    const derivedSlug = (slug || slugify(trimmedName)).trim().toLowerCase();
+    const derivedSlug = (
+      slug || (trimmedName ? `${slugify(trimmedName)}-${suffix}` : '')
+    ).trim();
     if (!derivedSlug) {
       toast.error('Could not generate a valid slug from this name');
       return;
@@ -310,10 +323,12 @@ function TermForm({
       t =>
         t.id !== term?.id &&
         (t.name.trim().toLowerCase() === trimmedName.toLowerCase() ||
-          t.slug.toLowerCase() === derivedSlug)
+          t.slug.toLowerCase() === derivedSlug.toLowerCase())
     );
     if (nameClash) {
-      toast.error(`A ${singularName.toLowerCase()} with this name already exists.`);
+      toast.error(
+        `A ${singularName.toLowerCase()} with this name or slug already exists.`
+      );
       return;
     }
 
@@ -361,10 +376,10 @@ function TermForm({
             inputClass,
             'cursor-not-allowed bg-steel-100/70 font-mono text-xs text-steel-500 dark:bg-dark-200 dark:text-steel-400'
           )}
-          value={slug || (name ? slugify(name) : '—')}
+          value={slug || (name ? `${slugify(name)}-${suffix}` : '—')}
           readOnly
           tabIndex={-1}
-          placeholder="Auto-generated from name"
+          placeholder="e.g. cat-one-TC123545"
         />
       </Field>
       {hierarchical && (

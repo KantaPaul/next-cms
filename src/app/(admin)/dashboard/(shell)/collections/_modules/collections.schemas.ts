@@ -116,6 +116,11 @@ export const collectionTaxonomySchema = z.object({
 
 export type CollectionTaxonomyInput = z.infer<typeof collectionTaxonomySchema>;
 
+export function generateTermSuffix(): string {
+  const num = Math.floor(100000 + Math.random() * 900000);
+  return `TC${num}`;
+}
+
 export const collectionTermSchema = z.object({
   id: z.string().optional(),
   taxonomyId: z.string().min(1),
@@ -126,8 +131,8 @@ export const collectionTermSchema = z.object({
     .min(1, 'Slug is required')
     .max(150)
     .regex(
-      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-      'Use lowercase letters, numbers, and dashes.'
+      /^[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/,
+      'Use letters, numbers, and dashes.'
     ),
   description: z.string().trim().max(1000).optional(),
   parentId: z.string().nullish().optional(),

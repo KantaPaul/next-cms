@@ -1,5 +1,5 @@
 import 'server-only';
-import { and, asc, count, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
+import { and, asc, count, eq, ilike, inArray, isNull, ne, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import {
   collectionTaxonomies,
@@ -43,7 +43,7 @@ export type TermInput = {
   position?: number;
 };
 
-const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const slugRegex = /^[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*$/;
 
 export const collectionTaxonomiesService = {
   listTaxonomies: async (collectionId: string) => {
@@ -309,7 +309,7 @@ export const collectionTaxonomiesService = {
       .where(
         and(
           eq(collectionTerms.taxonomyId, taxonomyId),
-          eq(collectionTerms.slug, slug),
+          ilike(collectionTerms.slug, slug),
           eq(collectionTerms.siteId, siteId),
           isNull(collectionTerms.deletedAt)
         )
@@ -322,10 +322,10 @@ export const collectionTaxonomiesService = {
     const { id, ...values } = input;
     const siteId = await adminSiteId();
 
-    const normalizedSlug = values.slug.trim().toLowerCase();
+    const normalizedSlug = values.slug.trim();
     if (!slugRegex.test(normalizedSlug)) {
       throw new ApplicationException(
-        'Term slug can only contain lowercase letters, numbers, and dashes.'
+        'Term slug can only contain letters, numbers, and dashes.'
       );
     }
 
@@ -362,7 +362,7 @@ export const collectionTaxonomiesService = {
         and(
           eq(collectionTerms.siteId, siteId),
           eq(collectionTerms.taxonomyId, values.taxonomyId),
-          eq(collectionTerms.slug, normalizedSlug),
+          ilike(collectionTerms.slug, normalizedSlug),
           isNull(collectionTerms.deletedAt),
           id ? ne(collectionTerms.id, id) : undefined
         )

@@ -7,6 +7,11 @@ import {
 } from '@/config/post-types';
 import { entryToPostView, type EntryTermView } from '@/builder/post-template';
 import { collectionTemplatesService } from '@/server/services/collection-templates.service';
+import {
+  generateTermSuffix,
+  collectionTermSchema,
+} from '@/app/(admin)/dashboard/(shell)/collections/_modules/collections.schemas';
+import { slugify } from '@/lib/utils/slugify';
 
 describe('PostTypeSupports', () => {
   it('defaults active features to true and featuredImage to false', () => {
@@ -554,6 +559,38 @@ describe('Taxonomy and term duplicate name prevention', () => {
     assert.equal(buildLayoutCondition('default'), 'default');
     assert.equal(buildLayoutCondition('tpl-123'), 'template:tpl-123');
     assert.equal(buildLayoutCondition(), 'all');
+  });
+
+  it('generates unique TC number suffix for term slugs', () => {
+    const suffix1 = generateTermSuffix();
+    const suffix2 = generateTermSuffix();
+    assert.match(suffix1, /^TC\d{6}$/);
+    assert.match(suffix2, /^TC\d{6}$/);
+  });
+
+  it('formats term slugs with base name and TC suffix', () => {
+    const suffix = 'TC123545';
+    const name = 'Cat One';
+    const slug = `${slugify(name)}-${suffix}`;
+    assert.equal(slug, 'cat-one-TC123545');
+
+    // Validates against collectionTermSchema
+    const parsed = collectionTermSchema.safeParse({
+      taxonomyId: 'tax_1',
+      name,
+      slug,
+    });
+    assert.ok(parsed.success);
+    if (parsed.success) {
+      assert.equal(parsed.data.slug, 'cat-one-TC123545');
+    }
+  });
+
+  it('rejects invalid term slugs in collectionTermSchema', () => {
+    assert.ok(!collectionTermSchema.safeParse({ taxonomyId: 'tax_1', name: 'Cat', slug: 'cat one' }).success);
+    assert.ok(!collectionTermSchema.safeParse({ taxonomyId: 'tax_1', name: 'Cat', slug: '-leading-dash' }).success);
+    assert.ok(!collectionTermSchema.safeParse({ taxonomyId: 'tax_1', name: 'Cat', slug: 'trailing-dash-' }).success);
+    assert.ok(!collectionTermSchema.safeParse({ taxonomyId: 'tax_1', name: 'Cat', slug: 'has@special#chars' }).success);
   });
 });
 
