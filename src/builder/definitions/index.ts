@@ -25,6 +25,46 @@ import { CollectionBlockPreviewField } from '../fields/client-fields';
 /** Blocks offered only inside a collection's own entry/entry-template builders. */
 const COLLECTION_ONLY_BLOCKS: ReadonlySet<string> = new Set(['CollectionBlock']);
 
+/** Blocks offered only inside the mega menu builder. */
+const MEGA_MENU_ONLY_BLOCKS: ReadonlySet<string> = new Set(['MegaMenuCard']);
+
+/**
+ * The mega menu builder's palette. Anything not listed here is unavailable:
+ * no page sections, loops, forms, embeds, or menus inside a menu.
+ */
+export const MEGA_MENU_GROUPS: BlockGroup[] = [
+  { title: 'Layout', types: ['Columns', 'Container', 'Spacer'] },
+  { title: 'Links', types: ['FooterLinks', 'Button'] },
+  { title: 'Featured', types: ['MegaMenuCard', 'BlogPosts', 'Image'] },
+  { title: 'Content', types: ['RichText', 'SocialIcons', 'ContactInfo'] },
+];
+
+/** Shared controls a panel inside a dropdown has no use for. */
+const MEGA_MENU_OMIT_FIELDS = [
+  'section_animation', // the panel animates as a whole
+  'section_filter',
+  'section_responsive', // mega menus are desktop-only
+  'section_attributes', // anchors
+];
+
+/** Block-specific controls that only make sense on a full page. */
+const MEGA_MENU_OMIT_BLOCK_FIELDS: Record<string, string[]> = {
+  FooterLinks: ['collapseOnMobile'],
+  BlogPosts: [
+    'showSearch',
+    'showCategoryFilter',
+    'showTagFilter',
+    'showSort',
+    'showPagination',
+  ],
+};
+
+/** Renamed for the mega menu palette. */
+const MEGA_MENU_LABELS: Record<string, string> = {
+  FooterLinks: 'Link list',
+  BlogPosts: 'Latest posts',
+};
+
 export const pageDefinitions: Record<string, BlockDefinition> = Object.fromEntries(
   [...NATIVE_BLOCKS, ...customBlockDefinitions].map(block => [block.type, withInfo(block)])
 );
@@ -62,7 +102,10 @@ const customGroups: BlockGroup[] = [
 
 export const pageBlockGroups: BlockGroup[] = [
   ...Object.entries(CATEGORIES)
-    .filter(([key]) => key !== 'post' && key !== 'header' && key !== 'footer')
+    .filter(
+      ([key]) =>
+        key !== 'post' && key !== 'header' && key !== 'footer' && key !== 'megamenu'
+    )
     .map(([, category]: any) => ({
       title: category.title ?? '',
       types: (category.components ?? []).map(String).filter(
@@ -88,7 +131,7 @@ const groupsOf = (
   skip: string[] = ['header', 'footer'],
   omitTypes: ReadonlySet<string> = COLLECTION_ONLY_BLOCKS
 ): BlockGroup[] => {
-  const skipSet = new Set([...skip, 'header', 'footer']);
+  const skipSet = new Set([...skip, 'header', 'footer', 'megamenu']);
   return Object.entries(CATEGORIES)
     .filter(([key]) => !skipSet.has(key))
     .map(([, category]: any) => ({
@@ -179,10 +222,15 @@ const LOOP_ITEM_ROOT_FIELDS: Record<string, FieldDef> = {
  */
 export function editorSetup(kind: string): EditorSetup {
   const setup = baseEditorSetup(kind);
-  if (kind === 'entry' || kind === 'entry-template') return setup;
+  if (kind === 'mega-menu') return setup;
+  const keepCollection = kind === 'entry' || kind === 'entry-template';
   const strip = <T,>(record: Record<string, T>) =>
     Object.fromEntries(
-      Object.entries(record).filter(([type]) => !COLLECTION_ONLY_BLOCKS.has(type))
+      Object.entries(record).filter(
+        ([type]) =>
+          !MEGA_MENU_ONLY_BLOCKS.has(type) &&
+          (keepCollection || !COLLECTION_ONLY_BLOCKS.has(type))
+      )
     ) as Record<string, T>;
   return {
     ...setup,
@@ -191,7 +239,136 @@ export function editorSetup(kind: string): EditorSetup {
   };
 }
 
+/** Panel settings for the mega menu builder's root (replaces page settings). */
+export const MEGA_MENU_ROOT_FIELDS: Record<string, FieldDef> = {
+  previewWidth: {
+    label: 'Preview width',
+    type: 'select',
+    group: 'Panel',
+    options: [
+      { label: 'Site width', value: 'container' },
+      { label: 'Full width', value: 'full' },
+      { label: 'Fit content', value: 'auto' },
+    ],
+  } as FieldDef,
+  background: {
+    label: 'Background',
+    type: 'select',
+    group: 'Panel',
+    options: [
+      { label: 'Site background', value: 'default' },
+      { label: 'Muted', value: 'muted' },
+      { label: 'Dark', value: 'inverted' },
+    ],
+  } as FieldDef,
+  padding: {
+    label: 'Padding',
+    type: 'select',
+    group: 'Panel',
+    options: [
+      { label: 'Small', value: 'sm' },
+      { label: 'Medium', value: 'md' },
+      { label: 'Large', value: 'lg' },
+    ],
+  } as FieldDef,
+  radius: {
+    label: 'Corner radius',
+    type: 'select',
+    group: 'Panel',
+    options: [
+      { label: 'None', value: 'none' },
+      { label: 'Small', value: 'sm' },
+      { label: 'Medium', value: 'md' },
+      { label: 'Large', value: 'lg' },
+    ],
+  } as FieldDef,
+  shadow: {
+    label: 'Shadow',
+    type: 'select',
+    group: 'Panel',
+    options: [
+      { label: 'None', value: 'none' },
+      { label: 'Small', value: 'sm' },
+      { label: 'Medium', value: 'md' },
+      { label: 'Large', value: 'lg' },
+    ],
+  } as FieldDef,
+  maxHeight: {
+    label: 'Max height (px, 0 = none)',
+    type: 'number',
+    group: 'Panel',
+  } as FieldDef,
+};
+
+function megaMenuEditorSetup(): EditorSetup {
+  const allowed = new Set(MEGA_MENU_GROUPS.flatMap(group => group.types));
+  const definitions = Object.fromEntries(
+    Object.entries(pageDefinitions)
+      .filter(([type]) => allowed.has(type))
+      .map(([type, definition]) => {
+        const omit = new Set([
+          ...MEGA_MENU_OMIT_FIELDS,
+          ...(MEGA_MENU_OMIT_BLOCK_FIELDS[type] ?? []),
+        ]);
+        const fields = Object.fromEntries(
+          Object.entries(definition.fields ?? {}).filter(([key]) => !omit.has(key))
+        );
+        // Layout slots would otherwise accept any page block. Columns still
+        // can't nest inside Columns.
+        const slots = definition.slots
+          ? Object.fromEntries(
+              Object.entries(definition.slots).map(([key, slot]) => [
+                key,
+                {
+                  ...slot,
+                  allow: [...allowed].filter(
+                    t => !(type === 'Columns' && t === 'Columns')
+                  ),
+                },
+              ])
+            )
+          : definition.slots;
+        return [
+          type,
+          {
+            ...definition,
+            label: MEGA_MENU_LABELS[type] ?? definition.label,
+            fields,
+            slots,
+          } as BlockDefinition,
+        ];
+      })
+  );
+  // Fields are also generated from schema keys, so drop omitted keys again.
+  const inspectorBlocks = Object.fromEntries(
+    Object.entries(inspectorOf(definitions)).map(([type, block]) => {
+      const omit = new Set([
+        ...MEGA_MENU_OMIT_FIELDS,
+        ...(MEGA_MENU_OMIT_BLOCK_FIELDS[type] ?? []),
+      ]);
+      return [
+        type,
+        {
+          ...block,
+          fields: Object.fromEntries(
+            Object.entries(block.fields).filter(([key]) => !omit.has(key))
+          ),
+        },
+      ];
+    })
+  );
+  return {
+    definitions,
+    schemas: schemasOf(definitions),
+    inspectorBlocks,
+    rootFields: MEGA_MENU_ROOT_FIELDS,
+    groups: MEGA_MENU_GROUPS,
+    renderKind: 'page',
+  };
+}
+
 function baseEditorSetup(kind: string): EditorSetup {
+  if (kind === 'mega-menu') return megaMenuEditorSetup();
   if (kind === 'loop-item') {
     const definitions = Object.fromEntries(
       Object.entries(pageDefinitions).filter(

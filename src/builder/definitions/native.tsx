@@ -50,6 +50,7 @@ import {
   Testimonials,
   Timeline,
 } from '../blocks/marketing';
+import { MegaMenuCard } from '../blocks/mega-menu';
 import { Newsletter } from '../blocks/newsletter';
 import { QueryFilter } from '../blocks/query-filters';
 import { LoopGrid } from '../blocks/loop-grid';
@@ -4369,8 +4370,56 @@ export const SearchResultsBlock = defineBlock({
   },
 });
 
+export const MegaMenuCardBlock = defineBlock({
+  type: 'MegaMenuCard',
+  label: 'Featured card',
+  category: 'megamenu',
+  icon: 'image',
+  schema: z
+    .object({
+      section: sectionSettingsSchema.optional(),
+    })
+    .passthrough(),
+  render: MegaMenuCard,
+  fields: {
+    layout: {
+      label: 'Layout',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Image on top', value: 'stacked' },
+        { label: 'Text over image', value: 'overlay' },
+        { label: 'Image beside text', value: 'side' },
+      ],
+    },
+    imageUrl: {
+      label: 'Image',
+      group: CONTENT,
+      type: 'custom',
+      render: MediaUrlField,
+    },
+    imageAlt: { label: 'Image alt text', group: CONTENT, type: 'text' },
+    eyebrow: { label: 'Eyebrow', group: CONTENT, type: 'text' },
+    title: { label: 'Title', group: CONTENT, type: 'text' },
+    text: { label: 'Text', group: CONTENT, type: 'textarea' },
+    linkLabel: { label: 'Link text', group: CONTENT, type: 'text' },
+    link: { label: 'Link', group: CONTENT, type: 'custom', render: UrlField },
+    ...sectionControls(),
+  },
+  defaults: {
+    layout: 'stacked',
+    eyebrow: 'New',
+    title: 'Featured product',
+    text: 'A short line about what makes it worth a click.',
+    linkLabel: 'Learn more',
+    link: '/',
+    section: { ...DEFAULT_SECTION, paddingY: 'none' },
+  },
+});
+
 export const NATIVE_BLOCKS = [
   exampleBlock,
+  MegaMenuCardBlock,
   HeroBlock,
   FeaturesBlock,
   StatsBlock,
@@ -4655,6 +4704,8 @@ export const CATEGORIES = {
     components: ['CollectionBlock'],
   },
   global: { title: 'Global blocks', components: ['GlobalRef'] },
+  /** Only the mega menu builder lists this group. */
+  megamenu: { title: 'Mega menu', components: ['MegaMenuCard'] },
   custom: { title: 'Custom', components: ['example'] },
   post: {
     title: 'Post',

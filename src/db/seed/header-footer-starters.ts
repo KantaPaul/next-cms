@@ -1,13 +1,19 @@
 import type { BuilderData, BuilderItem } from '@/builder/data';
 
 /** Global-block categories managed on the Site templates screen. */
-export type SiteTemplateCategory = 'Header' | 'Footer' | 'Search' | 'Archive';
+export type SiteTemplateCategory =
+  | 'Header'
+  | 'Footer'
+  | 'Search'
+  | 'Archive'
+  | 'MegaMenu';
 
 export const SITE_TEMPLATE_CATEGORIES: readonly SiteTemplateCategory[] = [
   'Header',
   'Footer',
   'Search',
   'Archive',
+  'MegaMenu',
 ];
 
 export type StarterTemplate = {
@@ -1433,6 +1439,170 @@ export const ARCHIVE_STARTER_MINIMAL_LIST: StarterTemplate = {
   },
 };
 
+/* =========================================================================
+   Mega menu starters. Attach one to a top-level item on the Menus screen.
+   ========================================================================= */
+
+const MEGA_ROOT = {
+  props: { background: 'default', padding: 'md', radius: 'md', shadow: 'md', maxHeight: 0, previewWidth: 'container' },
+};
+const NO_PAD = { paddingY: 'none', background: 'default' };
+
+const linkList = (id: string, heading: string, links: [string, string][]) => ({
+  type: 'FooterLinks',
+  props: {
+    id,
+    heading,
+    source: 'manual',
+    links: links.map(([label, url]) => ({ label, url })),
+    section: NO_PAD,
+  },
+});
+
+export const MEGA_STARTER_COLUMNS: StarterTemplate = {
+  key: 'link-columns',
+  name: 'Link Columns',
+  description: 'Four columns of headed link lists. The classic mega menu.',
+  category: 'MegaMenu',
+  content: {
+    root: MEGA_ROOT,
+    content: [
+      {
+        type: 'Columns',
+        props: { id: 'mega-cols', layout: '1-1-1-1', gap: 'md', verticalAlign: 'start', section: NO_PAD },
+      },
+    ],
+    zones: {
+      'mega-cols:column1': [
+        linkList('mega-links-1', 'Products', [
+          ['Overview', '/products'],
+          ['Features', '/#features'],
+          ['Pricing', '/pricing'],
+          ['Changelog', '/blog'],
+        ]),
+      ],
+      'mega-cols:column2': [
+        linkList('mega-links-2', 'Solutions', [
+          ['For startups', '/solutions/startups'],
+          ['For agencies', '/solutions/agencies'],
+          ['For enterprise', '/solutions/enterprise'],
+        ]),
+      ],
+      'mega-cols:column3': [
+        linkList('mega-links-3', 'Resources', [
+          ['Blog', '/blog'],
+          ['Guides', '/guides'],
+          ['Help center', '/help'],
+        ]),
+      ],
+      'mega-cols:column4': [
+        linkList('mega-links-4', 'Company', [
+          ['About', '/about'],
+          ['Careers', '/careers'],
+          ['Contact', '/contact'],
+        ]),
+      ],
+    },
+  },
+};
+
+export const MEGA_STARTER_FEATURED: StarterTemplate = {
+  key: 'links-featured',
+  name: 'Links + Featured Card',
+  description: 'Three link columns with a featured promo card on the right.',
+  category: 'MegaMenu',
+  content: {
+    root: MEGA_ROOT,
+    content: [
+      {
+        type: 'Columns',
+        props: { id: 'mega-cols', layout: '1-1-1-1', gap: 'lg', verticalAlign: 'start', section: NO_PAD },
+      },
+    ],
+    zones: {
+      'mega-cols:column1': [
+        linkList('mega-links-1', 'Platform', [
+          ['Visual builder', '/features/builder'],
+          ['Content API', '/features/api'],
+          ['Media library', '/features/media'],
+        ]),
+      ],
+      'mega-cols:column2': [
+        linkList('mega-links-2', 'Use cases', [
+          ['Marketing sites', '/use-cases/marketing'],
+          ['Blogs', '/use-cases/blogs'],
+          ['Docs', '/use-cases/docs'],
+        ]),
+      ],
+      'mega-cols:column3': [
+        linkList('mega-links-3', 'Learn', [
+          ['Blog', '/blog'],
+          ['Tutorials', '/tutorials'],
+          ['Community', '/community'],
+        ]),
+      ],
+      'mega-cols:column4': [
+        {
+          type: 'MegaMenuCard',
+          props: {
+            id: 'mega-card',
+            layout: 'stacked',
+            eyebrow: 'New',
+            title: 'See what shipped this month',
+            text: 'Faster editing, new blocks, and more.',
+            linkLabel: 'Read the update',
+            link: '/blog',
+            section: NO_PAD,
+          },
+        },
+      ],
+    },
+  },
+};
+
+export const MEGA_STARTER_VISUAL: StarterTemplate = {
+  key: 'visual-grid',
+  name: 'Visual Grid',
+  description: 'Three image cards with titles. Great for categories or collections.',
+  category: 'MegaMenu',
+  content: {
+    root: MEGA_ROOT,
+    content: [
+      {
+        type: 'Columns',
+        props: { id: 'mega-cols', layout: '1-1-1', gap: 'md', verticalAlign: 'start', section: NO_PAD },
+      },
+      {
+        type: 'Button',
+        props: { id: 'mega-all', label: 'Browse everything', link: '/blog', alignment: 'left', section: { paddingY: 'sm', background: 'default' } },
+      },
+    ],
+    zones: Object.fromEntries(
+      [
+        ['Design', 'Layouts, color, and type.'],
+        ['Development', 'Code, APIs, and tooling.'],
+        ['Marketing', 'Growth, SEO, and content.'],
+      ].map(([title, text], i) => [
+        `mega-cols:column${i + 1}`,
+        [
+          {
+            type: 'MegaMenuCard',
+            props: {
+              id: `mega-card-${i + 1}`,
+              layout: 'overlay',
+              title,
+              text,
+              linkLabel: 'Explore',
+              link: `/blog/category/${title.toLowerCase()}`,
+              section: NO_PAD,
+            },
+          },
+        ],
+      ])
+    ),
+  },
+};
+
 export const HEADER_STARTERS: StarterTemplate[] = [
   HEADER_STARTER_CLASSIC,
   HEADER_STARTER_CENTERED,
@@ -1467,11 +1637,18 @@ export const ARCHIVE_STARTERS: StarterTemplate[] = [
   ARCHIVE_STARTER_MINIMAL_LIST,
 ];
 
+export const MEGA_MENU_STARTERS: StarterTemplate[] = [
+  MEGA_STARTER_COLUMNS,
+  MEGA_STARTER_FEATURED,
+  MEGA_STARTER_VISUAL,
+];
+
 export const STARTERS_BY_CATEGORY: Record<SiteTemplateCategory, StarterTemplate[]> = {
   Header: HEADER_STARTERS,
   Footer: FOOTER_STARTERS,
   Search: SEARCH_STARTERS,
   Archive: ARCHIVE_STARTERS,
+  MegaMenu: MEGA_MENU_STARTERS,
 };
 
 export function getStarterContent(

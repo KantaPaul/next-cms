@@ -402,7 +402,16 @@ const loadNavMenu: BlockLoader = async (props, ctx) => {
   try {
     const { getSiteMenu } = await import('@/server/actions/site-chrome.actions');
     const menu = await getSiteMenu({ location, language: ctx.language });
-    return { menu };
+    // Mega menus only open from a horizontal header menu.
+    if (location !== 'header' || props.orientation === 'vertical') return { menu };
+    const { getMegaMenuPanels } = await import('@/server/actions/mega-menu.actions');
+    const megaMenus = await getMegaMenuPanels(menu, {
+      siteId: ctx.siteId,
+      language: ctx.language,
+      siteSlug: ctx.siteSlug as string | undefined,
+      draft: !!ctx.preview,
+    }).catch(() => ({}));
+    return { menu, megaMenus };
   } catch {
     return {};
   }

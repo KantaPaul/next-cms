@@ -9,6 +9,11 @@
  */
 
 import {
+  MegaMenuPanel,
+  type MegaMenuPanelSettings,
+  type MegaMenuWidth,
+} from '@/builder/blocks/mega-menu';
+import {
   applyPatch,
   type BuilderDocument,
   type BuilderNode,
@@ -218,10 +223,13 @@ function EditorSiteRoot({
   metadata,
   collectionEntry,
   loopPreviewItem,
+  megaMenu,
   children,
 }: {
   metadata: Record<string, unknown>;
   collectionEntry?: any;
+  /** Mega menus preview as a dropdown panel under a mock header bar. */
+  megaMenu?: boolean;
   /** Loop Item templates: the item the canvas renders, in a card-sized frame. */
   loopPreviewItem?: NormalizedListingItem | null;
   children: ReactNode;
@@ -240,6 +248,23 @@ function EditorSiteRoot({
               {children}
             </div>
           </LoopItemProvider>
+        ) : megaMenu ? (
+          <div data-mega-menu-frame className="min-h-[70vh] px-4 pb-16">
+            <div className="s-border mx-auto flex h-14 w-full max-w-[var(--site-max-width,72rem)] items-center gap-6 border-b text-sm">
+              <span className="font-semibold">Logo</span>
+              <span className="s-primary-text font-medium underline underline-offset-4">Menu item ▾</span>
+              <span className="s-muted">Another item</span>
+              <span className="s-muted">Contact</span>
+            </div>
+            <div className="mt-2">
+              <MegaMenuPanel
+                settings={rootProps as MegaMenuPanelSettings}
+                width={(rootProps?.previewWidth as MegaMenuWidth) || 'container'}
+              >
+                {children}
+              </MegaMenuPanel>
+            </div>
+          </div>
         ) : (
           children
         )}
@@ -1022,11 +1047,12 @@ export function NewEditor({
         metadata={metadata}
         collectionEntry={collectionEntry}
         loopPreviewItem={loopPreviewItem}
+        megaMenu={kind === 'mega-menu'}
       >
         {children}
       </EditorSiteRoot>
     ),
-    [metadata, collectionEntry, loopPreviewItem]
+    [metadata, collectionEntry, loopPreviewItem, kind]
   );
   const onFrame = useCallback(
     (frame: HTMLIFrameElement) => setFrameWindow(frame.contentWindow),
@@ -1127,9 +1153,9 @@ export function NewEditor({
         );
         return;
       }
-      if (kind === 'header' || kind === 'footer') {
+      if (kind === 'header' || kind === 'footer' || kind === 'mega-menu') {
         toast.success(
-          `${kind === 'header' ? 'Header' : 'Footer'} draft saved`
+          `${kind === 'header' ? 'Header' : kind === 'footer' ? 'Footer' : 'Mega menu'} draft saved`
         );
         return;
       }

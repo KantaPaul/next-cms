@@ -16,6 +16,7 @@ import {
   Video,
 } from './content';
 import { CollectionBlockRef } from './collection-block';
+import { MegaMenuCard } from './mega-menu';
 import { Container } from './container';
 import { ImageMorph } from './image-morph';
 import { Accordion, Slider, Tabs } from './interactive';
@@ -73,6 +74,7 @@ const builtInComponents = {
   Gallery,
   CollectionItem,
   CollectionBlock: CollectionBlockRef,
+  MegaMenuCard,
   PostTypeEntries,
   ContactForm,
   GlobalRef,

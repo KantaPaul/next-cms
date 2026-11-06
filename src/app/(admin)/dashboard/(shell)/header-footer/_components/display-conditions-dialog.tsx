@@ -101,10 +101,12 @@ export function DisplayConditionsDialog({
   item,
   open,
   onOpenChange,
+  onSaved,
 }: {
   item: HeaderFooterItem;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSaved?: () => void;
 }) {
   const [rules, setRules] = useState<RuleDraft[]>([]);
   const [loading, setLoading] = useState(true);
@@ -231,6 +233,7 @@ export function DisplayConditionsDialog({
         () => {
           toast.success('Display conditions saved');
           onOpenChange(false);
+          onSaved?.();
         }
       );
     });

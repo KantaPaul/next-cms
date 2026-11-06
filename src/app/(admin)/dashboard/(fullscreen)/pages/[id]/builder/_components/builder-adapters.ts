@@ -4,6 +4,7 @@
  * the Puck builder and the new editor so both behave the same.
  */
 
+import { siteTemplatesHref } from '@/app/(admin)/dashboard/(shell)/header-footer/_modules/site-template-href';
 import { toast } from 'sonner';
 import {
   publishPage,
@@ -96,11 +97,13 @@ export function adapterFor(
   page: BuilderPageProps['page'],
   category?: string
 ): Adapter {
-  if (kind === 'header' || kind === 'footer') {
+  if (kind === 'header' || kind === 'footer' || kind === 'mega-menu') {
     const isHeader = kind === 'header';
+    const isMega = kind === 'mega-menu';
+    const category = isMega ? 'MegaMenu' : isHeader ? 'Header' : 'Footer';
     return {
-      label: isHeader ? 'Header' : 'Footer',
-      backHref: PAGES.DASHBOARD.HEADER_FOOTER,
+      label: isMega ? 'Mega menu' : isHeader ? 'Header' : 'Footer',
+      backHref: siteTemplatesHref(isMega ? 'megamenu' : kind),
       backLabel: 'Site templates',
       headerPath: '',
       previewHref: null,
@@ -113,16 +116,18 @@ export function adapterFor(
         };
         if (!blocks.length) {
           toast.error(
-            isHeader
-              ? 'A header needs at least one block.'
-              : 'A footer needs at least one block.'
+            isMega
+              ? 'A mega menu needs at least one block.'
+              : isHeader
+                ? 'A header needs at least one block.'
+                : 'A footer needs at least one block.'
           );
           return { error: 'empty' };
         }
         return saveGlobalBlock({
           id: page.id,
           name: page.title,
-          category: isHeader ? 'Header' : 'Footer',
+          category,
           content: { root, content: blocks, zones },
         });
       },
@@ -144,7 +149,7 @@ export function adapterFor(
       backHref: isContactForm
         ? PAGES.DASHBOARD.CONTACT_FORMS
         : isSiteTemplate
-          ? PAGES.DASHBOARD.HEADER_FOOTER
+          ? siteTemplatesHref(category)
           : PAGES.DASHBOARD.TEMPLATES,
       backLabel: isContactForm
         ? 'Contact forms'

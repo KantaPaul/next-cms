@@ -6,7 +6,11 @@ import { metaObject } from '@/lib/utils/metadata';
 import { requirePermission } from '@/server/services/require-permission';
 import type { SiteTemplateCategory } from '@/db/seed/header-footer-starters';
 import { HeaderFooterList } from './_components/header-footer-list';
-import { headerFooterService } from './_modules/header-footer.service';
+import {
+  headerFooterService,
+  type HeaderFooterItem,
+} from './_modules/header-footer.service';
+import { paginate } from '@/db/helpers/with-pagination';
 
 const TITLE = 'Site templates';
 
@@ -19,17 +23,24 @@ const TYPE_TO_CATEGORY: Record<string, SiteTemplateCategory> = {
   footer: 'Footer',
   search: 'Search',
   archive: 'Archive',
+  megamenu: 'MegaMenu',
 };
+
+type Params = Record<string, string | string[] | undefined>;
+const one = (v: string | string[] | undefined) =>
+  (Array.isArray(v) ? v[0] : v) ?? '';
+
+const statusOf = (i: HeaderFooterItem) =>
+  !i.isPublished ? 'draft' : i.hasDraftChanges ? 'changes' : 'published';
 
 export default async function HeaderFooterPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string | string[] }>;
+  searchParams: Promise<Params>;
 }) {
-  const { type } = await searchParams;
+  const params = await searchParams;
   const initialTab =
-    TYPE_TO_CATEGORY[(Array.isArray(type) ? type[0] : type)?.toLowerCase() ?? ''] ??
-    'Header';
+    TYPE_TO_CATEGORY[one(params.type).toLowerCase()] ?? 'Header';
   const { access, allowed } = await requirePermission(PERMISSIONS.PAGES_EDIT);
   const breadcrumbs = [
     { title: 'Dashboard', href: PAGES.DASHBOARD.ROOT },
@@ -46,12 +57,50 @@ export default async function HeaderFooterPage({
   }
 
   const items = await headerFooterService.listHeaderFooters();
+  const tabCounts = Object.fromEntries(
+    Object.values(TYPE_TO_CATEGORY).map(c => [
+      c,
+      items.filter(i => i.category === c).length,
+    ])
+  ) as Record<SiteTemplateCategory, number>;
+
+  // The table filters and pages in the URL, like the Posts list.
+  const inTab = items.filter(i => i.category === initialTab);
+  const search = one(params.search).trim().toLowerCase();
+  const status = one(params.status);
+  const assigned = one(params.assigned);
+  const filtered = inTab.filter(
+    i =>
+      (!search || i.name.toLowerCase().includes(search)) &&
+      (!status || statusOf(i) === status) &&
+      (!assigned ||
+        (assigned === 'default' && i.isSiteDefault) ||
+        (assigned === 'in-use' && i.inUse) ||
+        (assigned === 'unused' && !i.inUse))
+  );
+  // Same page math as the Posts list (1-based `page`).
+  const { offset, limit } = paginate({
+    page: one(params.page) || undefined,
+    size: one(params.size) || undefined,
+  });
+  const rows = filtered.slice(offset, offset + limit);
+
+  const kpis = [
+    { label: 'Total', value: inTab.length },
+    { label: 'Published', value: inTab.filter(i => statusOf(i) === 'published').length },
+    { label: 'Draft changes', value: inTab.filter(i => statusOf(i) !== 'published').length },
+    { label: 'In use', value: inTab.filter(i => i.inUse).length },
+    { label: 'Unused', value: inTab.filter(i => !i.inUse).length },
+  ];
 
   return (
     <>
       <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
       <HeaderFooterList
-        items={items}
+        rows={rows}
+        totalCount={filtered.length}
+        tabCounts={tabCounts}
+        kpis={kpis}
         initialTab={initialTab}
         can={{
           create: access.permissions.includes(PERMISSIONS.PAGES_CREATE),

@@ -31,11 +31,12 @@ export default async function MenusPage() {
     );
   }
 
-  const [list, linkablePages, settings, site] = await Promise.all([
+  const [list, linkablePages, settings, site, megaMenus] = await Promise.all([
     menusService.list(),
     menusService.linkablePages(),
     siteSettingsService.get(),
     siteContext.publicSite(),
+    menusService.megaMenuOptions(),
   ]);
   const siteSlug = siteSlugPrefix(site);
   const menus = (
@@ -48,6 +49,7 @@ export default async function MenusPage() {
       <MenusManager
         menus={menus}
         linkablePages={linkablePages}
+        megaMenus={megaMenus}
         siteSlug={siteSlug}
         assigned={{
           header: settings.headerMenuId,

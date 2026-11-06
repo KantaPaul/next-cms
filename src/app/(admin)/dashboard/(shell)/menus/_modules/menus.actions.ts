@@ -72,6 +72,8 @@ export const saveMenuItems = manage
       items: z
         .array(
           itemSchema.extend({
+            megaMenuId: z.string().min(1).nullish(),
+            megaMenuWidth: z.enum(['container', 'full', 'auto']).optional(),
             children: z.array(itemSchema).max(50).optional(),
           })
         )

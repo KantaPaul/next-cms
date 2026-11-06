@@ -1,10 +1,11 @@
 'use client';
 
+import type { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { Archive, Check, Globe, LayoutTemplate, PanelBottom, PanelTop, Plus, Search } from 'lucide-react';
+import { Archive, Check, Globe, LayoutPanelTop, LayoutTemplate, PanelBottom, PanelTop, Plus, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type FormEvent, useEffect, useState, useTransition } from 'react';
+import { type FormEvent, useEffect, useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils/cn';
 import {
@@ -15,15 +16,8 @@ import {
   ActionDropdown,
   ActionDropdownItem,
 } from '@/components/atoms/action-dropdown';
-import {
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableHeaderCell,
-  TableRoot,
-  TableRow,
-} from '@/components/atoms/table';
+import { DataTable } from '@/components/atoms/data-table';
+import type { FilterConfig } from '@/components/atoms/filter-toolbar/types';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -34,7 +28,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { FormInput } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import type { HeaderFooterItem } from '../_modules/header-footer.service';
 import {
@@ -76,14 +70,113 @@ const TABS: {
     icon: Archive,
     emptyHint: 'Design category, tag, author, and date archive pages, then assign it in Settings → Archive Template.',
   },
+  {
+    value: 'MegaMenu',
+    label: 'Mega menus',
+    icon: LayoutPanelTop,
+    emptyHint: 'Design a wide dropdown panel in the visual builder, then attach it to a top-level item on the Menus screen.',
+  },
 ];
 
+/** Lower-case name for sentences: "header", "mega menu". */
+const noun = (c: SiteTemplateCategory) =>
+  c === 'MegaMenu' ? 'mega menu' : c.toLowerCase();
+/** Capitalised name for toasts: "Header", "Mega menu". */
+const title = (c: SiteTemplateCategory) =>
+  c === 'MegaMenu' ? 'Mega menu' : c;
+
+const FILTERS: FilterConfig[] = [
+  {
+    name: 'status',
+    type: 'select',
+    placeholder: 'All statuses',
+    options: [
+      { label: 'Published', value: 'published' },
+      { label: 'Draft', value: 'draft' },
+      { label: 'Draft changes', value: 'changes' },
+    ],
+  },
+  {
+    name: 'assigned',
+    type: 'select',
+    placeholder: 'Any assignment',
+    options: [
+      { label: 'Site default', value: 'default' },
+      { label: 'In use', value: 'in-use' },
+      { label: 'Unused', value: 'unused' },
+    ],
+  },
+];
+
+function StatusChip({ item }: { item: HeaderFooterItem }) {
+  if (!item.isPublished)
+    return (
+      <span className="rounded bg-steel-100 px-1.5 py-0.5 text-[10px] font-medium text-steel-600 dark:bg-dark-200 dark:text-steel-400">
+        Draft
+      </span>
+    );
+  if (item.hasDraftChanges)
+    return (
+      <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+        Draft changes
+      </span>
+    );
+  return (
+    <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+      Published
+    </span>
+  );
+}
+
+function AssignedCell({ item }: { item: HeaderFooterItem }) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 text-xs">
+      {item.isSiteDefault && (
+        <span className="inline-flex items-center gap-1 rounded bg-indigo-50 px-2 py-0.5 font-medium text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300">
+          <Globe className="size-3" />
+          Site default
+        </span>
+      )}
+      {item.locales.map(code => (
+        <span
+          key={code}
+          className="rounded bg-steel-100 px-1.5 py-0.5 font-mono text-[11px] font-medium uppercase text-steel-700 dark:bg-dark-200 dark:text-steel-300"
+        >
+          {code}
+        </span>
+      ))}
+      {item.pageCount > 0 && (
+        <span className="text-steel-500 dark:text-steel-400">
+          {item.pageCount} page{item.pageCount > 1 ? 's' : ''}
+        </span>
+      )}
+      {item.menuItemCount > 0 && (
+        <span className="text-steel-500 dark:text-steel-400">
+          {item.menuItemCount} menu item{item.menuItemCount > 1 ? 's' : ''}
+        </span>
+      )}
+      {item.ruleCount > 0 && (
+        <span className="text-steel-500 dark:text-steel-400">
+          {item.ruleCount} display rule{item.ruleCount > 1 ? 's' : ''}
+        </span>
+      )}
+      {!item.inUse && <span className="text-steel-400">—</span>}
+    </div>
+  );
+}
+
 export function HeaderFooterList({
-  items,
+  rows,
+  totalCount,
+  tabCounts,
+  kpis,
   initialTab = 'Header',
   can,
 }: {
-  items: HeaderFooterItem[];
+  rows: HeaderFooterItem[];
+  totalCount: number;
+  tabCounts: Record<SiteTemplateCategory, number>;
+  kpis: { label: string; value: number }[];
   initialTab?: SiteTemplateCategory;
   can: { create: boolean; delete: boolean };
 }) {
@@ -95,34 +188,33 @@ export function HeaderFooterList({
     setActiveTab(initialTab);
   }, [initialTab]);
 
+  // A new tab starts unfiltered on its first page.
   const changeTab = (tab: SiteTemplateCategory) => {
     setActiveTab(tab);
-    const params = new URLSearchParams(window.location.search);
-    params.set('type', tab.toLowerCase());
-    router.replace(`?${params.toString()}`, { scroll: false });
+    router.replace(`?type=${tab.toLowerCase()}`, { scroll: false });
   };
   const [renaming, setRenaming] = useState<HeaderFooterItem | null>(null);
   const [conditionsItem, setConditionsItem] = useState<HeaderFooterItem | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
-  const byCategory = (c: SiteTemplateCategory) =>
-    items.filter(i => i.category === c);
-  const currentList = byCategory(activeTab);
   const currentTab = TABS.find(t => t.value === activeTab)!;
+  const isEmptyCategory = tabCounts[activeTab] === 0;
 
   const remove = async (item: HeaderFooterItem) => {
-    let warning = `Delete the "${item.name}" ${item.category.toLowerCase()}?`;
+    let warning = `Delete the "${item.name}" ${noun(item.category)}?`;
     if (item.isSiteDefault) {
-      warning = `"${item.name}" is currently set as the site default ${item.category.toLowerCase()}! Deleting it will fall back to the built-in layout. Delete anyway?`;
+      warning = `"${item.name}" is currently set as the site default ${noun(item.category)}! Deleting it will fall back to the built-in layout. Delete anyway?`;
     } else if (item.pageCount > 0) {
       warning = `"${item.name}" is used on ${item.pageCount} page${item.pageCount > 1 ? 's' : ''}. Delete anyway?`;
+    } else if (item.inUse) {
+      warning = `"${item.name}" is still assigned. Delete anyway?`;
     }
     if (!confirm(warning)) return;
 
     setPendingId(item.id);
     await handleActionResponse(deleteHeaderFooter({ id: item.id }), () => {
-      toast.success(`${item.category} deleted`);
+      toast.success(`${title(item.category)} deleted`);
       router.refresh();
     });
     setPendingId(null);
@@ -131,11 +223,90 @@ export function HeaderFooterList({
   const duplicate = async (item: HeaderFooterItem) => {
     setPendingId(item.id);
     await handleActionResponse(duplicateHeaderFooter({ id: item.id }), () => {
-      toast.success(`${item.category} duplicated`);
+      toast.success(`${title(item.category)} duplicated`);
       router.refresh();
     });
     setPendingId(null);
   };
+
+  const columns = useMemo<ColumnDef<HeaderFooterItem>[]>(
+    () => [
+      {
+        id: 'name',
+        header: 'Name',
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <Link
+              href={siteTemplateEditHref(row.original.id, row.original.category)}
+              className="font-medium hover:underline"
+            >
+              {row.original.name}
+            </Link>
+            <StatusChip item={row.original} />
+          </div>
+        ),
+      },
+      {
+        id: 'assigned',
+        header: 'Assigned as',
+        cell: ({ row }) => <AssignedCell item={row.original} />,
+      },
+      {
+        id: 'updatedAt',
+        header: 'Updated',
+        cell: ({ row }) => (
+          <span className="text-xs text-steel-500">
+            {row.original.updatedAt
+              ? format(new Date(row.original.updatedAt), 'MMM d, yyyy')
+              : '—'}
+          </span>
+        ),
+      },
+      {
+        id: 'author',
+        header: 'Author',
+        cell: ({ row }) => (
+          <span className="text-xs text-steel-500">
+            {row.original.createdByName ?? '—'}
+          </span>
+        ),
+      },
+      {
+        id: 'actions',
+        header: () => <span className="sr-only">Actions</span>,
+        cell: ({ row }) => {
+          const item = row.original;
+          return (
+            <div className="flex justify-end">
+              <ActionDropdown isLoading={pendingId === item.id} variant="vertical">
+                <ActionDropdownItem
+                  href={siteTemplateEditHref(item.id, item.category)}
+                  label="Edit in builder"
+                />
+                {item.category !== 'MegaMenu' && (
+                  <ActionDropdownItem
+                    label="Display conditions"
+                    onClick={() => setConditionsItem(item)}
+                  />
+                )}
+                <ActionDropdownItem label="Duplicate" onClick={() => duplicate(item)} />
+                <ActionDropdownItem label="Rename" onClick={() => setRenaming(item)} />
+                {can.delete && (
+                  <ActionDropdownItem
+                    label="Delete"
+                    className="text-red-600 dark:text-red-400"
+                    onClick={() => remove(item)}
+                  />
+                )}
+              </ActionDropdown>
+            </div>
+          );
+        },
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pendingId, can.delete]
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -150,7 +321,7 @@ export function HeaderFooterList({
             onClick={() => setCreateOpen(true)}
           >
             <Plus className="mr-1.5 size-4" />
-            New {activeTab.toLowerCase()} template
+            New {noun(activeTab)} template
           </Button>
         )}
       </div>
@@ -160,7 +331,7 @@ export function HeaderFooterList({
         onValueChange={v => changeTab(v as SiteTemplateCategory)}
         className="w-full"
       >
-        <TabsList className="mb-4">
+        <TabsList>
           {TABS.map(tab => (
             <TabsTrigger
               key={tab.value}
@@ -168,141 +339,51 @@ export function HeaderFooterList({
               className="flex items-center gap-2"
             >
               <tab.icon className="size-4" />
-              {tab.label} ({byCategory(tab.value).length})
+              {tab.label} ({tabCounts[tab.value] ?? 0})
             </TabsTrigger>
           ))}
         </TabsList>
-
-        <TabsContent value={activeTab} className="mt-0">
-          {!currentList.length ? (
-            <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-steel-200 px-6 py-12 text-center dark:border-dark-300">
-              <LayoutTemplate className="size-8 text-steel-300" />
-              <p className="font-medium">
-                No {activeTab.toLowerCase()} templates yet
-              </p>
-              <p className="max-w-md text-sm text-steel-500">
-                {currentTab.emptyHint}
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-hidden rounded-lg border border-steel-200 dark:border-dark-300">
-              <TableContainer>
-                <TableRoot>
-                  <TableHead>
-                    <TableRow hoverStyle={false}>
-                      <TableHeaderCell>Name</TableHeaderCell>
-                      <TableHeaderCell>Assigned as</TableHeaderCell>
-                      <TableHeaderCell>Updated</TableHeaderCell>
-                      <TableHeaderCell>Author</TableHeaderCell>
-                      <TableHeaderCell className="w-12 text-right">
-                        Actions
-                      </TableHeaderCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {currentList.map(item => (
-                      <TableRow key={item.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Link
-                              href={siteTemplateEditHref(item.id, item.category)}
-                              className="font-medium hover:underline"
-                            >
-                              {item.name}
-                            </Link>
-                            {!item.isPublished ? (
-                              <span className="rounded bg-steel-100 px-1.5 py-0.5 text-[10px] font-medium text-steel-600 dark:bg-dark-200 dark:text-steel-400">
-                                Draft
-                              </span>
-                            ) : item.hasDraftChanges ? (
-                              <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-                                Draft changes
-                              </span>
-                            ) : (
-                              <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-                                Published
-                              </span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                            {item.isSiteDefault && (
-                              <span className="inline-flex items-center gap-1 rounded bg-indigo-50 px-2 py-0.5 font-medium text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300">
-                                <Globe className="size-3" />
-                                Site default
-                              </span>
-                            )}
-                            {item.locales.map(code => (
-                              <span
-                                key={code}
-                                className="rounded bg-steel-100 px-1.5 py-0.5 font-mono text-[11px] font-medium uppercase text-steel-700 dark:bg-dark-200 dark:text-steel-300"
-                              >
-                                {code}
-                              </span>
-                            ))}
-                            {item.pageCount > 0 && (
-                              <span className="text-steel-500 dark:text-steel-400">
-                                {item.pageCount} page{item.pageCount > 1 ? 's' : ''}
-                              </span>
-                            )}
-                            {!item.isSiteDefault &&
-                              !item.locales.length &&
-                              item.pageCount === 0 && (
-                                <span className="text-steel-400">—</span>
-                              )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-xs">
-                          {item.updatedAt
-                            ? format(new Date(item.updatedAt), 'MMM d, yyyy')
-                            : '—'}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-xs">
-                          {item.createdByName ?? '—'}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <ActionDropdown
-                            isLoading={pendingId === item.id}
-                            variant="vertical"
-                          >
-                            <ActionDropdownItem
-                              href={siteTemplateEditHref(item.id, item.category)}
-                              label="Edit in builder"
-                            />
-                            <ActionDropdownItem
-                              label="Display conditions"
-                              onClick={() => setConditionsItem(item)}
-                            />
-                            <ActionDropdownItem
-                              label="Duplicate"
-                              onClick={() => duplicate(item)}
-                            />
-                            <ActionDropdownItem
-                              label="Rename"
-                              onClick={() => setRenaming(item)}
-                            />
-                            {can.delete && (
-                              <ActionDropdownItem
-                                label="Delete"
-                                className="text-red-600 dark:text-red-400"
-                                onClick={() => remove(item)}
-                              />
-                            )}
-                          </ActionDropdown>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </TableRoot>
-              </TableContainer>
-            </div>
-          )}
-        </TabsContent>
       </Tabs>
 
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+        {kpis.map(kpi => (
+          <div
+            key={kpi.label}
+            className="rounded-lg border border-steel-200 px-4 py-3 dark:border-dark-300"
+          >
+            <div className="text-xs uppercase tracking-wide text-steel-400">
+              {kpi.label}
+            </div>
+            <div className="text-2xl font-semibold">{kpi.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {isEmptyCategory ? (
+        <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-steel-200 px-6 py-12 text-center dark:border-dark-300">
+          <LayoutTemplate className="size-8 text-steel-300" />
+          <p className="font-medium">
+            No {noun(activeTab)} templates yet
+          </p>
+          <p className="max-w-md text-sm text-steel-500">
+            {currentTab.emptyHint}
+          </p>
+        </div>
+      ) : (
+        <DataTable
+          key={`table-${activeTab}`}
+          columns={columns}
+          data={rows}
+          totalCount={totalCount}
+          filters={FILTERS}
+          inlineSearch
+          searchPlaceHolder="Search templates by name"
+          showClearButton
+        />
+      )}
+
       <NewHeaderFooterDialog
-        key={activeTab}
+        key={`new-${activeTab}`}
         open={createOpen}
         onOpenChange={setCreateOpen}
         category={activeTab}
@@ -321,6 +402,7 @@ export function HeaderFooterList({
           item={conditionsItem}
           open={!!conditionsItem}
           onOpenChange={open => !open && setConditionsItem(null)}
+          onSaved={() => router.refresh()}
         />
       )}
     </div>
@@ -338,7 +420,7 @@ function NewHeaderFooterDialog({
 }) {
   const router = useRouter();
   const starters = STARTERS_BY_CATEGORY[category];
-  const blankName = `Blank ${category.toLowerCase()}`;
+  const blankName = `Blank ${noun(category)}`;
   const defaultStarter = starters[0]?.key ?? 'blank';
   const nameFor = (key: string) =>
     key === 'blank' ? blankName : (starters.find(s => s.key === key)?.name ?? '');
@@ -377,7 +459,7 @@ function NewHeaderFooterDialog({
           starter,
         }),
         row => {
-          toast.success(`${category} created`);
+          toast.success(`${title(category)} created`);
           onOpenChange(false);
           router.push(siteTemplateEditHref(row.id, category));
         }
@@ -390,16 +472,16 @@ function NewHeaderFooterDialog({
       <DialogContent className="sm:max-w-lg">
         <form onSubmit={submit}>
           <DialogHeader>
-            <DialogTitle>New {category.toLowerCase()} template</DialogTitle>
+            <DialogTitle>New {noun(category)} template</DialogTitle>
             <DialogDescription>
-              Create a new {category.toLowerCase()} layout in the visual builder, or start from a starter.
+              Create a new {noun(category)} layout in the visual builder, or start from a starter.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
             <label className="flex flex-col gap-1.5 text-xs font-medium">
               <span>Name</span>
               <FormInput
-                placeholder={`e.g. Main ${category}, Landing ${category}`}
+                placeholder={`e.g. Main ${noun(category)}, Landing ${noun(category)}`}
                 value={name}
                 onChange={e => {
                   setName(e.target.value);
@@ -524,7 +606,7 @@ function RenameDialog({
       <DialogContent className="sm:max-w-md">
         <form onSubmit={submit}>
           <DialogHeader>
-            <DialogTitle>Rename {item.category}</DialogTitle>
+            <DialogTitle>Rename {noun(item.category)}</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <label className="flex flex-col gap-1.5 text-xs font-medium">

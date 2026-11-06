@@ -24,6 +24,7 @@ import {
   GripVertical,
   IndentDecrease,
   IndentIncrease,
+  LayoutPanelTop,
   Loader2,
   Plus,
   Save,
@@ -64,8 +65,14 @@ type EditorItem = {
   url: string;
   target: '_self' | '_blank';
   badge: string;
+  /** Top-level items only: mega menu template id, '' for a normal dropdown. */
+  megaMenuId: string;
+  megaMenuWidth: MegaMenuWidth;
   children: EditorItem[];
 };
+
+type MegaMenuWidth = 'container' | 'full' | 'auto';
+export type MegaMenuOption = { id: string; name: string };
 
 const inputClass =
   'h-9 w-full rounded-md border border-steel-200 bg-white px-3 text-sm dark:border-dark-300 dark:bg-dark-100';
@@ -80,12 +87,16 @@ const toEditorItems = (items: MenuDetail['items']): EditorItem[] =>
     url: item.url,
     target: item.target === '_blank' ? '_blank' : '_self',
     badge: item.badge ?? '',
+    megaMenuId: item.megaMenuId ?? '',
+    megaMenuWidth: (item.megaMenuWidth as MegaMenuWidth) ?? 'container',
     children: item.children.map(child => ({
       key: child.id,
       label: child.label,
       url: child.url,
       target: child.target === '_blank' ? '_blank' : '_self',
       badge: child.badge ?? '',
+      megaMenuId: '',
+      megaMenuWidth: 'container' as MegaMenuWidth,
       children: [],
     })),
   }));
@@ -107,11 +118,13 @@ const pageHref = (
 export function MenusManager({
   menus,
   linkablePages,
+  megaMenus = [],
   assigned,
   siteSlug,
 }: {
   menus: MenuDetail[];
   linkablePages: LinkablePage[];
+  megaMenus?: MegaMenuOption[];
   assigned: { header: string | null; footer: string | null };
   siteSlug?: string;
 }) {
@@ -183,6 +196,7 @@ export function MenusManager({
           key={selected.id}
           menu={selected}
           linkablePages={linkablePages}
+          megaMenus={megaMenus}
           siteSlug={siteSlug}
         />
       ) : (
@@ -270,10 +284,12 @@ function NewMenuForm({ onCreated }: { onCreated: (id: string) => void }) {
 function MenuEditor({
   menu,
   linkablePages,
+  megaMenus,
   siteSlug,
 }: {
   menu: MenuDetail;
   linkablePages: LinkablePage[];
+  megaMenus: MegaMenuOption[];
   siteSlug?: string;
 }) {
   const router = useRouter();
@@ -339,7 +355,11 @@ function MenuEditor({
       const [moved] = next.splice(index, 1);
       next[index - 1] = {
         ...next[index - 1],
-        children: [...next[index - 1].children, { ...moved, children: [] }],
+        // Mega menus belong to top-level items only.
+        children: [
+          ...next[index - 1].children,
+          { ...moved, megaMenuId: '', children: [] },
+        ],
       };
       return next;
     });
@@ -368,6 +388,8 @@ function MenuEditor({
         url: '/',
         target: '_self',
         badge: '',
+        megaMenuId: '',
+        megaMenuWidth: 'container',
         children: [],
         ...item,
       },
@@ -410,6 +432,8 @@ function MenuEditor({
       });
       const payload = items.map(item => ({
         ...strip(item),
+        megaMenuId: item.megaMenuId || null,
+        megaMenuWidth: item.megaMenuWidth,
         children: item.children.map(strip),
       }));
       const invalid = [...items, ...items.flatMap(i => i.children)].find(
@@ -570,6 +594,7 @@ function MenuEditor({
                   }
                   onChange={patch => update(item.key, patch)}
                   onRemove={() => remove(item.key)}
+                  megaMenus={megaMenus}
                   action={
                     <Button
                       type="button"
@@ -676,6 +701,7 @@ function SortableRow({
   onChange,
   onRemove,
   action,
+  megaMenus,
   children,
 }: {
   item: EditorItem;
@@ -684,8 +710,11 @@ function SortableRow({
   onChange: (patch: Partial<EditorItem>) => void;
   onRemove: () => void;
   action: React.ReactNode;
+  /** Set for top-level rows: mega menus this item can open. */
+  megaMenus?: MegaMenuOption[];
   children?: React.ReactNode;
 }) {
+  const megaName = megaMenus?.find(m => m.id === item.megaMenuId)?.name;
   const {
     attributes,
     listeners,
@@ -740,6 +769,11 @@ function SortableRow({
             {item.badge && (
               <span className="rounded-full bg-indigo-100 px-1.5 text-[10px] font-semibold uppercase text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200">
                 {item.badge}
+              </span>
+            )}
+            {megaName && (
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-sky-100 px-1.5 text-[10px] font-semibold text-sky-700 dark:bg-sky-950 dark:text-sky-300">
+                <LayoutPanelTop className="size-3" /> Mega menu
               </span>
             )}
           </button>
@@ -797,6 +831,62 @@ function SortableRow({
               />
               Open in a new tab
             </label>
+            {megaMenus && (
+              <div className="grid gap-3 rounded-md bg-steel-50 p-3 sm:col-span-2 sm:grid-cols-[1fr_auto_auto] sm:items-end dark:bg-dark-200">
+                <label className="flex flex-col gap-1 text-xs font-medium">
+                  Mega menu
+                  <select
+                    className={inputClass}
+                    value={item.megaMenuId}
+                    onChange={e => onChange({ megaMenuId: e.target.value })}
+                  >
+                    <option value="">None (normal dropdown)</option>
+                    {megaMenus.map(m => (
+                      <option key={m.id} value={m.id}>
+                        {m.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-xs font-medium">
+                  Panel width
+                  <select
+                    className={inputClass}
+                    value={item.megaMenuWidth}
+                    disabled={!item.megaMenuId}
+                    onChange={e =>
+                      onChange({ megaMenuWidth: e.target.value as MegaMenuWidth })
+                    }
+                  >
+                    <option value="container">Site width</option>
+                    <option value="full">Full width</option>
+                    <option value="auto">Fit content</option>
+                  </select>
+                </label>
+                <div className="flex gap-2 pb-0.5 text-xs">
+                  {item.megaMenuId ? (
+                    <Link
+                      href={PAGES.DASHBOARD.HEADER_FOOTER_EDIT(item.megaMenuId)}
+                      className="inline-flex h-9 items-center font-medium text-indigo-600 hover:underline"
+                    >
+                      Edit in builder
+                    </Link>
+                  ) : (
+                    <Link
+                      href={`${PAGES.DASHBOARD.HEADER_FOOTER}?type=megamenu`}
+                      className="inline-flex h-9 items-center font-medium text-indigo-600 hover:underline"
+                    >
+                      {megaMenus.length ? 'Manage mega menus' : 'Create a mega menu'}
+                    </Link>
+                  )}
+                </div>
+                {item.megaMenuId && (
+                  <p className="text-xs text-steel-500 sm:col-span-3">
+                    The panel opens on desktop. On mobile, this item shows its sub-links instead.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

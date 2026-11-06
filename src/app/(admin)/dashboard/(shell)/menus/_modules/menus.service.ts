@@ -1,7 +1,7 @@
 import 'server-only';
-import { and, asc, count, eq, isNull } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '@/db';
-import { menuItems, menus, pages } from '@/db/schema';
+import { globalBlocks, menuItems, menus, pages } from '@/db/schema';
 import type { MenuLocationType } from '@/db/schemas/shared.schema';
 import { NotFoundException } from '@/lib/utils/error';
 import { revalidatePublicSite } from '@/lib/utils/revalidate-site';
@@ -13,8 +13,13 @@ export type MenuItemInput = {
   url: string;
   target: '_self' | '_blank';
   badge?: string | null;
-  children?: Omit<MenuItemInput, 'children'>[];
+  /** Top-level items only: the MegaMenu site template this item opens. */
+  megaMenuId?: string | null;
+  megaMenuWidth?: MegaMenuWidth;
+  children?: Omit<MenuItemInput, 'children' | 'megaMenuId' | 'megaMenuWidth'>[];
 };
+
+export type MegaMenuWidth = 'container' | 'full' | 'auto';
 
 export const menusService = {
   list: async () =>
@@ -142,6 +147,27 @@ export const menusService = {
         .limit(1);
       if (!menu) throw new NotFoundException('Menu not found');
 
+      // Only keep mega menus that are this site's MegaMenu templates.
+      const wanted = [
+        ...new Set(items.map(i => i.megaMenuId).filter(Boolean) as string[]),
+      ];
+      const valid = new Set(
+        wanted.length
+          ? (
+              await tx
+                .select({ id: globalBlocks.id })
+                .from(globalBlocks)
+                .where(
+                  and(
+                    inArray(globalBlocks.id, wanted),
+                    eq(globalBlocks.siteId, siteId),
+                    eq(globalBlocks.category, 'MegaMenu')
+                  )
+                )
+            ).map(r => r.id)
+          : []
+      );
+
       await tx.delete(menuItems).where(eq(menuItems.menuId, menuId));
       for (const [index, item] of items.entries()) {
         const [parent] = await tx
@@ -152,6 +178,11 @@ export const menusService = {
             url: item.url,
             target: item.target,
             badge: item.badge || null,
+            megaMenuId:
+              item.megaMenuId && valid.has(item.megaMenuId)
+                ? item.megaMenuId
+                : null,
+            megaMenuWidth: item.megaMenuWidth ?? 'container',
             order: index,
           })
           .returning({ id: menuItems.id });
@@ -187,6 +218,18 @@ export const menusService = {
     return menusService.getWithItems(menuId);
   },
 
+  /** MegaMenu site templates the menu editor can attach to an item. */
+  megaMenuOptions: async () => {
+    const siteId = await adminSiteId();
+    return db
+      .select({ id: globalBlocks.id, name: globalBlocks.name })
+      .from(globalBlocks)
+      .where(
+        and(eq(globalBlocks.siteId, siteId), eq(globalBlocks.category, 'MegaMenu'))
+      )
+      .orderBy(asc(globalBlocks.name));
+  },
+
   copyToLocale: async (id: string, language: string, userId: string) => {
     const source = await menusService.getWithItems(id);
     if (!source) throw new NotFoundException('Menu not found');
@@ -210,6 +253,8 @@ export const menusService = {
             url: item.url,
             target: item.target,
             badge: item.badge,
+            megaMenuId: item.megaMenuId,
+            megaMenuWidth: item.megaMenuWidth,
             order: index,
           })
           .returning({ id: menuItems.id });

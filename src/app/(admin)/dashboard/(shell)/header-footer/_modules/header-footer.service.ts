@@ -1,7 +1,7 @@
 import 'server-only';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import { db } from '@/db';
-import { globalBlocks, pages, posts, users } from '@/db/schema';
+import { globalBlocks, menuItems, pages, posts, users } from '@/db/schema';
 import { ApplicationException, NotFoundException } from '@/lib/utils/error';
 import {
   accessService,
@@ -10,11 +10,13 @@ import {
 import { auditService } from '@/server/services/audit.service';
 import { adminSiteId } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
+import { templateResolverService } from '@/server/services/template-resolver.service';
 import { PERMISSIONS } from '@/config/permissions';
 import {
   getStarterContent,
   SEARCH_STARTER_SIMPLE,
   ARCHIVE_STARTER_GRID,
+  MEGA_STARTER_COLUMNS,
   SITE_TEMPLATE_CATEGORIES,
   type SiteTemplateCategory,
 } from '@/db/seed/header-footer-starters';
@@ -33,6 +35,12 @@ export type HeaderFooterItem = {
   isSiteDefault: boolean;
   locales: string[];
   pageCount: number;
+  /** Display rules that assign this template automatically. */
+  ruleCount: number;
+  /** Menu items that open this mega menu (MegaMenu only). */
+  menuItemCount: number;
+  /** Assigned anywhere: site default, locale, page, display rule or menu item. */
+  inUse: boolean;
 };
 
 const DEFAULT_HEADER_CONTENT = {
@@ -161,7 +169,7 @@ export const headerFooterService = {
   listHeaderFooters: async (): Promise<HeaderFooterItem[]> => {
     const siteId = await adminSiteId();
 
-    const [rows, settings, pageRows, postRows] = await Promise.all([
+    const [rows, settings, pageRows, postRows, ruleRows, megaRows] = await Promise.all([
       db
         .select({
           id: globalBlocks.id,
@@ -197,7 +205,23 @@ export const headerFooterService = {
         })
         .from(posts)
         .where(eq(posts.siteId, siteId)),
+      templateResolverService.getRulesForSite(siteId).catch(() => []),
+      db
+        .select({ megaMenuId: menuItems.megaMenuId })
+        .from(menuItems)
+        .innerJoin(globalBlocks, eq(globalBlocks.id, menuItems.megaMenuId))
+        .where(eq(globalBlocks.siteId, siteId)),
     ]);
+
+    const megaCounts: Record<string, number> = {};
+    for (const r of megaRows) {
+      if (r.megaMenuId) megaCounts[r.megaMenuId] = (megaCounts[r.megaMenuId] || 0) + 1;
+    }
+
+    const ruleCounts: Record<string, number> = {};
+    for (const r of ruleRows) {
+      ruleCounts[r.templateId] = (ruleCounts[r.templateId] || 0) + 1;
+    }
 
     const headerCounts: Record<string, number> = {};
     const footerCounts: Record<string, number> = {};
@@ -225,17 +249,18 @@ export const headerFooterService = {
       Footer: 'footerTemplateId',
       Search: 'searchTemplateId',
       Archive: 'archiveTemplateId',
+      MegaMenu: null,
     } as const;
 
     return rows.map(row => {
       const category = row.category as SiteTemplateCategory;
       const key = settingKey[category];
-      const isSiteDefault = settings[key] === row.id;
+      const isSiteDefault = !!key && settings[key] === row.id;
 
       const locales: string[] = [];
       if (settings.translations) {
         for (const [code, copy] of Object.entries(settings.translations)) {
-          if (copy[key] === row.id) locales.push(code);
+          if (key && copy[key] === row.id) locales.push(code);
         }
       }
 
@@ -246,6 +271,15 @@ export const headerFooterService = {
           : category === 'Footer'
             ? footerCounts[row.id] || 0
             : 0;
+
+      const ruleCount = ruleCounts[row.id] || 0;
+      const menuItemCount = megaCounts[row.id] || 0;
+      const inUse =
+        isSiteDefault ||
+        locales.length > 0 ||
+        pageCount > 0 ||
+        ruleCount > 0 ||
+        menuItemCount > 0;
 
       // Search and archive templates use the global block editor, which
       // saves straight to live content (no separate publish step).
@@ -271,6 +305,9 @@ export const headerFooterService = {
         isSiteDefault,
         locales,
         pageCount,
+        ruleCount,
+        menuItemCount,
+        inUse,
       };
     });
   },
@@ -291,6 +328,7 @@ export const headerFooterService = {
       Footer: DEFAULT_FOOTER_CONTENT,
       Search: SEARCH_STARTER_SIMPLE.content,
       Archive: ARCHIVE_STARTER_GRID.content,
+      MegaMenu: MEGA_STARTER_COLUMNS.content,
     };
     const initialContent =
       starterContent || structuredClone(defaultContent[input.category]);

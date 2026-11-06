@@ -29,7 +29,11 @@ export default async function GlobalBlockPage({
   if (block.category === 'contact-form') {
     redirect(PAGES.DASHBOARD.CONTACT_FORM(id));
   }
-  if (block.category === 'Header' || block.category === 'Footer') {
+  if (
+    block.category === 'Header' ||
+    block.category === 'Footer' ||
+    block.category === 'MegaMenu'
+  ) {
     redirect(PAGES.DASHBOARD.HEADER_FOOTER_EDIT(id));
   }
 

@@ -1,5 +1,7 @@
 import { siteHref } from '@/lib/utils/site-href';
+import type { ReactNode } from 'react';
 import type { MenuWithItems } from '@/server/services/public-site.service';
+import { MegaMenuItem } from './mega-menu-item';
 
 /** Menu URLs may be saved with or without the site slug; prefix only once. */
 export function menuHref(url: string, siteSlug?: string) {
@@ -17,6 +19,10 @@ export type MenuLinksProps = {
   orientation?: 'horizontal' | 'vertical';
   depth?: number;
   gap?: 'sm' | 'md' | 'lg';
+  /** Rendered mega menu panels by top-level menu item id. */
+  megaPanels?: Record<string, ReactNode>;
+  /** How mega menu panels open. */
+  trigger?: 'hover' | 'click';
 };
 
 const gapClasses: Record<string, string> = {
@@ -34,6 +40,8 @@ export function MenuLinks({
   orientation = 'horizontal',
   depth = 2,
   gap = 'md',
+  megaPanels,
+  trigger = 'hover',
 }: MenuLinksProps) {
   if (!menu?.items.length) return null;
 
@@ -56,6 +64,32 @@ export function MenuLinks({
           else if (activeStyle === 'bold') activeCls = 'font-bold';
           else if (activeStyle === 'pill')
             activeCls = 's-soft-primary px-2.5 py-1 rounded-full font-semibold';
+        }
+
+        const panel = orientation === 'horizontal' ? megaPanels?.[item.id] : null;
+        if (panel) {
+          return (
+            <MegaMenuItem
+              key={item.id}
+              trigger={trigger}
+              panel={panel}
+              link={
+                <a
+                  href={href}
+                  target={item.target}
+                  rel={item.target === '_blank' ? 'noopener noreferrer' : undefined}
+                  className={`inline-flex items-center gap-1.5 hover:opacity-80 transition-opacity ${activeCls}`}
+                >
+                  {item.label}
+                  {item.badge && (
+                    <span className="s-soft-primary rounded-full px-1.5 py-0.5 text-[10px] font-semibold">
+                      {item.badge}
+                    </span>
+                  )}
+                </a>
+              }
+            />
+          );
         }
 
         return (

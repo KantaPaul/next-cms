@@ -301,6 +301,15 @@ export const menuItems = pgTable(
     url: varchar('url', { length: 500 }).notNull(),
     target: varchar('target', { length: 10 }).default('_self').notNull(),
     badge: varchar('badge', { length: 30 }),
+    /** Mega menu panel (a MegaMenu site template) opened by this item. */
+    megaMenuId: text('mega_menu_id').references(
+      (): AnyPgColumn => globalBlocks.id,
+      setNull
+    ),
+    /** Panel width: 'container' (site width), 'full' or 'auto'. */
+    megaMenuWidth: varchar('mega_menu_width', { length: 20 })
+      .default('container')
+      .notNull(),
     order: integer('order').default(0).notNull(),
     ...timestampColumns,
   },

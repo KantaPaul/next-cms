@@ -367,3 +367,62 @@ describe('resolveChromeStyle', () => {
     assert.equal(s['--chrome-scrolled-link'], '#60a5fa');
   });
 });
+
+describe('Mega menu builder', () => {
+  const { MEGA_MENU_STARTERS } = require('@/db/seed/header-footer-starters');
+
+  it('offers only mega menu blocks, with page sections, loops and menus removed', () => {
+    const setup = editorSetup('mega-menu');
+    const palette = setup.groups.flatMap(g => g.types);
+    for (const type of ['Columns', 'FooterLinks', 'MegaMenuCard', 'RichText', 'Image', 'Button']) {
+      assert.ok(palette.includes(type), `${type} missing`);
+      assert.ok(setup.schemas[type], `${type} not insertable`);
+    }
+    for (const type of ['Hero', 'Features', 'Pricing', 'QueryLoop', 'ContactForm', 'Video', 'NavMenu', 'MobileMenu', 'HeaderBar', 'GlobalRef']) {
+      assert.ok(!palette.includes(type), `${type} should not be in the palette`);
+      assert.ok(!setup.schemas[type], `${type} should not be insertable`);
+    }
+    assert.equal(setup.inspectorBlocks.FooterLinks.label, 'Link list');
+    // Columns slots accept only mega menu blocks.
+    const slot = setup.definitions.Columns.slots?.column1;
+    assert.ok(slot?.allow?.includes('MegaMenuCard'));
+    assert.ok(!slot?.allow?.includes('Hero'));
+    // Panel settings replace page settings.
+    assert.ok(setup.rootFields.background);
+    assert.ok(setup.rootFields.maxHeight);
+    assert.ok(!setup.rootFields.style);
+  });
+
+  it('removes page-only controls from mega menu blocks', () => {
+    const setup = editorSetup('mega-menu');
+    for (const [type, block] of Object.entries(setup.inspectorBlocks)) {
+      for (const key of ['section_animation', 'section_filter', 'section_responsive', 'section_attributes']) {
+        assert.ok(!(key in block.fields), `${type} still has ${key}`);
+      }
+    }
+    assert.ok(!('collapseOnMobile' in setup.inspectorBlocks.FooterLinks.fields));
+    assert.ok(!('showPagination' in setup.inspectorBlocks.BlogPosts.fields));
+    // Other builders keep their controls and don't offer the featured card.
+    assert.ok('section_animation' in editorSetup('page').inspectorBlocks.Columns.fields);
+    assert.ok(!editorSetup('page').schemas.MegaMenuCard);
+    assert.ok(!editorSetup('header').schemas.MegaMenuCard);
+  });
+
+  it('provides valid mega menu starters built from allowed blocks', () => {
+    const setup = editorSetup('mega-menu');
+    assert.ok(MEGA_MENU_STARTERS.length >= 3);
+    for (const starter of MEGA_MENU_STARTERS) {
+      assert.equal(starter.category, 'MegaMenu');
+      const all = [
+        ...starter.content.content,
+        ...Object.values(starter.content.zones ?? {}).flat(),
+      ] as { type: string; props: Record<string, unknown> }[];
+      for (const block of all) {
+        const def = setup.definitions[block.type];
+        assert.ok(def, `${starter.key}: ${block.type} not allowed`);
+        assert.equal(validateProps(def, block.props).ok, true, `${starter.key}/${block.type} props invalid`);
+      }
+      assert.deepEqual(getStarterContent('MegaMenu', starter.key), starter.content);
+    }
+  });
+});

@@ -8,7 +8,7 @@ import { metaObject } from '@/lib/utils/metadata';
 import { requirePermission } from '@/server/services/require-permission';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 
-export const metadata = metaObject('Edit Header / Footer');
+export const metadata = metaObject('Edit site template');
 
 export default async function HeaderFooterBuilderPage({
   params,
@@ -27,11 +27,20 @@ export default async function HeaderFooterBuilderPage({
   ]);
 
   if (!block) notFound();
-  if (block.category !== 'Header' && block.category !== 'Footer') {
+  if (
+    block.category !== 'Header' &&
+    block.category !== 'Footer' &&
+    block.category !== 'MegaMenu'
+  ) {
     notFound();
   }
 
-  const kind = block.category === 'Header' ? 'header' : 'footer';
+  const kind =
+    block.category === 'Header'
+      ? 'header'
+      : block.category === 'Footer'
+        ? 'footer'
+        : 'mega-menu';
   const isPublished = !!block.publishedAt;
   const hasUnpublishedChanges =
     !isPublished ||

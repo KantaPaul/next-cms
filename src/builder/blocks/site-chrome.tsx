@@ -16,6 +16,9 @@ import type { BuilderItem } from '../data';
 import { renderSlot, type SlotValue } from './content';
 import { MenuLinks, menuHref } from '@/components/site/menu-links';
 import type { MenuWithItems } from '@/server/services/public-site.service';
+import type { MegaMenuPanelData } from '@/server/services/mega-menu.service';
+import { BlockList } from './block-list';
+import { MegaMenuPanel } from './mega-menu';
 import { LanguageSwitcher } from '@/components/site/language-switcher';
 import {
   MobileMenuClient,
@@ -120,6 +123,7 @@ export function HeaderBar({
 
   return (
     <div
+      data-header-bar
       className={cn(
         'w-full transition-colors',
         BG_STYLES[background] || BG_STYLES.default,
@@ -419,6 +423,8 @@ export type NavMenuProps = {
   activeStyle?: 'underline' | 'pill' | 'bold' | 'none';
   menu?: MenuWithItems | null;
   siteSlug?: string;
+  /** Loaded mega menu panels by top-level menu item id. */
+  megaMenus?: Record<string, MegaMenuPanelData>;
 };
 
 const SAMPLE_NAV_MENU = {
@@ -443,8 +449,23 @@ export function NavMenu({
   activeStyle = 'underline',
   menu,
   siteSlug,
+  megaMenus,
 }: NavMenuProps) {
   const resolvedMenu = menu?.items?.length ? menu : SAMPLE_NAV_MENU;
+  const megaPanels =
+    megaMenus && orientation === 'horizontal'
+      ? Object.fromEntries(
+          Object.entries(megaMenus).map(([itemId, panel]) => [
+            itemId,
+            <MegaMenuPanel key={itemId} settings={panel.settings} width={panel.width}>
+              <BlockList
+                items={panel.blocks as BuilderItem[]}
+                zones={panel.zones as Record<string, BuilderItem[]>}
+              />
+            </MegaMenuPanel>,
+          ])
+        )
+      : undefined;
 
   return (
     <nav aria-label={`${location} navigation`}>
@@ -455,6 +476,8 @@ export function NavMenu({
         gap={gap}
         activeStyle={activeStyle}
         siteSlug={siteSlug}
+        megaPanels={megaPanels}
+        trigger={dropdownTrigger}
       />
     </nav>
   );

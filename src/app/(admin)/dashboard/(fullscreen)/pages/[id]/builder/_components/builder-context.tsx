@@ -24,6 +24,7 @@ export type BuilderKind =
   | 'contact-form'
   | 'header'
   | 'footer'
+  | 'mega-menu'
   | 'loop-item';
 
 export type BuilderContextValue = {
