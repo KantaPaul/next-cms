@@ -21,7 +21,7 @@ export type PostTypeFieldType = (typeof POST_TYPE_FIELD_TYPES)[number]['value'];
 export type PostTypeSupports = {
   template: boolean;
   taxonomies: boolean;
-  featuredImage: boolean;
+  featuredImage?: boolean;
   excerpt: boolean;
   author: boolean;
   status: boolean;
@@ -31,7 +31,7 @@ export type PostTypeSupports = {
 export const DEFAULT_POST_TYPE_SUPPORTS: PostTypeSupports = {
   template: true,
   taxonomies: true,
-  featuredImage: true,
+  featuredImage: false,
   excerpt: true,
   author: true,
   status: true,
@@ -43,7 +43,7 @@ export function normalizePostTypeSupports(raw: unknown): PostTypeSupports {
   return {
     template: obj.template ?? true,
     taxonomies: obj.taxonomies ?? true,
-    featuredImage: obj.featuredImage ?? true,
+    featuredImage: obj.featuredImage ?? false,
     excerpt: obj.excerpt ?? true,
     author: obj.author ?? true,
     status: obj.status ?? true,
@@ -65,11 +65,6 @@ export const POST_TYPE_SUPPORT_FEATURES: {
     key: 'taxonomies',
     label: 'Taxonomies',
     description: 'Categories, tags, and custom hierarchical or flat taxonomies for this post type.',
-  },
-  {
-    key: 'featuredImage',
-    label: 'Featured image',
-    description: 'Cover or hero image shown on listings, social cards, and post header blocks.',
   },
   {
     key: 'excerpt',

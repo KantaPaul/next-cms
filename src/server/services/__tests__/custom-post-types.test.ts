@@ -9,11 +9,11 @@ import { entryToPostView, type EntryTermView } from '@/builder/post-template';
 import { collectionTemplatesService } from '@/server/services/collection-templates.service';
 
 describe('PostTypeSupports', () => {
-  it('defaults all features to true', () => {
+  it('defaults active features to true and featuredImage to false', () => {
     assert.deepEqual(DEFAULT_POST_TYPE_SUPPORTS, {
       template: true,
       taxonomies: true,
-      featuredImage: true,
+      featuredImage: false,
       excerpt: true,
       author: true,
       status: true,
@@ -29,18 +29,18 @@ describe('PostTypeSupports', () => {
     assert.equal(supports.taxonomies, false);
     assert.equal(supports.seo, false);
     assert.equal(supports.template, true);
-    assert.equal(supports.featuredImage, true);
+    assert.equal(supports.featuredImage, false);
     assert.equal(supports.excerpt, true);
     assert.equal(supports.author, true);
     assert.equal(supports.status, true);
   });
 
-  it('lists all 7 feature groups', () => {
-    assert.equal(POST_TYPE_SUPPORT_FEATURES.length, 7);
+  it('lists all 6 feature groups', () => {
+    assert.equal(POST_TYPE_SUPPORT_FEATURES.length, 6);
     const keys = POST_TYPE_SUPPORT_FEATURES.map(f => f.key);
     assert.ok(keys.includes('template'));
     assert.ok(keys.includes('taxonomies'));
-    assert.ok(keys.includes('featuredImage'));
+    assert.ok(!keys.includes('featuredImage'));
     assert.ok(keys.includes('excerpt'));
     assert.ok(keys.includes('author'));
     assert.ok(keys.includes('status'));

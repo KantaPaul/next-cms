@@ -300,8 +300,21 @@ function entryMetadata(
   const title = seo?.title || entryTitle;
   const description =
     seo?.description || entry.excerpt || copy.siteDescription || undefined;
+  const firstMediaField = collection?.fields?.find(
+    (f: any) => f.type === 'media'
+  );
+  const customImage = firstMediaField
+    ? (entry.data?.[firstMediaField.key] as string)
+    : undefined;
   const image =
-    seo?.ogImage || entry.featuredImage || settings.defaultOgImage || undefined;
+    seo?.ogImage ||
+    entry.featuredImage ||
+    customImage ||
+    (entry.data?.photo as string) ||
+    (entry.data?.image as string) ||
+    (entry.data?.cover as string) ||
+    settings.defaultOgImage ||
+    undefined;
 
   return {
     title: `${title} | ${copy.siteName}`,

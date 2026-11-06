@@ -366,7 +366,13 @@ export function EntryEditor({
                 />
 
                 {(supports.excerpt || supports.featuredImage) && (
-                  <div className="mt-6 grid gap-4 md:grid-cols-[1fr_16rem]">
+                  <div
+                    className={
+                      supports.featuredImage && supports.excerpt
+                        ? 'mt-6 grid gap-4 md:grid-cols-[1fr_16rem]'
+                        : 'mt-6'
+                    }
+                  >
                     {supports.excerpt && (
                       <FieldShell
                         htmlFor="entry-excerpt"
