@@ -50,6 +50,14 @@ export const PAGES = {
     COLLECTION_CREATE: (slug: string) => `/dashboard/collections/${slug}/create`,
     COLLECTION_ENTRY_EDIT: (slug: string, entryId: string) =>
       `/dashboard/collections/${slug}/${entryId}/edit`,
+    COLLECTION_ENTRY_BUILDER: (slug: string, entryId: string) =>
+      `/dashboard/collections/${slug}/${entryId}/builder`,
+    COLLECTION_TAXONOMY: (slug: string, key: string) =>
+      `/dashboard/collections/${slug}/taxonomies/${key}`,
+    COLLECTION_TEMPLATES: (slug: string) =>
+      `/dashboard/collections/${slug}/templates`,
+    COLLECTION_TEMPLATE_BUILDER: (slug: string, id: string) =>
+      `/dashboard/collections/${slug}/templates/${id}/builder`,
     /** The post type's fields and settings. */
     COLLECTION_SETTINGS: (slug: string) =>
       `/dashboard/collections/${slug}/settings`,

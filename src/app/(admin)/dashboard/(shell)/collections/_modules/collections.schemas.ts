@@ -80,3 +80,58 @@ export const collectionEntrySlugSchema = z.object({
 });
 
 export type CollectionEntrySlugInput = z.infer<typeof collectionEntrySlugSchema>;
+
+export const updateSupportsSchema = z.object({
+  id: z.string().min(1),
+  supports: z.object({
+    template: z.boolean().optional(),
+    taxonomies: z.boolean().optional(),
+    featuredImage: z.boolean().optional(),
+    excerpt: z.boolean().optional(),
+    author: z.boolean().optional(),
+    status: z.boolean().optional(),
+    seo: z.boolean().optional(),
+  }),
+});
+
+export type UpdateSupportsInput = z.infer<typeof updateSupportsSchema>;
+
+export const collectionTaxonomySchema = z.object({
+  id: z.string().optional(),
+  collectionId: z.string().min(1),
+  key: z
+    .string()
+    .trim()
+    .min(1, 'Key is required')
+    .max(100)
+    .regex(
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      'Use lowercase letters, numbers, and dashes.'
+    ),
+  name: z.string().trim().min(1, 'Name is required').max(150),
+  singularName: z.string().trim().max(150).optional(),
+  hierarchical: z.boolean().default(false),
+  position: z.number().int().default(0),
+});
+
+export type CollectionTaxonomyInput = z.infer<typeof collectionTaxonomySchema>;
+
+export const collectionTermSchema = z.object({
+  id: z.string().optional(),
+  taxonomyId: z.string().min(1),
+  name: z.string().trim().min(1, 'Name is required').max(150),
+  slug: z
+    .string()
+    .trim()
+    .min(1, 'Slug is required')
+    .max(150)
+    .regex(
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      'Use lowercase letters, numbers, and dashes.'
+    ),
+  description: z.string().trim().max(1000).optional(),
+  parentId: z.string().nullish().optional(),
+  position: z.number().int().default(0),
+});
+
+export type CollectionTermInput = z.infer<typeof collectionTermSchema>;

@@ -9,11 +9,16 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { pagesServices } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
 import { collectionsService } from '@/server/services/collections.service';
+import { collectionTaxonomiesService } from '@/server/services/collection-taxonomies.service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CollectionSettingsForm } from '../../components/collection-settings-form';
 import { AddFieldForm } from '../../components/add-field-form';
 import { FieldList } from '../../components/field-list';
+import { PostTypeTabs } from '../../components/post-type-tabs';
+import { PostTypeFeaturesCard } from '../../components/post-type-features-card';
+import { PostTypeTaxonomiesCard } from '../../components/post-type-taxonomies-card';
 import { loadPostTypeRoute } from '../../_modules/post-type-route';
+import { normalizePostTypeSupports } from '@/config/post-types';
 
 export default async function CollectionPage({
   params,
@@ -53,15 +58,22 @@ export default async function CollectionPage({
     );
   }
 
-  const [fields, templatePages, allTypes] = await Promise.all([
+  const [fields, templatePages, allTypes, taxonomies] = await Promise.all([
     collectionsService.getFields(collection.id),
     pagesServices.listTemplateOptions(),
     collectionsService.list(),
+    collectionTaxonomiesService.listTaxonomies(collection.id),
   ]);
+  const supports = normalizePostTypeSupports(collection.supports);
 
   return (
     <>
       <PageHeader title={collection.name} breadcrumbs={breadcrumbs} />
+      <PostTypeTabs
+        slug={collection.slug}
+        taxonomies={taxonomies}
+        supports={supports}
+      />
       <div className="mb-4 flex justify-end">
         <Button asChild>
           <Link href={PAGES.DASHBOARD.COLLECTION(collection.slug)}>
@@ -70,18 +82,30 @@ export default async function CollectionPage({
         </Button>
       </div>
       <div className="grid gap-6 lg:grid-cols-12">
-        <Card className="lg:col-span-4">
-          <CardHeader>
-            <CardTitle>Settings</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <CollectionSettingsForm
-              collection={collection}
-              templatePages={templatePages}
-            />
-          </CardContent>
-        </Card>
+        <div className="space-y-6 lg:col-span-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Settings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CollectionSettingsForm
+                collection={collection}
+                templatePages={templatePages}
+              />
+            </CardContent>
+          </Card>
+        </div>
         <div className="grid gap-6 lg:col-span-8">
+          <PostTypeFeaturesCard
+            collectionId={collection.id}
+            collectionSlug={collection.slug}
+            initialSupports={supports}
+          />
+          <PostTypeTaxonomiesCard
+            collectionId={collection.id}
+            collectionSlug={collection.slug}
+            taxonomies={taxonomies}
+          />
           <Card>
             <CardHeader>
               <CardTitle>Add field</CardTitle>

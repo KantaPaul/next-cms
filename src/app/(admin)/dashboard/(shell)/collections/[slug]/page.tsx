@@ -6,9 +6,12 @@ import { Button } from '@/components/ui/button';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import { collectionsService } from '@/server/services/collections.service';
+import { collectionTaxonomiesService } from '@/server/services/collection-taxonomies.service';
 import { requirePermission } from '@/server/services/require-permission';
 import { loadPostTypeRoute } from '../_modules/post-type-route';
 import { EntryList } from '../components/entry-list';
+import { PostTypeTabs } from '../components/post-type-tabs';
+import { normalizePostTypeSupports } from '@/config/post-types';
 
 /** One post type's entries: `/dashboard/collections/{slug}` (like Pages). */
 export default async function CollectionEntriesPage({
@@ -38,10 +41,12 @@ export default async function CollectionEntriesPage({
     );
   }
 
-  const [fields, entries] = await Promise.all([
+  const [fields, entries, taxonomies] = await Promise.all([
     collectionsService.getFields(collection.id),
     collectionsService.listEntries(collection.id),
+    collectionTaxonomiesService.listTaxonomies(collection.id),
   ]);
+  const supports = normalizePostTypeSupports(collection.supports);
   const singular = collection.singularName || 'Entry';
   const entriesData = entries.map(e => ({
     ...e,
@@ -57,6 +62,11 @@ export default async function CollectionEntriesPage({
   return (
     <>
       <PageHeader title={collection.name} breadcrumbs={breadcrumbs} />
+      <PostTypeTabs
+        slug={collection.slug}
+        taxonomies={taxonomies}
+        supports={supports}
+      />
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary">
