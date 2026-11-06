@@ -47,6 +47,11 @@ import {
   layoutLabel,
 } from '@/app/(admin)/dashboard/(shell)/posts/_components/set-template-dialog';
 import { EntryDataFields, type EntryFieldConfig } from './entry-data-fields';
+import {
+  EntryLanguageSection,
+  type EntryTranslationRow,
+} from './entry-translations';
+import { useSiteLocales } from '@/providers/site-locales';
 import { slugify } from '@/lib/utils/slugify';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import { normalizePostTypeSupports } from '@/config/post-types';
@@ -93,6 +98,8 @@ export type EntryEditorProps = {
   termsByTaxonomy: Record<string, CollectionTermNode[]>;
   templates: { id: string; name: string; isDefault: boolean }[];
   currentUserName?: string | null;
+  /** Other language versions of this entry. */
+  translations?: EntryTranslationRow[];
 };
 
 const toDateTimeLocal = (value?: Date | string | null) =>
@@ -106,8 +113,12 @@ export function EntryEditor({
   termsByTaxonomy,
   templates,
   currentUserName,
+  translations = [],
 }: EntryEditorProps) {
   const router = useRouter();
+  const { currentLocale } = useSiteLocales();
+  // New entries start in the dashboard's working language.
+  const [newLanguage, setNewLanguage] = useState(currentLocale);
   const [isPending, startTransition] = useTransition();
   const canPublish = useCan(PERMISSIONS.PAGES_PUBLISH);
   const supports = normalizePostTypeSupports(collection.supports);
@@ -202,6 +213,7 @@ export function EntryEditor({
         excerpt: values.excerpt || null,
         layout: values.layout,
         templateId: values.templateId || null,
+        ...(entry ? {} : { language: newLanguage }),
         data,
         terms: values.terms ?? {},
         seo: values.seo,
@@ -458,6 +470,14 @@ export function EntryEditor({
                       )}
                     </>
                   )}
+
+                  <EntryLanguageSection
+                    collectionSlug={collection.slug}
+                    entry={entry ? { id: entry.id, language: entry.language } : null}
+                    language={newLanguage}
+                    onLanguageChange={setNewLanguage}
+                    translations={translations}
+                  />
 
                   <FieldShell label="Slug" htmlFor="entry-slug">
                     <input

@@ -15,6 +15,8 @@ import {
   publicSiteService,
   resolveRoute,
 } from '@/server/services/public-site.service';
+import { collectionsService } from '@/server/services/collections.service';
+import { resolveEntryRoute } from '@/server/services/entry-route';
 
 export type LocaleLink = {
   code: string;
@@ -74,7 +76,7 @@ export async function localeLinksForPath(
   }
 
   const pageRoute = resolveRoute(segments, site);
-  if (!pageRoute) return [];
+  if (!pageRoute) return entryLocaleLinks(segments, site, labels);
 
   const previewId = await getPreviewPageId();
   const draft = previewId
@@ -87,7 +89,8 @@ export async function localeLinksForPath(
   const page =
     draft ??
     (await publicSiteService.getPublished(pageRoute.language, pageRoute.slug));
-  if (!page || page.alternates.length < 2) return [];
+  if (!page) return entryLocaleLinks(segments, site, labels);
+  if (page.alternates.length < 2) return [];
 
   return order(
     page.alternates.flatMap(alt => {
@@ -105,6 +108,49 @@ export async function localeLinksForPath(
             siteSlugPrefix(site)
           ),
           current: alt.language === pageRoute.language,
+        },
+      ];
+    }),
+    site.locales.map(locale => locale.code)
+  );
+}
+
+/** Language links for a collection entry route (`/{lang}/{type}/{entry}`). */
+async function entryLocaleLinks(
+  segments: string[] | undefined,
+  site: Awaited<ReturnType<typeof siteContext.publicSite>>,
+  labels: Map<string, string>
+): Promise<LocaleLink[]> {
+  const [collectionSlug, entrySlug, language] = resolveEntryRoute(
+    segments,
+    site
+  );
+  if (!collectionSlug || !entrySlug) return [];
+  const entry = await collectionsService
+    .getPublishedEntryByAnySlug(collectionSlug, entrySlug, site.id, language)
+    .catch(() => null);
+  if (!entry) return [];
+  const alternates = await collectionsService.getPublishedEntryAlternates(
+    entry.translationGroupId,
+    site.id
+  );
+  if (alternates.length < 2) return [];
+  return order(
+    alternates.flatMap(alt => {
+      const label = labels.get(alt.language);
+      if (!label) return [];
+      return [
+        {
+          code: alt.language,
+          label,
+          href: PAGES.SITE.entry(
+            entry.collection.slug,
+            alt.slug,
+            alt.language,
+            site.defaultLocale,
+            siteSlugPrefix(site)
+          ),
+          current: alt.language === entry.language,
         },
       ];
     }),

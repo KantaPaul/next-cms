@@ -7,6 +7,7 @@ export type PostTerm = {
   name: string;
   slug: string;
   color?: string;
+  url?: string;
 };
 
 /** The post a single-post layout renders, passed to blocks as Puck metadata. */
@@ -20,6 +21,7 @@ export type PostView = {
   body: string;
   publishedAt: string | null;
   authorName: string | null;
+  authorUrl?: string | null;
   categories: PostTerm[];
   tags: PostTerm[];
   headerTemplateId?: string | null;
@@ -142,29 +144,38 @@ export function entryToPostView(
     featuredImage?: string | null;
     publishedAt?: Date | string | null;
     authorName?: string | null;
-    author?: { name?: string | null } | null;
+    authorId?: string | null;
+    author?: { id?: string | null; name?: string | null } | null;
   },
   collection: {
     name?: string;
     slug?: string;
     fields?: { key: string; type: string }[];
   },
-  terms: EntryTermView[] = []
+  terms: EntryTermView[] = [],
+  opts?: { siteSlug?: string }
 ): PostView {
   const fields = collection.fields ?? [];
   const data = (entry.data && typeof entry.data === 'object' ? entry.data : {}) as Record<string, unknown>;
   const title = entryTitle(data, fields) || entry.slug;
+  const prefix = opts?.siteSlug ? `/${opts.siteSlug}` : '';
+  const colBase = collection.slug ? `${prefix}/collections/${collection.slug}` : '';
 
   const firstHierarchicalTaxonomyId = terms.find(t => t.hierarchical)?.taxonomyId;
   const firstFlatTaxonomyId = terms.find(t => !t.hierarchical)?.taxonomyId;
 
+  const termUrl = (t: EntryTermView) =>
+    colBase && t.taxonomyKey && t.slug
+      ? `${colBase}/${t.taxonomyKey}/${t.slug}`
+      : undefined;
+
   const categories: PostTerm[] = terms
     .filter(t => (firstHierarchicalTaxonomyId ? t.taxonomyId === firstHierarchicalTaxonomyId : t.hierarchical))
-    .map(t => ({ id: t.id ?? t.termId ?? '', name: t.name, slug: t.slug, color: t.color }));
+    .map(t => ({ id: t.id ?? t.termId ?? '', name: t.name, slug: t.slug, color: t.color, url: termUrl(t) }));
 
   const tags: PostTerm[] = terms
     .filter(t => (firstFlatTaxonomyId ? t.taxonomyId === firstFlatTaxonomyId : !t.hierarchical))
-    .map(t => ({ id: t.id ?? t.termId ?? '', name: t.name, slug: t.slug, color: t.color }));
+    .map(t => ({ id: t.id ?? t.termId ?? '', name: t.name, slug: t.slug, color: t.color, url: termUrl(t) }));
 
   const firstRichtextField = fields.find(f => f.type === 'richtext');
   let body = '';
@@ -196,6 +207,11 @@ export function entryToPostView(
               ? data.cover
               : null);
 
+  const authorId = entry.authorId ?? entry.author?.id ?? null;
+  const authorName = entry.authorName ?? entry.author?.name ?? null;
+  const authorUrl =
+    colBase && authorId ? `${colBase}/author/${authorId}` : null;
+
   return {
     id: entry.id,
     title,
@@ -205,9 +221,10 @@ export function entryToPostView(
     featuredImage: entry.featuredImage ?? customImage,
     body,
     publishedAt: entry.publishedAt ? new Date(entry.publishedAt).toISOString() : null,
-    authorName: entry.authorName ?? entry.author?.name ?? null,
+    authorName,
+    authorUrl,
     categories,
     tags,
-    blogUrl: collection.slug ? `/${collection.slug}` : null,
+    blogUrl: colBase || null,
   };
 }

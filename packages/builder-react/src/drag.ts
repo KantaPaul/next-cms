@@ -20,7 +20,7 @@ import { autoScrollSpeed, type Point } from './drop';
 import type { EditorStore } from './store';
 
 export type DragPayload =
-  | { kind: 'new'; type: string }
+  | { kind: 'new'; type: string; props?: Record<string, unknown> }
   | { kind: 'move'; id: NodeId };
 
 export type DragState = {
@@ -193,7 +193,7 @@ export function createDragController(store: EditorStore) {
         if (!drop) return;
         if (!active) onClick?.();
         else if (target && payload.kind === 'new')
-          store.insertBlock(payload.type, target.position);
+          store.insertBlock(payload.type, target.position, payload.props);
         else if (target && payload.kind === 'move') {
           if (!target.noop) store.move(payload.id, target.position);
         }

@@ -394,7 +394,7 @@ export async function saveEntryAction(input: unknown) {
 
   const actor = await actorId();
   try {
-    const { id, collectionId, ...rest } = parsed.data;
+    const { id, collectionId, language, ...rest } = parsed.data;
     if (id) {
       const updated = await collectionsService.updateEntry(
         id,
@@ -406,7 +406,7 @@ export async function saveEntryAction(input: unknown) {
     }
     const created = await collectionsService.createEntry(
       collectionId,
-      rest as any,
+      { ...(rest as any), language },
       actor
     );
     revalidatePostTypes();
@@ -513,5 +513,31 @@ export async function duplicateEntryAction(input: { id: string }) {
     return { ok: true, id: duplicated.id, slug: duplicated.slug };
   } catch (error: any) {
     return { ok: false, error: error.message ?? 'Failed to duplicate entry.' };
+  }
+}
+
+const entryTranslationSchema = z.object({
+  id: z.string().min(1),
+  language: z.string().regex(/^[a-z]{2,12}$/),
+});
+
+/** Copies an entry into another language as a linked draft. */
+export async function createEntryTranslationAction(input: unknown) {
+  const parsed = entryTranslationSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false as const, error: 'Pick a language for the translation.' };
+  }
+  try {
+    const created = await collectionsService.createEntryTranslation(
+      parsed.data,
+      await actorId()
+    );
+    revalidatePostTypes();
+    return { ok: true as const, id: created.id, language: created.language };
+  } catch (error: any) {
+    return {
+      ok: false as const,
+      error: error.message ?? 'Failed to create the translation.',
+    };
   }
 }

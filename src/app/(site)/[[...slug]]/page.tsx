@@ -13,7 +13,7 @@ import {
 import { ViewBeacon } from '@/components/analytics/view-beacon';
 import { PAGES } from '@/config/pages';
 import { db } from '@/db';
-import { pageContents, pageExperiments, pages } from '@/db/schema';
+import { pageContents, pageExperiments, pages, users } from '@/db/schema';
 import { env } from '@/env.mjs';
 import { buildListingSeoMetadata } from '@/lib/listing-seo';
 import {
@@ -23,6 +23,7 @@ import {
   resolveArchiveRoute,
   resolvePostRoute,
 } from '@/server/services/blog.service';
+import { resolveEntryRoute } from '@/server/services/entry-route';
 import { collectionsService } from '@/server/services/collections.service';
 import { collectionTemplatesService } from '@/server/services/collection-templates.service';
 import { collectionTaxonomiesService } from '@/server/services/collection-taxonomies.service';
@@ -160,30 +161,136 @@ function postMetadata(
   };
 }
 
-function resolveEntryRoute(
+function resolveCollectionAuthorRoute(
   segments: string[] | undefined,
-  site: { locales: { code: string }[] }
-): [string | undefined, string | undefined] {
-  if (!Array.isArray(segments)) return [undefined, undefined];
-  const localeCodes = site.locales.map(l => l.code) ?? [];
+  site: { defaultLocale: string; locales: { code: string }[] }
+): CollectionAuthorRoute | null {
+  if (!Array.isArray(segments) || segments.length === 0) return null;
+  const defaultLocale = site.defaultLocale ?? 'en';
+  const codes = site.locales.map(l => l.code) ?? [];
+  const parts = segments.map(s => {
+    try {
+      return decodeURIComponent(s);
+    } catch {
+      return s;
+    }
+  });
+
+  let language = defaultLocale;
+  let offset = 0;
   if (
-    segments.length === 3 &&
-    segments[0] === 'collections' &&
-    segments[1] &&
-    segments[2]
+    parts.length === 3 &&
+    parts[0] !== defaultLocale &&
+    codes.includes(parts[0]) &&
+    parts[1] !== 'blog'
   ) {
-    return [segments[1], segments[2]];
+    language = parts[0];
+    offset = 1;
   }
-  if (
-    segments.length === 2 &&
-    segments[0] &&
-    segments[1] &&
-    !localeCodes.includes(segments[0]) &&
-    segments[0] !== 'blog'
-  ) {
-    return [segments[0], segments[1]];
+  if (parts[offset] === 'collections') offset += 1;
+  if (parts.length !== offset + 3) return null;
+  if (parts[offset + 1] !== 'author') return null;
+
+  const typeSlug = parts[offset];
+  const authorId = parts[offset + 2];
+  if (!typeSlug || !authorId || typeSlug === 'blog') return null;
+  return { language, typeSlug, authorId };
+}
+
+async function loadCollectionAuthorArchive(segments?: string[], site?: any) {
+  const currentSite = site ?? (await siteContext.publicSite());
+  const route = resolveCollectionAuthorRoute(segments, currentSite);
+  if (!route) return null;
+  try {
+    const collection = await collectionsService.findBySlug(
+      route.typeSlug,
+      currentSite.id
+    );
+    if (!collection) return null;
+    const [author] = await db
+      .select({ id: users.id, name: users.name })
+      .from(users)
+      .where(eq(users.id, route.authorId))
+      .limit(1);
+    if (!author) return null;
+    return {
+      language: route.language,
+      collection,
+      author,
+      authorId: route.authorId,
+    };
+  } catch {
+    return null;
   }
-  return [undefined, undefined];
+}
+
+function resolveCollectionsIndexRoute(
+  segments: string[] | undefined,
+  site: { defaultLocale: string; locales: { code: string }[] }
+): { language: string } | null {
+  if (!Array.isArray(segments) || segments.length === 0) return null;
+  const defaultLocale = site.defaultLocale ?? 'en';
+  const codes = site.locales.map(l => l.code) ?? [];
+  const parts = segments.map(s => {
+    try { return decodeURIComponent(s); } catch { return s; }
+  });
+  let language = defaultLocale;
+  let offset = 0;
+  if (parts.length === 2 && parts[0] !== defaultLocale && codes.includes(parts[0])) {
+    language = parts[0];
+    offset = 1;
+  }
+  return parts[offset] === 'collections' && parts.length === offset + 1
+    ? { language }
+    : null;
+}
+
+function resolveCollectionArchiveRoute(
+  segments: string[] | undefined,
+  site: { defaultLocale: string; locales: { code: string }[] }
+): CollectionArchiveRoute | null {
+  if (!Array.isArray(segments) || segments.length === 0) return null;
+  const defaultLocale = site.defaultLocale ?? 'en';
+  const codes = site.locales.map(l => l.code) ?? [];
+  const parts = segments.map(s => {
+    try { return decodeURIComponent(s); } catch { return s; }
+  });
+  let language = defaultLocale;
+  let offset = 0;
+  if (parts.length === 3 && parts[0] !== defaultLocale && codes.includes(parts[0])) {
+    language = parts[0];
+    offset = 1;
+  }
+  if (parts[offset] !== 'collections') return null;
+  if (parts.length !== offset + 2) return null;
+  const typeSlug = parts[offset + 1];
+  if (!typeSlug || typeSlug === 'blog' || typeSlug === 'author') return null;
+  return { language, typeSlug };
+}
+
+
+async function loadCollectionsIndex(segments?: string[], site?: any) {
+  const currentSite = site ?? (await siteContext.publicSite());
+  const route = resolveCollectionsIndexRoute(segments, currentSite);
+  if (!route) return null;
+  const collections = await collectionsService.list(currentSite.id);
+  return { language: route.language, collections };
+}
+
+async function loadCollectionArchive(segments?: string[], site?: any) {
+  const currentSite = site ?? (await siteContext.publicSite());
+  const route = resolveCollectionArchiveRoute(segments, currentSite);
+  if (!route) return null;
+  try {
+    const collection = await collectionsService.findBySlug(
+      route.typeSlug,
+      currentSite.id
+    );
+    if (!collection) return null;
+    return { language: route.language, collection };
+  } catch {
+    return null;
+  }
 }
 
 type TermArchiveRoute = {
@@ -191,6 +298,17 @@ type TermArchiveRoute = {
   typeSlug: string;
   taxonomyKey: string;
   termSlug: string;
+};
+
+type CollectionArchiveRoute = {
+  language: string;
+  typeSlug: string;
+};
+
+type CollectionAuthorRoute = {
+  language: string;
+  typeSlug: string;
+  authorId: string;
 };
 
 function resolveTermArchiveRoute(
@@ -289,12 +407,39 @@ function entryMetadata(
   collection: any,
   settings: Settings,
   defaultLocale: string,
-  siteSlug: string
+  siteSlug: string,
+  alternates: { language: string; slug: string }[] = []
 ): Metadata {
-  const copy = localizedSettings(settings, defaultLocale, defaultLocale);
+  const language: string = entry.language || defaultLocale;
+  const copy = localizedSettings(settings, language, defaultLocale);
   const base = settings.siteUrl || env.SITE_URL;
-  const path = `/${collection.slug}/${entry.slug}`;
+  const path = PAGES.SITE.entry(
+    collection.slug,
+    entry.slug,
+    language,
+    defaultLocale,
+    siteSlug || undefined
+  );
   const url = absolute(base, path);
+  // hreflang: every published language version of this entry.
+  const languages =
+    alternates.length > 1
+      ? Object.fromEntries(
+          alternates.map(alt => [
+            alt.language,
+            absolute(
+              base,
+              PAGES.SITE.entry(
+                collection.slug,
+                alt.slug,
+                alt.language,
+                defaultLocale,
+                siteSlug || undefined
+              )
+            ),
+          ])
+        )
+      : undefined;
   const seo = entry.seo;
   const entryTitle = entry.data?.title || entry.data?.name || entry.slug;
   const title = seo?.title || entryTitle;
@@ -322,6 +467,7 @@ function entryMetadata(
     keywords: seo?.keywords || undefined,
     alternates: {
       canonical: seo?.canonicalUrl || url,
+      ...(languages && { languages }),
     },
     robots:
       seo?.noIndex || entry.status !== 'published'
@@ -333,7 +479,7 @@ function entryMetadata(
       type: seo?.ogType === 'article' ? 'article' : 'website',
       url,
       siteName: copy.siteName,
-      locale: defaultLocale,
+      locale: language,
       ...(entry.publishedAt && {
         publishedTime: new Date(entry.publishedAt).toISOString(),
       }),
@@ -401,7 +547,14 @@ export async function generateMetadata({
     const settings = await siteSettingsService.getPublic();
     const copy = localizedSettings(settings, language, site.defaultLocale);
     const base = settings.siteUrl || env.SITE_URL;
-    const path = `/${collection.slug}/${taxonomy.key}/${term.slug}`;
+    const path = PAGES.SITE.collectionTerm(
+      collection.slug,
+      taxonomy.key,
+      term.slug,
+      language,
+      site.defaultLocale,
+      siteSlug ?? undefined
+    );
     const url = absolute(base, path);
     const listingSeo = buildListingSeoMetadata({
       baseCanonicalUrl: url,
@@ -430,18 +583,111 @@ export async function generateMetadata({
     };
   }
 
+
+  const authorArchive = await loadCollectionAuthorArchive(segments, site);
+  if (authorArchive) {
+    const { collection, author, authorId, language } = authorArchive;
+    const settings = await siteSettingsService.getPublic();
+    const copy = localizedSettings(settings, language, site.defaultLocale);
+    const base = settings.siteUrl || env.SITE_URL;
+    const path = PAGES.SITE.collectionAuthor(
+      collection.slug,
+      authorId,
+      language,
+      site.defaultLocale,
+      siteSlug ?? undefined
+    );
+    const url = absolute(base, path);
+    const listingSeo = buildListingSeoMetadata({
+      baseCanonicalUrl: url,
+      searchParams: queryParams,
+    });
+    const authorName = author.name || 'Author';
+    const title = `${authorName} · ${collection.name}`;
+    const description = `${collection.name} entries by ${authorName}`;
+    return {
+      title: `${title} | ${copy.siteName}`,
+      description,
+      alternates: { canonical: listingSeo.canonicalUrl },
+      robots: listingSeo.noIndex ? { index: false, follow: true } : undefined,
+      openGraph: {
+        title: `${title} | ${copy.siteName}`,
+        description,
+        type: 'website',
+        url: listingSeo.canonicalUrl,
+        siteName: copy.siteName,
+        locale: language,
+      },
+      ...(settings.favicon && { icons: { icon: settings.favicon } }),
+    };
+  }
+
+  const collectionsIndex = await loadCollectionsIndex(segments, site);
+  if (collectionsIndex) {
+    const settings = await siteSettingsService.getPublic();
+    const copy = localizedSettings(settings, collectionsIndex.language, site.defaultLocale);
+    const base = settings.siteUrl || env.SITE_URL;
+    const url = absolute(base, PAGES.SITE.collectionsIndex(collectionsIndex.language, site.defaultLocale, siteSlug ?? undefined));
+    const listingSeo = buildListingSeoMetadata({ baseCanonicalUrl: url, searchParams: queryParams });
+    return {
+      title: `Collections | ${copy.siteName}`,
+      description: copy.seoDescription || undefined,
+      alternates: { canonical: listingSeo.canonicalUrl },
+      robots: listingSeo.noIndex ? { index: false, follow: true } : undefined,
+      openGraph: { title: `Collections | ${copy.siteName}`, description: copy.seoDescription || undefined, type: 'website', url: listingSeo.canonicalUrl, siteName: copy.siteName, locale: collectionsIndex.language },
+      ...(settings.favicon && { icons: { icon: settings.favicon } }),
+    };
+  }
+
+  const collectionArchive = await loadCollectionArchive(segments, site);
+  if (collectionArchive) {
+    const { collection, language } = collectionArchive;
+    const settings = await siteSettingsService.getPublic();
+    const copy = localizedSettings(settings, language, site.defaultLocale);
+    const base = settings.siteUrl || env.SITE_URL;
+    const path = PAGES.SITE.collectionArchive(
+      collection.slug,
+      language,
+      site.defaultLocale,
+      siteSlug ?? undefined
+    );
+    const url = absolute(base, path);
+    const listingSeo = buildListingSeoMetadata({
+      baseCanonicalUrl: url,
+      searchParams: queryParams,
+    });
+    const description =
+      collection.description || copy.seoDescription || undefined;
+    return {
+      title: `${collection.name} | ${copy.siteName}`,
+      description,
+      alternates: { canonical: listingSeo.canonicalUrl },
+      robots: listingSeo.noIndex ? { index: false, follow: true } : undefined,
+      openGraph: {
+        title: `${collection.name} | ${copy.siteName}`,
+        description,
+        type: 'website',
+        url: listingSeo.canonicalUrl,
+        siteName: copy.siteName,
+        locale: language,
+      },
+      ...(settings.favicon && { icons: { icon: settings.favicon } }),
+    };
+  }
+
   const [page, settings] = await Promise.all([
     loadPage(segments),
     siteSettingsService.getPublic(),
   ]);
   if (!page) {
-    const [colSlug, entSlug] = resolveEntryRoute(segments, site);
+    const [colSlug, entSlug, entLanguage] = resolveEntryRoute(segments, site);
     if (colSlug && entSlug) {
       try {
         const entry = await collectionsService.getPublishedEntryByAnySlug(
           colSlug,
           entSlug,
-          site.id
+          site.id,
+          entLanguage
         );
         if (
           entry &&
@@ -449,12 +695,18 @@ export async function generateMetadata({
           entry.visibility === 'public' &&
           (!entry.scheduledAt || new Date(entry.scheduledAt) <= new Date())
         ) {
+          const alternates =
+            await collectionsService.getPublishedEntryAlternates(
+              entry.translationGroupId,
+              site.id
+            );
           return entryMetadata(
             entry,
             entry.collection,
             settings,
             site.defaultLocale,
-            siteSlug ?? ''
+            siteSlug ?? '',
+            alternates
           );
         }
       } catch {
@@ -785,27 +1037,25 @@ async function ArchiveRouteView({
   );
 }
 
-function lockLoopToCollectionTerm(
+function lockLoopToCollectionArchive(
   content: unknown,
   collectionId: string,
-  termSlug: string
+  opts?: { lockedTerm?: string; lockedAuthorId?: string }
 ): unknown {
   if (!content || typeof content !== 'object') return content;
+  const lock = {
+    source: 'collection-entries' as const,
+    collectionId,
+    ...(opts?.lockedTerm ? { lockedTerm: opts.lockedTerm } : {}),
+    ...(opts?.lockedAuthorId ? { lockedAuthorId: opts.lockedAuthorId } : {}),
+  };
   const doc = content as Record<string, any>;
   if (Array.isArray(doc.content)) {
     return {
       ...doc,
       content: doc.content.map(block => {
         if (block?.type === 'LoopGrid' || block?.type === 'QueryLoop') {
-          return {
-            ...block,
-            props: {
-              ...block.props,
-              source: 'collection-entries',
-              collectionId,
-              lockedTerm: termSlug,
-            },
-          };
+          return { ...block, props: { ...block.props, ...lock } };
         }
         return block;
       }),
@@ -815,20 +1065,223 @@ function lockLoopToCollectionTerm(
     const nextNodes = { ...doc.nodes };
     for (const [id, node] of Object.entries(nextNodes) as [string, any][]) {
       if (node?.type === 'LoopGrid' || node?.type === 'QueryLoop') {
-        nextNodes[id] = {
-          ...node,
-          props: {
-            ...node.props,
-            source: 'collection-entries',
-            collectionId,
-            lockedTerm: termSlug,
-          },
-        };
+        nextNodes[id] = { ...node, props: { ...node.props, ...lock } };
       }
     }
     return { ...doc, nodes: nextNodes };
   }
   return content;
+}
+
+async function CollectionAuthorArchiveRouteView({
+  authorArchive,
+  settings,
+  siteId,
+  siteSlug,
+  defaultLocale,
+  searchParams,
+}: {
+  authorArchive: {
+    language: string;
+    collection: any;
+    author: { id: string; name: string | null };
+    authorId: string;
+  };
+  settings: Settings;
+  siteId: string;
+  siteSlug: string;
+  defaultLocale: string;
+  searchParams: SearchParams;
+}) {
+  const { collection, author, authorId, language } = authorArchive;
+  const copy = localizedSettings(settings, language, defaultLocale);
+  const archiveTemplateId =
+    (collection.settings as any)?.archiveTemplateId ??
+    copy.archiveTemplateId ??
+    settings.archiveTemplateId ??
+    null;
+  const preview = await getPreviewSession();
+
+  let templateContent: unknown = null;
+  if (archiveTemplateId) {
+    try {
+      const templateBlock = await getGlobalBlockContent(archiveTemplateId, {
+        siteId,
+        draft: !!preview,
+      });
+      if (
+        templateBlock &&
+        (templateBlock.blocks?.length ||
+          (templateBlock.content &&
+            typeof templateBlock.content === 'object' &&
+            Object.keys(templateBlock.content).length > 0))
+      ) {
+        templateContent = templateBlock.content;
+      }
+    } catch {
+      templateContent = null;
+    }
+  }
+
+  const authorName = author.name || 'Author';
+  const defaultArchiveContent = {
+    root: { props: { maxWidth: 'xl', paddingY: 'md' } },
+    content: [
+      {
+        type: 'LoopGrid',
+        props: {
+          id: 'archive-loop',
+          loopId: 'archive-loop',
+          source: 'collection-entries',
+          collectionId: collection.id,
+          lockedAuthorId: authorId,
+          title: `${authorName} · ${collection.name}`,
+          layout: 'grid',
+          columnsDesktop: 3,
+          columnsTablet: 2,
+          columnsMobile: 1,
+          gap: 'md',
+          pageSize: 12,
+          sortField: 'publishedAt',
+          sortOrder: 'desc',
+          pagination: 'numbered',
+          showExcerpt: true,
+          showImage: true,
+          showDate: true,
+          showAuthor: true,
+          showTerms: false,
+          emptyText: `No ${String(collection.name || 'entries').toLowerCase()} by this author yet.`,
+        },
+      },
+    ],
+  };
+
+  const rendered = await renderBuilderContent({
+    content: templateContent
+      ? lockLoopToCollectionArchive(templateContent, collection.id, {
+          lockedAuthorId: authorId,
+        })
+      : defaultArchiveContent,
+    metadata: {
+      themeTokens: settings.themeTokens,
+      language,
+      searchParams,
+      siteId,
+      siteSlug,
+      archive: {
+        kind: 'author',
+        id: authorId,
+        slug: authorId,
+        title: authorName,
+      },
+      site: {
+        name: settings.siteName,
+        description: settings.siteDescription,
+        url: settings.siteUrl,
+        logo: settings.logo,
+      },
+    },
+    kind: 'page',
+  });
+
+  return <>{rendered}</>;
+}
+
+async function CollectionArchiveRouteView({
+  collectionArchive,
+  settings,
+  siteId,
+  siteSlug,
+  defaultLocale,
+  searchParams,
+}: {
+  collectionArchive: { language: string; collection: any };
+  settings: Settings;
+  siteId: string;
+  siteSlug: string;
+  defaultLocale: string;
+  searchParams: SearchParams;
+}) {
+  const { collection, language } = collectionArchive;
+  const copy = localizedSettings(settings, language, defaultLocale);
+  const archiveTemplateId =
+    (collection.settings as any)?.archiveTemplateId ??
+    copy.archiveTemplateId ??
+    settings.archiveTemplateId ??
+    null;
+  const preview = await getPreviewSession();
+
+  let templateContent: unknown = null;
+  if (archiveTemplateId) {
+    try {
+      const templateBlock = await getGlobalBlockContent(archiveTemplateId, {
+        siteId,
+        draft: !!preview,
+      });
+      if (
+        templateBlock &&
+        (templateBlock.blocks?.length ||
+          (templateBlock.content &&
+            typeof templateBlock.content === 'object' &&
+            Object.keys(templateBlock.content).length > 0))
+      ) {
+        templateContent = templateBlock.content;
+      }
+    } catch {
+      templateContent = null;
+    }
+  }
+
+  const defaultArchiveContent = {
+    root: { props: { maxWidth: 'xl', paddingY: 'md' } },
+    content: [
+      {
+        type: 'LoopGrid',
+        props: {
+          id: 'archive-loop',
+          loopId: 'archive-loop',
+          source: 'collection-entries',
+          collectionId: collection.id,
+          title: collection.name,
+          layout: 'grid',
+          columnsDesktop: 3,
+          columnsTablet: 2,
+          columnsMobile: 1,
+          gap: 'md',
+          pageSize: 12,
+          sortField: 'publishedAt',
+          sortOrder: 'desc',
+          pagination: 'numbered',
+          showExcerpt: true,
+          showImage: true,
+          showDate: true,
+          showAuthor: false,
+          showTerms: false,
+          emptyText: `No ${String(collection.name || 'entries').toLowerCase()} entries yet.`,
+        },
+      },
+    ],
+  };
+
+  const rendered = await renderBuilderContent({
+    content: templateContent || defaultArchiveContent,
+    metadata: {
+      themeTokens: settings.themeTokens,
+      language,
+      searchParams,
+      siteId,
+      siteSlug,
+      site: {
+        name: settings.siteName,
+        description: settings.siteDescription,
+        url: settings.siteUrl,
+        logo: settings.logo,
+      },
+    },
+    kind: 'page',
+  });
+
+  return <>{rendered}</>;
 }
 
 async function TermArchiveRouteView({
@@ -926,7 +1379,9 @@ async function TermArchiveRouteView({
 
   const rendered = await renderBuilderContent({
     content: templateContent
-      ? lockLoopToCollectionTerm(templateContent, collection.id, term.slug)
+      ? lockLoopToCollectionArchive(templateContent, collection.id, {
+          lockedTerm: term.slug,
+        })
       : defaultArchiveContent,
     metadata: {
       themeTokens: settings.themeTokens,
@@ -969,6 +1424,37 @@ export default async function SitePage({ params, searchParams }: Params) {
   const siteSlug = siteSlugPrefix(site);
   const segments = sitePathSegments((slug?.join('/') ?? '/'), site);
 
+
+  // Canonical collection URLs live under /collections/...
+  {
+    const parts = segments.map(s => { try { return decodeURIComponent(s); } catch { return s; } });
+    const codes = site.locales.map((l: any) => l.code) ?? [];
+    let off = 0;
+    let langPrefix = '';
+    if (parts.length >= 2 && parts[0] !== site.defaultLocale && codes.includes(parts[0])) {
+      off = 1; langPrefix = `/${parts[0]}`;
+    }
+    const rest = parts.slice(off);
+    const sp = siteSlug ? `/${siteSlug}` : '';
+    if (rest[0] && rest[0] !== 'collections' && rest[0] !== 'blog' && rest[0] !== 'api' && rest[0] !== 'dashboard' && rest[0] !== 'search') {
+      if (rest.length === 1) {
+        const col = await collectionsService.findBySlug(rest[0], site.id).catch(() => null);
+        if (col) redirect(`${sp}${langPrefix}/collections/${col.slug}`);
+      }
+      if (rest.length === 2 && rest[1] !== 'author') {
+        const ent = await collectionsService
+          .getPublishedEntryByAnySlug(
+            rest[0],
+            rest[1],
+            site.id,
+            langPrefix ? parts[0] : site.defaultLocale
+          )
+          .catch(() => null);
+        if (ent) redirect(`${sp}${langPrefix}/collections/${rest[0]}/${rest[1]}`);
+      }
+    }
+  }
+
   // Root URL in path mode redirects to the default (prefixed) site. Only the
   // bare `/` redirects; `/{site}` is already that site's home.
   if (
@@ -1007,6 +1493,56 @@ export default async function SitePage({ params, searchParams }: Params) {
     );
   }
 
+  const authorArchive = await loadCollectionAuthorArchive(segments, site);
+  if (authorArchive) {
+    return (
+      <CollectionAuthorArchiveRouteView
+        authorArchive={authorArchive}
+        settings={settings}
+        siteId={site.id}
+        siteSlug={siteSlug ?? ''}
+        defaultLocale={site.defaultLocale}
+        searchParams={await searchParams}
+      />
+    );
+  }
+
+  const collectionsIndex = await loadCollectionsIndex(segments, site);
+  if (collectionsIndex) {
+    const copy = localizedSettings(settings, collectionsIndex.language, site.defaultLocale);
+    return (
+      <div className="mx-auto w-full max-w-5xl px-6 py-12">
+        <h1 className="text-3xl font-bold tracking-tight">Collections</h1>
+        {collectionsIndex.collections.length ? (
+          <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {collectionsIndex.collections.map((c: any) => (
+              <li key={c.id} className="s-border s-radius border p-5">
+                <a className="font-semibold hover:underline" href={PAGES.SITE.collectionArchive(c.slug, collectionsIndex.language, site.defaultLocale, siteSlug ?? undefined)}>{c.name}</a>
+                {c.description ? <p className="s-muted mt-2 text-sm">{c.description}</p> : null}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="s-muted mt-6">No collections published yet.</p>
+        )}
+      </div>
+    );
+  }
+
+  const collectionArchive = await loadCollectionArchive(segments, site);
+  if (collectionArchive) {
+    return (
+      <CollectionArchiveRouteView
+        collectionArchive={collectionArchive}
+        settings={settings}
+        siteId={site.id}
+        siteSlug={siteSlug ?? ''}
+        defaultLocale={site.defaultLocale}
+        searchParams={await searchParams}
+      />
+    );
+  }
+
   const post = await loadPost(segments);
   if (post)
     return (
@@ -1020,14 +1556,18 @@ export default async function SitePage({ params, searchParams }: Params) {
   const page = await loadPage(segments);
   if (!page) {
     // Collection route: /{collectionSlug}/{entrySlug} OR /collections/{collectionSlug}/{entrySlug}
-    const [collectionSlug, entrySlug] = resolveEntryRoute(segments, site);
+    const [collectionSlug, entrySlug, entryLanguage] = resolveEntryRoute(
+      segments,
+      site
+    );
 
     if (collectionSlug && entrySlug) {
       try {
         const entry = await collectionsService.getPublishedEntryByAnySlug(
           collectionSlug,
           entrySlug,
-          site.id
+          site.id,
+          entryLanguage
         );
 
         if (
@@ -1038,22 +1578,32 @@ export default async function SitePage({ params, searchParams }: Params) {
           notFound();
         }
 
-        const path = `/${collectionSlug}/${entrySlug}`;
+        const path = PAGES.SITE.entry(
+          collectionSlug,
+          entrySlug,
+          entry.language,
+          site.defaultLocale,
+          siteSlug ?? undefined
+        );
         const terms = await collectionTaxonomiesService.getEntryTerms(entry.id);
         const layout = await collectionTemplatesService.layoutForEntry({
           ...entry,
           siteId: site.id,
         });
 
-        const postView = entryToPostView(entry, entry.collection, terms);
+        const postView = entryToPostView(entry, entry.collection, terms, {
+          siteSlug: siteSlug ?? undefined,
+        });
 
         const metadata = {
           themeTokens: settings.themeTokens,
           siteSlug,
+          siteId: site.id,
           searchParams: await searchParams,
-          language: site.defaultLocale,
+          language: entry.language || site.defaultLocale,
           custom: entry?.data,
           post: postView,
+          collectionEntry: entry,
           site: {
             name: settings.siteName,
             description: settings.siteDescription,
@@ -1139,12 +1689,17 @@ export default async function SitePage({ params, searchParams }: Params) {
 
       if (requestedSlug) {
         collectionEntry = await collectionsService
-          .getPublishedEntry(linkedCollection.slug, requestedSlug, site.id)
+          .getPublishedEntry(
+            linkedCollection.slug,
+            requestedSlug,
+            site.id,
+            page.language
+          )
           .catch(() => null);
       }
       if (!collectionEntry) {
         collectionEntry = await collectionsService
-          .getLatestPublishedEntry(linkedCollection.id, site.id)
+          .getLatestPublishedEntry(linkedCollection.id, site.id, page.language)
           .catch(() => null);
       }
     }
@@ -1155,6 +1710,7 @@ export default async function SitePage({ params, searchParams }: Params) {
       searchParams: await searchParams,
       language: page.language,
       custom: collectionEntry?.data,
+      collectionEntry,
       page: {
         id: page.id,
         title: page.title,

@@ -53,7 +53,12 @@ export default async function CollectionTemplateBuilderPage({
       const fields = await collectionsService.getFields(collection.id);
       previewEntry = {
         ...detailed,
-        collection: { name: collection.name, slug: collection.slug, fields },
+        collection: {
+          id: collection.id,
+          name: collection.name,
+          slug: collection.slug,
+          fields,
+        },
       };
       previewPost = entryToPostView(
         detailed,
@@ -63,6 +68,17 @@ export default async function CollectionTemplateBuilderPage({
     } catch {
       // Fall back to SAMPLE_POST
     }
+  } else {
+    const fields = await collectionsService.getFields(collection.id);
+    previewEntry = {
+      collection: {
+        id: collection.id,
+        name: collection.name,
+        slug: collection.slug,
+        fields,
+      },
+      data: {},
+    };
   }
 
   return (

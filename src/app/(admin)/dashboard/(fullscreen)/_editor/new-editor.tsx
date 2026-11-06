@@ -186,6 +186,8 @@ export type NewEditorProps = BuilderPageProps & {
   issues?: string[];
   /** Block manager: block types left out of the insert panel. */
   hiddenBlocks?: string[];
+  /** Collection-scoped block presets for the insert panel. */
+  collectionBlocks?: { id: string; name: string }[];
   /** Pages and posts for "Specific Page/Blog Post" bindings. */
   dynamicRefs?: DynamicRefOptions;
   /** Editor chrome: the current one, or the shared @nextcms/editor-ui shell (B15 E6). */
@@ -640,6 +642,7 @@ const NO_DYNAMIC_REFS: DynamicRefOptions = { pages: [], posts: [] };
 
 const NO_PREVIEW_ITEMS: NormalizedListingItem[] = [];
 const NO_HIDDEN_BLOCKS: string[] = [];
+const NO_COLLECTION_BLOCKS: { id: string; name: string }[] = [];
 
 const DEFAULT_DYNAMIC_SOURCES: DynamicSourcesValue = {
   sources: APPROVED_DYNAMIC_SOURCES,
@@ -657,6 +660,7 @@ export function NewEditor({
   post,
   category,
   collectionEntry,
+  collectionBlocks = NO_COLLECTION_BLOCKS,
   previewItems = NO_PREVIEW_ITEMS,
   loopItemFields,
   document,
@@ -672,18 +676,65 @@ export function NewEditor({
   // Block manager: hidden blocks leave the insert panel only, so content that
   // already uses them still renders and edits normally.
   const setup = useMemo(() => {
-    if (!hiddenBlocks.length) return baseSetup;
-    const hidden = new Set(hiddenBlocks);
-    return {
-      ...baseSetup,
-      groups: baseSetup.groups
-        .map(group => ({
-          ...group,
-          types: group.types.filter(type => !hidden.has(type)),
-        }))
-        .filter(group => group.types.length > 0),
-    };
-  }, [baseSetup, hiddenBlocks]);
+    let next = baseSetup;
+    if (hiddenBlocks.length) {
+      const hidden = new Set(hiddenBlocks);
+      next = {
+        ...next,
+        groups: next.groups
+          .map(group => ({
+            ...group,
+            types: group.types.filter(type => !hidden.has(type)),
+          }))
+          .filter(group => group.types.length > 0),
+      };
+    }
+    if (kind === 'entry' || kind === 'entry-template') {
+      const collectionName =
+        collectionEntry?.collection?.name ?? 'Collection';
+      if (collectionBlocks.length) {
+        next = {
+          ...next,
+          schemas: {
+            ...next.schemas,
+            CollectionBlock: {
+              ...next.schemas.CollectionBlock,
+              presets: Object.fromEntries(
+                collectionBlocks.map(block => [
+                  block.name,
+                  { collectionBlockId: block.id },
+                ])
+              ),
+            },
+          },
+          groups: next.groups.map(group =>
+            group.title === 'Collection blocks'
+              ? {
+                  ...group,
+                  title: `${collectionName} blocks`,
+                  listPresets: true,
+                }
+              : group
+          ),
+        };
+      } else {
+        // No blocks for this collection: keep the type renderable, but leave
+        // it out of the insert panel (which lists every known schema).
+        const inUse = Object.values(document.nodes).some(
+          node => node.type === 'CollectionBlock'
+        );
+        const { CollectionBlock: _none, ...schemas } = next.schemas;
+        next = {
+          ...next,
+          schemas: inUse ? next.schemas : schemas,
+          groups: next.groups.filter(
+            group => group.title !== 'Collection blocks'
+          ),
+        };
+      }
+    }
+    return next;
+  }, [baseSetup, hiddenBlocks, kind, collectionBlocks, collectionEntry, document]);
   const adapter = useMemo(
     () => adapterFor(kind, page, category),
     [kind, page, category]
@@ -948,6 +999,7 @@ export function NewEditor({
       ...(setup.renderKind === 'post' && { post: post ?? SAMPLE_POST }),
       ...(collectionEntry && {
         entry: collectionEntry.data,
+        custom: collectionEntry.data,
         collection: collectionEntry.collection,
       }),
       pageRef: recordsById(dynamicRefs.pages),
@@ -1102,7 +1154,9 @@ export function NewEditor({
             ? 'Page published'
             : kind === 'post'
               ? 'Post published'
-              : 'Template published'
+              : kind === 'collection-block'
+                ? 'Block published'
+                : 'Template published'
         );
       });
       setLiveOutcome(ok ? 'success' : 'error');

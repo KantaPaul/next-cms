@@ -193,6 +193,7 @@ export const listingQueryService = {
         result = await resolveCollectionEntries(
           config,
           site,
+          language,
           currentId,
           pageSize,
           offset,
@@ -530,10 +531,11 @@ async function resolvePages(
 async function resolveCollectionEntries(
   config: ListingQueryConfig,
   site: ResolvedSite,
+  language: string,
   currentId: string | undefined,
   pageSize: number,
   offset: number,
-  _includeFacets = false
+  includeFacets = false
 ): Promise<ListingQueryResult> {
   const collectionId = config.collectionId!;
 
@@ -558,6 +560,8 @@ async function resolveCollectionEntries(
   const conditions: (SQL | undefined)[] = [
     eq(collectionEntries.siteId, site.id),
     eq(collectionEntries.collectionId, collectionId),
+    // Only entries in the language being rendered, like posts and pages.
+    eq(collectionEntries.language, language),
     eq(collectionEntries.status, 'published'),
     isNull(collectionEntries.deletedAt),
   ];
@@ -565,6 +569,8 @@ async function resolveCollectionEntries(
   if (config.excludeCurrent && currentId) {
     conditions.push(ne(collectionEntries.id, currentId));
   }
+  // Facet counts use the loop's scope before the visitor's filters (like posts).
+  const baseConditions = [...conditions];
 
   for (const filter of config.filters) {
     applyFilter(conditions, filter, {
@@ -637,6 +643,7 @@ async function resolveCollectionEntries(
           );
         return inArray(collectionEntries.id, subquery);
       },
+      authorId: val => eq(collectionEntries.authorId, String(val)),
       hasImage: val => {
         const wantImage = val === true || val === 'true' || val === '1' || val === 1;
         return wantImage
@@ -706,6 +713,9 @@ async function resolveCollectionEntries(
       .offset(offset),
     db.select({ total: count() }).from(collectionEntries).where(where),
   ]);
+  const facets = includeFacets
+    ? await computeEntryFacets(collectionId, and(...baseConditions))
+    : undefined;
 
   const entryIds = rows.map(r => r.id);
   const termsMap = await loadCollectionEntryTerms(entryIds);
@@ -727,7 +737,12 @@ async function resolveCollectionEntries(
       id: r.id,
       title,
       slug: r.slug,
-      url: siteHref(`/${collection.slug}/${r.slug}`, prefix),
+      // Canonical entry URL (`/collections/{type}/{entry}`), so cards don't
+      // bounce through the short-URL redirect.
+      url: siteHref(
+        PAGES.SITE.entry(collection.slug, r.slug, language, site.defaultLocale),
+        prefix
+      ),
       excerpt:
         (r.excerpt as string) || (typeof excerpt === 'string' ? excerpt : null),
       image:
@@ -754,6 +769,76 @@ async function resolveCollectionEntries(
     pageSize,
     totalPages,
     hasMore: offset + items.length < total,
+    ...(facets ? { facets } : {}),
+  };
+}
+
+/**
+ * Filter options for a post type: terms of its hierarchical taxonomies as
+ * "categories", of its flat ones as "tags", plus authors, each with how many
+ * entries in scope use it.
+ */
+async function computeEntryFacets(
+  collectionId: string,
+  baseScope: SQL | undefined
+): Promise<ListingFacets> {
+  const termRows = (hierarchical: boolean) =>
+    db
+      .select({
+        slug: collectionTerms.slug,
+        name: collectionTerms.name,
+        total: count(collectionEntries.id),
+      })
+      .from(collectionTerms)
+      .innerJoin(
+        collectionTaxonomies,
+        eq(collectionTaxonomies.id, collectionTerms.taxonomyId)
+      )
+      .innerJoin(
+        collectionEntryTerms,
+        eq(collectionEntryTerms.termId, collectionTerms.id)
+      )
+      .innerJoin(
+        collectionEntries,
+        eq(collectionEntries.id, collectionEntryTerms.entryId)
+      )
+      .where(
+        and(
+          baseScope,
+          eq(collectionTaxonomies.collectionId, collectionId),
+          eq(collectionTaxonomies.hierarchical, hierarchical),
+          isNull(collectionTerms.deletedAt)
+        )
+      )
+      .groupBy(collectionTerms.id, collectionTerms.slug, collectionTerms.name)
+      .orderBy(asc(collectionTerms.name));
+
+  const [catRows, tagRows, authorRows] = await Promise.all([
+    termRows(true),
+    termRows(false),
+    db
+      .select({
+        id: users.id,
+        name: users.name,
+        total: count(collectionEntries.id),
+      })
+      .from(users)
+      .innerJoin(collectionEntries, eq(collectionEntries.authorId, users.id))
+      .where(baseScope)
+      .groupBy(users.id, users.name)
+      .orderBy(asc(users.name)),
+  ]);
+
+  const toOptions = (rows: { slug: string; name: string; total: number }[]) =>
+    rows.map(r => ({ value: r.slug, label: r.name, count: Number(r.total) }));
+  return {
+    categories: toOptions(catRows),
+    tags: toOptions(tagRows),
+    authors: authorRows.map(r => ({
+      value: r.id,
+      label: r.name ?? 'Anonymous',
+      count: Number(r.total),
+    })),
   };
 }
 

@@ -6,7 +6,13 @@ import { useEffect, useRef, useState } from 'react';
 import { reloadNodeData } from '@/server/actions/builder-data.actions';
 
 /** Block types whose loaded data follows their props on the canvas. */
-const LIVE_TYPES = new Set(['LoopGrid', 'QueryLoop', 'PostTypeEntries']);
+const LIVE_TYPES = new Set([
+  'LoopGrid',
+  'QueryLoop',
+  'PostTypeEntries',
+  'CollectionBlock',
+  'QueryFilter',
+]);
 const DEBOUNCE_MS = 300;
 
 /** Props that change what a loader returns; slots and styling don't. */

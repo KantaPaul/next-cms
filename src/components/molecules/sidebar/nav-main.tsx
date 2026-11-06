@@ -92,6 +92,10 @@ export function NavMain({ postTypes = [] }: { postTypes?: SidebarPostType[] }) {
                 ),
               })),
               {
+                name: 'Blocks',
+                href: PAGES.DASHBOARD.COLLECTION_BLOCKS(postType.slug),
+              },
+              {
                 name: 'Templates',
                 href: PAGES.DASHBOARD.COLLECTION_TEMPLATES(postType.slug),
               },

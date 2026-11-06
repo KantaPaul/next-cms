@@ -11,6 +11,16 @@ export const LANGUAGE_FILTERED_ROUTES = new Set([
   '/dashboard/posts',
 ]);
 
+/** A post type's entries list: `/dashboard/collections/{slug}`. */
+const COLLECTION_ENTRIES_ROUTE = /^\/dashboard\/collections\/[^/]+$/;
+
+/** Whether `path` is a list that filters by `?language=`. */
+export function isLanguageFilteredRoute(path: string): boolean {
+  return (
+    LANGUAGE_FILTERED_ROUTES.has(path) || COLLECTION_ENTRIES_ROUTE.test(path)
+  );
+}
+
 /** The cookie's value if it names one of the site's locales, else null. */
 export function pickAdminLocale(
   value: string | null | undefined,
@@ -25,7 +35,7 @@ export function pickAdminLocale(
 export function withAdminLanguage(href: string, locale: string | null): string {
   if (!locale) return href;
   const [path, query = ''] = href.split('?');
-  if (!LANGUAGE_FILTERED_ROUTES.has(path)) return href;
+  if (!isLanguageFilteredRoute(path)) return href;
   const params = new URLSearchParams(query);
   params.set('language', locale);
   return `${path}?${params.toString()}`;

@@ -6,6 +6,7 @@ import {
   toDocument,
 } from '@nextcms/builder-core';
 import { editorSetup } from '@/builder/definitions';
+import { migrateCollectionItems } from '@/builder/collection-item-migrate';
 import { hiddenBlocksFor } from '@/config/block-manager';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 import { loadDocumentData } from '@/builder/loaders';
@@ -16,6 +17,7 @@ import {
   type DynamicRefOptions,
   dynamicRefsService,
 } from '@/server/services/dynamic-refs.service';
+import { collectionBlocksService } from '@/server/services/collection-blocks.service';
 
 export type EditorData = {
   document: BuilderDocument;
@@ -27,6 +29,8 @@ export type EditorData = {
   dynamicRefs: DynamicRefOptions;
   /** Collection entry context for template pages. */
   collectionEntry?: any;
+  /** Collection-scoped blocks for the insert panel presets. */
+  collectionBlocks?: { id: string; name: string }[];
   /** Block manager: block types left out of this editor's insert panel. */
   hiddenBlocks: string[];
 };
@@ -48,6 +52,7 @@ export async function loadEditorData({
   themeTokens,
   post,
   collectionEntry,
+  collectionId,
 }: {
   content: unknown;
   kind: string;
@@ -55,14 +60,28 @@ export async function loadEditorData({
   themeTokens: unknown;
   post?: PostView;
   collectionEntry?: any;
+  collectionId?: string;
 }): Promise<EditorData> {
-  const document = toDocument(content);
+  const document = migrateCollectionItems(toDocument(content));
   const setup = editorSetup(kind);
-  const [loaded, options, picked, settings] = await Promise.all([
-    loadDocumentData(document, { language, themeTokens, post, editor: true }),
+  const resolvedCollectionId =
+    collectionId ||
+    collectionEntry?.collection?.id ||
+    collectionEntry?.collectionId;
+  const [loaded, options, picked, settings, collectionBlocks] = await Promise.all([
+    loadDocumentData(document, {
+      language,
+      themeTokens,
+      post,
+      collectionEntry,
+      editor: true,
+    }),
     dynamicRefsService.options(),
     dynamicRefsService.load(collectDynamicRefs(document)),
     siteSettingsService.get(),
+    resolvedCollectionId && (kind === 'entry' || kind === 'entry-template')
+      ? collectionBlocksService.options(resolvedCollectionId).catch(() => [])
+      : Promise.resolve([]),
   ]);
   return {
     document,
@@ -78,5 +97,6 @@ export async function loadEditorData({
       posts: withPicked(options.posts, picked.postRef),
     },
     collectionEntry,
+    collectionBlocks,
   };
 }

@@ -31,6 +31,7 @@ import {
 } from '@nextcms/builder-core';
 import type { VideoLibraryVideoItem } from '@/components/video/video-library';
 import type { BlogActiveFilters, BlogPostsProps } from './blocks/blog';
+import type { BuilderItem } from './data';
 import type { PostView } from './post-template';
 
 // Server actions are imported inside each loader, so importing this module
@@ -60,6 +61,8 @@ export type LoaderContext = {
   post?: PostView;
   /** Current page id when rendering a page. */
   pageId?: string;
+  /** Collection entry context for entry/template rendering. */
+  collectionEntry?: unknown;
   /** Archive route context when rendering a category, tag, author, or date archive (R595). */
   archive?: ArchiveLoaderContext;
   /** Preview / draft mode. */
@@ -128,15 +131,42 @@ const loadBlogPosts: BlockLoader = async (props, ctx) => {
 };
 
 const loadRelatedPosts: BlockLoader = async (props, ctx) => {
+  const limit = Number(props.limit) || 3;
+  const current =
+    (ctx.post as PostView | undefined) ??
+    (ctx.collectionEntry
+      ? {
+          id: String((ctx.collectionEntry as any).id ?? ''),
+          language: String(
+            (ctx.collectionEntry as any).language ?? ctx.language ?? 'en'
+          ),
+          categories: [],
+          tags: [],
+        }
+      : null);
+
+  if (current && (ctx.collectionEntry as any)?.collectionId) {
+    const { resolveRelatedCollectionEntries } = await import(
+      '@/server/actions/listing.actions'
+    );
+    const posts = await resolveRelatedCollectionEntries({
+      collectionId: String((ctx.collectionEntry as any).collectionId),
+      entryId: current.id,
+      language: current.language,
+      limit,
+      siteSlug: typeof ctx.siteSlug === 'string' ? ctx.siteSlug : '',
+    });
+    return { posts };
+  }
+
   const [{ getRelatedPosts }, { SAMPLE_POST }] = await Promise.all([
     import('@/server/actions/blog.actions'),
     import('./post-template'),
   ]);
   const post = (ctx.post as PostView | undefined) ?? SAMPLE_POST;
-  const limit = Number(props.limit) || 3;
   const posts = await getRelatedPosts({
     postId: post.id,
-    categoryIds: post.categories.map(c => c.id),
+    categoryIds: post.categories.map((c: { id: string }) => c.id),
     language: post.language,
     limit,
   });
@@ -180,6 +210,70 @@ const loadGlobalRefs: import('@nextcms/builder-core').BatchBlockLoader<
     patches[node.id] = {
       blocks: result?.blocks ?? [],
       globalBlockName: result?.name ?? '',
+    };
+  }
+  return patches;
+};
+
+const loadCollectionBlockRefs: import('@nextcms/builder-core').BatchBlockLoader<
+  LoaderContext
+> = async (nodes, ctx) => {
+  const ids = [
+    ...new Set(
+      nodes
+        .map(n => n.props.collectionBlockId)
+        .filter((id): id is string => typeof id === 'string' && !!id)
+    ),
+  ];
+  if (ids.length === 0) return {};
+
+  const { getCollectionBlockContentAction } = await import(
+    '@/app/(admin)/dashboard/(shell)/collections/_modules/collection-blocks.actions'
+  );
+  const draft = Boolean(ctx.editor || ctx.preview);
+  const byId = await getCollectionBlockContentAction(ids, {
+    draft,
+    siteId: typeof ctx.siteId === 'string' ? ctx.siteId : undefined,
+  });
+
+  const entryCollectionId =
+    (ctx.collectionEntry as { collection?: { id?: string } } | undefined)
+      ?.collection?.id ??
+    (ctx.collectionEntry as { collectionId?: string } | undefined)
+      ?.collectionId;
+
+  const patches: Record<string, Record<string, unknown>> = {};
+  for (const node of nodes) {
+    const id =
+      typeof node.props.collectionBlockId === 'string'
+        ? node.props.collectionBlockId
+        : '';
+    const result = id ? byId[id] : null;
+    if (
+      !result ||
+      !('collectionId' in result) ||
+      (entryCollectionId && result.collectionId !== entryCollectionId)
+    ) {
+      patches[node.id] = {
+        blocks: [],
+        zones: {},
+        collectionBlockName:
+          result && 'name' in result ? (result.name ?? '') : '',
+      };
+      continue;
+    }
+    const content =
+      'content' in result ? result.content : null;
+    patches[node.id] = {
+      blocks: Array.isArray(content)
+        ? content
+        : (content?.content as BuilderItem[] | undefined) ?? [],
+      zones:
+        content && !Array.isArray(content)
+          ? ((content.zones as Record<string, BuilderItem[]> | undefined) ??
+            {})
+          : {},
+      collectionBlockName: result.name ?? '',
     };
   }
   return patches;
@@ -384,6 +478,21 @@ function buildFiltersFromPropsAndParams(
       : activeParams.terms ?? (activeParams.term ? [activeParams.term] : []);
     if (terms.length > 0) {
       filters.push({ field: 'terms', operator: 'in', value: terms });
+    }
+    // A Query Filter writes `categories` / `tags` (hierarchical / flat terms).
+    const cats =
+      activeParams.categories ??
+      (activeParams.category ? [activeParams.category] : []);
+    if (cats.length > 0) {
+      filters.push({ field: 'categories', operator: 'in', value: cats });
+    }
+    const tagList =
+      activeParams.tags ?? (activeParams.tag ? [activeParams.tag] : []);
+    if (tagList.length > 0) {
+      filters.push({ field: 'tags', operator: 'in', value: tagList });
+    }
+    if (activeParams.author) {
+      filters.push({ field: 'authorId', operator: 'eq', value: activeParams.author });
     }
   }
 
@@ -708,9 +817,18 @@ const loadQueryFilter: BlockLoader = async (props, ctx) => {
   const { resolveListingQuery } = await import(
     '@/server/actions/listing.actions'
   );
+  const collectionId =
+    source === 'collection-entries' && typeof props.collectionId === 'string'
+      ? props.collectionId.trim()
+      : '';
+  if (source === 'collection-entries' && !collectionId) {
+    // No post type picked yet: placeholder options in the editor.
+    return { activeParams, totalResults: 0, preservedHiddenParams };
+  }
   const result = await resolveListingQuery(
     {
       source,
+      ...(collectionId ? { collectionId } : {}),
       filters,
       sortField,
       sortOrder,
@@ -807,9 +925,11 @@ const registry = createLoaderRegistry<LoaderContext>(
   }
 );
 registry.registerBatch('GlobalRef', loadGlobalRefs);
+registry.registerBatch('CollectionBlock', loadCollectionBlockRefs);
 
 export const registerBlockLoader = registry.register;
 export const getBlockLoader = registry.get;
+export const getBatchBlockLoader = registry.getBatch;
 export const listLoaderTypes = registry.types;
 /** Each node's loaded data, for the editor to show without storing it. */
 export const loadDocumentData = registry.load;

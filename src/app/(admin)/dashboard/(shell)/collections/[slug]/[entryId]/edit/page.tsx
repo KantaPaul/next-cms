@@ -37,10 +37,11 @@ export default async function CollectionEntryPage({
     .catch(() => null);
   if (!entry || entry.collectionId !== collection.id) return notFound();
 
-  const [fields, taxonomies, templates] = await Promise.all([
+  const [fields, taxonomies, templates, translations] = await Promise.all([
     collectionsService.getFields(collection.id),
     collectionTaxonomiesService.listTaxonomies(collection.id),
     collectionTemplatesService.options(collection.id),
+    collectionsService.getEntryTranslations(entry.translationGroupId, entry.id),
   ]);
 
   const fieldConfigs = await toEntryFieldConfigs(fields);
@@ -67,6 +68,7 @@ export default async function CollectionEntryPage({
         termsByTaxonomy={termsByTaxonomy}
         templates={templates}
         currentUserName={userId || null}
+        translations={translations}
       />
     </div>
   );

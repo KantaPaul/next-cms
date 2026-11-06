@@ -3,7 +3,7 @@ import { and, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
 import { cache } from 'react';
 import { PAGES } from '@/config/pages';
 import { db } from '@/db';
-import { pages, posts } from '@/db/schema';
+import { collectionEntries, collections, pages, posts } from '@/db/schema';
 import type { LocaleLinkMap } from '@/lib/utils/locale-links';
 import { siteContext, type ResolvedSite } from '@/server/services/site-context';
 
@@ -12,6 +12,8 @@ type Row = {
   language: string;
   group: string | null;
   isHome?: boolean;
+  /** Collection slug, for entry rows. */
+  type?: string;
 };
 
 /** Pairs each default-language item with its `language` translation (same translation group). */
@@ -35,7 +37,7 @@ function pair(
 
 export const localeLinksService = {
   /**
-   * Link map for pages and posts in `language`; null for the default locale
+   * Link map for pages, posts and collection entries in `language`; null for the default locale
    * (its links are already right). Paths are without the site slug.
    */
   forLanguage: cache(
@@ -51,7 +53,7 @@ export const localeLinksService = {
         if (!resolved.locales.some(locale => locale.code === language)) return null;
         const languages = [defaultLocale, language];
 
-        const [pageRows, postRows] = await Promise.all([
+        const [pageRows, postRows, entryRows] = await Promise.all([
           db
             .select({
               slug: pages.slug,
@@ -85,6 +87,27 @@ export const localeLinksService = {
                 inArray(posts.language, languages)
               )
             ),
+          db
+            .select({
+              slug: collectionEntries.slug,
+              language: collectionEntries.language,
+              group: collectionEntries.translationGroupId,
+              type: collections.slug,
+            })
+            .from(collectionEntries)
+            .innerJoin(
+              collections,
+              eq(collections.id, collectionEntries.collectionId)
+            )
+            .where(
+              and(
+                eq(collectionEntries.siteId, resolved.id),
+                eq(collectionEntries.status, 'published'),
+                isNull(collectionEntries.deletedAt),
+                isNotNull(collectionEntries.translationGroupId),
+                inArray(collectionEntries.language, languages)
+              )
+            ),
         ]);
 
         const map = new Map<string, string>();
@@ -100,6 +123,14 @@ export const localeLinksService = {
           language,
           defaultLocale,
           row => PAGES.SITE.post(row.slug, row.language, defaultLocale),
+          map
+        );
+        pair(
+          entryRows,
+          language,
+          defaultLocale,
+          row =>
+            PAGES.SITE.entry(row.type ?? '', row.slug, row.language, defaultLocale),
           map
         );
         return map;

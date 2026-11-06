@@ -13,7 +13,7 @@ import { DEFAULT_SITE_LOCALES } from '@/db/schemas/sites.schema';
 import { cn } from '@/lib/utils/cn';
 import {
   ADMIN_LOCALE_COOKIE,
-  LANGUAGE_FILTERED_ROUTES,
+  isLanguageFilteredRoute,
 } from '@/lib/locale/admin-locale';
 
 export function LangSwitcher({
@@ -73,7 +73,7 @@ export function LangSwitcher({
         document.cookie = `${ADMIN_LOCALE_COOKIE}=${encodeURIComponent(code)}; path=/; max-age=31536000; SameSite=Lax`;
         startTransition(() => {
           // On a list that filters by language, show the new language's items.
-          if (LANGUAGE_FILTERED_ROUTES.has(pathname)) {
+          if (isLanguageFilteredRoute(pathname)) {
             const params = new URLSearchParams(searchParams.toString());
             params.set('language', code);
             params.delete('page');

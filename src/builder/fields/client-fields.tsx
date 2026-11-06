@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { DayPicker } from 'react-day-picker';
 import { listGlobalBlockOptions } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
 import { listCollectionOptions } from '@/app/(admin)/dashboard/(shell)/collections/_modules/collections.actions';
+import { listCollectionBlockOptionsAction } from '@/app/(admin)/dashboard/(shell)/collections/_modules/collection-blocks.actions';
 import { useEntry } from '@/components/analytics/entry-context';
 import { TextEditor } from '@/components/atoms/text-editor';
 import { MediaField } from '@/components/media/media-picker';
@@ -597,6 +598,61 @@ export function CollectionItemFieldSelect({
 }: CustomFieldProps<string | undefined>) {
   const { entry } = useEntry();
   const fields = entry?.collection?.fields ?? [];
+  // Inside a "Fields to display" row: one field, no "all fields" option.
+  const single = Boolean((field as { single?: boolean }).single);
+
+  return (
+    <div>
+      {/* In a list row the row already labels the control. */}
+      {!single && <FieldLabel label={field.label} />}
+      <select
+        value={value ?? ''}
+        onChange={e => onChange(e.target.value || undefined)}
+        className="h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm text-foreground"
+        aria-label={field.label}
+      >
+        <option value="">
+          {single ? 'Choose a field…' : 'All fields (full entry preview)'}
+        </option>
+        {fields.map(f => (
+          <option key={f.key} value={f.key}>
+            {f.label} ({f.key})
+          </option>
+        ))}
+      </select>
+      {!single && (
+        <p className="mt-1 text-xs text-steel-500">
+          Choose a specific field to render, or leave on &ldquo;All fields&rdquo; to show the full entry.
+        </p>
+      )}
+    </div>
+  );
+}
+
+export function CollectionBlockSelectField({
+  value,
+  onChange,
+  field,
+}: CustomFieldProps<string | undefined>) {
+  const { entry } = useEntry();
+  const collectionId = (entry?.collection as { id?: string } | undefined)?.id;
+  const [options, setOptions] = useState<
+    { id: string; name: string }[] | null
+  >(null);
+
+  useEffect(() => {
+    if (!collectionId) {
+      setOptions([]);
+      return;
+    }
+    let active = true;
+    listCollectionBlockOptionsAction(collectionId).then(rows => {
+      if (active) setOptions(Array.isArray(rows) ? rows : []);
+    });
+    return () => {
+      active = false;
+    };
+  }, [collectionId]);
 
   return (
     <div>
@@ -607,15 +663,24 @@ export function CollectionItemFieldSelect({
         className="h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm text-foreground"
         aria-label={field.label}
       >
-        <option value="">All fields (full entry preview)</option>
-        {fields.map(f => (
-          <option key={f.key} value={f.key}>
-            {f.label} ({f.key})
+        <option value="">
+          {!collectionId
+            ? 'Open in an entry builder to pick a block'
+            : options === null
+              ? 'Loading…'
+              : options.length
+                ? 'Choose a block'
+                : 'No blocks for this post type yet'}
+        </option>
+        {options?.map(o => (
+          <option key={o.id} value={o.id}>
+            {o.name}
           </option>
         ))}
       </select>
-      <p className="mt-1 text-xs text-steel-500">
-        Choose a specific field to render, or leave on &ldquo;All fields&rdquo; to show the full entry.
+      <p className="mt-2 text-xs text-steel-500">
+        Renders this block with the current entry&apos;s data wherever it is
+        used.
       </p>
     </div>
   );

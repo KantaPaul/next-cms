@@ -25,6 +25,8 @@ import type { EditorStore } from './store';
 export interface BlockCategory {
   title: string;
   types: string[];
+  /** List each preset of these blocks as its own card in the Blocks tab. */
+  listPresets?: boolean;
 }
 
 export interface ElementsViewProps {
@@ -67,6 +69,15 @@ const DEFAULT_CATEGORIES: BlockCategory[] = [
 const GLOBAL_REF = 'GlobalRef';
 const TEMPLATE = 'template:';
 const PRESET = 'preset:';
+/** Library id of a preset listed as its own card: `<type>::<preset name>`. */
+const PRESET_CARD = '::';
+
+function splitPresetCard(id: string): { type: string; preset?: string } {
+  const at = id.indexOf(PRESET_CARD);
+  return at === -1
+    ? { type: id }
+    : { type: id.slice(0, at), preset: id.slice(at + PRESET_CARD.length) };
+}
 
 function libraryBlock(
   schemas: BlockSchemas,
@@ -138,6 +149,16 @@ export function ElementsView({
       for (const type of cat.types) {
         if (seen.has(type) || !schemas[type]) continue;
         seen.add(type);
+        if (cat.listPresets) {
+          for (const name of Object.keys(schemas[type].presets ?? {})) {
+            list.push({
+              ...libraryBlock(schemas, type, cat.title),
+              type: `${type}${PRESET_CARD}${name}`,
+              label: name,
+            });
+          }
+          continue;
+        }
         list.push(libraryBlock(schemas, type, cat.title));
       }
     }
@@ -166,6 +187,7 @@ export function ElementsView({
       category: template.category === 'Custom' ? 'Saved' : 'Templates',
     }));
     for (const block of blocks) {
+      if (!schemas[block.type]) continue; // a preset card, listed in Blocks
       for (const name of Object.keys(schemas[block.type].presets ?? {})) {
         list.push({
           id: `${PRESET}${block.type}:${name}`,
@@ -190,9 +212,14 @@ export function ElementsView({
     ];
   }, [globals, schemas]);
 
-  const handleInsert = (type: string, props?: Record<string, unknown>) => {
-    store.insertBlock(type, undefined, props);
-    addRecent(type);
+  const handleInsert = (id: string, props?: Record<string, unknown>) => {
+    const { type, preset } = splitPresetCard(id);
+    store.insertBlock(
+      type,
+      undefined,
+      props ?? (preset ? schemas[type]?.presets?.[preset] : undefined)
+    );
+    addRecent(id);
     onSelectBlock?.(type);
   };
 
@@ -223,8 +250,13 @@ export function ElementsView({
       onAddBlock={type => handleInsert(type)}
       onBlockPointerDown={
         drag
-          ? (type, event) =>
-              drag.start({ kind: 'new', type }, event, () => handleInsert(type))
+          ? (id, event) => {
+              const { type, preset } = splitPresetCard(id);
+              const props = preset ? schemas[type]?.presets?.[preset] : undefined;
+              drag.start({ kind: 'new', type, props }, event, () =>
+                handleInsert(id)
+              );
+            }
           : undefined
       }
       onApplyPattern={applyPattern}

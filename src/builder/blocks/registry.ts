@@ -15,6 +15,7 @@ import {
   RichText,
   Video,
 } from './content';
+import { CollectionBlockRef } from './collection-block';
 import { Container } from './container';
 import { ImageMorph } from './image-morph';
 import { Accordion, Slider, Tabs } from './interactive';
@@ -71,6 +72,7 @@ const builtInComponents = {
   Image: ImageBlock,
   Gallery,
   CollectionItem,
+  CollectionBlock: CollectionBlockRef,
   PostTypeEntries,
   ContactForm,
   GlobalRef,

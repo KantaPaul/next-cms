@@ -201,6 +201,31 @@ export const collectionTemplates = pgTable(
   ]
 );
 
+/** Reusable, collection-scoped builder blocks designed in the admin UI. */
+export const collectionBlocks = pgTable(
+  'collection_blocks',
+  {
+    id,
+    siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
+    collectionId: text('collection_id')
+      .references(() => collections.id, { onDelete: 'cascade' })
+      .notNull(),
+    name: varchar('name', { length: 150 }).notNull(),
+    description: text('description'),
+    content: jsonb('content'),
+    draftContent: jsonb('draft_content'),
+    publishedAt: timestamp('published_at', { withTimezone: true }),
+    createdBy: text('created_by').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    ...timestampColumns,
+  },
+  t => [
+    index('collection_blocks_collection_id_index').on(t.collectionId),
+    index('collection_blocks_site_id_index').on(t.siteId),
+  ]
+);
+
 /** One JSON entry per row, scoped to a site and collection. */
 export const collectionEntries = pgTable(
   'collection_entries',
@@ -231,12 +256,20 @@ export const collectionEntries = pgTable(
     draftCanvas: jsonb('draft_canvas'),
     seo: jsonb('seo').$type<SeoInput>(),
     publishedAt: timestamp('published_at', { withTimezone: true }),
+    /** Locale code of this entry; one row per language, like pages and posts. */
+    language: text('language').default('en').notNull(),
+    /** Rows that are translations of each other share this id. */
+    translationGroupId: text('translation_group_id'),
     ...timestampColumns,
   },
   t => [
-    uniqueIndex('collection_entries_collection_slug_unique')
-      .on(t.collectionId, t.slug)
+    uniqueIndex('collection_entries_collection_slug_language_unique')
+      .on(t.collectionId, t.slug, t.language)
       .where(sql`${t.deletedAt} is null`),
+    index('collection_entries_translation_group_index').on(
+      t.translationGroupId
+    ),
+    index('collection_entries_language_index').on(t.language),
     index('collection_entries_site_id_index').on(t.siteId),
     index('collection_entries_collection_id_index').on(t.collectionId),
     index('collection_entries_status_index').on(t.status),
@@ -273,6 +306,7 @@ export const collectionsRelations = relations(collections, ({ many }) => ({
   entries: many(collectionEntries),
   taxonomies: many(collectionTaxonomies),
   templates: many(collectionTemplates),
+  blocks: many(collectionBlocks),
 }));
 
 export const collectionFieldsRelations = relations(
@@ -336,6 +370,20 @@ export const collectionTemplatesRelations = relations(
     }),
     creator: one(users, {
       fields: [collectionTemplates.createdBy],
+      references: [users.id],
+    }),
+  })
+);
+
+export const collectionBlocksRelations = relations(
+  collectionBlocks,
+  ({ one }) => ({
+    collection: one(collections, {
+      fields: [collectionBlocks.collectionId],
+      references: [collections.id],
+    }),
+    creator: one(users, {
+      fields: [collectionBlocks.createdBy],
       references: [users.id],
     }),
   })

@@ -32,6 +32,10 @@ import {
   publishCollectionTemplateAction,
 } from '@/app/(admin)/dashboard/(shell)/collections/_modules/collection-templates.actions';
 import {
+  saveCollectionBlockDraftAction,
+  publishCollectionBlockAction,
+} from '@/app/(admin)/dashboard/(shell)/collections/_modules/collection-blocks.actions';
+import {
   saveEntryDraftAction,
   publishEntryAction,
   saveEntryAction,
@@ -235,8 +239,8 @@ export function adapterFor(
       label: `Entry layout: ${page.title}`,
       backHref: PAGES.DASHBOARD.COLLECTION_ENTRY_EDIT(slug, page.id),
       backLabel: 'Entry settings',
-      headerPath: `/${slug}/${page.slug}`,
-      previewHref: `/${slug}/${page.slug}`,
+      headerPath: `/collections/${slug}/${page.slug}`,
+      previewHref: `/collections/${slug}/${page.slug}`,
       liveLabel: 'Update live entry',
       saveDraft: (content, autosave) =>
         saveEntryDraftAction({ id: page.id, canvas: content, autosave }),
@@ -262,6 +266,22 @@ export function adapterFor(
       saveDraft: content =>
         saveCollectionTemplateDraftAction({ id: page.id, content }),
       publish: () => publishCollectionTemplateAction({ id: page.id }),
+      submitForReview: null,
+    };
+  }
+
+  if (kind === 'collection-block') {
+    const slug = page.collectionSlug ?? '';
+    return {
+      label: `Block: ${page.title}`,
+      backHref: PAGES.DASHBOARD.COLLECTION_BLOCKS(slug),
+      backLabel: 'Blocks',
+      headerPath: `/${slug}/…`,
+      previewHref: null,
+      liveLabel: 'Update live block',
+      saveDraft: content =>
+        saveCollectionBlockDraftAction({ id: page.id, content }),
+      publish: () => publishCollectionBlockAction({ id: page.id }),
       submitForReview: null,
     };
   }

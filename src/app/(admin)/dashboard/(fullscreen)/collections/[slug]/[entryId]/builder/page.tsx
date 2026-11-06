@@ -41,6 +41,7 @@ export default async function CollectionEntryBuilderPage({
 
   const fields = await collectionsService.getFields(collection.id);
   const collectionInfo = {
+    id: collection.id,
     name: collection.name,
     slug: collection.slug,
     fields,
@@ -62,7 +63,7 @@ export default async function CollectionEntryBuilderPage({
         id: entry.id,
         title: entry.slug,
         slug: entry.slug,
-        language: 'en',
+        language: entry.language || 'en',
         isHome: false,
         status: entry.status,
         hasUnpublishedChanges: false,

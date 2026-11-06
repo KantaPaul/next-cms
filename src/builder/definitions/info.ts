@@ -190,6 +190,17 @@ export const BLOCK_INFO: Record<string, BlockInfo> = {
     nesting: 'leaf',
     defaultSize: FULL,
   },
+  CollectionBlock: {
+    description: 'Reusable block for this post type',
+    capabilities: [
+      'Designed in the post type block builder',
+      'Shows the current entry’s fields when inserted',
+      'Updates wherever the block is used',
+    ],
+    semanticTag: 'div',
+    nesting: 'leaf',
+    defaultSize: FULL,
+  },
   LoopGrid: {
     description: 'Repeat a saved Loop Item template over posts or a post type',
     capabilities: [

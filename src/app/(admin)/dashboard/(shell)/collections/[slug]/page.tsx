@@ -1,23 +1,24 @@
-import Link from 'next/link';
 import { LayoutTemplate, Settings } from 'lucide-react';
+import Link from 'next/link';
+import CreateButton from '@/components/atoms/buttons/create-button';
 import { AccessDenied } from '@/components/organisms/access-denied';
 import { PageHeader } from '@/components/organisms/page-header';
-import CreateButton from '@/components/atoms/buttons/create-button';
 import { Button } from '@/components/ui/button';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
-import { collectionsService } from '@/server/services/collections.service';
-import { collectionTaxonomiesService } from '@/server/services/collection-taxonomies.service';
-import { collectionTemplatesService } from '@/server/services/collection-templates.service';
-import { requirePermission } from '@/server/services/require-permission';
+import { normalizePostTypeSupports } from '@/config/post-types';
 import {
   parseSearchParams,
   type SearchParams,
 } from '@/db/helpers/parse-search-params';
+import { collectionTaxonomiesService } from '@/server/services/collection-taxonomies.service';
+import { collectionTemplatesService } from '@/server/services/collection-templates.service';
+import { collectionsService } from '@/server/services/collections.service';
+import { requirePermission } from '@/server/services/require-permission';
+import { siteContext, siteSlugPrefix } from '@/server/services/site-context';
 import { loadPostTypeRoute } from '../_modules/post-type-route';
 import { EntriesTable } from '../components/entries-table';
 import { PostTypeTabs } from '../components/post-type-tabs';
-import { normalizePostTypeSupports } from '@/config/post-types';
 
 /** One post type's entries: `/dashboard/collections/{slug}` (mirroring `/dashboard/posts`). */
 export default async function CollectionEntriesPage({
@@ -49,10 +50,10 @@ export default async function CollectionEntriesPage({
     );
   }
 
-  const [rawSearchParams, fields, taxonomies, templates] = await Promise.all([
+  const [rawSearchParams, fields, templates] = await Promise.all([
     searchParams,
     collectionsService.getFields(collection.id),
-    collectionTaxonomiesService.listTaxonomies(collection.id),
+    // collectionTaxonomiesService.listTaxonomies(collection.id),
     collectionTemplatesService.options(collection.id),
   ]);
 
@@ -62,19 +63,27 @@ export default async function CollectionEntriesPage({
       collectionId: collection.id,
       params: parsedParams,
     }),
-    collectionsService.getStatusCounts(collection.id),
+    collectionsService.getStatusCounts(
+      collection.id,
+      typeof parsedParams.language === 'string' && parsedParams.language
+        ? parsedParams.language
+        : undefined
+    ),
   ]);
 
   const supports = normalizePostTypeSupports(collection.supports);
   const singular = collection.singularName || 'Entry';
+  const siteSlug = siteSlugPrefix(await siteContext.publicSite());
 
   return (
     <>
       <PageHeader title={collection.name} breadcrumbs={breadcrumbs}>
-        {/* <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
           {supports.template && (
             <Button variant="outline" asChild>
-              <Link href={PAGES.DASHBOARD.COLLECTION_TEMPLATES(collection.slug)}>
+              <Link
+                href={PAGES.DASHBOARD.COLLECTION_TEMPLATES(collection.slug)}
+              >
                 <LayoutTemplate className="size-4" /> Templates
               </Link>
             </Button>
@@ -88,7 +97,7 @@ export default async function CollectionEntriesPage({
             href={PAGES.DASHBOARD.COLLECTION_CREATE(collection.slug)}
             text={`New ${singular.toLowerCase()}`}
           />
-        </div> */}
+        </div>
       </PageHeader>
 
       {/* <PostTypeTabs
@@ -136,6 +145,7 @@ export default async function CollectionEntriesPage({
         collectionSlug={collection.slug}
         templates={templates}
         fields={fields}
+        siteSlug={siteSlug as string}
       />
     </>
   );

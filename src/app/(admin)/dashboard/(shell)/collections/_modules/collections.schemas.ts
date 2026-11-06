@@ -153,6 +153,12 @@ export const entryEditorSchema = z.object({
   featuredImage: z.string().nullish().optional(),
   layout: z.enum(['template', 'custom']).optional(),
   templateId: z.string().nullish().optional(),
+  /** Language of a new entry; fixed once created (translations are separate rows). */
+  language: z
+    .string()
+    .regex(/^[a-z]{2,12}$/)
+    .nullish()
+    .optional(),
   data: z.record(z.string(), z.unknown()).default({}),
   terms: z.record(z.string(), z.array(z.string())).default({}),
   seo: z

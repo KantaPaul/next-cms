@@ -155,6 +155,27 @@
       "when": 1793937117440,
       "tag": "20261106035157_exotic_slipstream",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1793947683629,
+      "tag": "20261106064803_collection_blocks",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793949542551,
+      "tag": "20261106071902_backfill_entry_authors",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793949775563,
+      "tag": "20261106072255_entry_languages",
+      "breakpoints": true
     }
   ]
 }

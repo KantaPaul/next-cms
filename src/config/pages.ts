@@ -58,6 +58,10 @@ export const PAGES = {
       `/dashboard/collections/${slug}/templates`,
     COLLECTION_TEMPLATE_BUILDER: (slug: string, id: string) =>
       `/dashboard/collections/${slug}/templates/${id}/builder`,
+    COLLECTION_BLOCKS: (slug: string) =>
+      `/dashboard/collections/${slug}/blocks`,
+    COLLECTION_BLOCK_BUILDER: (slug: string, id: string) =>
+      `/dashboard/collections/${slug}/blocks/${id}/builder`,
     /** The post type's fields and settings. */
     COLLECTION_SETTINGS: (slug: string) =>
       `/dashboard/collections/${slug}/settings`,
@@ -96,6 +100,61 @@ export const PAGES = {
     ) => {
       const langPrefix = language === defaultLocale ? '' : `/${language}`;
       const base = `${langPrefix}/blog/${slug}`;
+      return siteSlug ? `/${siteSlug}${base}` : base;
+    },
+    /** A collection entry: `/{lang?}/collections/{type}/{entry}`. */
+    entry: (
+      collectionSlug: string,
+      entrySlug: string,
+      language = 'en',
+      defaultLocale = 'en',
+      siteSlug?: string
+    ) => {
+      const langPrefix = language === defaultLocale ? '' : `/${language}`;
+      const base = `${langPrefix}/collections/${collectionSlug}/${entrySlug}`;
+      return siteSlug ? `/${siteSlug}${base}` : base;
+    },
+    /** Collection archive/index URLs. */
+    collectionArchive: (
+      collectionSlug: string,
+      language = 'en',
+      defaultLocale = 'en',
+      siteSlug?: string
+    ) => {
+      const langPrefix = language === defaultLocale ? '' : `/${language}`;
+      const base = `${langPrefix}/collections/${collectionSlug}`;
+      return siteSlug ? `/${siteSlug}${base}` : base;
+    },
+    collectionsIndex: (
+      language = 'en',
+      defaultLocale = 'en',
+      siteSlug?: string
+    ) => {
+      const langPrefix = language === defaultLocale ? '' : `/${language}`;
+      const base = `${langPrefix}/collections`;
+      return siteSlug ? `/${siteSlug}${base}` : base;
+    },
+    collectionAuthor: (
+      collectionSlug: string,
+      authorId: string,
+      language = 'en',
+      defaultLocale = 'en',
+      siteSlug?: string
+    ) => {
+      const langPrefix = language === defaultLocale ? '' : `/${language}`;
+      const base = `${langPrefix}/collections/${collectionSlug}/author/${authorId}`;
+      return siteSlug ? `/${siteSlug}${base}` : base;
+    },
+    collectionTerm: (
+      collectionSlug: string,
+      taxonomyKey: string,
+      termSlug: string,
+      language = 'en',
+      defaultLocale = 'en',
+      siteSlug?: string
+    ) => {
+      const langPrefix = language === defaultLocale ? '' : `/${language}`;
+      const base = `${langPrefix}/collections/${collectionSlug}/${taxonomyKey}/${termSlug}`;
       return siteSlug ? `/${siteSlug}${base}` : base;
     },
     PREVIEW: (pageId: string) =>

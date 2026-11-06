@@ -29,7 +29,7 @@ import {
 } from '@/db/schema';
 import { accessService } from '@/server/services/access.service';
 import { searchIndex } from '@/server/services/search.service';
-import { adminSiteId } from '@/server/services/site-context';
+import { adminSiteId, siteContext } from '@/server/services/site-context';
 import { auditService } from './audit.service';
 import { collectionTaxonomiesService } from './collection-taxonomies.service';
 import { PERMISSIONS } from '@/config/permissions';
@@ -200,21 +200,48 @@ export function renderFieldValue(
   return String(value);
 }
 
+/** A site's default language and enabled codes. */
+async function siteLocales(siteId: string) {
+  const site = await siteContext.getById(siteId).catch(() => null);
+  const defaultLocale = site?.defaultLocale || 'en';
+  const codes = site?.locales?.map(locale => locale.code) ?? [defaultLocale];
+  return { defaultLocale, codes };
+}
+
+/** Picks a valid language for a new entry, or throws when it isn't enabled. */
+async function resolveEntryLanguage(siteId: string, language?: string | null) {
+  const { defaultLocale, codes } = await siteLocales(siteId);
+  if (!language) return defaultLocale;
+  if (!codes.includes(language)) {
+    throw new ApplicationException(
+      'That language is not enabled for this site.'
+    );
+  }
+  return language;
+}
+
 export const collectionsService = {
   /** List active collections for the current site. */
-  async list() {
-    const siteId = await adminSiteId();
+  async list(siteIdOverride?: string) {
+    let siteId = siteIdOverride;
+    if (!siteId) {
+      try {
+        siteId = await adminSiteId();
+      } catch {
+        siteId = 'default';
+      }
+    }
     return db
       .select()
       .from(collections)
       .where(
         and(
           eq(collections.siteId, siteId),
-          isNull(collections.deletedAt),
-          eq(collections.status, 'active')
+          eq(collections.status, 'active'),
+          isNull(collections.deletedAt)
         )
       )
-      .orderBy(collections.name);
+      .orderBy(asc(collections.name));
   },
 
   /** Get one collection by id. */
@@ -231,30 +258,51 @@ export const collectionsService = {
     return row;
   },
 
-  /** Get one collection by slug. */
+  /** Get one collection by slug. Tries admin site, then falls back across sites. */
   async getBySlug(slug: string, siteIdOverride?: string) {
-    let siteId = siteIdOverride;
-    if (!siteId) {
-      try {
-        siteId = await adminSiteId();
-      } catch {
-        siteId = 'default';
-      }
+    if (siteIdOverride) {
+      const [row] = await db
+        .select()
+        .from(collections)
+        .where(
+          and(
+            eq(collections.slug, slug),
+            eq(collections.siteId, siteIdOverride),
+            isNull(collections.deletedAt)
+          )
+        )
+        .limit(1);
+      if (!row) throw new NotFoundException('Collection not found');
+      return row;
     }
-    const [row] = await db
+
+    let siteId: string | null = null;
+    try {
+      siteId = await adminSiteId();
+    } catch {
+      siteId = null;
+    }
+    if (siteId) {
+      const [row] = await db
+        .select()
+        .from(collections)
+        .where(
+          and(
+            eq(collections.slug, slug),
+            eq(collections.siteId, siteId),
+            isNull(collections.deletedAt)
+          )
+        )
+        .limit(1);
+      if (row) return row;
+    }
+    const [any] = await db
       .select()
       .from(collections)
-      .where(
-        and(
-          eq(collections.slug, slug),
-          eq(collections.siteId, siteId),
-          isNull(collections.deletedAt),
-          eq(collections.status, 'active')
-        )
-      )
+      .where(and(eq(collections.slug, slug), isNull(collections.deletedAt)))
       .limit(1);
-    if (!row) throw new NotFoundException('Collection not found');
-    return row;
+    if (!any) throw new NotFoundException('Collection not found');
+    return any;
   },
 
   /** Find active collection by slug without throwing. */
@@ -285,21 +333,48 @@ export const collectionsService = {
   /**
    * A post type for the dashboard by its slug, or by its id for old links.
    * Archived types are included so they can still be managed.
+   * Tries the current admin site first, then falls back across sites so links
+   * still resolve when the site cookie/membership context is stale.
    */
   async findForAdmin(slugOrId: string) {
     if (!slugOrId) return null;
-    const siteId = await adminSiteId();
-    const base = and(eq(collections.siteId, siteId), isNull(collections.deletedAt));
+    let siteId: string | null = null;
+    try {
+      siteId = await adminSiteId();
+    } catch {
+      siteId = null;
+    }
+
+    if (siteId) {
+      const base = and(
+        eq(collections.siteId, siteId),
+        isNull(collections.deletedAt)
+      );
+      const [bySlug] = await db
+        .select()
+        .from(collections)
+        .where(and(base, eq(collections.slug, slugOrId)))
+        .limit(1);
+      if (bySlug) return { collection: bySlug, matchedBy: 'slug' as const };
+      const [byId] = await db
+        .select()
+        .from(collections)
+        .where(and(base, eq(collections.id, slugOrId)))
+        .limit(1);
+      if (byId) return { collection: byId, matchedBy: 'id' as const };
+    }
+
+    const anyBase = isNull(collections.deletedAt);
     const [bySlug] = await db
       .select()
       .from(collections)
-      .where(and(base, eq(collections.slug, slugOrId)))
+      .where(and(anyBase, eq(collections.slug, slugOrId)))
       .limit(1);
     if (bySlug) return { collection: bySlug, matchedBy: 'slug' as const };
     const [byId] = await db
       .select()
       .from(collections)
-      .where(and(base, eq(collections.id, slugOrId)))
+      .where(and(anyBase, eq(collections.id, slugOrId)))
       .limit(1);
     return byId ? { collection: byId, matchedBy: 'id' as const } : null;
   },
@@ -323,7 +398,11 @@ export const collectionsService = {
   },
 
   /** Get the latest published entry for a collection. */
-  async getLatestPublishedEntry(collectionId: string, siteIdOverride?: string) {
+  async getLatestPublishedEntry(
+    collectionId: string,
+    siteIdOverride?: string,
+    language?: string
+  ) {
     const siteId = siteIdOverride ?? (await adminSiteId());
     const [entry] = await db
       .select()
@@ -333,6 +412,7 @@ export const collectionsService = {
           eq(collectionEntries.collectionId, collectionId),
           eq(collectionEntries.siteId, siteId),
           eq(collectionEntries.status, 'published'),
+          language ? eq(collectionEntries.language, language) : undefined,
           isNull(collectionEntries.deletedAt)
         )
       )
@@ -711,7 +791,7 @@ export const collectionsService = {
   },
 
   /** Status counts for a collection's entries. */
-  async getStatusCounts(collectionId: string) {
+  async getStatusCounts(collectionId: string, language?: string) {
     const siteId = await adminSiteId();
     const rows = await db
       .select({ status: collectionEntries.status, total: count() })
@@ -720,6 +800,7 @@ export const collectionsService = {
         and(
           eq(collectionEntries.siteId, siteId),
           eq(collectionEntries.collectionId, collectionId),
+          language ? eq(collectionEntries.language, language) : undefined,
           isNull(collectionEntries.deletedAt)
         )
       )
@@ -746,7 +827,8 @@ export const collectionsService = {
     params: SearchParams;
   }) {
     const siteId = await adminSiteId();
-    const { page, size, sort, order, search, status, layout } = params;
+    const { page, size, sort, order, search, status, layout, language } =
+      params;
     const { offset, limit } = paginate({
       page: page as string,
       size: size as string,
@@ -762,6 +844,10 @@ export const collectionsService = {
       conditions.push(
         eq(collectionEntries.status, status as CollectionEntryStatus)
       );
+    }
+
+    if (typeof language === 'string' && language) {
+      conditions.push(eq(collectionEntries.language, language));
     }
 
     if (layout === 'custom') {
@@ -821,6 +907,8 @@ export const collectionsService = {
           updatedAt: collectionEntries.updatedAt,
           authorId: collectionEntries.authorId,
           authorName: users.name,
+          language: collectionEntries.language,
+          translationGroupId: collectionEntries.translationGroupId,
           data: collectionEntries.data,
           excerpt: collectionEntries.excerpt,
           featuredImage: collectionEntries.featuredImage,
@@ -864,6 +952,7 @@ export const collectionsService = {
             eq(collectionEntries.siteId, siteId),
             eq(collectionEntries.collectionId, source.collectionId),
             eq(collectionEntries.slug, slug),
+            eq(collectionEntries.language, source.language),
             isNull(collectionEntries.deletedAt)
           )
         )
@@ -878,6 +967,7 @@ export const collectionsService = {
         siteId,
         collectionId: source.collectionId,
         slug,
+        language: source.language,
         status: 'draft',
         visibility: source.visibility,
         layout: source.layout,
@@ -913,6 +1003,156 @@ export const collectionsService = {
     return duplicated;
   },
 
+  /**
+   * Copies an entry into another language as a draft, linked by
+   * `translationGroupId` (the same model pages use). The slug is kept, since
+   * slugs are unique per language.
+   */
+  async createEntryTranslation(
+    { id, language }: { id: string; language: string },
+    actorId: string
+  ) {
+    const access = await accessService.getUserAccess(actorId);
+    if (!accessService.can(access, PERMISSIONS.PAGES_CREATE)) {
+      throw new ApplicationException(
+        'You do not have permission to create entries.'
+      );
+    }
+    const source = await this.getEntryWithDetails(id);
+    if (!source) throw new NotFoundException('Entry not found');
+    await resolveEntryLanguage(source.siteId, language);
+    if (source.language === language) {
+      throw new ApplicationException(
+        'Pick a different language for the translation.'
+      );
+    }
+
+    const groupId = source.translationGroupId ?? source.id;
+    const [existing] = await db
+      .select({ id: collectionEntries.id })
+      .from(collectionEntries)
+      .where(
+        and(
+          eq(collectionEntries.translationGroupId, groupId),
+          eq(collectionEntries.language, language),
+          isNull(collectionEntries.deletedAt)
+        )
+      )
+      .limit(1);
+    if (existing) {
+      throw new ApplicationException(
+        `A ${language} translation already exists.`
+      );
+    }
+
+    const [slugTaken] = await db
+      .select({ id: collectionEntries.id })
+      .from(collectionEntries)
+      .where(
+        and(
+          eq(collectionEntries.collectionId, source.collectionId),
+          eq(collectionEntries.slug, source.slug),
+          eq(collectionEntries.language, language),
+          isNull(collectionEntries.deletedAt)
+        )
+      )
+      .limit(1);
+    const slug = slugTaken ? `${source.slug}-${language}` : source.slug;
+
+    const created = await db.transaction(async tx => {
+      if (!source.translationGroupId) {
+        await tx
+          .update(collectionEntries)
+          .set({ translationGroupId: groupId })
+          .where(eq(collectionEntries.id, source.id));
+      }
+      const [row] = await tx
+        .insert(collectionEntries)
+        .values({
+          siteId: source.siteId,
+          collectionId: source.collectionId,
+          slug,
+          language,
+          translationGroupId: groupId,
+          status: 'draft',
+          visibility: source.visibility,
+          layout: source.layout,
+          templateId: source.templateId,
+          authorId: actorId,
+          data: source.data,
+          excerpt: source.excerpt,
+          featuredImage: source.featuredImage,
+          canvas: source.draftCanvas ?? source.canvas,
+          draftCanvas: source.draftCanvas ?? source.canvas,
+          seo: source.seo,
+        })
+        .returning();
+      return row;
+    });
+
+    if (source.terms?.length) {
+      const termsByTax: Record<string, string[]> = {};
+      for (const t of source.terms) {
+        (termsByTax[t.taxonomyId] ??= []).push(t.termId);
+      }
+      await collectionTaxonomiesService.syncEntryTerms(created.id, termsByTax);
+    }
+
+    await auditService.log({
+      actorId,
+      action: 'create',
+      targetType: 'collection_entry',
+      targetId: created.id,
+      targetName: created.slug,
+      details: `Translation (${language}) of ${source.id}`,
+    });
+    return created;
+  },
+
+  /** The other language versions of an entry, for the editor's Translations panel. */
+  async getEntryTranslations(groupId: string | null, entryId: string) {
+    if (!groupId) return [];
+    return db
+      .select({
+        id: collectionEntries.id,
+        language: collectionEntries.language,
+        slug: collectionEntries.slug,
+        status: collectionEntries.status,
+        data: collectionEntries.data,
+      })
+      .from(collectionEntries)
+      .where(
+        and(
+          eq(collectionEntries.translationGroupId, groupId),
+          ne(collectionEntries.id, entryId),
+          isNull(collectionEntries.deletedAt)
+        )
+      )
+      .orderBy(asc(collectionEntries.language));
+  },
+
+  /** Published language versions of an entry (itself included), for hreflang and switchers. */
+  async getPublishedEntryAlternates(
+    groupId: string | null,
+    siteId: string
+  ): Promise<{ language: string; slug: string }[]> {
+    if (!groupId) return [];
+    return db
+      .select({
+        language: collectionEntries.language,
+        slug: collectionEntries.slug,
+      })
+      .from(collectionEntries)
+      .where(
+        and(
+          eq(collectionEntries.translationGroupId, groupId),
+          eq(collectionEntries.siteId, siteId),
+          eq(collectionEntries.status, 'published'),
+          isNull(collectionEntries.deletedAt)
+        )
+      );
+  },
+
   /** Get one entry by id. */
   async getEntry(id: string) {
     const siteId = await adminSiteId();
@@ -931,18 +1171,21 @@ export const collectionsService = {
   async getPublishedEntry(
     collectionSlug: string,
     entrySlug: string,
-    siteIdOverride?: string
+    siteIdOverride?: string,
+    language?: string
   ) {
     const siteId = siteIdOverride ?? (await adminSiteId());
     const [row] = await db
       .select()
       .from(collectionEntries)
       .innerJoin(collections, eq(collectionEntries.collectionId, collections.id))
+      .leftJoin(users, eq(users.id, collectionEntries.authorId))
       .where(
         and(
           eq(collections.slug, collectionSlug),
           eq(collectionEntries.slug, entrySlug),
           eq(collectionEntries.siteId, siteId),
+          language ? eq(collectionEntries.language, language) : undefined,
           eq(collectionEntries.status, 'published'),
           isNull(collectionEntries.deletedAt),
           isNull(collections.deletedAt),
@@ -954,6 +1197,8 @@ export const collectionsService = {
     const fields = await this.getFields(row.collections.id);
     return {
       ...row.collection_entries,
+      authorName: row.users?.name ?? null,
+      author: row.users?.id ? row.users : null,
       collection: { ...row.collections, fields },
     };
   },
@@ -964,13 +1209,19 @@ export const collectionsService = {
   async getPublishedEntryByAnySlug(
     collectionOrPageSlug: string,
     entrySlug: string,
-    siteIdOverride?: string
+    siteIdOverride?: string,
+    language?: string
   ) {
     const siteId = siteIdOverride ?? (await adminSiteId());
 
     // 1. First attempt: match by collection slug
     try {
-      return await this.getPublishedEntry(collectionOrPageSlug, entrySlug, siteId);
+      return await this.getPublishedEntry(
+        collectionOrPageSlug,
+        entrySlug,
+        siteId,
+        language
+      );
     } catch {
       // Continue to template page match
     }
@@ -1003,7 +1254,7 @@ export const collectionsService = {
         .limit(1);
 
       if (col) {
-        return this.getPublishedEntry(col.slug, entrySlug, siteId);
+        return this.getPublishedEntry(col.slug, entrySlug, siteId, language);
       }
     }
 
@@ -1027,6 +1278,7 @@ export const collectionsService = {
       draftCanvas?: unknown;
       seo?: SeoInput | null;
       terms?: Record<string, string[]>;
+      language?: string | null;
     },
     actorId: string
   ) {
@@ -1063,6 +1315,8 @@ export const collectionsService = {
         .replace(/^-+|-+$/g, '')
         .slice(0, 190) || 'entry';
 
+    const language = await resolveEntryLanguage(siteId, input.language);
+
     let suffix = 1;
     const baseSlug = targetSlug;
     while (true) {
@@ -1073,6 +1327,7 @@ export const collectionsService = {
           and(
             eq(collectionEntries.collectionId, collectionId),
             eq(collectionEntries.slug, targetSlug),
+            eq(collectionEntries.language, language),
             isNull(collectionEntries.deletedAt)
           )
         )
@@ -1107,11 +1362,13 @@ export const collectionsService = {
         siteId,
         collectionId,
         slug: targetSlug,
+        language,
         status,
         data,
         publishedAt,
         scheduledAt,
-        authorId: supports.author ? actorId : null,
+        // Always record who created it; `supports.author` only controls display.
+        authorId: actorId,
         excerpt: supports.excerpt ? (input.excerpt ?? null) : null,
         featuredImage: input.featuredImage ?? null,
         visibility:
@@ -1186,6 +1443,8 @@ export const collectionsService = {
     const fields = await this.getFields(entry.collectionId);
 
     const values: Record<string, unknown> = { updatedAt: new Date() };
+    // Entries created before authors were recorded get the first editor.
+    if (!entry.authorId) values.authorId = actorId;
 
     if (input.slug !== undefined) {
       const normalizedSlug = input.slug
@@ -1205,6 +1464,7 @@ export const collectionsService = {
           and(
             eq(collectionEntries.collectionId, entry.collectionId),
             eq(collectionEntries.slug, normalizedSlug),
+            eq(collectionEntries.language, entry.language),
             isNull(collectionEntries.deletedAt),
             ne(collectionEntries.id, id)
           )
@@ -1212,7 +1472,7 @@ export const collectionsService = {
         .limit(1);
       if (clash) {
         throw new ApplicationException(
-          `An entry with slug "${normalizedSlug}" already exists.`
+          `An ${entry.language} entry with slug "${normalizedSlug}" already exists.`
         );
       }
       values.slug = normalizedSlug;

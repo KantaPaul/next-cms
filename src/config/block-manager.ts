@@ -11,6 +11,8 @@ export const BLOCK_EDITOR_TYPES = [
   { kind: 'post-template', label: 'Post templates' },
   { kind: 'page-template', label: 'Page templates' },
   { kind: 'loop-item', label: 'Loop items' },
+  { kind: 'entry', label: 'Post type entries' },
+  { kind: 'entry-template', label: 'Post type templates' },
   { kind: 'global', label: 'Global blocks' },
   { kind: 'contact-form', label: 'Contact forms' },
   { kind: 'header', label: 'Header' },

@@ -5,7 +5,13 @@ import { PERMISSIONS } from '@/config/permissions';
 import { permissionProcedure } from '@/server/procedures/permission.procedure';
 
 /** Blocks whose canvas data can be re-fetched while editing. */
-const RELOADABLE_BLOCKS = ['LoopGrid', 'QueryLoop', 'PostTypeEntries'] as const;
+const RELOADABLE_BLOCKS = [
+  'LoopGrid',
+  'QueryLoop',
+  'PostTypeEntries',
+  'CollectionBlock',
+  'QueryFilter',
+] as const;
 
 /**
  * Re-runs one block's server loader with its current (unsaved) props, so the
@@ -21,12 +27,17 @@ export const reloadNodeData = permissionProcedure(PERMISSIONS.PAGES_EDIT)
     })
   )
   .action(async ({ input }) => {
-    const { getBlockLoader } = await import('@/builder/loaders');
+    const { getBatchBlockLoader, getBlockLoader } = await import(
+      '@/builder/loaders'
+    );
+    const ctx = { editor: true, language: input.language };
+    const batch = getBatchBlockLoader(input.type);
+    if (batch) {
+      const patches = await batch([{ id: 'live', props: input.props }], ctx);
+      return { patch: (patches.live ?? {}) as Record<string, unknown> };
+    }
     const loader = getBlockLoader(input.type);
     if (!loader) return { patch: {} as Record<string, unknown> };
-    const patch = await loader(input.props, {
-      editor: true,
-      language: input.language,
-    });
+    const patch = await loader(input.props, ctx);
     return { patch };
   });

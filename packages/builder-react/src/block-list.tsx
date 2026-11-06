@@ -15,7 +15,12 @@ import { useMemo } from 'react';
 import { useEditorStore } from './context';
 import type { DragController } from './drag';
 
-export type BlockGroup = { title: string; types: string[] };
+export type BlockGroup = {
+  title: string;
+  types: string[];
+  /** List each preset of these blocks as its own library card (Elements view). */
+  listPresets?: boolean;
+};
 
 /** One library item per block type, in group order; a type listed twice keeps its first group. */
 export function libraryItems(

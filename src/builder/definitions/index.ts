@@ -21,6 +21,9 @@ import { withInfo } from './info';
 import { customBlockDefinitions } from '../custom';
 import { LoopPreviewItemField } from '../controls/loop-preview';
 
+/** Blocks offered only inside a collection's own entry/entry-template builders. */
+const COLLECTION_ONLY_BLOCKS: ReadonlySet<string> = new Set(['CollectionBlock']);
+
 export const pageDefinitions: Record<string, BlockDefinition> = Object.fromEntries(
   [...NATIVE_BLOCKS, ...customBlockDefinitions].map(block => [block.type, withInfo(block)])
 );
@@ -61,8 +64,11 @@ export const pageBlockGroups: BlockGroup[] = [
     .filter(([key]) => key !== 'post' && key !== 'header' && key !== 'footer')
     .map(([, category]: any) => ({
       title: category.title ?? '',
-      types: (category.components ?? []).map(String),
-    })),
+      types: (category.components ?? []).map(String).filter(
+        (type: string) => !COLLECTION_ONLY_BLOCKS.has(type)
+      ),
+    }))
+    .filter(group => group.types.length > 0),
   ...customGroups,
 ];
 
@@ -70,14 +76,27 @@ const postDefinitions: Record<string, BlockDefinition> = Object.fromEntries(
   NATIVE_BLOCKS.map(block => [block.type, withInfo(block)])
 );
 
-const groupsOf = (skip: string[] = ['header', 'footer']): BlockGroup[] => {
+const collectionDesignDefinitions: Record<string, BlockDefinition> =
+  Object.fromEntries(
+    NATIVE_BLOCKS.filter(
+      block => block.type !== 'GlobalRef' && block.type !== 'CollectionBlock'
+    ).map(block => [block.type, withInfo(block)])
+  );
+
+const groupsOf = (
+  skip: string[] = ['header', 'footer'],
+  omitTypes: ReadonlySet<string> = COLLECTION_ONLY_BLOCKS
+): BlockGroup[] => {
   const skipSet = new Set([...skip, 'header', 'footer']);
   return Object.entries(CATEGORIES)
     .filter(([key]) => !skipSet.has(key))
     .map(([, category]: any) => ({
       title: category.title ?? '',
-      types: (category.components ?? []).map(String),
-    }));
+      types: (category.components ?? [])
+        .map(String)
+        .filter((type: string) => !omitTypes.has(type)),
+    }))
+    .filter(group => group.types.length > 0);
 };
 
 const schemasOf = (definitions: Record<string, BlockDefinition>): BlockSchemas =>
@@ -119,6 +138,7 @@ const LOOP_ITEM_EXCLUDED = new Set([
   'BlogPosts',
   'PostTypeEntries',
   'GlobalRef',
+  'CollectionBlock',
 ]);
 
 /** Root settings for the Loop Item editor: which item to preview, and how wide. */
@@ -140,7 +160,27 @@ const LOOP_ITEM_ROOT_FIELDS: Record<string, FieldDef> = {
   } as FieldDef,
 };
 
+/**
+ * Editor setup per kind. Collection-only blocks (CollectionBlock) stay in
+ * `definitions` everywhere so stored content renders and validates, but only
+ * collection entry/template editors can insert or inspect them: the insert
+ * panel lists every schema it knows, so other editors drop their schemas.
+ */
 export function editorSetup(kind: string): EditorSetup {
+  const setup = baseEditorSetup(kind);
+  if (kind === 'entry' || kind === 'entry-template') return setup;
+  const strip = <T,>(record: Record<string, T>) =>
+    Object.fromEntries(
+      Object.entries(record).filter(([type]) => !COLLECTION_ONLY_BLOCKS.has(type))
+    ) as Record<string, T>;
+  return {
+    ...setup,
+    schemas: strip(setup.schemas) as BlockSchemas,
+    inspectorBlocks: strip(setup.inspectorBlocks),
+  };
+}
+
+function baseEditorSetup(kind: string): EditorSetup {
   if (kind === 'loop-item') {
     const definitions = Object.fromEntries(
       Object.entries(pageDefinitions).filter(
@@ -198,10 +238,26 @@ export function editorSetup(kind: string): EditorSetup {
     kind === 'entry' ||
     kind === 'entry-template'
   ) {
+    const isCollectionEntry = kind === 'entry' || kind === 'entry-template';
     return {
       definitions: postDefinitions,
       schemas: schemasOf(postDefinitions),
       inspectorBlocks: inspectorOf(postDefinitions),
+      rootFields: PAGE_ROOT_FIELDS as Record<string, FieldDef>,
+      groups: isCollectionEntry
+        ? [
+            { title: 'Collection blocks', types: ['CollectionBlock'] },
+            ...groupsOf([]),
+          ]
+        : groupsOf([]),
+      renderKind: 'post',
+    };
+  }
+  if (kind === 'collection-block') {
+    return {
+      definitions: collectionDesignDefinitions,
+      schemas: schemasOf(collectionDesignDefinitions),
+      inspectorBlocks: inspectorOf(collectionDesignDefinitions),
       rootFields: PAGE_ROOT_FIELDS as Record<string, FieldDef>,
       groups: groupsOf([]),
       renderKind: 'post',

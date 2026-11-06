@@ -32,6 +32,8 @@ import {
   RichText,
   Video,
 } from '../blocks/content';
+import { CollectionBlockRef } from '../blocks/collection-block';
+import { ResponsiveColumnsField } from '../fields/responsive-columns-field';
 import { ImageMorph } from '../blocks/image-morph';
 import { Accordion, Slider, Tabs } from '../blocks/interactive';
 import { Button, Spacer } from '../blocks/layout';
@@ -88,6 +90,7 @@ import { SectionField } from '../controls/section-inspector';
 import { Example } from '../custom/example';
 import {
   CategoryLockField,
+  CollectionBlockSelectField,
   CollectionItemFieldSelect,
   CollectionSelectField,
   GlobalBlockSelectField,
@@ -99,11 +102,13 @@ import {
   VideoSourcesField,
 } from '../fields/client-fields';
 import { ContactFormOptionsField } from '../fields/contact-form-options-field';
+import { type ElementPart, ElementStyleControl } from '../controls/element-style';
 import {
   CONTENT,
   iconField,
   mediaField,
   STYLE,
+  ALL_PARTS,
   BUTTON_PARTS,
   elementStyle,
   groupControl,
@@ -1506,6 +1511,24 @@ export const SpacerBlock = defineBlock({
   },
 });
 
+/** Label for a Collection item field row: its key, made readable. */
+const fieldRowLabel = (item: Record<string, unknown>, index: number) => {
+  const key = typeof item.field === 'string' ? item.field : '';
+  if (!key) return `Field ${index + 1}`;
+  return key
+    .replace(/[_-]+/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/^./, c => c.toUpperCase());
+};
+
+const styleControl = (parts: readonly ElementPart[]) =>
+  ((props: any) =>
+    ElementStyleControl({
+      parts,
+      value: props.value,
+      onChange: props.onChange,
+    })) as any;
+
 export const CollectionItemBlock = defineBlock({
   type: 'CollectionItem',
   label: 'Collection item',
@@ -1517,11 +1540,67 @@ export const CollectionItemBlock = defineBlock({
   }).passthrough(),
   render: CollectionItem as any,
   fields: {
-    field: {
-      label: 'Field to display',
+    items: {
+      label: 'Fields to display',
       group: CONTENT,
-      type: 'custom',
-      render: CollectionItemFieldSelect,
+      type: 'list',
+      itemLabel: fieldRowLabel,
+      item: {
+        field: {
+          label: 'Field',
+          group: CONTENT,
+          type: 'custom',
+          render: CollectionItemFieldSelect,
+          single: true,
+        },
+        textSize: {
+          label: 'Text size / Heading',
+          group: CONTENT,
+          type: 'select',
+          options: [
+            { label: 'Auto (Smart heading / text)', value: 'auto' },
+            { label: 'Heading 1 (Hero Title)', value: 'h1' },
+            { label: 'Heading 2 (Section Title)', value: 'h2' },
+            { label: 'Heading 3 (Card Title)', value: 'h3' },
+            { label: 'Lead (Large text)', value: 'lead' },
+            { label: 'Body (Regular text)', value: 'body' },
+            { label: 'Small', value: 'small' },
+          ],
+        },
+        showLabel: {
+          label: 'Show field label',
+          group: CONTENT,
+          type: 'toggle',
+        },
+        labelText: {
+          label: 'Custom label (optional)',
+          group: CONTENT,
+          type: 'text',
+          placeholder: 'Uses the field name',
+          when: (item: any) => item.showLabel !== false,
+        },
+        style: {
+          label: 'Value style',
+          group: CONTENT,
+          type: 'custom',
+          render: styleControl(ALL_PARTS),
+        },
+        labelStyle: {
+          label: 'Label style',
+          group: CONTENT,
+          type: 'custom',
+          render: styleControl(TEXT_PARTS),
+          when: (item: any) => item.showLabel !== false,
+        },
+      },
+      defaultItem: {
+        field: '',
+        textSize: 'auto',
+        showLabel: true,
+        labelText: '',
+        style: {},
+        labelStyle: {},
+      },
     },
     layout: {
       label: 'Container style',
@@ -1531,27 +1610,28 @@ export const CollectionItemBlock = defineBlock({
         { label: 'Card (Box with border & shadow)', value: 'card' },
         { label: 'Clean (Inline, no box)', value: 'clean' },
       ],
-      when: (props: any) => Boolean(props.field),
     },
-    showLabel: {
-      label: 'Show field label',
-      group: CONTENT,
-      type: 'toggle',
-      when: (props: any) => Boolean(props.field),
-    },
-    textSize: {
-      label: 'Text size / Heading',
+    direction: {
+      label: 'Arrange fields',
       group: CONTENT,
       type: 'select',
       options: [
-        { label: 'Auto (Smart heading / text)', value: 'auto' },
-        { label: 'Heading 1 (Hero Title)', value: 'h1' },
-        { label: 'Heading 2 (Section Title)', value: 'h2' },
-        { label: 'Heading 3 (Card Title)', value: 'h3' },
-        { label: 'Lead (Large text)', value: 'lead' },
-        { label: 'Body (Regular text)', value: 'body' },
+        { label: 'Stacked', value: 'stack' },
+        { label: 'In a row', value: 'row' },
+        { label: 'Two-column grid', value: 'grid' },
       ],
-      when: (props: any) => Boolean(props.field),
+      when: (props: any) => (props.items?.length ?? 0) > 1,
+    },
+    gap: {
+      label: 'Space between fields',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Small', value: 'sm' },
+        { label: 'Medium', value: 'md' },
+        { label: 'Large', value: 'lg' },
+      ],
+      when: (props: any) => (props.items?.length ?? 0) > 1,
     },
     align: {
       label: 'Alignment',
@@ -1562,16 +1642,16 @@ export const CollectionItemBlock = defineBlock({
         { label: 'Center', value: 'center' },
         { label: 'Right', value: 'right' },
       ],
-      when: (props: any) => Boolean(props.field),
     },
+    container_style: elementStyle('container', 'Container Style', BUTTON_PARTS),
     ...sectionControls(),
   },
   defaults: {
-    field: '',
+    items: [],
     layout: 'card',
-    textSize: 'auto',
+    direction: 'stack',
+    gap: 'md',
     align: 'left',
-    showLabel: true,
     section: {
       paddingY: 'md',
       background: 'default',
@@ -1602,6 +1682,26 @@ export const GlobalRefBlock = defineBlock({
     },
   },
   defaults: { globalBlockId: '' },
+});
+
+export const CollectionBlockDef = defineBlock({
+  type: 'CollectionBlock',
+  label: 'Collection block',
+  category: 'collection-blocks',
+  icon: 'collectionitem',
+  schema: z.object({
+    collectionBlockId: z.string().optional(),
+  }).passthrough(),
+  render: CollectionBlockRef,
+  fields: {
+    collectionBlockId: {
+      label: 'Block',
+      group: CONTENT,
+      type: 'custom',
+      render: CollectionBlockSelectField,
+    },
+  },
+  defaults: { collectionBlockId: '' },
 });
 
 export const LogoCloudBlock = defineBlock({
@@ -3612,9 +3712,10 @@ export const QueryLoopBlock = defineBlock({
       ],
     },
     columnsDesktop: {
-      label: 'Columns (Desktop)',
+      label: 'Columns',
       group: CONTENT,
-      type: 'select',
+      type: 'custom',
+      render: ResponsiveColumnsField,
       options: [
         { label: '1 column', value: 1 },
         { label: '2 columns', value: 2 },
@@ -3623,9 +3724,10 @@ export const QueryLoopBlock = defineBlock({
       ],
     },
     columnsTablet: {
-      label: 'Columns (Tablet)',
+      label: 'Columns',
       group: CONTENT,
-      type: 'select',
+      type: 'custom',
+      render: ResponsiveColumnsField,
       options: [
         { label: '1 column', value: 1 },
         { label: '2 columns', value: 2 },
@@ -3633,9 +3735,10 @@ export const QueryLoopBlock = defineBlock({
       ],
     },
     columnsMobile: {
-      label: 'Columns (Mobile)',
+      label: 'Columns',
       group: CONTENT,
-      type: 'select',
+      type: 'custom',
+      render: ResponsiveColumnsField,
       options: [
         { label: '1 column', value: 1 },
         { label: '2 columns', value: 2 },
@@ -4028,6 +4131,10 @@ export const QueryFilterBlock = defineBlock({
   schema: z
     .object({
       targetLoopId: z.string().default(''),
+      source: z
+        .enum(['posts', 'pages', 'collection-entries', 'videos'])
+        .default('posts'),
+      collectionId: z.string().optional(),
       showKeyword: z.boolean().default(true),
       keywordPlaceholder: z.string().default('Search items…'),
       showCategories: z.boolean().default(true),
@@ -4057,6 +4164,24 @@ export const QueryFilterBlock = defineBlock({
       label: 'Target Query Loop ID (leave blank for default loop)',
       group: CONTENT,
       type: 'text',
+    },
+    source: {
+      label: 'Content source (match the target loop)',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Blog posts', value: 'posts' },
+        { label: 'Pages', value: 'pages' },
+        { label: 'Collection entries', value: 'collection-entries' },
+        { label: 'Videos', value: 'videos' },
+      ],
+    },
+    collectionId: {
+      label: 'Collection',
+      group: CONTENT,
+      type: 'custom',
+      render: CollectionSelectField,
+      when: (props: any) => props.source === 'collection-entries',
     },
     showKeyword: {
       label: 'Show keyword search',
@@ -4162,6 +4287,8 @@ export const QueryFilterBlock = defineBlock({
   },
   defaults: {
     targetLoopId: '',
+    source: 'posts',
+    collectionId: '',
     showKeyword: true,
     keywordPlaceholder: 'Search items…',
     showCategories: true,
@@ -4269,6 +4396,7 @@ export const NATIVE_BLOCKS = [
   CollectionItemBlock,
   PostTypeEntriesBlock,
   GlobalRefBlock,
+  CollectionBlockDef,
   LogoCloudBlock,
   TeamBlock,
   TimelineBlock,
@@ -4521,6 +4649,10 @@ export const CATEGORIES = {
   collections: {
     title: 'Post types',
     components: ['PostTypeEntries', 'CollectionItem'],
+  },
+  'collection-blocks': {
+    title: 'Collection blocks',
+    components: ['CollectionBlock'],
   },
   global: { title: 'Global blocks', components: ['GlobalRef'] },
   custom: { title: 'Custom', components: ['example'] },

@@ -1,21 +1,182 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { useEntry } from '@/components/analytics/entry-context';
 import { cn } from '@/lib/utils/cn';
 import { sanitizeRichText } from '../sanitize';
-import { Section, type SectionSettings } from './section';
+import { type ElementStyle, resolveElementStyle } from '../style';
+import { el, type WithSection } from './element';
+import { Section } from './section';
 
-type WithSection = { section?: SectionSettings; editing?: boolean };
+type TextSize = 'auto' | 'h1' | 'h2' | 'h3' | 'lead' | 'body' | 'small';
+type Align = 'left' | 'center' | 'right';
+
+/** One row of "Fields to display": a field and its own styling. */
+export type CollectionItemField = {
+  field?: string;
+  textSize?: TextSize;
+  showLabel?: boolean;
+  labelText?: string;
+  style?: ElementStyle;
+  labelStyle?: ElementStyle;
+};
 
 export type CollectionItemProps = WithSection & {
-  /** Which field to render inline. Falls back to listing all fields. */
-  field?: string;
+  /** Fields to render, each with its own style. Empty shows the full entry. */
+  items?: CollectionItemField[];
   layout?: 'card' | 'clean';
-  textSize?: 'auto' | 'h1' | 'h2' | 'h3' | 'lead' | 'body';
-  align?: 'left' | 'center' | 'right';
+  direction?: 'stack' | 'row' | 'grid';
+  gap?: 'sm' | 'md' | 'lg';
+  align?: Align;
+  /** Legacy single-field props, read when `items` is empty. */
+  field?: string;
+  textSize?: TextSize;
   showLabel?: boolean;
 };
+
+type EntryField = { key: string; label: string; type: string };
+
+const SIZE_CLASS: Record<Exclude<TextSize, 'auto'>, string> = {
+  h1: 'text-4xl md:text-5xl font-extrabold tracking-tight text-foreground',
+  h2: 'text-2xl md:text-3xl font-bold tracking-tight',
+  h3: 'text-xl md:text-2xl font-bold tracking-tight text-foreground',
+  lead: 'text-lg md:text-xl text-muted-foreground leading-relaxed',
+  body: 'text-base text-foreground font-medium',
+  small: 'text-sm text-muted-foreground',
+};
+
+const SIZE_TAG: Record<Exclude<TextSize, 'auto'>, 'h1' | 'h2' | 'h3' | 'p'> = {
+  h1: 'h1',
+  h2: 'h2',
+  h3: 'h3',
+  lead: 'p',
+  body: 'p',
+  small: 'p',
+};
+
+const GAP_CLASS = { sm: 'gap-2', md: 'gap-4', lg: 'gap-8' } as const;
+
+const ALIGN_CLASS: Record<Align, string> = {
+  left: 'text-left',
+  center: 'text-center',
+  right: 'text-right',
+};
+
+function styleOf(style: ElementStyle | undefined): {
+  classes: string[];
+  style: CSSProperties;
+} {
+  if (!style || Object.keys(style).length === 0) return { classes: [], style: {} };
+  return resolveElementStyle(style);
+}
+
+/** The rows to render: `items`, or the legacy single `field` prop. */
+function rowsOf(p: CollectionItemProps): CollectionItemField[] {
+  const items = (p.items ?? []).filter(item => item && item.field);
+  if (items.length) return items;
+  if (p.field) {
+    return [{ field: p.field, textSize: p.textSize, showLabel: p.showLabel }];
+  }
+  return [];
+}
+
+function FieldValue({
+  row,
+  field,
+  value,
+  isTitleField,
+  align,
+  editing,
+}: {
+  row: CollectionItemField;
+  field: EntryField;
+  value: unknown;
+  isTitleField: boolean;
+  align: Align;
+  editing?: boolean;
+}): ReactNode {
+  const showLabel = row.showLabel ?? true;
+  const label = row.labelText?.trim() || field.label;
+  const valueStyle = styleOf(row.style);
+  const labelStyle = styleOf(row.labelStyle);
+
+  const size: Exclude<TextSize, 'auto'> =
+    row.textSize && row.textSize !== 'auto'
+      ? row.textSize
+      : isTitleField
+        ? 'h2'
+        : 'body';
+
+  let content: ReactNode;
+  if (field.type === 'richtext') {
+    content = (
+      <div
+        className={cn(
+          's-prose prose prose-lg max-w-none text-foreground',
+          ...valueStyle.classes
+        )}
+        style={valueStyle.style}
+        dangerouslySetInnerHTML={{
+          __html: sanitizeRichText(
+            String(value ?? (editing ? `<p><em>[${label} content]</em></p>` : ''))
+          ),
+        }}
+      />
+    );
+  } else if (field.type === 'media') {
+    content = value ? (
+      <img
+        src={String(value)}
+        alt={label}
+        className={cn(
+          'max-h-96 max-w-full rounded-lg object-cover',
+          align === 'center' ? 'mx-auto' : align === 'right' ? 'ml-auto' : '',
+          ...valueStyle.classes
+        )}
+        style={valueStyle.style}
+      />
+    ) : editing ? (
+      <div className="flex h-36 w-full items-center justify-center rounded-lg border border-dashed text-xs text-muted-foreground">
+        [No image for {label}]
+      </div>
+    ) : null;
+  } else {
+    const Tag = SIZE_TAG[size];
+    const text =
+      typeof value === 'boolean'
+        ? value
+          ? 'Yes'
+          : 'No'
+        : String(value ?? (editing ? `[${label}]` : ''));
+    content = text ? (
+      <Tag
+        className={cn(SIZE_CLASS[size], ...valueStyle.classes)}
+        style={valueStyle.style}
+      >
+        {text}
+      </Tag>
+    ) : null;
+  }
+
+  if (!content && !editing) return null;
+
+  return (
+    <div className="min-w-0 space-y-1.5">
+      {showLabel && label && (
+        <span
+          className={cn(
+            'block text-xs font-semibold uppercase tracking-wider text-muted-foreground',
+            ...labelStyle.classes
+          )}
+          style={labelStyle.style}
+        >
+          {label}
+        </span>
+      )}
+      {content}
+    </div>
+  );
+}
 
 export function CollectionItem(p: CollectionItemProps): ReactNode {
   const { entry } = useEntry();
@@ -36,12 +197,12 @@ export function CollectionItem(p: CollectionItemProps): ReactNode {
     );
   }
 
-  const fieldKey = p.field;
-  const fields = entry.collection?.fields ?? [];
+  const fields: EntryField[] = entry.collection?.fields ?? [];
   const entryData = (entry.data as Record<string, unknown>) ?? {};
+  const rows = rowsOf(p);
 
-  // If no specific field selected, render a comprehensive preview card of the entire entry
-  if (!fieldKey) {
+  // No field chosen yet: a preview card of the entire entry.
+  if (!rows.length) {
     return (
       <Section section={p.section} editing={p.editing}>
         <div className="s-surface s-border space-y-4 rounded-xl border p-6 shadow-sm">
@@ -88,123 +249,54 @@ export function CollectionItem(p: CollectionItemProps): ReactNode {
     );
   }
 
-  const field =
-    fields.find((f: { key: string }) => f.key === fieldKey) ?? fields[0];
-
-  if (!field) return null;
-
-  const value = entryData?.[field.key];
-  const label = field.label;
-  const showLabel = p.showLabel ?? true;
   const layout = p.layout ?? 'card';
   const align = p.align ?? 'left';
-
-  const isTitleField =
-    field.key === 'title' ||
-    field.key === 'name' ||
-    fields[0]?.key === field.key;
-
-  const resolvedSize =
-    p.textSize && p.textSize !== 'auto'
-      ? p.textSize
-      : isTitleField
-        ? 'h2'
-        : 'body';
-
-  const textValue = String(value ?? (p.editing ? `[${label}]` : ''));
-
-  let textElement: ReactNode;
-  switch (resolvedSize) {
-    case 'h1':
-      textElement = (
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
-          {textValue}
-        </h1>
-      );
-      break;
-    case 'h2':
-      textElement = (
-        <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
-          {textValue}
-        </h2>
-      );
-      break;
-    case 'h3':
-      textElement = (
-        <h3 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
-          {textValue}
-        </h3>
-      );
-      break;
-    case 'lead':
-      textElement = (
-        <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-          {textValue}
-        </p>
-      );
-      break;
-    case 'body':
-    default:
-      textElement = (
-        <p className="text-base text-foreground font-medium">{textValue}</p>
-      );
-      break;
-  }
+  const direction = p.direction ?? 'stack';
+  const container = el(
+    p,
+    'container',
+    cn(
+      layout === 'card' && 's-surface s-border rounded-xl border p-6 shadow-sm',
+      direction === 'row'
+        ? 'flex flex-wrap items-start'
+        : direction === 'grid'
+          ? 'grid sm:grid-cols-2'
+          : 'flex flex-col',
+      GAP_CLASS[p.gap ?? 'md'],
+      ALIGN_CLASS[align]
+    )
+  );
 
   return (
     <Section section={p.section} editing={p.editing}>
-      <div
-        className={cn(
-          layout === 'card'
-            ? 's-surface s-border rounded-xl border p-6 shadow-sm space-y-3'
-            : 'space-y-1.5',
-          align === 'center'
-            ? 'text-center'
-            : align === 'right'
-              ? 'text-right'
-              : 'text-left'
-        )}
-      >
-        {showLabel && label && (
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block">
-            {label}
-          </span>
-        )}
-        {field.type === 'richtext' ? (
-          <div
-            className="s-prose prose prose-lg max-w-none text-foreground"
-            dangerouslySetInnerHTML={{
-              __html: sanitizeRichText(
-                String(
-                  value ??
-                    (p.editing ? `<p><em>[${label} content]</em></p>` : '')
-                )
-              ),
-            }}
-          />
-        ) : field.type === 'media' ? (
-          value ? (
-            <img
-              src={String(value)}
-              alt={label}
-              className={cn(
-                'max-w-full rounded-lg object-cover',
-                layout === 'card' ? 'max-h-80 w-full' : 'max-h-96',
-                align === 'center'
-                  ? 'mx-auto'
-                  : align === 'right'
-                    ? 'ml-auto'
-                    : ''
-              )}
+      <div className={container.className} style={container.style}>
+        {rows.map((row, index) => {
+          const field = fields.find(f => f.key === row.field);
+          if (!field) {
+            return p.editing ? (
+              // biome-ignore lint/suspicious/noArrayIndexKey: rows have no ids
+              <p key={index} className="text-xs text-muted-foreground">
+                [Field &ldquo;{row.field}&rdquo; no longer exists]
+              </p>
+            ) : null;
+          }
+          return (
+            <FieldValue
+              // biome-ignore lint/suspicious/noArrayIndexKey: a field may be listed twice
+              key={index}
+              row={row}
+              field={field}
+              value={entryData[field.key]}
+              isTitleField={
+                field.key === 'title' ||
+                field.key === 'name' ||
+                fields[0]?.key === field.key
+              }
+              align={align}
+              editing={p.editing}
             />
-          ) : p.editing ? (
-            <div className="flex h-36 w-full items-center justify-center rounded-lg border border-dashed text-xs text-muted-foreground">
-              [No image for {label}]
-            </div>
-          ) : null
-        ) : (
-          textElement
-        )}
+          );
+        })}
       </div>
     </Section>
   );

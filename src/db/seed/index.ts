@@ -799,6 +799,7 @@ async function main() {
         slug: e.slug,
         status: e.status,
         data: e.data,
+        authorId: ctx.admin.id,
         publishedAt: e.status === 'published' ? nowDate() : null,
       });
       totalCollectionEntries++;
@@ -847,6 +848,7 @@ async function main() {
         slug,
         status: 'published',
         data,
+        authorId: ctx.admin.id,
         publishedAt: nowDate(),
       });
       totalCollectionEntries++;

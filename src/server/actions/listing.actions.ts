@@ -80,3 +80,54 @@ export async function resolvePostTypeEntries(input: {
   );
   return { items: result.items, resolvedCollectionId: collectionId };
 }
+
+/** Related published collection entries from the same collection/archive. */
+export async function resolveRelatedCollectionEntries(input: {
+  collectionId: string;
+  entryId?: string;
+  language?: string;
+  limit?: number;
+  siteSlug?: string;
+}): Promise<import('@/builder/post-template').PostCard[]> {
+  const site = await siteContext.publicSite();
+  if (!input.collectionId) return [];
+  const prefix = input.siteSlug ? `/${input.siteSlug}` : '';
+
+  const result = await listingQueryService.resolve(
+    {
+      source: 'collection-entries',
+      collectionId: input.collectionId,
+      sortField: 'publishedAt',
+      sortOrder: 'desc',
+      limit: Math.min(Math.max(input.limit ?? 3, 1), 12),
+      page: 1,
+      ...(input.entryId ? { currentId: input.entryId } : {}),
+    },
+    { site, language: input.language, currentId: input.entryId }
+  );
+
+  return result.items.map(item => {
+    const raw = (item.raw && typeof item.raw === 'object' ? item.raw : {}) as any;
+    const url = prefix
+      ? item.url.startsWith(prefix)
+        ? item.url
+        : `${prefix}${item.url.startsWith('/') ? '' : '/'}${item.url}`
+      : item.url;
+    return {
+      id: item.id,
+      title: item.title,
+      slug: item.slug,
+      language: raw.language ?? input.language ?? 'en',
+      excerpt: item.excerpt ?? raw.excerpt ?? null,
+      featuredImage: item.image ?? raw.featuredImage ?? null,
+      publishedAt: item.publishedAt ?? null,
+      authorName: item.author?.name ?? raw.authorName ?? null,
+      authorUrl: raw.authorId
+        ? `${prefix}/collections/${raw.collection?.slug ?? raw.collectionSlug ?? ''}/author/${raw.authorId}`
+        : null,
+      categories: [],
+      tags: [],
+      url,
+    };
+  });
+}

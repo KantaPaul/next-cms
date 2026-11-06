@@ -38,6 +38,7 @@ import { PERMISSIONS } from '@/config/permissions';
 import { entryTitle } from '@/config/post-types';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import { useAccess } from '@/providers/access.provider';
+import { useSiteLocales } from '@/providers/site-locales';
 
 export type EntryListItem = {
   id: string;
@@ -54,6 +55,8 @@ export type EntryListItem = {
   updatedAt: Date | string;
   authorId: string | null;
   authorName: string | null;
+  language?: string;
+  translationGroupId?: string | null;
   data: Record<string, unknown> | null;
   excerpt: string | null;
   featuredImage: string | null;
@@ -73,8 +76,19 @@ const STATUS_OPTIONS = [
 ];
 
 const buildFilters = (
-  templates: CollectionTemplateItem[]
+  templates: CollectionTemplateItem[],
+  locales: { label: string; value: string }[]
 ): FilterConfig[] => [
+  ...(locales.length > 1
+    ? [
+        {
+          name: 'language',
+          type: 'select',
+          placeholder: 'All languages',
+          options: locales,
+        } as FilterConfig,
+      ]
+    : []),
   {
     name: 'status',
     type: 'select',
@@ -249,8 +263,10 @@ function RowActions({
 
 const buildColumns = (
   collectionSlug: string,
+  siteSlug: string,
   templates: CollectionTemplateItem[],
-  fields: { key: string; label: string; type: string }[]
+  fields: { key: string; label: string; type: string }[],
+  defaultLocale = 'en'
 ): ColumnDef<EntryListItem>[] => {
   // Up to two key custom fields (excluding name/title which is already primary)
   const extraFields = fields
@@ -288,13 +304,22 @@ const buildColumns = (
             )}
             <div className="flex min-w-0 flex-col gap-0.5">
               <Link
-                href={PAGES.DASHBOARD.COLLECTION_ENTRY_EDIT(collectionSlug, entry.id)}
+                href={PAGES.DASHBOARD.COLLECTION_ENTRY_EDIT(
+                  collectionSlug,
+                  entry.id
+                )}
                 className="truncate font-medium hover:underline"
               >
                 {title}
               </Link>
               <span className="truncate text-xs text-steel-400">
-                /{collectionSlug}/{entry.slug}
+                {PAGES.SITE.entry(
+                  collectionSlug,
+                  entry.slug,
+                  entry.language ?? defaultLocale,
+                  defaultLocale,
+                  siteSlug || undefined
+                )}
               </span>
             </div>
           </div>
@@ -369,6 +394,15 @@ const buildColumns = (
 
   cols.push(
     {
+      accessorKey: 'language',
+      header: 'Language',
+      cell: ({ row }) => (
+        <span className="rounded bg-steel-100 px-1.5 py-0.5 text-xs font-medium uppercase text-steel-600 dark:bg-dark-200 dark:text-steel-300">
+          {row.original.language ?? '—'}
+        </span>
+      ),
+    },
+    {
       accessorKey: 'authorName',
       header: 'Author',
       cell: ({ row }) => (
@@ -400,7 +434,13 @@ const buildColumns = (
         <div className="flex items-center justify-end gap-1">
           {row.original.status === 'published' && (
             <a
-              href={`/${collectionSlug}/${row.original.slug}`}
+              href={PAGES.SITE.entry(
+                collectionSlug,
+                row.original.slug,
+                row.original.language ?? defaultLocale,
+                defaultLocale,
+                siteSlug || undefined
+              )}
               target="_blank"
               rel="noreferrer"
               className="p-1 text-steel-400 hover:text-steel-700"
@@ -429,19 +469,26 @@ export function EntriesTable({
   collectionSlug,
   templates,
   fields,
+  siteSlug,
 }: {
   data: EntryListItem[];
   totalCount: number;
   collectionSlug: string;
   templates: CollectionTemplateItem[];
   fields: { key: string; label: string; type: string }[];
+  siteSlug: string;
 }) {
+  const { locales, defaultLocale } = useSiteLocales();
   const columns = useMemo(
-    () => buildColumns(collectionSlug, templates, fields),
-    [collectionSlug, templates, fields]
+    () =>
+      buildColumns(collectionSlug, siteSlug, templates, fields, defaultLocale),
+    [collectionSlug, siteSlug, templates, fields, defaultLocale]
   );
 
-  const filters = useMemo(() => buildFilters(templates), [templates]);
+  const filters = useMemo(
+    () => buildFilters(templates, locales),
+    [templates, locales]
+  );
 
   return (
     <DataTable

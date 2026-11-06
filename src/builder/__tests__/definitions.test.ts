@@ -14,6 +14,7 @@ import {
   pageInspectorBlocks,
   pageRootFields,
   pageSchemas,
+  editorSetup,
 } from '../definitions';
 import { groupControl, sectionControls } from '../definitions/fields';
 
@@ -129,5 +130,47 @@ describe('page block definitions', () => {
     assert.equal(sc.section_filter.type, 'custom');
     assert.equal(sc.section_filter.groupKind, 'cssFilter');
     assert.deepEqual(sc.section_filter.states, ['normal', 'hover']);
+  });
+
+  it('scopes CollectionBlock to collection entry editors', () => {
+    const entry = editorSetup('entry');
+    const entryTemplate = editorSetup('entry-template');
+    const collectionBlock = editorSetup('collection-block');
+    const page = editorSetup('page');
+    const post = editorSetup('post');
+
+    assert.ok(entry.groups.some(g => g.types.includes('CollectionBlock')));
+    assert.ok(
+      entryTemplate.groups.some(g => g.types.includes('CollectionBlock'))
+    );
+    assert.ok(!page.groups.some(g => g.types.includes('CollectionBlock')));
+    assert.ok(!post.groups.some(g => g.types.includes('CollectionBlock')));
+
+    for (const kind of [
+      'page',
+      'post',
+      'entry',
+      'entry-template',
+      'global',
+      'header',
+      'footer',
+    ]) {
+      // Still renderable everywhere, so stored content never breaks.
+      assert.ok(editorSetup(kind).definitions.CollectionBlock, kind);
+    }
+    // No nesting: a collection block can't hold another, nor sit in a loop item.
+    for (const kind of ['collection-block', 'loop-item']) {
+      const setup = editorSetup(kind);
+      assert.ok(!setup.definitions.CollectionBlock, kind);
+      assert.ok(!setup.groups.some(g => g.types.includes('CollectionBlock')), kind);
+    }
+    assert.ok(!collectionBlock.definitions.GlobalRef);
+
+    // Only collection editors can insert it: elsewhere the insert panel
+    // (which lists every known schema) must not see it.
+    for (const kind of ['page', 'post', 'global', 'header', 'footer', 'loop-item']) {
+      assert.ok(!editorSetup(kind).schemas.CollectionBlock, kind);
+    }
+    assert.ok(entry.schemas.CollectionBlock);
   });
 });

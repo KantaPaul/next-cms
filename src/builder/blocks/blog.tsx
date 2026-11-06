@@ -370,6 +370,7 @@ export function PostMeta(
       ? formatDate(p.post.publishedAt, p.post.language)
       : null;
   const author = p.showAuthor !== false ? p.post.authorName : null;
+  const authorUrl = p.showAuthor !== false ? p.post.authorUrl : null;
   const categories = p.showCategories !== false ? p.post.categories : [];
   const tags = p.showTags !== false ? p.post.tags : [];
   if (!date && !author && !categories.length && !tags.length) return null;
@@ -377,7 +378,14 @@ export function PostMeta(
   return (
     <Section section={p.section} editing={p.editing} innerClassName="max-w-3xl">
       <div className="s-border flex flex-wrap items-center gap-x-4 gap-y-2 border-y py-4 text-sm">
-        {author && <span className="font-medium">By {author}</span>}
+        {author &&
+          (authorUrl ? (
+            <a href={authorUrl} className="font-medium hover:underline">
+              By {author}
+            </a>
+          ) : (
+            <span className="font-medium">By {author}</span>
+          ))}
         {date && (
           <time dateTime={p.post.publishedAt ?? undefined} className="s-muted">
             {date}
@@ -385,17 +393,36 @@ export function PostMeta(
         )}
         {categories.length > 0 && (
           <span className="s-primary-text font-semibold">
-            {categories.map(c => c.name).join(', ')}
+            {categories.map((c, i) => (
+              <span key={c.id || c.slug}>
+                {c.url ? (
+                  <a href={c.url} className="hover:underline">
+                    {c.name}
+                  </a>
+                ) : (
+                  c.name
+                )}
+                {i < categories.length - 1 ? ', ' : ''}
+              </span>
+            ))}
           </span>
         )}
         {tags.length > 0 && (
           <ul className="flex flex-wrap gap-1.5" aria-label="Tags">
             {tags.map(t => (
-              <li
-                key={t.id}
-                className="s-soft-primary rounded-full px-2.5 py-0.5 text-xs font-medium"
-              >
-                #{t.name}
+              <li key={t.id || t.slug}>
+                {t.url ? (
+                  <a
+                    href={t.url}
+                    className="s-soft-primary inline-block rounded-full px-2.5 py-0.5 text-xs font-medium hover:underline"
+                  >
+                    #{t.name}
+                  </a>
+                ) : (
+                  <span className="s-soft-primary rounded-full px-2.5 py-0.5 text-xs font-medium">
+                    #{t.name}
+                  </span>
+                )}
               </li>
             ))}
           </ul>

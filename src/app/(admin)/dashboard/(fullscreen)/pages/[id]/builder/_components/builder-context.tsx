@@ -18,6 +18,7 @@ export type BuilderKind =
   | 'post-template'
   | 'entry'
   | 'entry-template'
+  | 'collection-block'
   | 'page-template'
   | 'global'
   | 'contact-form'
