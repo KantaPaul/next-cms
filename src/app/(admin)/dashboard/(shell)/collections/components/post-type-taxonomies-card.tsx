@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { PAGES } from '@/config/pages';
 import { slugify } from '@/lib/utils/slugify';
+import { cn } from '@/lib/utils';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import {
   deleteTaxonomyAction,
@@ -37,6 +38,22 @@ export function PostTypeTaxonomiesCard({
   const [isPending, startTransition] = useTransition();
 
   const handleQuickAdd = (type: 'categories' | 'tags') => {
+    const targetKey = type === 'categories' ? 'category' : 'tag';
+    const targetName = type === 'categories' ? 'categories' : 'tags';
+    const exists = taxonomies.some(
+      t =>
+        t.key.toLowerCase() === targetKey ||
+        t.name.trim().toLowerCase() === targetName
+    );
+    if (exists) {
+      toast.error(
+        type === 'categories'
+          ? 'A Categories taxonomy already exists.'
+          : 'A Tags taxonomy already exists.'
+      );
+      return;
+    }
+
     startTransition(async () => {
       const payload =
         type === 'categories'
@@ -83,8 +100,12 @@ export function PostTypeTaxonomiesCard({
     setPendingId(null);
   };
 
-  const hasCategories = taxonomies.some(t => t.key === 'category');
-  const hasTags = taxonomies.some(t => t.key === 'tag');
+  const hasCategories = taxonomies.some(
+    t => t.key === 'category' || t.name.trim().toLowerCase() === 'categories'
+  );
+  const hasTags = taxonomies.some(
+    t => t.key === 'tag' || t.name.trim().toLowerCase() === 'tags'
+  );
 
   return (
     <Card>
@@ -137,6 +158,7 @@ export function PostTypeTaxonomiesCard({
             collectionId={collectionId}
             collectionSlug={collectionSlug}
             taxonomy={editing === 'new' ? null : editing}
+            existingTaxonomies={taxonomies}
             onDone={() => setEditing(null)}
           />
         )}
@@ -224,37 +246,60 @@ function TaxonomyForm({
   collectionId,
   collectionSlug,
   taxonomy,
+  existingTaxonomies,
   onDone,
 }: {
   collectionId: string;
   collectionSlug: string;
   taxonomy: TaxonomyRow | null;
+  existingTaxonomies: TaxonomyRow[];
   onDone: () => void;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [name, setName] = useState(taxonomy?.name ?? '');
-  const [key, setKey] = useState(taxonomy?.key ?? '');
-  const [keyTouched, setKeyTouched] = useState(!!taxonomy?.key);
+  const [key, setKey] = useState(
+    taxonomy?.key ?? (taxonomy?.name ? slugify(taxonomy.name) : '')
+  );
   const [singularName, setSingularName] = useState(taxonomy?.singularName ?? '');
   const [hierarchical, setHierarchical] = useState(taxonomy?.hierarchical ?? false);
 
   const handleNameChange = (val: string) => {
     setName(val);
-    if (!keyTouched) {
-      setKey(slugify(val));
-    }
+    setKey(slugify(val));
   };
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      toast.error('Taxonomy name is required');
+      return;
+    }
+    const derivedKey = (key || slugify(trimmedName)).trim().toLowerCase();
+    if (!derivedKey) {
+      toast.error('Could not generate a valid key from this name');
+      return;
+    }
+
+    const clash = existingTaxonomies.some(
+      t =>
+        t.id !== taxonomy?.id &&
+        (t.name.trim().toLowerCase() === trimmedName.toLowerCase() ||
+          t.key.toLowerCase() === derivedKey)
+    );
+    if (clash) {
+      toast.error(`A taxonomy named "${trimmedName}" already exists for this post type.`);
+      return;
+    }
+
     startTransition(async () => {
       await handleActionResponse(
         saveTaxonomyAction({
           id: taxonomy?.id,
           collectionId,
-          key: key.trim().toLowerCase(),
-          name: name.trim(),
+          key: derivedKey,
+          name: trimmedName,
           singularName: singularName.trim() || undefined,
           hierarchical,
         }),
@@ -295,16 +340,16 @@ function TaxonomyForm({
       </label>
 
       <label className="flex flex-col gap-1 text-sm font-medium">
-        Key (Slug)
+        Key (auto-generated)
         <input
-          className={inputClass}
-          value={key}
-          onChange={e => {
-            setKeyTouched(true);
-            setKey(e.target.value);
-          }}
-          placeholder="e.g. department"
-          required
+          className={cn(
+            inputClass,
+            'cursor-not-allowed bg-steel-100/70 font-mono text-xs text-steel-500 dark:bg-dark-200 dark:text-steel-400'
+          )}
+          value={key || (name ? slugify(name) : '—')}
+          readOnly
+          tabIndex={-1}
+          placeholder="Auto-generated from name"
         />
       </label>
 

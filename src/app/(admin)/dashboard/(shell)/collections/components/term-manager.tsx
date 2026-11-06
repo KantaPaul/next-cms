@@ -56,19 +56,15 @@ function Field({
 
 function useSlugSync(initialName: string, initialSlug: string) {
   const [name, setName] = useState(initialName);
-  const [slug, setSlug] = useState(initialSlug);
-  const [slugTouched, setSlugTouched] = useState(!!initialSlug);
+  const [slug, setSlug] = useState(initialSlug || slugify(initialName));
   return {
     name,
     slug,
     setName: (value: string) => {
       setName(value);
-      if (!slugTouched) setSlug(slugify(value));
+      setSlug(slugify(value));
     },
-    setSlug: (value: string) => {
-      setSlugTouched(true);
-      setSlug(value);
-    },
+    setSlug,
   };
 }
 
@@ -299,14 +295,36 @@ function TermForm({
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      toast.error('Term name is required');
+      return;
+    }
+    const derivedSlug = (slug || slugify(trimmedName)).trim().toLowerCase();
+    if (!derivedSlug) {
+      toast.error('Could not generate a valid slug from this name');
+      return;
+    }
+
+    const nameClash = allTerms.some(
+      t =>
+        t.id !== term?.id &&
+        (t.name.trim().toLowerCase() === trimmedName.toLowerCase() ||
+          t.slug.toLowerCase() === derivedSlug)
+    );
+    if (nameClash) {
+      toast.error(`A ${singularName.toLowerCase()} with this name already exists.`);
+      return;
+    }
+
     startTransition(async () => {
       await handleActionResponse(
         saveTermAction(
           {
             id: term?.id,
             taxonomyId,
-            name,
-            slug,
+            name: trimmedName,
+            slug: derivedSlug,
             parentId: hierarchical && parentId ? parentId : null,
             description: description.trim() || undefined,
           },
@@ -331,18 +349,22 @@ function TermForm({
           className={inputClass}
           value={name}
           onChange={e => setName(e.target.value)}
+          placeholder={`e.g. New ${singularName.toLowerCase()}`}
           required
           maxLength={100}
           autoFocus
         />
       </Field>
-      <Field label="Slug">
+      <Field label="Slug (auto-generated)">
         <input
-          className={inputClass}
-          value={slug}
-          onChange={e => setSlug(e.target.value)}
-          required
-          maxLength={150}
+          className={cn(
+            inputClass,
+            'cursor-not-allowed bg-steel-100/70 font-mono text-xs text-steel-500 dark:bg-dark-200 dark:text-steel-400'
+          )}
+          value={slug || (name ? slugify(name) : '—')}
+          readOnly
+          tabIndex={-1}
+          placeholder="Auto-generated from name"
         />
       </Field>
       {hierarchical && (

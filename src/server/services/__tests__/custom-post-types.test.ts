@@ -455,4 +455,55 @@ describe('Listing terms filter', () => {
   });
 });
 
+describe('Taxonomy and term duplicate name prevention', () => {
+  it('detects duplicate taxonomy names (case-insensitive)', () => {
+    const existing = [
+      { id: '1', name: 'Categories', key: 'category' },
+      { id: '2', name: 'Department', key: 'department' },
+    ];
+
+    const hasClash = (name: string, key: string, currentId?: string) => {
+      const trimmedName = name.trim().toLowerCase();
+      const trimmedKey = key.trim().toLowerCase();
+      return existing.some(
+        t =>
+          t.id !== currentId &&
+          (t.name.trim().toLowerCase() === trimmedName ||
+            t.key.toLowerCase() === trimmedKey)
+      );
+    };
+
+    assert.ok(hasClash('categories', 'other'));
+    assert.ok(hasClash('CATEGORIES', 'other'));
+    assert.ok(hasClash('Department', 'dept'));
+    assert.ok(hasClash('New Tax', 'category'));
+    assert.ok(!hasClash('New Tax', 'new-tax'));
+    assert.ok(!hasClash('Categories', 'category', '1'));
+  });
+
+  it('detects duplicate term names (case-insensitive)', () => {
+    const existing = [
+      { id: '1', name: 'Engineering', slug: 'engineering' },
+      { id: '2', name: 'Design', slug: 'design' },
+    ];
+
+    const hasClash = (name: string, slug: string, currentId?: string) => {
+      const trimmedName = name.trim().toLowerCase();
+      const trimmedSlug = slug.trim().toLowerCase();
+      return existing.some(
+        t =>
+          t.id !== currentId &&
+          (t.name.trim().toLowerCase() === trimmedName ||
+            t.slug.toLowerCase() === trimmedSlug)
+      );
+    };
+
+    assert.ok(hasClash('engineering', 'eng'));
+    assert.ok(hasClash('ENGINEERING', 'engineering'));
+    assert.ok(hasClash('Product', 'design'));
+    assert.ok(!hasClash('Marketing', 'marketing'));
+    assert.ok(!hasClash('Engineering', 'engineering', '1'));
+  });
+});
+
 

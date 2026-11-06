@@ -1,5 +1,5 @@
 import 'server-only';
-import { and, asc, count, eq, inArray, isNull, ne } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import {
   collectionTaxonomies,
@@ -113,6 +113,32 @@ export const collectionTaxonomiesService = {
     if (!slugRegex.test(normalizedKey)) {
       throw new ApplicationException(
         'Taxonomy key can only contain lowercase letters, numbers, and dashes.'
+      );
+    }
+
+    const normalizedName = values.name.trim();
+    if (!normalizedName) {
+      throw new ApplicationException('Taxonomy name is required.');
+    }
+
+    // Check name clash (case-insensitive) within collection
+    const [nameClash] = await db
+      .select({ id: collectionTaxonomies.id })
+      .from(collectionTaxonomies)
+      .where(
+        and(
+          eq(collectionTaxonomies.siteId, siteId),
+          eq(collectionTaxonomies.collectionId, values.collectionId),
+          sql`lower(trim(${collectionTaxonomies.name})) = lower(${normalizedName})`,
+          isNull(collectionTaxonomies.deletedAt),
+          id ? ne(collectionTaxonomies.id, id) : undefined
+        )
+      )
+      .limit(1);
+
+    if (nameClash) {
+      throw new ApplicationException(
+        `A taxonomy named "${normalizedName}" already exists for this post type.`
       );
     }
 
@@ -300,6 +326,32 @@ export const collectionTaxonomiesService = {
     if (!slugRegex.test(normalizedSlug)) {
       throw new ApplicationException(
         'Term slug can only contain lowercase letters, numbers, and dashes.'
+      );
+    }
+
+    const normalizedName = values.name.trim();
+    if (!normalizedName) {
+      throw new ApplicationException('Term name is required.');
+    }
+
+    // Check name clash (case-insensitive) within this taxonomy
+    const [nameClash] = await db
+      .select({ id: collectionTerms.id, name: collectionTerms.name })
+      .from(collectionTerms)
+      .where(
+        and(
+          eq(collectionTerms.siteId, siteId),
+          eq(collectionTerms.taxonomyId, values.taxonomyId),
+          sql`lower(trim(${collectionTerms.name})) = lower(${normalizedName})`,
+          isNull(collectionTerms.deletedAt),
+          id ? ne(collectionTerms.id, id) : undefined
+        )
+      )
+      .limit(1);
+
+    if (nameClash) {
+      throw new ApplicationException(
+        `A term named "${normalizedName}" already exists in this taxonomy.`
       );
     }
 

@@ -673,14 +673,31 @@ function TaxonomyBlock({
   };
 
   const handleCreateTerm = () => {
-    if (!termName.trim()) return;
+    const trimmed = termName.trim();
+    if (!trimmed) return;
+    const slug = slugify(trimmed);
+    if (!slug) {
+      toast.error('Could not generate a valid slug from this name');
+      return;
+    }
+    const clash = terms.some(
+      t =>
+        t.name.trim().toLowerCase() === trimmed.toLowerCase() ||
+        t.slug.toLowerCase() === slug.toLowerCase()
+    );
+    if (clash) {
+      toast.error(
+        `A ${taxonomy.singularName || 'term'} named "${trimmed}" already exists.`
+      );
+      return;
+    }
+
     startAddTransition(async () => {
-      const slug = slugify(termName);
       await handleActionResponse(
         saveTermAction(
           {
             taxonomyId: taxonomy.id,
-            name: termName.trim(),
+            name: trimmed,
             slug,
             parentId: parentId || undefined,
           },
