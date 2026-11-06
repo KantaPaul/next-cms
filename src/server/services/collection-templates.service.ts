@@ -339,6 +339,88 @@ export const collectionTemplatesService = {
     return row;
   },
 
+  switchEntryLayout: async (
+    input: { id: string; layout: 'template' | 'custom' },
+    access: UserAccess
+  ) => {
+    accessService.assertPermission(access.userId, PERMISSIONS.PAGES_EDIT);
+    const siteId = await adminSiteId();
+    const [entry] = await db
+      .select()
+      .from(collectionEntries)
+      .where(
+        and(eq(collectionEntries.id, input.id), eq(collectionEntries.siteId, siteId))
+      )
+      .limit(1);
+    if (!entry) throw new NotFoundException('Entry not found');
+    if (entry.layout === input.layout) return entry;
+
+    let canvas = entry.canvas;
+    let draftCanvas = entry.draftCanvas;
+    if (input.layout === 'custom' && (!canvas || !draftCanvas)) {
+      const template = await collectionTemplatesService.layoutForEntry(entry);
+      canvas = canvas ?? template;
+      draftCanvas = draftCanvas ?? template;
+    }
+
+    const [updated] = await db
+      .update(collectionEntries)
+      .set({
+        layout: input.layout,
+        canvas,
+        draftCanvas,
+        updatedAt: new Date(),
+      })
+      .where(eq(collectionEntries.id, entry.id))
+      .returning();
+
+    if (entry.status === 'published') revalidatePublicSite();
+    return updated;
+  },
+
+  setEntryTemplate: async (
+    input: { id: string; templateId: string | null },
+    access: UserAccess
+  ) => {
+    accessService.assertPermission(access.userId, PERMISSIONS.PAGES_EDIT);
+    const siteId = await adminSiteId();
+    const [entry] = await db
+      .select()
+      .from(collectionEntries)
+      .where(
+        and(eq(collectionEntries.id, input.id), eq(collectionEntries.siteId, siteId))
+      )
+      .limit(1);
+    if (!entry) throw new NotFoundException('Entry not found');
+
+    if (input.templateId) {
+      const [template] = await db
+        .select({ id: collectionTemplates.id })
+        .from(collectionTemplates)
+        .where(
+          and(
+            eq(collectionTemplates.id, input.templateId),
+            eq(collectionTemplates.siteId, siteId)
+          )
+        )
+        .limit(1);
+      if (!template) throw new NotFoundException('Template not found');
+    }
+
+    const [updated] = await db
+      .update(collectionEntries)
+      .set({
+        layout: 'template',
+        templateId: input.templateId,
+        updatedAt: new Date(),
+      })
+      .where(eq(collectionEntries.id, entry.id))
+      .returning();
+
+    if (entry.status === 'published') revalidatePublicSite();
+    return updated;
+  },
+
   /**
    * Resolves the layout to render for a collection entry.
    * Order of precedence:

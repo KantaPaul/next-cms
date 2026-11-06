@@ -218,3 +218,66 @@ describe('taxonomy tree and cycle guard logic', () => {
   });
 });
 
+describe('Entry save respecting supports', () => {
+  it('filters out unsupported fields when saving entry data', () => {
+    const supports = normalizePostTypeSupports({
+      excerpt: false,
+      featuredImage: false,
+      seo: false,
+      status: false,
+    });
+
+    const rawInput = {
+      excerpt: 'Should be stripped',
+      featuredImage: 'https://example.com/stripped.jpg',
+      seo: { title: 'SEO title' },
+      status: 'scheduled' as const,
+      data: { name: 'Valid field' },
+    };
+
+    const sanitized = {
+      data: rawInput.data,
+      excerpt: supports.excerpt ? rawInput.excerpt : null,
+      featuredImage: supports.featuredImage ? rawInput.featuredImage : null,
+      seo: supports.seo ? rawInput.seo : null,
+      status: supports.status ? rawInput.status : 'draft',
+    };
+
+    assert.equal(sanitized.excerpt, null);
+    assert.equal(sanitized.featuredImage, null);
+    assert.equal(sanitized.seo, null);
+    assert.equal(sanitized.status, 'draft');
+    assert.deepEqual(sanitized.data, { name: 'Valid field' });
+  });
+
+  it('keeps supported fields intact', () => {
+    const supports = normalizePostTypeSupports({
+      excerpt: true,
+      featuredImage: true,
+      seo: true,
+      status: true,
+    });
+
+    const rawInput = {
+      excerpt: 'Keep me',
+      featuredImage: 'https://example.com/keep.jpg',
+      seo: { title: 'SEO Title' },
+      status: 'published' as const,
+      data: { name: 'Test' },
+    };
+
+    const sanitized = {
+      data: rawInput.data,
+      excerpt: supports.excerpt ? rawInput.excerpt : null,
+      featuredImage: supports.featuredImage ? rawInput.featuredImage : null,
+      seo: supports.seo ? rawInput.seo : null,
+      status: supports.status ? rawInput.status : 'draft',
+    };
+
+    assert.equal(sanitized.excerpt, 'Keep me');
+    assert.equal(sanitized.featuredImage, 'https://example.com/keep.jpg');
+    assert.deepEqual(sanitized.seo, { title: 'SEO Title' });
+    assert.equal(sanitized.status, 'published');
+  });
+});
+

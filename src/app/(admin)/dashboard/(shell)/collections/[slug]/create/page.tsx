@@ -1,15 +1,17 @@
 import { AccessDenied } from '@/components/organisms/access-denied';
 import { PageHeader } from '@/components/organisms/page-header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import { collectionsService } from '@/server/services/collections.service';
+import { collectionTaxonomiesService } from '@/server/services/collection-taxonomies.service';
+import { collectionTemplatesService } from '@/server/services/collection-templates.service';
 import { requirePermission } from '@/server/services/require-permission';
+import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { toEntryFieldConfigs } from '../../_modules/entry-fields';
 import { loadPostTypeRoute } from '../../_modules/post-type-route';
-import { CreateEntryForm } from '../../components/create-entry-form';
+import { EntryEditor } from '../../components/entry-editor';
 
-/** New entry: `/dashboard/collections/{slug}/create` (like Pages). */
+/** New entry: `/dashboard/collections/{slug}/create` (post-style editor). */
 export default async function CreateCollectionEntryPage({
   params,
 }: {
@@ -43,25 +45,36 @@ export default async function CreateCollectionEntryPage({
     );
   }
 
-  const fields = await collectionsService.getFields(collection.id);
+  const [fields, taxonomies, templates] = await Promise.all([
+    collectionsService.getFields(collection.id),
+    collectionTaxonomiesService.listTaxonomies(collection.id),
+    collectionTemplatesService.options(collection.id),
+  ]);
+
   const fieldConfigs = await toEntryFieldConfigs(fields);
 
+  const termsByTaxonomy: Record<string, any[]> = {};
+  await Promise.all(
+    taxonomies.map(async tax => {
+      termsByTaxonomy[tax.id] =
+        await collectionTaxonomiesService.listTerms(tax.id);
+    })
+  );
+
+  const { userId } = await getCurrentUserAndTeamId().catch(() => ({
+    userId: '',
+  }));
+
   return (
-    <>
-      <PageHeader title={title} breadcrumbs={breadcrumbs} />
-      <Card className="max-w-3xl">
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CreateEntryForm
-            collectionId={collection.id}
-            collectionSlug={collection.slug}
-            fields={fieldConfigs}
-            singularName={singular}
-          />
-        </CardContent>
-      </Card>
-    </>
+    <div className="-m-5 lg:h-[calc(100svh-4rem)] xl:-m-8">
+      <EntryEditor
+        collection={collection}
+        fields={fieldConfigs}
+        taxonomies={taxonomies}
+        termsByTaxonomy={termsByTaxonomy}
+        templates={templates}
+        currentUserName={userId || null}
+      />
+    </div>
   );
 }

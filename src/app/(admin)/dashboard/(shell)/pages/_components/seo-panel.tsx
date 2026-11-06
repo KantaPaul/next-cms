@@ -40,9 +40,11 @@ function Counter({ value, limit }: { value: number; limit: number }) {
 export function SeoPanel({
   pageId,
   kind = 'page',
+  pathPrefix,
 }: {
   pageId?: string;
-  kind?: 'page' | 'post';
+  kind?: 'page' | 'post' | 'entry';
+  pathPrefix?: string;
 }) {
   const { register, control, setValue } = useFormContext<CreatePagesInput>();
   const [title, slug, seoTitle, seoDescription, language, isHome] = useWatch({
@@ -65,7 +67,9 @@ export function SeoPanel({
     /\/$/,
     ''
   );
-  const prefix = `${language && language !== 'en' ? `${language}/` : ''}${kind === 'post' ? 'blog/' : ''}`;
+  const prefix = `${language && language !== 'en' ? `${language}/` : ''}${
+    kind === 'post' ? 'blog/' : kind === 'entry' ? (pathPrefix ?? '') : ''
+  }`;
   const path = isHome && kind === 'page' ? '' : `${prefix}${slug ?? ''}`;
 
   return (

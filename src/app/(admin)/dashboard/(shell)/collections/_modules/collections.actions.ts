@@ -3,6 +3,8 @@
 import { z } from 'zod';
 import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { collectionsService } from '@/server/services/collections.service';
+import { collectionTemplatesService } from '@/server/services/collection-templates.service';
+import { accessService } from '@/server/services/access.service';
 import { slugify } from '@/lib/utils/slugify';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
@@ -12,6 +14,7 @@ import {
   collectionFieldSchema,
   createCollectionSchema,
   updateCollectionSchema,
+  entryEditorSchema,
 } from './collections.schemas';
 
 /** Every post type screen (list, entries, create, edit, settings). */
@@ -377,5 +380,87 @@ export async function listCollectionOptions() {
     }));
   } catch {
     return [];
+  }
+}
+
+export async function saveEntryAction(input: unknown) {
+  const parsed = entryEditorSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? 'Invalid entry input.',
+    };
+  }
+
+  const actor = await actorId();
+  try {
+    const { id, collectionId, ...rest } = parsed.data;
+    if (id) {
+      const updated = await collectionsService.updateEntry(
+        id,
+        rest as any,
+        actor
+      );
+      revalidatePostTypes();
+      return { ok: true, id: updated.id, slug: updated.slug };
+    }
+    const created = await collectionsService.createEntry(
+      collectionId,
+      rest as any,
+      actor
+    );
+    revalidatePostTypes();
+    return { ok: true, id: created.id, slug: created.slug };
+  } catch (error: any) {
+    return { ok: false, error: error.message ?? 'Failed to save entry.' };
+  }
+}
+
+export async function deleteEntryAction(input: {
+  id: string;
+  collectionSlug: string;
+}) {
+  try {
+    await collectionsService.deleteEntry(input.id, await actorId());
+    revalidatePostTypes();
+    return { ok: true };
+  } catch (error: any) {
+    return { ok: false, error: error.message ?? 'Failed to delete entry.' };
+  }
+}
+
+export async function switchEntryLayoutAction(input: {
+  id: string;
+  layout: 'template' | 'custom';
+}) {
+  try {
+    const actor = await actorId();
+    const access = await accessService.getUserAccess(actor);
+    const updated = await collectionTemplatesService.switchEntryLayout(
+      { id: input.id, layout: input.layout },
+      access
+    );
+    revalidatePostTypes();
+    return { ok: true, layout: updated.layout };
+  } catch (error: any) {
+    return { ok: false, error: error.message ?? 'Failed to change layout.' };
+  }
+}
+
+export async function setEntryTemplateAction(input: {
+  id: string;
+  templateId: string | null;
+}) {
+  try {
+    const actor = await actorId();
+    const access = await accessService.getUserAccess(actor);
+    const updated = await collectionTemplatesService.setEntryTemplate(
+      { id: input.id, templateId: input.templateId },
+      access
+    );
+    revalidatePostTypes();
+    return { ok: true, templateId: updated.templateId };
+  } catch (error: any) {
+    return { ok: false, error: error.message ?? 'Failed to set template.' };
   }
 }

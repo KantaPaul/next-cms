@@ -105,16 +105,31 @@ function Option({
   );
 }
 
+export type DialogTemplateItem = Pick<
+  PostTemplateListItem,
+  'id' | 'name' | 'isDefault'
+> & {
+  description?: string | null;
+  isPublished?: boolean;
+  postCount?: number;
+};
+
 export function SetTemplateDialog({
   post,
   templates,
   open,
   onOpenChange,
+  title = 'Set post template',
+  onSwitchLayout,
+  onSetTemplate,
 }: {
   post: TemplateTarget;
-  templates: PostTemplateListItem[];
+  templates: DialogTemplateItem[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  title?: string;
+  onSwitchLayout?: (layout: 'custom' | 'template') => Promise<unknown>;
+  onSetTemplate?: (templateId: string | null) => Promise<unknown>;
 }) {
   const router = useRouter();
   const [choice, setChoice] = useState(() => currentChoice(post));
@@ -131,12 +146,16 @@ export function SetTemplateDialog({
     startTransition(async () => {
       const result =
         choice === CUSTOM
-          ? await switchPostLayout({ id: post.id, layout: 'custom' })
-          : await setPostTemplate({
-              id: post.id,
-              templateId: choice === DEFAULT ? null : choice,
-            });
-      await handleActionResponse(result, () => {
+          ? onSwitchLayout
+            ? await onSwitchLayout('custom')
+            : await switchPostLayout({ id: post.id, layout: 'custom' })
+          : onSetTemplate
+            ? await onSetTemplate(choice === DEFAULT ? null : choice)
+            : await setPostTemplate({
+                id: post.id,
+                templateId: choice === DEFAULT ? null : choice,
+              });
+      await handleActionResponse(result as any, () => {
         toast.success(
           choice === CUSTOM
             ? 'Custom layout created'
@@ -155,7 +174,7 @@ export function SetTemplateDialog({
     <Dialog open={open} onOpenChange={close}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Set post template</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
             Choose the layout &ldquo;{post.title}&rdquo; renders through.
           </DialogDescription>

@@ -135,3 +135,43 @@ export const collectionTermSchema = z.object({
 });
 
 export type CollectionTermInput = z.infer<typeof collectionTermSchema>;
+
+export const entryEditorSchema = z.object({
+  id: z.string().optional(),
+  collectionId: z.string().min(1),
+  slug: z.string().trim().max(200).optional(),
+  status: z
+    .enum(['draft', 'review', 'scheduled', 'published'])
+    .default('draft'),
+  visibility: z.enum(['public', 'private']).default('public'),
+  scheduledAt: z.string().nullish().optional(),
+  excerpt: z.string().max(1000).nullish().optional(),
+  featuredImage: z.string().nullish().optional(),
+  layout: z.enum(['template', 'custom']).optional(),
+  templateId: z.string().nullish().optional(),
+  data: z.record(z.string(), z.unknown()).default({}),
+  terms: z.record(z.string(), z.array(z.string())).default({}),
+  seo: z
+    .object({
+      title: z.string().trim().max(100).optional().nullable(),
+      description: z.string().trim().max(300).optional().nullable(),
+      keywords: z.string().trim().max(200).optional().nullable(),
+      canonicalUrl: z
+        .string()
+        .trim()
+        .url()
+        .optional()
+        .nullable()
+        .or(z.literal('')),
+      ogTitle: z.string().trim().max(100).optional().nullable(),
+      ogDescription: z.string().trim().max(300).optional().nullable(),
+      ogImage: z.string().trim().optional().nullable(),
+      ogType: z.string().trim().default('article'),
+      twitterCard: z.string().trim().default('summary_large_image'),
+      noIndex: z.boolean().default(false),
+      structuredDataType: z.string().trim().default('WebPage'),
+    })
+    .optional(),
+});
+
+export type EntryEditorInput = z.infer<typeof entryEditorSchema>;
