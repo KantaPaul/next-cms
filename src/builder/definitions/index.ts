@@ -20,6 +20,7 @@ import {
 import { withInfo } from './info';
 import { customBlockDefinitions } from '../custom';
 import { LoopPreviewItemField } from '../controls/loop-preview';
+import { CollectionBlockPreviewField } from '../fields/client-fields';
 
 /** Blocks offered only inside a collection's own entry/entry-template builders. */
 const COLLECTION_ONLY_BLOCKS: ReadonlySet<string> = new Set(['CollectionBlock']);
@@ -141,6 +142,16 @@ const LOOP_ITEM_EXCLUDED = new Set([
   'CollectionBlock',
 ]);
 
+/** Root settings for the collection block builder: preview entry first. */
+const COLLECTION_BLOCK_ROOT_FIELDS: Record<string, FieldDef> = {
+  previewEntry: {
+    label: 'Preview with',
+    type: 'custom',
+    render: CollectionBlockPreviewField,
+  } as FieldDef,
+  ...(PAGE_ROOT_FIELDS as Record<string, FieldDef>),
+};
+
 /** Root settings for the Loop Item editor: which item to preview, and how wide. */
 const LOOP_ITEM_ROOT_FIELDS: Record<string, FieldDef> = {
   previewItemId: {
@@ -258,7 +269,7 @@ function baseEditorSetup(kind: string): EditorSetup {
       definitions: collectionDesignDefinitions,
       schemas: schemasOf(collectionDesignDefinitions),
       inspectorBlocks: inspectorOf(collectionDesignDefinitions),
-      rootFields: PAGE_ROOT_FIELDS as Record<string, FieldDef>,
+      rootFields: COLLECTION_BLOCK_ROOT_FIELDS,
       groups: groupsOf([]),
       renderKind: 'post',
     };

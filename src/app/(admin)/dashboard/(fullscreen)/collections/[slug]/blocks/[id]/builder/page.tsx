@@ -9,7 +9,12 @@ import { NotFoundException } from '@/lib/utils/error';
 import { metaObject } from '@/lib/utils/metadata';
 import { accessService } from '@/server/services/access.service';
 import { siteSettingsService } from '@/server/services/site-settings.service';
-import { entryToPostView, SAMPLE_POST } from '@/builder/post-template';
+import { SAMPLE_POST } from '@/builder/post-template';
+import { getAdminSiteContext } from '@/server/services/site-context';
+import {
+  entryRenderContext,
+  previewEntryId,
+} from '@/app/(admin)/dashboard/(fullscreen)/_editor/entry-context';
 
 export const metadata = metaObject('Collection block builder');
 
@@ -40,40 +45,28 @@ export default async function CollectionBlockBuilderPage({
     notFound();
   }
 
-  const entries = await collectionsService.listEntries(collection.id);
-  let previewPost = SAMPLE_POST;
-  let previewEntry: any = null;
-
-  if (entries.length > 0 && entries[0]) {
-    try {
-      const detailed = await collectionsService.getEntryWithDetails(
-        entries[0].id
-      );
-      const fields = await collectionsService.getFields(collection.id);
-      previewEntry = {
-        ...detailed,
-        collection: {
-          id: collection.id,
-          name: collection.name,
-          slug: collection.slug,
-          fields,
-        },
-      };
-      previewPost = entryToPostView(
-        detailed,
-        { name: collection.name, slug: collection.slug, fields },
-        detailed.terms ?? []
-      );
-    } catch {
-      // Fall back to SAMPLE_POST
-    }
-  } else {
-    const fields = await collectionsService.getFields(collection.id);
-    previewEntry = {
-      collection: { id: collection.id, name: collection.name, slug: collection.slug, fields },
-      data: {},
-    };
-  }
+  // Preview entry: `?entry=<id>` (the "Preview with" picker), else the latest
+  // published entry in the site's default language.
+  const query = await searchParams;
+  const requested = Array.isArray(query.entry) ? query.entry[0] : query.entry;
+  const { defaultLocale } = await getAdminSiteContext(userId);
+  const entryId = await previewEntryId(collection.id, requested, defaultLocale);
+  const preview = entryId
+    ? await entryRenderContext(entryId, collection)
+    : null;
+  const fields = preview
+    ? null
+    : await collectionsService.getFields(collection.id);
+  const previewEntry = preview?.collectionEntry ?? {
+    collection: {
+      id: collection.id,
+      name: collection.name,
+      slug: collection.slug,
+      fields,
+    },
+    data: {},
+  };
+  const previewPost = preview?.post ?? SAMPLE_POST;
 
   return (
     <BuilderOrNewEditor
@@ -85,7 +78,7 @@ export default async function CollectionBlockBuilderPage({
         id: block.id,
         title: block.name,
         slug: '',
-        language: 'en',
+        language: preview?.language ?? defaultLocale,
         isHome: false,
         status:
           block.isPublished && !block.hasUnpublishedChanges

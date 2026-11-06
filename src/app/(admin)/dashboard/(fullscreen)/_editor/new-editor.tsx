@@ -765,7 +765,12 @@ export function NewEditor({
     setPreferencesStore(createPreferencesStore());
   }, []);
   const drag = useDragController(store);
-  const liveLoaded = useLiveLoaded(store, loaded, page.language);
+  const liveLoaded = useLiveLoaded(
+    store,
+    loaded,
+    page.language,
+    typeof collectionEntry?.id === 'string' ? collectionEntry.id : undefined
+  );
 
   const save = useCallback(
     async (input: SaveInput): Promise<SaveResult> => {
@@ -1567,6 +1572,8 @@ export function NewEditor({
     const singlePanelElement = (
       <SinglePanel
         blocks={setup.inspectorBlocks}
+        rootFields={setup.rootFields}
+        rootLabel={adapter.label ?? 'Page'}
         categories={setup.groups}
         templates={customTemplates}
         onSaveTemplate={handleSaveTemplate}
@@ -1885,6 +1892,8 @@ export function NewEditor({
               {!focusMode && singlePanelSide === 'left' && (
                 <SinglePanel
                   blocks={setup.inspectorBlocks}
+                  rootFields={setup.rootFields}
+                  rootLabel={adapter.label ?? 'Page'}
                   categories={setup.groups}
                   templates={customTemplates}
                   onSaveTemplate={handleSaveTemplate}
@@ -1904,6 +1913,8 @@ export function NewEditor({
               {!focusMode && singlePanelSide === 'right' && (
                 <SinglePanel
                   blocks={setup.inspectorBlocks}
+                  rootFields={setup.rootFields}
+                  rootLabel={adapter.label ?? 'Page'}
                   categories={setup.groups}
                   templates={customTemplates}
                   onSaveTemplate={handleSaveTemplate}

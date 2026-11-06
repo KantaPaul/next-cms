@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { getCurrentUserAndTeamId, validateSession } from '@/lib/auth';
 import { collectionBlocksService } from '@/server/services/collection-blocks.service';
 import { accessService } from '@/server/services/access.service';
+import { collectionsService } from '@/server/services/collections.service';
 
 const createSchema = z.object({
   collectionId: z.string().min(1),
@@ -124,4 +125,23 @@ export async function getCollectionBlockContentAction(
     draft,
     siteId: typeof options?.siteId === 'string' ? options.siteId : undefined,
   });
+}
+
+/** Entries to preview a collection block with, newest first. */
+export async function listCollectionBlockPreviewEntriesAction(
+  collectionId: string
+) {
+  if (typeof collectionId !== 'string' || !collectionId) return [];
+  await getAccess();
+  const [rows, labels] = await Promise.all([
+    collectionsService.listEntries(collectionId),
+    collectionsService.listEntryOptions(collectionId),
+  ]);
+  const labelById = new Map(labels.map(option => [option.id, option.label]));
+  return rows.map(row => ({
+    id: row.id,
+    label: labelById.get(row.id) || row.slug,
+    language: row.language || 'en',
+    status: row.status,
+  }));
 }

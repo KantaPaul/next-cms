@@ -1,9 +1,13 @@
 import 'server-only';
-import { and, asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
 import { type BuilderData, isBuilderData } from '@/builder/data';
 import { PERMISSIONS } from '@/config/permissions';
 import { db } from '@/db';
-import { collectionBlocks } from '@/db/schema';
+import {
+  collectionBlocks,
+  collectionEntries,
+  collectionTemplates,
+} from '@/db/schema';
 import { ApplicationException, NotFoundException } from '@/lib/utils/error';
 import { revalidatePublicSite } from '@/lib/utils/revalidate-site';
 import {
@@ -14,6 +18,13 @@ import { auditService } from '@/server/services/audit.service';
 import { adminSiteId } from '@/server/services/site-context';
 
 type BlockRow = typeof collectionBlocks.$inferSelect;
+
+export type CollectionBlockContent = {
+  collectionId: string;
+  name: string;
+  status: 'published' | 'draft-only' | 'changes';
+  content: BuilderData | null;
+};
 
 const sameJson = (a: unknown, b: unknown) =>
   JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
@@ -59,6 +70,59 @@ const editableContent = (
 const publishedContent = (row?: Pick<BlockRow, 'content'>): BuilderData | null =>
   isBuilderData(row?.content) ? (row.content as BuilderData) : null;
 
+/** Block ids referenced anywhere in a stored layout. */
+const referencedBlockIds = (layouts: unknown[]): Set<string> => {
+  const found = new Set<string>();
+  for (const layout of layouts) {
+    if (!layout) continue;
+    for (const match of JSON.stringify(layout).matchAll(
+      /"collectionBlockId":"([^"]+)"/g
+    )) {
+      if (match[1]) found.add(match[1]);
+    }
+  }
+  return found;
+};
+
+/** How many entries and templates of a collection use each block. */
+async function usageByBlock(collectionId: string) {
+  const [entries, templates] = await Promise.all([
+    db
+      .select({
+        canvas: collectionEntries.canvas,
+        draftCanvas: collectionEntries.draftCanvas,
+      })
+      .from(collectionEntries)
+      .where(
+        and(
+          eq(collectionEntries.collectionId, collectionId),
+          isNull(collectionEntries.deletedAt)
+        )
+      ),
+    db
+      .select({
+        content: collectionTemplates.content,
+        draftContent: collectionTemplates.draftContent,
+      })
+      .from(collectionTemplates)
+      .where(eq(collectionTemplates.collectionId, collectionId)),
+  ]);
+  const usage: Record<string, { entries: number; templates: number }> = {};
+  const add = (ids: Set<string>, key: 'entries' | 'templates') => {
+    for (const id of ids) {
+      usage[id] ??= { entries: 0, templates: 0 };
+      usage[id][key] += 1;
+    }
+  };
+  for (const row of entries) {
+    add(referencedBlockIds([row.canvas, row.draftCanvas]), 'entries');
+  }
+  for (const row of templates) {
+    add(referencedBlockIds([row.content, row.draftContent]), 'templates');
+  }
+  return usage;
+}
+
 const audit = (
   access: UserAccess,
   action: 'create' | 'update' | 'publish' | 'delete',
@@ -88,13 +152,19 @@ export const collectionBlocksService = {
           eq(collectionBlocks.siteId, siteId)
         )
       : eq(collectionBlocks.collectionId, collectionId);
-    const rows = await db
-      .select()
-      .from(collectionBlocks)
-      .where(where)
-      .orderBy(asc(collectionBlocks.name));
+    const [rows, usage] = await Promise.all([
+      db
+        .select()
+        .from(collectionBlocks)
+        .where(where)
+        .orderBy(asc(collectionBlocks.name)),
+      usageByBlock(collectionId).catch(() => ({}) as Awaited<
+        ReturnType<typeof usageByBlock>
+      >),
+    ]);
 
     return rows.map(row => ({
+      usage: usage[row.id] ?? { entries: 0, templates: 0 },
       id: row.id,
       collectionId: row.collectionId,
       name: row.name,
@@ -268,12 +338,15 @@ export const collectionBlocksService = {
     return row;
   },
 
-  /** Published content for block refs, keyed for loader batching. */
+  /**
+   * Content for block refs, keyed for loader batching. `draft` serves the
+   * draft (editor/preview); otherwise only published content is returned.
+   */
   getPublishedContent: async (
     ids: string[],
     options?: { draft?: boolean; siteId?: string }
-  ) => {
-    if (!ids.length) return {} as Record<string, BuilderData | null>;
+  ): Promise<Record<string, CollectionBlockContent>> => {
+    if (!ids.length) return {};
     const siteId = options?.siteId ?? (await adminSiteId().catch(() => 'default'));
     const rows = await db
       .select({
@@ -289,21 +362,27 @@ export const collectionBlocksService = {
       );
 
     return Object.fromEntries(
-      rows
-        .map(row => [
+      rows.map(row => {
+        const published = publishedContent(row);
+        const status: CollectionBlockContent['status'] = !published
+          ? 'draft-only'
+          : isBuilderData(row.draftContent) &&
+              !sameJson(row.draftContent, row.content)
+            ? 'changes'
+            : 'published';
+        return [
           row.id,
           {
             collectionId: row.collectionId,
             name: row.name,
+            status,
             content:
               options?.draft && isBuilderData(row.draftContent)
                 ? (row.draftContent as BuilderData)
-                : publishedContent(row),
+                : published,
           },
-        ])
-    ) as Record<
-      string,
-      { collectionId: string; name: string; content: BuilderData | null } | null
-    >;
+        ];
+      })
+    );
   },
 };

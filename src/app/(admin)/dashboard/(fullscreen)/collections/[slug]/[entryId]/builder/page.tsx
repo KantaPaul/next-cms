@@ -7,7 +7,7 @@ import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { metaObject } from '@/lib/utils/metadata';
 import { accessService } from '@/server/services/access.service';
 import { siteSettingsService } from '@/server/services/site-settings.service';
-import { entryToPostView } from '@/builder/post-template';
+import { entryRenderContext } from '@/app/(admin)/dashboard/(fullscreen)/_editor/entry-context';
 
 export const metadata = metaObject('Entry custom layout builder');
 
@@ -39,14 +39,8 @@ export default async function CollectionEntryBuilderPage({
     redirect(PAGES.DASHBOARD.COLLECTION_ENTRY_EDIT(slug, entryId));
   }
 
-  const fields = await collectionsService.getFields(collection.id);
-  const collectionInfo = {
-    id: collection.id,
-    name: collection.name,
-    slug: collection.slug,
-    fields,
-  };
-  const postView = entryToPostView(entry, collectionInfo, entry.terms ?? []);
+  const context = await entryRenderContext(entry.id, collection);
+  if (!context) notFound();
 
   const content = entry.draftCanvas ?? entry.canvas;
 
@@ -54,11 +48,8 @@ export default async function CollectionEntryBuilderPage({
     <BuilderOrNewEditor
       searchParams={searchParams}
       kind="entry"
-      post={postView}
-      collectionEntry={{
-        ...entry,
-        collection: collectionInfo,
-      }}
+      post={context.post}
+      collectionEntry={context.collectionEntry}
       page={{
         id: entry.id,
         title: entry.slug,

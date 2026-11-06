@@ -1,10 +1,13 @@
 /**
  * Full demo-site seed.
  *
- * Truncates every application table (except drizzle's `ledgerly_migrations`)
- * and seeds the default site with content for every route: pages that use
- * every builder block, header/footer/search/archive templates, a contact
- * form, the blog, and the user guide as blog posts (see src/content/user-guide).
+ * Truncates every table in the public schema (except drizzle's
+ * `ledgerly_migrations`) and seeds the default site with content for every
+ * route: pages that use every builder block, header/footer/search/archive
+ * templates, a contact form, a blog of builder articles (one per topic, see
+ * sections/builder-posts.ts), the user guide as posts, and five post types
+ * with taxonomies, single templates, collection blocks and translations
+ * (sections/post-types.ts).
  *
  * Wipes and reseeds: safe to re-run with `pnpm db:seed`.
  *
@@ -35,6 +38,8 @@ import { GUIDE_PDF_PATH } from '@/content/user-guide';
 import { assertValid, block, page } from './builder-nodes';
 import { SEED_IMAGES, seedPageDefs } from './sections/pages';
 import { seedGuidePosts } from './sections/posts';
+import { BLOG_CATEGORIES, BLOG_TAGS, BUILDER_POSTS, POST_IMAGES } from './sections/builder-posts';
+import { seedPostTypes } from './sections/post-types';
 import { seedSiteTemplates } from './sections/templates';
 import { searchIndex } from '@/server/services/search.service';
 
@@ -52,71 +57,30 @@ type SiteCtx = {
   viewer: UserRef | null;
 };
 
-/** Every application table that must be cleaned. `ledgerly_migrations` is
- *  drizzle's own meta table and is intentionally left alone. */
-const TABLES = [
-  'webhook_deliveries',
-  'webhook_subscriptions',
-  'video_progress',
-  'videos',
-  'video_playlists',
-  'personalized_section',
-  'personalization',
-  'account',
-  'session',
-  'audit_logs',
-  'login_tokens',
-  'search_documents',
-  'redirects',
-  'form_submissions',
-  'api_rate_windows',
-  'api_keys',
-  'editor_locks',
-  'page_views',
-  'page_experiments',
-  'analytics_dashboards',
-  'post_tags',
-  'post_categories',
-  'post_seo',
-  'post_revisions',
-  'post_contents',
-  'post_templates',
-  'posts',
-  'page_tags',
-  'page_categories',
-  'seo_meta',
-  'page_revisions',
-  'page_contents',
-  'preview_tokens',
-  'pages',
-  'menu_items',
-  'menus',
-  'global_blocks',
-  'page_templates',
-  'media',
-  'collection_entries',
-  'collection_fields',
-  'collections',
-  'tags',
-  'categories',
-  'site_memberships',
-  'site_settings',
-  'users',
-  'roles',
-  'sites',
-] as const;
+/** Drizzle's migration bookkeeping: never truncated. */
+const MIGRATIONS_TABLE = 'ledgerly_migrations';
 
+/**
+ * Empties every table in the public schema except the migrations table, so
+ * tables added by later migrations are cleaned too.
+ */
 async function truncateAll() {
-  const identifiers = TABLES.map(t => sql.identifier(t));
-  await db.execute(
-    sql`TRUNCATE ${sql.join(identifiers, sql`, `)} RESTART IDENTITY CASCADE`
+  const result = await db.execute<{ tablename: string }>(
+    sql`SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename <> ${MIGRATIONS_TABLE}`
   );
+  const rows = (Array.isArray(result) ? result : (result as { rows: { tablename: string }[] }).rows) as { tablename: string }[];
+  const tables = rows.map(row => row.tablename);
+  if (!tables.length) return 0;
+  await db.execute(
+    sql`TRUNCATE ${sql.join(tables.map(t => sql.identifier(t)), sql`, `)} RESTART IDENTITY CASCADE`
+  );
+  return tables.length;
 }
 
 async function main() {
   console.info('Cleaning database...');
-  await truncateAll();
-  console.info('All tables truncated.');
+  const cleaned = await truncateAll();
+  console.info(`Tables truncated: ${cleaned}.`);
 
   // ─── Roles & permissions ─────────────────────────────────────────────
   const roleByName = new Map<string, RoleRef>();
@@ -288,17 +252,21 @@ async function main() {
     const headerItems = [
       { label: 'Home', url: '/', order: 0 },
       { label: 'About', url: '/about', order: 1 },
-      { label: 'Pricing', url: '/pricing', order: 2 },
-      { label: 'Blog', url: '/blog', order: 3 },
-      { label: 'Components', url: '/components', order: 4 },
-      { label: 'User guide', url: '/user-guide', order: 5 },
-      { label: 'Contact', url: '/contact', order: 6 },
+      { label: 'Showcase', url: '/collections/showcase', order: 2 },
+      { label: 'Pricing', url: '/pricing', order: 3 },
+      { label: 'Blog', url: '/blog', order: 4 },
+      { label: 'Components', url: '/components', order: 5 },
+      { label: 'User guide', url: '/user-guide', order: 6 },
+      { label: 'Contact', url: '/contact', order: 7 },
     ];
     const footerItems = [
-      { label: 'Privacy', url: '/privacy', order: 0 },
-      { label: 'Terms', url: '/terms', order: 1 },
-      { label: 'Search', url: '/search', order: 2 },
-      { label: 'User guide (PDF)', url: GUIDE_PDF_PATH, order: 3 },
+      { label: 'Team', url: '/collections/team', order: 0 },
+      { label: 'Changelog', url: '/collections/changelog', order: 1 },
+      { label: 'FAQ', url: '/collections/faq', order: 2 },
+      { label: 'Privacy', url: '/privacy', order: 3 },
+      { label: 'Terms', url: '/terms', order: 4 },
+      { label: 'Search', url: '/search', order: 5 },
+      { label: 'User guide (PDF)', url: GUIDE_PDF_PATH, order: 6 },
     ];
 
     for (const [menuId, items] of [
@@ -331,55 +299,44 @@ async function main() {
   // ─── Categories & tags (per site) ────────────────────────────────────
   let totalCategories = 0;
   let totalTags = 0;
-  const categoryBySite = new Map<string, { id: string; name: string }[]>();
-  const tagBySite = new Map<string, { id: string; name: string }[]>();
+  const categoryBySite = new Map<string, { id: string; name: string; key: string }[]>();
+  const tagBySite = new Map<string, { id: string; name: string; key: string }[]>();
   for (const ctx of siteCtxById.values()) {
-    const cats = [
-      { name: 'Design', slug: 'design' },
-      { name: 'Engineering', slug: 'engineering' },
-      { name: 'Marketing', slug: 'marketing' },
-    ];
-    const insertedCats: { id: string; name: string }[] = [];
-    for (let i = 0; i < cats.length; i++) {
-      const cat = cats[i];
+    const insertedCats: { id: string; name: string; key: string }[] = [];
+    for (const cat of BLOG_CATEGORIES) {
       const [row] = await db
         .insert(schema.categories)
         .values({
           id: createId(),
           siteId: ctx.siteId,
           name: cat.name,
-          slug: cat.slug,
-          description: `${cat.name} category`,
-          parentId: i === 0 ? null : insertedCats[0].id,
+          slug: cat.key,
+          description: cat.description,
+          parentId: null,
           language: 'en',
           createdBy: ctx.admin.id,
         })
         .returning();
-      insertedCats.push({ id: row.id, name: cat.name });
+      insertedCats.push({ id: row.id, name: cat.name, key: cat.key });
       totalCategories++;
     }
     categoryBySite.set(ctx.siteId, insertedCats);
 
-    const tags = [
-      { name: 'Featured', slug: 'featured', color: '#ef4444' },
-      { name: 'Tutorial', slug: 'tutorial', color: '#3b82f6' },
-      { name: 'News', slug: 'news', color: '#10b981' },
-    ];
-    const insertedTags: { id: string; name: string }[] = [];
-    for (const tag of tags) {
+    const insertedTags: { id: string; name: string; key: string }[] = [];
+    for (const tag of BLOG_TAGS) {
       const [row] = await db
         .insert(schema.tags)
         .values({
           id: createId(),
           siteId: ctx.siteId,
           name: tag.name,
-          slug: tag.slug,
+          slug: tag.key,
           color: tag.color,
           language: 'en',
           createdBy: ctx.admin.id,
         })
         .returning();
-      insertedTags.push({ id: row.id, name: tag.name });
+      insertedTags.push({ id: row.id, name: tag.name, key: tag.key });
       totalTags++;
     }
     tagBySite.set(ctx.siteId, insertedTags);
@@ -565,128 +522,123 @@ async function main() {
   let totalPostSeo = 0;
   const postBySite = new Map<string, { id: string; title: string; slug: string }[]>();
 
-  const demoPosts = [
-    {
-      title: 'Getting started with Next CMS',
-      slug: 'getting-started',
-      image: SEED_IMAGES.laptop,
-      layout: 'template' as const,
-      featured: false,
-      body: '<p>This demo site was created by <code>pnpm db:seed</code>. Every page uses real builder blocks, and the header, footer, search, and archive pages use the default site templates.</p><h2>Where to go next</h2><ul><li>Open the <a href="/components">components page</a> to see every block.</li><li>Read the <a href="/user-guide">user guide</a>.</li><li>Sign in at <a href="/login">/login</a> as <code>admin@nextcms.test</code>.</li></ul>',
-    },
-    {
-      title: 'Building better landing pages',
-      slug: 'better-landing-pages',
-      image: SEED_IMAGES.desk,
-      layout: 'template' as const,
-      featured: true,
-      body: '<p>A good landing page has one goal. Start with a Hero that states it, prove it with Features and Stats, remove doubt with Testimonials and an FAQ, and finish with a single call to action.</p><h2>Keep it on brand</h2><p>Save sections you reuse as global blocks, and start new pages from page templates.</p>',
-    },
-    {
-      title: 'Designing a post with a custom layout',
-      slug: 'custom-layout-post',
-      image: SEED_IMAGES.meeting,
-      layout: 'custom' as const,
-      featured: false,
-      body: '<p>This post ignores the post templates and uses its own canvas, built in the post builder.</p><p>Use a custom layout for special stories such as launches or case studies.</p>',
-    },
-  ];
+  /** Custom canvas for posts with `layout: 'custom'`. */
+  const customPostCanvas = (title: string) =>
+    assertValid(title, page([
+      block('PostFeaturedImage', { aspect: '16/9' }),
+      block('PostTitle', { showBackLink: true, showExcerpt: true, alignment: 'center' }),
+      block('Columns', {
+        layout: '2-1',
+        column1: [block('PostContent', { width: 'full' })],
+        column2: [
+          block('PostMeta', {}),
+          block('CTA', { title: 'Try a custom layout', description: 'Open any post in the builder and switch its layout to Custom.', primaryButtonText: 'Sign in', primaryButtonLink: '/login', secondaryButtonText: '', secondaryButtonLink: '', variant: 'subtle' }),
+        ],
+      }),
+      block('RelatedPosts', { title: 'More from the blog', limit: 3, columns: 3 }),
+    ]));
 
   for (const ctx of siteCtxById.values()) {
     const siteTemplates = templatesBySite.get(ctx.siteId)!;
     const posts: { id: string; title: string; slug: string }[] = [];
-    for (let i = 0; i < demoPosts.length; i++) {
-      const demo = demoPosts[i];
-      const { title, slug } = demo;
-      const canvas =
-        demo.layout === 'custom'
-          ? assertValid(title, page([
-              block('PostFeaturedImage', { aspect: '16/9' }),
-              block('PostTitle', { showBackLink: true, showExcerpt: true, alignment: 'center' }),
-              block('Columns', {
-                layout: '2-1',
-                column1: [block('PostContent', { width: 'full' })],
-                column2: [block('PostMeta', {}), block('CTA', { title: 'Try the builder', description: 'Sign in and open the post builder.', primaryButtonText: 'Sign in', primaryButtonLink: '/login', secondaryButtonText: '', secondaryButtonLink: '', variant: 'subtle' })],
-              }),
-              block('RelatedPosts', { title: 'More posts', limit: 3, columns: 3 }),
-            ]))
-          : null;
-      const [post] = await db
-        .insert(schema.posts)
-        .values({
-          id: createId(),
-          siteId: ctx.siteId,
-          title,
-          slug,
-          excerpt: demo.body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160),
-          featuredImage: demo.image,
-          status: 'published',
-          visibility: 'public',
-          layout: demo.layout,
-          templateId: demo.featured ? siteTemplates.featuredPostLayoutId : siteTemplates.defaultPostLayoutId,
-          language: 'en',
-          publishedAt: new Date(Date.now() + (i + 1) * 60 * 1000),
-          createdBy: i === 0 ? ctx.admin.id : (ctx.author ?? ctx.admin).id,
-        })
-        .returning();
-      posts.push({ id: post.id, title, slug });
-      totalPosts++;
+    const cats = categoryBySite.get(ctx.siteId)!;
+    const tags = tagBySite.get(ctx.siteId)!;
+    const userFor = (who: 'admin' | 'editor' | 'author') =>
+      (who === 'editor' ? ctx.editor : who === 'author' ? ctx.author : ctx.admin) ?? ctx.admin;
 
-      for (const kind of ['draft', 'published'] as const) {
-        await db.insert(schema.postContents).values({
+    // Newest first: one article a day going back, scheduled ones in the future.
+    let published = 0;
+    for (const demo of BUILDER_POSTS) {
+      const status = demo.status ?? 'published';
+      const layout = demo.layout === 'custom' ? ('custom' as const) : ('template' as const);
+      const canvas = layout === 'custom' ? customPostCanvas(demo.title) : null;
+      const day = 24 * 60 * 60 * 1000;
+      const publishedAt =
+        status === 'published' ? new Date(Date.now() - published++ * day) : null;
+      const scheduledAt =
+        status === 'scheduled' ? new Date(Date.now() + 14 * day) : null;
+      const author = userFor(demo.author);
+      const categoryId = cats.find(c => c.key === demo.category)!.id;
+      const tagIds = demo.tags.map(key => tags.find(t => t.key === key)!.id);
+
+      const insertPost = async (
+        values: { title: string; slug: string; excerpt: string; body: string },
+        language: string,
+        translationGroupId: string | null
+      ) => {
+        const [post] = await db
+          .insert(schema.posts)
+          .values({
+            id: createId(),
+            siteId: ctx.siteId,
+            title: values.title,
+            slug: values.slug,
+            excerpt: values.excerpt,
+            featuredImage: demo.image,
+            status,
+            visibility: 'public',
+            layout,
+            templateId: demo.layout === 'featured' ? siteTemplates.featuredPostLayoutId : siteTemplates.defaultPostLayoutId,
+            language,
+            translationGroupId,
+            publishedAt,
+            scheduledAt,
+            createdBy: author.id,
+          })
+          .returning();
+        posts.push({ id: post.id, title: values.title, slug: values.slug });
+        totalPosts++;
+
+        const kinds = status === 'published' ? (['draft', 'published'] as const) : (['draft'] as const);
+        for (const kind of kinds) {
+          await db.insert(schema.postContents).values({ id: createId(), postId: post.id, kind, body: values.body, canvas });
+          totalPostContents++;
+        }
+        await db.insert(schema.postRevisions).values({
           id: createId(),
           postId: post.id,
-          kind,
-          body: demo.body,
+          kind: status === 'published' ? 'published' : 'manual',
+          title: values.title,
+          label: status === 'published' ? 'First publish' : 'First draft',
+          layout,
+          body: values.body,
           canvas,
+          authorId: author.id,
         });
-        totalPostContents++;
+        totalPostRevisions++;
+        await db.insert(schema.postSeo).values({
+          id: createId(),
+          postId: post.id,
+          title: `${values.title} | ${ctx.name}`,
+          description: values.excerpt,
+          noIndex: false,
+        });
+        totalPostSeo++;
+        await db.insert(schema.postCategories).values({ postId: post.id, categoryId });
+        for (const tagId of tagIds) {
+          await db.insert(schema.postTags).values({ postId: post.id, tagId });
+        }
+        return post.id;
+      };
+
+      const sourceId = await insertPost(demo, 'en', null);
+      if (demo.es) {
+        await db.update(schema.posts).set({ translationGroupId: sourceId }).where(eq(schema.posts.id, sourceId));
+        await insertPost(demo.es, 'es', sourceId);
       }
 
-      await db.insert(schema.postRevisions).values({
-        id: createId(),
-        postId: post.id,
-        kind: 'published',
-        title,
-        label: 'First publish',
-        layout: demo.layout,
-        body: demo.body,
-        canvas,
-        authorId: ctx.admin.id,
-      });
-      totalPostRevisions++;
-
-      await db.insert(schema.postSeo).values({
-        id: createId(),
-        postId: post.id,
-        title: `${title} | ${ctx.name}`,
-        description: `Read about ${title.toLowerCase()} on ${ctx.name}.`,
-        noIndex: false,
-      });
-      totalPostSeo++;
-
-      const cats = categoryBySite.get(ctx.siteId)!;
-      const tags = tagBySite.get(ctx.siteId)!;
-      await db.insert(schema.postCategories).values({
-        postId: post.id,
-        categoryId: cats[i % cats.length].id,
-      });
-      await db.insert(schema.postTags).values({
-        postId: post.id,
-        tagId: tags[i % tags.length].id,
-      });
-
-      await db.insert(schema.pageViews).values({
-        id: createId(),
-        siteId: ctx.siteId,
-        pageId: null,
-        postId: post.id,
-        path: `/blog/${slug}`,
-        referrerHost: null,
-        visitorId: `visitor_${createId().slice(-6)}`,
-        variant: null,
-      });
-      totalPageViews++;
+      // An editing lock on the article in review, to show the lock UI.
+      if (status === 'review') {
+        await db.insert(schema.editorLocks).values({
+          id: createId(),
+          siteId: ctx.siteId,
+          targetType: 'post',
+          targetId: sourceId,
+          userId: (ctx.editor ?? ctx.admin).id,
+          lastSeenAt: nowDate(),
+        });
+        totalEditorLocks++;
+      }
     }
 
     // The user guide: one post per topic.
@@ -696,6 +648,8 @@ async function main() {
       authorId: ctx.admin.id,
       templateId: siteTemplates.defaultPostLayoutId,
       tagIds: tutorialTag ? [tutorialTag.id] : [],
+      // Older than the builder articles, so those lead the blog.
+      startAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000),
     });
     posts.push(...guide.posts);
     totalPosts += guide.posts.length;
@@ -714,6 +668,45 @@ async function main() {
 
     postBySite.set(ctx.siteId, posts);
   }
+  // Analytics: 30 days of views so the charts and top-content lists have data.
+  // Deterministic, so every seed run looks the same.
+  let seedRandom = 7;
+  const nextRandom = () => {
+    seedRandom = (seedRandom * 16807) % 2147483647;
+    return seedRandom / 2147483647;
+  };
+  const referrers = [null, null, 'www.google.com', 'news.ycombinator.com', 'twitter.com', 'www.linkedin.com'];
+  for (const ctx of siteCtxById.values()) {
+    const targets = [
+      ...pageBySite.get(ctx.siteId)!.map(p => ({ pageId: p.id, postId: null, path: `/${p.slug === 'home' ? '' : p.slug}`, weight: p.slug === 'home' ? 12 : 4 })),
+      ...postBySite.get(ctx.siteId)!.map(p => ({ pageId: null, postId: p.id, path: `/blog/${p.slug}`, weight: 2 })),
+    ];
+    const rows: (typeof schema.pageViews.$inferInsert)[] = [];
+    for (let day = 0; day < 30; day++) {
+      for (const target of targets) {
+        const views = Math.floor(nextRandom() * target.weight * (day < 7 ? 1.5 : 1));
+        for (let v = 0; v < views; v++) {
+          rows.push({
+            id: createId(),
+            siteId: ctx.siteId,
+            pageId: target.pageId,
+            postId: target.postId,
+            path: target.path,
+            referrerHost: referrers[Math.floor(nextRandom() * referrers.length)],
+            visitorId: `visitor_${Math.floor(nextRandom() * 400)}`,
+            variant: null,
+            createdAt: new Date(Date.now() - day * 24 * 60 * 60 * 1000 - Math.floor(nextRandom() * 86_400_000)),
+          });
+        }
+      }
+    }
+    for (let i = 0; i < rows.length; i += 500) {
+      await db.insert(schema.pageViews).values(rows.slice(i, i + 500));
+    }
+    totalPageViews += rows.length;
+  }
+  console.info(`Page views: ${totalPageViews}`);
+
   // Search index: the app's own indexer, so paths match path/host routing.
   for (const ctx of siteCtxById.values()) {
     for (const p of pageBySite.get(ctx.siteId)!) {
@@ -732,138 +725,31 @@ async function main() {
     `Post templates: ${siteCtxById.size * 2}, posts: ${totalPosts}, post contents: ${totalPostContents}, post revisions: ${totalPostRevisions}, post seo: ${totalPostSeo}`
   );
 
-  // ─── Collections, fields, entries (per site) ─────────────────────────
-  let totalCollections = 0;
-  let totalCollectionFields = 0;
-  let totalCollectionEntries = 0;
+  // ─── Post types: fields, taxonomies, templates, blocks, entries ────────
+  const entryIdsBySite = new Map<string, string[]>();
   for (const ctx of siteCtxById.values()) {
-    const [collection] = await db
-      .insert(schema.collections)
-      .values({
-        id: createId(),
-        siteId: ctx.siteId,
-        name: 'Authors',
-        slug: 'authors',
-        templatePageId: null,
-        status: 'active',
-      })
-      .returning();
-    totalCollections++;
-
-    const fields: Array<{
-      key: string;
-      label: string;
-      type: (typeof schema.collectionFieldTypeEnum.enumValues)[number];
-      required: boolean;
-    }> = [
-      { key: 'name', label: 'Name', type: 'text', required: true },
-      { key: 'bio', label: 'Bio', type: 'richtext', required: false },
-      { key: 'twitter', label: 'Twitter', type: 'text', required: false },
-    ];
-    let position = 0;
-    for (const f of fields) {
-      await db.insert(schema.collectionFields).values({
-        id: createId(),
-        collectionId: collection.id,
-        key: f.key,
-        label: f.label,
-        type: f.type,
-        required: f.required,
-        position: position++,
-        config: {},
-      });
-      totalCollectionFields++;
-    }
-
-    const entries: Array<{
-      slug: string;
-      data: Record<string, unknown>;
-      status: 'published' | 'draft';
-    }> = [
-      {
-        slug: 'jane-doe',
-        data: { name: 'Jane Doe', bio: 'Content strategist', twitter: '@jane' },
-        status: 'published',
-      },
-      {
-        slug: 'john-smith',
-        data: { name: 'John Smith', bio: 'Lead developer', twitter: null },
-        status: 'draft',
-      },
-    ];
-    for (const e of entries) {
-      await db.insert(schema.collectionEntries).values({
-        id: createId(),
-        siteId: ctx.siteId,
-        collectionId: collection.id,
-        slug: e.slug,
-        status: e.status,
-        data: e.data,
-        authorId: ctx.admin.id,
-        publishedAt: e.status === 'published' ? nowDate() : null,
-      });
-      totalCollectionEntries++;
-    }
-
-    // Team: entries get public pages rendered with the "Team member" page.
-    const teamPage = pageBySite.get(ctx.siteId)!.find(p => p.slug === 'team-member');
-    const [team] = await db
-      .insert(schema.collections)
-      .values({
-        siteId: ctx.siteId,
-        name: 'Team',
-        slug: 'team',
-        templatePageId: teamPage?.id ?? null,
-        status: 'active',
-      })
-      .returning();
-    totalCollections++;
-    const teamFields: typeof fields = [
-      { key: 'name', label: 'Name', type: 'text', required: true },
-      { key: 'role', label: 'Role', type: 'text', required: true },
-      { key: 'photo', label: 'Photo', type: 'media', required: false },
-      { key: 'bio', label: 'Bio', type: 'richtext', required: false },
-    ];
-    for (const [index, f] of teamFields.entries()) {
-      await db.insert(schema.collectionFields).values({
-        collectionId: team.id,
-        key: f.key,
-        label: f.label,
-        type: f.type,
-        required: f.required,
-        position: index,
-        config: {},
-      });
-      totalCollectionFields++;
-    }
-    const members = [
-      { slug: 'ava-thompson', name: 'Ava Thompson', role: 'Founder', photo: SEED_IMAGES.person1, bio: '<p>Ava started Next CMS to give editors a builder they enjoy.</p>' },
-      { slug: 'leo-martins', name: 'Leo Martins', role: 'Engineering', photo: SEED_IMAGES.person2, bio: '<p>Leo leads the builder engine and the public API.</p>' },
-      { slug: 'sara-ahmed', name: 'Sara Ahmed', role: 'Design', photo: SEED_IMAGES.person3, bio: '<p>Sara designs the blocks, templates, and theme tokens.</p>' },
-    ];
-    for (const { slug, ...data } of members) {
-      await db.insert(schema.collectionEntries).values({
-        siteId: ctx.siteId,
-        collectionId: team.id,
-        slug,
-        status: 'published',
-        data,
-        authorId: ctx.admin.id,
-        publishedAt: nowDate(),
-      });
-      totalCollectionEntries++;
-    }
+    const { entryIds, counts } = await seedPostTypes({
+      siteId: ctx.siteId,
+      adminId: ctx.admin.id,
+      authorIds: [ctx.admin.id, (ctx.editor ?? ctx.admin).id, (ctx.author ?? ctx.admin).id],
+    });
+    entryIdsBySite.set(ctx.siteId, entryIds);
+    for (const id of entryIds) await searchIndex.syncCollectionEntry(id);
+    console.info(
+      `Post types: ${counts.types}, fields: ${counts.fields}, taxonomies: ${counts.taxonomies}, terms: ${counts.terms}, single templates: ${counts.templates}, collection blocks: ${counts.blocks}, entries: ${counts.entries}`
+    );
   }
-  console.info(
-    `Collections: ${totalCollections}, collection fields: ${totalCollectionFields}, collection entries: ${totalCollectionEntries}`
-  );
 
   // ─── Media, global blocks, page templates (per site) ─────────────────
   let totalMedia = 0;
   let totalPageTemplates = 0;
   for (const ctx of siteCtxById.values()) {
     // Media: the images the seeded pages use.
-    for (const [name, url] of Object.entries(SEED_IMAGES)) {
+    const library = new Map<string, string>();
+    for (const [name, url] of [...Object.entries(SEED_IMAGES), ...Object.entries(POST_IMAGES)]) {
+      if (![...library.values()].includes(url)) library.set(name, url);
+    }
+    for (const [name, url] of library) {
       const portrait = name.startsWith('person');
       await db.insert(schema.media).values({
         id: createId(),
@@ -1043,29 +929,36 @@ async function main() {
       .values({
         id: createId(),
         siteId: ctx.siteId,
-        name: 'Featured Videos',
-        slug: 'featured-videos',
-        description: 'A selection of featured videos',
+        name: 'Builder tutorials',
+        slug: 'builder-tutorials',
+        description: 'Short walkthroughs of the builder, one feature per video.',
         position: 0,
         createdBy: ctx.admin.id,
       })
       .returning();
     totalPlaylists++;
 
-    for (let i = 0; i < 2; i++) {
+    const videoDefs = [
+      { title: 'Builder tour: your first page', duration: 312 },
+      { title: 'Loop Grid and Loop Items in ten minutes', duration: 604 },
+      { title: 'Post types, taxonomies and collection blocks', duration: 845 },
+      { title: 'Headers, footers and display rules', duration: 421 },
+    ];
+    for (let i = 0; i < videoDefs.length; i++) {
+      const videoDef = videoDefs[i];
       const [video] = await db
         .insert(schema.videos)
         .values({
           id: createId(),
           siteId: ctx.siteId,
           playlistId: playlist.id,
-          title: `Video ${i + 1}`,
-          slug: `video-${i + 1}`,
+          title: videoDef.title,
+          slug: videoDef.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
           url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
           provider: 'youtube',
           providerId: 'dQw4w9WgXcQ',
           thumbnailUrl: 'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg',
-          duration: 210,
+          duration: videoDef.duration,
           status: 'published',
           visibility: 'public',
           position: i,
@@ -1080,9 +973,9 @@ async function main() {
         siteId: ctx.siteId,
         videoId: video.id,
         userId: ctx.admin.id,
-        position: i * 30,
-        duration: 210,
-        completed: i === 1,
+        position: i === 0 ? videoDef.duration : Math.floor(videoDef.duration / 3),
+        duration: videoDef.duration,
+        completed: i === 0,
       });
       totalVideoProgress++;
     }
@@ -1126,18 +1019,30 @@ async function main() {
   let totalAuditLogs = 0;
   let totalSessions = 0;
   let totalAccounts = 0;
-  for (const user of allUsers) {
+  const auditEntries: { actor: UserRef; action: string; targetType: string; targetName: string; details?: string }[] = [
+    { actor: adminUser, action: 'create', targetType: 'collection', targetName: 'Showcase', details: 'Post type created with 8 fields' },
+    { actor: adminUser, action: 'publish', targetType: 'template', targetName: 'Collection block: Member card' },
+    { actor: editorUser, action: 'publish', targetType: 'page', targetName: 'Home' },
+    { actor: editorUser, action: 'update', targetType: 'template', targetName: 'Header with top bar', details: 'Display rule: User guide category' },
+    { actor: authorUser, action: 'review', targetType: 'post', targetName: 'Registering custom blocks and loaders', details: 'Submitted for review' },
+    { actor: adminUser, action: 'publish', targetType: 'post', targetName: 'Release notes: post types, taxonomies and collection blocks' },
+    { actor: editorUser, action: 'create', targetType: 'entry', targetName: 'Leo Martins (es)', details: 'Translation created' },
+    { actor: adminUser, action: 'update', targetType: 'settings', targetName: 'Theme', details: 'Primary color and heading font' },
+    { actor: viewerUser, action: 'login', targetType: 'user', targetName: 'viewer@nextcms.test' },
+  ];
+  for (const entry of auditEntries) {
     await db.insert(schema.auditLogs).values({
       id: createId(),
-      actorId: user.id,
-      action: 'content.published',
-      targetType: 'page',
+      actorId: entry.actor.id,
+      action: entry.action,
+      targetType: entry.targetType,
       targetId: null,
-      targetName: null,
-      details: 'Seed audit entry',
+      targetName: entry.targetName,
+      details: entry.details ?? null,
     });
     totalAuditLogs++;
-
+  }
+  for (const user of allUsers) {
     await db.insert(schema.sessions).values({
       id: createId(),
       userId: user.id,

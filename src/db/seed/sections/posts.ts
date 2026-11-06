@@ -7,7 +7,14 @@ import * as schema from '@/db/schema';
 import { GUIDE_GROUP_TITLES, GUIDE_TOPICS, topicBodyHtml } from '@/content/user-guide';
 import type { GuideTopic } from '@/content/user-guide';
 
-type Ctx = { siteId: string; authorId: string; templateId: string; tagIds: string[] };
+type Ctx = {
+  siteId: string;
+  authorId: string;
+  templateId: string;
+  tagIds: string[];
+  /** Publish date of the first topic; later topics step back from it. */
+  startAt?: Date;
+};
 
 const CHILD_CATEGORIES: Record<GuideTopic['group'], { name: string; slug: string } | null> = {
   overview: null,
@@ -48,7 +55,7 @@ export async function seedGuidePosts(ctx: Ctx) {
   }
 
   // Publish dates step back one hour per topic so the guide lists in reading order.
-  const start = Date.now();
+  const start = (ctx.startAt ?? new Date()).getTime();
   const posts: { id: string; title: string; slug: string }[] = [];
   for (const [index, topic] of GUIDE_TOPICS.entries()) {
     const body = topicBodyHtml(topic);

@@ -1,6 +1,26 @@
 import type { ComponentType } from 'react';
 import type { BuilderItem } from '../data';
+import {
+  PostContent,
+  PostFeaturedImage,
+  PostMeta,
+  PostTitle,
+  RelatedPosts,
+} from './blog';
 import * as registry from './registry';
+
+/**
+ * Post blocks are not in the page registry (they need the current post). A
+ * stored item that already carries `post` (collection blocks inject it on
+ * load) renders with them, at any nesting depth.
+ */
+const POST_BLOCKS: Record<string, ComponentType<any>> = {
+  PostTitle,
+  PostFeaturedImage,
+  PostMeta,
+  PostContent,
+  RelatedPosts,
+};
 
 function setPath(obj: Record<string, unknown>, path: string, value: unknown) {
   const parts = path.replace(/\[(\w+)\]/g, '.$1').split('.');
@@ -67,7 +87,9 @@ export function BlockList({
   return (
     <>
       {rehydratedItems.map(item => {
-        const Component = components[item.type];
+        const Component =
+          components[item.type] ??
+          (item.props?.post ? POST_BLOCKS[item.type] : undefined);
         if (!Component) return null;
         return (
           <Component

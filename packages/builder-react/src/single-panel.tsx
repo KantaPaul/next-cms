@@ -7,7 +7,7 @@
  * block opens its settings; clearing the selection returns to the library.
  */
 
-import { ancestorIds } from '@nextcms/builder-core';
+import { ancestorIds, type FieldDef } from '@nextcms/builder-core';
 import {
   EditorPanel,
   FloatingLayersWindow,
@@ -38,7 +38,7 @@ import { useEditor, useEditorStore } from './context';
 import type { DragController } from './drag';
 import { type BlockCategory, ElementsView } from './elements-view';
 import { HistoryView } from './history-view';
-import type { InspectorBlock } from './inspector';
+import { type InspectorBlock, RootInspector } from './inspector';
 import { LayersView } from './layers-view';
 import { PageSettingsView } from './page-settings-view';
 import type { SaveQueue } from './save';
@@ -62,6 +62,9 @@ export type SinglePanelViewMode =
 
 export interface SinglePanelProps {
   blocks: Record<string, InspectorBlock>;
+  /** Document settings (root fields), shown in the Page view. */
+  rootFields?: Record<string, FieldDef>;
+  rootLabel?: string;
   categories?: BlockCategory[];
   templates?: TemplateItem[];
   onApplyTemplate?: (template: TemplateItem) => void;
@@ -107,6 +110,8 @@ function countChanged(
 
 export function SinglePanel({
   blocks,
+  rootFields,
+  rootLabel,
   categories,
   templates,
   onApplyTemplate,
@@ -427,7 +432,15 @@ export function SinglePanel({
           />
         )}
         {activeMode === 'settings' && <SettingsView blocks={blocks} />}
-        {activeMode === 'page' && <PageSettingsView />}
+        {activeMode === 'page' && (
+          <PageSettingsView
+            customRootFields={
+              rootFields && Object.keys(rootFields).length ? (
+                <RootInspector fields={rootFields} label={rootLabel} />
+              ) : undefined
+            }
+          />
+        )}
         {activeMode === 'history' && <HistoryView queue={queue} />}
         {activeMode === 'animation' && <AnimationView />}
       </EditorPanel>

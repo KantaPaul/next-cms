@@ -215,6 +215,39 @@ const loadGlobalRefs: import('@nextcms/builder-core').BatchBlockLoader<
   return patches;
 };
 
+const POST_BLOCK_TYPES = new Set([
+  'PostTitle',
+  'PostFeaturedImage',
+  'PostMeta',
+  'PostContent',
+  'RelatedPosts',
+]);
+
+/**
+ * Gives every post block in stored items (slots included) the current post,
+ * like `cmsTransformProps` does for top-level post content.
+ */
+export function injectPost<T>(value: T, post: PostView | undefined): T {
+  if (!post) return value;
+  if (Array.isArray(value)) {
+    return value.map(item => injectPost(item, post)) as T;
+  }
+  if (!value || typeof value !== 'object') return value;
+  const item = value as { type?: unknown; props?: Record<string, unknown> };
+  if (typeof item.type === 'string' && item.props && typeof item.props === 'object') {
+    const props: Record<string, unknown> = {};
+    for (const [key, child] of Object.entries(item.props)) {
+      props[key] = Array.isArray(child) ? injectPost(child, post) : child;
+    }
+    if (POST_BLOCK_TYPES.has(item.type)) props.post = post;
+    return { ...item, props } as T;
+  }
+  return value;
+}
+
+/** Publish state of a collection block, shown on the canvas. */
+export type CollectionBlockStatus = 'published' | 'draft-only' | 'changes';
+
 const loadCollectionBlockRefs: import('@nextcms/builder-core').BatchBlockLoader<
   LoaderContext
 > = async (nodes, ctx) => {
@@ -236,11 +269,54 @@ const loadCollectionBlockRefs: import('@nextcms/builder-core').BatchBlockLoader<
     siteId: typeof ctx.siteId === 'string' ? ctx.siteId : undefined,
   });
 
-  const entryCollectionId =
-    (ctx.collectionEntry as { collection?: { id?: string } } | undefined)
-      ?.collection?.id ??
-    (ctx.collectionEntry as { collectionId?: string } | undefined)
-      ?.collectionId;
+  const entry = ctx.collectionEntry as
+    | {
+        collection?: { id?: string; slug?: string };
+        collectionId?: string;
+        data?: unknown;
+      }
+    | undefined;
+  const entryCollectionId = entry?.collection?.id ?? entry?.collectionId;
+  // Nested blocks see the same entry/post as the page they sit on.
+  const nestedCtx: LoaderContext = {
+    ...ctx,
+    ...(ctx.custom === undefined &&
+    entry?.data &&
+    typeof entry.data === 'object'
+      ? { custom: entry.data as Record<string, unknown> }
+      : {}),
+  };
+
+  // Resolve each block once (loaders + dynamic bindings), then share it.
+  const resolvedById: Record<
+    string,
+    { blocks: BuilderItem[]; zones: Record<string, BuilderItem[]> }
+  > = {};
+  await Promise.all(
+    Object.entries(byId).map(async ([id, result]) => {
+      if (!result?.content) return;
+      if (entryCollectionId && result.collectionId !== entryCollectionId) return;
+      try {
+        const data = await resolvePuckData(result.content, nestedCtx);
+        const zones = (data.zones ?? {}) as Record<string, BuilderItem[]>;
+        resolvedById[id] = {
+          blocks: injectPost((data.content ?? []) as BuilderItem[], ctx.post),
+          zones: Object.fromEntries(
+            Object.entries(zones).map(([key, items]) => [
+              key,
+              injectPost(items, ctx.post),
+            ])
+          ),
+        };
+      } catch (err) {
+        console.error(`[builder/loaders] CollectionBlock ${id} failed:`, err);
+        resolvedById[id] = {
+          blocks: (result.content.content ?? []) as BuilderItem[],
+          zones: (result.content.zones ?? {}) as Record<string, BuilderItem[]>,
+        };
+      }
+    })
+  );
 
   const patches: Record<string, Record<string, unknown>> = {};
   for (const node of nodes) {
@@ -249,31 +325,14 @@ const loadCollectionBlockRefs: import('@nextcms/builder-core').BatchBlockLoader<
         ? node.props.collectionBlockId
         : '';
     const result = id ? byId[id] : null;
-    if (
-      !result ||
-      !('collectionId' in result) ||
-      (entryCollectionId && result.collectionId !== entryCollectionId)
-    ) {
-      patches[node.id] = {
-        blocks: [],
-        zones: {},
-        collectionBlockName:
-          result && 'name' in result ? (result.name ?? '') : '',
-      };
-      continue;
-    }
-    const content =
-      'content' in result ? result.content : null;
+    const resolved = id ? resolvedById[id] : undefined;
     patches[node.id] = {
-      blocks: Array.isArray(content)
-        ? content
-        : (content?.content as BuilderItem[] | undefined) ?? [],
-      zones:
-        content && !Array.isArray(content)
-          ? ((content.zones as Record<string, BuilderItem[]> | undefined) ??
-            {})
-          : {},
-      collectionBlockName: result.name ?? '',
+      blocks: resolved?.blocks ?? [],
+      zones: resolved?.zones ?? {},
+      collectionBlockName: result?.name ?? '',
+      collectionBlockStatus: result?.status ?? null,
+      collectionBlockMissing: !result,
+      collectionSlug: entry?.collection?.slug ?? '',
     };
   }
   return patches;

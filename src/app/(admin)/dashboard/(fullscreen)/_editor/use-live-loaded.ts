@@ -29,7 +29,9 @@ function queryKey(node: BuilderNode): string {
 export function useLiveLoaded(
   store: EditorStore,
   initial: Record<NodeId, Record<string, unknown>>,
-  language: string
+  language: string,
+  /** Collection entry the canvas renders for, so reloads see its fields and post data. */
+  entryId?: string
 ) {
   const [loaded, setLoaded] = useState(initial);
   const keys = useRef<Record<NodeId, string>>({});
@@ -63,6 +65,7 @@ export function useLiveLoaded(
             type: node.type as 'LoopGrid',
             props: node.props,
             language,
+            ...(entryId && { entryId }),
           })
             .then(result => {
               // Drop stale answers when a newer request for this node is in flight.
@@ -83,7 +86,7 @@ export function useLiveLoaded(
       unsubscribe();
       for (const timer of Object.values(pending)) clearTimeout(timer);
     };
-  }, [store, language]);
+  }, [store, language, entryId]);
 
   return loaded;
 }

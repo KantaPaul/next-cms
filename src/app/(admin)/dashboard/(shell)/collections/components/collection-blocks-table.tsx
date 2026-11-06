@@ -41,7 +41,17 @@ export type CollectionBlockItem = {
   description: string | null;
   isPublished: boolean;
   hasUnpublishedChanges: boolean;
+  /** Entries and single templates whose layout uses this block. */
+  usage: { entries: number; templates: number };
   updatedAt: Date;
+};
+
+const usageLabel = ({ entries, templates }: CollectionBlockItem['usage']) => {
+  const parts = [
+    entries && `${entries} ${entries === 1 ? 'entry' : 'entries'}`,
+    templates && `${templates} ${templates === 1 ? 'template' : 'templates'}`,
+  ].filter(Boolean);
+  return parts.length ? `Used in ${parts.join(' and ')}` : 'Not used yet';
 };
 
 type DetailsTarget =
@@ -85,7 +95,9 @@ export function CollectionBlocksTable({
   const handleDelete = async (block: CollectionBlockItem) => {
     if (
       !confirm(
-        `Delete block "${block.name}"? Entries using it will show an empty placeholder until the block is replaced.`
+        block.usage.entries + block.usage.templates > 0
+          ? `Delete block "${block.name}"? ${usageLabel(block.usage)}. They will show nothing for it on the live site until the block is replaced.`
+          : `Delete block "${block.name}"? It is not used by any entry or template.`
       )
     ) {
       return;
@@ -157,6 +169,9 @@ export function CollectionBlocksTable({
                         {block.description}
                       </p>
                     )}
+                    <p className="mt-0.5 text-xs text-steel-400">
+                      {usageLabel(block.usage)}
+                    </p>
                   </td>
                   <td className="px-4 py-3">
                     {block.isPublished ? (
@@ -179,8 +194,9 @@ export function CollectionBlocksTable({
                       <Badge
                         variant="outline"
                         className="border-steel-300 text-steel-600"
+                        title="Entries using this block show nothing for it on the live site until you publish it."
                       >
-                        Draft only
+                        Not published
                       </Badge>
                     )}
                   </td>

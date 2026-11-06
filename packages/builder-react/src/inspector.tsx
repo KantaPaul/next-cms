@@ -277,6 +277,46 @@ export function Inspector({
   );
 }
 
+/**
+ * Document (root) settings on their own, whatever is selected: for views
+ * like Page Settings that always edit the document.
+ */
+export function RootInspector({
+  fields,
+  defaultProps = {},
+  label = 'Page',
+  fieldTypes,
+}: {
+  fields: Record<string, FieldDef>;
+  defaultProps?: Record<string, unknown>;
+  label?: string;
+  fieldTypes?: Record<string, FieldComponent>;
+}) {
+  const device = useEditor(state => state.device);
+  const rootProps = useEditor(state => state.doc.root.props);
+  const block = useMemo<InspectorBlock>(
+    () => ({ label, fields, defaultProps }),
+    [label, fields, defaultProps]
+  );
+  if (Object.keys(fields).length === 0) return null;
+  return (
+    <FieldTypesProvider types={fieldTypes}>
+      <DeviceProvider value={device}>
+        <InspectorTabs
+          key="root"
+          block={block}
+          node={null as any}
+          props={rootProps}
+          defaultProps={defaultProps}
+          device={device}
+          readOnly={false}
+          isRoot
+        />
+      </DeviceProvider>
+    </FieldTypesProvider>
+  );
+}
+
 type InspectorTabsProps = {
   block: InspectorBlock;
   node: { id: string; type?: string } | null;

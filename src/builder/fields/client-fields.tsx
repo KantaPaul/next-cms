@@ -1,11 +1,15 @@
 'use client';
 
 import { Check, ChevronsUpDown, Search } from 'lucide-react';
+import { inputStyle } from '@nextcms/builder-react';
 import { useEffect, useMemo, useState } from 'react';
 import { DayPicker } from 'react-day-picker';
 import { listGlobalBlockOptions } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
 import { listCollectionOptions } from '@/app/(admin)/dashboard/(shell)/collections/_modules/collections.actions';
-import { listCollectionBlockOptionsAction } from '@/app/(admin)/dashboard/(shell)/collections/_modules/collection-blocks.actions';
+import {
+  listCollectionBlockOptionsAction,
+  listCollectionBlockPreviewEntriesAction,
+} from '@/app/(admin)/dashboard/(shell)/collections/_modules/collection-blocks.actions';
 import { useEntry } from '@/components/analytics/entry-context';
 import { TextEditor } from '@/components/atoms/text-editor';
 import { MediaField } from '@/components/media/media-picker';
@@ -681,6 +685,72 @@ export function CollectionBlockSelectField({
       <p className="mt-2 text-xs text-steel-500">
         Renders this block with the current entry&apos;s data wherever it is
         used.
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Collection block builder root setting: which entry the canvas previews.
+ * The choice lives in the URL (`?entry=`), not in the block, so it never
+ * saves; switching reloads the builder (the unsaved-changes guard applies).
+ */
+export function CollectionBlockPreviewField({
+  field,
+}: CustomFieldProps<string | undefined>) {
+  const { entry } = useEntry();
+  const collectionId = (entry?.collection as { id?: string } | undefined)?.id;
+  const currentId = typeof entry?.id === 'string' ? entry.id : '';
+  const [options, setOptions] = useState<
+    { id: string; label: string; language: string; status: string }[] | null
+  >(null);
+
+  useEffect(() => {
+    if (!collectionId) {
+      setOptions([]);
+      return;
+    }
+    let active = true;
+    listCollectionBlockPreviewEntriesAction(collectionId).then(rows => {
+      if (active) setOptions(Array.isArray(rows) ? rows : []);
+    });
+    return () => {
+      active = false;
+    };
+  }, [collectionId]);
+
+  const choose = (id: string) => {
+    if (!id || id === currentId) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('entry', id);
+    window.location.assign(url.toString());
+  };
+
+  return (
+    <div>
+      {/* The inspector already labels root fields. */}
+      <select
+        value={currentId}
+        onChange={e => choose(e.target.value)}
+        disabled={!options?.length}
+        style={inputStyle}
+        aria-label={field.label}
+      >
+        {!currentId && (
+          <option value="">
+            {options === null ? 'Loading…' : 'Sample data (no entries yet)'}
+          </option>
+        )}
+        {options?.map(o => (
+          <option key={o.id} value={o.id}>
+            {o.label} · {o.language.toUpperCase()}
+            {o.status === 'published' ? '' : ` · ${o.status}`}
+          </option>
+        ))}
+      </select>
+      <p style={{ margin: '6px 0 0', fontSize: 11, color: 'var(--ne-text-muted)' }}>
+        Only changes the preview. The block shows each entry&apos;s own data
+        where it is used.
       </p>
     </div>
   );
