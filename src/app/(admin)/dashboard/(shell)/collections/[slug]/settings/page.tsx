@@ -1,24 +1,24 @@
-import { AccessDenied } from '@/components/organisms/access-denied';
-import { PageHeader } from '@/components/organisms/page-header';
-import { PAGES } from '@/config/pages';
-import { PERMISSIONS } from '@/config/permissions';
-import { metaObject } from '@/lib/utils/metadata';
-import { accessService } from '@/server/services/access.service';
-import { requirePermission } from '@/server/services/require-permission';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { pagesServices } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
-import { collectionsService } from '@/server/services/collections.service';
-import { collectionTaxonomiesService } from '@/server/services/collection-taxonomies.service';
+import { AccessDenied } from '@/components/organisms/access-denied';
+import { PageHeader } from '@/components/organisms/page-header';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CollectionSettingsForm } from '../../components/collection-settings-form';
-import { AddFieldForm } from '../../components/add-field-form';
-import { FieldList } from '../../components/field-list';
-import { PostTypeTabs } from '../../components/post-type-tabs';
-import { PostTypeFeaturesCard } from '../../components/post-type-features-card';
-import { PostTypeTaxonomiesCard } from '../../components/post-type-taxonomies-card';
-import { loadPostTypeRoute } from '../../_modules/post-type-route';
+import { PAGES } from '@/config/pages';
+import { PERMISSIONS } from '@/config/permissions';
 import { normalizePostTypeSupports } from '@/config/post-types';
+import { metaObject } from '@/lib/utils/metadata';
+import { accessService } from '@/server/services/access.service';
+import { collectionTaxonomiesService } from '@/server/services/collection-taxonomies.service';
+import { collectionsService } from '@/server/services/collections.service';
+import { requirePermission } from '@/server/services/require-permission';
+import { loadPostTypeRoute } from '../../_modules/post-type-route';
+import { AddFieldForm } from '../../components/add-field-form';
+import { CollectionSettingsForm } from '../../components/collection-settings-form';
+import { FieldList } from '../../components/field-list';
+import { PostTypeFeaturesCard } from '../../components/post-type-features-card';
+import { PostTypeTabs } from '../../components/post-type-tabs';
+import { PostTypeTaxonomiesCard } from '../../components/post-type-taxonomies-card';
 
 export default async function CollectionPage({
   params,
@@ -68,19 +68,18 @@ export default async function CollectionPage({
 
   return (
     <>
-      <PageHeader title={collection.name} breadcrumbs={breadcrumbs} />
-      <PostTypeTabs
-        slug={collection.slug}
-        taxonomies={taxonomies}
-        supports={supports}
-      />
-      <div className="mb-4 flex justify-end">
+      <PageHeader title={collection.name} breadcrumbs={breadcrumbs}>
         <Button asChild>
           <Link href={PAGES.DASHBOARD.COLLECTION(collection.slug)}>
             Manage {collection.name.toLowerCase()}
           </Link>
         </Button>
-      </div>
+      </PageHeader>
+      {/* <PostTypeTabs
+        slug={collection.slug}
+        taxonomies={taxonomies}
+        supports={supports}
+      /> */}
       <div className="grid gap-6 lg:grid-cols-12">
         <div className="space-y-6 lg:col-span-4">
           <Card>

@@ -44,12 +44,12 @@ export default async function CollectionTemplatesPage({
     );
   }
 
-  const [templates, taxonomies] = await Promise.all([
+  const [templates] = await Promise.all([
     collectionTemplatesService.list(collection.id),
-    collectionTaxonomiesService.listTaxonomies(collection.id),
+    // collectionTaxonomiesService.listTaxonomies(collection.id),
   ]);
 
-  const supports = normalizePostTypeSupports(collection.supports);
+  // const supports = normalizePostTypeSupports(collection.supports);
 
   return (
     <>
@@ -57,11 +57,11 @@ export default async function CollectionTemplatesPage({
         title={`Templates · ${collection.name}`}
         breadcrumbs={breadcrumbs}
       />
-      <PostTypeTabs
+      {/* <PostTypeTabs
         slug={collection.slug}
         taxonomies={taxonomies}
         supports={supports}
-      />
+      /> */}
       <CollectionTemplatesTable
         collectionId={collection.id}
         collectionSlug={collection.slug}

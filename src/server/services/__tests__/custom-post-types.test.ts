@@ -14,11 +14,10 @@ import {
 import { slugify } from '@/lib/utils/slugify';
 
 describe('PostTypeSupports', () => {
-  it('defaults active features to true and featuredImage to false', () => {
+  it('defaults active features to true', () => {
     assert.deepEqual(DEFAULT_POST_TYPE_SUPPORTS, {
       template: true,
       taxonomies: true,
-      featuredImage: false,
       excerpt: true,
       author: true,
       status: true,
@@ -34,7 +33,6 @@ describe('PostTypeSupports', () => {
     assert.equal(supports.taxonomies, false);
     assert.equal(supports.seo, false);
     assert.equal(supports.template, true);
-    assert.equal(supports.featuredImage, false);
     assert.equal(supports.excerpt, true);
     assert.equal(supports.author, true);
     assert.equal(supports.status, true);
@@ -45,7 +43,6 @@ describe('PostTypeSupports', () => {
     const keys = POST_TYPE_SUPPORT_FEATURES.map(f => f.key);
     assert.ok(keys.includes('template'));
     assert.ok(keys.includes('taxonomies'));
-    assert.ok(!keys.includes('featuredImage'));
     assert.ok(keys.includes('excerpt'));
     assert.ok(keys.includes('author'));
     assert.ok(keys.includes('status'));
@@ -115,6 +112,21 @@ describe('entryToPostView', () => {
     assert.equal(postView.body, '');
     assert.deepEqual(postView.categories, []);
     assert.deepEqual(postView.tags, []);
+  });
+
+  it('falls back to custom image field when featuredImage column is not set', () => {
+    const entry = {
+      id: 'e3',
+      slug: 'jane-doe',
+      data: { name: 'Jane Doe', photo: 'https://example.com/jane.jpg' },
+    };
+    const collection = {
+      name: 'Team',
+      slug: 'team',
+      fields: [{ key: 'photo', type: 'media' }],
+    };
+    const postView = entryToPostView(entry, collection, []);
+    assert.equal(postView.featuredImage, 'https://example.com/jane.jpg');
   });
 });
 
@@ -227,14 +239,12 @@ describe('Entry save respecting supports', () => {
   it('filters out unsupported fields when saving entry data', () => {
     const supports = normalizePostTypeSupports({
       excerpt: false,
-      featuredImage: false,
       seo: false,
       status: false,
     });
 
     const rawInput = {
       excerpt: 'Should be stripped',
-      featuredImage: 'https://example.com/stripped.jpg',
       seo: { title: 'SEO title' },
       status: 'scheduled' as const,
       data: { name: 'Valid field' },
@@ -243,13 +253,11 @@ describe('Entry save respecting supports', () => {
     const sanitized = {
       data: rawInput.data,
       excerpt: supports.excerpt ? rawInput.excerpt : null,
-      featuredImage: supports.featuredImage ? rawInput.featuredImage : null,
       seo: supports.seo ? rawInput.seo : null,
       status: supports.status ? rawInput.status : 'draft',
     };
 
     assert.equal(sanitized.excerpt, null);
-    assert.equal(sanitized.featuredImage, null);
     assert.equal(sanitized.seo, null);
     assert.equal(sanitized.status, 'draft');
     assert.deepEqual(sanitized.data, { name: 'Valid field' });
@@ -258,14 +266,12 @@ describe('Entry save respecting supports', () => {
   it('keeps supported fields intact', () => {
     const supports = normalizePostTypeSupports({
       excerpt: true,
-      featuredImage: true,
       seo: true,
       status: true,
     });
 
     const rawInput = {
       excerpt: 'Keep me',
-      featuredImage: 'https://example.com/keep.jpg',
       seo: { title: 'SEO Title' },
       status: 'published' as const,
       data: { name: 'Test' },
@@ -274,13 +280,11 @@ describe('Entry save respecting supports', () => {
     const sanitized = {
       data: rawInput.data,
       excerpt: supports.excerpt ? rawInput.excerpt : null,
-      featuredImage: supports.featuredImage ? rawInput.featuredImage : null,
       seo: supports.seo ? rawInput.seo : null,
       status: supports.status ? rawInput.status : 'draft',
     };
 
     assert.equal(sanitized.excerpt, 'Keep me');
-    assert.equal(sanitized.featuredImage, 'https://example.com/keep.jpg');
     assert.deepEqual(sanitized.seo, { title: 'SEO Title' });
     assert.equal(sanitized.status, 'published');
   });

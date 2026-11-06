@@ -86,7 +86,6 @@ export const updateSupportsSchema = z.object({
   supports: z.object({
     template: z.boolean().optional(),
     taxonomies: z.boolean().optional(),
-    featuredImage: z.boolean().optional(),
     excerpt: z.boolean().optional(),
     author: z.boolean().optional(),
     status: z.boolean().optional(),

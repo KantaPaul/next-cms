@@ -9,8 +9,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { PAGES } from '@/config/pages';
-import { PERMISSIONS } from '@/config/permissions';
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -22,10 +20,12 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
+import { PAGES } from '@/config/pages';
+import { PERMISSIONS } from '@/config/permissions';
+import { withAdminLanguage } from '@/lib/locale/admin-locale';
 import { getMenuItems } from '@/menus';
 import { useAccess } from '@/providers/access.provider';
 import { useSiteLocales } from '@/providers/site-locales';
-import { withAdminLanguage } from '@/lib/locale/admin-locale';
 
 export type SidebarPostType = {
   id: string;
@@ -52,7 +52,9 @@ export function NavMain({ postTypes = [] }: { postTypes?: SidebarPostType[] }) {
       postType: type,
     }));
   const menuItems = getMenuItems()
-    .flatMap(item => (item.name === 'Posts' ? [item, ...postTypeItems] : [item]))
+    .flatMap(item =>
+      item.name === 'Posts' ? [item, ...postTypeItems] : [item]
+    )
     .filter(item => !item.permission || permissions.includes(item.permission));
 
   // Inside one post type's screens, highlight that type, not "Post types".
@@ -69,13 +71,11 @@ export function NavMain({ postTypes = [] }: { postTypes?: SidebarPostType[] }) {
         {menuItems.map(item => {
           const postType = (item as { postType?: SidebarPostType }).postType;
           const isPostTypeItem = !!postType;
-          const isActive =
-            isPostTypeItem
-              ? within(item.href)
-              : item.href === PAGES.DASHBOARD.COLLECTIONS && inPostType
-                ? false
-                : item.href === pathname ||
-                  pathname.startsWith(`${item.href}/`);
+          const isActive = isPostTypeItem
+            ? within(item.href)
+            : item.href === PAGES.DASHBOARD.COLLECTIONS && inPostType
+              ? false
+              : item.href === pathname || pathname.startsWith(`${item.href}/`);
           const { name, icon, href } = item;
 
           if (isPostTypeItem && postType) {
@@ -109,30 +109,29 @@ export function NavMain({ postTypes = [] }: { postTypes?: SidebarPostType[] }) {
                 className="group/collapsible"
               >
                 <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    tooltip={name}
-                    isActive={isActive}
-                  >
-                    <Link href={withAdminLanguage(href, chosenLocale)}>
-                      {icon}
-                      <span>{name}</span>
-                    </Link>
-                  </SidebarMenuButton>
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuAction
-                      className="transition-transform duration-200 data-[state=open]:rotate-90"
-                      aria-label={`Toggle ${name} menu`}
+                    <SidebarMenuButton
+                      asChild
+                      tooltip={name}
+                      isActive={isActive}
                     >
-                      <ChevronRight className="size-4" />
-                    </SidebarMenuAction>
+                      <span className='block cursor-pointer'>
+                        {icon}
+                        <span>{name}</span>
+                        <SidebarMenuAction
+                          className="transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90"
+                          aria-label={`Toggle ${name} menu`}
+                        >
+                          <ChevronRight className="size-4" />
+                        </SidebarMenuAction>
+                      </span>
+                    </SidebarMenuButton>
                   </CollapsibleTrigger>
-                  <CollapsibleContent>
+                  <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
                     <SidebarMenuSub>
                       {subItems.map(sub => {
                         const isSubActive =
-                          sub.href ===
-                          PAGES.DASHBOARD.COLLECTION(postType.slug)
+                          sub.href === PAGES.DASHBOARD.COLLECTION(postType.slug)
                             ? pathname === sub.href
                             : pathname === sub.href ||
                               pathname.startsWith(`${sub.href}/`);
@@ -143,10 +142,7 @@ export function NavMain({ postTypes = [] }: { postTypes?: SidebarPostType[] }) {
                               isActive={isSubActive}
                             >
                               <Link
-                                href={withAdminLanguage(
-                                  sub.href,
-                                  chosenLocale
-                                )}
+                                href={withAdminLanguage(sub.href, chosenLocale)}
                               >
                                 <span>{sub.name}</span>
                               </Link>
@@ -163,11 +159,7 @@ export function NavMain({ postTypes = [] }: { postTypes?: SidebarPostType[] }) {
 
           return (
             <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton
-                asChild
-                tooltip={name}
-                isActive={isActive}
-              >
+              <SidebarMenuButton asChild tooltip={name} isActive={isActive}>
                 <Link href={withAdminLanguage(href, chosenLocale)}>
                   {icon}
                   <span>{name}</span>

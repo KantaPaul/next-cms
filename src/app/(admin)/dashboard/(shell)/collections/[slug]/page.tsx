@@ -71,7 +71,7 @@ export default async function CollectionEntriesPage({
   return (
     <>
       <PageHeader title={collection.name} breadcrumbs={breadcrumbs}>
-        <div className="flex items-center gap-2">
+        {/* <div className="flex items-center gap-2">
           {supports.template && (
             <Button variant="outline" asChild>
               <Link href={PAGES.DASHBOARD.COLLECTION_TEMPLATES(collection.slug)}>
@@ -88,14 +88,14 @@ export default async function CollectionEntriesPage({
             href={PAGES.DASHBOARD.COLLECTION_CREATE(collection.slug)}
             text={`New ${singular.toLowerCase()}`}
           />
-        </div>
+        </div> */}
       </PageHeader>
 
-      <PostTypeTabs
+      {/* <PostTypeTabs
         slug={collection.slug}
         taxonomies={taxonomies}
         supports={supports}
-      />
+      /> */}
 
       {/* KPI status cards */}
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">

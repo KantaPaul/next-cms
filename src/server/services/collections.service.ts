@@ -1113,9 +1113,7 @@ export const collectionsService = {
         scheduledAt,
         authorId: supports.author ? actorId : null,
         excerpt: supports.excerpt ? (input.excerpt ?? null) : null,
-        featuredImage: supports.featuredImage
-          ? (input.featuredImage ?? null)
-          : null,
+        featuredImage: input.featuredImage ?? null,
         visibility:
           supports.status && input.visibility ? input.visibility : 'public',
         layout:
@@ -1231,7 +1229,7 @@ export const collectionsService = {
     if (supports.excerpt && input.excerpt !== undefined) {
       values.excerpt = input.excerpt;
     }
-    if (supports.featuredImage && input.featuredImage !== undefined) {
+    if (input.featuredImage !== undefined) {
       values.featuredImage = input.featuredImage;
     }
     if (supports.seo && input.seo !== undefined) {

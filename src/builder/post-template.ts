@@ -179,13 +179,30 @@ export function entryToPostView(
     }
   }
 
+  const firstMediaField = fields.find(f => f.type === 'media');
+  const customImage =
+    (firstMediaField && typeof data[firstMediaField.key] === 'string'
+      ? (data[firstMediaField.key] as string)
+      : null) ??
+    (typeof data.image === 'string'
+      ? data.image
+      : typeof data.photo === 'string'
+        ? data.photo
+        : typeof data.avatar === 'string'
+          ? data.avatar
+          : typeof data.thumbnail === 'string'
+            ? data.thumbnail
+            : typeof data.cover === 'string'
+              ? data.cover
+              : null);
+
   return {
     id: entry.id,
     title,
     slug: entry.slug,
     language: 'en',
     excerpt: entry.excerpt ?? null,
-    featuredImage: entry.featuredImage ?? null,
+    featuredImage: entry.featuredImage ?? customImage,
     body,
     publishedAt: entry.publishedAt ? new Date(entry.publishedAt).toISOString() : null,
     authorName: entry.authorName ?? entry.author?.name ?? null,

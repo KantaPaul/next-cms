@@ -7,7 +7,6 @@ import { format } from 'date-fns';
 import {
   useForm,
   FormProvider,
-  Controller,
   useWatch,
   useFormContext,
 } from 'react-hook-form';
@@ -36,7 +35,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { StatusBadge } from '@/components/atoms/status-badge';
 import { BackButton } from '@/components/atoms/buttons/back-button';
-import { MediaField } from '@/components/media/media-picker';
 import {
   FieldShell,
   inputClass,
@@ -133,7 +131,6 @@ export function EntryEditor({
     const base: Record<string, any> = {
       slug: entry?.slug ?? '',
       excerpt: entry?.excerpt ?? '',
-      featuredImage: entry?.featuredImage ?? '',
       status: entry?.status ?? 'draft',
       visibility: entry?.visibility ?? 'public',
       scheduledAt: toDateTimeLocal(entry?.scheduledAt),
@@ -203,7 +200,6 @@ export function EntryEditor({
         visibility: values.visibility,
         scheduledAt: values.scheduledAt || null,
         excerpt: values.excerpt || null,
-        featuredImage: values.featuredImage || null,
         layout: values.layout,
         templateId: values.templateId || null,
         data,
@@ -367,72 +363,27 @@ export function EntryEditor({
                   onFieldChange={handleFieldChange}
                 />
 
-                {/* Taxonomies Section (Main Column / Left Side) */}
-                {supports.taxonomies && taxonomies.length > 0 && (
-                  <div className="space-y-4 pt-2">
-                    <div
-                      className={
-                        taxonomies.length === 1
-                          ? 'grid gap-4'
-                          : 'grid gap-4 sm:grid-cols-2'
+                {supports.excerpt && (
+                  <div className="mt-6">
+                    <FieldShell
+                      htmlFor="entry-excerpt"
+                      label={
+                        <>
+                          Excerpt{' '}
+                          <span className="text-xs font-normal text-steel-400">
+                            {excerptValue?.length ?? 0}/300
+                          </span>
+                        </>
                       }
+                      hint="Brief summary shown in listings and previews."
                     >
-                      {taxonomies.map(tax => (
-                        <TaxonomySelectField
-                          key={tax.id}
-                          taxonomy={tax}
-                          terms={termsByTaxonomy[tax.id] ?? []}
-                          collectionSlug={collection.slug}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {(supports.excerpt || supports.featuredImage) && (
-                  <div
-                    className={
-                      supports.featuredImage && supports.excerpt
-                        ? 'mt-6 grid gap-4 md:grid-cols-[1fr_16rem]'
-                        : 'mt-6'
-                    }
-                  >
-                    {supports.excerpt && (
-                      <FieldShell
-                        htmlFor="entry-excerpt"
-                        label={
-                          <>
-                            Excerpt{' '}
-                            <span className="text-xs font-normal text-steel-400">
-                              {excerptValue?.length ?? 0}/300
-                            </span>
-                          </>
-                        }
-                        hint="Brief summary shown in listings and previews."
-                      >
-                        <textarea
-                          id="entry-excerpt"
-                          rows={4}
-                          className={textareaClass}
-                          {...register('excerpt')}
-                        />
-                      </FieldShell>
-                    )}
-
-                    {supports.featuredImage && (
-                      <Controller
-                        control={control}
-                        name="featuredImage"
-                        render={({ field }) => (
-                          <FieldShell label="Featured image">
-                            <MediaField
-                              value={field.value ?? ''}
-                              onChange={field.onChange}
-                            />
-                          </FieldShell>
-                        )}
+                      <textarea
+                        id="entry-excerpt"
+                        rows={4}
+                        className={textareaClass}
+                        {...register('excerpt')}
                       />
-                    )}
+                    </FieldShell>
                   </div>
                 )}
               </div>
@@ -461,7 +412,7 @@ export function EntryEditor({
                   />
                 )}
 
-                {/* Status, Visibility, Slug, Publish-at, Author */}
+                {/* Status, Visibility, Slug, Publish-at, Author, Taxonomies */}
                 <div className="space-y-4 px-4">
                   {supports.status && (
                     <>
@@ -533,6 +484,20 @@ export function EntryEditor({
                         disabled
                       />
                     </FieldShell>
+                  )}
+
+                  {/* Taxonomies in Sidebar like Posts */}
+                  {supports.taxonomies && taxonomies.length > 0 && (
+                    <div className="space-y-4 pt-2">
+                      {taxonomies.map(tax => (
+                        <TaxonomySelectField
+                          key={tax.id}
+                          taxonomy={tax}
+                          terms={termsByTaxonomy[tax.id] ?? []}
+                          collectionSlug={collection.slug}
+                        />
+                      ))}
+                    </div>
                   )}
                 </div>
               </TabsContent>

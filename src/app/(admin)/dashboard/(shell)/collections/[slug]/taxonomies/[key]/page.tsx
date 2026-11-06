@@ -1,14 +1,14 @@
 import { notFound } from 'next/navigation';
+import { AccessDenied } from '@/components/organisms/access-denied';
 import { PageHeader } from '@/components/organisms/page-header';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
+import { normalizePostTypeSupports } from '@/config/post-types';
 import { collectionTaxonomiesService } from '@/server/services/collection-taxonomies.service';
 import { requirePermission } from '@/server/services/require-permission';
-import { AccessDenied } from '@/components/organisms/access-denied';
 import { loadPostTypeRoute } from '../../../_modules/post-type-route';
 import { PostTypeTabs } from '../../../components/post-type-tabs';
 import { TermManager } from '../../../components/term-manager';
-import { normalizePostTypeSupports } from '@/config/post-types';
 
 export default async function CollectionTaxonomyPage({
   params,
@@ -37,8 +37,8 @@ export default async function CollectionTaxonomyPage({
     );
   }
 
-  const [taxonomies, taxonomy] = await Promise.all([
-    collectionTaxonomiesService.listTaxonomies(collection.id),
+  const [taxonomy] = await Promise.all([
+    // collectionTaxonomiesService.listTaxonomies(collection.id),
     collectionTaxonomiesService.getTaxonomyByKey(collection.id, key),
   ]);
 
@@ -47,7 +47,7 @@ export default async function CollectionTaxonomyPage({
   }
 
   const terms = await collectionTaxonomiesService.listTerms(taxonomy.id);
-  const supports = normalizePostTypeSupports(collection.supports);
+  // const supports = normalizePostTypeSupports(collection.supports);
 
   return (
     <>
@@ -61,11 +61,11 @@ export default async function CollectionTaxonomyPage({
           },
         ]}
       />
-      <PostTypeTabs
+      {/* <PostTypeTabs
         slug={collection.slug}
         taxonomies={taxonomies}
         supports={supports}
-      />
+      /> */}
       <TermManager
         collectionSlug={collection.slug}
         taxonomy={taxonomy}

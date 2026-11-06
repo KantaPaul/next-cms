@@ -4,16 +4,18 @@ import { Loader2, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, type ReactNode, useState, useTransition } from 'react';
 import { toast } from 'sonner';
+import { Input, Textarea } from '@/components/atoms/forms';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils/cn';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import { slugify } from '@/lib/utils/slugify';
+import type { CollectionTermNode } from '@/server/services/collection-taxonomies.service';
 import {
   deleteTermAction,
   saveTermAction,
 } from '../_modules/collection-taxonomies.actions';
 import { generateTermSuffix } from '../_modules/collections.schemas';
-import type { CollectionTermNode } from '@/server/services/collection-taxonomies.service';
 
 const inputClass =
   'h-9 w-full rounded-md border border-steel-200 bg-white px-3 text-sm dark:border-dark-300 dark:bg-dark-100';
@@ -48,10 +50,10 @@ function Field({
   className?: string;
 }) {
   return (
-    <label className={cn('flex flex-col gap-1 text-sm font-medium', className)}>
+    <Label className={cn('flex flex-col gap-1 text-sm font-medium', className)}>
       {label}
       {children}
-    </label>
+    </Label>
   );
 }
 
@@ -95,7 +97,9 @@ export function TermManager({
   terms: CollectionTermNode[];
 }) {
   const router = useRouter();
-  const [editing, setEditing] = useState<CollectionTermNode | 'new' | null>(null);
+  const [editing, setEditing] = useState<CollectionTermNode | 'new' | null>(
+    null
+  );
   const [pendingId, setPendingId] = useState<string | null>(null);
 
   const singular = taxonomy.singularName || 'Term';
@@ -163,9 +167,7 @@ export function TermManager({
                   style={{ paddingLeft: term.depth * 20 }}
                   className="flex min-w-0 flex-1 items-center gap-2"
                 >
-                  {term.depth > 0 && (
-                    <span className="text-steel-300">└</span>
-                  )}
+                  {term.depth > 0 && <span className="text-steel-300">└</span>}
                   <span className="truncate font-medium">{term.name}</span>
                   <span className="truncate text-xs text-steel-400">
                     /{term.slug}
@@ -296,7 +298,11 @@ function TermForm({
     while (changed) {
       changed = false;
       for (const t of allTerms) {
-        if (t.parentId && descendants.has(t.parentId) && !descendants.has(t.id)) {
+        if (
+          t.parentId &&
+          descendants.has(t.parentId) &&
+          !descendants.has(t.id)
+        ) {
           descendants.add(t.id);
           changed = true;
         }
@@ -346,7 +352,9 @@ function TermForm({
           collectionSlug
         ),
         () => {
-          toast.success(term ? `${singularName} updated` : `${singularName} created`);
+          toast.success(
+            term ? `${singularName} updated` : `${singularName} created`
+          );
           router.refresh();
           onDone();
         }
@@ -359,29 +367,29 @@ function TermForm({
       onSubmit={submit}
       className="grid gap-3 rounded-md bg-steel-50 p-4 sm:grid-cols-2 dark:bg-dark-100"
     >
-      <Field label="Name">
-        <input
-          className={inputClass}
-          value={name}
-          onChange={e => setName(e.target.value)}
-          placeholder={`e.g. New ${singularName.toLowerCase()}`}
-          required
-          maxLength={100}
-          autoFocus
-        />
-      </Field>
-      <Field label="Slug (auto-generated)">
-        <input
-          className={cn(
-            inputClass,
-            'cursor-not-allowed bg-steel-100/70 font-mono text-xs text-steel-500 dark:bg-dark-200 dark:text-steel-400'
-          )}
-          value={slug || (name ? `${slugify(name)}-${suffix}` : '—')}
-          readOnly
-          tabIndex={-1}
-          placeholder="e.g. cat-one-TC123545"
-        />
-      </Field>
+      <Input
+        inputClassName={inputClass}
+        value={name}
+        onChange={e => setName(e.target.value)}
+        placeholder={`e.g. New ${singularName.toLowerCase()}`}
+        required
+        maxLength={100}
+        label="Name"
+        isRequired
+        // autoFocus
+      />
+
+      <Input
+        inputClassName={cn(
+          inputClass,
+          'cursor-not-allowed bg-steel-100/70 font-mono text-xs text-steel-500 dark:bg-dark-200 dark:text-steel-400'
+        )}
+        value={slug || (name ? `${slugify(name)}-${suffix}` : '—')}
+        readOnly
+        tabIndex={-1}
+        placeholder="e.g. cat-one-TC123545"
+        label="Slug (auto-generated)"
+      />
       {hierarchical && (
         <Field label="Parent" className="sm:col-span-2">
           <select
@@ -402,7 +410,7 @@ function TermForm({
         </Field>
       )}
       <Field label="Description" className="sm:col-span-2">
-        <textarea
+        <Textarea
           className={cn(inputClass, 'h-auto py-2')}
           rows={2}
           value={description}
@@ -412,7 +420,9 @@ function TermForm({
       <div className="flex gap-2 sm:col-span-2">
         <Button type="submit" size="sm" disabled={isPending}>
           {isPending && <Loader2 className="animate-spin" />}{' '}
-          {term ? `Save ${singularName.toLowerCase()}` : `Create ${singularName.toLowerCase()}`}
+          {term
+            ? `Save ${singularName.toLowerCase()}`
+            : `Create ${singularName.toLowerCase()}`}
         </Button>
         <Button type="button" size="sm" variant="ghost" onClick={onDone}>
           <X /> Cancel
