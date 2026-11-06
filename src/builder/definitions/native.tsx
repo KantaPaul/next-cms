@@ -78,6 +78,7 @@ import { ContainerLayoutControl } from '../controls/container-layout';
 import { LoopCustomKeyField } from '../controls/loop-preview';
 import {
   CptFieldFiltersField,
+  CptTermLockField,
   LoopSortField,
   LoopTemplatePickerField,
 } from '../controls/loop-grid-fields';
@@ -3480,6 +3481,7 @@ export const QueryLoopBlock = defineBlock({
       playlistId: z.string().optional(),
       lockedCategory: z.string().optional(),
       lockedTag: z.string().optional(),
+      lockedTerm: z.string().optional(),
       lockedAuthorId: z.string().optional(),
       sortField: z.string().default('publishedAt'),
       sortOrder: z.enum(['asc', 'desc']).default('desc'),
@@ -3696,6 +3698,13 @@ export const QueryLoopBlock = defineBlock({
       type: 'custom',
       render: TagLockField,
     },
+    lockedTerm: {
+      label: 'Lock to term (post types)',
+      group: CONTENT,
+      type: 'custom',
+      render: CptTermLockField,
+      when: (props: any) => props.source === 'collection-entries',
+    },
     pagination: {
       label: 'Pagination style',
       group: CONTENT,
@@ -3772,6 +3781,7 @@ export const LoopGridBlock = defineBlock({
       templateId: z.string().optional(),
       lockedCategory: z.string().optional(),
       lockedTag: z.string().optional(),
+      lockedTerm: z.string().optional(),
       lockedAuthorId: z.string().optional(),
       fieldFilters: z
         .array(
@@ -3900,6 +3910,13 @@ export const LoopGridBlock = defineBlock({
       group: CONTENT,
       type: 'custom',
       render: CptFieldFiltersField,
+      when: isCollectionGrid,
+    },
+    lockedTerm: {
+      label: 'Lock to term',
+      group: CONTENT,
+      type: 'custom',
+      render: CptTermLockField,
       when: isCollectionGrid,
     },
     excludeCurrent: qlf.excludeCurrent,

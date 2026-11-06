@@ -35,8 +35,11 @@ import { db } from '@/db';
 import {
   categories,
   collectionEntries,
+  collectionEntryTerms,
   collectionFields,
   collections,
+  collectionTaxonomies,
+  collectionTerms,
   pageCategories,
   pages,
   pageTags,
@@ -574,6 +577,66 @@ async function resolveCollectionEntries(
         gte(collectionEntries.publishedAt, new Date(String(val))),
       publishedBefore: val =>
         lte(collectionEntries.publishedAt, new Date(String(val))),
+      terms: val => {
+        const values = Array.isArray(val) ? val.map(String) : [String(val)];
+        const subquery = db
+          .select({ entryId: collectionEntryTerms.entryId })
+          .from(collectionEntryTerms)
+          .innerJoin(
+            collectionTerms,
+            eq(collectionTerms.id, collectionEntryTerms.termId)
+          )
+          .where(
+            and(
+              isNull(collectionTerms.deletedAt),
+              or(
+                inArray(collectionEntryTerms.termId, values),
+                inArray(collectionTerms.slug, values)
+              )
+            )
+          );
+        return inArray(collectionEntries.id, subquery);
+      },
+      categories: val => {
+        const values = Array.isArray(val) ? val.map(String) : [String(val)];
+        const subquery = db
+          .select({ entryId: collectionEntryTerms.entryId })
+          .from(collectionEntryTerms)
+          .innerJoin(
+            collectionTerms,
+            eq(collectionTerms.id, collectionEntryTerms.termId)
+          )
+          .where(
+            and(
+              isNull(collectionTerms.deletedAt),
+              or(
+                inArray(collectionEntryTerms.termId, values),
+                inArray(collectionTerms.slug, values)
+              )
+            )
+          );
+        return inArray(collectionEntries.id, subquery);
+      },
+      tags: val => {
+        const values = Array.isArray(val) ? val.map(String) : [String(val)];
+        const subquery = db
+          .select({ entryId: collectionEntryTerms.entryId })
+          .from(collectionEntryTerms)
+          .innerJoin(
+            collectionTerms,
+            eq(collectionTerms.id, collectionEntryTerms.termId)
+          )
+          .where(
+            and(
+              isNull(collectionTerms.deletedAt),
+              or(
+                inArray(collectionEntryTerms.termId, values),
+                inArray(collectionTerms.slug, values)
+              )
+            )
+          );
+        return inArray(collectionEntries.id, subquery);
+      },
       hasImage: val => {
         const wantImage = val === true || val === 'true' || val === '1' || val === 1;
         return wantImage
@@ -627,17 +690,25 @@ async function resolveCollectionEntries(
         id: collectionEntries.id,
         slug: collectionEntries.slug,
         data: collectionEntries.data,
+        excerpt: collectionEntries.excerpt,
+        featuredImage: collectionEntries.featuredImage,
+        authorId: collectionEntries.authorId,
+        authorName: users.name,
         publishedAt: collectionEntries.publishedAt,
         createdAt: collectionEntries.createdAt,
         updatedAt: collectionEntries.updatedAt,
       })
       .from(collectionEntries)
+      .leftJoin(users, eq(users.id, collectionEntries.authorId))
       .where(where)
       .orderBy(...orderByClause)
       .limit(pageSize)
       .offset(offset),
     db.select({ total: count() }).from(collectionEntries).where(where),
   ]);
+
+  const entryIds = rows.map(r => r.id);
+  const termsMap = await loadCollectionEntryTerms(entryIds);
 
   const prefix = siteSlugPrefix(site);
   const items: NormalizedListingItem[] = rows.map(r => {
@@ -650,15 +721,22 @@ async function resolveCollectionEntries(
       data.cover ||
       (firstMediaKey ? data[firstMediaKey] : undefined);
 
+    const itemTerms = termsMap.get(r.id) ?? [];
+
     return {
       id: r.id,
       title,
       slug: r.slug,
-      url: siteHref(`/collections/${collection.slug}/${r.slug}`, prefix),
-      excerpt: typeof excerpt === 'string' ? excerpt : null,
-      image: typeof image === 'string' ? image : null,
+      url: siteHref(`/${collection.slug}/${r.slug}`, prefix),
+      excerpt:
+        (r.excerpt as string) || (typeof excerpt === 'string' ? excerpt : null),
+      image:
+        (r.featuredImage as string) || (typeof image === 'string' ? image : null),
       publishedAt: r.publishedAt?.toISOString() ?? null,
-      terms: [],
+      author: r.authorId
+        ? { id: r.authorId, name: r.authorName ?? 'Anonymous' }
+        : null,
+      terms: itemTerms,
       source: 'collection-entries',
       raw: {
         ...data,
@@ -995,6 +1073,51 @@ async function loadPostTerms(postIds: string[]) {
       taxonomy: 'tag',
     });
     termsMap.set(tag.postId, list);
+  }
+
+  return termsMap;
+}
+
+async function loadCollectionEntryTerms(entryIds: string[]) {
+  const termsMap = new Map<
+    string,
+    { id: string; name: string; slug: string; taxonomy: string }[]
+  >();
+  if (entryIds.length === 0) return termsMap;
+
+  const rows = await db
+    .select({
+      entryId: collectionEntryTerms.entryId,
+      id: collectionTerms.id,
+      name: collectionTerms.name,
+      slug: collectionTerms.slug,
+      taxonomyKey: collectionTaxonomies.key,
+    })
+    .from(collectionEntryTerms)
+    .innerJoin(
+      collectionTerms,
+      eq(collectionTerms.id, collectionEntryTerms.termId)
+    )
+    .innerJoin(
+      collectionTaxonomies,
+      eq(collectionTaxonomies.id, collectionTerms.taxonomyId)
+    )
+    .where(
+      and(
+        inArray(collectionEntryTerms.entryId, entryIds),
+        isNull(collectionTerms.deletedAt)
+      )
+    );
+
+  for (const row of rows) {
+    const list = termsMap.get(row.entryId) ?? [];
+    list.push({
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      taxonomy: row.taxonomyKey,
+    });
+    termsMap.set(row.entryId, list);
   }
 
   return termsMap;

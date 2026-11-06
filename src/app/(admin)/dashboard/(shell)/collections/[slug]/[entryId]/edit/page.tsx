@@ -58,7 +58,7 @@ export default async function CollectionEntryPage({
   }));
 
   return (
-    <div className="-m-5 lg:h-[calc(100svh-4rem)] xl:-m-8">
+    <div className="-m-5 xl:-m-8">
       <EntryEditor
         collection={collection}
         entry={entry}

@@ -217,8 +217,15 @@ export const collectionsService = {
   },
 
   /** Get one collection by slug. */
-  async getBySlug(slug: string) {
-    const siteId = await adminSiteId();
+  async getBySlug(slug: string, siteIdOverride?: string) {
+    let siteId = siteIdOverride;
+    if (!siteId) {
+      try {
+        siteId = await adminSiteId();
+      } catch {
+        siteId = 'default';
+      }
+    }
     const [row] = await db
       .select()
       .from(collections)
@@ -233,6 +240,31 @@ export const collectionsService = {
       .limit(1);
     if (!row) throw new NotFoundException('Collection not found');
     return row;
+  },
+
+  /** Find active collection by slug without throwing. */
+  async findBySlug(slug: string, siteIdOverride?: string) {
+    let siteId = siteIdOverride;
+    if (!siteId) {
+      try {
+        siteId = await adminSiteId();
+      } catch {
+        siteId = 'default';
+      }
+    }
+    const [row] = await db
+      .select()
+      .from(collections)
+      .where(
+        and(
+          eq(collections.slug, slug),
+          eq(collections.siteId, siteId),
+          isNull(collections.deletedAt),
+          eq(collections.status, 'active')
+        )
+      )
+      .limit(1);
+    return row ?? null;
   },
 
   /**

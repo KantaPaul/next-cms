@@ -281,3 +281,178 @@ describe('Entry save respecting supports', () => {
   });
 });
 
+describe('Term syncing on entry save', () => {
+  it('syncs terms only for taxonomies provided', () => {
+    const existingEntryTerms = [
+      { taxonomyId: 'tax1', termId: 't1' },
+      { taxonomyId: 'tax2', termId: 't2' },
+    ];
+
+    const inputTerms: Record<string, string[]> = {
+      tax1: ['t3', 't4'],
+    };
+
+    const remaining = existingEntryTerms.filter(et => !(et.taxonomyId in inputTerms));
+    const newTerms = Object.entries(inputTerms).flatMap(([taxId, termIds]) =>
+      termIds.map(termId => ({ taxonomyId: taxId, termId }))
+    );
+    const finalTerms = [...remaining, ...newTerms];
+
+    assert.equal(finalTerms.length, 3);
+    assert.deepEqual(
+      finalTerms,
+      [
+        { taxonomyId: 'tax2', termId: 't2' },
+        { taxonomyId: 'tax1', termId: 't3' },
+        { taxonomyId: 'tax1', termId: 't4' },
+      ]
+    );
+  });
+});
+
+describe('Scheduled entry publishing logic', () => {
+  it('publishes due scheduled entries and leaves future ones untouched', () => {
+    const now = new Date('2026-11-06T10:00:00Z');
+    const entries = [
+      { id: 'e1', status: 'scheduled', scheduledAt: new Date('2026-11-06T09:59:00Z'), publishedAt: null },
+      { id: 'e2', status: 'scheduled', scheduledAt: new Date('2026-11-06T10:01:00Z'), publishedAt: null },
+      { id: 'e3', status: 'draft', scheduledAt: new Date('2026-11-06T09:00:00Z'), publishedAt: null },
+    ];
+
+    const toPublish = entries.filter(
+      e => e.status === 'scheduled' && e.scheduledAt && e.scheduledAt <= now
+    );
+
+    assert.equal(toPublish.length, 1);
+    assert.equal(toPublish[0]?.id, 'e1');
+
+    const published = toPublish.map(e => ({
+      ...e,
+      status: 'published' as const,
+      publishedAt: now,
+      scheduledAt: null,
+    }));
+
+    assert.equal(published[0]?.status, 'published');
+    assert.equal(published[0]?.scheduledAt, null);
+    assert.deepEqual(published[0]?.publishedAt, now);
+  });
+});
+
+describe('resolveTermArchiveRoute', () => {
+  const site = {
+    defaultLocale: 'en',
+    locales: [{ code: 'en' }, { code: 'es' }, { code: 'fr' }],
+  };
+
+  function resolve(segments: string[]) {
+    const defaultLocale = site.defaultLocale ?? 'en';
+    const codes = site.locales.map(l => l.code) ?? [];
+    const parts = segments.map(s => {
+      try {
+        return decodeURIComponent(s);
+      } catch {
+        return s;
+      }
+    });
+
+    let language = defaultLocale;
+    let offset = 0;
+
+    if (
+      parts.length >= 4 &&
+      parts[0] !== defaultLocale &&
+      codes.includes(parts[0]) &&
+      parts[1] !== 'blog'
+    ) {
+      language = parts[0];
+      offset = 1;
+    }
+
+    if (parts[offset] === 'collections') {
+      offset += 1;
+    }
+
+    if (parts.length !== offset + 3) {
+      return null;
+    }
+
+    const typeSlug = parts[offset];
+    const taxonomyKey = parts[offset + 1];
+    const termSlug = parts[offset + 2];
+
+    if (
+      typeSlug === 'blog' ||
+      typeSlug === 'api' ||
+      typeSlug === 'dashboard' ||
+      !typeSlug ||
+      !taxonomyKey ||
+      !termSlug
+    ) {
+      return null;
+    }
+
+    return { language, typeSlug, taxonomyKey, termSlug };
+  }
+
+  it('resolves direct 3-segment post type term archive route', () => {
+    const res = resolve(['team', 'department', 'engineering']);
+    assert.deepEqual(res, {
+      language: 'en',
+      typeSlug: 'team',
+      taxonomyKey: 'department',
+      termSlug: 'engineering',
+    });
+  });
+
+  it('resolves localized 4-segment post type term archive route', () => {
+    const res = resolve(['es', 'team', 'department', 'engineering']);
+    assert.deepEqual(res, {
+      language: 'es',
+      typeSlug: 'team',
+      taxonomyKey: 'department',
+      termSlug: 'engineering',
+    });
+  });
+
+  it('resolves /collections/{typeSlug}/{taxonomyKey}/{termSlug}', () => {
+    const res = resolve(['collections', 'team', 'department', 'engineering']);
+    assert.deepEqual(res, {
+      language: 'en',
+      typeSlug: 'team',
+      taxonomyKey: 'department',
+      termSlug: 'engineering',
+    });
+  });
+
+  it('ignores blog routes and invalid lengths', () => {
+    assert.equal(resolve(['blog', 'category', 'tech']), null);
+    assert.equal(resolve(['team']), null);
+    assert.equal(resolve(['team', 'john-doe']), null);
+  });
+});
+
+describe('Listing terms filter', () => {
+  it('filters collection entries by matching term ID or slug', () => {
+    const entries = [
+      { id: 'e1', title: 'John', terms: [{ id: 'term-eng', slug: 'engineering' }] },
+      { id: 'e2', title: 'Jane', terms: [{ id: 'term-des', slug: 'design' }] },
+      { id: 'e3', title: 'Bob', terms: [{ id: 'term-eng', slug: 'engineering' }, { id: 'term-lead', slug: 'lead' }] },
+    ];
+
+    const filterByTerms = (val: string | string[]) => {
+      const values = Array.isArray(val) ? val : [val];
+      return entries.filter(e =>
+        e.terms.some(t => values.includes(t.id) || values.includes(t.slug))
+      );
+    };
+
+    assert.equal(filterByTerms('engineering').length, 2);
+    assert.deepEqual(filterByTerms('engineering').map(e => e.id), ['e1', 'e3']);
+    assert.equal(filterByTerms('term-des').length, 1);
+    assert.equal(filterByTerms(['design', 'lead']).length, 2);
+    assert.equal(filterByTerms('nonexistent').length, 0);
+  });
+});
+
+

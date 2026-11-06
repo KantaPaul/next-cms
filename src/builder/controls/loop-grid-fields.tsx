@@ -8,6 +8,7 @@ import {
   listCollectionFieldOptions,
   listLoopTemplateOptions,
 } from '@/app/(admin)/dashboard/(shell)/templates/loop/_modules/loop-templates.actions';
+import { listCollectionTermOptions } from '@/app/(admin)/dashboard/(shell)/collections/_modules/collection-taxonomies.actions';
 import { PAGES } from '@/config/pages';
 
 type LoopFieldProps<T> = {
@@ -444,3 +445,65 @@ export function CptFieldFiltersField({
     </div>
   );
 }
+
+export function CptTermLockField({
+  value,
+  onChange,
+  field,
+  props,
+  readOnly,
+}: LoopFieldProps<string | undefined>) {
+  const { collectionId } = gridSource(props);
+  const [terms, setTerms] = useState<
+    { id: string; name: string; slug: string; taxonomy: string }[] | null
+  >(null);
+
+  useEffect(() => {
+    if (!collectionId) {
+      setTerms([]);
+      return;
+    }
+    let active = true;
+    listCollectionTermOptions(collectionId)
+      .then(rows => {
+        if (active) setTerms(Array.isArray(rows) ? rows : []);
+      })
+      .catch(() => {
+        if (active) setTerms([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [collectionId]);
+
+  if (!collectionId) {
+    return (
+      <div>
+        <p
+          className="text-xs"
+          style={{ color: 'var(--ne-text-muted, #64748b)' }}
+        >
+          Choose a post type first.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <select
+      style={compactStyle}
+      value={value ?? ''}
+      disabled={readOnly}
+      onChange={e => onChange(e.target.value || undefined)}
+      aria-label={field.label ?? 'Lock to term'}
+    >
+      <option value="">Any term</option>
+      {terms?.map(t => (
+        <option key={t.id} value={t.slug}>
+          {t.name}
+        </option>
+      ))}
+    </select>
+  );
+}
+

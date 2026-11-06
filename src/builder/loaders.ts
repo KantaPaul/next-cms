@@ -40,7 +40,7 @@ import type { PostView } from './post-template';
 /* ---------- context ---------- */
 
 export type ArchiveLoaderContext = {
-  kind: 'category' | 'tag' | 'author' | 'date';
+  kind: 'category' | 'tag' | 'author' | 'date' | 'term';
   slug?: string;
   id?: string;
   title?: string;
@@ -369,6 +369,21 @@ function buildFiltersFromPropsAndParams(
       activeParams.author;
     if (authorId) {
       filters.push({ field: 'authorId', operator: 'eq', value: authorId });
+    }
+  }
+
+  if (source === 'collection-entries') {
+    const lockedTerm =
+      (typeof props.lockedTerm === 'string' && props.lockedTerm.trim()) ||
+      (typeof props.lockedCategory === 'string' &&
+        props.lockedCategory.trim()) ||
+      (typeof props.lockedTag === 'string' && props.lockedTag.trim()) ||
+      (ctx.archive?.kind === 'term' ? ctx.archive.slug : undefined);
+    const terms = lockedTerm
+      ? [lockedTerm]
+      : activeParams.terms ?? (activeParams.term ? [activeParams.term] : []);
+    if (terms.length > 0) {
+      filters.push({ field: 'terms', operator: 'in', value: terms });
     }
   }
 

@@ -132,3 +132,26 @@ export async function updateSupportsAction({
     };
   }
 }
+
+export async function listCollectionTermOptions(collectionId: string) {
+  if (!collectionId) return [];
+  try {
+    const taxs = await collectionTaxonomiesService.listTaxonomies(collectionId);
+    const result: { id: string; name: string; slug: string; taxonomy: string }[] = [];
+    for (const tax of taxs) {
+      const terms = await collectionTaxonomiesService.listTerms(tax.id);
+      for (const term of terms) {
+        result.push({
+          id: term.id,
+          name: `${tax.name}: ${term.name}`,
+          slug: term.slug,
+          taxonomy: tax.key,
+        });
+      }
+    }
+    return result;
+  } catch {
+    return [];
+  }
+}
+

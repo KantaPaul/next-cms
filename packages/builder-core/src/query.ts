@@ -44,6 +44,9 @@ export const ALLOWED_FILTER_FIELDS: Record<ListingSource, readonly string[]> = {
   ],
   'collection-entries': [
     'collectionId',
+    'terms',
+    'categories',
+    'tags',
     'search',
     'publishedAfter',
     'publishedBefore',
@@ -220,7 +223,7 @@ export interface NormalizedListingItem {
     id: string;
     name: string;
     slug: string;
-    taxonomy: 'category' | 'tag';
+    taxonomy: string;
   }[];
   source: ListingSource;
   raw?: Record<string, unknown>;
@@ -267,6 +270,8 @@ export interface ParsedListingParams {
   categories?: string[];
   tag?: string;
   tags?: string[];
+  term?: string;
+  terms?: string[];
   author?: string;
   from?: string;
   to?: string;
@@ -319,6 +324,10 @@ export function parseNamespacedParams(
   const category = categoriesList[0];
   const tagsList = getMultiParam('tag');
   const tag = tagsList[0];
+  const termsList = getMultiParam('terms').length
+    ? getMultiParam('terms')
+    : getMultiParam('term');
+  const term = termsList[0];
   const author = getParam('author');
   const from = getParam('from');
   const to = getParam('to');
@@ -350,6 +359,8 @@ export function parseNamespacedParams(
     ...(categoriesList.length > 1 && { categories: categoriesList }),
     ...(tag && { tag }),
     ...(tagsList.length > 1 && { tags: tagsList }),
+    ...(term && { term }),
+    ...(termsList.length > 1 && { terms: termsList }),
     ...(author && { author: author.trim() }),
     ...(from && { from: from.trim() }),
     ...(to && { to: to.trim() }),

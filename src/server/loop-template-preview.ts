@@ -24,8 +24,11 @@ const ENTRY_BASE_FIELDS: LoopItemFieldOption[] = [
   { path: 'title', label: 'Title', type: 'text' },
   { path: 'url', label: 'Permalink', type: 'url' },
   { path: 'slug', label: 'Slug', type: 'text' },
-  { path: 'image', label: 'Image (first media field)', type: 'image' },
+  { path: 'excerpt', label: 'Excerpt', type: 'text' },
+  { path: 'image', label: 'Featured image', type: 'image' },
   { path: 'publishedAt', label: 'Published date', type: 'date' },
+  { path: 'authorName', label: 'Author name', type: 'text' },
+  { path: 'terms', label: 'Terms', type: 'text' },
 ];
 
 const FIELD_TYPE_TO_DYNAMIC: Record<string, string> = {

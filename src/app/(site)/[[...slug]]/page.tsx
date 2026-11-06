@@ -186,6 +186,104 @@ function resolveEntryRoute(
   return [undefined, undefined];
 }
 
+type TermArchiveRoute = {
+  language: string;
+  typeSlug: string;
+  taxonomyKey: string;
+  termSlug: string;
+};
+
+function resolveTermArchiveRoute(
+  segments: string[] | undefined,
+  site: { defaultLocale: string; locales: { code: string }[] }
+): TermArchiveRoute | null {
+  if (!Array.isArray(segments) || segments.length === 0) return null;
+  const defaultLocale = site.defaultLocale ?? 'en';
+  const codes = site.locales.map(l => l.code) ?? [];
+  const parts = segments.map(s => {
+    try {
+      return decodeURIComponent(s);
+    } catch {
+      return s;
+    }
+  });
+
+  let language = defaultLocale;
+  let offset = 0;
+
+  if (
+    parts.length >= 4 &&
+    parts[0] !== defaultLocale &&
+    codes.includes(parts[0]) &&
+    parts[1] !== 'blog'
+  ) {
+    language = parts[0];
+    offset = 1;
+  }
+
+  if (parts[offset] === 'collections') {
+    offset += 1;
+  }
+
+  if (parts.length !== offset + 3) {
+    return null;
+  }
+
+  const typeSlug = parts[offset];
+  const taxonomyKey = parts[offset + 1];
+  const termSlug = parts[offset + 2];
+
+  if (
+    typeSlug === 'blog' ||
+    typeSlug === 'api' ||
+    typeSlug === 'dashboard' ||
+    !typeSlug ||
+    !taxonomyKey ||
+    !termSlug
+  ) {
+    return null;
+  }
+
+  return { language, typeSlug, taxonomyKey, termSlug };
+}
+
+async function loadTermArchive(segments?: string[], site?: any) {
+  const currentSite = site ?? (await siteContext.publicSite());
+  const route = resolveTermArchiveRoute(segments, currentSite);
+  if (!route) return null;
+
+  try {
+    const collection = await collectionsService.findBySlug(
+      route.typeSlug,
+      currentSite.id
+    );
+    if (!collection) return null;
+
+    const taxonomy = await collectionTaxonomiesService.getTaxonomyByKey(
+      collection.id,
+      route.taxonomyKey,
+      currentSite.id
+    );
+    if (!taxonomy) return null;
+
+    const term = await collectionTaxonomiesService.getTermBySlug(
+      taxonomy.id,
+      route.termSlug,
+      currentSite.id
+    );
+    if (!term) return null;
+
+    return {
+      language: route.language,
+      collection,
+      taxonomy,
+      term,
+    };
+  } catch {
+    return null;
+  }
+}
+
 function entryMetadata(
   entry: any,
   collection: any,
@@ -279,6 +377,41 @@ export async function generateMetadata({
         url: listingSeo.canonicalUrl,
         siteName: copy.siteName,
         locale: archive.language,
+      },
+      ...(settings.favicon && { icons: { icon: settings.favicon } }),
+    };
+  }
+
+  const termArchive = await loadTermArchive(segments, site);
+  if (termArchive) {
+    const { collection, taxonomy, term, language } = termArchive;
+    const settings = await siteSettingsService.getPublic();
+    const copy = localizedSettings(settings, language, site.defaultLocale);
+    const base = settings.siteUrl || env.SITE_URL;
+    const path = `/${collection.slug}/${taxonomy.key}/${term.slug}`;
+    const url = absolute(base, path);
+    const listingSeo = buildListingSeoMetadata({
+      baseCanonicalUrl: url,
+      searchParams: queryParams,
+    });
+    const title = `${term.name} · ${collection.name}`;
+    const description =
+      term.description || `${collection.name} entries tagged with ${term.name}`;
+
+    return {
+      title: `${title} | ${copy.siteName}`,
+      description,
+      alternates: {
+        canonical: listingSeo.canonicalUrl,
+      },
+      robots: listingSeo.noIndex ? { index: false, follow: true } : undefined,
+      openGraph: {
+        title: `${title} | ${copy.siteName}`,
+        description,
+        type: 'website',
+        url: listingSeo.canonicalUrl,
+        siteName: copy.siteName,
+        locale: language,
       },
       ...(settings.favicon && { icons: { icon: settings.favicon } }),
     };
@@ -639,6 +772,183 @@ async function ArchiveRouteView({
   );
 }
 
+function lockLoopToCollectionTerm(
+  content: unknown,
+  collectionId: string,
+  termSlug: string
+): unknown {
+  if (!content || typeof content !== 'object') return content;
+  const doc = content as Record<string, any>;
+  if (Array.isArray(doc.content)) {
+    return {
+      ...doc,
+      content: doc.content.map(block => {
+        if (block?.type === 'LoopGrid' || block?.type === 'QueryLoop') {
+          return {
+            ...block,
+            props: {
+              ...block.props,
+              source: 'collection-entries',
+              collectionId,
+              lockedTerm: termSlug,
+            },
+          };
+        }
+        return block;
+      }),
+    };
+  }
+  if (doc.nodes && typeof doc.nodes === 'object') {
+    const nextNodes = { ...doc.nodes };
+    for (const [id, node] of Object.entries(nextNodes) as [string, any][]) {
+      if (node?.type === 'LoopGrid' || node?.type === 'QueryLoop') {
+        nextNodes[id] = {
+          ...node,
+          props: {
+            ...node.props,
+            source: 'collection-entries',
+            collectionId,
+            lockedTerm: termSlug,
+          },
+        };
+      }
+    }
+    return { ...doc, nodes: nextNodes };
+  }
+  return content;
+}
+
+async function TermArchiveRouteView({
+  termArchive,
+  settings,
+  siteId,
+  siteSlug,
+  defaultLocale,
+  searchParams,
+}: {
+  termArchive: {
+    language: string;
+    collection: any;
+    taxonomy: any;
+    term: any;
+  };
+  settings: Settings;
+  siteId: string;
+  siteSlug: string;
+  defaultLocale: string;
+  searchParams: SearchParams;
+}) {
+  const { collection, taxonomy, term, language } = termArchive;
+  const copy = localizedSettings(settings, language, defaultLocale);
+  const archiveTemplateId =
+    copy.archiveTemplateId ?? settings.archiveTemplateId ?? null;
+  const preview = await getPreviewSession();
+
+  const archiveLoaderContext = {
+    kind: 'term',
+    id: term.id,
+    slug: term.slug,
+    title: term.name,
+    description: term.description,
+  };
+
+  let templateContent: unknown = null;
+  if (archiveTemplateId) {
+    try {
+      const templateBlock = await getGlobalBlockContent(archiveTemplateId, {
+        siteId,
+        draft: !!preview,
+      });
+      if (
+        templateBlock &&
+        (templateBlock.blocks?.length ||
+          (templateBlock.content &&
+            typeof templateBlock.content === 'object' &&
+            Object.keys(templateBlock.content).length > 0))
+      ) {
+        templateContent = templateBlock.content;
+      }
+    } catch {
+      templateContent = null;
+    }
+  }
+
+  // Fallback default archive content: Loop Grid for that post type locked to the term
+  const defaultArchiveContent = {
+    root: {
+      props: {
+        maxWidth: 'xl',
+        paddingY: 'md',
+      },
+    },
+    content: [
+      {
+        type: 'LoopGrid',
+        props: {
+          id: 'archive-loop',
+          loopId: 'archive-loop',
+          source: 'collection-entries',
+          collectionId: collection.id,
+          lockedTerm: term.slug,
+          title: `${term.name} (${collection.name})`,
+          layout: 'grid',
+          columnsDesktop: 3,
+          columnsTablet: 2,
+          columnsMobile: 1,
+          gap: 'md',
+          pageSize: 9,
+          sortField: 'publishedAt',
+          sortOrder: 'desc',
+          pagination: 'numbered',
+          showExcerpt: true,
+          showImage: true,
+          showDate: true,
+          showAuthor: true,
+          showTerms: true,
+          emptyText: `No ${collection.name.toLowerCase()} entries in this archive yet.`,
+        },
+      },
+    ],
+  };
+
+  const rendered = await renderBuilderContent({
+    content: templateContent
+      ? lockLoopToCollectionTerm(templateContent, collection.id, term.slug)
+      : defaultArchiveContent,
+    metadata: {
+      themeTokens: settings.themeTokens,
+      language,
+      searchParams,
+      archive: archiveLoaderContext,
+      siteId,
+      siteSlug,
+      site: {
+        name: settings.siteName,
+        description: settings.siteDescription,
+        url: settings.siteUrl,
+        logo: settings.logo,
+      },
+    },
+  });
+
+  return (
+    <div className="mx-auto w-full max-w-6xl px-5 py-8 md:px-8">
+      {!templateContent && (
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold tracking-tight">{term.name}</h1>
+          <p className="s-muted mt-1 text-sm font-medium">
+            {collection.name} · {taxonomy.name}
+          </p>
+          {term.description && (
+            <p className="s-muted mt-2 text-base">{term.description}</p>
+          )}
+        </div>
+      )}
+      {rendered}
+    </div>
+  );
+}
+
 export default async function SitePage({ params, searchParams }: Params) {
   const { slug } = await params;
   const settings = await siteSettingsService.getPublic();
@@ -661,6 +971,20 @@ export default async function SitePage({ params, searchParams }: Params) {
     return (
       <ArchiveRouteView
         archive={archive}
+        settings={settings}
+        siteId={site.id}
+        siteSlug={siteSlug ?? ''}
+        defaultLocale={site.defaultLocale}
+        searchParams={await searchParams}
+      />
+    );
+  }
+
+  const termArchive = await loadTermArchive(segments, site);
+  if (termArchive) {
+    return (
+      <TermArchiveRouteView
+        termArchive={termArchive}
         settings={settings}
         siteId={site.id}
         siteSlug={siteSlug ?? ''}

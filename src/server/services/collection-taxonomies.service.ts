@@ -77,8 +77,19 @@ export const collectionTaxonomiesService = {
     return row ?? null;
   },
 
-  getTaxonomyByKey: async (collectionId: string, key: string) => {
-    const siteId = await adminSiteId();
+  getTaxonomyByKey: async (
+    collectionId: string,
+    key: string,
+    siteIdOverride?: string
+  ) => {
+    let siteId = siteIdOverride;
+    if (!siteId) {
+      try {
+        siteId = await adminSiteId();
+      } catch {
+        siteId = 'default';
+      }
+    }
     const [row] = await db
       .select()
       .from(collectionTaxonomies)
@@ -253,8 +264,19 @@ export const collectionTaxonomiesService = {
     return row ?? null;
   },
 
-  getTermBySlug: async (taxonomyId: string, slug: string) => {
-    const siteId = await adminSiteId();
+  getTermBySlug: async (
+    taxonomyId: string,
+    slug: string,
+    siteIdOverride?: string
+  ) => {
+    let siteId = siteIdOverride;
+    if (!siteId) {
+      try {
+        siteId = await adminSiteId();
+      } catch {
+        siteId = 'default';
+      }
+    }
     const [row] = await db
       .select()
       .from(collectionTerms)

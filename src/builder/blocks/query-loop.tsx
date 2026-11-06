@@ -263,6 +263,7 @@ export interface QueryLoopProps {
   playlistId?: string;
   lockedCategory?: string;
   lockedTag?: string;
+  lockedTerm?: string;
   lockedAuthorId?: string;
   sortField?: string;
   sortOrder?: 'asc' | 'desc';
