@@ -6,6 +6,8 @@ import {
   toDocument,
 } from '@nextcms/builder-core';
 import { editorSetup } from '@/builder/definitions';
+import { hiddenBlocksFor } from '@/config/block-manager';
+import { siteSettingsService } from '@/server/services/site-settings.service';
 import { loadDocumentData } from '@/builder/loaders';
 import type { PostView } from '@/builder/post-template';
 import { documentIssues } from '@/builder/validate-document';
@@ -25,6 +27,8 @@ export type EditorData = {
   dynamicRefs: DynamicRefOptions;
   /** Collection entry context for template pages. */
   collectionEntry?: any;
+  /** Block manager: block types left out of this editor's insert panel. */
+  hiddenBlocks: string[];
 };
 
 /** Adds records the document already points at that fell outside the option list. */
@@ -53,15 +57,22 @@ export async function loadEditorData({
   collectionEntry?: any;
 }): Promise<EditorData> {
   const document = toDocument(content);
-  const [loaded, options, picked] = await Promise.all([
+  const setup = editorSetup(kind);
+  const [loaded, options, picked, settings] = await Promise.all([
     loadDocumentData(document, { language, themeTokens, post, editor: true }),
     dynamicRefsService.options(),
     dynamicRefsService.load(collectDynamicRefs(document)),
+    siteSettingsService.get(),
   ]);
   return {
     document,
     loaded,
-    issues: documentIssues(document, editorSetup(kind).definitions),
+    issues: documentIssues(document, setup.definitions),
+    hiddenBlocks: hiddenBlocksFor(
+      settings.blockSettings,
+      kind,
+      setup.groups.flatMap(group => group.types)
+    ),
     dynamicRefs: {
       pages: withPicked(options.pages, picked.pageRef),
       posts: withPicked(options.posts, picked.postRef),

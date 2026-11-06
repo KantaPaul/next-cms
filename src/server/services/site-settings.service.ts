@@ -1,4 +1,9 @@
 import 'server-only';
+import {
+  type BlockSettings,
+  DEFAULT_BLOCK_SETTINGS,
+  normalizeBlockSettings,
+} from '@/config/block-manager';
 import { createId } from '@paralleldrive/cuid2';
 import { eq } from 'drizzle-orm';
 import { cache } from 'react';
@@ -99,7 +104,12 @@ async function loadSettings(siteId: string) {
       .from(siteSettings)
       .where(eq(siteSettings.siteId, siteId))
       .limit(1);
-    if (row) return { ...row, themeTokens: resolveThemeTokens(row.themeTokens) };
+    if (row)
+      return {
+        ...row,
+        themeTokens: resolveThemeTokens(row.themeTokens),
+        blockSettings: normalizeBlockSettings(row.blockSettings),
+      };
 
     const [created] = await db
       .insert(siteSettings)
@@ -123,6 +133,7 @@ async function loadSettings(siteId: string) {
       themeTokens: resolveThemeTokens(settings?.themeTokens),
       licenseSettings: (settings?.licenseSettings as LicenseSettings) ?? DEFAULT_LICENSE_SETTINGS,
       authSettings: (settings?.authSettings as AuthSettings) ?? DEFAULT_AUTH_SETTINGS,
+      blockSettings: normalizeBlockSettings(settings?.blockSettings),
     };
   } catch {
     return {
@@ -148,6 +159,7 @@ async function loadSettings(siteId: string) {
       searchSettings: DEFAULT_SEARCH_SETTINGS,
       licenseSettings: DEFAULT_LICENSE_SETTINGS,
       authSettings: DEFAULT_AUTH_SETTINGS,
+      blockSettings: DEFAULT_BLOCK_SETTINGS,
       robotsTxt: null,
       googleAnalyticsId: null,
       updatedAt: new Date(),
@@ -257,6 +269,32 @@ export const siteSettingsService = {
     });
     revalidatePublicSite();
     return row;
+  },
+
+  /** Block manager: hidden blocks per editor type. */
+  updateBlockSettings: async (
+    input: unknown,
+    access: UserAccess
+  ): Promise<BlockSettings> => {
+    await accessService.assertPermission(
+      access.userId,
+      PERMISSIONS.SETTINGS_MANAGE
+    );
+    const siteId = await adminSiteId();
+    await loadSettings(siteId);
+    const blockSettings = normalizeBlockSettings(input);
+    await db
+      .update(siteSettings)
+      .set({ blockSettings, updatedAt: new Date() })
+      .where(eq(siteSettings.siteId, siteId));
+    await auditService.log({
+      actorId: access.userId,
+      action: 'update',
+      targetType: 'settings',
+      targetId: siteId,
+      targetName: 'Site settings (blocks)',
+    });
+    return blockSettings;
   },
 
   updateVideoSettings: async (

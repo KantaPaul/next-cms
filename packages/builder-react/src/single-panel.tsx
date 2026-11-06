@@ -238,30 +238,30 @@ export function SinglePanel({
       orientation="horizontal"
       ariaLabel="Panel footer toolbar"
       items={toolRailItems}
-      // leading={
-      //   <>
-      //     <button
-      //       type="button"
-      //       className={railButton}
-      //       disabled={history.past.length === 0}
-      //       onClick={() => store.undo()}
-      //       aria-label="Undo"
-      //       title={`Undo (${MOD}Z)`}
-      //     >
-      //       <Undo2 size={15} />
-      //     </button>
-      //     <button
-      //       type="button"
-      //       className={railButton}
-      //       disabled={history.future.length === 0}
-      //       onClick={() => store.redo()}
-      //       aria-label="Redo"
-      //       title={`Redo (${MOD}Shift+Z)`}
-      //     >
-      //       <Redo2 size={15} />
-      //     </button>
-      //   </>
-      // }
+      leading={
+        <>
+          <button
+            type="button"
+            className={railButton}
+            disabled={history.past.length === 0}
+            onClick={() => store.undo()}
+            aria-label="Undo"
+            title={`Undo (${MOD}Z)`}
+          >
+            <Undo2 size={15} />
+          </button>
+          <button
+            type="button"
+            className={railButton}
+            disabled={history.future.length === 0}
+            onClick={() => store.redo()}
+            aria-label="Redo"
+            title={`Redo (${MOD}Shift+Z)`}
+          >
+            <Redo2 size={15} />
+          </button>
+        </>
+      }
       trailing={
         <>
           {selectedId && selectedChanges > 0 ? (

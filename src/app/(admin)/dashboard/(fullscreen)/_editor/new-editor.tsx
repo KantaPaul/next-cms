@@ -184,6 +184,8 @@ export type NewEditorProps = BuilderPageProps & {
   draftVersion?: number;
   /** Problems found in the stored document (R797). */
   issues?: string[];
+  /** Block manager: block types left out of the insert panel. */
+  hiddenBlocks?: string[];
   /** Pages and posts for "Specific Page/Blog Post" bindings. */
   dynamicRefs?: DynamicRefOptions;
   /** Editor chrome: the current one, or the shared @nextcms/editor-ui shell (B15 E6). */
@@ -637,6 +639,7 @@ function useEditorLock(targetType: 'page' | 'post' | null, id: string) {
 const NO_DYNAMIC_REFS: DynamicRefOptions = { pages: [], posts: [] };
 
 const NO_PREVIEW_ITEMS: NormalizedListingItem[] = [];
+const NO_HIDDEN_BLOCKS: string[] = [];
 
 const DEFAULT_DYNAMIC_SOURCES: DynamicSourcesValue = {
   sources: APPROVED_DYNAMIC_SOURCES,
@@ -660,11 +663,27 @@ export function NewEditor({
   loaded,
   draftVersion = 0,
   issues = [],
+  hiddenBlocks = NO_HIDDEN_BLOCKS,
   dynamicRefs = NO_DYNAMIC_REFS,
   shell = 'legacy',
   layout,
 }: NewEditorProps) {
-  const setup = useMemo(() => editorSetup(kind), [kind]);
+  const baseSetup = useMemo(() => editorSetup(kind), [kind]);
+  // Block manager: hidden blocks leave the insert panel only, so content that
+  // already uses them still renders and edits normally.
+  const setup = useMemo(() => {
+    if (!hiddenBlocks.length) return baseSetup;
+    const hidden = new Set(hiddenBlocks);
+    return {
+      ...baseSetup,
+      groups: baseSetup.groups
+        .map(group => ({
+          ...group,
+          types: group.types.filter(type => !hidden.has(type)),
+        }))
+        .filter(group => group.types.length > 0),
+    };
+  }, [baseSetup, hiddenBlocks]);
   const adapter = useMemo(
     () => adapterFor(kind, page, category),
     [kind, page, category]

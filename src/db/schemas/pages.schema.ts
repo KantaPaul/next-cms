@@ -16,6 +16,10 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core';
 import { baseColumns, relationConfig } from '@/db/helpers/base.columns';
+import {
+  type BlockSettings,
+  DEFAULT_BLOCK_SETTINGS,
+} from '@/config/block-manager';
 import { users } from '@/db/schemas/auth.schema';
 import { DEFAULT_SITE_ID } from '@/db/schemas/sites.schema';
 import { type VideoSettings, DEFAULT_VIDEO_SETTINGS } from '@/db/schemas/video.schema';
@@ -507,6 +511,11 @@ export const siteSettings = pgTable('site_settings', {
   authSettings: jsonb('auth_settings')
     .$type<AuthSettings>()
     .default(DEFAULT_AUTH_SETTINGS)
+    .notNull(),
+  /** Block manager: hidden blocks per editor type (see config/block-manager). */
+  blockSettings: jsonb('block_settings')
+    .$type<BlockSettings>()
+    .default(DEFAULT_BLOCK_SETTINGS)
     .notNull(),
   robotsTxt: text('robots_txt'),
   googleAnalyticsId: varchar('google_analytics_id', { length: 50 }),

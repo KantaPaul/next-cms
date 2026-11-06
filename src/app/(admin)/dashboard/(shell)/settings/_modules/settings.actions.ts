@@ -1,4 +1,5 @@
 'use server';
+import { BLOCK_EDITOR_KINDS } from '@/config/block-manager';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { PAGES } from '@/config/pages';
@@ -62,6 +63,20 @@ export const updateSiteSettings = permissionProcedure(
     );
     revalidatePath(PAGES.DASHBOARD.SETTINGS);
     return row;
+  });
+
+export const updateBlockSettings = permissionProcedure(
+  PERMISSIONS.SETTINGS_MANAGE
+)
+  .input(
+    z.object({
+      hidden: z.record(z.enum(BLOCK_EDITOR_KINDS), z.array(z.string().max(100)).max(300)),
+    })
+  )
+  .action(async ({ input, ctx }) => {
+    const data = await siteSettingsService.updateBlockSettings(input, ctx.access);
+    revalidatePath(PAGES.DASHBOARD.SETTINGS_BLOCKS);
+    return { ok: true, data };
   });
 
 export const updateVideoSettings = permissionProcedure(

@@ -1,0 +1,1 @@
+ALTER TABLE "site_settings" ADD COLUMN "block_settings" jsonb DEFAULT '{"hidden":{}}'::jsonb NOT NULL;

@@ -141,6 +141,13 @@
       "when": 1793898459448,
       "tag": "20261105170739_loop_templates",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793903702310,
+      "tag": "20261105183502_block_settings",
+      "breakpoints": true
     }
   ]
 }

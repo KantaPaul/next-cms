@@ -303,7 +303,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 
       {/* Zone 2: Layout and dock, then device and zoom when the host keeps them here */}
       <div className="flex shrink-0 items-center gap-2">
-        {/* {layout && onLayoutChange && (
+        {layout && onLayoutChange && (
           <div role="group" aria-label="Editor layout" className={pill}>
             <button
               type="button"
@@ -326,7 +326,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               <span>Split</span>
             </button>
           </div>
-        )} */}
+        )}
 
         {layout !== 'split' && onDockSideChange && (
           <button
