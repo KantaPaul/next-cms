@@ -123,7 +123,8 @@ export const resolvePostTemplate = (value: unknown): BuilderData =>
   isBuilderData(value) && value.content.length ? value : defaultPostTemplate();
 
 export type EntryTermView = {
-  id: string;
+  id?: string;
+  termId?: string;
   name: string;
   slug: string;
   color?: string;
@@ -159,11 +160,11 @@ export function entryToPostView(
 
   const categories: PostTerm[] = terms
     .filter(t => (firstHierarchicalTaxonomyId ? t.taxonomyId === firstHierarchicalTaxonomyId : t.hierarchical))
-    .map(t => ({ id: t.id, name: t.name, slug: t.slug, color: t.color }));
+    .map(t => ({ id: t.id ?? t.termId ?? '', name: t.name, slug: t.slug, color: t.color }));
 
   const tags: PostTerm[] = terms
     .filter(t => (firstFlatTaxonomyId ? t.taxonomyId === firstFlatTaxonomyId : !t.hierarchical))
-    .map(t => ({ id: t.id, name: t.name, slug: t.slug, color: t.color }));
+    .map(t => ({ id: t.id ?? t.termId ?? '', name: t.name, slug: t.slug, color: t.color }));
 
   const firstRichtextField = fields.find(f => f.type === 'richtext');
   let body = '';

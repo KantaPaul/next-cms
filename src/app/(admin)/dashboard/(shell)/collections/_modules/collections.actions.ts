@@ -464,3 +464,32 @@ export async function setEntryTemplateAction(input: {
     return { ok: false, error: error.message ?? 'Failed to set template.' };
   }
 }
+
+export async function saveEntryDraftAction(input: {
+  id: string;
+  canvas?: unknown;
+  autosave?: boolean;
+}) {
+  try {
+    const actor = await actorId();
+    await collectionsService.updateEntry(
+      input.id,
+      { draftCanvas: input.canvas },
+      actor
+    );
+    return { ok: true, savedAt: new Date().toISOString() };
+  } catch (error: any) {
+    return { ok: false, error: error.message ?? 'Failed to save draft.' };
+  }
+}
+
+export async function publishEntryAction(input: { id: string }) {
+  try {
+    const actor = await actorId();
+    await collectionsService.publishEntry(input.id, actor);
+    revalidatePostTypes();
+    return { ok: true };
+  } catch (error: any) {
+    return { ok: false, error: error.message ?? 'Failed to publish entry.' };
+  }
+}

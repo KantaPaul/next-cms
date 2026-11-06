@@ -27,6 +27,15 @@ import {
   publishLoopTemplate,
   saveLoopTemplate,
 } from '@/app/(admin)/dashboard/(shell)/templates/loop/_modules/loop-templates.actions';
+import {
+  saveCollectionTemplateDraftAction,
+  publishCollectionTemplateAction,
+} from '@/app/(admin)/dashboard/(shell)/collections/_modules/collection-templates.actions';
+import {
+  saveEntryDraftAction,
+  publishEntryAction,
+  saveEntryAction,
+} from '@/app/(admin)/dashboard/(shell)/collections/_modules/collections.actions';
 import type { NormalizedListingItem } from '@nextcms/builder-core';
 import type { BuilderData, BuilderItem } from '@/builder/data';
 import type { PostView } from '@/builder/post-template';
@@ -44,6 +53,7 @@ export type BuilderPageProps = {
     status: string;
     hasUnpublishedChanges: boolean;
     content: unknown;
+    collectionSlug?: string;
   };
   themeTokens: ThemeTokens;
   /** Defaults to `page`. Post kinds use the post blocks and post actions. */
@@ -215,6 +225,43 @@ export function adapterFor(
       liveLabel: 'Update live template',
       saveDraft: content => savePostTemplateDraft({ id: page.id, content }),
       publish: () => publishPostTemplate({ id: page.id }),
+      submitForReview: null,
+    };
+  }
+
+  if (kind === 'entry') {
+    const slug = page.collectionSlug ?? '';
+    return {
+      label: `Entry layout: ${page.title}`,
+      backHref: PAGES.DASHBOARD.COLLECTION_ENTRY_EDIT(slug, page.id),
+      backLabel: 'Entry settings',
+      headerPath: `/${slug}/${page.slug}`,
+      previewHref: `/${slug}/${page.slug}`,
+      liveLabel: 'Update live entry',
+      saveDraft: (content, autosave) =>
+        saveEntryDraftAction({ id: page.id, canvas: content, autosave }),
+      publish: () => publishEntryAction({ id: page.id }),
+      submitForReview: () =>
+        saveEntryAction({
+          id: page.id,
+          collectionId: 'ignored',
+          status: 'review',
+        }),
+    };
+  }
+
+  if (kind === 'entry-template') {
+    const slug = page.collectionSlug ?? '';
+    return {
+      label: `Template: ${page.title}`,
+      backHref: PAGES.DASHBOARD.COLLECTION_TEMPLATES(slug),
+      backLabel: 'Single templates',
+      headerPath: `/${slug}/…`,
+      previewHref: null,
+      liveLabel: 'Update live template',
+      saveDraft: content =>
+        saveCollectionTemplateDraftAction({ id: page.id, content }),
+      publish: () => publishCollectionTemplateAction({ id: page.id }),
       submitForReview: null,
     };
   }

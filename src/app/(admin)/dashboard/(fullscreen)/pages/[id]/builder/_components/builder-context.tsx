@@ -16,6 +16,8 @@ export type BuilderKind =
   | 'page'
   | 'post'
   | 'post-template'
+  | 'entry'
+  | 'entry-template'
   | 'page-template'
   | 'global'
   | 'contact-form'

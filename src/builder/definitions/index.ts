@@ -192,7 +192,12 @@ export function editorSetup(kind: string): EditorSetup {
       renderKind: 'page',
     };
   }
-  if (kind === 'post' || kind === 'post-template') {
+  if (
+    kind === 'post' ||
+    kind === 'post-template' ||
+    kind === 'entry' ||
+    kind === 'entry-template'
+  ) {
     return {
       definitions: postDefinitions,
       schemas: schemasOf(postDefinitions),

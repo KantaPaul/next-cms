@@ -24,6 +24,9 @@ import {
   resolvePostRoute,
 } from '@/server/services/blog.service';
 import { collectionsService } from '@/server/services/collections.service';
+import { collectionTemplatesService } from '@/server/services/collection-templates.service';
+import { collectionTaxonomiesService } from '@/server/services/collection-taxonomies.service';
+import { entryToPostView } from '@/builder/post-template';
 import {
   getPreviewPageId,
   getPreviewPostId,
@@ -157,6 +160,84 @@ function postMetadata(
   };
 }
 
+function resolveEntryRoute(
+  segments: string[] | undefined,
+  site: { locales: { code: string }[] }
+): [string | undefined, string | undefined] {
+  if (!Array.isArray(segments)) return [undefined, undefined];
+  const localeCodes = site.locales.map(l => l.code) ?? [];
+  if (
+    segments.length === 3 &&
+    segments[0] === 'collections' &&
+    segments[1] &&
+    segments[2]
+  ) {
+    return [segments[1], segments[2]];
+  }
+  if (
+    segments.length === 2 &&
+    segments[0] &&
+    segments[1] &&
+    !localeCodes.includes(segments[0]) &&
+    segments[0] !== 'blog'
+  ) {
+    return [segments[0], segments[1]];
+  }
+  return [undefined, undefined];
+}
+
+function entryMetadata(
+  entry: any,
+  collection: any,
+  settings: Settings,
+  defaultLocale: string,
+  siteSlug: string
+): Metadata {
+  const copy = localizedSettings(settings, defaultLocale, defaultLocale);
+  const base = settings.siteUrl || env.SITE_URL;
+  const path = `/${collection.slug}/${entry.slug}`;
+  const url = absolute(base, path);
+  const seo = entry.seo;
+  const entryTitle = entry.data?.title || entry.data?.name || entry.slug;
+  const title = seo?.title || entryTitle;
+  const description =
+    seo?.description || entry.excerpt || copy.siteDescription || undefined;
+  const image =
+    seo?.ogImage || entry.featuredImage || settings.defaultOgImage || undefined;
+
+  return {
+    title: `${title} | ${copy.siteName}`,
+    description,
+    keywords: seo?.keywords || undefined,
+    alternates: {
+      canonical: seo?.canonicalUrl || url,
+    },
+    robots:
+      seo?.noIndex || entry.status !== 'published'
+        ? { index: false, follow: false }
+        : undefined,
+    openGraph: {
+      title: seo?.ogTitle || title,
+      description: seo?.ogDescription || description,
+      type: seo?.ogType === 'article' ? 'article' : 'website',
+      url,
+      siteName: copy.siteName,
+      locale: defaultLocale,
+      ...(entry.publishedAt && {
+        publishedTime: new Date(entry.publishedAt).toISOString(),
+      }),
+      ...(image && { images: [{ url: image }] }),
+    },
+    twitter: {
+      card: seo?.twitterCard === 'summary' ? 'summary' : 'summary_large_image',
+      title: seo?.ogTitle || title,
+      description: seo?.ogDescription || description,
+      ...(image && { images: [image] }),
+    },
+    ...(settings.favicon && { icons: { icon: settings.favicon } }),
+  };
+}
+
 export async function generateMetadata({
   params,
   searchParams,
@@ -207,7 +288,35 @@ export async function generateMetadata({
     loadPage(segments),
     siteSettingsService.getPublic(),
   ]);
-  if (!page) return { title: 'Not found' };
+  if (!page) {
+    const [colSlug, entSlug] = resolveEntryRoute(segments, site);
+    if (colSlug && entSlug) {
+      try {
+        const entry = await collectionsService.getPublishedEntryByAnySlug(
+          colSlug,
+          entSlug,
+          site.id
+        );
+        if (
+          entry &&
+          entry.status === 'published' &&
+          entry.visibility === 'public' &&
+          (!entry.scheduledAt || new Date(entry.scheduledAt) <= new Date())
+        ) {
+          return entryMetadata(
+            entry,
+            entry.collection,
+            settings,
+            site.defaultLocale,
+            siteSlug ?? ''
+          );
+        }
+      } catch {
+        // Fall through to not found
+      }
+    }
+    return { title: 'Not found' };
+  }
 
   const copy = localizedSettings(settings, page.language, site.defaultLocale);
   const base = settings.siteUrl || env.SITE_URL;
@@ -574,30 +683,7 @@ export default async function SitePage({ params, searchParams }: Params) {
   const page = await loadPage(segments);
   if (!page) {
     // Collection route: /{collectionSlug}/{entrySlug} OR /collections/{collectionSlug}/{entrySlug}
-    const localeCodes = site.locales.map(l => l.code) ?? [];
-    let collectionSlug: string | undefined;
-    let entrySlug: string | undefined;
-
-    if (
-      Array.isArray(segments) &&
-      segments.length === 3 &&
-      segments[0] === 'collections' &&
-      segments[1] &&
-      segments[2]
-    ) {
-      collectionSlug = segments[1];
-      entrySlug = segments[2];
-    } else if (
-      Array.isArray(segments) &&
-      segments.length === 2 &&
-      segments[0] &&
-      segments[1] &&
-      !localeCodes.includes(segments[0]) &&
-      segments[0] !== 'blog'
-    ) {
-      collectionSlug = segments[0];
-      entrySlug = segments[1];
-    }
+    const [collectionSlug, entrySlug] = resolveEntryRoute(segments, site);
 
     if (collectionSlug && entrySlug) {
       try {
@@ -606,71 +692,49 @@ export default async function SitePage({ params, searchParams }: Params) {
           entrySlug,
           site.id
         );
-        const base = settings.siteUrl || env.SITE_URL;
-        const path = `/${collectionSlug}/${entrySlug}`;
 
-        if (entry.collection.templatePageId) {
-          const template = await publicSiteService.getPublished(
-            site.defaultLocale,
-            ''
-          );
-          // Find the template page by id - getPublished looks up by slug,
-          // so we need to query pages directly for the template page.
-          const [templatePage] = await db
-            .select()
-            .from(pages)
-            .where(
-              and(
-                eq(pages.id, entry.collection.templatePageId),
-                eq(pages.siteId, site.id),
-                isNull(pages.deletedAt),
-                eq(pages.status, 'published')
-              )
-            )
-            .limit(1);
-
-          if (templatePage) {
-            const [contentRow] = await db
-              .select({ content: pageContents.content })
-              .from(pageContents)
-              .where(
-                and(
-                  eq(pageContents.pageId, templatePage.id),
-                  eq(pageContents.kind, 'published')
-                )
-              )
-              .limit(1);
-
-            const metadata = {
-              themeTokens: settings.themeTokens,
-              siteSlug,
-              searchParams: await searchParams,
-              language: templatePage.language,
-              custom: entry?.data,
-              site: {
-                name: settings.siteName,
-                description: settings.siteDescription,
-                url: settings.siteUrl,
-                logo: settings.logo,
-              },
-            };
-            const rendered = await renderBuilderContent({
-              content: contentRow?.content,
-              metadata,
-            });
-            return (
-              <EntryProvider entry={entry}>
-                {beaconForEntry(entry, path)}
-                {rendered}
-              </EntryProvider>
-            );
-          }
+        if (
+          entry.visibility === 'private' ||
+          entry.status !== 'published' ||
+          (entry.scheduledAt && new Date(entry.scheduledAt) > new Date())
+        ) {
+          notFound();
         }
 
-        // No template page - render plain field list
+        const path = `/${collectionSlug}/${entrySlug}`;
+        const terms = await collectionTaxonomiesService.getEntryTerms(entry.id);
+        const layout = await collectionTemplatesService.layoutForEntry({
+          ...entry,
+          siteId: site.id,
+        });
+
+        const postView = entryToPostView(entry, entry.collection, terms);
+
+        const metadata = {
+          themeTokens: settings.themeTokens,
+          siteSlug,
+          searchParams: await searchParams,
+          language: site.defaultLocale,
+          custom: entry?.data,
+          post: postView,
+          site: {
+            name: settings.siteName,
+            description: settings.siteDescription,
+            url: settings.siteUrl,
+            logo: settings.logo,
+          },
+        };
+
+        const rendered = await renderBuilderContent({
+          content: layout,
+          metadata,
+          kind: 'post',
+        });
+
         return (
-          <EntryProvider entry={entry}>
-            <CollectionEntryList entry={entry} base={base} />
+          <EntryProvider entry={entry as any}>
+            {beaconForEntry(entry, path)}
+            {rendered}
           </EntryProvider>
         );
       } catch {
