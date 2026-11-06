@@ -4,11 +4,21 @@ import { createId } from '@paralleldrive/cuid2';
 import { db } from '@/db';
 import { templateRules } from '@/db/schema';
 
+export type TemplateArea = 'header' | 'footer' | 'search' | 'archive';
+export type TemplateRuleKind =
+  | 'post-type'
+  | 'category'
+  | 'tag'
+  | 'user-state'
+  | 'role'
+  | 'archive-type'
+  | 'search-kind';
+
 export type TemplateRuleItem = {
   id?: string;
   templateId: string;
-  area: 'header' | 'footer';
-  kind: 'post-type' | 'category' | 'tag' | 'user-state' | 'role';
+  area: TemplateArea;
+  kind: TemplateRuleKind;
   value: string;
   priority?: number;
 };
@@ -43,6 +53,8 @@ const SPECIFICITY_WEIGHT: Record<string, number> = {
   tag: 30,
   category: 20,
   'post-type': 10,
+  'archive-type': 8,
+  'search-kind': 8,
   'user-state': 5,
   role: 5,
 };
@@ -146,10 +158,74 @@ export function resolveTemplate(input: ResolutionInput): ResolutionResult {
   };
 }
 
+function sortRules(rules: TemplateRuleItem[]): TemplateRuleItem[] {
+  return [...rules].sort((a, b) => {
+    const priorityDiff = (b.priority ?? 0) - (a.priority ?? 0);
+    if (priorityDiff !== 0) return priorityDiff;
+    return (SPECIFICITY_WEIGHT[b.kind] ?? 0) - (SPECIFICITY_WEIGHT[a.kind] ?? 0);
+  });
+}
+
+/** What an archive route knows about itself, for archive display rules. */
+export type ArchiveRuleContext = {
+  archiveType: 'category' | 'tag' | 'author' | 'date' | 'term' | 'collection';
+  /** Collection slug, or `post` for blog archives. */
+  postType?: string;
+  /** Category / tag / term id for taxonomy archives. */
+  termId?: string;
+};
+
+/** What the search page knows, for search display rules. */
+export type SearchRuleContext = {
+  /** Active results filter (`?kind=`), absent for "all". */
+  kind?: string;
+};
+
+/**
+ * Pure matcher for search and archive display rules. Returns the template of
+ * the highest-priority (then most specific) matching rule, or null.
+ */
+export function resolveRuleTemplate(
+  rules: TemplateRuleItem[],
+  area: 'search' | 'archive',
+  ctx: ArchiveRuleContext | SearchRuleContext
+): string | null {
+  for (const rule of sortRules(rules.filter(r => r.area === area))) {
+    let matches = false;
+    if (area === 'archive') {
+      const a = ctx as ArchiveRuleContext;
+      if (rule.kind === 'archive-type') matches = a.archiveType === rule.value;
+      else if (rule.kind === 'post-type') matches = a.postType === rule.value;
+      else if (rule.kind === 'category' || rule.kind === 'tag')
+        matches = !!a.termId && a.termId === rule.value;
+    } else if (rule.kind === 'search-kind') {
+      const k = (ctx as SearchRuleContext).kind;
+      matches = rule.value === 'all' ? !k : k === rule.value;
+    }
+    if (matches) return rule.templateId;
+  }
+  return null;
+}
+
 export const templateResolverService = {
   resolveTemplate,
+  resolveRuleTemplate,
 
-  getRulesForSite: async (siteId: string, area?: 'header' | 'footer'): Promise<TemplateRuleItem[]> => {
+  /** Load this site's rules for an area and return the matched template id. */
+  resolveAreaTemplate: async (
+    siteId: string,
+    area: 'search' | 'archive',
+    ctx: ArchiveRuleContext | SearchRuleContext
+  ): Promise<string | null> => {
+    try {
+      const rules = await templateResolverService.getRulesForSite(siteId, area);
+      return resolveRuleTemplate(rules, area, ctx);
+    } catch {
+      return null;
+    }
+  },
+
+  getRulesForSite: async (siteId: string, area?: TemplateArea): Promise<TemplateRuleItem[]> => {
     const conditions = [eq(templateRules.siteId, siteId)];
     if (area) {
       conditions.push(eq(templateRules.area, area));
@@ -199,9 +275,9 @@ export const templateResolverService = {
   saveRulesForTemplate: async (
     siteId: string,
     templateId: string,
-    area: 'header' | 'footer',
+    area: TemplateArea,
     rules: Array<{
-      kind: 'post-type' | 'category' | 'tag' | 'user-state' | 'role';
+      kind: TemplateRuleKind;
       value: string;
       priority?: number;
     }>

@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { Archive, Check, Globe, LayoutTemplate, PanelBottom, PanelTop, Plus, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type FormEvent, useState, useTransition } from 'react';
+import { type FormEvent, useEffect, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils/cn';
 import {
@@ -78,18 +78,29 @@ const TABS: {
   },
 ];
 
-const isPerPage = (category: SiteTemplateCategory) =>
-  category === 'Header' || category === 'Footer';
-
 export function HeaderFooterList({
   items,
+  initialTab = 'Header',
   can,
 }: {
   items: HeaderFooterItem[];
+  initialTab?: SiteTemplateCategory;
   can: { create: boolean; delete: boolean };
 }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<SiteTemplateCategory>('Header');
+  const [activeTab, setActiveTab] = useState<SiteTemplateCategory>(initialTab);
+
+  // Sidebar submenu links change ?type= without remounting this list.
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
+  const changeTab = (tab: SiteTemplateCategory) => {
+    setActiveTab(tab);
+    const params = new URLSearchParams(window.location.search);
+    params.set('type', tab.toLowerCase());
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
   const [renaming, setRenaming] = useState<HeaderFooterItem | null>(null);
   const [conditionsItem, setConditionsItem] = useState<HeaderFooterItem | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -146,7 +157,7 @@ export function HeaderFooterList({
 
       <Tabs
         value={activeTab}
-        onValueChange={v => setActiveTab(v as SiteTemplateCategory)}
+        onValueChange={v => changeTab(v as SiteTemplateCategory)}
         className="w-full"
       >
         <TabsList className="mb-4">
@@ -259,12 +270,10 @@ export function HeaderFooterList({
                               href={siteTemplateEditHref(item.id, item.category)}
                               label="Edit in builder"
                             />
-                            {isPerPage(item.category) && (
-                              <ActionDropdownItem
-                                label="Display conditions"
-                                onClick={() => setConditionsItem(item)}
-                              />
-                            )}
+                            <ActionDropdownItem
+                              label="Display conditions"
+                              onClick={() => setConditionsItem(item)}
+                            />
                             <ActionDropdownItem
                               label="Duplicate"
                               onClick={() => duplicate(item)}
@@ -329,9 +338,32 @@ function NewHeaderFooterDialog({
 }) {
   const router = useRouter();
   const starters = STARTERS_BY_CATEGORY[category];
-  const [name, setName] = useState('');
-  const [starter, setStarter] = useState<string>(starters[0]?.key ?? 'blank');
+  const blankName = `Blank ${category.toLowerCase()}`;
+  const defaultStarter = starters[0]?.key ?? 'blank';
+  const nameFor = (key: string) =>
+    key === 'blank' ? blankName : (starters.find(s => s.key === key)?.name ?? '');
+  const [name, setName] = useState(() => nameFor(defaultStarter));
+  const [nameTouched, setNameTouched] = useState(false);
+  const [starter, setStarter] = useState<string>(defaultStarter);
   const [isPending, startTransition] = useTransition();
+
+  // Fresh form each time the dialog opens.
+  useEffect(() => {
+    if (!open) return;
+    setStarter(defaultStarter);
+    setName(nameFor(defaultStarter));
+    setNameTouched(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, category]);
+
+  const pickStarter = (key: string) => {
+    setStarter(key);
+    // Follow the starter's name until the user types their own.
+    if (!nameTouched || !name.trim()) {
+      setName(nameFor(key));
+      setNameTouched(false);
+    }
+  };
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -347,7 +379,6 @@ function NewHeaderFooterDialog({
         row => {
           toast.success(`${category} created`);
           onOpenChange(false);
-          setName('');
           router.push(siteTemplateEditHref(row.id, category));
         }
       );
@@ -370,7 +401,10 @@ function NewHeaderFooterDialog({
               <FormInput
                 placeholder={`e.g. Main ${category}, Landing ${category}`}
                 value={name}
-                onChange={e => setName(e.target.value)}
+                onChange={e => {
+                  setName(e.target.value);
+                  setNameTouched(true);
+                }}
                 maxLength={150}
                 required
                 autoFocus
@@ -388,10 +422,7 @@ function NewHeaderFooterDialog({
                     <button
                       key={s.key}
                       type="button"
-                      onClick={() => {
-                        setStarter(s.key);
-                        if (!name.trim()) setName(s.name);
-                      }}
+                      onClick={() => pickStarter(s.key)}
                       className={cn(
                         'flex flex-col text-left p-3 rounded-lg border transition-all',
                         selected
@@ -415,7 +446,7 @@ function NewHeaderFooterDialog({
                 })}
                 <button
                   type="button"
-                  onClick={() => setStarter('blank')}
+                  onClick={() => pickStarter('blank')}
                   className={cn(
                     'flex flex-col text-left p-3 rounded-lg border transition-all',
                     starter === 'blank'

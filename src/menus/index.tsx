@@ -28,6 +28,7 @@ export function getMenuItems(): {
   href: string;
   icon: React.ReactNode;
   permission?: PermissionKey;
+  children?: { name: string; href: string }[];
 }[] {
   return [
     {
@@ -70,6 +71,12 @@ export function getMenuItems(): {
       name: 'Site templates',
       href: PAGES.DASHBOARD.HEADER_FOOTER,
       icon: <PanelTop className="w-[18px]" />,
+      children: [
+        { name: 'Headers', href: `${PAGES.DASHBOARD.HEADER_FOOTER}?type=header` },
+        { name: 'Footers', href: `${PAGES.DASHBOARD.HEADER_FOOTER}?type=footer` },
+        { name: 'Archives', href: `${PAGES.DASHBOARD.HEADER_FOOTER}?type=archive` },
+        { name: 'Search', href: `${PAGES.DASHBOARD.HEADER_FOOTER}?type=search` },
+      ],
     },
     {
       name: 'Contact forms',

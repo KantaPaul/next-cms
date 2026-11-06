@@ -8,6 +8,7 @@ import { revalidatePublicSite } from '@/lib/utils/revalidate-site';
 import { adminSiteId } from '@/server/services/site-context';
 import { headerFooterService } from './header-footer.service';
 import { templateResolverService } from '@/server/services/template-resolver.service';
+import { collectionsService } from '@/server/services/collections.service';
 import { taxonomyService } from '@/app/(admin)/dashboard/(shell)/taxonomy/_modules/taxonomy.service';
 
 export const createHeaderFooter = accessProcedure
@@ -84,10 +85,18 @@ export const saveDisplayRules = accessProcedure
   .input(
     z.object({
       templateId: z.string().min(1),
-      area: z.enum(['header', 'footer']),
+      area: z.enum(['header', 'footer', 'search', 'archive']),
       rules: z.array(
         z.object({
-          kind: z.enum(['post-type', 'category', 'tag', 'user-state', 'role']),
+          kind: z.enum([
+            'post-type',
+            'category',
+            'tag',
+            'user-state',
+            'role',
+            'archive-type',
+            'search-kind',
+          ]),
           value: z.string().min(1),
           priority: z.number().default(0),
         })
@@ -104,13 +113,19 @@ export const saveDisplayRules = accessProcedure
     );
     revalidatePath(PAGES.DASHBOARD.HEADER_FOOTER);
     await revalidatePublicSite(siteId);
-    return rows;
+    // Wrapped so an empty rule list still counts as success client-side.
+    return { saved: rows.length };
   });
 
 export const getDisplayRulesTaxonomy = accessProcedure.action(async () => {
-  const [categories, tags] = await Promise.all([
+  const [categories, tags, postTypes] = await Promise.all([
     taxonomyService.listCategories(),
     taxonomyService.listTags(),
+    collectionsService.list().catch(() => []),
   ]);
-  return { categories, tags };
+  return {
+    categories,
+    tags,
+    postTypes: postTypes.map(c => ({ label: c.name, value: c.slug })),
+  };
 });

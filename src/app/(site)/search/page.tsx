@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { templateResolverService } from '@/server/services/template-resolver.service';
 import { getGlobalBlockContent } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
 import { SearchResults } from '@/builder/blocks/search-results';
 import { renderBuilderContent } from '@/builder/render-content';
@@ -64,7 +65,13 @@ export default async function SearchPage({
   const copy = localizedSettings(settings, language, site.defaultLocale);
 
   // If a custom Search Results builder template is assigned, render it
-  const searchTemplateId = copy.searchTemplateId ?? settings.searchTemplateId;
+  const ruleTemplateId = await templateResolverService.resolveAreaTemplate(
+    site.id,
+    'search',
+    { kind }
+  );
+  const searchTemplateId =
+    ruleTemplateId ?? copy.searchTemplateId ?? settings.searchTemplateId;
   if (searchTemplateId) {
     try {
       const templateBlock = await getGlobalBlockContent(searchTemplateId, {

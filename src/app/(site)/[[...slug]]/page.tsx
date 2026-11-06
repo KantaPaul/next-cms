@@ -24,6 +24,7 @@ import {
   resolvePostRoute,
 } from '@/server/services/blog.service';
 import { resolveEntryRoute } from '@/server/services/entry-route';
+import { templateResolverService } from '@/server/services/template-resolver.service';
 import { collectionsService } from '@/server/services/collections.service';
 import { collectionTemplatesService } from '@/server/services/collection-templates.service';
 import { collectionTaxonomiesService } from '@/server/services/collection-taxonomies.service';
@@ -921,8 +922,20 @@ async function ArchiveRouteView({
   searchParams: SearchParams;
 }) {
   const copy = localizedSettings(settings, archive.language, defaultLocale);
+  const ruleTemplateId = await templateResolverService.resolveAreaTemplate(
+    siteId,
+    'archive',
+    {
+      archiveType: archive.kind,
+      postType: 'post',
+      termId:
+        archive.kind === 'category' || archive.kind === 'tag'
+          ? archive.id
+          : undefined,
+    }
+  );
   const archiveTemplateId =
-    copy.archiveTemplateId ?? settings.archiveTemplateId ?? null;
+    ruleTemplateId ?? copy.archiveTemplateId ?? settings.archiveTemplateId ?? null;
   const preview = await getPreviewSession();
 
   const archiveLoaderContext = {
@@ -1097,6 +1110,10 @@ async function CollectionAuthorArchiveRouteView({
   const copy = localizedSettings(settings, language, defaultLocale);
   const archiveTemplateId =
     (collection.settings as any)?.archiveTemplateId ??
+    (await templateResolverService.resolveAreaTemplate(siteId, 'archive', {
+      archiveType: 'author',
+      postType: collection.slug,
+    })) ??
     copy.archiveTemplateId ??
     settings.archiveTemplateId ??
     null;
@@ -1206,6 +1223,10 @@ async function CollectionArchiveRouteView({
   const copy = localizedSettings(settings, language, defaultLocale);
   const archiveTemplateId =
     (collection.settings as any)?.archiveTemplateId ??
+    (await templateResolverService.resolveAreaTemplate(siteId, 'archive', {
+      archiveType: 'collection',
+      postType: collection.slug,
+    })) ??
     copy.archiveTemplateId ??
     settings.archiveTemplateId ??
     null;
@@ -1264,7 +1285,11 @@ async function CollectionArchiveRouteView({
   };
 
   const rendered = await renderBuilderContent({
-    content: templateContent || defaultArchiveContent,
+    // The archive template is shared with the blog: point its listings at
+    // this post type, like the term and author archives do.
+    content: templateContent
+      ? lockLoopToCollectionArchive(templateContent, collection.id)
+      : defaultArchiveContent,
     metadata: {
       themeTokens: settings.themeTokens,
       language,
@@ -1306,8 +1331,13 @@ async function TermArchiveRouteView({
 }) {
   const { collection, taxonomy, term, language } = termArchive;
   const copy = localizedSettings(settings, language, defaultLocale);
+  const ruleTemplateId = await templateResolverService.resolveAreaTemplate(
+    siteId,
+    'archive',
+    { archiveType: 'term', postType: collection?.slug, termId: term.id }
+  );
   const archiveTemplateId =
-    copy.archiveTemplateId ?? settings.archiveTemplateId ?? null;
+    ruleTemplateId ?? copy.archiveTemplateId ?? settings.archiveTemplateId ?? null;
   const preview = await getPreviewSession();
 
   const archiveLoaderContext = {

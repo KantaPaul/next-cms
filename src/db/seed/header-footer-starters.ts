@@ -908,27 +908,563 @@ export const ARCHIVE_STARTER_LIST_FILTERS: StarterTemplate = {
   },
 };
 
+/* =========================================================================
+   Additional starter variants
+   ========================================================================= */
+
+const MOBILE_MENU = (id = 'header-mobile') => ({
+  type: 'MobileMenu',
+  props: { id, breakpoint: 'mobile', drawerSide: 'right', icon: 'menu' },
+});
+
+export const HEADER_STARTER_SPLIT_NAV: StarterTemplate = {
+  key: 'split-nav',
+  name: 'Split Navigation Header',
+  description: 'Navigation on the left, centered logo, search and call-to-action on the right.',
+  category: 'Header',
+  content: {
+    root: {
+      props: {
+        sticky: 'always',
+        transparent: false,
+        shrinkOnScroll: false,
+        hideOnScrollDown: false,
+        shadow: 'on-scroll',
+        zIndex: 50,
+      },
+    },
+    content: [
+      {
+        type: 'HeaderBar',
+        props: {
+          id: 'header-bar-split',
+          width: 'boxed',
+          background: 'default',
+          paddingY: 'sm',
+          align: 'center',
+          borderBottom: true,
+        },
+      },
+    ],
+    zones: {
+      'header-bar-split:left': [
+        {
+          type: 'NavMenu',
+          props: {
+            id: 'header-nav',
+            location: 'header',
+            orientation: 'horizontal',
+            activeStyle: 'subtle',
+          },
+        },
+        MOBILE_MENU(),
+      ],
+      'header-bar-split:center': [
+        {
+          type: 'Logo',
+          props: { id: 'header-logo', source: 'site', width: 140, link: '/', showSiteName: true },
+        },
+      ],
+      'header-bar-split:right': [
+        {
+          type: 'SearchBox',
+          props: { id: 'header-search', mode: 'icon-modal', placeholder: 'Search site...' },
+        },
+        {
+          type: 'Button',
+          props: { id: 'header-cta', text: 'Contact us', link: '/contact', variant: 'primary', size: 'sm' },
+        },
+      ],
+    },
+  },
+};
+
+export const HEADER_STARTER_TRANSPARENT: StarterTemplate = {
+  key: 'transparent-overlay',
+  name: 'Transparent Overlay Header',
+  description: 'Sits over the hero, turns solid and shrinks as visitors scroll. Great for landing pages.',
+  category: 'Header',
+  content: {
+    root: {
+      props: {
+        sticky: 'always',
+        transparent: true,
+        shrinkOnScroll: true,
+        hideOnScrollDown: false,
+        shadow: 'on-scroll',
+        zIndex: 50,
+      },
+    },
+    content: [
+      {
+        type: 'HeaderBar',
+        props: {
+          id: 'header-bar-overlay',
+          width: 'full',
+          background: 'default',
+          paddingY: 'md',
+          align: 'center',
+          borderBottom: false,
+        },
+      },
+    ],
+    zones: {
+      'header-bar-overlay:left': [
+        {
+          type: 'Logo',
+          props: { id: 'header-logo', source: 'site', width: 150, link: '/', showSiteName: true },
+        },
+      ],
+      'header-bar-overlay:center': [
+        {
+          type: 'NavMenu',
+          props: {
+            id: 'header-nav',
+            location: 'header',
+            orientation: 'horizontal',
+            activeStyle: 'underline',
+          },
+        },
+      ],
+      'header-bar-overlay:right': [
+        {
+          type: 'Button',
+          props: { id: 'header-cta', text: 'Get Started', link: '/contact', variant: 'primary', size: 'sm' },
+        },
+        MOBILE_MENU(),
+      ],
+    },
+  },
+};
+
+export const HEADER_STARTER_LOGO_CTA: StarterTemplate = {
+  key: 'logo-cta',
+  name: 'Logo + Call to Action',
+  description: 'Distraction-free bar with just the logo and one action button; the menu lives in a drawer on smaller screens.',
+  category: 'Header',
+  content: {
+    root: {
+      props: {
+        sticky: 'off',
+        transparent: false,
+        shrinkOnScroll: false,
+        hideOnScrollDown: false,
+        shadow: 'none',
+        zIndex: 50,
+      },
+    },
+    content: [
+      {
+        type: 'HeaderBar',
+        props: {
+          id: 'header-bar-cta',
+          width: 'boxed',
+          background: 'default',
+          paddingY: 'sm',
+          align: 'center',
+          borderBottom: false,
+        },
+      },
+    ],
+    zones: {
+      'header-bar-cta:left': [
+        {
+          type: 'Logo',
+          props: { id: 'header-logo', source: 'site', width: 130, link: '/', showSiteName: true },
+        },
+      ],
+      'header-bar-cta:right': [
+        {
+          type: 'Button',
+          props: { id: 'header-cta', text: 'Sign up free', link: '/contact', variant: 'primary', size: 'sm' },
+        },
+        { type: 'MobileMenu', props: { id: 'header-mobile', breakpoint: 'tablet', drawerSide: 'right', icon: 'menu' } },
+      ],
+    },
+  },
+};
+
+export const FOOTER_STARTER_MINIMAL_LINE: StarterTemplate = {
+  key: 'minimal-line',
+  name: 'Minimal One-line Footer',
+  description: 'A single slim row with copyright on one side and legal links on the other.',
+  category: 'Footer',
+  content: {
+    root: { props: { background: 'default' } },
+    content: [
+      {
+        type: 'FooterColumns',
+        props: {
+          id: 'footer-cols-line',
+          width: 'boxed',
+          background: 'default',
+          paddingY: 'sm',
+          columns: 2,
+          gap: 'md',
+        },
+      },
+    ],
+    zones: {
+      'footer-cols-line:col1': [
+        {
+          type: 'Copyright',
+          props: { id: 'footer-copyright', text: '© {year} {site_name}', align: 'left' },
+        },
+      ],
+      'footer-cols-line:col2': [
+        {
+          type: 'LegalLinks',
+          props: {
+            id: 'footer-legal',
+            source: 'manual',
+            separator: 'dot',
+            align: 'right',
+            links: [
+              { label: 'Privacy', url: '/privacy' },
+              { label: 'Terms', url: '/terms' },
+              { label: 'Contact', url: '/contact' },
+            ],
+          },
+        },
+      ],
+    },
+  },
+};
+
+export const FOOTER_STARTER_BRAND_TWO_COL: StarterTemplate = {
+  key: 'brand-two-column',
+  name: 'Two-column Brand Footer',
+  description: 'Logo and short about text beside a footer menu, with a muted copyright bar.',
+  category: 'Footer',
+  content: {
+    root: { props: { background: 'default' } },
+    content: [
+      {
+        type: 'FooterColumns',
+        props: {
+          id: 'footer-cols-brand',
+          width: 'boxed',
+          background: 'default',
+          paddingY: 'lg',
+          columns: 2,
+          gap: 'lg',
+        },
+      },
+      {
+        type: 'FooterColumns',
+        props: {
+          id: 'footer-cols-bottom',
+          width: 'boxed',
+          background: 'muted',
+          paddingY: 'sm',
+          columns: 1,
+          gap: 'sm',
+        },
+      },
+    ],
+    zones: {
+      'footer-cols-brand:col1': [
+        {
+          type: 'Logo',
+          props: { id: 'footer-logo', source: 'site', width: 140, link: '/', showSiteName: true },
+        },
+        {
+          type: 'RichText',
+          props: {
+            id: 'footer-about',
+            content:
+              '<p class="text-sm text-steel-500 dark:text-steel-400 mt-2">We help teams publish faster with a modern, flexible content platform.</p>',
+          },
+        },
+      ],
+      'footer-cols-brand:col2': [
+        {
+          type: 'FooterLinks',
+          props: {
+            id: 'footer-links-explore',
+            heading: 'Explore',
+            source: 'manual',
+            links: [
+              { label: 'Home', url: '/' },
+              { label: 'Blog', url: '/blog' },
+              { label: 'About', url: '/about' },
+              { label: 'Contact', url: '/contact' },
+            ],
+          },
+        },
+      ],
+      'footer-cols-bottom:col1': [
+        {
+          type: 'Copyright',
+          props: { id: 'footer-copyright', text: '© {year} {site_name}. All rights reserved.', align: 'center' },
+        },
+      ],
+    },
+  },
+};
+
+export const FOOTER_STARTER_SOCIAL: StarterTemplate = {
+  key: 'social-focused',
+  name: 'Social-focused Footer',
+  description: 'Centered brand mark with large social icons, contact details, and copyright.',
+  category: 'Footer',
+  content: {
+    root: { props: { background: 'muted' } },
+    content: [
+      {
+        type: 'FooterColumns',
+        props: {
+          id: 'footer-cols-social',
+          width: 'boxed',
+          background: 'muted',
+          paddingY: 'lg',
+          columns: 1,
+          gap: 'md',
+        },
+      },
+    ],
+    zones: {
+      'footer-cols-social:col1': [
+        {
+          type: 'Logo',
+          props: { id: 'footer-logo', source: 'site', width: 120, link: '/', showSiteName: false },
+        },
+        {
+          type: 'SocialIcons',
+          props: {
+            id: 'footer-social',
+            shape: 'round',
+            size: 'lg',
+            align: 'center',
+            items: [
+              { network: 'x', url: 'https://x.com', label: 'X' },
+              { network: 'instagram', url: 'https://instagram.com', label: 'Instagram' },
+              { network: 'youtube', url: 'https://youtube.com', label: 'YouTube' },
+              { network: 'linkedin', url: 'https://linkedin.com', label: 'LinkedIn' },
+              { network: 'github', url: 'https://github.com', label: 'GitHub' },
+            ],
+          },
+        },
+        {
+          type: 'ContactInfo',
+          props: {
+            id: 'footer-contact',
+            layout: 'horizontal',
+            showIcons: true,
+            items: [{ kind: 'email', value: 'hello@example.com', label: 'Email' }],
+          },
+        },
+        {
+          type: 'Copyright',
+          props: { id: 'footer-copyright', text: '© {year} {site_name}', align: 'center' },
+        },
+      ],
+    },
+  },
+};
+
+export const SEARCH_STARTER_VISUAL: StarterTemplate = {
+  key: 'visual',
+  name: 'Visual Search',
+  description: 'Large heading, type tabs, and big thumbnails, twelve results per page.',
+  category: 'Search',
+  content: {
+    root: { props: {} },
+    content: [
+      {
+        type: 'SearchResults',
+        props: {
+          id: 'search-results-main',
+          eyebrow: 'Search',
+          title: 'Find anything',
+          subtitle: 'Pages, posts, and videos across the site.',
+          showTabs: true,
+          showThumbnails: true,
+          showTypeBadges: false,
+          showSnippets: false,
+          pageSize: 12,
+        },
+      },
+    ],
+    zones: {},
+  },
+};
+
+export const SEARCH_STARTER_DETAILED: StarterTemplate = {
+  key: 'detailed',
+  name: 'Detailed Results',
+  description: 'Snippets, badges, and thumbnails with a friendly empty state, fifty per page.',
+  category: 'Search',
+  content: {
+    root: { props: {} },
+    content: [
+      {
+        type: 'SearchResults',
+        props: {
+          id: 'search-results-main',
+          title: 'Search results',
+          subtitle: 'Refine your search or browse by type.',
+          showTabs: true,
+          showThumbnails: true,
+          showTypeBadges: true,
+          showSnippets: true,
+          pageSize: 50,
+          emptyText: 'Nothing matched. Try fewer or different keywords.',
+        },
+      },
+    ],
+    zones: {},
+  },
+};
+
+export const ARCHIVE_STARTER_MAGAZINE: StarterTemplate = {
+  key: 'magazine',
+  name: 'Magazine Archive',
+  description: 'Two-column large cards with images, excerpts, and a load-more button.',
+  category: 'Archive',
+  content: {
+    root: { props: {} },
+    content: [
+      {
+        type: 'QueryLoop',
+        props: {
+          id: 'archive-loop',
+          loopId: '',
+          source: 'posts',
+          eyebrow: 'Archive',
+          title: '{archive_title}',
+          subtitle: '{archive_description}',
+          layout: 'grid',
+          columnsDesktop: 2,
+          columnsTablet: 2,
+          columnsMobile: 1,
+          gap: 'lg',
+          pageSize: 8,
+          sortField: 'publishedAt',
+          sortOrder: 'desc',
+          pagination: 'load-more',
+          loadMoreLabel: 'Load more stories',
+          showImage: true,
+          showExcerpt: true,
+          showAuthor: true,
+          showDate: true,
+          showTerms: true,
+          emptyText: 'No stories here yet.',
+        },
+      },
+    ],
+    zones: {},
+  },
+};
+
+export const ARCHIVE_STARTER_MASONRY_FILTERS: StarterTemplate = {
+  key: 'masonry-filters',
+  name: 'Masonry with Filters',
+  description: 'Category, tag, and sort filters above a masonry wall that scrolls infinitely.',
+  category: 'Archive',
+  content: {
+    root: { props: {} },
+    content: [
+      {
+        type: 'QueryFilter',
+        props: {
+          id: 'archive-filter',
+          targetLoopId: '',
+          showKeyword: true,
+          showCategories: true,
+          showTags: true,
+          showSort: true,
+          showResultCount: true,
+          showActiveChips: true,
+        },
+      },
+      {
+        type: 'QueryLoop',
+        props: {
+          id: 'archive-loop',
+          loopId: '',
+          source: 'posts',
+          title: '{archive_title}',
+          layout: 'masonry',
+          columnsDesktop: 3,
+          pageSize: 12,
+          sortField: 'publishedAt',
+          sortOrder: 'desc',
+          pagination: 'infinite-scroll',
+          emptyText: 'No posts match these filters.',
+        },
+      },
+    ],
+    zones: {},
+  },
+};
+
+export const ARCHIVE_STARTER_MINIMAL_LIST: StarterTemplate = {
+  key: 'minimal-list',
+  name: 'Minimal List',
+  description: 'Text-only list of titles and dates, twenty per page. Ideal for date and author archives.',
+  category: 'Archive',
+  content: {
+    root: { props: {} },
+    content: [
+      {
+        type: 'QueryLoop',
+        props: {
+          id: 'archive-loop',
+          loopId: '',
+          source: 'posts',
+          title: '{archive_title}',
+          layout: 'list',
+          gap: 'sm',
+          pageSize: 20,
+          sortField: 'publishedAt',
+          sortOrder: 'desc',
+          pagination: 'numbered',
+          showImage: false,
+          showExcerpt: false,
+          showAuthor: false,
+          showDate: true,
+          showTerms: false,
+          emptyText: 'No posts in this archive yet.',
+        },
+      },
+    ],
+    zones: {},
+  },
+};
+
 export const HEADER_STARTERS: StarterTemplate[] = [
   HEADER_STARTER_CLASSIC,
   HEADER_STARTER_CENTERED,
   HEADER_STARTER_MINIMAL,
   HEADER_STARTER_WITH_TOPBAR,
+  HEADER_STARTER_SPLIT_NAV,
+  HEADER_STARTER_TRANSPARENT,
+  HEADER_STARTER_LOGO_CTA,
 ];
 
 export const FOOTER_STARTERS: StarterTemplate[] = [
   FOOTER_STARTER_COLUMNS_4,
   FOOTER_STARTER_CENTERED,
   FOOTER_STARTER_DARK_NEWSLETTER,
+  FOOTER_STARTER_MINIMAL_LINE,
+  FOOTER_STARTER_BRAND_TWO_COL,
+  FOOTER_STARTER_SOCIAL,
 ];
 
 export const SEARCH_STARTERS: StarterTemplate[] = [
   SEARCH_STARTER_SIMPLE,
   SEARCH_STARTER_COMPACT,
+  SEARCH_STARTER_VISUAL,
+  SEARCH_STARTER_DETAILED,
 ];
 
 export const ARCHIVE_STARTERS: StarterTemplate[] = [
   ARCHIVE_STARTER_GRID,
   ARCHIVE_STARTER_LIST_FILTERS,
+  ARCHIVE_STARTER_MAGAZINE,
+  ARCHIVE_STARTER_MASONRY_FILTERS,
+  ARCHIVE_STARTER_MINIMAL_LIST,
 ];
 
 export const STARTERS_BY_CATEGORY: Record<SiteTemplateCategory, StarterTemplate[]> = {

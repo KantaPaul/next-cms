@@ -21,14 +21,81 @@ import {
   saveDisplayRules,
 } from '../_modules/header-footer.actions';
 
+type RuleKind =
+  | 'post-type'
+  | 'category'
+  | 'tag'
+  | 'user-state'
+  | 'role'
+  | 'archive-type'
+  | 'search-kind';
+
 type RuleDraft = {
   id?: string;
-  kind: 'post-type' | 'category' | 'tag' | 'user-state' | 'role';
+  kind: RuleKind;
   value: string;
   priority: number;
 };
 
 type Option = { label: string; value: string };
+type Area = 'header' | 'footer' | 'search' | 'archive';
+
+/** Which condition kinds each template area supports, first is the default. */
+const KINDS_BY_AREA: Record<Area, { value: RuleKind; label: string }[]> = {
+  header: [
+    { value: 'post-type', label: 'Content Type' },
+    { value: 'category', label: 'Category' },
+    { value: 'tag', label: 'Tag' },
+    { value: 'user-state', label: 'User State' },
+  ],
+  footer: [
+    { value: 'post-type', label: 'Content Type' },
+    { value: 'category', label: 'Category' },
+    { value: 'tag', label: 'Tag' },
+    { value: 'user-state', label: 'User State' },
+  ],
+  archive: [
+    { value: 'archive-type', label: 'Archive Type' },
+    { value: 'post-type', label: 'Post Type' },
+    { value: 'category', label: 'Category' },
+    { value: 'tag', label: 'Tag' },
+  ],
+  search: [{ value: 'search-kind', label: 'Results Filter' }],
+};
+
+const ARCHIVE_TYPE_OPTIONS: Option[] = [
+  { value: 'category', label: 'Category archive' },
+  { value: 'tag', label: 'Tag archive' },
+  { value: 'author', label: 'Author archive' },
+  { value: 'date', label: 'Date archive' },
+  { value: 'collection', label: 'Post type archive' },
+  { value: 'term', label: 'Post type taxonomy term' },
+];
+
+const SEARCH_KIND_OPTIONS: Option[] = [
+  { value: 'all', label: 'All results (no filter)' },
+  { value: 'page', label: 'Pages' },
+  { value: 'post', label: 'Posts' },
+  { value: 'collection', label: 'Post type entries' },
+  { value: 'video', label: 'Videos' },
+];
+
+const CONTENT_TYPE_OPTIONS: Option[] = [
+  { value: 'post', label: 'All Blog Posts' },
+  { value: 'page', label: 'All Standard Pages' },
+];
+
+const USER_STATE_OPTIONS: Option[] = [
+  { value: 'logged-in', label: 'Logged In' },
+  { value: 'guest', label: 'Guest / Anonymous' },
+];
+
+const SETTINGS_HINT: Record<Area, string> = {
+  header: 'Site Settings or specific Page/Post settings',
+  footer: 'Site Settings or specific Page/Post settings',
+  archive: 'Settings → Archive Template (or a post type’s own archive template)',
+  search: 'Settings → Search Results Template',
+};
 
 export function DisplayConditionsDialog({
   item,
@@ -43,6 +110,9 @@ export function DisplayConditionsDialog({
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<Option[]>([]);
   const [tags, setTags] = useState<Option[]>([]);
+  const [postTypes, setPostTypes] = useState<Option[]>([]);
+  const area = item.category.toLowerCase() as Area;
+  const kinds = KINDS_BY_AREA[area] ?? KINDS_BY_AREA.header;
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -55,18 +125,21 @@ export function DisplayConditionsDialog({
       getDisplayRulesTaxonomy(undefined as any),
     ]).then(([rulesRes, taxonomyRes]) => {
       if (cancelled) return;
-      const [rulesData] = (rulesRes as any) || [];
-      if (rulesData && Array.isArray(rulesData)) {
-        setRules(
-          rulesData.map((r: any) => ({
-            id: r.id,
-            kind: r.kind as any,
-            value: r.value,
-            priority: r.priority ?? 0,
-          }))
-        );
-      }
-      const [taxonomyData] = (taxonomyRes as any) || [];
+      // Actions return the data itself, or an error object on failure.
+      const isError = (v: any) =>
+        !v || typeof v !== 'object' || 'hasError' in v || 'errors' in v;
+      const rulesData: any[] = Array.isArray(rulesRes)
+        ? (rulesRes as any[]).filter(r => !isError(r))
+        : [];
+      setRules(
+        rulesData.map((r: any) => ({
+          id: r.id,
+          kind: r.kind as RuleKind,
+          value: r.value,
+          priority: r.priority ?? 0,
+        }))
+      );
+      const taxonomyData: any = isError(taxonomyRes) ? null : taxonomyRes;
       if (taxonomyData) {
         setCategories(
           (taxonomyData.categories || []).map((c: any) => ({
@@ -80,6 +153,7 @@ export function DisplayConditionsDialog({
             value: t.id || t.value,
           }))
         );
+        setPostTypes(taxonomyData.postTypes || []);
       }
       setLoading(false);
     });
@@ -89,14 +163,39 @@ export function DisplayConditionsDialog({
     };
   }, [open, item.id]);
 
+  const optionsFor = (kind: RuleKind): Option[] => {
+    switch (kind) {
+      case 'post-type':
+        return area === 'archive'
+          ? [{ value: 'post', label: 'Blog posts' }, ...postTypes]
+          : CONTENT_TYPE_OPTIONS;
+      case 'category':
+        return categories;
+      case 'tag':
+        return tags;
+      case 'user-state':
+        return USER_STATE_OPTIONS;
+      case 'archive-type':
+        return ARCHIVE_TYPE_OPTIONS;
+      case 'search-kind':
+        return SEARCH_KIND_OPTIONS;
+      default:
+        return [];
+    }
+  };
+
+  const emptyLabel = (kind: RuleKind) =>
+    kind === 'category'
+      ? 'No categories found'
+      : kind === 'tag'
+        ? 'No tags found'
+        : 'No options';
+
   const addRule = () => {
+    const kind = kinds[0].value;
     setRules(prev => [
       ...prev,
-      {
-        kind: 'post-type',
-        value: 'post',
-        priority: 0,
-      },
+      { kind, value: optionsFor(kind)[0]?.value ?? '', priority: 0 },
     ]);
   };
 
@@ -110,12 +209,7 @@ export function DisplayConditionsDialog({
         if (idx !== index) return r;
         const next = { ...r, ...patch };
         if (patch.kind && patch.kind !== r.kind) {
-          if (patch.kind === 'post-type') next.value = 'post';
-          else if (patch.kind === 'category')
-            next.value = categories[0]?.value || '';
-          else if (patch.kind === 'tag') next.value = tags[0]?.value || '';
-          else if (patch.kind === 'user-state') next.value = 'logged-in';
-          else next.value = 'admin';
+          next.value = optionsFor(patch.kind)[0]?.value ?? '';
         }
         return next;
       })
@@ -124,12 +218,11 @@ export function DisplayConditionsDialog({
 
   const save = () => {
     startTransition(async () => {
-      const area = item.category.toLowerCase() as 'header' | 'footer';
       await handleActionResponse(
         saveDisplayRules({
           templateId: item.id,
           area,
-          rules: rules.map(r => ({
+          rules: rules.filter(r => r.value).map(r => ({
             kind: r.kind,
             value: r.value,
             priority: Number(r.priority) || 0,
@@ -168,7 +261,7 @@ export function DisplayConditionsDialog({
                     No display conditions configured
                   </p>
                   <p className="text-xs text-steel-500 dark:text-steel-400 mt-1">
-                    Without rules, this {item.category.toLowerCase()} is assigned via Site Settings or specific Page/Post settings.
+                    Without rules, this {item.category.toLowerCase()} is assigned via {SETTINGS_HINT[area]}.
                   </p>
                 </div>
               ) : (
@@ -186,66 +279,31 @@ export function DisplayConditionsDialog({
                         }
                         className="rounded border border-steel-300 bg-white px-2 py-1 text-xs dark:border-dark-300 dark:bg-dark-100"
                       >
-                        <option value="post-type">Content Type</option>
-                        <option value="category">Category</option>
-                        <option value="tag">Tag</option>
-                        <option value="user-state">User State</option>
+                        {kinds.map(k => (
+                          <option key={k.value} value={k.value}>
+                            {k.label}
+                          </option>
+                        ))}
                       </select>
 
                       <span className="text-steel-400 font-medium">is</span>
 
                       {/* Value Selector */}
-                      {rule.kind === 'post-type' ? (
-                        <select
-                          value={rule.value}
-                          onChange={e => updateRule(idx, { value: e.target.value })}
-                          className="flex-1 rounded border border-steel-300 bg-white px-2 py-1 text-xs dark:border-dark-300 dark:bg-dark-100"
-                        >
-                          <option value="post">All Blog Posts</option>
-                          <option value="page">All Standard Pages</option>
-                        </select>
-                      ) : rule.kind === 'category' ? (
-                        <select
-                          value={rule.value}
-                          onChange={e => updateRule(idx, { value: e.target.value })}
-                          className="flex-1 rounded border border-steel-300 bg-white px-2 py-1 text-xs dark:border-dark-300 dark:bg-dark-100"
-                        >
-                          {categories.length === 0 ? (
-                            <option value="">No categories found</option>
-                          ) : (
-                            categories.map(c => (
-                              <option key={c.value} value={c.value}>
-                                {c.label}
-                              </option>
-                            ))
-                          )}
-                        </select>
-                      ) : rule.kind === 'tag' ? (
-                        <select
-                          value={rule.value}
-                          onChange={e => updateRule(idx, { value: e.target.value })}
-                          className="flex-1 rounded border border-steel-300 bg-white px-2 py-1 text-xs dark:border-dark-300 dark:bg-dark-100"
-                        >
-                          {tags.length === 0 ? (
-                            <option value="">No tags found</option>
-                          ) : (
-                            tags.map(t => (
-                              <option key={t.value} value={t.value}>
-                                {t.label}
-                              </option>
-                            ))
-                          )}
-                        </select>
-                      ) : (
-                        <select
-                          value={rule.value}
-                          onChange={e => updateRule(idx, { value: e.target.value })}
-                          className="flex-1 rounded border border-steel-300 bg-white px-2 py-1 text-xs dark:border-dark-300 dark:bg-dark-100"
-                        >
-                          <option value="logged-in">Logged In</option>
-                          <option value="guest">Guest / Anonymous</option>
-                        </select>
-                      )}
+                      <select
+                        value={rule.value}
+                        onChange={e => updateRule(idx, { value: e.target.value })}
+                        className="flex-1 min-w-0 rounded border border-steel-300 bg-white px-2 py-1 text-xs dark:border-dark-300 dark:bg-dark-100"
+                      >
+                        {optionsFor(rule.kind).length === 0 ? (
+                          <option value="">{emptyLabel(rule.kind)}</option>
+                        ) : (
+                          optionsFor(rule.kind).map(o => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}
+                            </option>
+                          ))
+                        )}
+                      </select>
 
                       {/* Priority */}
                       <label className="flex items-center gap-1 text-[11px] text-steel-500 whitespace-nowrap">

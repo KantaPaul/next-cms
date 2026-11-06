@@ -244,3 +244,41 @@ describe('Header & Footer Templates Resolution (R484, R485)', () => {
     assert.deepEqual(singleResult, []);
   });
 });
+
+describe('Search & Archive display rules', () => {
+  const { resolveRuleTemplate } = require('../template-resolver.service');
+  const rules = [
+    { templateId: 'arch-tag', area: 'archive', kind: 'archive-type', value: 'tag', priority: 0 },
+    { templateId: 'arch-cat-x', area: 'archive', kind: 'category', value: 'cat-x', priority: 0 },
+    { templateId: 'arch-books', area: 'archive', kind: 'post-type', value: 'books', priority: 0 },
+    { templateId: 'arch-date', area: 'archive', kind: 'archive-type', value: 'date', priority: 5 },
+    { templateId: 'search-posts', area: 'search', kind: 'search-kind', value: 'post', priority: 0 },
+    { templateId: 'search-all', area: 'search', kind: 'search-kind', value: 'all', priority: 0 },
+    { templateId: 'header-x', area: 'header', kind: 'post-type', value: 'post', priority: 99 },
+  ];
+
+  it('matches archive type, term and post type rules', () => {
+    assert.equal(resolveRuleTemplate(rules, 'archive', { archiveType: 'tag', postType: 'post', termId: 't1' }), 'arch-tag');
+    assert.equal(resolveRuleTemplate(rules, 'archive', { archiveType: 'category', postType: 'post', termId: 'cat-x' }), 'arch-cat-x');
+    assert.equal(resolveRuleTemplate(rules, 'archive', { archiveType: 'collection', postType: 'books' }), 'arch-books');
+    assert.equal(resolveRuleTemplate(rules, 'archive', { archiveType: 'author', postType: 'post' }), null);
+  });
+
+  it('prefers higher priority, then more specific rules', () => {
+    const withConflict = [
+      ...rules,
+      { templateId: 'arch-tag-specific', area: 'archive', kind: 'tag', value: 't1', priority: 0 },
+    ];
+    assert.equal(
+      resolveRuleTemplate(withConflict, 'archive', { archiveType: 'tag', postType: 'post', termId: 't1' }),
+      'arch-tag-specific'
+    );
+    assert.equal(resolveRuleTemplate(rules, 'archive', { archiveType: 'date', postType: 'post' }), 'arch-date');
+  });
+
+  it('matches search results filter rules and ignores other areas', () => {
+    assert.equal(resolveRuleTemplate(rules, 'search', { kind: 'post' }), 'search-posts');
+    assert.equal(resolveRuleTemplate(rules, 'search', {}), 'search-all');
+    assert.equal(resolveRuleTemplate(rules, 'search', { kind: 'video' }), null);
+  });
+});

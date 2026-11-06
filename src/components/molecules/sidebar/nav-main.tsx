@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronRight } from 'lucide-react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import Link from '@/components/atoms/next/link';
 import { PostTypeIcon } from '@/components/atoms/post-type-icon';
 import {
@@ -39,6 +39,7 @@ type NavItem = ReturnType<typeof getMenuItems>[number];
 
 export function NavMain({ postTypes = [] }: { postTypes?: SidebarPostType[] }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { permissions } = useAccess();
   const { chosenLocale } = useSiteLocales();
 
@@ -78,8 +79,9 @@ export function NavMain({ postTypes = [] }: { postTypes?: SidebarPostType[] }) {
               : item.href === pathname || pathname.startsWith(`${item.href}/`);
           const { name, icon, href } = item;
 
-          if (isPostTypeItem && postType) {
-            const subItems = [
+          const subItems: { name: string; href: string }[] | null =
+            isPostTypeItem && postType
+              ? [
               {
                 name: 'Entries',
                 href: PAGES.DASHBOARD.COLLECTION(postType.slug),
@@ -103,7 +105,28 @@ export function NavMain({ postTypes = [] }: { postTypes?: SidebarPostType[] }) {
                 name: 'Settings',
                 href: PAGES.DASHBOARD.COLLECTION_SETTINGS(postType.slug),
               },
-            ];
+              ]
+              : item.children?.length
+                ? item.children
+                : null;
+
+          if (subItems) {
+            const isSubActive = (subHref: string) => {
+              const [subPath, subQuery] = subHref.split('?');
+              if (subQuery) {
+                if (pathname !== subPath && !pathname.startsWith(`${subPath}/`))
+                  return false;
+                const want = new URLSearchParams(subQuery);
+                const first = subItems[0]?.href === subHref;
+                return [...want.entries()].every(([k, v]) => {
+                  const got = searchParams.get(k);
+                  return got === v || (!got && first);
+                });
+              }
+              if (postType && subHref === PAGES.DASHBOARD.COLLECTION(postType.slug))
+                return pathname === subHref;
+              return pathname === subHref || pathname.startsWith(`${subHref}/`);
+            };
 
             return (
               <Collapsible
@@ -134,16 +157,11 @@ export function NavMain({ postTypes = [] }: { postTypes?: SidebarPostType[] }) {
                   <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
                     <SidebarMenuSub>
                       {subItems.map(sub => {
-                        const isSubActive =
-                          sub.href === PAGES.DASHBOARD.COLLECTION(postType.slug)
-                            ? pathname === sub.href
-                            : pathname === sub.href ||
-                              pathname.startsWith(`${sub.href}/`);
                         return (
                           <SidebarMenuSubItem key={sub.href}>
                             <SidebarMenuSubButton
                               asChild
-                              isActive={isSubActive}
+                              isActive={isSubActive(sub.href)}
                             >
                               <Link
                                 href={withAdminLanguage(sub.href, chosenLocale)}
