@@ -676,7 +676,8 @@ export const searchIndex = {
     const title = String(
       data.title || data.name || data.label || entry.slug || 'Untitled'
     );
-    const thumbnail = data.image || data.thumbnail || data.cover;
+    const thumbnail =
+      entry.featuredImage || data.image || data.thumbnail || data.cover;
     const site = await siteContext.getById(entry.siteId);
     const prefix = site ? siteSlugPrefix(site) : undefined;
 

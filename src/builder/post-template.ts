@@ -1,5 +1,6 @@
 import { DEFAULT_SECTION } from './blocks/section';
 import { type BuilderData, isBuilderData } from './data';
+import { entryTitle } from '@/config/post-types';
 
 export type PostTerm = {
   id: string;
@@ -120,3 +121,75 @@ export const defaultPostTemplate = (): BuilderData => ({
 
 export const resolvePostTemplate = (value: unknown): BuilderData =>
   isBuilderData(value) && value.content.length ? value : defaultPostTemplate();
+
+export type EntryTermView = {
+  id: string;
+  name: string;
+  slug: string;
+  color?: string;
+  taxonomyId?: string;
+  taxonomyKey?: string;
+  hierarchical?: boolean;
+};
+
+export function entryToPostView(
+  entry: {
+    id: string;
+    slug: string;
+    data?: unknown;
+    excerpt?: string | null;
+    featuredImage?: string | null;
+    publishedAt?: Date | string | null;
+    authorName?: string | null;
+    author?: { name?: string | null } | null;
+  },
+  collection: {
+    name?: string;
+    slug?: string;
+    fields?: { key: string; type: string }[];
+  },
+  terms: EntryTermView[] = []
+): PostView {
+  const fields = collection.fields ?? [];
+  const data = (entry.data && typeof entry.data === 'object' ? entry.data : {}) as Record<string, unknown>;
+  const title = entryTitle(data, fields) || entry.slug;
+
+  const firstHierarchicalTaxonomyId = terms.find(t => t.hierarchical)?.taxonomyId;
+  const firstFlatTaxonomyId = terms.find(t => !t.hierarchical)?.taxonomyId;
+
+  const categories: PostTerm[] = terms
+    .filter(t => (firstHierarchicalTaxonomyId ? t.taxonomyId === firstHierarchicalTaxonomyId : t.hierarchical))
+    .map(t => ({ id: t.id, name: t.name, slug: t.slug, color: t.color }));
+
+  const tags: PostTerm[] = terms
+    .filter(t => (firstFlatTaxonomyId ? t.taxonomyId === firstFlatTaxonomyId : !t.hierarchical))
+    .map(t => ({ id: t.id, name: t.name, slug: t.slug, color: t.color }));
+
+  const firstRichtextField = fields.find(f => f.type === 'richtext');
+  let body = '';
+  if (firstRichtextField && data[firstRichtextField.key]) {
+    body = String(data[firstRichtextField.key]);
+  } else {
+    for (const [k, v] of Object.entries(data)) {
+      if (typeof v === 'string' && (v.startsWith('<p>') || v.includes('</'))) {
+        body = v;
+        break;
+      }
+    }
+  }
+
+  return {
+    id: entry.id,
+    title,
+    slug: entry.slug,
+    language: 'en',
+    excerpt: entry.excerpt ?? null,
+    featuredImage: entry.featuredImage ?? null,
+    body,
+    publishedAt: entry.publishedAt ? new Date(entry.publishedAt).toISOString() : null,
+    authorName: entry.authorName ?? entry.author?.name ?? null,
+    categories,
+    tags,
+    blogUrl: collection.slug ? `/${collection.slug}` : null,
+  };
+}

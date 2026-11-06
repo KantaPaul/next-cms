@@ -1,12 +1,14 @@
 import 'server-only';
 import { z } from 'zod';
-import { and, desc, eq, isNull, ne, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, lte, ne, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import {
   collectionEntries,
   collectionFields,
   collections,
+  collectionTemplates,
   pages,
+  users,
   type CollectionEntryStatus,
   type CollectionFieldType,
 } from '@/db/schema';
@@ -14,10 +16,18 @@ import { accessService } from '@/server/services/access.service';
 import { searchIndex } from '@/server/services/search.service';
 import { adminSiteId } from '@/server/services/site-context';
 import { auditService } from './audit.service';
+import { collectionTaxonomiesService } from './collection-taxonomies.service';
 import { PERMISSIONS } from '@/config/permissions';
 import { ApplicationException, NotFoundException } from '@/lib/utils/error';
+import { revalidatePublicSite } from '@/lib/utils/revalidate-site';
 import { sanitizeRichText } from '@/builder/sanitize';
-import { entryTitle, POST_TYPE_PRESETS } from '@/config/post-types';
+import {
+  entryTitle,
+  normalizePostTypeSupports,
+  type PostTypeSupports,
+  POST_TYPE_PRESETS,
+} from '@/config/post-types';
+import type { SeoInput } from '@/db/validations/pages.validation';
 
 const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -411,6 +421,7 @@ export const collectionsService = {
       icon?: string | null;
       description?: string | null;
       templatePageId?: string | null;
+      supports?: Partial<PostTypeSupports>;
     },
     actorId: string
   ) {
@@ -454,6 +465,14 @@ export const collectionsService = {
           : {}),
         ...(input.templatePageId !== undefined
           ? { templatePageId: input.templatePageId }
+          : {}),
+        ...(input.supports !== undefined
+          ? {
+              supports: normalizePostTypeSupports({
+                ...collection.supports,
+                ...input.supports,
+              }),
+            }
           : {}),
         updatedAt: new Date(),
       })
@@ -744,7 +763,21 @@ export const collectionsService = {
   /** Create an entry (draft). Requires pages.create. */
   async createEntry(
     collectionId: string,
-    input: { slug: string; data: Record<string, unknown> },
+    input: {
+      slug?: string;
+      data?: Record<string, unknown>;
+      excerpt?: string | null;
+      featuredImage?: string | null;
+      status?: CollectionEntryStatus;
+      visibility?: 'public' | 'private';
+      scheduledAt?: Date | string | null;
+      layout?: 'template' | 'custom';
+      templateId?: string | null;
+      canvas?: unknown;
+      draftCanvas?: unknown;
+      seo?: SeoInput | null;
+      terms?: Record<string, string[]>;
+    },
     actorId: string
   ) {
     const access = await accessService.getUserAccess(actorId);
@@ -764,14 +797,24 @@ export const collectionsService = {
       .limit(1);
     if (!collection) throw new NotFoundException('Collection not found');
 
+    const supports = normalizePostTypeSupports(collection.supports);
     const fields = await this.getFields(collectionId);
-    const { data, error } = parseEntryData(fields, input.data);
+    const { data, error } = parseEntryData(fields, input.data ?? {});
     if (error) {
       throw new ApplicationException(`Invalid entry data: ${error.message}`);
     }
 
-    let targetSlug = input.slug;
+    const rawSlug = input.slug?.trim() || entryTitle(data, fields) || 'entry';
+    let targetSlug =
+      rawSlug
+        .toLowerCase()
+        .normalize('NFKD')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 190) || 'entry';
+
     let suffix = 1;
+    const baseSlug = targetSlug;
     while (true) {
       const [existing] = await db
         .select({ id: collectionEntries.id })
@@ -785,7 +828,27 @@ export const collectionsService = {
         )
         .limit(1);
       if (!existing) break;
-      targetSlug = `${input.slug}-${suffix++}`;
+      targetSlug = `${baseSlug}-${suffix++}`;
+    }
+
+    const now = new Date();
+    let status: CollectionEntryStatus = 'draft';
+    let publishedAt: Date | null = null;
+    let scheduledAt: Date | null = null;
+
+    if (supports.status && input.status) {
+      status = input.status;
+      if (status === 'published') {
+        publishedAt = now;
+        scheduledAt = null;
+      } else if (status === 'scheduled') {
+        if (!input.scheduledAt) {
+          throw new ApplicationException(
+            'A scheduled date and time is required.'
+          );
+        }
+        scheduledAt = new Date(input.scheduledAt);
+      }
     }
 
     const [row] = await db
@@ -794,25 +857,72 @@ export const collectionsService = {
         siteId,
         collectionId,
         slug: targetSlug,
-        status: 'draft',
+        status,
         data,
+        publishedAt,
+        scheduledAt,
+        authorId: supports.author ? actorId : null,
+        excerpt: supports.excerpt ? (input.excerpt ?? null) : null,
+        featuredImage: supports.featuredImage
+          ? (input.featuredImage ?? null)
+          : null,
+        visibility:
+          supports.status && input.visibility ? input.visibility : 'public',
+        layout:
+          supports.template && input.layout ? input.layout : 'template',
+        templateId:
+          supports.template && input.templateId ? input.templateId : null,
+        canvas:
+          supports.template && input.canvas ? (input.canvas as any) : null,
+        draftCanvas:
+          supports.template && input.draftCanvas
+            ? (input.draftCanvas as any)
+            : null,
+        seo: supports.seo && input.seo ? input.seo : null,
       })
       .returning();
+
+    if (supports.taxonomies && input.terms) {
+      await collectionTaxonomiesService.syncEntryTerms(row.id, input.terms);
+    }
 
     await auditService.log({
       actorId,
       action: 'create',
       targetType: 'collection_entry',
       targetId: row.id,
-      targetName: input.slug,
+      targetName: row.slug,
     });
+
+    if (row.status === 'published') {
+      try {
+        await searchIndex.syncCollectionEntry(row.id);
+      } catch (err) {
+        console.error('Failed to sync collection entry search document:', err);
+      }
+    }
+
     return row;
   },
 
-  /** Update an entry (stays draft). Requires pages.edit. */
+  /** Update an entry. Requires pages.edit. */
   async updateEntry(
     id: string,
-    input: { slug?: string; data?: Record<string, unknown> },
+    input: {
+      slug?: string;
+      data?: Record<string, unknown>;
+      excerpt?: string | null;
+      featuredImage?: string | null;
+      status?: CollectionEntryStatus;
+      visibility?: 'public' | 'private';
+      scheduledAt?: Date | string | null;
+      layout?: 'template' | 'custom';
+      templateId?: string | null;
+      canvas?: unknown;
+      draftCanvas?: unknown;
+      seo?: SeoInput | null;
+      terms?: Record<string, string[]>;
+    },
     actorId: string
   ) {
     const access = await accessService.getUserAccess(actorId);
@@ -823,10 +933,43 @@ export const collectionsService = {
     }
 
     const entry = await this.getEntry(id);
+    const collection = await this.get(entry.collectionId);
+    const supports = normalizePostTypeSupports(collection.supports);
     const fields = await this.getFields(entry.collectionId);
 
     const values: Record<string, unknown> = { updatedAt: new Date() };
-    if (input.slug !== undefined) values.slug = input.slug;
+
+    if (input.slug !== undefined) {
+      const normalizedSlug = input.slug
+        .trim()
+        .toLowerCase()
+        .normalize('NFKD')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 190);
+      if (!normalizedSlug) {
+        throw new ApplicationException('Slug cannot be empty.');
+      }
+      const [clash] = await db
+        .select({ id: collectionEntries.id })
+        .from(collectionEntries)
+        .where(
+          and(
+            eq(collectionEntries.collectionId, entry.collectionId),
+            eq(collectionEntries.slug, normalizedSlug),
+            isNull(collectionEntries.deletedAt),
+            ne(collectionEntries.id, id)
+          )
+        )
+        .limit(1);
+      if (clash) {
+        throw new ApplicationException(
+          `An entry with slug "${normalizedSlug}" already exists.`
+        );
+      }
+      values.slug = normalizedSlug;
+    }
+
     if (input.data !== undefined) {
       const { data, error } = parseEntryData(fields, input.data);
       if (error) {
@@ -835,19 +978,67 @@ export const collectionsService = {
       values.data = data;
     }
 
+    if (supports.excerpt && input.excerpt !== undefined) {
+      values.excerpt = input.excerpt;
+    }
+    if (supports.featuredImage && input.featuredImage !== undefined) {
+      values.featuredImage = input.featuredImage;
+    }
+    if (supports.seo && input.seo !== undefined) {
+      values.seo = input.seo;
+    }
+    if (supports.template) {
+      if (input.layout !== undefined) values.layout = input.layout;
+      if (input.templateId !== undefined) values.templateId = input.templateId;
+      if (input.canvas !== undefined) values.canvas = input.canvas;
+      if (input.draftCanvas !== undefined) values.draftCanvas = input.draftCanvas;
+    }
+    if (supports.status) {
+      if (input.visibility !== undefined) values.visibility = input.visibility;
+      if (input.scheduledAt !== undefined) {
+        values.scheduledAt = input.scheduledAt
+          ? new Date(input.scheduledAt)
+          : null;
+      }
+      if (input.status !== undefined) {
+        values.status = input.status;
+        if (input.status === 'published') {
+          values.publishedAt = entry.publishedAt ?? new Date();
+          values.scheduledAt = null;
+        } else if (input.status === 'scheduled') {
+          if (!input.scheduledAt && !entry.scheduledAt) {
+            throw new ApplicationException(
+              'A scheduled date and time is required.'
+            );
+          }
+        }
+      }
+    }
+
     const [row] = await db
       .update(collectionEntries)
       .set(values)
       .where(eq(collectionEntries.id, id))
       .returning();
 
+    if (supports.taxonomies && input.terms) {
+      await collectionTaxonomiesService.syncEntryTerms(id, input.terms);
+    }
+
     await auditService.log({
       actorId,
       action: 'update',
       targetType: 'collection_entry',
       targetId: id,
-      targetName: entry.slug,
+      targetName: row.slug,
     });
+
+    try {
+      await searchIndex.syncCollectionEntry(id);
+    } catch (err) {
+      console.error('Failed to sync collection entry search document:', err);
+    }
+
     return row;
   },
 
@@ -869,7 +1060,8 @@ export const collectionsService = {
       .update(collectionEntries)
       .set({
         status: 'published',
-        publishedAt: new Date(),
+        publishedAt: entry.publishedAt ?? new Date(),
+        scheduledAt: null,
         updatedAt: new Date(),
       })
       .where(eq(collectionEntries.id, id))
@@ -909,6 +1101,7 @@ export const collectionsService = {
       .set({
         status: 'draft',
         publishedAt: null,
+        scheduledAt: null,
         updatedAt: new Date(),
       })
       .where(eq(collectionEntries.id, id))
@@ -948,6 +1141,105 @@ export const collectionsService = {
       targetName: entry.slug,
     });
     await searchIndex.removeCollectionEntry(id);
+  },
+
+  /** Get one entry by id with author, template, and assigned taxonomy terms. */
+  async getEntryWithDetails(id: string) {
+    const siteId = await adminSiteId();
+    const [row] = await db
+      .select({
+        entry: collectionEntries,
+        author: {
+          id: users.id,
+          name: users.name,
+          email: users.email,
+        },
+        template: {
+          id: collectionTemplates.id,
+          name: collectionTemplates.name,
+        },
+      })
+      .from(collectionEntries)
+      .leftJoin(users, eq(collectionEntries.authorId, users.id))
+      .leftJoin(
+        collectionTemplates,
+        eq(collectionEntries.templateId, collectionTemplates.id)
+      )
+      .where(
+        and(eq(collectionEntries.id, id), eq(collectionEntries.siteId, siteId))
+      )
+      .limit(1);
+
+    if (!row) throw new NotFoundException('Entry not found');
+    const terms = await collectionTaxonomiesService.getEntryTerms(id);
+    return {
+      ...row.entry,
+      author: row.author?.id ? row.author : null,
+      template: row.template?.id ? row.template : null,
+      terms,
+    };
+  },
+
+  /** Publishes every scheduled collection entry whose time has come. Safe to call repeatedly. */
+  async publishDueScheduledEntries() {
+    const due = await db
+      .select({
+        id: collectionEntries.id,
+        slug: collectionEntries.slug,
+        authorId: collectionEntries.authorId,
+        scheduledAt: collectionEntries.scheduledAt,
+      })
+      .from(collectionEntries)
+      .where(
+        and(
+          eq(collectionEntries.status, 'scheduled'),
+          lte(collectionEntries.scheduledAt, new Date()),
+          isNull(collectionEntries.deletedAt)
+        )
+      );
+
+    for (const entry of due) {
+      try {
+        await db
+          .update(collectionEntries)
+          .set({
+            status: 'published',
+            publishedAt: entry.scheduledAt ?? new Date(),
+            scheduledAt: null,
+            updatedAt: new Date(),
+          })
+          .where(eq(collectionEntries.id, entry.id));
+
+        await auditService.log({
+          actorId: entry.authorId,
+          action: 'publish',
+          targetType: 'collection_entry',
+          targetId: entry.id,
+          targetName: entry.slug,
+          details: 'Scheduled publish',
+        });
+
+        try {
+          await searchIndex.syncCollectionEntry(entry.id);
+        } catch (err) {
+          console.error(
+            '[collections.publishDueScheduledEntries] search sync failed',
+            err
+          );
+        }
+      } catch (error) {
+        console.error(
+          '[collections.publishDueScheduledEntries] failed for',
+          entry.id,
+          error
+        );
+      }
+    }
+
+    if (due.length > 0) {
+      revalidatePublicSite();
+    }
+    return due.map(e => e.id);
   },
 
   /** Creates a post type and its fields from a ready-made preset. */

@@ -18,6 +18,81 @@ export const POST_TYPE_FIELD_TYPES = [
 
 export type PostTypeFieldType = (typeof POST_TYPE_FIELD_TYPES)[number]['value'];
 
+export type PostTypeSupports = {
+  template: boolean;
+  taxonomies: boolean;
+  featuredImage: boolean;
+  excerpt: boolean;
+  author: boolean;
+  status: boolean;
+  seo: boolean;
+};
+
+export const DEFAULT_POST_TYPE_SUPPORTS: PostTypeSupports = {
+  template: true,
+  taxonomies: true,
+  featuredImage: true,
+  excerpt: true,
+  author: true,
+  status: true,
+  seo: true,
+};
+
+export function normalizePostTypeSupports(raw: unknown): PostTypeSupports {
+  const obj = (raw && typeof raw === 'object' ? raw : {}) as Partial<PostTypeSupports>;
+  return {
+    template: obj.template ?? true,
+    taxonomies: obj.taxonomies ?? true,
+    featuredImage: obj.featuredImage ?? true,
+    excerpt: obj.excerpt ?? true,
+    author: obj.author ?? true,
+    status: obj.status ?? true,
+    seo: obj.seo ?? true,
+  };
+}
+
+export const POST_TYPE_SUPPORT_FEATURES: {
+  key: keyof PostTypeSupports;
+  label: string;
+  description: string;
+}[] = [
+  {
+    key: 'template',
+    label: 'Single template & custom layout',
+    description: 'Build layouts per post type with the single template editor or custom canvas.',
+  },
+  {
+    key: 'taxonomies',
+    label: 'Taxonomies',
+    description: 'Categories, tags, and custom hierarchical or flat taxonomies for this post type.',
+  },
+  {
+    key: 'featuredImage',
+    label: 'Featured image',
+    description: 'Cover or hero image shown on listings, social cards, and post header blocks.',
+  },
+  {
+    key: 'excerpt',
+    label: 'Excerpt',
+    description: 'Short summary or teaser text used on archive pages and meta descriptions.',
+  },
+  {
+    key: 'author',
+    label: 'Author attribution',
+    description: 'Records and displays the user who created or authored each entry.',
+  },
+  {
+    key: 'status',
+    label: 'Status, visibility & schedule',
+    description: 'Draft, review, scheduled, and published statuses with future release scheduling.',
+  },
+  {
+    key: 'seo',
+    label: 'SEO & social sharing',
+    description: 'Custom SEO title, description, keywords, canonical URLs, and Open Graph previews.',
+  },
+];
+
 export const POST_TYPE_FIELD_TYPE_VALUES = POST_TYPE_FIELD_TYPES.map(
   t => t.value
 ) as [PostTypeFieldType, ...PostTypeFieldType[]];

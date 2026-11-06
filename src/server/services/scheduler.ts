@@ -1,6 +1,7 @@
 import 'server-only';
 import { pagesServices } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
 import { postsService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.service';
+import { collectionsService } from '@/server/services/collections.service';
 
 const INTERVAL_MS = 60_000;
 let lastRun = 0;
@@ -19,6 +20,7 @@ export function maybePublishScheduled() {
   Promise.all([
     pagesServices.publishDueScheduled(),
     postsService.publishDueScheduled(),
+    collectionsService.publishDueScheduledEntries(),
   ])
     .catch(error => console.error('Scheduled publish failed', error))
     .finally(() => {

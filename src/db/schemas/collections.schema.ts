@@ -6,6 +6,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -14,6 +15,18 @@ import {
 import { baseColumns, relationConfig } from '@/db/helpers/base.columns';
 import { DEFAULT_SITE_ID } from '@/db/schemas/sites.schema';
 import { pages } from '@/db/schemas/pages.schema';
+import { users } from '@/db/schemas/auth.schema';
+import {
+  postLayoutEnum,
+  PostLayout,
+  visibilityStatusEnum,
+  VisibilityStatus,
+} from '@/db/schemas/shared.schema';
+import {
+  type PostTypeSupports,
+  DEFAULT_POST_TYPE_SUPPORTS,
+} from '@/config/post-types';
+import type { SeoInput } from '@/db/validations/pages.validation';
 
 const { id, ...timestampColumns } = baseColumns;
 const { cascade } = relationConfig;
@@ -26,6 +39,8 @@ export type CollectionStatus = (typeof collectionStatusEnum.enumValues)[number];
 
 export const collectionEntryStatusEnum = pgEnum('collection_entry_status', [
   'draft',
+  'review',
+  'scheduled',
   'published',
 ]);
 export type CollectionEntryStatus = (typeof collectionEntryStatusEnum.enumValues)[number];
@@ -63,6 +78,10 @@ export const collections = pgTable(
       onUpdate: 'cascade',
     }),
     status: collectionStatusEnum('status').default('active').notNull(),
+    supports: jsonb('supports')
+      .$type<PostTypeSupports>()
+      .default(DEFAULT_POST_TYPE_SUPPORTS)
+      .notNull(),
     ...timestampColumns,
   },
   t => [
@@ -100,6 +119,88 @@ export const collectionFields = pgTable(
   ]
 );
 
+/** Taxonomies defined per post type (e.g. Department on Team). */
+export const collectionTaxonomies = pgTable(
+  'collection_taxonomies',
+  {
+    id,
+    siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
+    collectionId: text('collection_id')
+      .references(() => collections.id, { onDelete: 'cascade' })
+      .notNull(),
+    key: varchar('key', { length: 100 }).notNull(),
+    name: varchar('name', { length: 150 }).notNull(),
+    singularName: varchar('singular_name', { length: 150 }),
+    hierarchical: boolean('hierarchical').default(false).notNull(),
+    position: integer('position').notNull().default(0),
+    ...timestampColumns,
+  },
+  t => [
+    uniqueIndex('collection_taxonomies_collection_key_unique').on(
+      t.collectionId,
+      t.key
+    ),
+    index('collection_taxonomies_collection_id_index').on(t.collectionId),
+    index('collection_taxonomies_site_id_index').on(t.siteId),
+  ]
+);
+
+/** Terms inside a post type taxonomy (e.g. Engineering under Department). */
+export const collectionTerms = pgTable(
+  'collection_terms',
+  {
+    id,
+    siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
+    taxonomyId: text('taxonomy_id')
+      .references(() => collectionTaxonomies.id, { onDelete: 'cascade' })
+      .notNull(),
+    name: varchar('name', { length: 150 }).notNull(),
+    slug: varchar('slug', { length: 150 }).notNull(),
+    description: text('description'),
+    parentId: text('parent_id').references((): any => collectionTerms.id, {
+      onDelete: 'set null',
+    }),
+    position: integer('position').notNull().default(0),
+    ...timestampColumns,
+  },
+  t => [
+    uniqueIndex('collection_terms_taxonomy_slug_unique')
+      .on(t.taxonomyId, t.slug)
+      .where(sql`${t.deletedAt} is null`),
+    index('collection_terms_taxonomy_id_index').on(t.taxonomyId),
+    index('collection_terms_parent_id_index').on(t.parentId),
+    index('collection_terms_site_id_index').on(t.siteId),
+  ]
+);
+
+/** Named single-entry layouts for a post type. */
+export const collectionTemplates = pgTable(
+  'collection_templates',
+  {
+    id,
+    siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
+    collectionId: text('collection_id')
+      .references(() => collections.id, { onDelete: 'cascade' })
+      .notNull(),
+    name: varchar('name', { length: 150 }).notNull(),
+    description: text('description'),
+    content: jsonb('content'),
+    draftContent: jsonb('draft_content'),
+    isDefault: boolean('is_default').default(false).notNull(),
+    createdBy: text('created_by').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    ...timestampColumns,
+  },
+  t => [
+    uniqueIndex('collection_templates_default_unique')
+      .on(t.collectionId)
+      .where(sql`${t.isDefault} = true`),
+    index('collection_templates_collection_id_index').on(t.collectionId),
+    index('collection_templates_site_id_index').on(t.siteId),
+  ]
+);
+
 /** One JSON entry per row, scoped to a site and collection. */
 export const collectionEntries = pgTable(
   'collection_entries',
@@ -112,6 +213,23 @@ export const collectionEntries = pgTable(
     slug: varchar('slug', { length: 200 }).notNull(),
     status: collectionEntryStatusEnum('status').default('draft').notNull(),
     data: jsonb('data').notNull().default({}),
+    excerpt: text('excerpt'),
+    featuredImage: text('featured_image'),
+    authorId: text('author_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    visibility: visibilityStatusEnum('visibility')
+      .default(VisibilityStatus.public)
+      .notNull(),
+    scheduledAt: timestamp('scheduled_at', { withTimezone: true }),
+    layout: postLayoutEnum('layout').default(PostLayout.template).notNull(),
+    templateId: text('template_id').references(
+      (): any => collectionTemplates.id,
+      { onDelete: 'set null' }
+    ),
+    canvas: jsonb('canvas'),
+    draftCanvas: jsonb('draft_canvas'),
+    seo: jsonb('seo').$type<SeoInput>(),
     publishedAt: timestamp('published_at', { withTimezone: true }),
     ...timestampColumns,
   },
@@ -122,13 +240,39 @@ export const collectionEntries = pgTable(
     index('collection_entries_site_id_index').on(t.siteId),
     index('collection_entries_collection_id_index').on(t.collectionId),
     index('collection_entries_status_index').on(t.status),
+    index('collection_entries_template_id_index').on(t.templateId),
+    index('collection_entries_author_id_index').on(t.authorId),
+    index('collection_entries_scheduled_at_index').on(t.scheduledAt),
     index('collection_entries_deleted_at_index').on(t.deletedAt),
+  ]
+);
+
+/** Many-to-many relationship between collection entries and taxonomy terms. */
+export const collectionEntryTerms = pgTable(
+  'collection_entry_terms',
+  {
+    entryId: text('entry_id')
+      .references(() => collectionEntries.id, { onDelete: 'cascade' })
+      .notNull(),
+    termId: text('term_id')
+      .references(() => collectionTerms.id, { onDelete: 'cascade' })
+      .notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  t => [
+    primaryKey({ columns: [t.entryId, t.termId] }),
+    index('collection_entry_terms_term_id_index').on(t.termId),
+    index('collection_entry_terms_entry_id_index').on(t.entryId),
   ]
 );
 
 export const collectionsRelations = relations(collections, ({ many }) => ({
   fields: many(collectionFields),
   entries: many(collectionEntries),
+  taxonomies: many(collectionTaxonomies),
+  templates: many(collectionTemplates),
 }));
 
 export const collectionFieldsRelations = relations(
@@ -141,13 +285,78 @@ export const collectionFieldsRelations = relations(
   })
 );
 
+export const collectionTaxonomiesRelations = relations(
+  collectionTaxonomies,
+  ({ one, many }) => ({
+    collection: one(collections, {
+      fields: [collectionTaxonomies.collectionId],
+      references: [collections.id],
+    }),
+    terms: many(collectionTerms),
+  })
+);
+
+export const collectionTermsRelations = relations(
+  collectionTerms,
+  ({ one, many }) => ({
+    taxonomy: one(collectionTaxonomies, {
+      fields: [collectionTerms.taxonomyId],
+      references: [collectionTaxonomies.id],
+    }),
+    parent: one(collectionTerms, {
+      fields: [collectionTerms.parentId],
+      references: [collectionTerms.id],
+      relationName: 'term_children',
+    }),
+    children: many(collectionTerms, { relationName: 'term_children' }),
+    entryTerms: many(collectionEntryTerms),
+  })
+);
+
+export const collectionEntryTermsRelations = relations(
+  collectionEntryTerms,
+  ({ one }) => ({
+    entry: one(collectionEntries, {
+      fields: [collectionEntryTerms.entryId],
+      references: [collectionEntries.id],
+    }),
+    term: one(collectionTerms, {
+      fields: [collectionEntryTerms.termId],
+      references: [collectionTerms.id],
+    }),
+  })
+);
+
+export const collectionTemplatesRelations = relations(
+  collectionTemplates,
+  ({ one }) => ({
+    collection: one(collections, {
+      fields: [collectionTemplates.collectionId],
+      references: [collections.id],
+    }),
+    creator: one(users, {
+      fields: [collectionTemplates.createdBy],
+      references: [users.id],
+    }),
+  })
+);
+
 export const collectionEntriesRelations = relations(
   collectionEntries,
-  ({ one }) => ({
+  ({ one, many }) => ({
     collection: one(collections, {
       fields: [collectionEntries.collectionId],
       references: [collections.id],
     }),
+    author: one(users, {
+      fields: [collectionEntries.authorId],
+      references: [users.id],
+    }),
+    template: one(collectionTemplates, {
+      fields: [collectionEntries.templateId],
+      references: [collectionTemplates.id],
+    }),
+    terms: many(collectionEntryTerms),
   })
 );
 

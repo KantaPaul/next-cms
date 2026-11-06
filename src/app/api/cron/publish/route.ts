@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { pagesServices } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
 import { postsService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.service';
+import { collectionsService } from '@/server/services/collections.service';
 import { licenseService } from '@/server/services/license.service';
 import { env } from '@/env.mjs';
 
@@ -32,12 +33,19 @@ export async function GET(request: Request) {
   }
 
   try {
-    const [published, publishedPosts, sweptLicenses] = await Promise.all([
-      pagesServices.publishDueScheduled(),
-      postsService.publishDueScheduled(),
-      licenseService.sweepExpiredLicenses(), // R233 / L3-06
-    ]);
-    return NextResponse.json({ published, publishedPosts, sweptLicenses });
+    const [published, publishedPosts, publishedEntries, sweptLicenses] =
+      await Promise.all([
+        pagesServices.publishDueScheduled(),
+        postsService.publishDueScheduled(),
+        collectionsService.publishDueScheduledEntries(),
+        licenseService.sweepExpiredLicenses(), // R233 / L3-06
+      ]);
+    return NextResponse.json({
+      published,
+      publishedPosts,
+      publishedEntries,
+      sweptLicenses,
+    });
   } catch (error) {
     console.error('[cron/publish] failed', error);
     return NextResponse.json({ message: 'Cron failed' }, { status: 500 });
