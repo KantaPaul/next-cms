@@ -15,15 +15,18 @@ import { toast } from 'sonner';
 import {
   Eye,
   LayoutTemplate,
-  Loader2,
   MoreVertical,
   PanelsTopLeft,
-  Plus,
   Trash2,
-  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import {
+  ReactSelect,
+  groupSelectedOptions,
+  handleMultiSelect,
+  handleOnChange,
+  type Option,
+} from '@/components/atoms/react-select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   DropdownMenu,
@@ -58,7 +61,6 @@ import {
   switchEntryLayoutAction,
   setEntryTemplateAction,
 } from '../_modules/collections.actions';
-import { saveTermAction } from '../_modules/collection-taxonomies.actions';
 import type {
   collections,
   collectionEntries,
@@ -365,6 +367,28 @@ export function EntryEditor({
                   onFieldChange={handleFieldChange}
                 />
 
+                {/* Taxonomies Section (Main Column / Left Side) */}
+                {supports.taxonomies && taxonomies.length > 0 && (
+                  <div className="space-y-4 pt-2">
+                    <div
+                      className={
+                        taxonomies.length === 1
+                          ? 'grid gap-4'
+                          : 'grid gap-4 sm:grid-cols-2'
+                      }
+                    >
+                      {taxonomies.map(tax => (
+                        <TaxonomySelectField
+                          key={tax.id}
+                          taxonomy={tax}
+                          terms={termsByTaxonomy[tax.id] ?? []}
+                          collectionSlug={collection.slug}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {(supports.excerpt || supports.featuredImage) && (
                   <div
                     className={
@@ -511,23 +535,6 @@ export function EntryEditor({
                     </FieldShell>
                   )}
                 </div>
-
-                {/* Taxonomies Section */}
-                {supports.taxonomies && taxonomies.length > 0 && (
-                  <div className="space-y-5 border-t border-steel-200 px-4 pt-5 dark:border-dark-300">
-                    <h3 className="text-sm font-semibold text-steel-900 dark:text-steel-100">
-                      Taxonomies
-                    </h3>
-                    {taxonomies.map(tax => (
-                      <TaxonomyBlock
-                        key={tax.id}
-                        taxonomy={tax}
-                        terms={termsByTaxonomy[tax.id] ?? []}
-                        collectionSlug={collection.slug}
-                      />
-                    ))}
-                  </div>
-                )}
               </TabsContent>
 
               {supports.seo && (
@@ -645,7 +652,7 @@ function LayoutSection({
   );
 }
 
-function TaxonomyBlock({
+function TaxonomySelectField({
   taxonomy,
   terms,
   collectionSlug,
@@ -654,79 +661,28 @@ function TaxonomyBlock({
   terms: CollectionTermNode[];
   collectionSlug: string;
 }) {
-  const router = useRouter();
   const { control, setValue } = useFormContext();
   const allTerms = useWatch({ control, name: 'terms' }) as
     | Record<string, string[]>
     | undefined;
-  const selectedTerms: string[] = allTerms?.[taxonomy.id] ?? [];
-  const [adding, setAdding] = useState(false);
-  const [termName, setTermName] = useState('');
-  const [parentId, setParentId] = useState('');
-  const [isAddingPending, startAddTransition] = useTransition();
+  const selectedIds: string[] = allTerms?.[taxonomy.id] ?? [];
 
-  const toggleTerm = (termId: string, checked: boolean) => {
-    const next = checked
-      ? [...selectedTerms, termId]
-      : selectedTerms.filter(id => id !== termId);
-    setValue(`terms.${taxonomy.id}`, next, { shouldDirty: true });
-  };
+  const optionsArray: Option[] = useMemo(() => {
+    return terms.map(t => ({
+      value: t.id,
+      label: `${'— '.repeat(t.depth ?? 0)}${t.name}`,
+    }));
+  }, [terms]);
 
-  const handleCreateTerm = () => {
-    const trimmed = termName.trim();
-    if (!trimmed) return;
-    const slug = slugify(trimmed);
-    if (!slug) {
-      toast.error('Could not generate a valid slug from this name');
-      return;
-    }
-    const clash = terms.some(
-      t =>
-        t.name.trim().toLowerCase() === trimmed.toLowerCase() ||
-        t.slug.toLowerCase() === slug.toLowerCase()
-    );
-    if (clash) {
-      toast.error(
-        `A ${taxonomy.singularName || 'term'} named "${trimmed}" already exists.`
-      );
-      return;
-    }
-
-    startAddTransition(async () => {
-      await handleActionResponse(
-        saveTermAction(
-          {
-            taxonomyId: taxonomy.id,
-            name: trimmed,
-            slug,
-            parentId: parentId || undefined,
-          },
-          collectionSlug
-        ),
-        result => {
-          toast.success(
-            `Added ${taxonomy.singularName || 'term'} "${termName.trim()}"`
-          );
-          if (result && typeof result === 'object' && 'id' in result) {
-            setValue(
-              `terms.${taxonomy.id}`,
-              [...selectedTerms, (result as any).id],
-              { shouldDirty: true }
-            );
-          }
-          setTermName('');
-          setParentId('');
-          setAdding(false);
-          router.refresh();
-        }
-      );
-    });
-  };
+  const [groupOptions, selectedOptions] = useMemo(
+    () => groupSelectedOptions(optionsArray, selectedIds),
+    [optionsArray, selectedIds]
+  );
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-semibold uppercase tracking-wider text-steel-600 dark:text-steel-400">
+        <label className="text-sm font-medium text-steel-700 dark:text-steel-200">
           {taxonomy.name}
         </label>
         <Link
@@ -734,100 +690,34 @@ function TaxonomyBlock({
             collectionSlug,
             taxonomy.key
           )}
+          target="_blank"
           className="text-xs text-primary hover:underline"
         >
           Manage
         </Link>
       </div>
 
-      {terms.length > 0 ? (
-        <div className="max-h-48 overflow-y-auto rounded-md border border-steel-200 bg-white p-2.5 dark:border-dark-300 dark:bg-dark-100">
-          <div className="space-y-1.5">
-            {terms.map(term => {
-              const checked = selectedTerms.includes(term.id);
-              return (
-                <label
-                  key={term.id}
-                  className="flex items-center gap-2 text-xs hover:bg-steel-50 dark:hover:bg-dark-200 py-0.5 rounded px-1 cursor-pointer"
-                  style={{
-                    paddingLeft: `${Math.max(0.25, (term.depth ?? 0) * 1.25 + 0.25)}rem`,
-                  }}
-                >
-                  <Checkbox
-                    checked={checked}
-                    onCheckedChange={val => toggleTerm(term.id, val === true)}
-                  />
-                  <span className="truncate">{term.name}</span>
-                </label>
-              );
-            })}
-          </div>
-        </div>
-      ) : (
-        <p className="text-xs text-steel-400">
-          No {taxonomy.name.toLowerCase()} yet.
-        </p>
-      )}
-
-      {adding ? (
-        <div className="space-y-2 rounded-md border border-steel-200 bg-steel-50 p-2.5 dark:border-dark-300 dark:bg-dark-100">
-          <input
-            className={inputClass}
-            placeholder={`New ${taxonomy.singularName || 'term'} name`}
-            value={termName}
-            onChange={e => setTermName(e.target.value)}
-            autoFocus
-          />
-          {taxonomy.hierarchical && terms.length > 0 && (
-            <select
-              className={inputClass}
-              value={parentId}
-              onChange={e => setParentId(e.target.value)}
-            >
-              <option value="">No parent (top level)</option>
-              {terms.map(t => (
-                <option key={t.id} value={t.id}>
-                  {`${'— '.repeat(t.depth ?? 0)}${t.name}`}
-                </option>
-              ))}
-            </select>
-          )}
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              size="sm"
-              disabled={isAddingPending || !termName.trim()}
-              onClick={handleCreateTerm}
-            >
-              {isAddingPending && <Loader2 className="animate-spin size-3 mr-1" />}
-              Add
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                setAdding(false);
-                setTermName('');
-                setParentId('');
-              }}
-            >
-              <X className="size-3.5 mr-1" /> Cancel
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-7 text-xs text-primary"
-          onClick={() => setAdding(true)}
-        >
-          <Plus className="size-3 mr-1" /> Add{' '}
-          {taxonomy.singularName?.toLowerCase() || 'term'}
-        </Button>
-      )}
+      <ReactSelect
+        isMulti
+        isClearable
+        options={groupOptions}
+        value={handleMultiSelect(selectedOptions, selectedIds)}
+        placeholder={
+          optionsArray.length
+            ? `Select ${taxonomy.name.toLowerCase()}…`
+            : `No ${taxonomy.name.toLowerCase()} yet`
+        }
+        isDisabled={optionsArray.length === 0}
+        onChange={newValue => {
+          const processedValue = handleOnChange(newValue);
+          const next = Array.isArray(processedValue)
+            ? (processedValue as string[])
+            : processedValue
+              ? [processedValue as string]
+              : [];
+          setValue(`terms.${taxonomy.id}`, next, { shouldDirty: true });
+        }}
+      />
     </div>
   );
 }

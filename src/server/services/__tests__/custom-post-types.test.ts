@@ -504,6 +504,24 @@ describe('Taxonomy and term duplicate name prevention', () => {
     assert.ok(!hasClash('Marketing', 'marketing'));
     assert.ok(!hasClash('Engineering', 'engineering', '1'));
   });
+
+  it('formats taxonomy terms with hierarchical depth indentation for multiselect', () => {
+    const terms = [
+      { id: '1', name: 'Design', depth: 0 },
+      { id: '2', name: 'UI/UX', depth: 1 },
+      { id: '3', name: 'Figma', depth: 2 },
+    ];
+
+    const options = terms.map(t => ({
+      value: t.id,
+      label: `${'— '.repeat(t.depth)}${t.name}`,
+    }));
+
+    assert.equal(options[0].label, 'Design');
+    assert.equal(options[1].label, '— UI/UX');
+    assert.equal(options[2].label, '— — Figma');
+  });
 });
+
 
 
