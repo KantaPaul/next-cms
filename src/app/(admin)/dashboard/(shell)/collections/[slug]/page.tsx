@@ -1,23 +1,31 @@
 import Link from 'next/link';
-import { PostTypeIcon } from '@/components/atoms/post-type-icon';
+import { LayoutTemplate, Settings } from 'lucide-react';
 import { AccessDenied } from '@/components/organisms/access-denied';
 import { PageHeader } from '@/components/organisms/page-header';
+import CreateButton from '@/components/atoms/buttons/create-button';
 import { Button } from '@/components/ui/button';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import { collectionsService } from '@/server/services/collections.service';
 import { collectionTaxonomiesService } from '@/server/services/collection-taxonomies.service';
+import { collectionTemplatesService } from '@/server/services/collection-templates.service';
 import { requirePermission } from '@/server/services/require-permission';
+import {
+  parseSearchParams,
+  type SearchParams,
+} from '@/db/helpers/parse-search-params';
 import { loadPostTypeRoute } from '../_modules/post-type-route';
-import { EntryList } from '../components/entry-list';
+import { EntriesTable } from '../components/entries-table';
 import { PostTypeTabs } from '../components/post-type-tabs';
 import { normalizePostTypeSupports } from '@/config/post-types';
 
-/** One post type's entries: `/dashboard/collections/{slug}` (like Pages). */
+/** One post type's entries: `/dashboard/collections/{slug}` (mirroring `/dashboard/posts`). */
 export default async function CollectionEntriesPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<SearchParams>;
 }) {
   const { slug } = await params;
   const collection = await loadPostTypeRoute(slug, PAGES.DASHBOARD.COLLECTION);
@@ -41,58 +49,73 @@ export default async function CollectionEntriesPage({
     );
   }
 
-  const [fields, entries, taxonomies] = await Promise.all([
+  const [rawSearchParams, fields, taxonomies, templates] = await Promise.all([
+    searchParams,
     collectionsService.getFields(collection.id),
-    collectionsService.listEntries(collection.id),
     collectionTaxonomiesService.listTaxonomies(collection.id),
+    collectionTemplatesService.options(collection.id),
   ]);
+
+  const parsedParams = parseSearchParams(rawSearchParams);
+  const [{ data, totalCount }, counts] = await Promise.all([
+    collectionsService.getPaginatedEntries({
+      collectionId: collection.id,
+      params: parsedParams,
+    }),
+    collectionsService.getStatusCounts(collection.id),
+  ]);
+
   const supports = normalizePostTypeSupports(collection.supports);
   const singular = collection.singularName || 'Entry';
-  const entriesData = entries.map(e => ({
-    ...e,
-    data: e.data as Record<string, unknown> | undefined,
-  }));
-
-  // Up to three text fields as columns
-  const textFields = fields
-    .filter(f => f.type === 'text')
-    .slice(0, 3)
-    .map(f => f.key);
 
   return (
     <>
-      <PageHeader title={collection.name} breadcrumbs={breadcrumbs} />
+      <PageHeader title={collection.name} breadcrumbs={breadcrumbs}>
+        <div className="flex items-center gap-2">
+          {supports.template && (
+            <Button variant="outline" asChild>
+              <Link href={PAGES.DASHBOARD.COLLECTION_TEMPLATES(collection.slug)}>
+                <LayoutTemplate className="size-4" /> Templates
+              </Link>
+            </Button>
+          )}
+          <Button variant="outline" asChild>
+            <Link href={PAGES.DASHBOARD.COLLECTION_SETTINGS(collection.slug)}>
+              <Settings className="size-4" /> Settings
+            </Link>
+          </Button>
+          <CreateButton
+            href={PAGES.DASHBOARD.COLLECTION_CREATE(collection.slug)}
+            text={`New ${singular.toLowerCase()}`}
+          />
+        </div>
+      </PageHeader>
+
       <PostTypeTabs
         slug={collection.slug}
         taxonomies={taxonomies}
         supports={supports}
       />
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary">
-            <PostTypeIcon name={collection.icon} className="size-4" />
-          </span>
-          <div>
-            <h1 className="text-lg font-semibold">{collection.name}</h1>
-            <p className="text-sm text-muted-foreground">
-              {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
-              {collection.description ? ` · ${collection.description}` : ''}
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" asChild>
-            <Link href={PAGES.DASHBOARD.COLLECTION_SETTINGS(collection.slug)}>
-              Fields & settings
-            </Link>
-          </Button>
-          <Button asChild>
-            <Link href={PAGES.DASHBOARD.COLLECTION_CREATE(collection.slug)}>
-              New {singular.toLowerCase()}
-            </Link>
-          </Button>
-        </div>
+
+      {/* KPI status cards */}
+      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+        {(['published', 'draft', 'review', 'scheduled'] as const).map(
+          status => (
+            <div
+              key={status}
+              className="rounded-lg border border-steel-200 px-4 py-3 dark:border-dark-300"
+            >
+              <div className="text-xs uppercase tracking-wide text-steel-400">
+                {status === 'review' ? 'Under review' : status}
+              </div>
+              <div className="text-2xl font-semibold">
+                {counts[status] ?? 0}
+              </div>
+            </div>
+          )
+        )}
       </div>
+
       {fields.length === 0 && (
         <p className="mb-4 rounded-md border border-dashed p-4 text-sm text-muted-foreground">
           This post type has no fields yet.{' '}
@@ -106,12 +129,13 @@ export default async function CollectionEntriesPage({
         </p>
       )}
 
-      <EntryList
-        entries={entriesData}
-        textFields={textFields}
-        fields={fields.map(f => ({ key: f.key, label: f.label }))}
-        collectionId={collection.id}
+      {/* Searchable, filterable, paginated entries table */}
+      <EntriesTable
+        data={data as any}
+        totalCount={totalCount}
         collectionSlug={collection.slug}
+        templates={templates}
+        fields={fields}
       />
     </>
   );

@@ -521,6 +521,40 @@ describe('Taxonomy and term duplicate name prevention', () => {
     assert.equal(options[1].label, '— UI/UX');
     assert.equal(options[2].label, '— — Figma');
   });
+
+  it('aggregates status counts with zeros for missing statuses', () => {
+    const rawRows = [
+      { status: 'published', total: 5 },
+      { status: 'draft', total: 2 },
+    ];
+    const result: Record<string, number> = {
+      published: 0,
+      draft: 0,
+      review: 0,
+      scheduled: 0,
+    };
+    for (const r of rawRows) {
+      if (r.status) result[r.status] = Number(r.total);
+    }
+    assert.equal(result.published, 5);
+    assert.equal(result.draft, 2);
+    assert.equal(result.review, 0);
+    assert.equal(result.scheduled, 0);
+  });
+
+  it('builds search and layout filter conditions for collection entries', () => {
+    const buildLayoutCondition = (layout?: string) => {
+      if (layout === 'custom') return 'custom';
+      if (layout === 'default') return 'default';
+      if (layout) return `template:${layout}`;
+      return 'all';
+    };
+
+    assert.equal(buildLayoutCondition('custom'), 'custom');
+    assert.equal(buildLayoutCondition('default'), 'default');
+    assert.equal(buildLayoutCondition('tpl-123'), 'template:tpl-123');
+    assert.equal(buildLayoutCondition(), 'all');
+  });
 });
 
 

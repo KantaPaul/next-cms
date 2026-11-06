@@ -493,3 +493,25 @@ export async function publishEntryAction(input: { id: string }) {
     return { ok: false, error: error.message ?? 'Failed to publish entry.' };
   }
 }
+
+export async function unpublishEntryAction(input: { id: string }) {
+  try {
+    const actor = await actorId();
+    await collectionsService.unpublishEntry(input.id, actor);
+    revalidatePostTypes();
+    return { ok: true };
+  } catch (error: any) {
+    return { ok: false, error: error.message ?? 'Failed to unpublish entry.' };
+  }
+}
+
+export async function duplicateEntryAction(input: { id: string }) {
+  try {
+    const actor = await actorId();
+    const duplicated = await collectionsService.duplicateEntry(input.id, actor);
+    revalidatePostTypes();
+    return { ok: true, id: duplicated.id, slug: duplicated.slug };
+  } catch (error: any) {
+    return { ok: false, error: error.message ?? 'Failed to duplicate entry.' };
+  }
+}

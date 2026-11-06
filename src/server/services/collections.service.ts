@@ -1,7 +1,22 @@
 import 'server-only';
 import { z } from 'zod';
-import { and, desc, eq, isNull, lte, ne, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  ilike,
+  isNull,
+  lte,
+  ne,
+  or,
+  sql,
+  type SQL,
+} from 'drizzle-orm';
 import { db } from '@/db';
+import type { SearchParams } from '@/db/helpers/parse-search-params';
+import { paginate } from '@/db/helpers/with-pagination';
 import {
   collectionEntries,
   collectionFields,
@@ -693,6 +708,209 @@ export const collectionsService = {
         )
       )
       .orderBy(desc(collectionEntries.updatedAt));
+  },
+
+  /** Status counts for a collection's entries. */
+  async getStatusCounts(collectionId: string) {
+    const siteId = await adminSiteId();
+    const rows = await db
+      .select({ status: collectionEntries.status, total: count() })
+      .from(collectionEntries)
+      .where(
+        and(
+          eq(collectionEntries.siteId, siteId),
+          eq(collectionEntries.collectionId, collectionId),
+          isNull(collectionEntries.deletedAt)
+        )
+      )
+      .groupBy(collectionEntries.status);
+
+    const result: Record<string, number> = {
+      published: 0,
+      draft: 0,
+      review: 0,
+      scheduled: 0,
+    };
+    for (const r of rows) {
+      if (r.status) result[r.status] = Number(r.total);
+    }
+    return result;
+  },
+
+  /** Paginated, filtered, and searchable entries for a collection. */
+  async getPaginatedEntries({
+    collectionId,
+    params,
+  }: {
+    collectionId: string;
+    params: SearchParams;
+  }) {
+    const siteId = await adminSiteId();
+    const { page, size, sort, order, search, status, layout } = params;
+    const { offset, limit } = paginate({
+      page: page as string,
+      size: size as string,
+    });
+
+    const conditions: (SQL | undefined)[] = [
+      eq(collectionEntries.siteId, siteId),
+      eq(collectionEntries.collectionId, collectionId),
+      isNull(collectionEntries.deletedAt),
+    ];
+
+    if (typeof status === 'string' && status) {
+      conditions.push(
+        eq(collectionEntries.status, status as CollectionEntryStatus)
+      );
+    }
+
+    if (layout === 'custom') {
+      conditions.push(eq(collectionEntries.layout, 'custom'));
+    } else if (layout === 'default') {
+      conditions.push(
+        eq(collectionEntries.layout, 'template'),
+        or(
+          isNull(collectionEntries.templateId),
+          eq(collectionTemplates.isDefault, true)
+        )
+      );
+    } else if (typeof layout === 'string' && layout) {
+      conditions.push(
+        eq(collectionEntries.layout, 'template'),
+        eq(collectionEntries.templateId, layout)
+      );
+    }
+
+    if (typeof search === 'string' && search.trim()) {
+      const term = `%${search.trim()}%`;
+      conditions.push(
+        or(
+          ilike(collectionEntries.slug, term),
+          ilike(collectionEntries.excerpt, term),
+          sql`${collectionEntries.data}::text ILIKE ${term}`
+        )
+      );
+    }
+
+    const where = and(...conditions);
+
+    const sortMap: Record<string, any> = {
+      slug: collectionEntries.slug,
+      status: collectionEntries.status,
+      createdAt: collectionEntries.createdAt,
+      updatedAt: collectionEntries.updatedAt,
+    };
+    const sortColumn =
+      sortMap[(sort as string) ?? 'updatedAt'] ?? collectionEntries.updatedAt;
+    const orderBy = order === 'asc' ? asc(sortColumn) : desc(sortColumn);
+
+    const [data, [{ totalCount }]] = await Promise.all([
+      db
+        .select({
+          id: collectionEntries.id,
+          collectionId: collectionEntries.collectionId,
+          slug: collectionEntries.slug,
+          status: collectionEntries.status,
+          visibility: collectionEntries.visibility,
+          layout: collectionEntries.layout,
+          templateId: collectionEntries.templateId,
+          templateName: collectionTemplates.name,
+          scheduledAt: collectionEntries.scheduledAt,
+          publishedAt: collectionEntries.publishedAt,
+          createdAt: collectionEntries.createdAt,
+          updatedAt: collectionEntries.updatedAt,
+          authorId: collectionEntries.authorId,
+          authorName: users.name,
+          data: collectionEntries.data,
+          excerpt: collectionEntries.excerpt,
+          featuredImage: collectionEntries.featuredImage,
+        })
+        .from(collectionEntries)
+        .leftJoin(users, eq(users.id, collectionEntries.authorId))
+        .leftJoin(
+          collectionTemplates,
+          eq(collectionTemplates.id, collectionEntries.templateId)
+        )
+        .where(where)
+        .orderBy(orderBy, desc(collectionEntries.createdAt))
+        .limit(limit)
+        .offset(offset),
+      db
+        .select({ totalCount: count() })
+        .from(collectionEntries)
+        .leftJoin(
+          collectionTemplates,
+          eq(collectionTemplates.id, collectionEntries.templateId)
+        )
+        .where(where),
+    ]);
+
+    return { data, totalCount };
+  },
+
+  /** Duplicate an entry with a fresh unique slug. */
+  async duplicateEntry(id: string, actorId: string) {
+    const siteId = await adminSiteId();
+    const source = await this.getEntryWithDetails(id);
+    if (!source) throw new NotFoundException('Entry not found');
+
+    let slug = `${source.slug}-copy`;
+    for (let n = 2; ; n++) {
+      const [taken] = await db
+        .select({ id: collectionEntries.id })
+        .from(collectionEntries)
+        .where(
+          and(
+            eq(collectionEntries.siteId, siteId),
+            eq(collectionEntries.collectionId, source.collectionId),
+            eq(collectionEntries.slug, slug),
+            isNull(collectionEntries.deletedAt)
+          )
+        )
+        .limit(1);
+      if (!taken) break;
+      slug = `${source.slug}-copy-${n}`;
+    }
+
+    const [duplicated] = await db
+      .insert(collectionEntries)
+      .values({
+        siteId,
+        collectionId: source.collectionId,
+        slug,
+        status: 'draft',
+        visibility: source.visibility,
+        layout: source.layout,
+        templateId: source.templateId,
+        authorId: actorId,
+        data: source.data,
+        excerpt: source.excerpt,
+        featuredImage: source.featuredImage,
+        canvas: source.canvas,
+        draftCanvas: source.draftCanvas,
+        seo: source.seo,
+      })
+      .returning();
+
+    // Copy assigned terms
+    if (source.terms?.length) {
+      const termsByTax: Record<string, string[]> = {};
+      for (const t of source.terms) {
+        if (!termsByTax[t.taxonomyId]) termsByTax[t.taxonomyId] = [];
+        termsByTax[t.taxonomyId].push(t.termId);
+      }
+      await collectionTaxonomiesService.syncEntryTerms(duplicated.id, termsByTax);
+    }
+
+    await auditService.log({
+      actorId,
+      action: 'create',
+      targetType: 'collection_entry',
+      targetId: duplicated.id,
+      targetName: duplicated.slug,
+    });
+
+    return duplicated;
   },
 
   /** Get one entry by id. */

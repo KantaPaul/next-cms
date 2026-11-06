@@ -7,12 +7,31 @@ import {
 } from '@/components/ui/sidebar';
 import { getSession } from '@/server/actions/auth.actions';
 import { collectionsService } from '@/server/services/collections.service';
+import { collectionTaxonomiesService } from '@/server/services/collection-taxonomies.service';
 
 /** Active post types for the sidebar; an empty list if they can't be loaded. */
 async function sidebarPostTypes() {
   try {
     const rows = await collectionsService.list();
-    return rows.map(c => ({ id: c.id, slug: c.slug, name: c.name, icon: c.icon }));
+    const withTaxonomies = await Promise.all(
+      rows.map(async c => {
+        const taxonomies = await collectionTaxonomiesService
+          .listTaxonomies(c.id)
+          .catch(() => []);
+        return {
+          id: c.id,
+          slug: c.slug,
+          name: c.name,
+          icon: c.icon,
+          taxonomies: taxonomies.map(t => ({
+            id: t.id,
+            key: t.key,
+            name: t.name,
+          })),
+        };
+      })
+    );
+    return withTaxonomies;
   } catch {
     return [];
   }
