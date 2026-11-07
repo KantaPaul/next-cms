@@ -33,8 +33,13 @@ import {
   ThemeToggleClient,
   type ThemeToggleClientProps,
 } from './site-chrome-client';
+import { headerColJustify, headerGridTemplate } from './header-grid';
 
 /* ---------- HeaderBar ---------- */
+
+/** Live-site slots are arrays; in the editor they're render functions (always "present"). */
+const hasSlotContent = (slot: SlotValue, _zones?: Record<string, BuilderItem[]>) =>
+  typeof slot === 'function' || (Array.isArray(slot) && slot.length > 0);
 
 export type HeaderBarProps = {
   width?: 'boxed' | 'full';
@@ -43,7 +48,23 @@ export type HeaderBarProps = {
   minHeight?: string;
   borderBottom?: boolean;
   align?: 'center' | 'start' | 'end';
-  layout?: 'left-center-right' | 'split-2' | 'equal-3' | 'left-heavy' | 'right-heavy';
+  layout?:
+    | 'left-center-right'
+    | 'split-2'
+    | 'equal-3'
+    | 'left-heavy'
+    | 'right-heavy'
+    | 'custom';
+  leftWidth?: string;
+  leftSize?: string;
+  leftAlign?: string;
+  centerWidth?: string;
+  centerSize?: string;
+  centerAlign?: string;
+  rightWidth?: string;
+  rightSize?: string;
+  rightAlign?: string;
+  stackOn?: 'none' | 'mobile' | 'tablet';
   left?: SlotValue;
   center?: SlotValue;
   right?: SlotValue;
@@ -86,6 +107,7 @@ export function HeaderBar({
   right,
   zones,
   editing,
+  ...rest
 }: HeaderBarProps) {
   const containerClass =
     width === 'full'
@@ -93,6 +115,49 @@ export function HeaderBar({
       : 'max-w-[var(--site-max-width,72rem)] mx-auto px-4 sm:px-6 lg:px-8';
 
   const style: React.CSSProperties = minHeight ? { minHeight } : {};
+
+  if (layout === 'custom') {
+    const p = rest as HeaderBarProps;
+    const centerEmpty = !editing && !hasSlotContent(center, zones);
+    const cols = [
+      { key: 'left', slot: left, width: p.leftWidth ?? 'auto', size: p.leftSize, align: p.leftAlign, fallback: 'start' as const },
+      { key: 'center', slot: center, width: p.centerWidth ?? 'fill', size: p.centerSize, align: p.centerAlign, fallback: 'center' as const },
+      { key: 'right', slot: right, width: p.rightWidth ?? 'auto', size: p.rightSize, align: p.rightAlign, fallback: 'end' as const },
+    ].filter(c => !(c.key === 'center' && centerEmpty && c.width === 'auto'));
+    const stack = p.stackOn ?? 'none';
+    return (
+      <div
+        data-header-bar
+        className={cn(
+          'w-full transition-colors',
+          BG_STYLES[background] || BG_STYLES.default,
+          borderBottom && 'border-b border-[var(--site-border)]'
+        )}
+        style={style}
+      >
+        <div
+          className={cn(
+            containerClass,
+            PADDING_Y[paddingY] || PADDING_Y.sm,
+            'grid gap-4',
+            stack === 'none' ? 's-hcols-always' : stack === 'tablet' ? 's-hcols-lg' : 's-hcols',
+            ALIGN_ITEMS[align] || ALIGN_ITEMS.center
+          )}
+          style={{ '--hc-cols': headerGridTemplate(cols) } as React.CSSProperties}
+        >
+          {cols.map(c => (
+            <div
+              key={c.key}
+              data-header-col={c.key}
+              className={cn('flex min-w-0 items-center gap-3', headerColJustify(c.align, c.fallback))}
+            >
+              {renderSlot(c.slot, zones)}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   const colStyles = {
     'left-center-right': {
@@ -166,6 +231,8 @@ export type HeaderColumnsProps = {
   gap?: 'sm' | 'md' | 'lg' | 'xl';
   align?: 'center' | 'start' | 'end';
   stackOn?: 'mobile' | 'tablet';
+  /** Per-column width (`auto` | `fill` | `custom`), size and alignment: col1Width, col1Size, col1Align … */
+  [key: `col${number}${'Width' | 'Size' | 'Align'}`]: string | undefined;
   col1?: SlotValue;
   col2?: SlotValue;
   col3?: SlotValue;
@@ -192,6 +259,7 @@ export function HeaderColumns({
   col6,
   zones,
   editing,
+  ...rest
 }: HeaderColumnsProps) {
   const containerClass =
     width === 'full'
@@ -201,30 +269,13 @@ export function HeaderColumns({
   const cols = Math.min(Math.max(Number(columns) || 3, 1), 6);
   const slots = [col1, col2, col3, col4, col5, col6].slice(0, cols);
 
-  const gridColsClass =
-    stackOn === 'tablet'
-      ? cols === 1
-        ? 'grid-cols-1'
-        : cols === 2
-          ? 'grid-cols-1 lg:grid-cols-2'
-          : cols === 3
-            ? 'grid-cols-1 lg:grid-cols-3'
-            : cols === 4
-              ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
-              : cols === 5
-                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-5'
-                : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-6'
-      : cols === 1
-        ? 'grid-cols-1'
-        : cols === 2
-          ? 'grid-cols-1 md:grid-cols-2'
-          : cols === 3
-            ? 'grid-cols-1 md:grid-cols-3'
-            : cols === 4
-              ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4'
-              : cols === 5
-                ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-5'
-                : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-6';
+  const colProps = rest as Record<string, string | undefined>;
+  const template = headerGridTemplate(
+    slots.map((_, i) => ({
+      width: colProps[`col${i + 1}Width`] ?? 'fill',
+      size: colProps[`col${i + 1}Size`],
+    }))
+  );
 
   return (
     <div
@@ -238,16 +289,26 @@ export function HeaderColumns({
           containerClass,
           PADDING_Y[paddingY] || PADDING_Y.none,
           'grid items-center',
-          gridColsClass,
+          cols === 1 ? '' : stackOn === 'tablet' ? 's-hcols-lg' : 's-hcols',
           GAP_STYLES[gap] || GAP_STYLES.md,
           ALIGN_ITEMS[align] || ALIGN_ITEMS.center
         )}
+        style={{ '--hc-cols': template } as React.CSSProperties}
       >
-        {slots.map((slot, index) => (
-          <div key={index} className="min-w-0">
-            {renderSlot(slot, zones)}
-          </div>
-        ))}
+        {slots.map((slot, index) => {
+          const alignValue = colProps[`col${index + 1}Align`];
+          return (
+            <div
+              key={index}
+              className={cn(
+                'min-w-0',
+                alignValue && cn('flex items-center gap-3', headerColJustify(alignValue, 'start'))
+              )}
+            >
+              {renderSlot(slot, zones)}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

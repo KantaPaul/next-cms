@@ -73,6 +73,10 @@ export default async function SettingsPage() {
           translations: settings.translations ?? null,
           themeTokens: settings.themeTokens,
           videoSettings: settings.videoSettings ?? null,
+          readingSettings: {
+            postNavigation: settings.readingSettings?.postNavigation ?? 'auto',
+            comments: settings.readingSettings?.comments ?? true,
+          },
           searchSettings: {
             synonyms: Object.entries(settings.searchSettings?.synonyms ?? {}).map(
               ([term, synonyms]) => ({

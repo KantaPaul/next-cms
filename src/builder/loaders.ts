@@ -174,7 +174,56 @@ const loadRelatedPosts: BlockLoader = async (props, ctx) => {
 };
 
 /** Previous / next published posts around the current one. */
-const loadPostNavigation: BlockLoader = async (_props, ctx) => {
+const loadComments: BlockLoader = async (props, ctx) => {
+  const post = ctx.post as PostView | undefined;
+  if (!post?.id || ctx.collectionEntry || post.id === 'sample-post') {
+    return ctx.editor ? {} : { comments: [], total: 0, open: false };
+  }
+  const { getPostComments } = await import('@/server/actions/blog.actions');
+  const result = await getPostComments({
+    postId: post.id,
+    sort: props.sort === 'newest' ? 'newest' : 'oldest',
+  });
+  return {
+    comments: result.items,
+    total: result.total,
+    open: result.open && post.allowComments !== false,
+  };
+};
+
+const loadAuthorCard: BlockLoader = async (props, ctx) => {
+  const post = ctx.post as PostView | undefined;
+  if (props.showLatestPosts === false || !post?.authorId || ctx.collectionEntry) {
+    return { latestPosts: [] };
+  }
+  const { getAuthorPosts } = await import('@/server/actions/blog.actions');
+  return {
+    latestPosts: await getAuthorPosts({
+      authorId: post.authorId,
+      excludeId: post.id,
+      language: post.language,
+      limit: Number(props.latestCount) || 3,
+    }),
+  };
+};
+
+const loadPostNavigation: BlockLoader = async (props, ctx) => {
+  const sameTerm = props.scope === 'same-term';
+  const entry = ctx.collectionEntry as
+    | { id?: string; collection?: { slug?: string } }
+    | undefined;
+  if (entry?.id && entry.collection?.slug) {
+    const { getAdjacentEntries } = await import(
+      '@/server/actions/entry-nav.actions'
+    );
+    return getAdjacentEntries({
+      entry,
+      sameTerm,
+      defaultLocale:
+        typeof ctx.defaultLocale === 'string' ? ctx.defaultLocale : undefined,
+      siteSlug: typeof ctx.siteSlug === 'string' ? ctx.siteSlug : undefined,
+    });
+  }
   const post = ctx.post as PostView | undefined;
   if (!post?.publishedAt || !post.id) return { previous: null, next: null };
   const { getAdjacentPosts } = await import('@/server/actions/blog.actions');
@@ -182,6 +231,9 @@ const loadPostNavigation: BlockLoader = async (_props, ctx) => {
     postId: post.id,
     language: post.language,
     publishedAt: post.publishedAt,
+    ...(sameTerm && post.categories[0]?.id
+      ? { categoryId: post.categories[0].id }
+      : {}),
   });
 };
 
@@ -234,6 +286,8 @@ const POST_BLOCK_TYPES = new Set([
   'PostContent',
   'RelatedPosts',
   'AuthorBio',
+  'AuthorCard',
+  'Comments',
   'ShareButtons',
   'PostNavigation',
   'BookmarkButton',
@@ -797,6 +851,9 @@ const loadQueryLoop: BlockLoader = async (props, ctx) => {
     facets: result.facets,
     activeParams,
     pageHrefs,
+    ...(props.filterPosition && props.filterPosition !== 'none'
+      ? { preservedHiddenParams: preserved }
+      : {}),
     clearFiltersHref: clearQs ? `?${clearQs}` : '?',
     language: typeof ctx.language === 'string' ? ctx.language : 'en',
     ...archiveTokenPatch(props, ctx),
@@ -990,6 +1047,8 @@ const registry = createLoaderRegistry<LoaderContext>(
     BlogPosts: loadBlogPosts,
     RelatedPosts: loadRelatedPosts,
     PostNavigation: loadPostNavigation,
+    AuthorCard: loadAuthorCard,
+    Comments: loadComments,
     QueryLoop: loadQueryLoop,
     LoopGrid: loadLoopGrid,
     PostTypeEntries: loadPostTypeEntries,

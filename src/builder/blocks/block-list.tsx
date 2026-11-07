@@ -9,10 +9,12 @@ import {
 } from './blog';
 import {
   AuthorBio,
+  AuthorCard,
   BookmarkButton,
   PostNavigation,
   ShareButtons,
 } from './post-extras';
+import { Comments } from './comments';
 import * as registry from './registry';
 
 /**
@@ -27,6 +29,8 @@ const POST_BLOCKS: Record<string, ComponentType<any>> = {
   PostContent,
   RelatedPosts,
   AuthorBio,
+  AuthorCard,
+  Comments,
   ShareButtons,
   PostNavigation,
   BookmarkButton,

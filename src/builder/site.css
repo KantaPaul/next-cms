@@ -1334,3 +1334,22 @@ html[data-site-mode='dark'] .site-root .site-header-shell[data-scrolled="true"] 
   transform: scale(0.85);
   transition: transform 0.2s ease;
 }
+
+/* ---------- Header column widths (HeaderBar custom / HeaderColumns) ---------- */
+.site-root .s-hcols,
+.site-root .s-hcols-lg {
+  grid-template-columns: minmax(0, 1fr);
+}
+.site-root .s-hcols-always {
+  grid-template-columns: var(--hc-cols, minmax(0, 1fr));
+}
+@media (min-width: 768px) {
+  .site-root .s-hcols {
+    grid-template-columns: var(--hc-cols, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  .site-root .s-hcols-lg {
+    grid-template-columns: var(--hc-cols, minmax(0, 1fr));
+  }
+}

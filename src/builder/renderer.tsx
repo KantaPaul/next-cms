@@ -10,10 +10,12 @@
 
 import {
   AuthorBio,
+  AuthorCard,
   BookmarkButton,
   PostNavigation,
   ShareButtons,
 } from './blocks/post-extras';
+import { Comments } from './blocks/comments';
 import {
   type BlockComponents,
   type BuilderDocument,
@@ -76,6 +78,8 @@ const POST_BLOCKS = {
   PostMeta,
   PostContent,
   AuthorBio,
+  AuthorCard,
+  Comments,
   ShareButtons,
   PostNavigation,
   BookmarkButton,

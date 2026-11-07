@@ -154,6 +154,12 @@ export const settingsSchema = z.object({
     'Use a GA4 measurement ID like G-XXXXXXX'
   ),
   themeTokens: themeTokensSchema.optional(),
+  readingSettings: z
+    .object({
+      postNavigation: z.enum(['auto', 'off']).optional(),
+      comments: z.boolean().optional(),
+    })
+    .nullish(),
   videoSettings: z
     .object({
       enabled: z.boolean().optional(),

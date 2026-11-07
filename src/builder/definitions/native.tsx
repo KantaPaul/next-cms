@@ -21,6 +21,7 @@ import {
 } from '../blocks/blog';
 import {
   AuthorBio,
+  AuthorCard,
   BookmarkButton,
   PostNavigation,
   ShareButtons,
@@ -61,6 +62,14 @@ import {
 import { MegaMenuCard } from '../blocks/mega-menu';
 import { Newsletter } from '../blocks/newsletter';
 import { QueryFilter } from '../blocks/query-filters';
+import { Comments } from '../blocks/comments';
+import {
+  FILTER_OPTION_DEFAULTS,
+  FILTER_OPTION_FIELDS,
+  FILTER_OPTION_SCHEMA,
+  prefixedFilterFields,
+  prefixedFilterSchema,
+} from './query-filter-fields';
 import { LoopGrid } from '../blocks/loop-grid';
 import { LoopItemField, QueryLoop } from '../blocks/query-loop';
 import { PostTypeEntries } from '../blocks/post-type-entries';
@@ -2696,6 +2705,136 @@ export const AuthorBioBlock = defineBlock({
   },
 });
 
+const POST_SECTION_DEFAULT = {
+  paddingY: 'sm' as const,
+  background: 'default' as const,
+  hideOnMobile: false,
+  hideOnTablet: false,
+  hideOnDesktop: false,
+  anchor: '',
+};
+
+const WIDTH_FIELD = {
+  label: 'Width',
+  group: CONTENT,
+  type: 'select' as const,
+  options: [
+    { label: 'Narrow', value: 'narrow' },
+    { label: 'Normal', value: 'normal' },
+    { label: 'Wide', value: 'wide' },
+  ],
+};
+
+export const AuthorCardBlock = defineBlock({
+  type: 'AuthorCard',
+  label: 'Author card',
+  category: 'post',
+  icon: 'authorcard',
+  schema: z.object({
+    layout: z.enum(['horizontal', 'stacked']).optional(),
+    latestCount: z.number().int().min(1).max(5).optional(),
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
+  }).passthrough(),
+  render: AuthorCard,
+  fields: {
+    heading: { label: 'Heading', group: CONTENT, type: 'text' },
+    layout: {
+      label: 'Layout',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Side by side', value: 'horizontal' },
+        { label: 'Stacked (centered)', value: 'stacked' },
+      ],
+    },
+    showSocial: { label: 'Show website & social links', group: CONTENT, type: 'toggle' },
+    showPostCount: { label: 'Show post count', group: CONTENT, type: 'toggle' },
+    showLatestPosts: { label: 'Show latest posts', group: CONTENT, type: 'toggle' },
+    latestCount: {
+      label: 'Latest posts to show',
+      group: CONTENT,
+      type: 'select',
+      options: [1, 2, 3, 4, 5].map(n => ({ label: String(n), value: n })),
+      when: (p: any) => p.showLatestPosts !== false,
+    },
+    latestTitle: {
+      label: 'Latest posts heading (blank = “More from <name>”)',
+      group: CONTENT,
+      type: 'text',
+      when: (p: any) => p.showLatestPosts !== false,
+    },
+    viewAllLabel: { label: '“View all posts” label (blank hides it)', group: CONTENT, type: 'text' },
+    width: WIDTH_FIELD,
+    ...cardFields(),
+    card_style: elementStyle('card', 'Card Style', BUTTON_PARTS),
+    name_style: elementStyle('name', 'Name Style', TEXT_PARTS),
+    bio_style: elementStyle('bio', 'Bio Style', TEXT_PARTS),
+    ...sectionControls(),
+  },
+  defaults: {
+    heading: 'About the author',
+    layout: 'horizontal',
+    showSocial: true,
+    showPostCount: true,
+    showLatestPosts: true,
+    latestCount: 3,
+    latestTitle: '',
+    viewAllLabel: 'View all posts',
+    width: 'normal',
+    section: POST_SECTION_DEFAULT,
+  },
+});
+
+export const CommentsBlock = defineBlock({
+  type: 'Comments',
+  label: 'Comments',
+  category: 'post',
+  icon: 'comments',
+  schema: z.object({
+    sort: z.enum(['oldest', 'newest']).optional(),
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
+  }).passthrough(),
+  render: Comments,
+  fields: {
+    heading: { label: 'Heading', group: CONTENT, type: 'text' },
+    sort: {
+      label: 'Order',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Oldest first', value: 'oldest' },
+        { label: 'Newest first', value: 'newest' },
+      ],
+    },
+    showForm: { label: 'Show comment form', group: CONTENT, type: 'toggle' },
+    formTitle: { label: 'Form title', group: CONTENT, type: 'text', when: (p: any) => p.showForm !== false },
+    submitLabel: { label: 'Submit button label', group: CONTENT, type: 'text', when: (p: any) => p.showForm !== false },
+    pendingMessage: { label: 'Message after posting', group: CONTENT, type: 'text', when: (p: any) => p.showForm !== false },
+    emptyText: { label: 'Text when there are no comments', group: CONTENT, type: 'text' },
+    closedText: { label: 'Text when comments are off (blank hides the block)', group: CONTENT, type: 'text' },
+    width: WIDTH_FIELD,
+    ...cardFields(),
+    heading_style: elementStyle('heading', 'Heading Style', TEXT_PARTS),
+    name_style: elementStyle('name', 'Commenter Name Style', TEXT_PARTS),
+    body_style: elementStyle('body', 'Comment Text Style', TEXT_PARTS),
+    ...sectionControls(),
+  },
+  defaults: {
+    heading: 'Comments',
+    sort: 'oldest',
+    showForm: true,
+    formTitle: 'Leave a comment',
+    submitLabel: 'Post comment',
+    pendingMessage: 'Thanks — your comment is awaiting moderation.',
+    emptyText: 'No comments yet. Start the conversation.',
+    closedText: 'Comments are closed.',
+    width: 'normal',
+    section: { ...POST_SECTION_DEFAULT, paddingY: 'md' },
+  },
+});
+
 export const PostNavigationBlock = defineBlock({
   type: 'PostNavigation',
   label: 'Previous / next post',
@@ -2709,6 +2848,26 @@ export const PostNavigationBlock = defineBlock({
   fields: {
     previousLabel: { label: 'Previous label', group: CONTENT, type: 'text' },
     nextLabel: { label: 'Next label', group: CONTENT, type: 'text' },
+    scope: {
+      label: 'Link to',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Any post / entry', value: 'all' },
+        { label: 'Same category / term', value: 'same-term' },
+      ],
+    },
+    layout: {
+      label: 'Layout',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Cards', value: 'split' },
+        { label: 'Minimal row', value: 'minimal' },
+      ],
+    },
+    showImage: { label: 'Show image', group: CONTENT, type: 'toggle', when: (p: any) => p.layout !== 'minimal' },
+    showDate: { label: 'Show date', group: CONTENT, type: 'toggle' },
     width: {
       label: 'Width',
       group: CONTENT,
@@ -2724,6 +2883,10 @@ export const PostNavigationBlock = defineBlock({
   defaults: {
     previousLabel: 'Previous',
     nextLabel: 'Next',
+    scope: 'all',
+    layout: 'split',
+    showImage: false,
+    showDate: false,
     width: 'normal',
     section: {
       paddingY: 'sm',
@@ -2795,6 +2958,45 @@ export const ShareButtonsBlock = defineBlock({
   },
 });
 
+/** Width / size / align fields for one header column (HeaderBar custom layout, HeaderColumns). */
+const headerColumnFields = (
+  prefix: string,
+  label: string,
+  defaults: { width: 'auto' | 'fill' | 'custom'; align: 'start' | 'center' | 'end' },
+  visible: (props: any) => boolean
+) => ({
+  [`${prefix}Width`]: {
+    label: `${label} width`,
+    type: 'select' as const,
+    options: [
+      { label: 'Fit content', value: 'auto' },
+      { label: 'Fill remaining space', value: 'fill' },
+      { label: 'Custom size', value: 'custom' },
+    ],
+    when: visible,
+  },
+  [`${prefix}Size`]: {
+    label: `${label} size (e.g. 240px, 30%, 2fr)`,
+    type: 'text' as const,
+    when: (props: any) =>
+      visible(props) && (props[`${prefix}Width`] ?? defaults.width) === 'custom',
+  },
+  [`${prefix}Align`]: {
+    label: `${label} alignment`,
+    type: 'radio' as const,
+    options: [
+      { label: 'Start', value: 'start' },
+      { label: 'Center', value: 'center' },
+      { label: 'End', value: 'end' },
+    ],
+    when: visible,
+  },
+});
+
+const headerColWidthSchema = z.enum(['auto', 'fill', 'custom']).optional();
+const headerColAlignSchema = z.enum(['start', 'center', 'end']).optional();
+const headerColSizeSchema = z.string().max(24).optional();
+
 export const HeaderBarBlock = defineBlock({
   type: 'HeaderBar',
   label: 'Header bar',
@@ -2813,8 +3015,19 @@ export const HeaderBarBlock = defineBlock({
         'equal-3',
         'left-heavy',
         'right-heavy',
+        'custom',
       ])
       .default('left-center-right'),
+    leftWidth: headerColWidthSchema,
+    leftSize: headerColSizeSchema,
+    leftAlign: headerColAlignSchema,
+    centerWidth: headerColWidthSchema,
+    centerSize: headerColSizeSchema,
+    centerAlign: headerColAlignSchema,
+    rightWidth: headerColWidthSchema,
+    rightSize: headerColSizeSchema,
+    rightAlign: headerColAlignSchema,
+    stackOn: z.enum(['none', 'mobile', 'tablet']).optional(),
     minHeight: z.string().default(''),
     borderBottom: z.boolean().default(false),
     align: z.enum(['center', 'start', 'end']).default('center'),
@@ -2846,7 +3059,21 @@ export const HeaderBarBlock = defineBlock({
         { label: '3 equal columns (33% / 33% / 33%)', value: 'equal-3' },
         { label: 'Left heavy (50% / 25% / 25%)', value: 'left-heavy' },
         { label: 'Right heavy (25% / 25% / 50%)', value: 'right-heavy' },
+        { label: 'Custom widths (set each column)', value: 'custom' },
       ],
+    },
+    ...headerColumnFields('left', 'Left column', { width: 'auto', align: 'start' }, (p: any) => p.layout === 'custom'),
+    ...headerColumnFields('center', 'Center column', { width: 'fill', align: 'center' }, (p: any) => p.layout === 'custom'),
+    ...headerColumnFields('right', 'Right column', { width: 'auto', align: 'end' }, (p: any) => p.layout === 'custom'),
+    stackOn: {
+      label: 'Stack columns on',
+      type: 'radio',
+      options: [
+        { label: 'Never', value: 'none' },
+        { label: 'Mobile', value: 'mobile' },
+        { label: 'Tablet', value: 'tablet' },
+      ],
+      when: (p: any) => p.layout === 'custom',
     },
     background: {
       label: 'Background',
@@ -2914,7 +3141,24 @@ export const HeaderColumnsBlock = defineBlock({
     columns: z.number().min(1).max(6).default(3),
     gap: z.enum(['sm', 'md', 'lg', 'xl']).default('md'),
     align: z.enum(['center', 'start', 'end']).default('center'),
-    stackOn: z.enum(['mobile', 'tablet']).default('mobile'),
+    stackOn: z.enum(['mobile', 'tablet']).default('mobile'),    col1Width: headerColWidthSchema,
+    col1Size: headerColSizeSchema,
+    col1Align: headerColAlignSchema,
+    col2Width: headerColWidthSchema,
+    col2Size: headerColSizeSchema,
+    col2Align: headerColAlignSchema,
+    col3Width: headerColWidthSchema,
+    col3Size: headerColSizeSchema,
+    col3Align: headerColAlignSchema,
+    col4Width: headerColWidthSchema,
+    col4Size: headerColSizeSchema,
+    col4Align: headerColAlignSchema,
+    col5Width: headerColWidthSchema,
+    col5Size: headerColSizeSchema,
+    col5Align: headerColAlignSchema,
+    col6Width: headerColWidthSchema,
+    col6Size: headerColSizeSchema,
+    col6Align: headerColAlignSchema,
   }),
   slots: {
     col1: { label: 'Column 1' },
@@ -2995,6 +3239,12 @@ export const HeaderColumnsBlock = defineBlock({
         { label: 'Tablet (< 1024px)', value: 'tablet' },
       ],
     },
+    ...headerColumnFields('col1', 'Column 1', { width: 'fill', align: 'start' }, (p: any) => (Number(p.columns) || 3) >= 1),
+    ...headerColumnFields('col2', 'Column 2', { width: 'fill', align: 'start' }, (p: any) => (Number(p.columns) || 3) >= 2),
+    ...headerColumnFields('col3', 'Column 3', { width: 'fill', align: 'start' }, (p: any) => (Number(p.columns) || 3) >= 3),
+    ...headerColumnFields('col4', 'Column 4', { width: 'fill', align: 'start' }, (p: any) => (Number(p.columns) || 3) >= 4),
+    ...headerColumnFields('col5', 'Column 5', { width: 'fill', align: 'start' }, (p: any) => (Number(p.columns) || 3) >= 5),
+    ...headerColumnFields('col6', 'Column 6', { width: 'fill', align: 'start' }, (p: any) => (Number(p.columns) || 3) >= 6),
   },
   defaults: {
     width: 'boxed',
@@ -3985,6 +4235,9 @@ export const QueryLoopBlock = defineBlock({
       showDate: z.boolean().default(true),
       showTerms: z.boolean().default(true),
       emptyText: z.string().default('No matching items found.'),
+      filterPosition: z.enum(['none', 'top', 'left', 'right']).default('none'),
+      filterSticky: z.boolean().optional(),
+      ...prefixedFilterSchema(),
       section: sectionSettingsSchema.optional(),
       elements: z.record(z.string(), elementStyleSchema).optional(),
     })
@@ -4216,6 +4469,27 @@ export const QueryLoopBlock = defineBlock({
     showDate: { label: 'Show published date', group: CONTENT, type: 'toggle' },
     showTerms: { label: 'Show categories/tags', group: CONTENT, type: 'toggle' },
     emptyText: { label: 'Empty state text', group: CONTENT, type: 'text' },
+    filterPosition: {
+      label: 'Filters',
+      group: 'Filters',
+      type: 'select',
+      options: [
+        { label: 'Off', value: 'none' },
+        { label: 'Top (above results)', value: 'top' },
+        { label: 'Left sidebar', value: 'left' },
+        { label: 'Right sidebar', value: 'right' },
+      ],
+    },
+    filterSticky: {
+      label: 'Keep sidebar in view while scrolling',
+      group: 'Filters',
+      type: 'toggle',
+      when: (props: any) =>
+        props.filterPosition === 'left' || props.filterPosition === 'right',
+    },
+    ...prefixedFilterFields(
+      (props: any) => Boolean(props.filterPosition) && props.filterPosition !== 'none'
+    ),
     ...cardFields(),
     ...headingStyles(),
     ...sectionControls(),
@@ -4244,6 +4518,7 @@ export const QueryLoopBlock = defineBlock({
     showDate: true,
     showTerms: true,
     emptyText: 'No matching items found.',
+    filterPosition: 'none',
     card: [],
     emptyState: [],
     section: DEFAULT_SECTION,
@@ -4527,25 +4802,7 @@ export const QueryFilterBlock = defineBlock({
         .enum(['posts', 'pages', 'collection-entries', 'videos'])
         .default('posts'),
       collectionId: z.string().optional(),
-      showKeyword: z.boolean().default(true),
-      keywordPlaceholder: z.string().default('Search items…'),
-      showCategories: z.boolean().default(true),
-      categoryStyle: z
-        .enum(['select', 'checkboxes', 'chips'])
-        .default('select'),
-      showTags: z.boolean().default(true),
-      tagStyle: z.enum(['select', 'checkboxes', 'chips']).default('chips'),
-      showDateRange: z.boolean().default(false),
-      showNumberRange: z.boolean().default(false),
-      numberRangeLabel: z.string().default('Duration / Value'),
-      showBooleanToggle: z.boolean().default(false),
-      booleanToggleLabel: z.string().default('With image only'),
-      showSort: z.boolean().default(true),
-      showResultCount: z.boolean().default(true),
-      showActiveChips: z.boolean().default(true),
-      showFacetCounts: z.boolean().default(true),
-      mobileDrawer: z.boolean().default(true),
-      applyButtonLabel: z.string().default('Apply filters'),
+      ...FILTER_OPTION_SCHEMA,
       section: sectionSettingsSchema.optional(),
       elements: z.record(z.string(), elementStyleSchema).optional(),
     })
@@ -4575,129 +4832,14 @@ export const QueryFilterBlock = defineBlock({
       render: CollectionSelectField,
       when: (props: any) => props.source === 'collection-entries',
     },
-    showKeyword: {
-      label: 'Show keyword search',
-      group: CONTENT,
-      type: 'toggle',
-    },
-    keywordPlaceholder: {
-      label: 'Keyword placeholder',
-      group: CONTENT,
-      type: 'text',
-      when: (props: any) => props.showKeyword !== false,
-    },
-    showCategories: {
-      label: 'Show category filter',
-      group: CONTENT,
-      type: 'toggle',
-    },
-    categoryStyle: {
-      label: 'Category control style',
-      group: CONTENT,
-      type: 'select',
-      options: [
-        { label: 'Dropdown select', value: 'select' },
-        { label: 'Checkboxes', value: 'checkboxes' },
-        { label: 'Filter chips', value: 'chips' },
-      ],
-      when: (props: any) => props.showCategories !== false,
-    },
-    showTags: {
-      label: 'Show tag filter',
-      group: CONTENT,
-      type: 'toggle',
-    },
-    tagStyle: {
-      label: 'Tag control style',
-      group: CONTENT,
-      type: 'select',
-      options: [
-        { label: 'Filter chips', value: 'chips' },
-        { label: 'Dropdown select', value: 'select' },
-        { label: 'Checkboxes', value: 'checkboxes' },
-      ],
-      when: (props: any) => props.showTags !== false,
-    },
-    showDateRange: {
-      label: 'Show date range filter',
-      group: CONTENT,
-      type: 'toggle',
-    },
-    showNumberRange: {
-      label: 'Show number range filter',
-      group: CONTENT,
-      type: 'toggle',
-    },
-    numberRangeLabel: {
-      label: 'Number range label',
-      group: CONTENT,
-      type: 'text',
-      when: (props: any) => Boolean(props.showNumberRange),
-    },
-    showBooleanToggle: {
-      label: 'Show yes/no toggle filter',
-      group: CONTENT,
-      type: 'toggle',
-    },
-    booleanToggleLabel: {
-      label: 'Yes/No toggle label',
-      group: CONTENT,
-      type: 'text',
-      when: (props: any) => Boolean(props.showBooleanToggle),
-    },
-    showSort: {
-      label: 'Show sort selector',
-      group: CONTENT,
-      type: 'toggle',
-    },
-    showResultCount: {
-      label: 'Show result count',
-      group: CONTENT,
-      type: 'toggle',
-    },
-    showActiveChips: {
-      label: 'Show active filter chips & clear all',
-      group: CONTENT,
-      type: 'toggle',
-    },
-    showFacetCounts: {
-      label: 'Show facet counts next to options',
-      group: CONTENT,
-      type: 'toggle',
-    },
-    mobileDrawer: {
-      label: 'Use collapsible filter drawer on mobile',
-      group: CONTENT,
-      type: 'toggle',
-    },
-    applyButtonLabel: {
-      label: 'Apply button label',
-      group: CONTENT,
-      type: 'text',
-    },
+    ...FILTER_OPTION_FIELDS,
     ...sectionControls(),
   },
   defaults: {
     targetLoopId: '',
     source: 'posts',
     collectionId: '',
-    showKeyword: true,
-    keywordPlaceholder: 'Search items…',
-    showCategories: true,
-    categoryStyle: 'select',
-    showTags: true,
-    tagStyle: 'chips',
-    showDateRange: false,
-    showNumberRange: false,
-    numberRangeLabel: 'Duration / Value',
-    showBooleanToggle: false,
-    booleanToggleLabel: 'With image only',
-    showSort: true,
-    showResultCount: true,
-    showActiveChips: true,
-    showFacetCounts: true,
-    mobileDrawer: true,
-    applyButtonLabel: 'Apply filters',
+    ...FILTER_OPTION_DEFAULTS,
     section: DEFAULT_SECTION,
   },
 });
@@ -4851,6 +4993,8 @@ export const NATIVE_BLOCKS = [
   PostContentBlock,
   RelatedPostsBlock,
   AuthorBioBlock,
+  AuthorCardBlock,
+  CommentsBlock,
   PostNavigationBlock,
   ShareButtonsBlock,
   BookmarkButtonBlock,
@@ -5115,9 +5259,11 @@ export const CATEGORIES = {
       'PostMeta',
       'PostContent',
       'AuthorBio',
+      'AuthorCard',
       'ShareButtons',
       'BookmarkButton',
       'PostNavigation',
+      'Comments',
       'RelatedPosts',
     ],
   },

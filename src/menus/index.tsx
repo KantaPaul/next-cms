@@ -19,6 +19,7 @@ import {
   Share2,
   ShieldCheck,
   LayoutGrid,
+  MessagesSquare,
 } from 'lucide-react';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS, type PermissionKey } from '@/config/permissions';
@@ -83,6 +84,12 @@ export function getMenuItems(): {
       name: 'Contact forms',
       href: PAGES.DASHBOARD.CONTACT_FORMS,
       icon: <Mail className="w-[18px]" />,
+    },
+    {
+      name: 'Comments',
+      href: PAGES.DASHBOARD.COMMENTS,
+      icon: <MessagesSquare className="w-[18px]" />,
+      permission: PERMISSIONS.COMMENTS_MODERATE,
     },
     {
       name: 'Review',

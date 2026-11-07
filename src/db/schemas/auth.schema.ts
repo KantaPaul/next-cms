@@ -4,6 +4,7 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   pgTable,
   primaryKey,
   text,
@@ -17,6 +18,14 @@ import { baseColumns, relationConfig } from '@/db/helpers/base.columns';
 import { UserStatus, userStatusEnum } from '@/db/schemas/shared.schema';
 
 const { id, ...timestampColumns } = baseColumns;
+
+/** Public social profiles on a user's author card (full https URLs). */
+export type AuthorSocialLinks = {
+  x?: string;
+  linkedin?: string;
+  github?: string;
+  instagram?: string;
+};
 const { cascade, setNull } = relationConfig;
 
 export const users = pgTable(
@@ -33,6 +42,10 @@ export const users = pgTable(
     image: text('image'),
     /** Short public bio shown by the Author Bio block on posts. */
     bio: text('bio'),
+    /** Public author profile: shown by the Author card block. */
+    jobTitle: varchar('job_title', { length: 120 }),
+    website: text('website'),
+    socialLinks: jsonb('social_links').$type<AuthorSocialLinks>(),
     status: userStatusEnum('user_status')
       .notNull()
       .default(UserStatus.Inactive),

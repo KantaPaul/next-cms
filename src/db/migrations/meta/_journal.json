@@ -190,6 +190,13 @@
       "when": 1794056411907,
       "tag": "20261107130011_user_bio",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1794076995269,
+      "tag": "20261107184315_comments_author_profile",
+      "breakpoints": true
     }
   ]
 }

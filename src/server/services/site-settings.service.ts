@@ -15,6 +15,7 @@ import {
   siteSettings,
   DEFAULT_VIDEO_SETTINGS,
   DEFAULT_SEARCH_SETTINGS,
+  DEFAULT_READING_SETTINGS,
   DEFAULT_LICENSE_SETTINGS,
   DEFAULT_AUTH_SETTINGS,
   licenseSettingsSchema,
@@ -22,6 +23,7 @@ import {
   type ThemeTokens,
   type VideoSettings,
   type SearchSettings,
+  type ReadingSettings,
   type LicenseSettings,
   type AuthSettings,
 } from '@/db/schema';
@@ -51,6 +53,7 @@ export type SiteSettingsInput = {
   themeTokens?: ThemeTokens;
   videoSettings?: VideoSettings;
   searchSettings?: SearchSettings | null;
+  readingSettings?: ReadingSettings | null;
   licenseSettings?: LicenseSettings;
   authSettings?: AuthSettings;
   robotsTxt?: string | null;
@@ -157,6 +160,7 @@ async function loadSettings(siteId: string) {
       themeTokens: resolveThemeTokens(null),
       videoSettings: DEFAULT_VIDEO_SETTINGS,
       searchSettings: DEFAULT_SEARCH_SETTINGS,
+      readingSettings: DEFAULT_READING_SETTINGS,
       licenseSettings: DEFAULT_LICENSE_SETTINGS,
       authSettings: DEFAULT_AUTH_SETTINGS,
       blockSettings: DEFAULT_BLOCK_SETTINGS,
@@ -212,6 +216,7 @@ export const siteSettingsService = {
           input.themeTokens ?? current.themeTokens
         ),
         searchSettings: input.searchSettings ?? undefined,
+        readingSettings: input.readingSettings ?? undefined,
         licenseSettings: input.licenseSettings ?? undefined,
         authSettings: undefined,
         updatedAt: new Date(),

@@ -24,6 +24,7 @@ import { PAGES } from '@/config/pages';
 import { db } from '@/db';
 import {
   categories,
+  comments,
   pages,
   postCategories,
   postContents,
@@ -259,6 +260,11 @@ async function loadPost(where: SQL | undefined, kind: 'draft' | 'published') {
       ...cardSelect,
       authorImage: users.image,
       authorBio: users.bio,
+      authorId: users.id,
+      authorJobTitle: users.jobTitle,
+      authorWebsite: users.website,
+      authorSocial: users.socialLinks,
+      allowComments: posts.allowComments,
       layout: posts.layout,
       templateId: posts.templateId,
       headerTemplateId: posts.headerTemplateId,
@@ -281,11 +287,37 @@ async function loadPost(where: SQL | undefined, kind: 'draft' | 'published') {
   const content =
     contents.find(c => c.kind === kind) ??
     contents.find(c => c.kind === 'published');
-  const [[seo], { categoriesByPost, tagsByPost }, blogUrl] = await Promise.all([
-    db.select().from(postSeo).where(eq(postSeo.postId, row.id)).limit(1),
-    loadTerms([row.id]),
-    blogIndexUrl(row.language),
-  ]);
+  const [[seo], { categoriesByPost, tagsByPost }, blogUrl, site, authorCount, commentCount] =
+    await Promise.all([
+      db.select().from(postSeo).where(eq(postSeo.postId, row.id)).limit(1),
+      loadTerms([row.id]),
+      blogIndexUrl(row.language),
+      siteContext.publicSite(),
+      row.authorId
+        ? db
+            .select({ n: count() })
+            .from(posts)
+            .where(await published(eq(posts.createdBy, row.authorId)))
+            .then(r => r[0]?.n ?? 0)
+        : Promise.resolve(0),
+      db
+        .select({ n: count() })
+        .from(comments)
+        .where(
+          and(
+            eq(comments.postId, row.id),
+            eq(comments.status, 'approved'),
+            isNull(comments.deletedAt)
+          )
+        )
+        .then(r => r[0]?.n ?? 0),
+    ]);
+  const prefix = siteSlugPrefix(site);
+  const authorUrl = row.authorId
+    ? `${prefix ? `/${prefix}` : ''}${
+        row.language !== site.defaultLocale ? `/${row.language}` : ''
+      }/blog/author/${row.authorId}`
+    : null;
 
   const view: PostView = {
     id: row.id,
@@ -299,6 +331,14 @@ async function loadPost(where: SQL | undefined, kind: 'draft' | 'published') {
     authorName: row.authorName,
     authorImage: row.authorImage,
     authorBio: row.authorBio,
+    authorId: row.authorId,
+    authorUrl,
+    authorJobTitle: row.authorJobTitle,
+    authorWebsite: row.authorWebsite,
+    authorSocial: row.authorSocial ?? null,
+    authorPostCount: Number(authorCount),
+    allowComments: row.allowComments,
+    commentCount: Number(commentCount),
     categories: categoriesByPost.get(row.id) ?? [],
     tags: tagsByPost.get(row.id) ?? [],
     headerTemplateId: row.headerTemplateId,
@@ -382,19 +422,61 @@ export const blogService = {
   },
 
   /** The published posts just before and after `publishedAt`, in the same language. */
+  /** The author's latest published posts (Author card "More from"). */
+  byAuthor: async ({
+    authorId,
+    excludeId,
+    language,
+    limit,
+  }: {
+    authorId: string;
+    excludeId?: string;
+    language: string;
+    limit: number;
+  }): Promise<PostCard[]> => {
+    const rows = await db
+      .select(cardSelect)
+      .from(posts)
+      .leftJoin(users, eq(users.id, posts.createdBy))
+      .where(
+        await published(
+          and(
+            eq(posts.createdBy, authorId),
+            eq(posts.language, language),
+            excludeId ? ne(posts.id, excludeId) : undefined
+          )
+        )
+      )
+      .orderBy(desc(posts.publishedAt))
+      .limit(Math.min(Math.max(limit, 1), 5));
+    return toCards(rows);
+  },
+
   adjacent: async ({
     postId,
     language,
     publishedAt,
+    categoryId,
   }: {
     postId: string;
     language: string;
     publishedAt: Date;
+    /** Limit to posts in this category (Post Navigation "same category"). */
+    categoryId?: string;
   }): Promise<{ previous: PostCard | null; next: PostCard | null }> => {
     const base = and(
       await published(),
       eq(posts.language, language),
-      ne(posts.id, postId)
+      ne(posts.id, postId),
+      categoryId
+        ? inArray(
+            posts.id,
+            db
+              .select({ id: postCategories.postId })
+              .from(postCategories)
+              .where(eq(postCategories.categoryId, categoryId))
+          )
+        : undefined
     );
     const one = (where: SQL | undefined, newestFirst: boolean) =>
       db

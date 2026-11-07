@@ -230,6 +230,8 @@ export const BLOCK_INFO: Record<string, BlockInfo> = {
   PostContent: { description: 'Body of the current post', semanticTag: 'article', defaultSize: FULL },
   RelatedPosts: { description: 'Posts related to this one', semanticTag: 'section', defaultSize: FULL },
   AuthorBio: { description: 'The post author’s avatar, name, and bio', semanticTag: 'aside', defaultSize: FULL },
+  AuthorCard: { description: 'Author profile card: avatar, job title, bio, website and social links, post count, latest posts and a link to all their posts', semanticTag: 'aside', defaultSize: FULL },
+  Comments: { description: 'Approved visitor comments with one level of replies and a comment form; new comments wait for approval', semanticTag: 'section', defaultSize: FULL },
   ShareButtons: { description: 'Copy-link and social share buttons', semanticTag: 'div', defaultSize: FULL },
   PostNavigation: { description: 'Links to the previous and next post', semanticTag: 'nav', defaultSize: FULL },
   BookmarkButton: { description: 'Lets visitors save the post in their browser', semanticTag: 'div', defaultSize: FULL },

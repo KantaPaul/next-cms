@@ -68,6 +68,7 @@ export const PAGES = {
     WEBHOOKS: '/dashboard/webhooks',
     REDIRECTS: '/dashboard/redirects',
     REVIEW: '/dashboard/review',
+    COMMENTS: '/dashboard/comments',
     ACCOUNT: '/dashboard/account',
     SETTINGS: '/dashboard/settings',
     SETTINGS_LICENSE: '/dashboard/settings/license',

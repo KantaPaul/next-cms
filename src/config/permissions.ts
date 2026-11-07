@@ -13,6 +13,7 @@ export const PERMISSIONS = {
   VIDEOS_DELETE: 'videos.delete',
   LICENSES_MANAGE: 'licenses.manage',
   POST_TYPES_MANAGE: 'post_types.manage',
+  COMMENTS_MODERATE: 'comments.moderate',
 } as const;
 
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -93,6 +94,11 @@ export const PERMISSION_MATRIX: {
   {
     key: PERMISSIONS.POST_TYPES_MANAGE,
     label: 'Create post types and edit their fields',
+    roles: { Admin: true, Editor: true, Author: false, Viewer: false },
+  },
+  {
+    key: PERMISSIONS.COMMENTS_MODERATE,
+    label: 'Approve, reply to, and remove blog comments',
     roles: { Admin: true, Editor: true, Author: false, Viewer: false },
   },
 ];

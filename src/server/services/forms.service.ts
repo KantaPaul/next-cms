@@ -29,7 +29,7 @@ function fieldsFromContent(content: unknown): FormField[] {
   return found;
 }
 
-async function verifyTurnstile(token: string) {
+export async function verifyTurnstile(token: string) {
   if (!env.TURNSTILE_SECRET_KEY) return true;
   if (!token) return false;
   const body = new URLSearchParams({

@@ -14,6 +14,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { baseColumns, relationConfig } from '@/db/helpers/base.columns';
 import { collectionEntries } from '@/db/schemas/collections.schema';
+import { users } from '@/db/schemas/auth.schema';
 import { pages, posts } from '@/db/schemas/pages.schema';
 import { DEFAULT_SITE_ID } from '@/db/schemas/sites.schema';
 import { videos } from '@/db/schemas/video.schema';
@@ -49,6 +50,52 @@ export const formSubmissions = pgTable(
     check(
       'form_submissions_status_check',
       sql`${t.status} in ('new', 'read', 'archived')`
+    ),
+  ]
+);
+
+export const COMMENT_STATUSES = ['pending', 'approved', 'spam', 'trash'] as const;
+export type CommentStatus = (typeof COMMENT_STATUSES)[number];
+
+/** Visitor comments on blog posts. Plain text only; new ones wait for approval. */
+export const comments = pgTable(
+  'comments',
+  {
+    id,
+    siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
+    postId: text('post_id')
+      .references(() => posts.id, cascade)
+      .notNull(),
+    /** One level of replies: a reply's parent is always a top-level comment. */
+    parentId: text('parent_id').references((): any => comments.id, cascade),
+    authorName: varchar('author_name', { length: 80 }).notNull(),
+    authorEmail: varchar('author_email', { length: 200 }).notNull(),
+    authorUrl: varchar('author_url', { length: 300 }),
+    /** Set when a signed-in staff member replies from the dashboard. */
+    userId: text('user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    body: text('body').notNull(),
+    status: varchar('status', { length: 20 }).notNull().default('pending'),
+    ipHash: varchar('ip_hash', { length: 64 }),
+    userAgent: varchar('user_agent', { length: 300 }),
+    ...timestampColumns,
+  },
+  t => [
+    index('comments_post_status_created_index').on(
+      t.postId,
+      t.status,
+      t.createdAt
+    ),
+    index('comments_site_status_created_index').on(
+      t.siteId,
+      t.status,
+      t.createdAt
+    ),
+    index('comments_ip_created_index').on(t.ipHash, t.createdAt),
+    check(
+      'comments_status_check',
+      sql`${t.status} in ('pending', 'approved', 'spam', 'trash')`
     ),
   ]
 );

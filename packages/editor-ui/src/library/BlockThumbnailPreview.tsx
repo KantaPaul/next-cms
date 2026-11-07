@@ -46,6 +46,8 @@ const BY_TYPE: Record<string, BlockThumbnailFamily> = {
   postcontent: 'text',
   postmeta: 'text',
   authorbio: 'text',
+  authorcard: 'cards',
+  comments: 'text',
   postnavigation: 'cards',
   entryterms: 'text',
   audio: 'media',

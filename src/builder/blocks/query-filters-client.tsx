@@ -41,6 +41,8 @@ export interface QueryFilterClientProps {
   showFacetCounts?: boolean;
   mobileDrawer?: boolean;
   applyButtonLabel?: string;
+  /** `vertical` stacks every control in one column (Query Loop sidebar filters). */
+  orientation?: 'horizontal' | 'vertical';
   // Server-loaded state
   activeParams?: ParsedListingParams;
   facets?: ListingFacets;
@@ -68,6 +70,7 @@ export function QueryFilterClient({
   showFacetCounts = true,
   mobileDrawer = true,
   applyButtonLabel = 'Apply filters',
+  orientation = 'horizontal',
   activeParams: serverParams,
   facets,
   totalResults = 0,
@@ -79,6 +82,10 @@ export function QueryFilterClient({
   const rawSearchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const vertical = orientation === 'vertical';
+  const fieldGrid = vertical
+    ? 'grid grid-cols-1 gap-3'
+    : 'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4';
 
   // Merge URL searchParams with server-provided activeParams
   const currentParams = useMemo(() => {
@@ -429,9 +436,9 @@ export function QueryFilterClient({
 
   const filterControlsContent = (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className={fieldGrid}>
         {showKeyword && (
-          <label className="flex flex-col gap-1 text-xs font-medium sm:col-span-2">
+          <label className={cn('flex flex-col gap-1 text-xs font-medium', !vertical && 'sm:col-span-2')}>
             <span className="s-muted">Search</span>
             <div className="relative flex items-center">
               <Search className="s-muted pointer-events-none absolute left-3 size-4" />
@@ -527,7 +534,7 @@ export function QueryFilterClient({
 
       {/* Date Range, Number Range & Boolean Toggle (R581 / QRY-11) */}
       {(showDateRange || showNumberRange || showBooleanToggle) && (
-        <div className="grid grid-cols-1 gap-3 pt-1 sm:grid-cols-2 lg:grid-cols-4">
+        <div className={cn(fieldGrid, 'pt-1')}>
           {showDateRange && (
             <>
               <label className="flex flex-col gap-1 text-xs font-medium">
@@ -621,7 +628,10 @@ export function QueryFilterClient({
       <div className="flex items-center justify-end gap-2">
         <button
           type="submit"
-          className="s-primary-bg s-radius inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold transition-opacity hover:opacity-90"
+          className={cn(
+            's-primary-bg rounded-[var(--site-btn-radius)] inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold transition-opacity hover:opacity-90',
+            vertical && 'w-full'
+          )}
         >
           <Filter className="size-3.5" />
           {applyButtonLabel}
@@ -632,12 +642,12 @@ export function QueryFilterClient({
 
   return (
     <div
-      className={cn('mb-6 flex flex-col gap-3', isPending && 'opacity-75')}
+      className={cn('flex flex-col gap-3', !vertical && 'mb-6', isPending && 'opacity-75')}
       data-query-filter={targetLoopId || 'main'}
     >
       {/* Mobile drawer trigger button (R585 / QRY-15) */}
       {mobileDrawer && (
-        <div className="flex items-center justify-between sm:hidden">
+        <div className={cn('flex items-center justify-between', vertical ? 'lg:hidden' : 'sm:hidden')}>
           <button
             type="button"
             onClick={() => setDrawerOpen(prev => !prev)}
@@ -671,7 +681,7 @@ export function QueryFilterClient({
         aria-label="Filter items"
         className={cn(
           's-surface s-border s-radius border p-4',
-          mobileDrawer && !drawerOpen && 'hidden sm:block'
+          mobileDrawer && !drawerOpen && (vertical ? 'hidden lg:block' : 'hidden sm:block')
         )}
       >
         {/* Preserve query params belonging to other QueryLoop namespaces */}

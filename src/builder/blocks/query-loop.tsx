@@ -17,6 +17,11 @@ import {
   QueryLoopPagination,
 } from './query-loop-client';
 import { formatLoopDate, SAMPLE_LOOP_ITEMS } from './loop-shared';
+import { unprefixFilterOptions } from '../definitions/query-filter-fields';
+import {
+  QueryFilterClient,
+  type QueryFilterClientProps,
+} from './query-filters-client';
 import {
   type CardStyleProps,
   cardClass,
@@ -348,7 +353,26 @@ export interface QueryLoopProps extends CardStyleProps {
   language?: string;
   section?: SectionSettings;
   editing?: boolean;
+  /** Built-in filters bound to this loop (no separate Query Filter block needed). */
+  filterPosition?: 'none' | 'top' | 'left' | 'right';
+  filterSticky?: boolean;
+  preservedHiddenParams?: Record<string, string>;
+  /** Prefixed filter options (`filterShowKeyword`, …). */
+  [key: `filter${string}`]: unknown;
 }
+
+/** Editor-only placeholder options so built-in filters are visible while designing. */
+const SAMPLE_FACETS: ListingFacets = {
+  categories: [
+    { value: 'news', label: 'News', count: 4 },
+    { value: 'guides', label: 'Guides', count: 3 },
+    { value: 'essays', label: 'Essays', count: 2 },
+  ],
+  tags: [
+    { value: 'design', label: 'Design', count: 3 },
+    { value: 'product', label: 'Product', count: 2 },
+  ],
+} as ListingFacets;
 
 const GAP_CLASSES: Record<QueryLoopGap, string> = {
   sm: 'gap-3',
@@ -447,6 +471,11 @@ export function QueryLoop({
   editing,
   cardVariant,
   cardHover,
+  facets,
+  filterPosition = 'none',
+  filterSticky = false,
+  preservedHiddenParams = {},
+  ...rest
 }: QueryLoopProps) {
   const items =
     loadedItems !== undefined
@@ -519,9 +548,8 @@ export function QueryLoop({
       ? buildItemListJsonLd(items, title)
       : null;
 
-  return (
-    <Section section={section} editing={editing}>
-      <SectionHeading elements={elements} eyebrow={eyebrow} title={title} subtitle={subtitle} />
+  const results = (
+    <>
 
       {jsonLd && (
         <script
@@ -725,6 +753,46 @@ export function QueryLoop({
           />
         )}
       </div>
+    </>
+  );
+
+  return (
+    <Section section={section} editing={editing}>
+      <SectionHeading elements={elements} eyebrow={eyebrow} title={title} subtitle={subtitle} />
+      {filterPosition === 'none' || !filterPosition ? (
+        results
+      ) : (
+        <div
+          data-query-loop-filters={filterPosition}
+          className={cn(
+            filterPosition !== 'top' &&
+              (filterPosition === 'left'
+                ? 'grid grid-cols-1 gap-8 lg:grid-cols-[18rem_minmax(0,1fr)]'
+                : 'grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]')
+          )}
+        >
+          <aside
+            aria-label="Filters"
+            className={cn(
+              'min-w-0',
+              filterPosition === 'right' && 'lg:order-2',
+              filterSticky && filterPosition !== 'top' && 'lg:sticky lg:top-24 lg:self-start'
+            )}
+          >
+            <QueryFilterClient
+              {...(unprefixFilterOptions(rest as Record<string, unknown>) as Partial<QueryFilterClientProps>)}
+              targetLoopId={loopId}
+              orientation={filterPosition === 'top' ? 'horizontal' : 'vertical'}
+              facets={facets ?? (editing ? SAMPLE_FACETS : undefined)}
+              totalResults={total}
+              activeParams={activeParams}
+              preservedHiddenParams={preservedHiddenParams}
+              editing={editing}
+            />
+          </aside>
+          <div className="min-w-0">{results}</div>
+        </div>
+      )}
     </Section>
   );
 }

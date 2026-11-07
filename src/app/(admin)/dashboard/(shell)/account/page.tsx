@@ -28,6 +28,11 @@ export default async function AccountPage() {
           name: session.user.name ?? '',
           image: (session.user as { image?: string | null }).image ?? '',
           bio: (session.user as { bio?: string | null }).bio ?? '',
+          jobTitle: (session.user as { jobTitle?: string | null }).jobTitle ?? '',
+          website: (session.user as { website?: string | null }).website ?? '',
+          social:
+            (session.user as { socialLinks?: Record<string, string> | null })
+              .socialLinks ?? {},
         }}
         hasPassword={Boolean(
           (session.user as { passwordHash?: string | null }).passwordHash

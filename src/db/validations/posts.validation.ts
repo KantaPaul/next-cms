@@ -52,6 +52,8 @@ const postFields = {
   body: z.string().optional(),
   categories: z.array(z.string()).nullish(),
   tags: z.array(z.string()).nullish(),
+  /** Visitors may comment on this post (Comments block). */
+  allowComments: z.boolean().optional(),
   seo: seoSchema.partial().optional(),
 };
 

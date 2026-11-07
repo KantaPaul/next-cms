@@ -182,3 +182,97 @@ describe('helpers', () => {
     assert.match(js, /data-site-mode/);
   });
 });
+
+describe('header column widths', () => {
+  it('builds a grid template from per-column widths', async () => {
+    const { headerGridTemplate } = await import('../blocks/header-grid');
+    assert.equal(
+      headerGridTemplate([{ width: 'auto' }, { width: 'fill' }, { width: 'auto' }]),
+      'auto minmax(0,1fr) auto'
+    );
+    assert.equal(
+      headerGridTemplate([{ width: 'custom', size: '240px' }, { width: 'custom', size: '2fr' }]),
+      '240px 2fr'
+    );
+  });
+
+  it('drops invalid custom sizes', async () => {
+    const { headerGridTemplate } = await import('../blocks/header-grid');
+    assert.equal(
+      headerGridTemplate([{ width: 'custom', size: '1px);background:red' }, { width: 'custom', size: '' }]),
+      'minmax(0,1fr) minmax(0,1fr)'
+    );
+  });
+});
+
+describe('query loop built-in filters', () => {
+  it('maps prefixed props back to filter options with defaults', async () => {
+    const { unprefixFilterOptions, prefixedFilterKey } = await import(
+      '../definitions/query-filter-fields'
+    );
+    assert.equal(prefixedFilterKey('showKeyword'), 'filterShowKeyword');
+    const opts = unprefixFilterOptions({ filterShowTags: false, filterCategoryStyle: 'chips' });
+    assert.equal(opts.showTags, false);
+    assert.equal(opts.categoryStyle, 'chips');
+    assert.equal(opts.showKeyword, true);
+    assert.equal(opts.applyButtonLabel, 'Apply filters');
+  });
+});
+
+describe('single page extras', () => {
+  it('adds previous / next before related posts, once', async () => {
+    const { defaultPostTemplate, withSingleExtras } = await import('../post-template');
+    const bare = { root: { props: {} }, content: [{ type: 'PostContent', props: { id: 'a' } }, { type: 'RelatedPosts', props: { id: 'b' } }], zones: {} };
+    const out = withSingleExtras(bare as never, { postNavigation: 'auto' });
+    assert.deepEqual(out.content.map(n => n.type), ['PostContent', 'PostNavigation', 'RelatedPosts']);
+    // Templates that already place it keep their own.
+    const tpl = defaultPostTemplate();
+    assert.equal(withSingleExtras(tpl, { postNavigation: 'auto' }), tpl);
+    assert.equal(withSingleExtras(bare as never, { postNavigation: 'off' }), bare);
+  });
+
+  it('adds comments only when switched on', async () => {
+    const { withSingleExtras } = await import('../post-template');
+    const bare = { root: { props: {} }, content: [], zones: { 'x:y': [{ type: 'PostNavigation', props: { id: 'n' } }] } };
+    assert.deepEqual(
+      withSingleExtras(bare as never, { postNavigation: 'auto', comments: true }).content.map(n => n.type),
+      ['Comments']
+    );
+    assert.equal(withSingleExtras(bare as never, { postNavigation: 'auto', comments: false }), bare);
+  });
+});
+
+describe('comment rules', () => {
+  const post = { id: 'p1', published: true, allowComments: true };
+  const base = { post, commentsEnabled: true, parent: null, recentFromIp: 0 };
+  const ok = { honeypot: false, turnstileOk: true };
+
+  it('accepts a comment as pending', async () => {
+    const { decideComment } = await import('@/server/services/comments.rules');
+    assert.deepEqual(decideComment({ postId: 'p1' }, base, ok), { ok: true, status: 'pending' });
+  });
+
+  it('rejects closed posts and site-wide off', async () => {
+    const { decideComment } = await import('@/server/services/comments.rules');
+    assert.equal(decideComment({ postId: 'p1' }, { ...base, post: { ...post, allowComments: false } }, ok).ok, false);
+    assert.equal(decideComment({ postId: 'p1' }, { ...base, commentsEnabled: false }, ok).ok, false);
+    assert.equal(decideComment({ postId: 'p1' }, { ...base, post: null }, ok).ok, false);
+  });
+
+  it('allows one level of replies only', async () => {
+    const { decideComment } = await import('@/server/services/comments.rules');
+    const top = { postId: 'p1', parentId: null, status: 'approved' };
+    assert.equal(decideComment({ postId: 'p1', parentId: 'c1' }, { ...base, parent: top }, ok).ok, true);
+    const reply = { ...top, parentId: 'c0' };
+    assert.equal(decideComment({ postId: 'p1', parentId: 'c2' }, { ...base, parent: reply }, ok).ok, false);
+    assert.equal(decideComment({ postId: 'p1', parentId: 'c1' }, { ...base, parent: { ...top, postId: 'other' } }, ok).ok, false);
+  });
+
+  it('marks honeypot spam and rate-limits the sixth comment', async () => {
+    const { decideComment, COMMENT_RATE_LIMIT } = await import('@/server/services/comments.rules');
+    assert.deepEqual(decideComment({ postId: 'p1' }, base, { honeypot: true, turnstileOk: false }), { ok: true, status: 'spam' });
+    const limited = decideComment({ postId: 'p1' }, { ...base, recentFromIp: COMMENT_RATE_LIMIT }, ok);
+    assert.equal(limited.ok, false);
+    assert.equal(!limited.ok && limited.status, 429);
+  });
+});

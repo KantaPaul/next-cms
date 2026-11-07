@@ -41,11 +41,43 @@ const adjacentSchema = z.object({
   postId: z.string().max(100),
   language: z.string().max(10),
   publishedAt: z.coerce.date(),
+  categoryId: z.string().max(100).optional(),
 });
 
 /** Previous (older) and next (newer) published posts, for the Post Navigation block. */
 export async function getAdjacentPosts(input: z.input<typeof adjacentSchema>) {
   return blogService.adjacent(adjacentSchema.parse(input));
+}
+
+const authorPostsSchema = z.object({
+  authorId: z.string().max(100),
+  excludeId: z.string().max(100).optional(),
+  language: z.string().max(10),
+  limit: z.coerce.number().int().min(1).max(5),
+});
+
+/** An author's latest published posts, for the Author card block. */
+export async function getAuthorPosts(input: z.input<typeof authorPostsSchema>) {
+  return blogService.byAuthor(authorPostsSchema.parse(input));
+}
+
+const postCommentsSchema = z.object({
+  postId: z.string().max(100),
+  sort: z.enum(['oldest', 'newest']).default('oldest'),
+});
+
+/** Approved comments for the Comments block, and whether new ones are accepted site-wide. */
+export async function getPostComments(input: z.input<typeof postCommentsSchema>) {
+  const { postId, sort } = postCommentsSchema.parse(input);
+  const [{ commentsService }, { siteSettingsService }] = await Promise.all([
+    import('@/server/services/comments.service'),
+    import('@/server/services/site-settings.service'),
+  ]);
+  const [result, settings] = await Promise.all([
+    commentsService.forPost(postId, sort),
+    siteSettingsService.getPublic(),
+  ]);
+  return { ...result, open: settings.readingSettings?.comments !== false };
 }
 
 /** Categories and tags that appear on published posts, for public filter dropdowns. */

@@ -160,6 +160,7 @@ export function SettingsForm({
     > | null;
     themeTokens?: ThemeTokens;
     videoSettings: { providers: Record<string, boolean> } | null;
+    readingSettings?: { postNavigation?: 'auto' | 'off'; comments?: boolean } | null;
     searchSettings?: {
       synonyms: Array<{ term: string; synonyms: string[] }>;
       pinnedResults: Array<{
@@ -748,6 +749,50 @@ export function SettingsForm({
               </div>
             </div>
           </div>
+        </Section>
+
+        <Section
+          title="Single pages"
+          description="How blog posts and post-type entries behave on the public site."
+        >
+          <Controller
+            name="readingSettings.postNavigation"
+            render={({ field }) => (
+              <Field group label="Previous / next links">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={field.value !== 'off'}
+                    onChange={() => field.onChange(field.value === 'off' ? 'auto' : 'off')}
+                    className="rounded border-steel-300 text-indigo-600 focus:ring-indigo-500 dark:border-dark-300"
+                  />
+                  <span>Show previous / next links on every single page</span>
+                </label>
+                <p className="text-xs text-steel-500">
+                  Added after the content when a template doesn&apos;t already include the Previous / next block.
+                </p>
+              </Field>
+            )}
+          />
+          <Controller
+            name="readingSettings.comments"
+            render={({ field }) => (
+              <Field group label="Comments">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={field.value !== false}
+                    onChange={() => field.onChange(field.value === false)}
+                    className="rounded border-steel-300 text-indigo-600 focus:ring-indigo-500 dark:border-dark-300"
+                  />
+                  <span>Allow comments on blog posts</span>
+                </label>
+                <p className="text-xs text-steel-500">
+                  Each post can still switch comments off. New comments wait for approval under Comments.
+                </p>
+              </Field>
+            )}
+          />
         </Section>
 
         <Section

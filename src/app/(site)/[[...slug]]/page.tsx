@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { getGlobalBlockContent } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
 import { renderBuilderContent } from '@/builder/render-content';
+import { withSingleExtras } from '@/builder/post-template';
 import { sanitizeRichText } from '@/builder/sanitize';
 import {
   type CollectionEntryWithFields,
@@ -868,7 +869,12 @@ async function PostRoute({
     },
   };
   const rendered = await renderBuilderContent({
-    content: layout,
+    content: withSingleExtras(layout, {
+      postNavigation: settings.readingSettings?.postNavigation,
+      comments:
+        settings.readingSettings?.comments !== false &&
+        view.allowComments !== false,
+    }),
     kind: 'post',
     metadata,
   });
@@ -1634,6 +1640,7 @@ export default async function SitePage({ params, searchParams }: Params) {
           custom: entry?.data,
           post: postView,
           collectionEntry: entry,
+          defaultLocale: site.defaultLocale,
           site: {
             name: settings.siteName,
             description: settings.siteDescription,
@@ -1643,7 +1650,9 @@ export default async function SitePage({ params, searchParams }: Params) {
         };
 
         const rendered = await renderBuilderContent({
-          content: layout,
+          content: withSingleExtras(layout, {
+            postNavigation: settings.readingSettings?.postNavigation,
+          }),
           metadata,
           kind: 'post',
         });

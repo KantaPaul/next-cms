@@ -16,7 +16,14 @@ export function AccountForms({
   hasPassword,
   totp,
 }: {
-  profile: { name: string; image: string; bio: string };
+  profile: {
+    name: string;
+    image: string;
+    bio: string;
+    jobTitle: string;
+    website: string;
+    social: { x?: string; linkedin?: string; github?: string; instagram?: string };
+  };
   hasPassword: boolean;
   totp: { secret: string; uri: string; enabled: boolean } | null;
 }) {
@@ -44,7 +51,7 @@ export function AccountForms({
       >
         <h2 className="text-lg font-medium">Public author profile</h2>
         <p className="text-sm text-steel-500">
-          Shown on posts you write, in the Author Bio block and post meta.
+          Shown on posts you write, in the Author bio and Author card blocks and post meta.
         </p>
         <FormInput
           name="name"
@@ -69,6 +76,41 @@ export function AccountForms({
           aria-label="Bio"
           className="w-full rounded-md border border-steel-200 bg-transparent px-3 py-2 text-sm dark:border-dark-300"
         />
+        <FormInput
+          name="jobTitle"
+          defaultValue={profile.jobTitle}
+          placeholder="Job title (e.g. Senior editor)"
+          maxLength={120}
+          aria-label="Job title"
+        />
+        <FormInput
+          name="website"
+          type="url"
+          defaultValue={profile.website}
+          placeholder="Website (https://…)"
+          maxLength={300}
+          aria-label="Website"
+        />
+        <div className="grid gap-3 sm:grid-cols-2">
+          {(
+            [
+              ['x', 'X profile URL'],
+              ['linkedin', 'LinkedIn profile URL'],
+              ['github', 'GitHub profile URL'],
+              ['instagram', 'Instagram profile URL'],
+            ] as const
+          ).map(([key, label]) => (
+            <FormInput
+              key={key}
+              name={key}
+              type="url"
+              defaultValue={profile.social[key] ?? ''}
+              placeholder={`${label} (https://…)`}
+              maxLength={300}
+              aria-label={label}
+            />
+          ))}
+        </div>
         <Button type="submit" className="justify-self-start">
           Save profile
         </Button>

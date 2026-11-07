@@ -104,6 +104,7 @@ function PostFormInner({ id }: { id: string }) {
       body: initialValues?.body ?? '',
       categories: initialValues?.categories ?? [],
       tags: initialValues?.tags ?? [],
+      allowComments: initialValues?.allowComments ?? true,
       seo: {
         title: initialValues?.seo?.title ?? '',
         description: initialValues?.seo?.description ?? '',
@@ -337,6 +338,11 @@ function PostSidebar({
               type: 'multiselect',
               placeholder: taxonomy.tags.length ? 'Select tags' : 'No tags yet',
               options: taxonomy.tags,
+            },
+            {
+              name: 'allowComments',
+              label: 'Allow comments',
+              type: 'switch',
             },
           ],
         ]}

@@ -26,6 +26,16 @@ export type PostView = {
   authorImage?: string | null;
   /** Author's public bio (Account → Public author profile). */
   authorBio?: string | null;
+  authorId?: string | null;
+  authorJobTitle?: string | null;
+  authorWebsite?: string | null;
+  authorSocial?: { x?: string; linkedin?: string; github?: string; instagram?: string } | null;
+  /** Published posts by this author. */
+  authorPostCount?: number;
+  /** Per-post comments switch (blog posts only). */
+  allowComments?: boolean;
+  /** Approved comments. */
+  commentCount?: number;
   categories: PostTerm[];
   tags: PostTerm[];
   headerTemplateId?: string | null;
@@ -50,6 +60,12 @@ export const SAMPLE_POST: PostView = {
   authorName: 'Jane Writer',
   authorBio:
     'Jane writes about publishing tools and editorial design. This bio comes from the author’s account profile.',
+  authorJobTitle: 'Senior editor',
+  authorWebsite: 'https://example.com',
+  authorSocial: { x: 'https://x.com/example', linkedin: 'https://www.linkedin.com/in/example' },
+  authorPostCount: 12,
+  allowComments: true,
+  commentCount: 2,
   categories: [{ id: 'sample-category', name: 'News', slug: 'news' }],
   tags: [
     { id: 'sample-tag', name: 'Product', slug: 'product', color: '#6366f1' },
@@ -64,6 +80,8 @@ export const POST_BLOCK_TYPES = [
   'PostContent',
   'RelatedPosts',
   'AuthorBio',
+  'AuthorCard',
+  'Comments',
   'ShareButtons',
   'PostNavigation',
   'BookmarkButton',
@@ -118,6 +136,16 @@ export const defaultPostTemplate = (): BuilderData => ({
       },
     },
     {
+      type: 'PostNavigation',
+      props: {
+        id: 'PostNavigation-default',
+        previousLabel: 'Previous',
+        nextLabel: 'Next',
+        width: 'normal',
+        section: { ...DEFAULT_SECTION, paddingY: 'sm' },
+      },
+    },
+    {
       type: 'RelatedPosts',
       props: {
         id: 'RelatedPosts-default',
@@ -130,6 +158,52 @@ export const defaultPostTemplate = (): BuilderData => ({
   ],
   zones: {},
 });
+
+const containsBlock = (data: BuilderData, type: string) =>
+  data.content.some(n => n.type === type) ||
+  Object.values(data.zones ?? {}).some(items =>
+    (items as { type: string }[]).some(n => n.type === type)
+  );
+
+/**
+ * Settings → Single pages: adds Previous / next (and, for blog posts,
+ * Comments) to a single-page layout that doesn't already place them, so
+ * every single page gets them without editing each template.
+ */
+export function withSingleExtras(
+  layout: BuilderData,
+  opts: { postNavigation?: 'auto' | 'off'; comments?: boolean }
+): BuilderData {
+  const extras: BuilderData['content'] = [];
+  if (opts.postNavigation !== 'off' && !containsBlock(layout, 'PostNavigation')) {
+    extras.push({
+      type: 'PostNavigation',
+      props: {
+        id: 'PostNavigation-auto',
+        previousLabel: 'Previous',
+        nextLabel: 'Next',
+        width: 'normal',
+        section: { ...DEFAULT_SECTION, paddingY: 'sm' },
+      },
+    });
+  }
+  if (opts.comments && !containsBlock(layout, 'Comments')) {
+    extras.push({
+      type: 'Comments',
+      props: {
+        id: 'Comments-auto',
+        heading: 'Comments',
+        width: 'normal',
+        section: { ...DEFAULT_SECTION, paddingY: 'md' },
+      },
+    });
+  }
+  if (!extras.length) return layout;
+  const content = [...layout.content];
+  const related = content.findIndex(n => n.type === 'RelatedPosts');
+  content.splice(related === -1 ? content.length : related, 0, ...extras);
+  return { ...layout, content };
+}
 
 export const resolvePostTemplate = (value: unknown): BuilderData =>
   isBuilderData(value) && value.content.length ? value : defaultPostTemplate();

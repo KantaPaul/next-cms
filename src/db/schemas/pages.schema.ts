@@ -447,6 +447,19 @@ export type SearchPinnedResult = {
   kind?: 'page' | 'post' | 'collection' | 'video';
 };
 
+/** Settings → Single pages: site-wide behaviour of post and entry singles. */
+export type ReadingSettings = {
+  /** `auto` adds Previous / Next links to single pages whose template doesn't include them. */
+  postNavigation?: 'auto' | 'off';
+  /** Site-wide switch for blog comments (each post can still switch them off). */
+  comments?: boolean;
+};
+
+export const DEFAULT_READING_SETTINGS: ReadingSettings = {
+  postNavigation: 'auto',
+  comments: true,
+};
+
 export type SearchSettings = {
   synonyms: Record<string, string[]>;
   pinnedResults: SearchPinnedResult[];
@@ -517,6 +530,10 @@ export const siteSettings = pgTable('site_settings', {
   videoSettings: jsonb('video_settings')
     .$type<VideoSettings>()
     .default(DEFAULT_VIDEO_SETTINGS)
+    .notNull(),
+  readingSettings: jsonb('reading_settings')
+    .$type<ReadingSettings>()
+    .default(DEFAULT_READING_SETTINGS)
     .notNull(),
   searchSettings: jsonb('search_settings')
     .$type<SearchSettings>()
@@ -764,6 +781,8 @@ export const posts = pgTable(
     layout: postLayoutEnum('layout').default(PostLayout.template).notNull(),
     /** Null uses the default template. */
     templateId: text('template_id').references(() => postTemplates.id, setNull),
+    /** Visitors may comment (Comments block); Settings → Single pages can switch comments off site-wide. */
+    allowComments: boolean('allow_comments').default(true).notNull(),
     language: text('language').default('en').notNull(),
     headerTemplateId: text('header_template_id'),
     footerTemplateId: text('footer_template_id'),
