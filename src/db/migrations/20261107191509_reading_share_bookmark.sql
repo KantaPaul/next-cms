@@ -1,0 +1,1 @@
+ALTER TABLE "site_settings" ALTER COLUMN "reading_settings" SET DEFAULT '{"postNavigation":"auto","comments":true,"share":true,"bookmark":true}'::jsonb;

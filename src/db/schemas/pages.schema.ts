@@ -453,11 +453,17 @@ export type ReadingSettings = {
   postNavigation?: 'auto' | 'off';
   /** Site-wide switch for blog comments (each post can still switch them off). */
   comments?: boolean;
+  /** Share buttons on single pages whose template doesn't include them. */
+  share?: boolean;
+  /** Bookmark (save) button on single pages whose template doesn't include one. */
+  bookmark?: boolean;
 };
 
 export const DEFAULT_READING_SETTINGS: ReadingSettings = {
   postNavigation: 'auto',
   comments: true,
+  share: true,
+  bookmark: true,
 };
 
 export type SearchSettings = {

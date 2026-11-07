@@ -73,3 +73,40 @@ export function decideComment(
   }
   return { ok: true, status: 'pending' };
 }
+
+/** Visitor cookie that ties a browser to its own comments and reactions. */
+export const COMMENTER_COOKIE = 'cms_commenter';
+
+export type ReactionValue = -1 | 0 | 1;
+
+export type ReactionDecision =
+  | { ok: true }
+  | { ok: false; status: number; error: string };
+
+/**
+ * Like / dislike rules: only approved comments on open posts, and never your
+ * own comment (same commenter cookie, or same network as the comment).
+ */
+export function decideReaction(
+  comment: { status: string; voterHash: string | null; ipHash: string | null } | null,
+  reactor: { voterHash: string; ipHash: string },
+  open: boolean
+): ReactionDecision {
+  if (!comment || comment.status !== 'approved') {
+    return { ok: false, status: 404, error: 'This comment is not available.' };
+  }
+  if (!open) {
+    return { ok: false, status: 403, error: 'Comments are closed on this post.' };
+  }
+  if (
+    (comment.voterHash && comment.voterHash === reactor.voterHash) ||
+    (comment.ipHash && comment.ipHash === reactor.ipHash)
+  ) {
+    return {
+      ok: false,
+      status: 403,
+      error: 'You can’t like or dislike your own comment.',
+    };
+  }
+  return { ok: true };
+}

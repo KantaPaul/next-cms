@@ -160,7 +160,12 @@ export function SettingsForm({
     > | null;
     themeTokens?: ThemeTokens;
     videoSettings: { providers: Record<string, boolean> } | null;
-    readingSettings?: { postNavigation?: 'auto' | 'off'; comments?: boolean } | null;
+    readingSettings?: {
+      postNavigation?: 'auto' | 'off';
+      comments?: boolean;
+      share?: boolean;
+      bookmark?: boolean;
+    } | null;
     searchSettings?: {
       synonyms: Array<{ term: string; synonyms: string[] }>;
       pinnedResults: Array<{
@@ -770,6 +775,44 @@ export function SettingsForm({
                 </label>
                 <p className="text-xs text-steel-500">
                   Added after the content when a template doesn&apos;t already include the Previous / next block.
+                </p>
+              </Field>
+            )}
+          />
+          <Controller
+            name="readingSettings.share"
+            render={({ field }) => (
+              <Field group label="Share buttons">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={field.value !== false}
+                    onChange={() => field.onChange(field.value === false)}
+                    className="rounded border-steel-300 text-indigo-600 focus:ring-indigo-500 dark:border-dark-300"
+                  />
+                  <span>Show share buttons on every single page</span>
+                </label>
+                <p className="text-xs text-steel-500">
+                  Copy link, X, LinkedIn and email, under the content. Templates that already include the block keep their own.
+                </p>
+              </Field>
+            )}
+          />
+          <Controller
+            name="readingSettings.bookmark"
+            render={({ field }) => (
+              <Field group label="Bookmark">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={field.value !== false}
+                    onChange={() => field.onChange(field.value === false)}
+                    className="rounded border-steel-300 text-indigo-600 focus:ring-indigo-500 dark:border-dark-300"
+                  />
+                  <span>Show a bookmark (save for later) button on every single page</span>
+                </label>
+                <p className="text-xs text-steel-500">
+                  Saved items are kept in the visitor’s browser and listed by the Bookmarks block. Templates that already include the block keep their own.
                 </p>
               </Field>
             )}

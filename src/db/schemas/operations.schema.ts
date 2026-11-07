@@ -7,6 +7,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -78,6 +79,8 @@ export const comments = pgTable(
     body: text('body').notNull(),
     status: varchar('status', { length: 20 }).notNull().default('pending'),
     ipHash: varchar('ip_hash', { length: 64 }),
+    /** Hashed commenter cookie: stops people liking or disliking their own comment. */
+    voterHash: varchar('voter_hash', { length: 64 }),
     userAgent: varchar('user_agent', { length: 300 }),
     ...timestampColumns,
   },
@@ -97,6 +100,27 @@ export const comments = pgTable(
       'comments_status_check',
       sql`${t.status} in ('pending', 'approved', 'spam', 'trash')`
     ),
+  ]
+);
+
+/** One like (+1) or dislike (-1) per visitor per comment. */
+export const commentReactions = pgTable(
+  'comment_reactions',
+  {
+    commentId: text('comment_id')
+      .references(() => comments.id, cascade)
+      .notNull(),
+    /** Hashed visitor cookie. */
+    voterHash: varchar('voter_hash', { length: 64 }).notNull(),
+    ipHash: varchar('ip_hash', { length: 64 }),
+    value: integer('value').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }),
+  },
+  t => [
+    primaryKey({ columns: [t.commentId, t.voterHash] }),
+    index('comment_reactions_comment_ip_index').on(t.commentId, t.ipHash),
+    check('comment_reactions_value_check', sql`${t.value} in (-1, 1)`),
   ]
 );
 

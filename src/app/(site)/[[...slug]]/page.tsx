@@ -871,6 +871,8 @@ async function PostRoute({
   const rendered = await renderBuilderContent({
     content: withSingleExtras(layout, {
       postNavigation: settings.readingSettings?.postNavigation,
+      share: settings.readingSettings?.share,
+      bookmark: settings.readingSettings?.bookmark,
       comments:
         settings.readingSettings?.comments !== false &&
         view.allowComments !== false,
@@ -1652,6 +1654,8 @@ export default async function SitePage({ params, searchParams }: Params) {
         const rendered = await renderBuilderContent({
           content: withSingleExtras(layout, {
             postNavigation: settings.readingSettings?.postNavigation,
+            share: settings.readingSettings?.share,
+            bookmark: settings.readingSettings?.bookmark,
           }),
           metadata,
           kind: 'post',

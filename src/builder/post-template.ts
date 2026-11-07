@@ -159,11 +159,13 @@ export const defaultPostTemplate = (): BuilderData => ({
   zones: {},
 });
 
+const allNodes = (data: BuilderData) => [
+  ...data.content,
+  ...Object.values(data.zones ?? {}).flat(),
+] as { type: string; props: Record<string, unknown> }[];
+
 const containsBlock = (data: BuilderData, type: string) =>
-  data.content.some(n => n.type === type) ||
-  Object.values(data.zones ?? {}).some(items =>
-    (items as { type: string }[]).some(n => n.type === type)
-  );
+  allNodes(data).some(n => n.type === type);
 
 /**
  * Settings → Single pages: adds Previous / next (and, for blog posts,
@@ -172,9 +174,41 @@ const containsBlock = (data: BuilderData, type: string) =>
  */
 export function withSingleExtras(
   layout: BuilderData,
-  opts: { postNavigation?: 'auto' | 'off'; comments?: boolean }
+  opts: {
+    postNavigation?: 'auto' | 'off';
+    comments?: boolean;
+    /** Share buttons on every single page (default on). */
+    share?: boolean;
+    /** Bookmark (save for later) button on every single page (default on). */
+    bookmark?: boolean;
+  }
 ): BuilderData {
   const extras: BuilderData['content'] = [];
+  const nodes = allNodes(layout);
+  const needShare = opts.share !== false && !nodes.some(n => n.type === 'ShareButtons');
+  const needBookmark =
+    opts.bookmark !== false &&
+    !nodes.some(
+      n =>
+        n.type === 'BookmarkButton' ||
+        (n.type === 'ShareButtons' && Boolean((n.props as { showBookmark?: boolean }).showBookmark))
+    );
+  const actions: BuilderData['content'] = [];
+  if (needShare || needBookmark) {
+    actions.push({
+      type: 'ShareButtons',
+      props: {
+        id: 'ShareButtons-auto',
+        label: 'Share',
+        networks: needShare ? 'default' : 'none',
+        showBookmark: needBookmark,
+        bookmarkLabel: 'Save',
+        align: 'left',
+        width: 'normal',
+        section: { ...DEFAULT_SECTION, paddingY: 'sm' },
+      },
+    });
+  }
   if (opts.postNavigation !== 'off' && !containsBlock(layout, 'PostNavigation')) {
     extras.push({
       type: 'PostNavigation',
@@ -198,8 +232,17 @@ export function withSingleExtras(
       },
     });
   }
-  if (!extras.length) return layout;
+  if (!extras.length && !actions.length) return layout;
   const content = [...layout.content];
+  // Share / save sit right after the article body; nav and comments before related posts.
+  if (actions.length) {
+    const body = content.findIndex(n => n.type === 'PostContent');
+    const tail = content.findIndex(n =>
+      ['PostNavigation', 'Comments', 'RelatedPosts'].includes(n.type)
+    );
+    const at = body !== -1 ? body + 1 : tail !== -1 ? tail : content.length;
+    content.splice(at, 0, ...actions);
+  }
   const related = content.findIndex(n => n.type === 'RelatedPosts');
   content.splice(related === -1 ? content.length : related, 0, ...extras);
   return { ...layout, content };

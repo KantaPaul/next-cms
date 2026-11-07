@@ -2,7 +2,7 @@ import type React from 'react';
 import { cn } from '@/lib/utils/cn';
 import type { PostView } from '../post-template';
 import type { ElementStyle } from '../style';
-import { CommentForm, ReplyToggle } from './comments-client';
+import { CommentForm, CommentReactions, ReplyToggle } from './comments-client';
 import { el } from './element';
 import { type CardStyleProps, cardClass, Section, type SectionSettings } from './section';
 
@@ -14,6 +14,8 @@ export type CommentView = {
   isStaff: boolean;
   body: string;
   createdAt: string;
+  likes?: number;
+  dislikes?: number;
   replies: CommentView[];
 };
 
@@ -27,6 +29,8 @@ export const SAMPLE_COMMENTS: CommentView[] = [
     isStaff: false,
     body: 'This is a sample comment. Approved comments from visitors show here.',
     createdAt: new Date('2026-01-16T10:00:00Z').toISOString(),
+    likes: 4,
+    dislikes: 1,
     replies: [
       {
         id: 'sample-2',
@@ -50,6 +54,8 @@ export type CommentsProps = CardStyleProps & {
   sort?: 'oldest' | 'newest';
   width?: keyof typeof WIDTH;
   showForm?: boolean;
+  /** Like / dislike buttons on each comment. */
+  showReactions?: boolean;
   formTitle?: string;
   submitLabel?: string;
   pendingMessage?: string;
@@ -135,16 +141,27 @@ function CommentItem({
           </time>
         </p>
         <Body text={c.body} {...el(p, 'body', 'mt-1.5 flex flex-col gap-2 leading-relaxed')} />
-        {!reply && p.open !== false && p.showForm !== false ? (
-          <div className="mt-2">
-            <ReplyToggle
-              postId={p.post.id}
-              parentId={c.id}
-              labels={{ submitLabel: 'Post reply', pendingMessage: p.pendingMessage }}
-              editing={p.editing}
-            />
+        {(p.showReactions !== false || (!reply && p.open !== false && p.showForm !== false)) && (
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+            {p.showReactions !== false ? (
+              <CommentReactions
+                postId={p.post.id}
+                commentId={c.id}
+                likes={c.likes ?? 0}
+                dislikes={c.dislikes ?? 0}
+                editing={p.editing}
+              />
+            ) : null}
+            {!reply && p.open !== false && p.showForm !== false ? (
+              <ReplyToggle
+                postId={p.post.id}
+                parentId={c.id}
+                labels={{ submitLabel: 'Post reply', pendingMessage: p.pendingMessage }}
+                editing={p.editing}
+              />
+            ) : null}
           </div>
-        ) : null}
+        )}
         {c.replies.length > 0 ? (
           <ol className="mt-2 border-l border-[var(--site-border)] pl-4">
             {c.replies.map(r => (

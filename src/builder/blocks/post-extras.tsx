@@ -409,9 +409,12 @@ export function ShareButtons(
   p: PostBlock & {
     label?: string;
     /** A preset name (inspector select) or an explicit list. */
-    networks?: 'default' | 'all' | 'copy' | ShareNetwork[];
+    networks?: 'default' | 'all' | 'copy' | 'none' | ShareNetwork[];
     align?: 'left' | 'center';
     width?: keyof typeof WIDTH;
+    /** Save-for-later button in the same row. */
+    showBookmark?: boolean;
+    bookmarkLabel?: string;
   }
 ) {
   const list: string[] = Array.isArray(p.networks)
@@ -420,7 +423,9 @@ export function ShareButtons(
       ? SHARE_NETWORKS
       : p.networks === 'copy'
         ? ['copy']
-        : ['copy', 'x', 'linkedin', 'email'];
+        : p.networks === 'none'
+          ? []
+          : ['copy', 'x', 'linkedin', 'email'];
   const networks = list.filter((n): n is ShareNetwork =>
     SHARE_NETWORKS.includes(n as ShareNetwork)
   );
@@ -430,12 +435,28 @@ export function ShareButtons(
       editing={p.editing}
       innerClassName={WIDTH[p.width ?? 'normal']}
     >
-      <ShareButtonsClient
-        networks={networks}
-        title={p.post.title}
-        label={p.label}
-        align={p.align}
-      />
+      <div
+        className={cn(
+          'flex flex-wrap items-center gap-x-6 gap-y-3',
+          p.align === 'center' ? 'justify-center' : 'justify-between'
+        )}
+      >
+        {networks.length > 0 && (
+          <ShareButtonsClient
+            networks={networks}
+            title={p.post.title}
+            label={p.label}
+            align={p.align}
+          />
+        )}
+        {p.showBookmark && (
+          <BookmarkToggle
+            title={p.post.title}
+            image={p.post.featuredImage}
+            label={p.bookmarkLabel ?? 'Save'}
+          />
+        )}
+      </div>
     </Section>
   );
 }

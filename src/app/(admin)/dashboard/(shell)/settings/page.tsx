@@ -76,6 +76,8 @@ export default async function SettingsPage() {
           readingSettings: {
             postNavigation: settings.readingSettings?.postNavigation ?? 'auto',
             comments: settings.readingSettings?.comments ?? true,
+            share: settings.readingSettings?.share ?? true,
+            bookmark: settings.readingSettings?.bookmark ?? true,
           },
           searchSettings: {
             synonyms: Object.entries(settings.searchSettings?.synonyms ?? {}).map(

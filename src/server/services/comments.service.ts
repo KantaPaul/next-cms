@@ -1,8 +1,9 @@
 import 'server-only';
-import { and, asc, count, desc, eq, gt, inArray, isNull } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import {
   type CommentStatus,
+  commentReactions,
   comments,
   posts,
   users,
@@ -19,6 +20,8 @@ import {
   COMMENT_RATE_WINDOW_MS,
   commentInputSchema,
   decideComment,
+  decideReaction,
+  type ReactionValue,
 } from './comments.rules';
 
 /** What the public Comments block renders (no emails). */
@@ -29,8 +32,31 @@ export type PublicComment = {
   isStaff: boolean;
   body: string;
   createdAt: string;
+  likes: number;
+  dislikes: number;
   replies: PublicComment[];
 };
+
+const voterHashOf = (key: string) => hashIdentifier(`voter:${key}`);
+const ipHashOf = (ip: string) => hashIdentifier(`comment:${ip}`);
+
+async function reactionTotals(ids: string[]) {
+  const out = new Map<string, { likes: number; dislikes: number }>();
+  if (!ids.length) return out;
+  const rows = await db
+    .select({
+      commentId: commentReactions.commentId,
+      likes: sql<number>`count(*) filter (where ${commentReactions.value} = 1)`,
+      dislikes: sql<number>`count(*) filter (where ${commentReactions.value} = -1)`,
+    })
+    .from(commentReactions)
+    .where(inArray(commentReactions.commentId, ids))
+    .groupBy(commentReactions.commentId);
+  for (const r of rows) {
+    out.set(r.commentId, { likes: Number(r.likes), dislikes: Number(r.dislikes) });
+  }
+  return out;
+}
 
 const publicSelect = {
   id: comments.id,
@@ -44,7 +70,10 @@ const publicSelect = {
 
 export const commentsService = {
   /** Visitor submission from the Comments block (POST /api/comments). */
-  submit: async (formData: FormData, meta: { ip: string; userAgent: string }) => {
+  submit: async (
+    formData: FormData,
+    meta: { ip: string; userAgent: string; voterKey: string }
+  ) => {
     const read = (k: string) => {
       const v = formData.get(k);
       return typeof v === 'string' ? v : undefined;
@@ -66,7 +95,7 @@ export const commentsService = {
     }
     const input = parsed.data;
     const site = await siteContext.publicSite();
-    const ipHash = hashIdentifier(`comment:${meta.ip}`);
+    const ipHash = ipHashOf(meta.ip);
     const since = new Date(Date.now() - COMMENT_RATE_WINDOW_MS);
 
     const [[post], parentRows, [recent], settings] = await Promise.all([
@@ -138,6 +167,7 @@ export const commentsService = {
       body: input.body,
       status: decision.status,
       ipHash,
+      voterHash: voterHashOf(meta.voterKey),
       userAgent: meta.userAgent.slice(0, 300) || null,
     });
 
@@ -173,6 +203,7 @@ export const commentsService = {
       )
       .orderBy(asc(comments.createdAt))
       .limit(500);
+    const totals = await reactionTotals(rows.map(r => r.id));
 
     const toPublic = (r: (typeof rows)[number]): PublicComment => ({
       id: r.id,
@@ -181,6 +212,8 @@ export const commentsService = {
       isStaff: Boolean(r.userId),
       body: r.body,
       createdAt: r.createdAt.toISOString(),
+      likes: totals.get(r.id)?.likes ?? 0,
+      dislikes: totals.get(r.id)?.dislikes ?? 0,
       replies: [],
     });
     const top = rows.filter(r => !r.parentId).map(toPublic);
@@ -190,6 +223,126 @@ export const commentsService = {
     }
     if (sort === 'newest') top.reverse();
     return { items: top, total: rows.length };
+  },
+
+  /**
+   * Like (1), dislike (-1) or clear (0) a comment. One reaction per visitor
+   * per comment (cookie, falling back to network); never on your own comment.
+   */
+  react: async (
+    input: { commentId: string; value: ReactionValue },
+    meta: { ip: string; voterKey: string }
+  ) => {
+    const voterHash = voterHashOf(meta.voterKey);
+    const ipHash = ipHashOf(meta.ip);
+    const site = await siteContext.publicSite();
+    const [row] = await db
+      .select({
+        status: comments.status,
+        voterHash: comments.voterHash,
+        ipHash: comments.ipHash,
+        deletedAt: comments.deletedAt,
+        postStatus: posts.status,
+        postVisibility: posts.visibility,
+        allowComments: posts.allowComments,
+      })
+      .from(comments)
+      .innerJoin(posts, eq(posts.id, comments.postId))
+      .where(and(eq(comments.id, input.commentId), eq(comments.siteId, site.id)))
+      .limit(1);
+    const settings = await siteSettingsService.getPublic();
+    const decision = decideReaction(
+      row && !row.deletedAt ? row : null,
+      { voterHash, ipHash },
+      Boolean(row) &&
+        row.postStatus === 'published' &&
+        row.postVisibility === 'public' &&
+        row.allowComments &&
+        settings.readingSettings?.comments !== false
+    );
+    if (!decision.ok) return decision;
+
+    // Same visitor = same cookie, or a reaction from the same network (stops
+    // clearing cookies to vote again).
+    const [existing] = await db
+      .select({ voterHash: commentReactions.voterHash, value: commentReactions.value })
+      .from(commentReactions)
+      .where(
+        and(
+          eq(commentReactions.commentId, input.commentId),
+          or(eq(commentReactions.voterHash, voterHash), eq(commentReactions.ipHash, ipHash))
+        )
+      )
+      .limit(1);
+
+    if (input.value === 0) {
+      if (existing) {
+        await db
+          .delete(commentReactions)
+          .where(
+            and(
+              eq(commentReactions.commentId, input.commentId),
+              eq(commentReactions.voterHash, existing.voterHash)
+            )
+          );
+      }
+    } else if (existing) {
+      await db
+        .update(commentReactions)
+        .set({ value: input.value, updatedAt: new Date() })
+        .where(
+          and(
+            eq(commentReactions.commentId, input.commentId),
+            eq(commentReactions.voterHash, existing.voterHash)
+          )
+        );
+    } else {
+      await db.insert(commentReactions).values({
+        commentId: input.commentId,
+        voterHash,
+        ipHash,
+        value: input.value,
+      });
+    }
+    const totals = (await reactionTotals([input.commentId])).get(input.commentId);
+    return {
+      ok: true as const,
+      likes: totals?.likes ?? 0,
+      dislikes: totals?.dislikes ?? 0,
+      mine: input.value,
+    };
+  },
+
+  /** The current visitor's reactions and own comments on one post (for button states). */
+  visitorState: async (postId: string, meta: { ip: string; voterKey: string | null }) => {
+    // Without a cookie yet, only the network match applies.
+    const voterHash = meta.voterKey ? voterHashOf(meta.voterKey) : 'none';
+    const ipHash = ipHashOf(meta.ip);
+    const [reactions, own] = await Promise.all([
+      db
+        .select({ commentId: commentReactions.commentId, value: commentReactions.value })
+        .from(commentReactions)
+        .innerJoin(comments, eq(comments.id, commentReactions.commentId))
+        .where(
+          and(
+            eq(comments.postId, postId),
+            or(eq(commentReactions.voterHash, voterHash), eq(commentReactions.ipHash, ipHash))
+          )
+        ),
+      db
+        .select({ id: comments.id })
+        .from(comments)
+        .where(
+          and(
+            eq(comments.postId, postId),
+            or(eq(comments.voterHash, voterHash), eq(comments.ipHash, ipHash))
+          )
+        ),
+    ]);
+    return {
+      reactions: Object.fromEntries(reactions.map(r => [r.commentId, r.value])),
+      own: own.map(r => r.id),
+    };
   },
 
   /* ---------- Dashboard ---------- */

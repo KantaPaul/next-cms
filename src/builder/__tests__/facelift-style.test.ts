@@ -223,22 +223,44 @@ describe('single page extras', () => {
   it('adds previous / next before related posts, once', async () => {
     const { defaultPostTemplate, withSingleExtras } = await import('../post-template');
     const bare = { root: { props: {} }, content: [{ type: 'PostContent', props: { id: 'a' } }, { type: 'RelatedPosts', props: { id: 'b' } }], zones: {} };
-    const out = withSingleExtras(bare as never, { postNavigation: 'auto' });
+    const out = withSingleExtras(bare as never, { postNavigation: 'auto', share: false, bookmark: false });
     assert.deepEqual(out.content.map(n => n.type), ['PostContent', 'PostNavigation', 'RelatedPosts']);
     // Templates that already place it keep their own.
     const tpl = defaultPostTemplate();
-    assert.equal(withSingleExtras(tpl, { postNavigation: 'auto' }), tpl);
-    assert.equal(withSingleExtras(bare as never, { postNavigation: 'off' }), bare);
+    assert.equal(withSingleExtras(tpl, { postNavigation: 'auto', share: false, bookmark: false }), tpl);
+    assert.equal(withSingleExtras(bare as never, { postNavigation: 'off', share: false, bookmark: false }), bare);
   });
 
   it('adds comments only when switched on', async () => {
     const { withSingleExtras } = await import('../post-template');
     const bare = { root: { props: {} }, content: [], zones: { 'x:y': [{ type: 'PostNavigation', props: { id: 'n' } }] } };
     assert.deepEqual(
-      withSingleExtras(bare as never, { postNavigation: 'auto', comments: true }).content.map(n => n.type),
+      withSingleExtras(bare as never, { postNavigation: 'auto', comments: true, share: false, bookmark: false }).content.map(n => n.type),
       ['Comments']
     );
-    assert.equal(withSingleExtras(bare as never, { postNavigation: 'auto', comments: false }), bare);
+    assert.equal(withSingleExtras(bare as never, { postNavigation: 'auto', comments: false, share: false, bookmark: false }), bare);
+  });
+
+  it('adds one share + bookmark row after the article body', async () => {
+    const { withSingleExtras } = await import('../post-template');
+    const bare = { root: { props: {} }, content: [{ type: 'PostTitle', props: { id: 't' } }, { type: 'PostContent', props: { id: 'c' } }, { type: 'RelatedPosts', props: { id: 'r' } }], zones: {} };
+    const out = withSingleExtras(bare as never, { postNavigation: 'off' });
+    assert.deepEqual(out.content.map(n => n.type), ['PostTitle', 'PostContent', 'ShareButtons', 'RelatedPosts']);
+    const row = out.content[2].props as Record<string, unknown>;
+    assert.equal(row.networks, 'default');
+    assert.equal(row.showBookmark, true);
+  });
+
+  it('only adds what the template is missing', async () => {
+    const { withSingleExtras } = await import('../post-template');
+    const withShare = { root: { props: {} }, content: [{ type: 'PostContent', props: { id: 'c' } }, { type: 'ShareButtons', props: { id: 's' } }], zones: {} };
+    const out = withSingleExtras(withShare as never, { postNavigation: 'off' });
+    const added = out.content.filter(n => n.props.id === 'ShareButtons-auto');
+    assert.equal(added.length, 1);
+    assert.equal((added[0].props as Record<string, unknown>).networks, 'none');
+    const both = { root: { props: {} }, content: [{ type: 'ShareButtons', props: { id: 's', showBookmark: true } }], zones: {} };
+    assert.equal(withSingleExtras(both as never, { postNavigation: 'off' }), both);
+    assert.equal(withSingleExtras(withShare as never, { postNavigation: 'off', bookmark: false }), withShare);
   });
 });
 
@@ -274,5 +296,31 @@ describe('comment rules', () => {
     const limited = decideComment({ postId: 'p1' }, { ...base, recentFromIp: COMMENT_RATE_LIMIT }, ok);
     assert.equal(limited.ok, false);
     assert.equal(!limited.ok && limited.status, 429);
+  });
+});
+
+describe('comment reactions', () => {
+  const comment = { status: 'approved', voterHash: 'v-author', ipHash: 'ip-author' };
+
+  it('allows other visitors to react', async () => {
+    const { decideReaction } = await import('@/server/services/comments.rules');
+    assert.deepEqual(decideReaction(comment, { voterHash: 'v-other', ipHash: 'ip-other' }, true), { ok: true });
+  });
+
+  it('blocks liking or disliking your own comment', async () => {
+    const { decideReaction } = await import('@/server/services/comments.rules');
+    const sameCookie = decideReaction(comment, { voterHash: 'v-author', ipHash: 'ip-other' }, true);
+    assert.equal(sameCookie.ok, false);
+    assert.equal(!sameCookie.ok && sameCookie.status, 403);
+    // Clearing cookies doesn't help: same network as the comment.
+    assert.equal(decideReaction(comment, { voterHash: 'v-new', ipHash: 'ip-author' }, true).ok, false);
+  });
+
+  it('rejects unapproved comments and closed posts', async () => {
+    const { decideReaction } = await import('@/server/services/comments.rules');
+    const r = { voterHash: 'v-other', ipHash: 'ip-other' };
+    assert.equal(decideReaction({ ...comment, status: 'pending' }, r, true).ok, false);
+    assert.equal(decideReaction(null, r, true).ok, false);
+    assert.equal(decideReaction(comment, r, false).ok, false);
   });
 });

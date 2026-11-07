@@ -2809,6 +2809,7 @@ export const CommentsBlock = defineBlock({
       ],
     },
     showForm: { label: 'Show comment form', group: CONTENT, type: 'toggle' },
+    showReactions: { label: 'Show like / dislike buttons', group: CONTENT, type: 'toggle' },
     formTitle: { label: 'Form title', group: CONTENT, type: 'text', when: (p: any) => p.showForm !== false },
     submitLabel: { label: 'Submit button label', group: CONTENT, type: 'text', when: (p: any) => p.showForm !== false },
     pendingMessage: { label: 'Message after posting', group: CONTENT, type: 'text', when: (p: any) => p.showForm !== false },
@@ -2825,6 +2826,7 @@ export const CommentsBlock = defineBlock({
     heading: 'Comments',
     sort: 'oldest',
     showForm: true,
+    showReactions: true,
     formTitle: 'Leave a comment',
     submitLabel: 'Post comment',
     pendingMessage: 'Thanks — your comment is awaiting moderation.',
@@ -2919,7 +2921,15 @@ export const ShareButtonsBlock = defineBlock({
         { label: 'Copy, X, LinkedIn, Email', value: 'default' },
         { label: 'All (+ Facebook)', value: 'all' },
         { label: 'Copy link only', value: 'copy' },
+        { label: 'None (bookmark only)', value: 'none' },
       ],
+    },
+    showBookmark: { label: 'Show bookmark (save) button', group: CONTENT, type: 'toggle' },
+    bookmarkLabel: {
+      label: 'Bookmark label (blank = icon only)',
+      group: CONTENT,
+      type: 'text',
+      when: (p: any) => Boolean(p.showBookmark),
     },
     align: {
       label: 'Alignment',
@@ -2945,6 +2955,8 @@ export const ShareButtonsBlock = defineBlock({
   defaults: {
     label: 'Share',
     networks: 'default',
+    showBookmark: false,
+    bookmarkLabel: 'Save',
     align: 'left',
     width: 'normal',
     section: {

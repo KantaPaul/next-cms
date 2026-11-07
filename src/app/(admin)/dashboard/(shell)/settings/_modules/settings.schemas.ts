@@ -158,6 +158,8 @@ export const settingsSchema = z.object({
     .object({
       postNavigation: z.enum(['auto', 'off']).optional(),
       comments: z.boolean().optional(),
+      share: z.boolean().optional(),
+      bookmark: z.boolean().optional(),
     })
     .nullish(),
   videoSettings: z

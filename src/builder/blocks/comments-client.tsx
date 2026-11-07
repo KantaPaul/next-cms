@@ -1,5 +1,6 @@
 'use client';
 
+import { ThumbsDown, ThumbsUp } from 'lucide-react';
 import { type FormEvent, useEffect, useId, useState } from 'react';
 import { cn } from '@/lib/utils/cn';
 
@@ -201,7 +202,7 @@ export function ReplyToggle({
     );
   }
   return (
-    <div className="mt-3">
+    <div className="mt-1 w-full basis-full">
       <CommentForm
         postId={postId}
         parentId={parentId}
@@ -210,6 +211,138 @@ export function ReplyToggle({
         compact
         onCancel={() => setOpen(false)}
       />
+    </div>
+  );
+}
+
+/* ---------- Like / dislike ---------- */
+
+type VisitorState = { reactions: Record<string, number>; own: string[] };
+const stateCache = new Map<string, Promise<VisitorState>>();
+
+function visitorState(postId: string) {
+  let p = stateCache.get(postId);
+  if (!p) {
+    p = fetch(`/api/comments/state?postId=${encodeURIComponent(postId)}`, {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    })
+      .then(r => (r.ok ? r.json() : { reactions: {}, own: [] }))
+      .catch(() => ({ reactions: {}, own: [] }));
+    stateCache.set(postId, p);
+  }
+  return p;
+}
+
+/** Like / dislike buttons. Your own comments show counts only. */
+export function CommentReactions({
+  postId,
+  commentId,
+  likes: initialLikes,
+  dislikes: initialDislikes,
+  editing,
+}: {
+  postId: string;
+  commentId: string;
+  likes: number;
+  dislikes: number;
+  editing?: boolean;
+}) {
+  const [likes, setLikes] = useState(initialLikes);
+  const [dislikes, setDislikes] = useState(initialDislikes);
+  const [mine, setMine] = useState<0 | 1 | -1>(0);
+  const [own, setOwn] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (editing) return;
+    let live = true;
+    visitorState(postId).then(s => {
+      if (!live) return;
+      const v = s.reactions?.[commentId];
+      setMine(v === 1 || v === -1 ? v : 0);
+      setOwn(Boolean(s.own?.includes(commentId)));
+    });
+    return () => {
+      live = false;
+    };
+  }, [postId, commentId, editing]);
+
+  const react = async (value: 1 | -1) => {
+    if (editing || own || busy) return;
+    const next = mine === value ? 0 : value;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/comments/react', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ commentId, value: next }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        likes?: number;
+        dislikes?: number;
+        mine?: number;
+        error?: string;
+      };
+      if (!res.ok) {
+        setError(data.error || 'Couldn’t save your reaction.');
+        if (res.status === 403 && /own comment/i.test(data.error ?? '')) setOwn(true);
+        return;
+      }
+      setLikes(data.likes ?? likes);
+      setDislikes(data.dislikes ?? dislikes);
+      setMine(next);
+    } catch {
+      setError('Couldn’t save your reaction.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const btn = (active: boolean) =>
+    cn(
+      'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+      active
+        ? 's-soft-primary border-[var(--site-primary)] text-[var(--site-primary)]'
+        : 'border-[var(--site-border)] s-muted',
+      own ? 'cursor-default opacity-70' : 'hover:text-[var(--site-primary)]'
+    );
+  const ownTitle = 'You can’t like or dislike your own comment';
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        onClick={() => react(1)}
+        disabled={busy || own}
+        aria-pressed={mine === 1}
+        aria-label={`Like (${likes})`}
+        title={own ? ownTitle : 'Like'}
+        className={btn(mine === 1)}
+      >
+        <ThumbsUp className="size-3.5" aria-hidden />
+        {likes}
+      </button>
+      <button
+        type="button"
+        onClick={() => react(-1)}
+        disabled={busy || own}
+        aria-pressed={mine === -1}
+        aria-label={`Dislike (${dislikes})`}
+        title={own ? ownTitle : 'Dislike'}
+        className={btn(mine === -1)}
+      >
+        <ThumbsDown className="size-3.5" aria-hidden />
+        {dislikes}
+      </button>
+      {own ? <span className="s-meta">Your comment</span> : null}
+      {error ? (
+        <span role="alert" className="text-xs text-red-600">
+          {error}
+        </span>
+      ) : null}
     </div>
   );
 }
