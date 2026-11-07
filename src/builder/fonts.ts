@@ -3,6 +3,8 @@ export interface FontDefinition {
   category: 'sans-serif' | 'serif' | 'monospace' | 'display' | 'handwriting';
   stack: string;
   isGoogleFont?: boolean;
+  /** Google Fonts axis spec (after `family=Name:`). Defaults to weights 100–900. */
+  axes?: string;
 }
 
 export const CURATED_FONTS: FontDefinition[] = [
@@ -91,6 +93,33 @@ export const CURATED_FONTS: FontDefinition[] = [
     isGoogleFont: true,
   },
   {
+    name: 'Manrope',
+    category: 'sans-serif',
+    stack: "'Manrope', ui-sans-serif, system-ui, sans-serif",
+    isGoogleFont: true,
+  },
+  {
+    name: 'Newsreader',
+    category: 'serif',
+    stack: "'Newsreader', Georgia, 'Times New Roman', serif",
+    isGoogleFont: true,
+    axes: 'ital,wght@0,200..800;1,200..800',
+  },
+  {
+    name: 'Fraunces',
+    category: 'serif',
+    stack: "'Fraunces', Georgia, serif",
+    isGoogleFont: true,
+    axes: 'ital,wght@0,100..900;1,100..900',
+  },
+  {
+    name: 'Instrument Serif',
+    category: 'serif',
+    stack: "'Instrument Serif', Georgia, serif",
+    isGoogleFont: true,
+    axes: 'ital@0;1',
+  },
+  {
     name: 'Playfair Display',
     category: 'serif',
     stack: "'Playfair Display', Georgia, serif",
@@ -165,7 +194,13 @@ export function buildGoogleFontsUrl(families: string[]): string | null {
   if (unique.length === 0) return null;
 
   const params = unique
-    .map(family => `family=${encodeURIComponent(family)}:wght@100;200;300;400;500;600;700;800;900`)
+    .map(family => {
+      const entry = CURATED_FONTS.find(
+        f => f.name.toLowerCase() === family.toLowerCase()
+      );
+      const axes = entry?.axes ?? 'wght@100;200;300;400;500;600;700;800;900';
+      return `family=${encodeURIComponent(family)}:${axes}`;
+    })
     .join('&');
 
   return `https://fonts.googleapis.com/css2?${params}&display=swap`;

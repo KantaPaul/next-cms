@@ -131,7 +131,7 @@ export const BLOCK_INFO: Record<string, BlockInfo> = {
   },
   Gallery: {
     description: 'Grid of images',
-    capabilities: ['Several images', 'Column count', 'Lightbox'],
+    capabilities: ['Several images', 'Column count', 'Captions'],
     semanticTag: 'section',
     defaultSize: FULL,
   },
@@ -149,20 +149,26 @@ export const BLOCK_INFO: Record<string, BlockInfo> = {
   },
   Embed: {
     description: 'Third-party embed code',
-    capabilities: ['Sanitized HTML embed', 'Responsive frame'],
+    capabilities: ['Embed by URL from allowed hosts', 'Responsive frame'],
     semanticTag: 'div',
     defaultSize: FULL,
   },
   Map: {
     description: 'Interactive location map',
-    capabilities: ['Address or coordinates', 'Zoom level'],
+    capabilities: ['Address lookup', 'OpenStreetMap embed'],
     semanticTag: 'div',
     defaultSize: '100% × 360px',
   },
   Code: {
-    description: 'Code snippet with highlighting',
-    capabilities: ['Language selection', 'Copy button'],
+    description: 'Code snippet with a copy button',
+    capabilities: ['Monospace code block', 'Copy button'],
     semanticTag: 'pre',
+    defaultSize: FULL,
+  },
+  Audio: {
+    description: 'Audio file in a card with a player',
+    capabilities: ['Title, caption and cover image', 'Browser audio controls'],
+    semanticTag: 'figure',
     defaultSize: FULL,
   },
   Newsletter: {
@@ -223,6 +229,10 @@ export const BLOCK_INFO: Record<string, BlockInfo> = {
   PostMeta: { description: 'Author, date, and reading time', semanticTag: 'div', defaultSize: FULL },
   PostContent: { description: 'Body of the current post', semanticTag: 'article', defaultSize: FULL },
   RelatedPosts: { description: 'Posts related to this one', semanticTag: 'section', defaultSize: FULL },
+  AuthorBio: { description: 'The post author’s avatar, name, and bio', semanticTag: 'aside', defaultSize: FULL },
+  ShareButtons: { description: 'Copy-link and social share buttons', semanticTag: 'div', defaultSize: FULL },
+  PostNavigation: { description: 'Links to the previous and next post', semanticTag: 'nav', defaultSize: FULL },
+  BookmarkButton: { description: 'Lets visitors save the post in their browser', semanticTag: 'div', defaultSize: FULL },
   HeaderBar: {
     description: 'Site header with logo and menu',
     capabilities: ['Logo, navigation, and actions', 'Sticky and transparent modes'],
@@ -243,6 +253,7 @@ export const BLOCK_INFO: Record<string, BlockInfo> = {
   LegalLinks: { description: 'Privacy, terms, and similar links', semanticTag: 'nav', defaultSize: 'auto × auto' },
   BackToTop: { description: 'Button that scrolls to the top', semanticTag: 'button', defaultSize: '40px × 40px' },
   ThemeToggle: { description: 'Light and dark mode switch', semanticTag: 'button', defaultSize: '36px × 36px' },
+  Bookmarks: { description: 'Saved-posts button and drawer (stored in the visitor’s browser)', semanticTag: 'div', defaultSize: '36px × 36px' },
   LanguageSwitcher: { description: 'Switch between site languages', semanticTag: 'div', defaultSize: 'auto × auto' },
 };
 

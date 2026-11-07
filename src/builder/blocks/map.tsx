@@ -15,7 +15,7 @@ const FALLBACK_SRC =
 
 /**
  * Shows the address as text and as an OpenStreetMap embed. The embed centers on
- * the address via reverse geocoding; until it resolves the world view renders.
+ * the address via forward geocoding; until it resolves the world view renders.
  */
 export function Map(p: MapProps) {
   const address = p.address?.trim() ?? '';
@@ -24,15 +24,17 @@ export function Map(p: MapProps) {
   useEffect(() => {
     if (!address) return;
     let active = true;
-    const params = new URLSearchParams({ format: 'json', address, limit: '1' });
-    fetch(`https://nominatim.openstreetmap.org/reverse?${params.toString()}`, {
+    const params = new URLSearchParams({ format: 'json', q: address, limit: '1' });
+    fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
       headers: { Accept: 'application/json' },
     })
       .then(response => (response.ok ? response.json() : null))
       .then(data => {
         if (!active) return;
-        const lat = Number(data?.lat);
-        const lon = Number(data?.lon);
+        // `/search` returns an array of matches.
+        const hit = Array.isArray(data) ? data[0] : data;
+        const lat = Number(hit?.lat);
+        const lon = Number(hit?.lon);
         if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
         const halfSpan = 0.05;
         const west = lon - halfSpan;
@@ -50,6 +52,7 @@ export function Map(p: MapProps) {
   }, [address]);
 
   if (!address) {
+    if (!p.editing) return null;
     return (
       <Section section={p.section} editing={p.editing}>
         <div className="s-surface s-border s-muted s-radius flex aspect-[16/9] items-center justify-center border border-dashed text-sm">

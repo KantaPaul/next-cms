@@ -6,6 +6,9 @@ import { el, orderedParts, type WithSection } from './element';
 import { PricingToggle } from './pricing-toggle';
 import {
   ButtonLink,
+  type CardStyleProps,
+  cardClass,
+  ITEM_GRID_COLS,
   MotionItem,
   Section,
   SectionHeading,
@@ -29,7 +32,7 @@ export function Hero(p: HeroProps) {
   const centered = p.alignment !== 'left';
   const split = !centered && !!p.imageUrl;
   const badgeEl = el(p, 'badge', 's-soft-primary mb-6 inline-flex rounded-full px-3 py-1 text-xs font-semibold');
-  const titleEl = el(p, 'title', 'text-4xl font-extrabold tracking-tight md:text-6xl');
+  const titleEl = el(p, 'title', 's-display-title');
   const subtitleEl = el(p, 'subtitle', 's-muted mt-6 text-lg leading-relaxed md:text-xl');
   const primaryBtnEl = el(p, 'primaryButton');
   const secondaryBtnEl = el(p, 'secondaryButton');
@@ -105,7 +108,9 @@ export function Hero(p: HeroProps) {
   );
 }
 
-export type FeaturesProps = WithSection & {
+export type FeaturesProps = WithSection &
+  CardStyleProps & {
+  showIcons?: boolean;
   eyebrow?: string;
   title?: string;
   subtitle?: string;
@@ -125,7 +130,7 @@ export function Features(p: FeaturesProps) {
 
   return (
     <Section section={p.section} editing={p.editing} hasItems>
-      <SectionHeading
+      <SectionHeading elements={p.elements}
         eyebrow={p.eyebrow}
         title={p.title}
         subtitle={p.subtitle}
@@ -136,9 +141,9 @@ export function Features(p: FeaturesProps) {
         {(p.items ?? []).map((item, i) => (
           <MotionItem
             key={i}
-            className="s-surface s-border s-radius border p-6"
+            className={cn(cardClass(p), p.cardVariant === 'none' ? 'py-2' : 'p-6')}
           >
-            {item.icon && (
+            {item.icon && p.showIcons !== false && (
               <div className="s-soft-primary s-radius mb-4 inline-flex p-2.5">
                 <BlockIcon name={item.icon} className="size-5" />
               </div>
@@ -160,11 +165,12 @@ export function Features(p: FeaturesProps) {
 
 export type StatsProps = WithSection & {
   headline?: string;
+  columns?: 2 | 3 | 4;
   items: { value: string; label: string; change?: string }[];
 };
 
 export function Stats(p: StatsProps) {
-  const valueEl = el(p, 'value', 's-primary-text text-3xl font-extrabold md:text-4xl');
+  const valueEl = el(p, 'value', 's-primary-text s-stat-value text-3xl md:text-4xl');
   const labelEl = el(p, 'label', 'mt-1 text-sm font-medium');
 
   return (
@@ -174,7 +180,12 @@ export function Stats(p: StatsProps) {
           {p.headline}
         </p>
       )}
-      <dl className="grid grid-cols-2 gap-6 lg:grid-cols-4">
+      <dl
+        className={cn(
+          'grid grid-cols-2 gap-6',
+          { 2: '', 3: 'lg:grid-cols-3', 4: 'lg:grid-cols-4' }[p.columns ?? 4]
+        )}
+      >
         {(p.items ?? []).map((item, i) => (
           <MotionItem key={i} className="flex flex-col text-center">
             {orderedParts(
@@ -214,7 +225,10 @@ export type PricingPlan = {
   popular?: boolean;
 };
 
-export type PricingProps = WithSection & {
+export type PricingProps = WithSection &
+  CardStyleProps & {
+  popularLabel?: string;
+  yearlyPeriodLabel?: string;
   eyebrow?: string;
   title?: string;
   subtitle?: string;
@@ -229,7 +243,7 @@ export function Pricing(p: PricingProps) {
   const plans = p.plans ?? [];
   const hasYearly = plans.some(plan => plan.yearlyPrice);
   const planTitleEl = el(p, 'planTitle', 'text-lg font-semibold');
-  const planPriceEl = el(p, 'planPrice', 'text-4xl font-extrabold');
+  const planPriceEl = el(p, 'planPrice', 's-stat-value text-4xl');
   const planBtnEl = el(p, 'planButton');
 
   const cards = (yearly: boolean) => (
@@ -246,13 +260,16 @@ export function Pricing(p: PricingProps) {
           className={cn(
             's-radius relative flex flex-col border p-7',
             plan.popular
-              ? 'shadow-xl ring-2 ring-[color:var(--site-primary)]'
-              : 's-border s-surface'
+              ? cn(
+                  cardClass(p, 's-surface'),
+                  'shadow-xl ring-2 ring-[color:var(--site-primary)]'
+                )
+              : cardClass(p, 's-border s-surface')
           )}
         >
           {plan.popular && (
             <span className="s-primary-bg absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-xs font-semibold">
-              Most popular
+              {p.popularLabel || 'Most popular'}
             </span>
           )}
           <h3 className={planTitleEl.className} style={planTitleEl.style}>
@@ -267,7 +284,9 @@ export function Pricing(p: PricingProps) {
             </span>
             {plan.period && (
               <span className="s-muted text-sm">
-                {yearly && plan.yearlyPrice ? 'per year' : plan.period}
+                {yearly && plan.yearlyPrice
+                  ? p.yearlyPeriodLabel || 'per year'
+                  : plan.period}
               </span>
             )}
           </p>
@@ -301,7 +320,7 @@ export function Pricing(p: PricingProps) {
 
   return (
     <Section section={p.section} editing={p.editing} hasItems>
-      <SectionHeading
+      <SectionHeading elements={p.elements}
         eyebrow={p.eyebrow}
         title={p.title}
         subtitle={p.subtitle}
@@ -317,7 +336,9 @@ export function Pricing(p: PricingProps) {
   );
 }
 
-export type TestimonialsProps = WithSection & {
+export type TestimonialsProps = WithSection &
+  CardStyleProps & {
+  columns?: 1 | 2 | 3;
   eyebrow?: string;
   title?: string;
   items: {
@@ -335,13 +356,13 @@ export function Testimonials(p: TestimonialsProps) {
 
   return (
     <Section section={p.section} editing={p.editing} hasItems>
-      <SectionHeading eyebrow={p.eyebrow} title={p.title} />
-      <div className="grid gap-6 md:grid-cols-2">
+      <SectionHeading elements={p.elements} eyebrow={p.eyebrow} title={p.title} />
+      <div className={cn('grid gap-6', ITEM_GRID_COLS[p.columns ?? 2])}>
         {(p.items ?? []).map((item, i) => (
           <MotionItem
             as="figure"
             key={i}
-            className="s-surface s-border s-radius flex flex-col border p-7"
+            className={cn(cardClass(p), 'flex flex-col p-7')}
           >
             {orderedParts(
               { partOrder: p.partOrder, editing: p.editing && i === 0 },
@@ -410,7 +431,7 @@ export function Faq(p: FaqProps) {
       innerClassName="max-w-3xl"
       hasItems
     >
-      <SectionHeading
+      <SectionHeading elements={p.elements}
         eyebrow={p.eyebrow}
         title={p.title}
         partOrder={p.partOrder}
@@ -465,7 +486,7 @@ export function Cta(p: CtaProps) {
       onColor ? 'bg-white/20 text-white' : 's-soft-primary'
     )
   );
-  const titleEl = el(p, 'title', 'mx-auto max-w-2xl text-3xl font-bold tracking-tight md:text-4xl');
+  const titleEl = el(p, 'title', 'mx-auto max-w-2xl s-section-title');
   const descEl = el(
     p,
     'description',
@@ -541,6 +562,8 @@ export type LogoCloudItem = {
 };
 
 export type LogoCloudProps = WithSection & {
+  /** Logos in grey until hovered. */
+  grayscale?: boolean;
   eyebrow?: string;
   title?: string;
   subtitle?: string;
@@ -552,7 +575,7 @@ export function LogoCloud(p: LogoCloudProps) {
 
   return (
     <Section section={p.section} editing={p.editing} hasItems>
-      <SectionHeading
+      <SectionHeading elements={p.elements}
         eyebrow={p.eyebrow}
         title={p.title}
         subtitle={p.subtitle}
@@ -572,7 +595,10 @@ export function LogoCloud(p: LogoCloudProps) {
                 <img
                   src={item.url}
                   alt={item.alt ?? ''}
-                  className="s-muted max-h-8 w-auto"
+                  className={cn(
+                  's-muted max-h-8 w-auto transition duration-200',
+                  p.grayscale && 'opacity-70 grayscale hover:opacity-100 hover:grayscale-0'
+                )}
                 />
               </a>
             ) : (
@@ -580,7 +606,10 @@ export function LogoCloud(p: LogoCloudProps) {
               <img
                 src={item.url}
                 alt={item.alt ?? ''}
-                className="s-muted max-h-8 w-auto"
+                className={cn(
+                  's-muted max-h-8 w-auto transition duration-200',
+                  p.grayscale && 'opacity-70 grayscale hover:opacity-100 hover:grayscale-0'
+                )}
               />
             )}
           </MotionItem>
@@ -600,7 +629,9 @@ export type TeamItem = {
   role?: string;
 };
 
-export type TeamProps = WithSection & {
+export type TeamProps = WithSection &
+  CardStyleProps & {
+  columns?: 2 | 3 | 4;
   eyebrow?: string;
   title?: string;
   items?: TeamItem[];
@@ -611,19 +642,24 @@ export function Team(p: TeamProps) {
 
   return (
     <Section section={p.section} editing={p.editing} hasItems>
-      <SectionHeading
+      <SectionHeading elements={p.elements}
         eyebrow={p.eyebrow}
         title={p.title}
         partOrder={p.partOrder}
         editing={p.editing}
       />
       {items.length ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+          className={cn(
+            'grid gap-6 sm:grid-cols-2',
+            { 2: '', 3: 'lg:grid-cols-3', 4: 'lg:grid-cols-4' }[p.columns ?? 3]
+          )}
+        >
           {items.map((item, i) => (
             <MotionItem
               key={i}
               as="div"
-              className="s-surface s-border s-radius border p-6 text-center"
+              className={cn(cardClass(p), 'p-6 text-center')}
             >
               {item.photo ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -674,7 +710,7 @@ export function Timeline(p: TimelineProps) {
 
   return (
     <Section section={p.section} editing={p.editing} hasItems>
-      <SectionHeading
+      <SectionHeading elements={p.elements}
         eyebrow={p.eyebrow}
         title={p.title}
         partOrder={p.partOrder}

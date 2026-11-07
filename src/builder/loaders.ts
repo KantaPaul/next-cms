@@ -173,6 +173,18 @@ const loadRelatedPosts: BlockLoader = async (props, ctx) => {
   return { posts };
 };
 
+/** Previous / next published posts around the current one. */
+const loadPostNavigation: BlockLoader = async (_props, ctx) => {
+  const post = ctx.post as PostView | undefined;
+  if (!post?.publishedAt || !post.id) return { previous: null, next: null };
+  const { getAdjacentPosts } = await import('@/server/actions/blog.actions');
+  return getAdjacentPosts({
+    postId: post.id,
+    language: post.language,
+    publishedAt: post.publishedAt,
+  });
+};
+
 /**
  * Loads every GlobalRef node in one pass (R752 / DAT-16): a page can embed
  * the same global block many times (e.g. a footer CTA repeated per section),
@@ -221,6 +233,10 @@ const POST_BLOCK_TYPES = new Set([
   'PostMeta',
   'PostContent',
   'RelatedPosts',
+  'AuthorBio',
+  'ShareButtons',
+  'PostNavigation',
+  'BookmarkButton',
 ]);
 
 /**
@@ -973,6 +989,7 @@ const registry = createLoaderRegistry<LoaderContext>(
   {
     BlogPosts: loadBlogPosts,
     RelatedPosts: loadRelatedPosts,
+    PostNavigation: loadPostNavigation,
     QueryLoop: loadQueryLoop,
     LoopGrid: loadLoopGrid,
     PostTypeEntries: loadPostTypeEntries,

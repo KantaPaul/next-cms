@@ -1,5 +1,11 @@
 import type { CSSProperties } from 'react';
 import {
+  buildGoogleFontsUrl,
+  FONT_FAMILIES,
+  getFontStack,
+  isGoogleFont,
+} from './fonts';
+import {
   DEFAULT_GLOBAL_COLORS,
   DEFAULT_THEME_TOKENS,
   DEFAULT_TYPOGRAPHY_PRESETS,
@@ -16,14 +22,6 @@ const RADIUS: Record<ThemeTokens['borderRadius'], string> = {
   md: '0.75rem',
   lg: '1.25rem',
   full: '9999px',
-};
-
-const FONT_STACK: Record<ThemeTokens['fontFamily'], string> = {
-  Inter: "'Inter', ui-sans-serif, system-ui, sans-serif",
-  'Plus Jakarta Sans':
-    "'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif",
-  'JetBrains Mono': "'JetBrains Mono', ui-monospace, monospace",
-  System: 'ui-sans-serif, system-ui, -apple-system, sans-serif',
 };
 
 const HEX = /^#[0-9a-f]{3,8}$/i;
@@ -62,12 +60,25 @@ export const resolveThemeTokens = (
       ? tokens.typography
       : DEFAULT_TYPOGRAPHY_PRESETS;
 
+  const colorsDark = Object.fromEntries(
+    Object.entries(tokens?.colorsDark ?? {}).filter(
+      ([, v]) => typeof v === 'string' && HEX.test(v)
+    )
+  ) as ThemeTokens['colorsDark'];
+
+  const headingFont =
+    tokens?.headingFont && FONT_FAMILIES.includes(tokens.headingFont)
+      ? tokens.headingFont
+      : undefined;
+
   return {
     ...DEFAULT_THEME_TOKENS,
     ...tokens,
     primaryColor: primary,
     accentColor: accent,
     colors,
+    colorsDark,
+    headingFont,
     typography,
   };
 };
@@ -132,6 +143,8 @@ const CORE_COLOR_TOKENS: Array<{
   { key: 'textMuted', name: 'Text Muted', cssVar: '--site-color-text-muted' },
   { key: 'background', name: 'Background', cssVar: '--site-color-background' },
   { key: 'surface', name: 'Surface', cssVar: '--site-color-surface' },
+  { key: 'surfaceAlt', name: 'Surface Alt', cssVar: '--site-color-surface-alt' },
+  { key: 'primarySoft', name: 'Primary Soft', cssVar: '--site-color-primary-soft' },
   { key: 'border', name: 'Border', cssVar: '--site-color-border' },
 ];
 
@@ -161,23 +174,32 @@ export function themeStyle(
 ): CSSProperties {
   const t = resolveThemeTokens(tokens);
   const colors = t.colors ?? DEFAULT_GLOBAL_COLORS;
+  const bodyStack = getFontStack(t.fontFamily);
 
   const styles: Record<string, string> = {
-    '--site-primary': t.primaryColor,
-    '--site-accent': t.accentColor,
+    // `--site-primary` / `--site-accent` are derived in site.css from the
+    // `--site-color-*` tokens below, so dark mode can swap them.
     '--site-radius': RADIUS[t.borderRadius] ?? RADIUS.md,
-    '--site-font': FONT_STACK[t.fontFamily] ?? FONT_STACK.System,
-
-    // Global color tokens
-    '--site-color-primary': colors.primary ?? t.primaryColor,
-    '--site-color-secondary': colors.secondary ?? DEFAULT_GLOBAL_COLORS.secondary ?? '#64748b',
-    '--site-color-text': colors.text ?? DEFAULT_GLOBAL_COLORS.text ?? '#0f172a',
-    '--site-color-text-muted': colors.textMuted ?? DEFAULT_GLOBAL_COLORS.textMuted ?? '#64748b',
-    '--site-color-accent': colors.accent ?? t.accentColor,
-    '--site-color-background': colors.background ?? DEFAULT_GLOBAL_COLORS.background ?? '#ffffff',
-    '--site-color-surface': colors.surface ?? DEFAULT_GLOBAL_COLORS.surface ?? '#f8fafc',
-    '--site-color-border': colors.border ?? DEFAULT_GLOBAL_COLORS.border ?? '#e2e8f0',
+    '--site-btn-radius':
+      RADIUS[t.buttonRadius ?? t.borderRadius] ?? RADIUS.md,
+    '--site-font': bodyStack,
+    '--site-font-heading': t.headingFont
+      ? getFontStack(t.headingFont)
+      : bodyStack,
   };
+
+  // Global color tokens (light) and their dark-mode counterparts.
+  for (const { key, cssVar } of CORE_COLOR_TOKENS) {
+    const light =
+      key === 'primary'
+        ? (colors.primary ?? t.primaryColor)
+        : key === 'accent'
+          ? (colors.accent ?? t.accentColor)
+          : (colors[key] ?? DEFAULT_GLOBAL_COLORS[key]);
+    if (light) styles[cssVar] = light;
+    const dark = t.colorsDark?.[key];
+    if (dark) styles[`${cssVar}-dark`] = dark;
+  }
 
   // Custom tokens
   if (colors.custom) {
@@ -188,19 +210,33 @@ export function themeStyle(
     }
   }
 
-  // Typography presets
+  // Typography presets → `--site-type-<id>-*`. Sizes are emitted per device
+  // (`-size` desktop, `-size-t` tablet, `-size-m` mobile) for `.s-type-<id>`.
   const presets = t.typography ?? DEFAULT_TYPOGRAPHY_PRESETS;
   for (const preset of presets) {
     const key = sanitizeTokenKey(preset.id);
     if (preset.fontFamily) {
-      styles[`--site-type-${key}-font`] = preset.fontFamily;
+      styles[`--site-type-${key}-font`] = getFontStack(preset.fontFamily);
     }
-    if (preset.fontSize) {
-      const size =
-        typeof preset.fontSize === 'object' && preset.fontSize !== null
-          ? String(preset.fontSize.desktop ?? '1rem')
-          : String(preset.fontSize);
-      styles[`--site-type-${key}-size`] = size;
+    if (preset.fontSize !== undefined && preset.fontSize !== '') {
+      const fs = preset.fontSize;
+      const size = (v: string | number | undefined) =>
+        v === undefined || v === '' ? undefined : typeof v === 'number' ? `${v}px` : v;
+      if (typeof fs === 'object' && fs !== null) {
+        const d = size(fs.desktop) ?? size(fs.tablet) ?? size(fs.mobile);
+        const tb = size(fs.tablet) ?? d;
+        const m = size(fs.mobile) ?? tb;
+        if (d) styles[`--site-type-${key}-size`] = d;
+        if (tb) styles[`--site-type-${key}-size-t`] = tb;
+        if (m) styles[`--site-type-${key}-size-m`] = m;
+      } else {
+        const v = size(fs);
+        if (v) {
+          styles[`--site-type-${key}-size`] = v;
+          styles[`--site-type-${key}-size-t`] = v;
+          styles[`--site-type-${key}-size-m`] = v;
+        }
+      }
     }
     if (preset.fontWeight) {
       styles[`--site-type-${key}-weight`] = String(preset.fontWeight);
@@ -216,16 +252,20 @@ export function themeStyle(
   return styles as CSSProperties;
 }
 
-import { buildGoogleFontsUrl, isGoogleFont } from './fonts';
+
 
 export function fontStylesheetUrl(
   tokens?: Partial<ThemeTokens> | null,
   additionalFamilies: string[] = []
 ): string | null {
-  const themeFont = resolveThemeTokens(tokens).fontFamily;
+  const t = resolveThemeTokens(tokens);
   const allFonts: string[] = [];
-  if (themeFont && themeFont !== 'System') {
-    allFonts.push(themeFont);
+  for (const f of [
+    t.fontFamily,
+    t.headingFont,
+    ...(t.typography ?? []).map(p => p.fontFamily),
+  ]) {
+    if (f && f !== 'System') allFonts.push(f);
   }
   for (const f of additionalFamilies) {
     if (f && f !== 'System' && isGoogleFont(f)) {

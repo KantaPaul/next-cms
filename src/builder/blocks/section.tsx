@@ -8,7 +8,7 @@ import {
   type SectionSettings,
   type UrlValue,
 } from '../style';
-import { orderedParts } from './element';
+import { el, orderedParts } from './element';
 
 export { MotionItem } from '../motion';
 export type { SectionSettings } from '../style';
@@ -119,6 +119,13 @@ export function Section({
   );
 }
 
+/** Element-style keys for the shared section heading (see `headingStyles()`). */
+export const HEADING_ELEMENTS = {
+  eyebrow: 'headingEyebrow',
+  title: 'headingTitle',
+  subtitle: 'headingSubtitle',
+} as const;
+
 export function SectionHeading({
   eyebrow,
   title,
@@ -126,6 +133,7 @@ export function SectionHeading({
   align = 'center',
   partOrder,
   editing,
+  elements,
 }: {
   eyebrow?: string;
   title?: string;
@@ -133,8 +141,11 @@ export function SectionHeading({
   align?: 'left' | 'center';
   partOrder?: string[];
   editing?: boolean;
+  /** The block's `elements` map, for the heading element styles. */
+  elements?: Record<string, unknown>;
 }) {
   if (!eyebrow && !title && !subtitle) return null;
+  const owner = { elements } as Parameters<typeof el>[0];
   return (
     <div
       className={cn(
@@ -146,17 +157,27 @@ export function SectionHeading({
         { partOrder, editing },
         {
           eyebrow: eyebrow ? (
-            <p className="s-primary-text mb-3 text-sm font-semibold uppercase tracking-wider">
-              {eyebrow}
+            <p className="mb-4">
+              <span {...el(owner, HEADING_ELEMENTS.eyebrow, 's-eyebrow')}>
+                {eyebrow}
+              </span>
             </p>
           ) : null,
           title: title ? (
-            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+            <h2 {...el(owner, HEADING_ELEMENTS.title, 's-section-title')}>
               {title}
             </h2>
           ) : null,
           subtitle: subtitle ? (
-            <p className="s-muted mt-4 text-lg leading-relaxed">{subtitle}</p>
+            <p
+              {...el(
+                owner,
+                HEADING_ELEMENTS.subtitle,
+                's-muted mt-4 text-lg leading-relaxed'
+              )}
+            >
+              {subtitle}
+            </p>
           ) : null,
         }
       )}
@@ -173,7 +194,13 @@ export function ButtonLink({
 }: {
   href?: UrlValue;
   children: ReactNode;
-  variant?: 'primary' | 'secondary' | 'light' | 'ghost-light';
+  variant?:
+    | 'primary'
+    | 'secondary'
+    | 'outline'
+    | 'soft'
+    | 'light'
+    | 'ghost-light';
   className?: string;
   style?: CSSProperties;
 }) {
@@ -190,3 +217,35 @@ export function ButtonLink({
     </a>
   );
 }
+
+export type CardVariant =
+  | 'default'
+  | 'flat'
+  | 'outline'
+  | 'elevated'
+  | 'glass'
+  | 'none';
+
+/** Card props shared by card-based blocks (see `cardFields()`). */
+export type CardStyleProps = { cardVariant?: CardVariant; cardHover?: boolean };
+
+/**
+ * Classes for one card. "default" keeps each block's original look (`legacy`),
+ * so existing pages don't change until a card style is picked.
+ */
+export function cardClass(
+  p: CardStyleProps,
+  legacy = 's-surface s-border s-radius border'
+): string {
+  const v = p.cardVariant;
+  const base = !v || v === 'default' ? legacy : `s-card s-card-${v}`;
+  return cn(base, p.cardHover && 's-card s-hover-lift');
+}
+
+/** `md:`/`lg:` grid columns for 1–4 column item grids. */
+export const ITEM_GRID_COLS: Record<number, string> = {
+  1: 'grid-cols-1',
+  2: 'md:grid-cols-2',
+  3: 'md:grid-cols-2 lg:grid-cols-3',
+  4: 'md:grid-cols-2 lg:grid-cols-4',
+};

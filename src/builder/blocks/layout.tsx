@@ -6,22 +6,35 @@ import { ButtonLink, type SectionSettings, Section } from './section';
 export type ButtonProps = WithSection & {
   label?: string;
   link?: UrlValue;
-  alignment?: 'center' | 'left';
+  alignment?: 'center' | 'left' | 'right';
+  variant?: 'primary' | 'secondary' | 'outline' | 'soft';
+  size?: 'sm' | 'md' | 'lg';
+};
+
+const BUTTON_SIZE = {
+  sm: 'px-4 py-2 text-sm',
+  md: '',
+  lg: 'px-7 py-3.5 text-base',
 };
 
 export function Button(p: ButtonProps) {
   const btnEl = el(p, 'button');
   return (
-    <Section section={p.section} editing={p.editing} className='py-0 md:py-0'>
+    <Section section={p.section} editing={p.editing}>
       <div
         className={cn(
           'flex w-full',
-          p.alignment === 'center' ? 'justify-center' : 'justify-start'
+          p.alignment === 'center'
+            ? 'justify-center'
+            : p.alignment === 'right'
+              ? 'justify-end'
+              : 'justify-start'
         )}
       >
         <ButtonLink
           href={p.link}
-          className={btnEl.className}
+          variant={p.variant ?? 'primary'}
+          className={cn(BUTTON_SIZE[p.size ?? 'md'], btnEl.className)}
           style={btnEl.style}
         >
           {p.label}

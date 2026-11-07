@@ -7,6 +7,12 @@ import {
   PostTitle,
   RelatedPosts,
 } from './blog';
+import {
+  AuthorBio,
+  BookmarkButton,
+  PostNavigation,
+  ShareButtons,
+} from './post-extras';
 import * as registry from './registry';
 
 /**
@@ -20,6 +26,10 @@ const POST_BLOCKS: Record<string, ComponentType<any>> = {
   PostMeta,
   PostContent,
   RelatedPosts,
+  AuthorBio,
+  ShareButtons,
+  PostNavigation,
+  BookmarkButton,
 };
 
 function setPath(obj: Record<string, unknown>, path: string, value: unknown) {

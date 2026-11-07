@@ -24,6 +24,11 @@ export default async function AccountPage() {
     <>
       <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
       <AccountForms
+        profile={{
+          name: session.user.name ?? '',
+          image: (session.user as { image?: string | null }).image ?? '',
+          bio: (session.user as { bio?: string | null }).bio ?? '',
+        }}
         hasPassword={Boolean(
           (session.user as { passwordHash?: string | null }).passwordHash
         )}

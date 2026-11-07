@@ -22,6 +22,10 @@ export type PostView = {
   publishedAt: string | null;
   authorName: string | null;
   authorUrl?: string | null;
+  /** Author avatar URL (users.image). */
+  authorImage?: string | null;
+  /** Author's public bio (Account → Public author profile). */
+  authorBio?: string | null;
   categories: PostTerm[];
   tags: PostTerm[];
   headerTemplateId?: string | null;
@@ -44,6 +48,8 @@ export const SAMPLE_POST: PostView = {
   body: '<p>This is sample copy. Each post that uses the shared template shows its own title, image, and article body in these blocks.</p><h2>A section heading</h2><p>Write posts in the rich-text editor on the post screen. The template decides where that body appears.</p>',
   publishedAt: new Date('2026-01-15T09:00:00Z').toISOString(),
   authorName: 'Jane Writer',
+  authorBio:
+    'Jane writes about publishing tools and editorial design. This bio comes from the author’s account profile.',
   categories: [{ id: 'sample-category', name: 'News', slug: 'news' }],
   tags: [
     { id: 'sample-tag', name: 'Product', slug: 'product', color: '#6366f1' },
@@ -57,6 +63,10 @@ export const POST_BLOCK_TYPES = [
   'PostMeta',
   'PostContent',
   'RelatedPosts',
+  'AuthorBio',
+  'ShareButtons',
+  'PostNavigation',
+  'BookmarkButton',
 ] as const;
 
 /** Used whenever no single-post template has been published yet. */

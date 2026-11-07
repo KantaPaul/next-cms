@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import {
+  ChevronDown,
   Facebook,
   Github,
   Instagram,
@@ -52,9 +53,9 @@ export type HeaderBarProps = {
 
 const BG_STYLES: Record<string, string> = {
   default: 'bg-transparent text-inherit',
-  muted: 'bg-[var(--site-surface)] text-[var(--site-text)]',
-  inverted: 'bg-[var(--site-text)] text-[var(--site-bg)]',
-  primary: 'bg-[var(--site-primary)] text-white',
+  muted: 'bg-[var(--site-surface)] text-[var(--site-fg)]',
+  inverted: 'bg-[var(--site-fg)] text-[var(--site-bg)]',
+  primary: 'bg-[var(--site-primary)] text-[var(--site-on-primary)]',
   transparent: 'bg-transparent text-inherit',
 };
 
@@ -89,7 +90,7 @@ export function HeaderBar({
   const containerClass =
     width === 'full'
       ? 'w-full px-4 sm:px-6 lg:px-8'
-      : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8';
+      : 'max-w-[var(--site-max-width,72rem)] mx-auto px-4 sm:px-6 lg:px-8';
 
   const style: React.CSSProperties = minHeight ? { minHeight } : {};
 
@@ -127,7 +128,7 @@ export function HeaderBar({
       className={cn(
         'w-full transition-colors',
         BG_STYLES[background] || BG_STYLES.default,
-        borderBottom && 'border-b border-steel-200 dark:border-dark-300'
+        borderBottom && 'border-b border-[var(--site-border)]'
       )}
       style={style}
     >
@@ -195,7 +196,7 @@ export function HeaderColumns({
   const containerClass =
     width === 'full'
       ? 'w-full px-4 sm:px-6 lg:px-8'
-      : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8';
+      : 'max-w-[var(--site-max-width,72rem)] mx-auto px-4 sm:px-6 lg:px-8';
 
   const cols = Math.min(Math.max(Number(columns) || 3, 1), 6);
   const slots = [col1, col2, col3, col4, col5, col6].slice(0, cols);
@@ -305,7 +306,7 @@ export function FooterColumns({
   const containerClass =
     width === 'full'
       ? 'w-full px-4 sm:px-6 lg:px-8'
-      : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8';
+      : 'max-w-[var(--site-max-width,72rem)] mx-auto px-4 sm:px-6 lg:px-8';
 
   const cols = Math.min(Math.max(Number(columns) || 4, 1), 6);
   const slots = [col1, col2, col3, col4, col5, col6].slice(0, cols);
@@ -367,7 +368,8 @@ export type LogoProps = {
   source?: 'site' | 'media';
   mediaUrl?: string;
   darkMediaUrl?: string;
-  stickyMediaUrl?: string;
+  /** Small line under the site name. */
+  tagline?: string;
   width?: number;
   link?: string;
   showSiteName?: boolean;
@@ -384,6 +386,7 @@ export function Logo({
   link = '/',
   showSiteName = true,
   siteName = 'Site Name',
+  tagline,
   siteLogo,
   siteSlug,
 }: LogoProps) {
@@ -402,11 +405,27 @@ export function Logo({
           src={logoUrl}
           alt={siteName || 'Logo'}
           style={{ width: `${width}px`, maxWidth: '100%', height: 'auto' }}
-          className="object-contain"
+          className={cn('object-contain', darkMediaUrl && 's-logo-light')}
+        />
+      ) : null}
+      {logoUrl && darkMediaUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={darkMediaUrl}
+          alt={siteName || 'Logo'}
+          style={{ width: `${width}px`, maxWidth: '100%', height: 'auto' }}
+          className="s-logo-dark object-contain"
         />
       ) : null}
       {showSiteName && siteName && (
-        <span className="truncate">{siteName}</span>
+        <span className="flex min-w-0 flex-col leading-tight">
+          <span className="truncate [font-family:var(--site-font-heading)]">
+            {siteName}
+          </span>
+          {tagline ? (
+            <span className="s-meta truncate font-normal">{tagline}</span>
+          ) : null}
+        </span>
       )}
     </Link>
   );
@@ -510,7 +529,7 @@ export function Copyright({
   return (
     <p
       className={cn(
-        'text-xs text-steel-500 dark:text-steel-400',
+        'text-xs s-muted',
         ALIGN_CLASS[align] || ALIGN_CLASS.center
       )}
     >
@@ -549,27 +568,54 @@ export function FooterLinks({
       ? menu.items.map(i => ({ label: i.label, url: i.url, target: i.target }))
       : links;
 
+  const list = (
+    <ul className="flex flex-col space-y-1.5 text-sm s-muted">
+      {(items || []).map((link, idx) => (
+        <li key={idx}>
+          <a
+            href={menuHref(link.url, siteSlug)}
+            target={link.target}
+            rel={link.target === '_blank' ? 'noopener noreferrer' : undefined}
+            className="hover:underline hover:text-[var(--site-fg)] transition-colors"
+          >
+            {link.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+  const headingEl = heading ? (
+    <h4 className="font-semibold text-sm tracking-tight text-[var(--site-fg)]">
+      {heading}
+    </h4>
+  ) : null;
+
+  if (collapseOnMobile && heading) {
+    // Phones: a disclosure per column. Tablet and up: always open.
+    return (
+      <div>
+        <details className="s-border group border-b py-2 md:hidden">
+          <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-semibold [&::-webkit-details-marker]:hidden">
+            {heading}
+            <ChevronDown
+              className="size-4 transition-transform group-open:rotate-180"
+              aria-hidden
+            />
+          </summary>
+          <div className="pt-2">{list}</div>
+        </details>
+        <div className="hidden flex-col space-y-2 md:flex">
+          {headingEl}
+          {list}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col space-y-2">
-      {heading && (
-        <h4 className="font-semibold text-sm tracking-tight text-[var(--site-text)]">
-          {heading}
-        </h4>
-      )}
-      <ul className="flex flex-col space-y-1.5 text-sm text-steel-600 dark:text-steel-300">
-        {(items || []).map((link, idx) => (
-          <li key={idx}>
-            <a
-              href={menuHref(link.url, siteSlug)}
-              target={link.target}
-              rel={link.target === '_blank' ? 'noopener noreferrer' : undefined}
-              className="hover:underline hover:text-[var(--site-text)] transition-colors"
-            >
-              {link.label}
-            </a>
-          </li>
-        ))}
-      </ul>
+      {headingEl}
+      {list}
     </div>
   );
 }
@@ -648,19 +694,19 @@ const SOCIAL_SIZE_ICON: Record<string, string> = {
 
 const SOCIAL_SHAPE: Record<string, Record<string, string>> = {
   plain: {
-    sm: 'p-1 text-steel-600 hover:text-steel-900 dark:text-steel-400 dark:hover:text-white transition-colors',
-    md: 'p-1.5 text-steel-600 hover:text-steel-900 dark:text-steel-400 dark:hover:text-white transition-colors',
-    lg: 'p-2 text-steel-600 hover:text-steel-900 dark:text-steel-400 dark:hover:text-white transition-colors',
+    sm: 'p-1 s-muted hover:text-[var(--site-fg)] transition-colors',
+    md: 'p-1.5 s-muted hover:text-[var(--site-fg)] transition-colors',
+    lg: 'p-2 s-muted hover:text-[var(--site-fg)] transition-colors',
   },
   round: {
-    sm: 'p-1.5 rounded-full bg-steel-100 hover:bg-steel-200 text-steel-700 dark:bg-dark-200 dark:hover:bg-dark-100 dark:text-steel-300 transition-colors',
-    md: 'p-2 rounded-full bg-steel-100 hover:bg-steel-200 text-steel-700 dark:bg-dark-200 dark:hover:bg-dark-100 dark:text-steel-300 transition-colors',
-    lg: 'p-2.5 rounded-full bg-steel-100 hover:bg-steel-200 text-steel-700 dark:bg-dark-200 dark:hover:bg-dark-100 dark:text-steel-300 transition-colors',
+    sm: 'p-1.5 rounded-full bg-[var(--site-surface)] hover:bg-[var(--site-surface)] text-[var(--site-fg)] transition-colors',
+    md: 'p-2 rounded-full bg-[var(--site-surface)] hover:bg-[var(--site-surface)] text-[var(--site-fg)] transition-colors',
+    lg: 'p-2.5 rounded-full bg-[var(--site-surface)] hover:bg-[var(--site-surface)] text-[var(--site-fg)] transition-colors',
   },
   square: {
-    sm: 'p-1.5 rounded-md bg-steel-100 hover:bg-steel-200 text-steel-700 dark:bg-dark-200 dark:hover:bg-dark-100 dark:text-steel-300 transition-colors',
-    md: 'p-2 rounded-md bg-steel-100 hover:bg-steel-200 text-steel-700 dark:bg-dark-200 dark:hover:bg-dark-100 dark:text-steel-300 transition-colors',
-    lg: 'p-2.5 rounded-md bg-steel-100 hover:bg-steel-200 text-steel-700 dark:bg-dark-200 dark:hover:bg-dark-100 dark:text-steel-300 transition-colors',
+    sm: 'p-1.5 rounded-md bg-[var(--site-surface)] hover:bg-[var(--site-surface)] text-[var(--site-fg)] transition-colors',
+    md: 'p-2 rounded-md bg-[var(--site-surface)] hover:bg-[var(--site-surface)] text-[var(--site-fg)] transition-colors',
+    lg: 'p-2.5 rounded-md bg-[var(--site-surface)] hover:bg-[var(--site-surface)] text-[var(--site-fg)] transition-colors',
   },
 };
 
@@ -792,7 +838,7 @@ export function ContactInfo({
   return (
     <div
       className={cn(
-        'text-sm text-steel-600 dark:text-steel-300',
+        'text-sm s-muted',
         isHorizontal
           ? 'flex flex-wrap items-center gap-x-6 gap-y-2'
           : 'flex flex-col space-y-2',
@@ -825,7 +871,7 @@ export function ContactInfo({
             {href ? (
               <a
                 href={href}
-                className="hover:underline hover:text-[var(--site-text)] transition-colors"
+                className="hover:underline hover:text-[var(--site-fg)] transition-colors"
               >
                 {content}
               </a>
@@ -888,14 +934,14 @@ export function LegalLinks({
     <nav
       aria-label="Legal links"
       className={cn(
-        'flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-steel-500 dark:text-steel-400',
+        'flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs s-muted',
         LEGAL_ALIGN[align] || LEGAL_ALIGN.center
       )}
     >
       {(items || []).map((link, idx) => (
         <span key={idx} className="inline-flex items-center gap-2.5">
           {idx > 0 && sepChar && (
-            <span className="text-steel-300 dark:text-steel-600 select-none" aria-hidden>
+            <span className="s-muted select-none" aria-hidden>
               {sepChar}
             </span>
           )}
@@ -903,7 +949,7 @@ export function LegalLinks({
             href={menuHref(link.url, siteSlug)}
             target={link.target}
             rel={link.target === '_blank' ? 'noopener noreferrer' : undefined}
-            className="hover:underline hover:text-[var(--site-text)] transition-colors"
+            className="hover:underline hover:text-[var(--site-fg)] transition-colors"
           >
             {link.label}
           </a>

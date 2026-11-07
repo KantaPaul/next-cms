@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { FONT_FAMILIES } from '@/builder/fonts';
 import { parseVideoSettings } from '@/lib/video/settings';
 import { licenseSettingsSchema } from '@/db/schemas/licenses.schema';
 import { authSettingsSchema } from '@/db/schemas/pages.schema';
@@ -14,27 +15,39 @@ const optionalText = (max: number) =>
 const hex = z
   .string()
   .regex(/^#[0-9a-fA-F]{6}$/, 'Use a hex colour like #4f46e5');
+const radius = z.enum(['none', 'sm', 'md', 'lg', 'full']);
+const paletteSchema = z.object({
+  primary: hex.optional(),
+  secondary: hex.optional(),
+  text: hex.optional(),
+  textMuted: hex.optional(),
+  accent: hex.optional(),
+  background: hex.optional(),
+  surface: hex.optional(),
+  surfaceAlt: hex.optional(),
+  primarySoft: hex.optional(),
+  border: hex.optional(),
+});
 export const themeTokensSchema = z.object({
   primaryColor: hex,
   accentColor: hex,
   fontFamily: z.enum([
     'Inter',
     'Plus Jakarta Sans',
+    'Manrope',
     'JetBrains Mono',
     'System',
   ]),
-  borderRadius: z.enum(['none', 'sm', 'md', 'lg', 'full']),
+  headingFont: z
+    .string()
+    .refine(f => FONT_FAMILIES.includes(f), 'Pick a font from the list')
+    .optional(),
+  borderRadius: radius,
+  buttonRadius: radius.optional(),
   colorMode: z.enum(['light', 'dark', 'system']),
-  colors: z
-    .object({
-      primary: hex.optional(),
-      secondary: hex.optional(),
-      text: hex.optional(),
-      textMuted: hex.optional(),
-      accent: hex.optional(),
-      background: hex.optional(),
-      surface: hex.optional(),
-      border: hex.optional(),
+  colorsDark: paletteSchema.optional(),
+  colors: paletteSchema
+    .extend({
       custom: z
         .array(
           z.object({

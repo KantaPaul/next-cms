@@ -11,6 +11,10 @@ export interface GlobalColorTokens {
   background?: string;
   surface?: string;
   border?: string;
+  /** Alternate section background (bands, cards on canvas). */
+  surfaceAlt?: string;
+  /** Tinted primary used behind badges, chips and soft buttons. */
+  primarySoft?: string;
   custom?: Array<{ id: string; name: string; value: string }>;
 }
 
@@ -34,10 +38,21 @@ export interface TypographyPreset {
 export interface ThemeTokens {
   primaryColor: string;
   accentColor: string;
-  fontFamily: 'Inter' | 'Plus Jakarta Sans' | 'JetBrains Mono' | 'System';
+  fontFamily:
+    | 'Inter'
+    | 'Plus Jakarta Sans'
+    | 'Manrope'
+    | 'JetBrains Mono'
+    | 'System';
+  /** Heading/display family. Unset = headings use `fontFamily`. */
+  headingFont?: string;
   borderRadius: 'none' | 'sm' | 'md' | 'lg' | 'full';
+  /** Buttons, badges and inputs. Unset = same as `borderRadius`. */
+  buttonRadius?: 'none' | 'sm' | 'md' | 'lg' | 'full';
   colorMode: 'light' | 'dark' | 'system';
   colors?: GlobalColorTokens;
+  /** Dark-mode palette. Unset keys fall back to the built-in dark colors. */
+  colorsDark?: Omit<GlobalColorTokens, 'custom'>;
   typography?: TypographyPreset[];
 }
 
@@ -57,7 +72,6 @@ export const DEFAULT_TYPOGRAPHY_PRESETS: TypographyPreset[] = [
   {
     id: 'h1',
     name: 'Heading 1',
-    fontFamily: 'Inter',
     fontSize: { desktop: '2.5rem', tablet: '2rem', mobile: '1.75rem' },
     fontWeight: '700',
     lineHeight: '1.2',
@@ -66,7 +80,6 @@ export const DEFAULT_TYPOGRAPHY_PRESETS: TypographyPreset[] = [
   {
     id: 'h2',
     name: 'Heading 2',
-    fontFamily: 'Inter',
     fontSize: { desktop: '2rem', tablet: '1.75rem', mobile: '1.5rem' },
     fontWeight: '600',
     lineHeight: '1.25',
@@ -75,7 +88,6 @@ export const DEFAULT_TYPOGRAPHY_PRESETS: TypographyPreset[] = [
   {
     id: 'h3',
     name: 'Heading 3',
-    fontFamily: 'Inter',
     fontSize: { desktop: '1.5rem', tablet: '1.35rem', mobile: '1.25rem' },
     fontWeight: '600',
     lineHeight: '1.3',
@@ -83,7 +95,6 @@ export const DEFAULT_TYPOGRAPHY_PRESETS: TypographyPreset[] = [
   {
     id: 'body',
     name: 'Body',
-    fontFamily: 'Inter',
     fontSize: '1rem',
     fontWeight: '400',
     lineHeight: '1.5',
@@ -91,7 +102,6 @@ export const DEFAULT_TYPOGRAPHY_PRESETS: TypographyPreset[] = [
   {
     id: 'caption',
     name: 'Caption',
-    fontFamily: 'Inter',
     fontSize: '0.875rem',
     fontWeight: '400',
     lineHeight: '1.4',
@@ -99,7 +109,6 @@ export const DEFAULT_TYPOGRAPHY_PRESETS: TypographyPreset[] = [
   {
     id: 'button',
     name: 'Button',
-    fontFamily: 'Inter',
     fontSize: '0.875rem',
     fontWeight: '500',
     lineHeight: '1',

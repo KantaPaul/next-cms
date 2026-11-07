@@ -17,6 +17,8 @@ export type PostTypeEntriesDisplay =
   | 'faq';
 
 export interface PostTypeEntriesProps {
+  /** Element styles (`elementStyle()` fields), e.g. the section heading. */
+  elements?: Record<string, unknown>;
   collectionId?: string;
   postTypeSlug?: string;
   /** Set by the loader when the post type resolved (by id or slug). */
@@ -89,6 +91,7 @@ export function PostTypeEntries({
   emptyText = 'Nothing to show yet.',
   items: loaded,
   section,
+  elements,
   editing,
 }: PostTypeEntriesProps) {
   // Loaded data knows whether the type exists; unloaded editor previews
@@ -114,7 +117,7 @@ export function PostTypeEntries({
   if (!items.length) {
     return editing ? (
       <Section section={section} editing={editing}>
-        <SectionHeading eyebrow={eyebrow} title={title} />
+        <SectionHeading elements={elements} eyebrow={eyebrow} title={title} />
         <p className="s-muted text-center text-sm">
           {emptyText} Publish entries of this post type to show them.
         </p>
@@ -167,7 +170,7 @@ export function PostTypeEntries({
   if (display === 'testimonial-slider') {
     return (
       <Section section={section} editing={editing} hasItems>
-        <SectionHeading eyebrow={eyebrow} title={title} />
+        <SectionHeading elements={elements} eyebrow={eyebrow} title={title} />
         <QueryLoopCarousel gapClass="gap-6" columnsDesktop={2}>
           {testimonialItems.map((t, i) => (
             <figure
@@ -237,7 +240,7 @@ export function PostTypeEntries({
   // Generic cards for any custom post type.
   return (
     <Section section={section} editing={editing} hasItems>
-      <SectionHeading eyebrow={eyebrow} title={title} />
+      <SectionHeading elements={elements} eyebrow={eyebrow} title={title} />
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {items.map(item => {
           const body = (

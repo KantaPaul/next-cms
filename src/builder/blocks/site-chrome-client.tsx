@@ -1,5 +1,6 @@
 'use client';
 
+import { currentSiteMode, type SiteMode, setSiteMode } from '../site-mode';
 import {
   type FormEvent,
   useEffect,
@@ -93,7 +94,7 @@ export function MobileMenuClient({
         onClick={() => setOpen(true)}
         aria-label="Open mobile menu"
         aria-expanded={open}
-        className="inline-flex items-center justify-center rounded-md p-2 text-steel-700 hover:bg-steel-100 hover:text-steel-900 dark:text-steel-300 dark:hover:bg-dark-200 dark:hover:text-white transition-colors"
+        className="inline-flex items-center justify-center rounded-md p-2 text-[var(--site-fg)] hover:bg-[var(--site-surface)] hover:text-[var(--site-fg)] transition-colors"
       >
         {icon === 'dots' ? (
           <MoreVertical className="size-5" />
@@ -119,18 +120,18 @@ export function MobileMenuClient({
             aria-modal="true"
             aria-label="Mobile Navigation"
             className={cn(
-              'relative z-10 flex flex-col bg-[var(--site-bg)] text-[var(--site-text)] shadow-2xl border-steel-200 dark:border-dark-300',
+              'relative z-10 flex flex-col bg-[var(--site-bg)] text-[var(--site-fg)] shadow-2xl border-[var(--site-border)]',
               drawerPositionClass
             )}
           >
             {/* Drawer Header */}
-            <div className="flex items-center justify-between border-b border-steel-200 dark:border-dark-300 px-5 py-4">
+            <div className="flex items-center justify-between border-b border-[var(--site-border)] px-5 py-4">
               <span className="font-semibold text-sm">Navigation</span>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Close menu"
-                className="rounded-md p-1.5 text-steel-500 hover:bg-steel-100 dark:hover:bg-dark-200 transition-colors"
+                className="rounded-md p-1.5 s-muted hover:bg-[var(--site-surface)] transition-colors"
               >
                 <X className="size-5" />
               </button>
@@ -138,7 +139,7 @@ export function MobileMenuClient({
 
             {/* Optional Search */}
             {showSearch && (
-              <div className="border-b border-steel-200 dark:border-dark-300 p-4">
+              <div className="border-b border-[var(--site-border)] p-4">
                 <SearchBoxClient
                   mode="inline"
                   placeholder="Search..."
@@ -172,7 +173,7 @@ export function MobileMenuClient({
                             type="button"
                             onClick={e => toggleSubmenu(item.id, e)}
                             aria-expanded={isExpanded}
-                            className="p-2 text-steel-400 hover:text-steel-700 dark:hover:text-steel-200"
+                            className="p-2 s-muted hover:text-[var(--site-fg)]"
                           >
                             <ChevronDown
                               className={cn(
@@ -185,13 +186,13 @@ export function MobileMenuClient({
                       </div>
 
                       {hasChildren && isExpanded && (
-                        <ul className="ml-4 flex flex-col space-y-1 border-l border-steel-200 dark:border-dark-300 pl-3 py-1">
+                        <ul className="ml-4 flex flex-col space-y-1 border-l border-[var(--site-border)] pl-3 py-1">
                           {item.children.map(child => (
                             <li key={child.id}>
                               <Link
                                 href={menuHref(child.url, siteSlug)}
                                 onClick={() => setOpen(false)}
-                                className="block py-1.5 text-sm text-steel-600 hover:text-[var(--site-primary)] dark:text-steel-400 transition-colors"
+                                className="block py-1.5 text-sm s-muted hover:text-[var(--site-primary)] transition-colors"
                               >
                                 {child.label}
                               </Link>
@@ -378,31 +379,31 @@ export function SearchBoxClient({
         role="listbox"
         aria-label="Search suggestions"
         className={cn(
-          'overflow-hidden rounded-xl border border-steel-200 bg-[var(--site-bg)] p-1.5 shadow-2xl dark:border-dark-300',
+          'overflow-hidden rounded-xl border border-[var(--site-border)] bg-[var(--site-bg)] p-1.5 shadow-2xl',
           mode === 'inline'
             ? cn(
                 'absolute top-full mt-2 w-72 sm:w-80 md:w-96 max-w-[calc(100vw-2rem)] z-50',
                 align === 'right' ? 'right-0' : 'left-0'
               )
-            : 'mt-3 w-full border-t border-steel-100 dark:border-dark-200 pt-3'
+            : 'mt-3 w-full border-t border-[var(--site-border)] pt-3'
         )}
       >
         {loading && hits.length === 0 ? (
-          <div className="flex items-center justify-center gap-2 py-4 text-xs text-steel-500">
+          <div className="flex items-center justify-center gap-2 py-4 text-xs s-muted">
             <Loader2 className="size-4 animate-spin text-[var(--site-primary)]" />
             <span>Searching...</span>
           </div>
         ) : hits.length === 0 ? (
-          <div className="py-4 text-center text-xs text-steel-500">
+          <div className="py-4 text-center text-xs s-muted">
             No matches for &ldquo;
-            <span className="font-medium text-steel-700 dark:text-steel-300">
+            <span className="font-medium text-[var(--site-fg)]">
               {query}
             </span>
             &rdquo;
           </div>
         ) : (
           <>
-            <div className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-steel-400">
+            <div className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider s-muted">
               Results
             </div>
             <ul className="flex flex-col gap-0.5">
@@ -424,11 +425,11 @@ export function SearchBoxClient({
                       className={cn(
                         'flex items-start gap-2.5 rounded-lg px-2.5 py-2 text-xs transition-colors',
                         isSelected
-                          ? 'bg-steel-100 text-[var(--site-primary)] dark:bg-dark-200'
-                          : 'hover:bg-steel-100 dark:hover:bg-dark-200 text-[var(--site-text)]'
+                          ? 'bg-[var(--site-surface)] text-[var(--site-primary)]'
+                          : 'hover:bg-[var(--site-surface)] text-[var(--site-fg)]'
                       )}
                     >
-                      <div className="mt-0.5 shrink-0 text-steel-400">
+                      <div className="mt-0.5 shrink-0 s-muted">
                         {hit.kind === 'post' ? (
                           <BookOpen className="size-4" />
                         ) : (
@@ -438,12 +439,12 @@ export function SearchBoxClient({
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
                           <span className="truncate font-medium">{hit.title}</span>
-                          <span className="shrink-0 rounded bg-steel-100 dark:bg-dark-300 px-1 py-0.5 text-[9px] uppercase tracking-wider font-semibold text-steel-500">
+                          <span className="shrink-0 rounded bg-[var(--site-surface)] px-1 py-0.5 text-[9px] uppercase tracking-wider font-semibold s-muted">
                             {hit.kind}
                           </span>
                         </div>
                         {hit.snippet && (
-                          <p className="mt-0.5 line-clamp-1 text-[11px] text-steel-400">
+                          <p className="mt-0.5 line-clamp-1 text-[11px] s-muted">
                             {hit.snippet}
                           </p>
                         )}
@@ -457,7 +458,7 @@ export function SearchBoxClient({
               id={`site-search-opt-${hits.length}`}
               role="option"
               aria-selected={activeIndex === hits.length}
-              className="mt-1 border-t border-steel-200 dark:border-dark-300 pt-1"
+              className="mt-1 border-t border-[var(--site-border)] pt-1"
             >
               <Link
                 href={fullSearchUrl}
@@ -468,8 +469,8 @@ export function SearchBoxClient({
                 className={cn(
                   'block rounded-md px-2.5 py-1.5 text-center text-xs font-medium text-[var(--site-primary)] transition-colors',
                   activeIndex === hits.length
-                    ? 'bg-steel-100 dark:bg-dark-200'
-                    : 'hover:bg-steel-50 dark:hover:bg-dark-200'
+                    ? 'bg-[var(--site-surface)]'
+                    : 'hover:bg-[var(--site-surface)]'
                 )}
               >
                 View all results for &ldquo;{query}&rdquo; &rarr;
@@ -491,7 +492,7 @@ export function SearchBoxClient({
             setActiveIndex(-1);
           }}
           aria-label="Open search"
-          className="inline-flex items-center justify-center rounded-md p-2 text-steel-600 hover:bg-steel-100 dark:text-steel-400 dark:hover:bg-dark-200 transition-colors"
+          className="inline-flex items-center justify-center rounded-md p-2 s-muted hover:bg-[var(--site-surface)] transition-colors"
         >
           <SearchIcon className="size-4" />
         </button>
@@ -507,10 +508,10 @@ export function SearchBoxClient({
             />
             <div
               ref={containerRef}
-              className="relative z-10 w-full max-w-lg rounded-xl border border-steel-200 bg-[var(--site-bg)] p-4 shadow-2xl dark:border-dark-300"
+              className="relative z-10 w-full max-w-lg rounded-xl border border-[var(--site-border)] bg-[var(--site-bg)] p-4 shadow-2xl"
             >
               <form action={searchPath} method="GET" className="relative">
-                <SearchIcon className="absolute left-3 top-3 size-5 text-steel-400" />
+                <SearchIcon className="absolute left-3 top-3 size-5 s-muted" />
                 <input
                   ref={inputRef}
                   type="search"
@@ -525,7 +526,7 @@ export function SearchBoxClient({
                   onKeyDown={handleKeyDown}
                   onFocus={handleInputFocus}
                   placeholder={placeholder}
-                  className="w-full rounded-lg border border-steel-200 bg-transparent py-2.5 pl-11 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary dark:border-dark-300"
+                  className="w-full rounded-lg border border-[var(--site-border)] bg-transparent py-2.5 pl-11 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--site-primary)]"
                 />
                 <button
                   type="button"
@@ -533,7 +534,7 @@ export function SearchBoxClient({
                     setModalOpen(false);
                     setShowFlyout(false);
                   }}
-                  className="absolute right-2.5 top-2.5 rounded p-1 text-steel-400 hover:text-steel-600"
+                  className="absolute right-2.5 top-2.5 rounded p-1 s-muted hover:text-[var(--site-fg)]"
                 >
                   <X className="size-4" />
                 </button>
@@ -553,7 +554,7 @@ export function SearchBoxClient({
       className={cn('relative', className || 'w-48 sm:w-64')}
     >
       <form action={searchPath} method="GET" className="relative w-full">
-        <SearchIcon className="absolute left-2.5 top-2.5 size-4 text-steel-400" />
+        <SearchIcon className="absolute left-2.5 top-2.5 size-4 s-muted" />
         <input
           ref={inputRef}
           type="search"
@@ -568,7 +569,7 @@ export function SearchBoxClient({
           onKeyDown={handleKeyDown}
           onFocus={handleInputFocus}
           placeholder={placeholder}
-          className="w-full rounded-md border border-steel-200 bg-[var(--site-surface)] py-1.5 pl-8 pr-3 text-xs placeholder:text-steel-400 focus:outline-none focus:ring-1 focus:ring-primary dark:border-dark-300"
+          className="w-full rounded-md border border-[var(--site-border)] bg-[var(--site-surface)] py-1.5 pl-8 pr-3 text-xs placeholder:text-[var(--site-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--site-primary)]"
         />
       </form>
       {renderDropdownContent()}
@@ -637,8 +638,8 @@ export function AnnouncementBarClient({
   if (dismissed || !text) return null;
 
   return (
-    <div className="relative w-full bg-[var(--site-primary)] text-white px-4 py-2 text-xs sm:text-sm font-medium transition-all">
-      <div className="mx-auto flex max-w-7xl items-center justify-center text-center pr-8 sm:pr-0">
+    <div className="relative w-full bg-[var(--site-primary)] text-[var(--site-on-primary)] px-4 py-2 text-xs sm:text-sm font-medium transition-all">
+      <div className="mx-auto flex max-w-[var(--site-max-width,72rem)] items-center justify-center text-center pr-8 sm:pr-0">
         {link ? (
           <a
             href={link}
@@ -656,7 +657,7 @@ export function AnnouncementBarClient({
           type="button"
           onClick={handleDismiss}
           aria-label="Dismiss announcement"
-          className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+          className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 opacity-80 hover:bg-black/10 hover:opacity-100 transition-colors"
         >
           <X className="size-3.5" />
         </button>
@@ -731,8 +732,8 @@ export function BackToTopClient({
       title={label || 'Back to top'}
       className={cn(
         'group inline-flex items-center justify-center gap-2 rounded-full shadow-md transition-all duration-200',
-        'bg-[var(--site-bg,#ffffff)] text-[var(--site-text,#1e293b)] border border-steel-200 dark:border-dark-300',
-        'hover:bg-steel-50 hover:shadow-lg dark:hover:bg-dark-200 hover:-translate-y-0.5',
+        'bg-[var(--site-bg,#ffffff)] text-[var(--site-fg,#1e293b)] border border-[var(--site-border)]',
+        'hover:bg-[var(--site-surface)] hover:shadow-lg hover:-translate-y-0.5',
         'focus:outline-none focus:ring-2 focus:ring-[var(--site-primary,#3b82f6)]',
         label ? 'px-4 py-2 text-xs font-medium' : 'p-3',
         posClasses
@@ -749,34 +750,20 @@ export function BackToTopClient({
    ========================================================================= */
 
 export type ThemeToggleClientProps = {
-  icon?: 'sun-moon' | 'circle';
   align?: 'left' | 'center' | 'right';
 };
 
-export function ThemeToggleClient({
-  icon = 'sun-moon',
-  align = 'center',
-}: ThemeToggleClientProps) {
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+export function ThemeToggleClient(_props: ThemeToggleClientProps) {
+  const [theme, setTheme] = useState<SiteMode>('light');
 
   useEffect(() => {
-    const root = document.querySelector<HTMLElement>('.site-root, [data-site-theme]');
-    const current = root?.getAttribute('data-site-theme') === 'dark' ? 'dark' : 'light';
-    setTheme(current);
+    setTheme(currentSiteMode());
   }, []);
 
   const toggle = () => {
-    const next = theme === 'dark' ? 'light' : 'dark';
+    const next: SiteMode = currentSiteMode() === 'dark' ? 'light' : 'dark';
+    setSiteMode(next);
     setTheme(next);
-    const root = document.querySelector<HTMLElement>('.site-root, [data-site-theme]');
-    if (root) {
-      root.setAttribute('data-site-theme', next);
-    }
-    try {
-      document.cookie = `site_theme=${next}; path=/; max-age=31536000; SameSite=Lax`;
-    } catch {
-      // cookie unavailable
-    }
   };
 
   return (
@@ -784,8 +771,9 @@ export function ThemeToggleClient({
       type="button"
       onClick={toggle}
       aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+      aria-pressed={theme === 'dark'}
       title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-      className="inline-flex items-center justify-center rounded-md p-2 text-steel-600 hover:bg-steel-100 hover:text-steel-900 dark:text-steel-300 dark:hover:bg-dark-200 dark:hover:text-white transition-colors"
+      className="s-icon-btn"
     >
       {theme === 'dark' ? (
         <Sun className="size-4" />

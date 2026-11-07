@@ -12,6 +12,9 @@ import {
   TEXT_TRANSFORMS,
   type Typography,
 } from '../style';
+import { useMemo } from 'react';
+import { resolveThemeTokens } from '../theme';
+import { useEditorBridge } from './editor-bridge';
 import {
   Description,
   ResponsiveChoose,
@@ -58,6 +61,18 @@ export function TypographyControl({
   defaultWeight,
 }: TypographyControlProps) {
   const t = value ?? {};
+  const { themeTokens } = useEditorBridge();
+  const presetOptions = useMemo(
+    () => [
+      { value: '', label: 'None' },
+      ...(
+        resolveThemeTokens(
+          themeTokens as Parameters<typeof resolveThemeTokens>[0]
+        ).typography ?? []
+      ).map(p => ({ value: p.id, label: p.name || p.id })),
+    ],
+    [themeTokens]
+  );
   const set = (patch: Partial<Typography>) => {
     const next: Typography = { ...t, ...patch };
     for (const k of Object.keys(next) as (keyof Typography)[])
@@ -102,6 +117,20 @@ export function TypographyControl({
   return (
     <ScrollArea className="max-h-96">
       <div className="space-y-4 pr-3">
+        {!isExcluded('preset') && presetOptions.length > 1 && (
+          <>
+            <SelectInput
+              label="Theme style"
+              value={t.preset ?? ''}
+              options={presetOptions}
+              onChange={preset => set({ preset: preset || undefined })}
+            />
+            <Description>
+              Uses a typography preset from Settings → Theme. Values below
+              override it.
+            </Description>
+          </>
+        )}
         {!isExcluded('family') && (
           <SelectInput
             label="Family"

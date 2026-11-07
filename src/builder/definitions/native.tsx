@@ -19,6 +19,14 @@ import {
   PostTitle,
   RelatedPosts,
 } from '../blocks/blog';
+import {
+  AuthorBio,
+  BookmarkButton,
+  PostNavigation,
+  ShareButtons,
+} from '../blocks/post-extras';
+import { Audio } from '../blocks/audio';
+import { BookmarksDrawer } from '../blocks/bookmarks-client';
 import { Container, DEFAULT_CONTAINER } from '../blocks/container';
 import {
   Code,
@@ -87,7 +95,6 @@ import {
 } from '../controls/loop-grid-fields';
 import { ImageMorphField } from '../controls/image-morph';
 import { PageTransitionField } from '../controls/page-transition';
-import { SectionField } from '../controls/section-inspector';
 import { Example } from '../custom/example';
 import {
   CategoryLockField,
@@ -112,10 +119,12 @@ import {
   ALL_PARTS,
   BUTTON_PARTS,
   elementStyle,
+  headingStyles,
+  cardFields,
+  columnsField,
   groupControl,
   MEDIA_PARTS,
   sectionControls,
-  sectionField,
   TEXT_PARTS,
 sectionSchema,
   urlField,
@@ -310,6 +319,9 @@ export const FeaturesBlock = defineBlock({
     },
     item_title_style: elementStyle('itemTitle', 'Item Title Style', TEXT_PARTS),
     item_desc_style: elementStyle('itemDescription', 'Item Description Style', TEXT_PARTS),
+    showIcons: { label: 'Show icons', group: CONTENT, type: 'toggle' },
+    ...cardFields(),
+    ...headingStyles(),
     ...sectionControls(),
   },
   defaults: {
@@ -377,6 +389,7 @@ export const StatsBlock = defineBlock({
     },
     value_style: elementStyle('value', 'Value Style', TEXT_PARTS),
     label_style: elementStyle('label', 'Label Style', TEXT_PARTS),
+    columns: columnsField('Columns (desktop)', [2, 3, 4]),
     ...sectionControls(),
   },
   defaults: {
@@ -480,6 +493,10 @@ export const PricingBlock = defineBlock({
     plan_title_style: elementStyle('planTitle', 'Plan Title Style', TEXT_PARTS),
     plan_price_style: elementStyle('planPrice', 'Plan Price Style', TEXT_PARTS),
     plan_btn_style: elementStyle('planButton', 'Plan Button Style', BUTTON_PARTS),
+    popularLabel: { label: 'Popular badge text', group: CONTENT, type: 'text' },
+    yearlyPeriodLabel: { label: 'Yearly period text', group: CONTENT, type: 'text' },
+    ...cardFields(),
+    ...headingStyles(),
     ...sectionControls(),
   },
   defaults: {
@@ -575,6 +592,9 @@ export const TestimonialsBlock = defineBlock({
     },
     quote_style: elementStyle('quote', 'Quote Style', TEXT_PARTS),
     author_style: elementStyle('author', 'Author Style', TEXT_PARTS),
+    columns: columnsField('Columns', [1, 2, 3]),
+    ...cardFields(),
+    ...headingStyles({ subtitle: false }),
     ...sectionControls(),
   },
   defaults: {
@@ -638,6 +658,7 @@ export const FAQBlock = defineBlock({
     },
     question_style: elementStyle('question', 'Question Style', TEXT_PARTS),
     answer_style: elementStyle('answer', 'Answer Style', TEXT_PARTS),
+    ...headingStyles({ subtitle: false }),
     ...sectionControls(),
   },
   defaults: {
@@ -1033,6 +1054,16 @@ export const CodeBlock = defineBlock({
   render: Code,
   fields: {
     code: { label: 'Code', group: CONTENT, type: 'textarea' },
+    filename: { label: 'File name', group: CONTENT, type: 'text' },
+    showCopy: {
+      label: 'Copy button',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+      ],
+    },
     ...sectionControls(),
   },
   defaults: {
@@ -1060,8 +1091,20 @@ export const NewsletterBlock = defineBlock({
   render: Newsletter,
   fields: {
     title: { label: 'Title', group: CONTENT, type: 'text' },
+    text: { label: 'Description', group: CONTENT, type: 'textarea' },
     subtitle: { label: 'Short text', group: CONTENT, type: 'text' },
-    email: { label: 'Email', group: CONTENT, type: 'text' },
+    placeholder: { label: 'Email placeholder', group: CONTENT, type: 'text' },
+    submitText: { label: 'Button text', group: CONTENT, type: 'text' },
+    successMessage: { label: 'Success message', group: CONTENT, type: 'text' },
+    layout: {
+      label: 'Layout',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Centered', value: 'centered' },
+        { label: 'Compact', value: 'compact' },
+      ],
+    },
     ...sectionControls(),
   },
   defaults: {
@@ -1069,7 +1112,7 @@ export const NewsletterBlock = defineBlock({
     subtitle: '',
     email: '',
     section: {
-      paddingY: 'md',
+      paddingY: 'none',
       background: 'default',
       hideOnMobile: false,
       hideOnTablet: false,
@@ -1244,7 +1287,7 @@ export const ImageNativeBlock = defineBlock({
       type: 'custom',
       render: UrlField,
     },
-    image_style: elementStyle('image', 'Image Style', MEDIA_PARTS),
+    image_style: elementStyle('image', 'Image Style', MEDIA_PARTS.filter(part => part !== 'imageSize')),
     caption_style: elementStyle('caption', 'Caption Style', TEXT_PARTS),
     ...sectionControls(),
   },
@@ -1318,6 +1361,7 @@ export const GalleryBlock = defineBlock({
       defaultItem: { url: '', alt: '', caption: '' },
     },
     image_style: elementStyle('image', 'Image Style', MEDIA_PARTS),
+    ...headingStyles(),
     ...sectionControls(),
   },
   defaults: {
@@ -1412,6 +1456,7 @@ export const ContactFormBlock = defineBlock({
         options: '',
       },
     },
+    ...headingStyles({ eyebrow: false }),
     ...sectionControls(),
   },
   defaults: {
@@ -1457,8 +1502,30 @@ export const ButtonBlock = defineBlock({
       group: CONTENT,
       type: 'radio',
       options: [
-        { label: 'Center', value: 'center' },
         { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+        { label: 'Right', value: 'right' },
+      ],
+    },
+    variant: {
+      label: 'Style',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Primary', value: 'primary' },
+        { label: 'Secondary', value: 'secondary' },
+        { label: 'Outline', value: 'outline' },
+        { label: 'Soft', value: 'soft' },
+      ],
+    },
+    size: {
+      label: 'Size',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'S', value: 'sm' },
+        { label: 'M', value: 'md' },
+        { label: 'L', value: 'lg' },
       ],
     },
     button_style: elementStyle('button', 'Button Style', BUTTON_PARTS),
@@ -1469,7 +1536,7 @@ export const ButtonBlock = defineBlock({
     link: 'https://www.example.com/',
     alignment: 'center',
     section: {
-      paddingY: 'md',
+      paddingY: 'none',
       background: 'default',
       hideOnMobile: false,
       hideOnTablet: false,
@@ -1609,6 +1676,7 @@ export const CollectionItemBlock = defineBlock({
       type: 'select',
       options: [
         { label: 'Card (Box with border & shadow)', value: 'card' },
+        { label: 'Table (label / value rows)', value: 'table' },
         { label: 'Clean (Inline, no box)', value: 'clean' },
       ],
     },
@@ -1747,6 +1815,8 @@ export const LogoCloudBlock = defineBlock({
       },
       defaultItem: { url: '', alt: '', link: '' },
     },
+    grayscale: { label: 'Grey until hover', group: CONTENT, type: 'toggle' },
+    ...headingStyles(),
     ...sectionControls(),
   },
   defaults: {
@@ -1800,6 +1870,9 @@ export const TeamBlock = defineBlock({
       },
       defaultItem: { photo: '', name: '', role: '' },
     },
+    columns: columnsField('Columns (desktop)', [2, 3, 4]),
+    ...cardFields(),
+    ...headingStyles({ subtitle: false }),
     ...sectionControls(),
   },
   defaults: {
@@ -1847,6 +1920,7 @@ export const TimelineBlock = defineBlock({
       },
       defaultItem: { date: '', title: '', body: '' },
     },
+    ...headingStyles({ subtitle: false }),
     ...sectionControls(),
   },
   defaults: {
@@ -1997,6 +2071,7 @@ export const BlogPostsBlock = defineBlock({
       render: TagLockField,
     },
     emptyMessage: { label: 'Empty message', group: CONTENT, type: 'text' },
+    ...headingStyles({ eyebrow: false }),
     ...sectionControls(),
   },
   defaults: {
@@ -2044,12 +2119,30 @@ export const SliderBlock = defineBlock({
       item: { title: { label: 'Title', group: CONTENT, type: 'text' } },
       defaultItem: { title: 'Slide', content: [] },
     },
+    autoplay: { label: 'Autoplay', group: CONTENT, type: 'toggle' },
+    autoplayInterval: {
+      label: 'Autoplay every',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: '3 seconds', value: 3 },
+        { label: '5 seconds', value: 5 },
+        { label: '7 seconds', value: 7 },
+        { label: '10 seconds', value: 10 },
+      ],
+    },
+    loop: { label: 'Loop slides', group: CONTENT, type: 'toggle' },
+    showArrows: { label: 'Show arrows', group: CONTENT, type: 'toggle' },
+    showDots: { label: 'Show dots', group: CONTENT, type: 'toggle' },
     ...sectionControls(),
   },
   defaults: {
     items: [{ title: 'Slide 1', content: [] }],
+    showArrows: true,
+    showDots: true,
+    autoplayInterval: 5,
     section: {
-      paddingY: 'md',
+      paddingY: 'none',
       background: 'default',
       hideOnMobile: false,
       hideOnTablet: false,
@@ -2077,6 +2170,24 @@ export const TabsBlock = defineBlock({
       type: 'list',
       item: { label: { label: 'Label', group: CONTENT, type: 'text' } },
       defaultItem: { label: 'Tab 1', content: [] },
+    },
+    variant: {
+      label: 'Tab style',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Underline', value: 'underline' },
+        { label: 'Pills', value: 'pills' },
+      ],
+    },
+    alignment: {
+      label: 'Tab alignment',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Start', value: 'start' },
+        { label: 'Center', value: 'center' },
+      ],
     },
     ...sectionControls(),
   },
@@ -2111,6 +2222,11 @@ export const AccordionBlock = defineBlock({
       type: 'list',
       item: { title: { label: 'Title', group: CONTENT, type: 'text' } },
       defaultItem: { title: 'Question?', content: [] },
+    },
+    allowMultiple: {
+      label: 'Allow several open at once',
+      group: CONTENT,
+      type: 'toggle',
     },
     ...sectionControls(),
   },
@@ -2389,6 +2505,7 @@ export const RelatedPostsBlock = defineBlock({
         { label: 'No', value: false },
       ],
     },
+    ...headingStyles({ eyebrow: false, subtitle: false }),
     ...sectionControls(),
   },
   defaults: {
@@ -2400,7 +2517,275 @@ export const RelatedPostsBlock = defineBlock({
     showAuthor: false,
     showDate: true,
     section: {
+      paddingY: 'none',
+      background: 'default',
+      hideOnMobile: false,
+      hideOnTablet: false,
+      hideOnDesktop: false,
+      anchor: '',
+    },
+  },
+});
+
+export const BookmarkButtonBlock = defineBlock({
+  type: 'BookmarkButton',
+  label: 'Bookmark button',
+  category: 'post',
+  icon: 'bookmarks',
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
+  }).passthrough(),
+  render: BookmarkButton,
+  fields: {
+    label: { label: 'Button text (empty = icon only)', group: CONTENT, type: 'text' },
+    align: {
+      label: 'Alignment',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+      ],
+    },
+    width: {
+      label: 'Width',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Narrow', value: 'narrow' },
+        { label: 'Normal', value: 'normal' },
+        { label: 'Wide', value: 'wide' },
+      ],
+    },
+    ...sectionControls(),
+  },
+  defaults: {
+    label: 'Save',
+    align: 'left',
+    width: 'normal',
+    section: {
+      paddingY: 'sm',
+      background: 'default',
+      hideOnMobile: false,
+      hideOnTablet: false,
+      hideOnDesktop: false,
+      anchor: '',
+    },
+  },
+});
+
+export const AudioBlock = defineBlock({
+  type: 'Audio',
+  label: 'Audio',
+  category: 'content',
+  icon: 'audio',
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
+  }).passthrough(),
+  render: Audio,
+  fields: {
+    url: { label: 'Audio file URL (mp3, m4a, ogg)', group: CONTENT, type: 'text' },
+    title: { label: 'Title', group: CONTENT, type: 'text' },
+    caption: { label: 'Caption', group: CONTENT, type: 'text' },
+    coverImage: {
+      label: 'Cover image',
+      group: CONTENT,
+      type: 'custom',
+      render: MediaUrlField,
+    },
+    width: {
+      label: 'Width',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Narrow', value: 'narrow' },
+        { label: 'Normal', value: 'normal' },
+        { label: 'Wide', value: 'wide' },
+      ],
+    },
+    card_style: elementStyle('card', 'Card Style', BUTTON_PARTS),
+    title_style: elementStyle('title', 'Title Style', TEXT_PARTS),
+    ...sectionControls(),
+  },
+  defaults: {
+    url: '',
+    title: 'Field recording',
+    caption: '',
+    width: 'normal',
+    section: {
       paddingY: 'md',
+      background: 'default',
+      hideOnMobile: false,
+      hideOnTablet: false,
+      hideOnDesktop: false,
+      anchor: '',
+    },
+  },
+});
+
+export const BookmarksBlock = defineBlock({
+  type: 'Bookmarks',
+  label: 'Bookmarks',
+  category: 'header',
+  icon: 'bookmarks',
+  schema: z.object({
+    title: z.string().max(60).optional(),
+    emptyText: z.string().max(200).optional(),
+  }).passthrough(),
+  render: BookmarksDrawer,
+  fields: {
+    title: { label: 'Drawer title', type: 'text' },
+    emptyText: { label: 'Empty message', type: 'textarea' },
+  },
+  defaults: {
+    title: 'Saved',
+    emptyText: 'Nothing saved yet. Use the bookmark button on a post to keep it here.',
+  },
+});
+
+export const AuthorBioBlock = defineBlock({
+  type: 'AuthorBio',
+  label: 'Author bio',
+  category: 'post',
+  icon: 'authorbio',
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
+  }).passthrough(),
+  render: AuthorBio,
+  fields: {
+    heading: { label: 'Heading', group: CONTENT, type: 'text' },
+    showAvatar: {
+      label: 'Avatar',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+      ],
+    },
+    width: {
+      label: 'Width',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Narrow', value: 'narrow' },
+        { label: 'Normal', value: 'normal' },
+        { label: 'Wide', value: 'wide' },
+      ],
+    },
+    card_style: elementStyle('card', 'Card Style', BUTTON_PARTS),
+    name_style: elementStyle('name', 'Name Style', TEXT_PARTS),
+    bio_style: elementStyle('bio', 'Bio Style', TEXT_PARTS),
+    ...sectionControls(),
+  },
+  defaults: {
+    heading: 'Written by',
+    showAvatar: true,
+    width: 'normal',
+    section: {
+      paddingY: 'sm',
+      background: 'default',
+      hideOnMobile: false,
+      hideOnTablet: false,
+      hideOnDesktop: false,
+      anchor: '',
+    },
+  },
+});
+
+export const PostNavigationBlock = defineBlock({
+  type: 'PostNavigation',
+  label: 'Previous / next post',
+  category: 'post',
+  icon: 'postnavigation',
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
+  }).passthrough(),
+  render: PostNavigation,
+  fields: {
+    previousLabel: { label: 'Previous label', group: CONTENT, type: 'text' },
+    nextLabel: { label: 'Next label', group: CONTENT, type: 'text' },
+    width: {
+      label: 'Width',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Narrow', value: 'narrow' },
+        { label: 'Normal', value: 'normal' },
+        { label: 'Wide', value: 'wide' },
+      ],
+    },
+    ...sectionControls(),
+  },
+  defaults: {
+    previousLabel: 'Previous',
+    nextLabel: 'Next',
+    width: 'normal',
+    section: {
+      paddingY: 'sm',
+      background: 'default',
+      hideOnMobile: false,
+      hideOnTablet: false,
+      hideOnDesktop: false,
+      anchor: '',
+    },
+  },
+});
+
+export const ShareButtonsBlock = defineBlock({
+  type: 'ShareButtons',
+  label: 'Share buttons',
+  category: 'post',
+  icon: 'share-2',
+  schema: z.object({
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
+  }).passthrough(),
+  render: ShareButtons,
+  fields: {
+    label: { label: 'Label', group: CONTENT, type: 'text' },
+    networks: {
+      label: 'Networks',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Copy, X, LinkedIn, Email', value: 'default' },
+        { label: 'All (+ Facebook)', value: 'all' },
+        { label: 'Copy link only', value: 'copy' },
+      ],
+    },
+    align: {
+      label: 'Alignment',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+      ],
+    },
+    width: {
+      label: 'Width',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Narrow', value: 'narrow' },
+        { label: 'Normal', value: 'normal' },
+        { label: 'Wide', value: 'wide' },
+      ],
+    },
+    ...sectionControls(),
+  },
+  defaults: {
+    label: 'Share',
+    networks: 'default',
+    align: 'left',
+    width: 'normal',
+    section: {
+      paddingY: 'sm',
       background: 'default',
       hideOnMobile: false,
       hideOnTablet: false,
@@ -2726,10 +3111,12 @@ export const LogoBlock = defineBlock({
     source: z.enum(['site', 'media']).default('site'),
     mediaUrl: z.string().default(''),
     darkMediaUrl: z.string().default(''),
-    stickyMediaUrl: z.string().default(''),
+    /** Removed control; kept so older saves still validate. */
+    stickyMediaUrl: z.string().optional(),
     width: z.number().default(140),
     link: z.string().default('/'),
     showSiteName: z.boolean().default(true),
+    tagline: z.string().max(120).optional(),
   }),
   render: Logo,
   fields: {
@@ -2751,12 +3138,6 @@ export const LogoBlock = defineBlock({
       label: 'Dark mode logo (optional)',
       type: 'custom',
       render: MediaUrlField,
-      when: (props: any) => props.source === 'media',
-    },
-    stickyMediaUrl: {
-      label: 'Sticky header logo (optional)',
-      type: 'custom',
-      render: MediaUrlField,
     },
     width: { label: 'Width (px)', type: 'number' },
     link: { label: 'Link URL', type: 'custom', render: UrlField },
@@ -2768,12 +3149,16 @@ export const LogoBlock = defineBlock({
         { label: 'No', value: false },
       ],
     },
+    tagline: {
+      label: 'Tagline (under the name)',
+      type: 'text',
+      when: (props: any) => props.showSiteName !== false,
+    },
   },
   defaults: {
     source: 'site',
     mediaUrl: '',
     darkMediaUrl: '',
-    stickyMediaUrl: '',
     width: 140,
     link: '/',
     showSiteName: true,
@@ -3431,22 +3816,12 @@ export const ThemeToggleBlock = defineBlock({
   category: 'header',
   icon: 'sun',
   schema: z.object({
-    icon: z.enum(['sun-moon', 'circle']).default('sun-moon'),
+    /** Removed control (it never changed the icon); kept so older saves validate. */
+    icon: z.enum(['sun-moon', 'circle']).optional(),
   }),
   render: ThemeToggle,
-  fields: {
-    icon: {
-      label: 'Icon style',
-      type: 'radio',
-      options: [
-        { label: 'Sun / Moon', value: 'sun-moon' },
-        { label: 'Circle', value: 'circle' },
-      ],
-    },
-  },
-  defaults: {
-    icon: 'sun-moon',
-  },
+  fields: {},
+  defaults: {},
 });
 
 export const LanguageSwitcherNativeBlock = defineBlock({
@@ -3550,6 +3925,7 @@ export const PostTypeEntriesBlock = defineBlock({
       when: (props: any) => (props.display ?? 'cards') === 'cards',
     },
     emptyText: { label: 'Empty state text', group: CONTENT, type: 'text' },
+    ...headingStyles({ subtitle: false }),
     ...sectionControls(),
   },
   defaults: {
@@ -3593,7 +3969,7 @@ export const QueryLoopBlock = defineBlock({
       title: z.string().optional(),
       subtitle: z.string().optional(),
       layout: z
-        .enum(['grid', 'list', 'masonry', 'carousel', 'table'])
+        .enum(['grid', 'list', 'masonry', 'carousel', 'table', 'featured'])
         .default('grid'),
       columnsDesktop: z.number().int().min(1).max(4).default(3),
       columnsTablet: z.number().int().min(1).max(3).default(2),
@@ -3710,6 +4086,7 @@ export const QueryLoopBlock = defineBlock({
         { label: 'Masonry', value: 'masonry' },
         { label: 'Carousel', value: 'carousel' },
         { label: 'Table', value: 'table' },
+        { label: 'Featured (lead + grid)', value: 'featured' },
       ],
     },
     columnsDesktop: {
@@ -3761,6 +4138,13 @@ export const QueryLoopBlock = defineBlock({
       group: CONTENT,
       type: 'number',
       min: 1,
+      max: 100,
+    },
+    offset: {
+      label: 'Offset (skip first items)',
+      group: CONTENT,
+      type: 'number',
+      min: 0,
       max: 100,
     },
     sortField: {
@@ -3832,6 +4216,8 @@ export const QueryLoopBlock = defineBlock({
     showDate: { label: 'Show published date', group: CONTENT, type: 'toggle' },
     showTerms: { label: 'Show categories/tags', group: CONTENT, type: 'toggle' },
     emptyText: { label: 'Empty state text', group: CONTENT, type: 'text' },
+    ...cardFields(),
+    ...headingStyles(),
     ...sectionControls(),
   },
   defaults: {
@@ -3904,7 +4290,7 @@ export const LoopGridBlock = defineBlock({
       eyebrow: z.string().optional(),
       title: z.string().optional(),
       subtitle: z.string().optional(),
-      layout: z.enum(['grid', 'list', 'masonry', 'carousel']).default('grid'),
+      layout: z.enum(['grid', 'list', 'masonry', 'carousel', 'featured']).default('grid'),
       columnsDesktop: z.number().int().min(1).max(4).default(3),
       columnsTablet: z.number().int().min(1).max(3).default(2),
       columnsMobile: z.number().int().min(1).max(2).default(1),
@@ -3979,6 +4365,7 @@ export const LoopGridBlock = defineBlock({
         { label: 'List', value: 'list' },
         { label: 'Masonry', value: 'masonry' },
         { label: 'Carousel', value: 'carousel' },
+        { label: 'Featured (lead + grid)', value: 'featured' },
       ],
     },
     columnsDesktop: qlf.columnsDesktop,
@@ -4028,6 +4415,8 @@ export const LoopGridBlock = defineBlock({
     pagination: qlf.pagination,
     loadMoreLabel: qlf.loadMoreLabel,
     emptyText: qlf.emptyText,
+    ...cardFields(),
+    ...headingStyles(),
     ...sectionControls(),
   },
   defaults: {
@@ -4072,6 +4461,7 @@ export const LoopItemFieldBlock = defineBlock({
           'author',
           'terms',
           'readMore',
+          'bookmark',
           'custom',
         ])
         .default('title'),
@@ -4094,6 +4484,7 @@ export const LoopItemFieldBlock = defineBlock({
         { label: 'Author Name', value: 'author' },
         { label: 'Categories & Tags', value: 'terms' },
         { label: 'Read More Link', value: 'readMore' },
+        { label: 'Bookmark Button', value: 'bookmark' },
         { label: 'Custom / Collection Field', value: 'custom' },
       ],
     },
@@ -4353,6 +4744,7 @@ export const SearchResultsBlock = defineBlock({
       max: 100,
     },
     emptyText: { label: 'Empty state text', group: CONTENT, type: 'text' },
+    ...headingStyles(),
     ...sectionControls(),
   },
   defaults: {
@@ -4458,6 +4850,12 @@ export const NATIVE_BLOCKS = [
   PostMetaBlock,
   PostContentBlock,
   RelatedPostsBlock,
+  AuthorBioBlock,
+  PostNavigationBlock,
+  ShareButtonsBlock,
+  BookmarkButtonBlock,
+  AudioBlock,
+  BookmarksBlock,
   HeaderBarBlock,
   HeaderColumnsBlock,
   FooterColumnsBlock,
@@ -4621,6 +5019,7 @@ export const CATEGORIES = {
       'SocialIcons',
       'ContactInfo',
       'ThemeToggle',
+      'Bookmarks',
       'LanguageSwitcher',
       'Button',
       'Spacer',
@@ -4668,6 +5067,7 @@ export const CATEGORIES = {
       'Embed',
       'Map',
       'Code',
+      'Audio',
       'Newsletter',
     ],
   },
@@ -4714,6 +5114,10 @@ export const CATEGORIES = {
       'PostFeaturedImage',
       'PostMeta',
       'PostContent',
+      'AuthorBio',
+      'ShareButtons',
+      'BookmarkButton',
+      'PostNavigation',
       'RelatedPosts',
     ],
   },

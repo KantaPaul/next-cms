@@ -1,6 +1,7 @@
 'use client';
 
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useId, useState } from 'react';
+import { cn } from '@/lib/utils/cn';
 import { type SectionSettings, Section } from './section';
 
 type WithSection = { section?: SectionSettings; editing?: boolean };
@@ -9,16 +10,19 @@ export type NewsletterProps = WithSection & {
   title?: string;
   subtitle?: string;
   text?: string;
-  /** Subscriber email. */
-  email?: string;
+  placeholder?: string;
   submitText?: string;
   successMessage?: string;
+  /** "centered" band, or "compact" left-aligned (footers, sidebars). */
+  layout?: 'centered' | 'compact';
 };
 
 const DEFAULT_SUCCESS = 'Thanks! You are on the list.';
 
 export function Newsletter(p: NewsletterProps) {
   const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const inputId = useId();
+  const compact = p.layout === 'compact';
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -46,7 +50,13 @@ export function Newsletter(p: NewsletterProps) {
   if (state === 'sent') {
     return (
       <Section section={p.section} editing={p.editing}>
-        <div className="s-soft-primary s-radius p-6 text-center font-medium">
+        <div
+          role="status"
+          className={cn(
+            's-soft-primary s-radius p-6 font-medium',
+            !compact && 'text-center'
+          )}
+        >
           {p.successMessage || DEFAULT_SUCCESS}
         </div>
       </Section>
@@ -54,28 +64,42 @@ export function Newsletter(p: NewsletterProps) {
   }
 
   return (
-    <Section section={p.section} editing={p.editing} className='py-0 md:py-0'>
-      <div className="mx-auto max-w-2xl text-center">
+    <Section section={p.section} editing={p.editing}>
+      <div className={compact ? 'max-w-md' : 'mx-auto max-w-2xl text-center'}>
         {p.title ? (
-          <h2 className="text-3xl font-bold tracking-tight md:text-4xl">{p.title}</h2>
+          compact ? (
+            <h3 className="text-lg font-semibold">{p.title}</h3>
+          ) : (
+            <h2 className="s-section-title">{p.title}</h2>
+          )
         ) : null}
-        {p.text ? <p className="s-muted mt-4 text-lg">{p.text}</p> : null}
-        {p.subtitle ? <p className="s-muted mt-2">{p.subtitle}</p> : null}
+        {p.text ? (
+          <p className={cn('s-muted', compact ? 'mt-2 text-sm' : 'mt-4 text-lg')}>
+            {p.text}
+          </p>
+        ) : null}
+        {p.subtitle ? (
+          <p className={cn('s-muted', compact ? 'mt-1 text-sm' : 'mt-2')}>
+            {p.subtitle}
+          </p>
+        ) : null}
         <form
           onSubmit={onSubmit}
           name="newsletter"
-          className="relative mx-auto mt-6 flex max-w-md gap-2"
+          className={cn(
+            'relative mt-6 flex max-w-md gap-2',
+            compact ? 'mt-4' : 'mx-auto'
+          )}
         >
-          <label htmlFor="newsletter-email" className="sr-only">
+          <label htmlFor={inputId} className="sr-only">
             Email
           </label>
           <input
-            id="newsletter-email"
+            id={inputId}
             name="email"
             type="email"
             required
-            defaultValue={p.email}
-            placeholder="you@example.com"
+            placeholder={p.placeholder || 'you@example.com'}
             className="s-input h-11 w-full"
           />
           {/* Honeypot: bots fill it in; real users never see or submit it. */}

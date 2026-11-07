@@ -10,14 +10,9 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { puckToDocument } from '@nextcms/builder-core';
 import { BuilderRenderer, rendererComponents } from '../renderer';
 import { NATIVE_BLOCKS } from '../definitions/native';
+import { POST_BLOCK_TYPES } from '../post-template';
 
-const POST_TYPES = new Set([
-  'PostTitle',
-  'PostFeaturedImage',
-  'PostMeta',
-  'PostContent',
-  'RelatedPosts',
-]);
+const POST_TYPES = new Set<string>(POST_BLOCK_TYPES);
 
 describe('renderer components', () => {
   it('has a component for every page native block', () => {

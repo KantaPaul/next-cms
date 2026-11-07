@@ -6,6 +6,7 @@ import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import { permissionProcedure } from '@/server/procedures/permission.procedure';
 import { siteSettingsService } from '@/server/services/site-settings.service';
+import { starterKitService } from '@/server/services/starter-kit.service';
 import { parseVideoSettings } from '@/lib/video/settings';
 import { db } from '@/db';
 import { licenses } from '@/db/schemas/licenses.schema';
@@ -33,6 +34,18 @@ export const updateThemeSettings = permissionProcedure(
     revalidatePath('/dashboard', 'layout');
     return row;
   });
+
+/** Theme + header, footer, archive, search, post layout and a home page template. */
+export const installQuietEditorial = permissionProcedure(
+  PERMISSIONS.SETTINGS_MANAGE
+)
+  .input(z.object({}).optional())
+  .action(async ({ ctx }) => {
+  const result = await starterKitService.installQuietEditorial(ctx.access);
+  revalidatePath(PAGES.DASHBOARD.THEME);
+  revalidatePath('/dashboard', 'layout');
+  return result;
+});
 
 export const updateSiteSettings = permissionProcedure(
   PERMISSIONS.SETTINGS_MANAGE

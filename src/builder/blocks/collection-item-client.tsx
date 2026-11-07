@@ -24,7 +24,8 @@ export type CollectionItemField = {
 export type CollectionItemProps = WithSection & {
   /** Fields to render, each with its own style. Empty shows the full entry. */
   items?: CollectionItemField[];
-  layout?: 'card' | 'clean';
+  /** `table`: label / value rows with hairline dividers (spec sheets). */
+  layout?: 'card' | 'clean' | 'table';
   direction?: 'stack' | 'row' | 'grid';
   gap?: 'sm' | 'md' | 'lg';
   align?: Align;
@@ -37,12 +38,12 @@ export type CollectionItemProps = WithSection & {
 type EntryField = { key: string; label: string; type: string };
 
 const SIZE_CLASS: Record<Exclude<TextSize, 'auto'>, string> = {
-  h1: 'text-4xl md:text-5xl font-extrabold tracking-tight text-foreground',
+  h1: 'text-4xl md:text-5xl font-extrabold tracking-tight text-[var(--site-fg)]',
   h2: 'text-2xl md:text-3xl font-bold tracking-tight',
-  h3: 'text-xl md:text-2xl font-bold tracking-tight text-foreground',
-  lead: 'text-lg md:text-xl text-muted-foreground leading-relaxed',
-  body: 'text-base text-foreground font-medium',
-  small: 'text-sm text-muted-foreground',
+  h3: 'text-xl md:text-2xl font-bold tracking-tight text-[var(--site-fg)]',
+  lead: 'text-lg md:text-xl s-muted leading-relaxed',
+  body: 'text-base text-[var(--site-fg)] font-medium',
+  small: 'text-sm s-muted',
 };
 
 const SIZE_TAG: Record<Exclude<TextSize, 'auto'>, 'h1' | 'h2' | 'h3' | 'p'> = {
@@ -112,7 +113,7 @@ function FieldValue({
     content = (
       <div
         className={cn(
-          's-prose prose prose-lg max-w-none text-foreground',
+          's-prose prose prose-lg max-w-none text-[var(--site-fg)]',
           ...valueStyle.classes
         )}
         style={valueStyle.style}
@@ -136,7 +137,7 @@ function FieldValue({
         style={valueStyle.style}
       />
     ) : editing ? (
-      <div className="flex h-36 w-full items-center justify-center rounded-lg border border-dashed text-xs text-muted-foreground">
+      <div className="flex h-36 w-full items-center justify-center rounded-lg border border-dashed text-xs s-muted">
         [No image for {label}]
       </div>
     ) : null;
@@ -165,7 +166,7 @@ function FieldValue({
       {showLabel && label && (
         <span
           className={cn(
-            'block text-xs font-semibold uppercase tracking-wider text-muted-foreground',
+            'block text-xs font-semibold uppercase tracking-wider s-muted',
             ...labelStyle.classes
           )}
           style={labelStyle.style}
@@ -186,8 +187,8 @@ export function CollectionItem(p: CollectionItemProps): ReactNode {
     return (
       <Section section={p.section} editing={p.editing}>
         <div className="s-surface s-border s-muted s-radius flex min-h-40 flex-col items-center justify-center border border-dashed p-6 text-center text-sm">
-          <p className="font-semibold text-foreground">Collection Item</p>
-          <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+          <p className="font-semibold text-[var(--site-fg)]">Collection Item</p>
+          <p className="text-xs s-muted mt-1 max-w-sm">
             This block displays dynamic collection content when used on a
             collection template page, or when viewed at
             /collections/[collection]/[entry].
@@ -207,7 +208,7 @@ export function CollectionItem(p: CollectionItemProps): ReactNode {
       <Section section={p.section} editing={p.editing}>
         <div className="s-surface s-border space-y-4 rounded-xl border p-6 shadow-sm">
           <div className="border-b pb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <span className="text-xs font-semibold uppercase tracking-wider s-muted">
               {entry.collection.name}
             </span>
             <h3 className="text-2xl font-bold mt-1">
@@ -219,12 +220,12 @@ export function CollectionItem(p: CollectionItemProps): ReactNode {
               const value = entryData[f.key];
               return (
                 <div key={f.key} className="space-y-1">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  <span className="text-xs font-semibold s-muted uppercase tracking-wide">
                     {f.label}
                   </span>
                   {f.type === 'richtext' ? (
                     <div
-                      className="s-prose prose prose-sm max-w-none text-foreground"
+                      className="s-prose prose prose-sm max-w-none text-[var(--site-fg)]"
                       dangerouslySetInnerHTML={{
                         __html: sanitizeRichText(String(value ?? '')),
                       }}
@@ -256,7 +257,7 @@ export function CollectionItem(p: CollectionItemProps): ReactNode {
     p,
     'container',
     cn(
-      layout === 'card' && 's-surface s-border rounded-xl border p-6 shadow-sm',
+      layout === 'card' && 's-surface s-border s-radius border p-6 shadow-sm',
       direction === 'row'
         ? 'flex flex-wrap items-start'
         : direction === 'grid'
@@ -267,6 +268,41 @@ export function CollectionItem(p: CollectionItemProps): ReactNode {
     )
   );
 
+  if (layout === 'table') {
+    const tableEl = el(p, 'container', 's-card s-card-outline overflow-hidden');
+    return (
+      <Section section={p.section} editing={p.editing}>
+        <dl className={tableEl.className} style={tableEl.style}>
+          {rows.map((row, index) => {
+            const field = fields.find(f => f.key === row.field);
+            if (!field) return null;
+            return (
+              <div
+                // biome-ignore lint/suspicious/noArrayIndexKey: a field may be listed twice
+                key={index}
+                className="s-border grid gap-1 border-b px-5 py-3.5 last:border-b-0 sm:grid-cols-[minmax(8rem,38%)_1fr] sm:gap-6"
+              >
+                <dt className="s-meta font-semibold uppercase tracking-[0.12em]">
+                  {row.labelText?.trim() || field.label}
+                </dt>
+                <dd className="min-w-0">
+                  <FieldValue
+                    row={{ ...row, showLabel: false, textSize: row.textSize ?? 'body' }}
+                    field={field}
+                    value={entryData[field.key]}
+                    isTitleField={false}
+                    align="left"
+                    editing={p.editing}
+                  />
+                </dd>
+              </div>
+            );
+          })}
+        </dl>
+      </Section>
+    );
+  }
+
   return (
     <Section section={p.section} editing={p.editing}>
       <div className={container.className} style={container.style}>
@@ -275,7 +311,7 @@ export function CollectionItem(p: CollectionItemProps): ReactNode {
           if (!field) {
             return p.editing ? (
               // biome-ignore lint/suspicious/noArrayIndexKey: rows have no ids
-              <p key={index} className="text-xs text-muted-foreground">
+              <p key={index} className="text-xs s-muted">
                 [Field &ldquo;{row.field}&rdquo; no longer exists]
               </p>
             ) : null;

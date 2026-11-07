@@ -35,6 +35,8 @@ import {
   Timeline,
 } from './marketing';
 import { Newsletter } from './newsletter';
+import { Audio } from './audio';
+import { BookmarksDrawer } from './bookmarks-client';
 import { PostTypeEntries } from './post-type-entries';
 import { QueryFilter } from './query-filters';
 import { LoopGrid } from './loop-grid';
@@ -87,6 +89,7 @@ const builtInComponents = {
   Embed,
   Code,
   Map: MapBlock,
+  Audio,
   Newsletter,
   LogoCloud,
   Team,
@@ -109,6 +112,7 @@ const builtInComponents = {
   LegalLinks,
   BackToTop,
   ThemeToggle,
+  Bookmarks: BookmarksDrawer,
   LanguageSwitcher: LanguageSwitcherBlock,
   QueryLoop,
   LoopGrid,

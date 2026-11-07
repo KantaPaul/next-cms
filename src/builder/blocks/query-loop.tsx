@@ -18,6 +18,8 @@ import {
 } from './query-loop-client';
 import { formatLoopDate, SAMPLE_LOOP_ITEMS } from './loop-shared';
 import {
+  type CardStyleProps,
+  cardClass,
   MotionItem,
   Section,
   SectionHeading,
@@ -88,7 +90,7 @@ export function QueryLoopSkeleton({
   count = 6,
   columnsDesktop = 3,
 }: {
-  layout?: 'grid' | 'list' | 'masonry' | 'carousel' | 'table';
+  layout?: QueryLoopLayout;
   count?: number;
   columnsDesktop?: number;
 }) {
@@ -155,7 +157,10 @@ export { LoopItemField, type LoopItemFieldProps } from './loop-item-field';
 
 interface DefaultItemCardProps {
   item: NormalizedListingItem;
-  layout: 'grid' | 'list' | 'masonry' | 'carousel' | 'table';
+  layout: QueryLoopLayout;
+  /** Lead item of the "featured" layout: large, image beside the text. */
+  featured?: boolean;
+  cardStyle?: CardStyleProps;
   showImage?: boolean;
   showExcerpt?: boolean;
   showAuthor?: boolean;
@@ -167,6 +172,8 @@ interface DefaultItemCardProps {
 function DefaultItemCard({
   item,
   layout,
+  featured = false,
+  cardStyle = {},
   showImage = true,
   showExcerpt = true,
   showAuthor = true,
@@ -183,8 +190,13 @@ function DefaultItemCard({
     <MotionItem>
       <article
         className={cn(
-          's-surface s-border s-radius group flex h-full overflow-hidden border',
-          layout === 'list' ? 'flex-col sm:flex-row' : 'flex-col'
+          cardClass(cardStyle),
+          'group flex h-full overflow-hidden',
+          featured
+            ? 'flex-col lg:flex-row'
+            : layout === 'list'
+              ? 'flex-col sm:flex-row'
+              : 'flex-col'
         )}
       >
         {hasImg && (
@@ -194,7 +206,7 @@ function DefaultItemCard({
             aria-hidden
             className={cn(
               'block shrink-0 overflow-hidden',
-              layout === 'list' && 'sm:w-64'
+              featured ? 'lg:w-7/12' : layout === 'list' && 'sm:w-64'
             )}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -202,23 +214,49 @@ function DefaultItemCard({
               src={item.image ?? undefined}
               alt=""
               loading="lazy"
-              className="aspect-video size-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+              className={cn(
+                'size-full object-cover transition-transform duration-300 group-hover:scale-[1.03]',
+                featured ? 'aspect-[16/10] lg:aspect-auto lg:min-h-[22rem]' : 'aspect-video'
+              )}
             />
           </a>
         )}
-        <div className="flex flex-1 flex-col gap-3 p-5">
+        <div
+          className={cn(
+            'flex flex-1 flex-col gap-3',
+            featured ? 'justify-center p-6 md:p-10' : 'p-5'
+          )}
+        >
           {showTerms && categories.length > 0 && (
-            <p className="s-primary-text text-xs font-semibold uppercase tracking-wider">
+            <p
+              className={
+                featured
+                  ? 'self-start s-eyebrow'
+                  : 's-primary-text text-xs font-semibold uppercase tracking-wider'
+              }
+            >
               {categories.map(c => c.name).join(' · ')}
             </p>
           )}
-          <h3 className="text-lg font-bold leading-snug">
+          <h3
+            className={cn(
+              'leading-snug',
+              featured
+                ? 's-section-title'
+                : 's-card-title text-lg'
+            )}
+          >
             <a href={item.url} className="hover:underline">
               {item.title}
             </a>
           </h3>
           {showExcerpt && item.excerpt && (
-            <p className="s-muted line-clamp-3 text-sm leading-relaxed">
+            <p
+              className={cn(
+                's-muted leading-relaxed',
+                featured ? 'line-clamp-4 text-base md:text-lg' : 'line-clamp-3 text-sm'
+              )}
+            >
               {item.excerpt}
             </p>
           )}
@@ -246,7 +284,9 @@ export type QueryLoopLayout =
   | 'list'
   | 'masonry'
   | 'carousel'
-  | 'table';
+  | 'table'
+  /** First item large across the row, the rest in the grid. */
+  | 'featured';
 
 export type QueryLoopPaginationStyle =
   | 'numbered'
@@ -256,7 +296,9 @@ export type QueryLoopPaginationStyle =
 
 export type QueryLoopGap = 'sm' | 'md' | 'lg' | 'xl';
 
-export interface QueryLoopProps {
+export interface QueryLoopProps extends CardStyleProps {
+  /** Element styles (`elementStyle()` fields), e.g. the section heading. */
+  elements?: Record<string, unknown>;
   loopId?: string;
   source?: ListingSource;
   collectionId?: string;
@@ -401,7 +443,10 @@ export function QueryLoop({
   clearFiltersHref = '?',
   language = 'en',
   section,
+  elements,
   editing,
+  cardVariant,
+  cardHover,
 }: QueryLoopProps) {
   const items =
     loadedItems !== undefined
@@ -455,6 +500,8 @@ export function QueryLoop({
         <DefaultItemCard
           item={item}
           layout={layout}
+          featured={layout === 'featured' && index === 0 && page === 1}
+          cardStyle={{ cardVariant, cardHover }}
           showImage={showImage}
           showExcerpt={showExcerpt}
           showAuthor={showAuthor}
@@ -474,7 +521,7 @@ export function QueryLoop({
 
   return (
     <Section section={section} editing={editing}>
-      <SectionHeading eyebrow={eyebrow} title={title} subtitle={subtitle} />
+      <SectionHeading elements={elements} eyebrow={eyebrow} title={title} subtitle={subtitle} />
 
       {jsonLd && (
         <script
@@ -622,6 +669,28 @@ export function QueryLoop({
                 {renderCardForItem(item, idx)}
               </div>
             ))}
+          </div>
+        ) : layout === 'featured' ? (
+          /* Featured: lead item full width, the rest in the grid */
+          <div className={cn('grid', gapClass)}>
+            {items[0] ? (
+              page === 1 ? (
+                renderCardForItem(items[0], 0)
+              ) : null
+            ) : null}
+            <div
+              className={cn(
+                'grid',
+                resolveGridColumnsClass(columnsDesktop, columnsTablet, columnsMobile),
+                gapClass
+              )}
+            >
+              {items
+                .slice(page === 1 ? 1 : 0)
+                .map((item, idx) =>
+                  renderCardForItem(item, idx + (page === 1 ? 1 : 0))
+                )}
+            </div>
           </div>
         ) : (
           /* Grid & List layouts (R576 / QRY-06) */

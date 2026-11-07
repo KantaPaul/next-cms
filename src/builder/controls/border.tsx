@@ -36,14 +36,28 @@ export function BorderControl({
   value,
   onChange,
   exclude,
+  state,
 }: {
   value: BorderSettings | undefined;
   onChange: (value: BorderSettings | undefined) => void;
   exclude?: string[];
+  /** From GroupShell. Hover only changes the border colour. */
+  state?: 'normal' | 'hover';
 }) {
   const border = value ?? {};
   const style = border.style ?? 'none';
   const isExcluded = (field: string) => exclude?.includes(field);
+
+  if (state === 'hover') {
+    return (
+      <ColorPicker
+        label="Hover border color"
+        value={border.color}
+        onChange={color => onChange(color ? { color } : undefined)}
+        placeholder="Same as normal"
+      />
+    );
+  }
 
   return (
     <div className="space-y-3">

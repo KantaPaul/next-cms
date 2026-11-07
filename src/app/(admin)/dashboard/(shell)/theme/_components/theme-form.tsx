@@ -8,6 +8,7 @@ import {
   Plus,
   RotateCcw,
   Save,
+  Sparkles,
   Trash2,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -16,6 +17,7 @@ import { Controller, FormProvider, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { ColorInput } from '@/builder/controls/primitives';
 import { themeStyle } from '@/builder/theme';
+import { THEME_PRESETS } from '@/builder/theme-presets';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -41,7 +43,10 @@ import {
 } from '@/db/schemas/pages.schema';
 import { useFormAction } from '@/hooks/use-form-action';
 import { cn } from '@/lib/utils/cn';
-import { updateThemeSettings } from '../../settings/_modules/settings.actions';
+import {
+  installQuietEditorial,
+  updateThemeSettings,
+} from '../../settings/_modules/settings.actions';
 import {
   type ThemeFormInput,
   themeFormSchema,
@@ -50,9 +55,44 @@ import {
 const FONTS: ThemeTokens['fontFamily'][] = [
   'Inter',
   'Plus Jakarta Sans',
+  'Manrope',
   'JetBrains Mono',
   'System',
 ];
+/** Heading font choices: serif display faces first, then the body fonts. */
+const HEADING_FONTS = [
+  'Newsreader',
+  'Fraunces',
+  'Instrument Serif',
+  'Playfair Display',
+  'Lora',
+  'Merriweather',
+  'Inter',
+  'Plus Jakarta Sans',
+  'Manrope',
+  'DM Sans',
+  'Space Grotesk',
+];
+const SAME_AS_BODY = '__body__';
+
+/** Extra light-mode colours, after the original seven. */
+const EXTRA_COLORS = [
+  { key: 'textMuted', label: 'Muted text colour', fallback: '#64748b' },
+  { key: 'surfaceAlt', label: 'Alternate surface', fallback: '#f1f5f9' },
+  { key: 'primarySoft', label: 'Primary tint', fallback: '#eef2ff' },
+] as const;
+
+/** Dark-mode palette. Empty = the built-in dark colours. */
+const DARK_COLORS = [
+  { key: 'primary', label: 'Primary', fallback: '#818cf8' },
+  { key: 'text', label: 'Text', fallback: '#e2e8f0' },
+  { key: 'textMuted', label: 'Muted text', fallback: '#94a3b8' },
+  { key: 'background', label: 'Background', fallback: '#0b1020' },
+  { key: 'surface', label: 'Surface', fallback: '#131a2e' },
+  { key: 'surfaceAlt', label: 'Alternate surface', fallback: '#182038' },
+  { key: 'primarySoft', label: 'Primary tint', fallback: '#1e2448' },
+  { key: 'border', label: 'Border', fallback: '#1f2a44' },
+] as const;
 const RADII: ThemeTokens['borderRadius'][] = [
   'none',
   'sm',
@@ -137,6 +177,30 @@ export function ThemeForm({
       },
     }
   );
+
+  const [installOpen, setInstallOpen] = useState(false);
+  const [installing, setInstalling] = useState(false);
+  const runInstall = async () => {
+    setInstalling(true);
+    try {
+      const res = (await installQuietEditorial({})) as
+        | { hasError?: boolean; message?: string }
+        | undefined;
+      if (res && 'hasError' in res && res.hasError) {
+        toast.error(res.message || 'Could not install the starter kit.');
+        return;
+      }
+      toast.success(
+        'Quiet Editorial installed: theme, header, footer, archive, search and post layout are live. Create your home page from the “Quiet Editorial home” template.'
+      );
+      setInstallOpen(false);
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not install the starter kit.');
+    } finally {
+      setInstalling(false);
+    }
+  };
 
   const [customName, setCustomName] = useState('');
   const [customColor, setCustomColor] = useState('#8b5cf6');
@@ -343,6 +407,21 @@ export function ThemeForm({
               </Field>
             )}
           />
+          {EXTRA_COLORS.map(c => (
+            <Controller
+              key={c.key}
+              name={`themeTokens.colors.${c.key}` as const}
+              render={({ field }) => (
+                <Field group label={c.label}>
+                  <ColorInput
+                    label={c.label}
+                    value={field.value ?? c.fallback}
+                    onChange={v => field.onChange(v)}
+                  />
+                </Field>
+              )}
+            />
+          ))}
           <Controller
             name="themeTokens.fontFamily"
             render={({ field, fieldState }) => {
@@ -400,6 +479,71 @@ export function ThemeForm({
             )}
           />
           <Controller
+            name="themeTokens.headingFont"
+            render={({ field }) => {
+              const id = useId();
+              return (
+                <FormItem>
+                  <Label htmlFor={id}>Heading font</Label>
+                  <Select
+                    value={field.value ?? SAME_AS_BODY}
+                    onValueChange={v =>
+                      field.onChange(v === SAME_AS_BODY ? undefined : v)
+                    }
+                  >
+                    <SelectTrigger id={id} className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={SAME_AS_BODY}>Same as body</SelectItem>
+                      {HEADING_FONTS.map(f => (
+                        <SelectItem key={f} value={f}>
+                          {f}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              );
+            }}
+          />
+          <Controller
+            name="themeTokens.buttonRadius"
+            render={({ field }) => (
+              <Field
+                group
+                label="Button radius"
+                hint="Buttons, badges and chips. Unset follows the corner radius."
+              >
+                <div
+                  role="radiogroup"
+                  aria-label="Button radius"
+                  className="flex gap-1"
+                >
+                  {RADII.map(r => (
+                    <button
+                      key={r}
+                      type="button"
+                      role="radio"
+                      aria-checked={field.value === r}
+                      onClick={() =>
+                        field.onChange(field.value === r ? undefined : r)
+                      }
+                      className={cn(
+                        'h-9 flex-1 rounded-md border text-xs capitalize transition',
+                        field.value === r
+                          ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-200'
+                          : 'border-steel-200 hover:border-steel-400 dark:border-dark-300'
+                      )}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+            )}
+          />
+          <Controller
             name="themeTokens.colorMode"
             render={({ field, fieldState }) => {
               const id = useId();
@@ -425,6 +569,49 @@ export function ThemeForm({
               );
             }}
           />
+
+          <div className="sm:col-span-2 rounded-lg border border-steel-200 dark:border-dark-300 p-4 space-y-3">
+            <div>
+              <h4 className="text-sm font-semibold">Dark mode palette</h4>
+              <p className="text-xs text-steel-500">
+                Used when the colour mode is dark, when &ldquo;System&rdquo;
+                resolves to dark, or when a visitor switches with the theme
+                toggle. Leave a colour unset to use the built-in dark colour.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {DARK_COLORS.map(c => (
+                <Controller
+                  key={c.key}
+                  name={`themeTokens.colorsDark.${c.key}` as const}
+                  render={({ field }) => (
+                    <Field group label={c.label}>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <ColorInput
+                            label={`Dark ${c.label}`}
+                            value={field.value ?? c.fallback}
+                            onChange={v => field.onChange(v)}
+                          />
+                        </div>
+                        {field.value && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Reset dark ${c.label}`}
+                            onClick={() => field.onChange(undefined)}
+                          >
+                            <RotateCcw className="size-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    </Field>
+                  )}
+                />
+              ))}
+            </div>
+          </div>
 
           <div className="sm:col-span-2 rounded-lg border border-steel-200 dark:border-dark-300 p-4 space-y-3">
             <div className="flex items-center justify-between">
@@ -522,7 +709,42 @@ export function ThemeForm({
             </div>
           </div>
 
-          <div className="flex items-end">
+          <div className="flex flex-wrap items-end gap-2 sm:col-span-2">
+            {THEME_PRESETS.map(preset => (
+              <Button
+                key={preset.id}
+                type="button"
+                variant="outline"
+                size="sm"
+                title={preset.description}
+                onClick={() => {
+                  // Keep the site's own custom tokens when applying a preset.
+                  const custom =
+                    form.getValues('themeTokens.colors.custom') ?? [];
+                  form.setValue(
+                    'themeTokens',
+                    {
+                      ...preset.tokens,
+                      colors: { ...preset.tokens.colors, custom },
+                    } as ThemeFormInput['themeTokens'],
+                    { shouldDirty: true }
+                  );
+                  toast.info(
+                    `${preset.name} applied. Save to publish it to the site.`
+                  );
+                }}
+              >
+                <Sparkles /> Apply {preset.name}
+              </Button>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setInstallOpen(true)}
+            >
+              <Sparkles /> Install Quiet Editorial site
+            </Button>
             <Button
               type="button"
               variant="ghost"
@@ -716,6 +938,34 @@ export function ThemeForm({
               onClick={confirmRemoveCustomToken}
             >
               Delete Token
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={installOpen} onOpenChange={setInstallOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Install the Quiet Editorial site?</DialogTitle>
+            <DialogDescription>
+              This applies the Quiet Editorial theme and adds published Quiet
+              Editorial header, footer, archive and search templates, making
+              them the site defaults. It also adds a default post layout and a
+              “Quiet Editorial home” page template. Your existing templates and
+              pages are kept, so you can switch back from Site templates.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setInstallOpen(false)}
+              disabled={installing}
+            >
+              Cancel
+            </Button>
+            <Button type="button" onClick={runInstall} disabled={installing}>
+              {installing ? <Loader2 className="animate-spin" /> : <Sparkles />}
+              Install
             </Button>
           </DialogFooter>
         </DialogContent>

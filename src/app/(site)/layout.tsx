@@ -5,6 +5,7 @@ import { PAGES } from '@/config/pages';
 import { getPreviewSession } from '@/server/services/preview-session';
 import { maybePublishScheduled } from '@/server/services/scheduler';
 import { siteSettingsService } from '@/server/services/site-settings.service';
+import { siteModeScript } from '@/builder/site-mode';
 
 /**
  * Site shell: theme, admin bar, preview banner and analytics. Header and footer
@@ -31,7 +32,9 @@ export default async function SiteLayout({
       )}`
     : null;
   const fontUrl = fontStylesheetUrl(settings.themeTokens);
-  const mode = settings.themeTokens.colorMode === 'dark' ? 'dark' : 'light';
+  const colorMode = settings.themeTokens.colorMode;
+  const mode =
+    colorMode === 'dark' || colorMode === 'system' ? colorMode : 'light';
 
   return (
     <div
@@ -39,6 +42,11 @@ export default async function SiteLayout({
       data-site-theme={mode}
       style={themeStyle(settings.themeTokens)}
     >
+      {/* Before paint: apply the visitor's saved mode, or the OS mode for "system". */}
+      <script
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: static, no user input
+        dangerouslySetInnerHTML={{ __html: siteModeScript(mode) }}
+      />
       {fontUrl && <link rel="stylesheet" href={fontUrl} precedence="default" />}
       <AdminBar />
       {exitPreviewHref && (

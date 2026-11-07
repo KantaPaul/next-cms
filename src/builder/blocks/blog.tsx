@@ -1,6 +1,8 @@
 import { cn } from '@/lib/utils/cn';
 import type { PostCard, PostTerm, PostView } from '../post-template';
 import { sanitizeRichText } from '../sanitize';
+import type { ElementStyle } from '../style';
+import { el } from './element';
 import { BlogFilters } from './blog-filters-client';
 import {
   MotionItem,
@@ -9,7 +11,11 @@ import {
   type SectionSettings,
 } from './section';
 
-type WithSection = { section?: SectionSettings; editing?: boolean };
+type WithSection = {
+  section?: SectionSettings;
+  editing?: boolean;
+  elements?: Record<string, ElementStyle>;
+};
 
 export type CardOptions = {
   showImage?: boolean;
@@ -75,7 +81,7 @@ function PostCardItem({
               {post.categories.map(c => c.name).join(' · ')}
             </p>
           )}
-          <h3 className="text-lg font-bold leading-snug">
+          <h3 className="s-card-title text-lg leading-snug">
             <a href={post.url} className="hover:underline">
               {post.title}
             </a>
@@ -234,7 +240,7 @@ export function BlogPosts(p: BlogPostsProps) {
 
   return (
     <Section section={p.section} editing={p.editing} hasItems>
-      <SectionHeading title={p.title} subtitle={p.subtitle} />
+      <SectionHeading elements={p.elements} title={p.title} subtitle={p.subtitle} />
       <BlogFilters
         showSearch={!!p.showSearch}
         showCategory={
@@ -282,11 +288,22 @@ export function BlogPosts(p: BlogPostsProps) {
 
 /* ---------- single-post blocks ---------- */
 
+/** Rough reading time: ~220 words a minute, at least 1. */
+export function readingMinutes(html: string | null | undefined): number {
+  if (!html) return 0;
+  const words = html
+    .replace(/<[^>]*>/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean).length;
+  return words ? Math.max(1, Math.round(words / 220)) : 0;
+}
+
 type PostBlock = WithSection & { post: PostView };
 
 export function PostTitle(
   p: PostBlock & {
     showBackLink?: boolean;
+    backLinkLabel?: string;
     showExcerpt?: boolean;
     alignment?: 'left' | 'center';
   }
@@ -300,10 +317,12 @@ export function PostTitle(
             href={p.post.blogUrl}
             className="s-primary-text mb-6 inline-block text-sm font-medium hover:underline"
           >
-            ← All posts
+            {p.backLinkLabel || '← All posts'}
           </a>
         )}
-        <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl">
+        <h1
+          {...el(p, 'title', 's-post-title')}
+        >
           {p.post.title}
         </h1>
         {p.showExcerpt !== false && p.post.excerpt && (
@@ -348,9 +367,10 @@ export function PostFeaturedImage(
       <img
         src={p.post.featuredImage}
         alt=""
-        className={cn(
-          's-radius w-full object-cover',
-          ASPECT[p.aspect ?? 'wide']
+        {...el(
+          p,
+          'image',
+          cn('s-radius w-full object-cover', ASPECT[p.aspect ?? 'wide'])
         )}
       />
     </Section>
@@ -361,6 +381,8 @@ export function PostMeta(
   p: PostBlock & {
     showDate?: boolean;
     showAuthor?: boolean;
+    showAvatar?: boolean;
+    showReadingTime?: boolean;
     showCategories?: boolean;
     showTags?: boolean;
   }
@@ -373,11 +395,22 @@ export function PostMeta(
   const authorUrl = p.showAuthor !== false ? p.post.authorUrl : null;
   const categories = p.showCategories !== false ? p.post.categories : [];
   const tags = p.showTags !== false ? p.post.tags : [];
-  if (!date && !author && !categories.length && !tags.length) return null;
+  const minutes = p.showReadingTime ? readingMinutes(p.post.body) : 0;
+  const avatar = author && p.showAvatar ? p.post.authorImage : null;
+  if (!date && !author && !minutes && !categories.length && !tags.length)
+    return null;
 
   return (
     <Section section={p.section} editing={p.editing} innerClassName="max-w-3xl">
       <div className="s-border flex flex-wrap items-center gap-x-4 gap-y-2 border-y py-4 text-sm">
+        {avatar ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={avatar}
+            alt=""
+            className="-mr-2 size-9 rounded-full object-cover"
+          />
+        ) : null}
         {author &&
           (authorUrl ? (
             <a href={authorUrl} className="font-medium hover:underline">
@@ -390,6 +423,9 @@ export function PostMeta(
           <time dateTime={p.post.publishedAt ?? undefined} className="s-muted">
             {date}
           </time>
+        )}
+        {minutes > 0 && (
+          <span className="s-muted">{minutes} min read</span>
         )}
         {categories.length > 0 && (
           <span className="s-primary-text font-semibold">
@@ -439,7 +475,7 @@ const CONTENT_WIDTH = {
 };
 
 export function PostContent(
-  p: PostBlock & { width?: keyof typeof CONTENT_WIDTH }
+  p: PostBlock & { width?: keyof typeof CONTENT_WIDTH; dropCap?: boolean }
 ) {
   return (
     <Section
@@ -449,7 +485,14 @@ export function PostContent(
     >
       <article
         lang={p.post.language}
-        className="s-prose prose prose-lg max-w-none [&_p]:text-[length:inherit]"
+        {...el(
+          p,
+          'content',
+          cn(
+            's-prose prose prose-lg max-w-none [&_p]:text-[length:inherit]',
+            p.dropCap && 's-prose-dropcap'
+          )
+        )}
         dangerouslySetInnerHTML={{ __html: sanitizeRichText(p.post.body) }}
       />
     </Section>
@@ -470,7 +513,7 @@ export function RelatedPosts(
   if (!posts.length) {
     return p.editing ? (
       <Section section={p.section} editing>
-        <SectionHeading title={p.title} />
+        <SectionHeading elements={p.elements} title={p.title} />
         <p className="s-muted text-center text-sm">
           Related posts from the same category appear here once more posts are
           published.
@@ -480,8 +523,8 @@ export function RelatedPosts(
   }
 
   return (
-    <Section section={p.section} editing={p.editing} className='py-0 md:py-0' hasItems>
-      <SectionHeading title={p.title} />
+    <Section section={p.section} editing={p.editing} hasItems>
+      <SectionHeading elements={p.elements} title={p.title} />
       <PostGrid
         posts={posts}
         layout="grid"

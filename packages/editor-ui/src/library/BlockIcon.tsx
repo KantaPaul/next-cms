@@ -1,5 +1,10 @@
 import {
+  ArrowLeftRight,
   ArrowUp,
+  AudioLines,
+  Bookmark,
+  Tags,
+  UserRound,
   BarChart3,
   Bell,
   Blend,
@@ -96,6 +101,11 @@ const ICONS: Record<string, LucideIcon> = {
   'file-text': FileText,
   'arrow-up': ArrowUp,
   sun: Sun,
+  authorbio: UserRound,
+  postnavigation: ArrowLeftRight,
+  bookmarks: Bookmark,
+  audio: AudioLines,
+  entryterms: Tags,
 };
 
 export interface BlockIconProps {

@@ -23,6 +23,7 @@ import {
   BackgroundSectionControl,
   BorderSectionControl,
   DisplaySectionControl,
+  EffectsSectionControl,
   FilterSectionControl,
   LayoutSectionControl,
   MotionSectionControl,
@@ -172,6 +173,35 @@ export function groupControl<T = any>(
           );
         }
 
+        if (kind === 'boxShadow') {
+          // Only structured shadows are editable; legacy preset strings show as unset.
+          const normal =
+            s.shadow && typeof s.shadow === 'object' ? s.shadow : undefined;
+          return renderGroupShell(
+            opts,
+            opts.states?.includes('hover')
+              ? { normal, hover: s.hover?.shadow }
+              : normal,
+            val => {
+              if (
+                opts.states?.includes('hover') &&
+                val &&
+                typeof val === 'object' &&
+                ('normal' in val || 'hover' in val)
+              ) {
+                setSection({
+                  ...s,
+                  shadow: (val as any).normal,
+                  hover: { ...(s.hover ?? {}), shadow: (val as any).hover },
+                });
+              } else {
+                setSection({ ...s, shadow: val });
+              }
+            },
+            Component
+          );
+        }
+
         if (kind === 'typography') {
           return renderGroupShell(
             opts,
@@ -182,11 +212,18 @@ export function groupControl<T = any>(
         }
 
         if (kind === 'cssFilter') {
+          // Older saves nested `{ normal, hover }` under `section.filter`.
+          const legacy =
+            s.filter && typeof s.filter === 'object' && 'normal' in s.filter
+              ? (s.filter as { normal?: unknown; hover?: unknown })
+              : undefined;
+          const normalFilter = legacy ? legacy.normal : s.filter;
+          const hoverFilter = s.hover?.filter ?? legacy?.hover;
           return renderGroupShell(
             opts,
             opts.states?.includes('hover')
-              ? { normal: s.filter, hover: s.hover?.filter }
-              : s.filter,
+              ? { normal: normalFilter, hover: hoverFilter }
+              : normalFilter,
             val => {
               if (
                 opts.states?.includes('hover') &&
@@ -256,7 +293,14 @@ export function sectionControls(opts?: { omit?: string[] }): Fields {
       states: ['normal', 'hover'],
     }),
     section_border: groupControl('border', {
-      label: 'Border & Shadow',
+      label: 'Border',
+      tab: 'style',
+      section: 'Border',
+      path: 'section',
+      states: ['normal', 'hover'],
+    }),
+    section_shadow: groupControl('boxShadow', {
+      label: 'Box Shadow',
       tab: 'style',
       section: 'Border',
       path: 'section',
@@ -285,9 +329,17 @@ export function sectionControls(opts?: { omit?: string[] }): Fields {
       label: 'CSS Filters',
       tab: 'style',
       section: 'Filters',
-      path: 'section.filter',
+      path: 'section',
       states: ['normal', 'hover'],
     }),
+    section_effects: {
+      type: 'custom',
+      label: 'Glass & Hover',
+      tab: 'style',
+      section: 'Effects',
+      path: 'section',
+      render: EffectsSectionControl,
+    },
     section_display: {
       type: 'custom',
       label: 'Height & Alignment',
@@ -372,6 +424,71 @@ export const ALL_PARTS: readonly ElementPart[] = [
   'cssFilter',
   'imageSize',
 ] as const;
+
+/**
+ * Style controls for the shared section heading (eyebrow pill, title, subtitle)
+ * rendered by `SectionHeading`. Keys match `HEADING_ELEMENTS` in blocks/section.tsx.
+ */
+export function headingStyles(opts?: { eyebrow?: boolean; subtitle?: boolean }): Fields {
+  const fields: Fields = {};
+  if (opts?.eyebrow !== false)
+    fields.heading_eyebrow_style = elementStyle(
+      'headingEyebrow',
+      'Eyebrow Style',
+      BUTTON_PARTS
+    );
+  fields.heading_title_style = elementStyle(
+    'headingTitle',
+    'Heading Style',
+    TEXT_PARTS
+  );
+  if (opts?.subtitle !== false)
+    fields.heading_subtitle_style = elementStyle(
+      'headingSubtitle',
+      'Subheading Style',
+      TEXT_PARTS
+    );
+  return fields;
+}
+
+/** Card look for card-based blocks. Read by `cardClass()` in blocks/section.tsx. */
+export function cardFields(): Fields {
+  return {
+    cardVariant: {
+      label: 'Card style',
+      type: 'select',
+      tab: 'style',
+      section: 'Cards',
+      options: [
+        { label: 'Default', value: 'default' },
+        { label: 'Flat (filled)', value: 'flat' },
+        { label: 'Outline (hairline)', value: 'outline' },
+        { label: 'Elevated (shadow)', value: 'elevated' },
+        { label: 'Glass (blurred)', value: 'glass' },
+        { label: 'None (no box)', value: 'none' },
+      ],
+    },
+    cardHover: {
+      label: 'Lift cards on hover',
+      type: 'toggle',
+      tab: 'style',
+      section: 'Cards',
+    },
+  } as Fields;
+}
+
+/** Grid column count for blocks whose item grid used to be fixed. */
+export function columnsField(
+  label = 'Columns',
+  values: number[] = [1, 2, 3, 4]
+): FieldDef {
+  return {
+    label,
+    group: CONTENT,
+    type: 'select',
+    options: values.map(v => ({ label: String(v), value: v })),
+  } as FieldDef;
+}
 
 /** Creates a field definition for styling an inner block element. */
 export function elementStyle(

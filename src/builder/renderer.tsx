@@ -9,6 +9,12 @@
  */
 
 import {
+  AuthorBio,
+  BookmarkButton,
+  PostNavigation,
+  ShareButtons,
+} from './blocks/post-extras';
+import {
   type BlockComponents,
   type BuilderDocument,
   type BuilderNode,
@@ -64,7 +70,16 @@ const ROOT_PADDING: Record<string, string> = {
 };
 
 /** Blocks bound to the post being rendered, like `renderPostBlock` in config.tsx. */
-const POST_BLOCKS = { PostTitle, PostFeaturedImage, PostMeta, PostContent };
+const POST_BLOCKS = {
+  PostTitle,
+  PostFeaturedImage,
+  PostMeta,
+  PostContent,
+  AuthorBio,
+  ShareButtons,
+  PostNavigation,
+  BookmarkButton,
+};
 
 /** Every component a kind of content can render; mirrors the Puck configs. */
 export function rendererComponents(kind: RenderKind): BlockComponents {
@@ -162,8 +177,8 @@ export function SiteRoot({
   const mode =
     rootProps.theme === 'light' || rootProps.theme === 'dark'
       ? rootProps.theme
-      : tokens.colorMode === 'dark'
-        ? 'dark'
+      : tokens.colorMode === 'dark' || tokens.colorMode === 'system'
+        ? tokens.colorMode
         : 'light';
   const fontUrl = fontStylesheetUrl(tokens, fonts);
   const editing = !!metadata.editing;

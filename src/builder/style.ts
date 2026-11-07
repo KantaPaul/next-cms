@@ -290,6 +290,8 @@ export type Typography = {
   wordSpacingUnit?: LengthUnit;
   textShadow?: TextShadowSettings;
   textStroke?: TextStrokeSettings;
+  /** Theme typography preset id (Settings → Theme), e.g. "h2" or "eyebrow". */
+  preset?: string;
 };
 
 export type DisplaySettings = {
@@ -389,6 +391,8 @@ export type SectionSettings = {
   display?: DisplaySettings;
   animation?: AnimationSettings;
   filter?: FilterSettings;
+  /** Frosted-glass backdrop blur in px (pair with a semi-transparent fill). */
+  backdropBlur?: number;
   hover?: HoverSettings;
   margin?: Responsive<Sides>;
   marginUnit?: SpacingUnit;
@@ -803,6 +807,30 @@ function responsiveLength(
   return any;
 }
 
+/**
+ * Border radius → `--s-rad-{d,t,m}`. Every device gets a value (inheriting
+ * desktop → tablet → mobile) so a radius set on one device doesn't collapse
+ * to 0 on the others. Uses `rad`, not `br`: `s-br` is the right border width.
+ */
+function applyRadius(
+  radius: Responsive<number> | undefined,
+  unit: unknown,
+  style: Record<string, string>
+): boolean {
+  if (!responsiveLength(radius, unit, PROP_UNITS.radius, false, 'rad', style))
+    return false;
+  const u = pick(unit, PROP_UNITS.radius) ?? PROP_UNITS.radius[0];
+  for (const d of DEVICES) {
+    const key = `--s-rad-${DEVICE_SUFFIX[d]}`;
+    if (style[key]) continue;
+    const resolved = resolveResponsive(radius, d, v =>
+      typeof v === 'number' && Number.isFinite(v) ? v : undefined
+    );
+    if (resolved !== undefined) style[key] = `${resolved}${u}`;
+  }
+  return true;
+}
+
 export function fillValue(fill: Fill | undefined) {
   if (!fill?.type) return null;
 
@@ -917,11 +945,55 @@ export type ResolvedSectionStyle = {
   hasFill: boolean;
 };
 
+/**
+ * Older saves stored the section filter as `{ normal, hover }` under
+ * `section.filter`. Split it into `filter` + `hover.filter`.
+ */
+function normalizeLegacySectionFilter(s: SectionSettings): SectionSettings {
+  const f = s.filter as unknown;
+  if (!f || typeof f !== 'object' || !('normal' in f || 'hover' in f))
+    return s;
+  const { normal, hover } = f as {
+    normal?: FilterSettings;
+    hover?: FilterSettings;
+  };
+  return {
+    ...s,
+    filter: normal,
+    hover: hover ? { ...(s.hover ?? {}), filter: s.hover?.filter ?? hover } : s.hover,
+  };
+}
+
+/** Typography preset → `s-tp` + vars pointing at the theme's `--site-type-<id>-*`. */
+function applyTypographyPreset(
+  preset: unknown,
+  classes: string[],
+  style: Record<string, string>
+): void {
+  if (typeof preset !== 'string') return;
+  const id = preset.toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  if (!id || id.length > 50) return;
+  classes.push('s-tp');
+  style['--s-tp'] = id;
+  for (const [k, suffix] of [
+    ['font', 'font'],
+    ['weight', 'weight'],
+    ['lh', 'line-height'],
+    ['ls', 'letter-spacing'],
+    ['size-d', 'size'],
+  ] as const) {
+    style[`--s-tp-${k}`] = `var(--site-type-${id}-${suffix})`;
+  }
+  style['--s-tp-size-t'] = `var(--site-type-${id}-size-t, var(--site-type-${id}-size))`;
+  style['--s-tp-size-m'] = `var(--site-type-${id}-size-m, var(--site-type-${id}-size))`;
+}
+
 export function resolveSectionStyle(
   s: SectionSettings | undefined
 ): ResolvedSectionStyle {
   if (!s)
     return { outerClasses: [], innerClasses: [], style: {}, hasFill: false };
+  s = normalizeLegacySectionFilter(s);
 
   const outerClasses: string[] = [];
   const innerClasses: string[] = [];
@@ -945,6 +1017,11 @@ export function resolveSectionStyle(
   if (textColor) style.color = textColor;
 
   const ty = s.typography;
+  applyTypographyPreset(ty?.preset, outerClasses, style);
+  if (typeof s.backdropBlur === 'number' && s.backdropBlur > 0) {
+    outerClasses.push('s-backdrop');
+    style['--s-blur'] = `${clamp(s.backdropBlur, 0, 40)}px`;
+  }
   const unitSize = responsiveLength(
     ty?.fontSize,
     ty?.fontSizeUnit,
@@ -1093,8 +1170,7 @@ export function resolveSectionStyle(
     ] as const);
 
     if (bs && bs !== 'none') {
-      outerClasses.push('s-bd');
-      style['--s-bd-style'] = bs;
+      outerClasses.push(`s-bd-${bs}`);
       const bc = safeColor(s.border.color);
       if (bc) style['--s-bd-color'] = bc;
       const bw = responsiveSides(s.border.width, 'b', 40, 'px');
@@ -1102,17 +1178,8 @@ export function resolveSectionStyle(
       Object.assign(style, bw.vars);
     }
 
-    if (
-      responsiveLength(
-        s.border.radius,
-        s.border.radiusUnit,
-        PROP_UNITS.radius,
-        false,
-        'br',
-        style
-      )
-    )
-      outerClasses.push('s-br');
+    if (applyRadius(s.border.radius, s.border.radiusUnit, style))
+      outerClasses.push('s-rad');
   }
 
   // Shadow: structured object or legacy preset string
@@ -1256,6 +1323,17 @@ export function resolveSectionStyle(
         style['--s-h-filter'] = hFl;
       }
     }
+
+    const hScale = clamp(s.hover.scale, 0.5, 1.5);
+    if (hScale !== undefined && hScale !== 1) {
+      outerClasses.push('s-hscale');
+      style['--s-h-scale'] = String(hScale);
+    }
+    const hOpacity = clamp(s.hover.opacity, 0, 1);
+    if (hOpacity !== undefined && hOpacity !== 1) {
+      outerClasses.push('s-hop');
+      style['--s-h-opacity'] = String(hOpacity);
+    }
   }
 
   return {
@@ -1313,6 +1391,7 @@ export function resolveElementStyle(
 
   // Typography
   const ty = es.typography;
+  applyTypographyPreset(ty?.preset, classes, style);
   if (ty) {
     const unitSize = responsiveLength(
       ty.fontSize,
@@ -1545,8 +1624,7 @@ export function resolveElementStyle(
     ] as const);
 
     if (bs && bs !== 'none') {
-      classes.push('s-bd');
-      style['--s-bd-style'] = bs;
+      classes.push(`s-bd-${bs}`);
       const bc = safeColor(es.border.color);
       if (bc) style['--s-bd-color'] = bc;
       const bw = responsiveSides(es.border.width, 'b', 40, 'px');
@@ -1554,30 +1632,8 @@ export function resolveElementStyle(
       Object.assign(style, bw.vars);
     }
 
-    if (
-      responsiveLength(
-        es.border.radius,
-        es.border.radiusUnit,
-        PROP_UNITS.radius,
-        false,
-        'br',
-        style
-      )
-    ) {
-      classes.push('s-br');
-      for (const d of DEVICES) {
-        const key = `--s-br-${DEVICE_SUFFIX[d]}`;
-        if (!style[key]) {
-          const resolved = resolveResponsive(es.border.radius, d, v =>
-            typeof v === 'number' && Number.isFinite(v) ? v : undefined
-          );
-          if (resolved !== undefined) {
-            const u = pick(es.border.radiusUnit, PROP_UNITS.radius) ?? 'px';
-            style[key] = `${resolved}${u}`;
-          }
-        }
-      }
-    }
+    if (applyRadius(es.border.radius, es.border.radiusUnit, style))
+      classes.push('s-rad');
   }
 
   // Box Shadow
@@ -1686,6 +1742,8 @@ export type ChromeStyle = {
     linkColor?: string;
   };
   transparentTextColor?: string;
+  /** Frosted glass: blur behind a semi-transparent fill (sticky headers). */
+  backdropBlur?: number;
 };
 
 export type ResolvedChromeStyle = {
@@ -1726,6 +1784,7 @@ export function resolveChromeStyle(
     spacingUnit: effective.spacingUnit,
     border: effective.border,
     shadow: effective.shadow,
+    backdropBlur: effective.backdropBlur,
   };
 
   const base = resolveSectionStyle(sectionSettings);

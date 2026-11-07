@@ -158,7 +158,7 @@ export function Slider(p: SliderProps) {
 
   // Public / preview interactive view
   return (
-    <Section section={p.section} editing={p.editing} hasItems className='py-0 md:py-0'>
+    <Section section={p.section} editing={p.editing} hasItems>
       <div
         className="group/slider relative w-full"
         onMouseEnter={() => setIsHovered(true)}

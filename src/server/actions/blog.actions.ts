@@ -37,6 +37,17 @@ export async function getRelatedPosts(input: z.input<typeof relatedSchema>) {
   return blogService.related(relatedSchema.parse(input));
 }
 
+const adjacentSchema = z.object({
+  postId: z.string().max(100),
+  language: z.string().max(10),
+  publishedAt: z.coerce.date(),
+});
+
+/** Previous (older) and next (newer) published posts, for the Post Navigation block. */
+export async function getAdjacentPosts(input: z.input<typeof adjacentSchema>) {
+  return blogService.adjacent(adjacentSchema.parse(input));
+}
+
 /** Categories and tags that appear on published posts, for public filter dropdowns. */
 export async function getBlogFilterOptions(language?: string | null) {
   return blogService.taxonomy(

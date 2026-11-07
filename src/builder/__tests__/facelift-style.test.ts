@@ -1,0 +1,184 @@
+/**
+ * Public-site face-lift: style resolver fixes and theme token output.
+ *
+ * Run with: tsx --import ./scripts/server-only-stub.mjs --test src/builder/__tests__/facelift-style.test.ts
+ */
+import assert from 'node:assert';
+import { describe, it } from 'node:test';
+import { cardClass } from '../blocks/section';
+import { readingMinutes } from '../blocks/blog';
+import { animationSchema, sectionSettingsSchema } from '../schemas/style.schema';
+import { siteModeScript } from '../site-mode';
+import { resolveElementStyle, resolveSectionStyle } from '../style';
+import { themeStyle } from '../theme';
+import { QUIET_EDITORIAL_THEME } from '../theme-presets';
+
+describe('border style and radius', () => {
+  it('section border emits s-bd-<style>, which site.css defines', () => {
+    const r = resolveSectionStyle({
+      border: {
+        style: 'dashed',
+        width: { desktop: { top: 1, right: 1, bottom: 1, left: 1 } },
+      },
+    });
+    assert.ok(r.outerClasses.includes('s-bd-dashed'));
+    assert.ok(!r.outerClasses.includes('s-bd'));
+  });
+
+  it('element border emits s-bd-<style>', () => {
+    const r = resolveElementStyle({ border: { style: 'solid' } });
+    assert.ok(r.classes.includes('s-bd-solid'));
+  });
+
+  it('radius uses s-rad / --s-rad-*, not s-br (right border width)', () => {
+    const r = resolveSectionStyle({ border: { radius: { desktop: 12 } } });
+    assert.ok(r.outerClasses.includes('s-rad'));
+    assert.ok(!r.outerClasses.includes('s-br'));
+    assert.equal((r.style as Record<string, string>)['--s-rad-d'], '12px');
+    // Inherited by tablet and mobile instead of collapsing to 0.
+    assert.equal((r.style as Record<string, string>)['--s-rad-t'], '12px');
+    assert.equal((r.style as Record<string, string>)['--s-rad-m'], '12px');
+    assert.equal((r.style as Record<string, string>)['--s-br-d'], undefined);
+  });
+
+  it('a right border width keeps s-br alongside the radius', () => {
+    const r = resolveElementStyle({
+      border: {
+        style: 'solid',
+        width: { desktop: { right: 2 } },
+        radius: { desktop: 8 },
+      },
+    });
+    assert.ok(r.classes.includes('s-br'));
+    assert.ok(r.classes.includes('s-rad'));
+    assert.equal((r.style as Record<string, string>)['--s-br-d'], '2px');
+    assert.equal((r.style as Record<string, string>)['--s-rad-d'], '8px');
+  });
+});
+
+describe('section filters', () => {
+  it('reads a flat filter and a hover filter', () => {
+    const r = resolveSectionStyle({
+      filter: { grayscale: 100 },
+      hover: { filter: { grayscale: 0 } },
+    });
+    assert.ok(r.outerClasses.includes('s-filter'));
+    assert.ok(r.outerClasses.includes('s-hfl'));
+  });
+
+  it('accepts the legacy { normal, hover } shape saved by the old control', () => {
+    const r = resolveSectionStyle({
+      filter: { normal: { blur: 2 }, hover: { blur: 0, brightness: 120 } },
+    } as never);
+    assert.match((r.style as Record<string, string>)['--s-filter'] ?? '', /blur\(2px\)/);
+    assert.ok(r.outerClasses.includes('s-hfl'));
+  });
+});
+
+describe('animation schema', () => {
+  it('accepts the milliseconds the motion control saves', () => {
+    assert.ok(
+      animationSchema.safeParse({ duration: 600, delay: 150, stagger: 80 })
+        .success
+    );
+  });
+  it('rejects out-of-range values', () => {
+    assert.ok(!animationSchema.safeParse({ duration: 9000 }).success);
+    assert.ok(!animationSchema.safeParse({ stagger: 5000 }).success);
+  });
+});
+
+describe('new style controls', () => {
+  it('typography preset points at the theme preset vars', () => {
+    const r = resolveElementStyle({ typography: { preset: 'h2' } });
+    assert.ok(r.classes.includes('s-tp'));
+    assert.equal((r.style as Record<string, string>)['--s-tp-font'], 'var(--site-type-h2-font)');
+    assert.match((r.style as Record<string, string>)['--s-tp-size-m'] ?? '', /--site-type-h2-size-m/);
+  });
+
+  it('typography preset ids are sanitised', () => {
+    const r = resolveElementStyle({
+      typography: { preset: 'h2);color:red' },
+    });
+    assert.equal((r.style as Record<string, string>)['--s-tp-font'], 'var(--site-type-h2colorred-font)');
+  });
+
+  it('backdrop blur and hover scale / opacity', () => {
+    const r = resolveSectionStyle({
+      backdropBlur: 12,
+      hover: { scale: 1.02, opacity: 0.8 },
+    });
+    assert.ok(r.outerClasses.includes('s-backdrop'));
+    assert.equal((r.style as Record<string, string>)['--s-blur'], '12px');
+    assert.ok(r.outerClasses.includes('s-hscale'));
+    assert.equal((r.style as Record<string, string>)['--s-h-scale'], '1.02');
+    assert.ok(r.outerClasses.includes('s-hop'));
+  });
+
+  it('schema accepts the new section settings', () => {
+    assert.ok(
+      sectionSettingsSchema.safeParse({
+        backdropBlur: 20,
+        typography: { preset: 'eyebrow' },
+        hover: { scale: 1.05 },
+      }).success
+    );
+  });
+
+  it('card "default" keeps a block’s original classes', () => {
+    assert.equal(cardClass({}, 'legacy-classes'), 'legacy-classes');
+    assert.match(cardClass({ cardVariant: 'glass' }), /s-card-glass/);
+    assert.match(cardClass({ cardHover: true }), /s-hover-lift/);
+  });
+});
+
+describe('theme tokens', () => {
+  it('emits dark palette, heading font and button radius', () => {
+    const vars = themeStyle(QUIET_EDITORIAL_THEME) as Record<string, string>;
+    assert.equal(vars['--site-color-background'], '#fef9f1');
+    assert.equal(vars['--site-color-background-dark'], '#0e1513');
+    assert.equal(vars['--site-color-surface-alt'], '#f2ede6');
+    assert.match(vars['--site-font-heading'], /Newsreader/);
+    assert.equal(vars['--site-btn-radius'], '9999px');
+    // Primary is derived in CSS so dark mode can swap it.
+    assert.equal(vars['--site-primary'], undefined);
+  });
+
+  it('emits per-device preset sizes', () => {
+    const vars = themeStyle(QUIET_EDITORIAL_THEME) as Record<string, string>;
+    assert.equal(vars['--site-type-h1-size'], '3rem');
+    assert.equal(vars['--site-type-h1-size-t'], '2.5rem');
+    assert.equal(vars['--site-type-h1-size-m'], '2.125rem');
+    assert.equal(vars['--site-type-body-size-m'], '1rem');
+  });
+
+  it('ignores heading fonts outside the curated list', () => {
+    const vars = themeStyle({
+      ...QUIET_EDITORIAL_THEME,
+      headingFont: "x'; background:url(//evil)",
+    }) as Record<string, string>;
+    assert.ok(!vars['--site-font-heading'].includes('evil'));
+  });
+
+  it('ignores non-hex dark colours', () => {
+    const vars = themeStyle({
+      ...QUIET_EDITORIAL_THEME,
+      colorsDark: { background: 'red;}' },
+    }) as Record<string, string>;
+    assert.equal(vars['--site-color-background-dark'], undefined);
+  });
+});
+
+describe('helpers', () => {
+  it('reading time', () => {
+    assert.equal(readingMinutes(''), 0);
+    assert.equal(readingMinutes('<p>one two</p>'), 1);
+    assert.equal(readingMinutes(`<p>${'word '.repeat(880)}</p>`), 4);
+  });
+
+  it('site mode script only embeds the mode keyword', () => {
+    const js = siteModeScript('system');
+    assert.match(js, /"system"==='system'/);
+    assert.match(js, /data-site-mode/);
+  });
+});

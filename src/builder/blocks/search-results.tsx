@@ -11,6 +11,8 @@ import {
 } from './section';
 
 export interface SearchResultsBlockProps {
+  /** Element styles (`elementStyle()` fields), e.g. the section heading. */
+  elements?: Record<string, unknown>;
   eyebrow?: string;
   title?: string;
   subtitle?: string;
@@ -112,6 +114,7 @@ export function SearchResults({
   countsByKind,
   searchActionPath = '/search',
   section,
+  elements,
   editing = false,
 }: SearchResultsBlockProps) {
   const items =
@@ -133,7 +136,7 @@ export function SearchResults({
 
   return (
     <Section section={section} editing={editing}>
-      <SectionHeading eyebrow={eyebrow} title={title} subtitle={subtitle} />
+      <SectionHeading elements={elements} eyebrow={eyebrow} title={title} subtitle={subtitle} />
 
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
         {/* Search Form */}
@@ -257,7 +260,7 @@ export function SearchResults({
                     <span className="s-muted truncate text-xs">{item.path}</span>
                   </div>
 
-                  <h2 className="text-lg font-bold leading-snug">
+                  <h2 className="s-card-title text-lg leading-snug">
                     <a href={item.path} className="hover:underline">
                       {item.title}
                     </a>

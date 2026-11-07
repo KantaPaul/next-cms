@@ -148,6 +148,7 @@ export const typographySchema = z.object({
   wordSpacingUnit: lengthUnitSchema.optional(),
   textShadow: textShadowSchema.optional(),
   textStroke: textStrokeSchema.optional(),
+  preset: z.string().regex(/^[a-z0-9_-]{1,50}$/i).optional(),
 });
 
 export const filterSchema = z.object({
@@ -164,11 +165,12 @@ export const animationSchema = z.object({
   entrance: z.enum(['none', '', ...ENTRANCES] as any).optional(),
   exit: z.enum(['none', '', ...EXITS] as any).optional(),
   trigger: z.enum(TRIGGERS as any).optional(),
-  duration: z.number().min(0.2).max(5).optional(),
-  delay: z.number().min(0).max(5).optional(),
+  // Milliseconds — the motion control and renderer both work in ms.
+  duration: z.number().min(0).max(5000).optional(),
+  delay: z.number().min(0).max(5000).optional(),
   easing: z.enum(EASINGS as any).optional(),
   once: z.boolean().optional(),
-  stagger: z.number().min(0).max(2).optional(),
+  stagger: z.number().min(0).max(2000).optional(),
   hover: z.enum(['none', '', ...HOVERS] as any).optional(),
   devices: z
     .object({
@@ -229,6 +231,7 @@ export const sectionSettingsSchema = z.object({
   display: displaySchema.optional(),
   animation: animationSchema.optional(),
   filter: filterSchema.optional(),
+  backdropBlur: z.number().min(0).max(40).optional(),
   hover: z
     .object({
       fill: fillSchema.optional(),

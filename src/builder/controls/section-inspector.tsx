@@ -509,3 +509,76 @@ export function SectionField({ value, onChange }: Props) {
     </div>
   );
 }
+
+const HOVER_LIFT = {
+  none: { scale: undefined, label: 'None' },
+  subtle: { scale: 1.02, label: 'Subtle' },
+  grow: { scale: 1.05, label: 'Grow' },
+} as const;
+type HoverLift = keyof typeof HOVER_LIFT;
+
+/**
+ * Glass and hover effects for a block's wrapper: backdrop blur (frosted glass
+ * over whatever is behind a semi-transparent background), and hover scale /
+ * fade (`section.hover.scale` / `.opacity`).
+ */
+export function EffectsSectionControl({
+  value,
+  onChange,
+}: {
+  value: SectionSettings | undefined;
+  onChange: (value: SectionSettings) => void;
+}) {
+  const s = value ?? {};
+  const scale = s.hover?.scale;
+  const lift: HoverLift =
+    scale === undefined || scale === 1
+      ? 'none'
+      : scale >= 1.04
+        ? 'grow'
+        : 'subtle';
+  const setHover = (patch: Partial<NonNullable<SectionSettings['hover']>>) =>
+    onChange({ ...s, hover: { ...(s.hover ?? {}), ...patch } });
+
+  return (
+    <div className="space-y-4">
+      <Slider
+        label="Backdrop blur (glass)"
+        value={s.backdropBlur}
+        min={0}
+        max={40}
+        unit="px"
+        placeholder="0"
+        onChange={backdropBlur => onChange({ ...s, backdropBlur })}
+      />
+      <Description>
+        Blurs what is behind the block. Use with a semi-transparent background
+        colour.
+      </Description>
+      <Choose<HoverLift>
+        label="Hover scale"
+        value={lift}
+        options={(Object.keys(HOVER_LIFT) as HoverLift[]).map(k => ({
+          value: k,
+          label: HOVER_LIFT[k].label,
+        }))}
+        onChange={k => setHover({ scale: HOVER_LIFT[k].scale })}
+      />
+      <Slider
+        label="Hover opacity"
+        value={
+          s.hover?.opacity === undefined
+            ? undefined
+            : Math.round(s.hover.opacity * 100)
+        }
+        min={10}
+        max={100}
+        unit="%"
+        placeholder="100"
+        onChange={v =>
+          setHover({ opacity: v === undefined || v === 100 ? undefined : v / 100 })
+        }
+      />
+    </div>
+  );
+}

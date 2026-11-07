@@ -3,6 +3,7 @@
 // Reads the current loop item from React context, so it must render on the client.
 import { useLoopItem } from './query-loop-client';
 import { formatLoopDate, SAMPLE_LOOP_ITEMS } from './loop-shared';
+import { BookmarkToggle } from './bookmarks-client';
 
 // ---------------------------------------------------------------------------
 // LoopItemField Block (R575 / QRY-05)
@@ -17,6 +18,7 @@ export interface LoopItemFieldProps {
     | 'author'
     | 'terms'
     | 'readMore'
+    | 'bookmark'
     | 'custom';
   customKey?: string;
   linkToItem?: boolean;
@@ -120,6 +122,15 @@ export function LoopItemField({
         >
           {readMoreLabel} →
         </a>
+      );
+
+    case 'bookmark':
+      return (
+        <BookmarkToggle
+          url={item.url}
+          title={item.title}
+          image={item.image}
+        />
       );
 
     case 'custom': {

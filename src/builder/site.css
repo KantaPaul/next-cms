@@ -1,30 +1,312 @@
 /*
  * Public-site design tokens. The builder root (and the public site layout) set these
  * variables from site settings, so blocks never depend on the admin's own theme.
+ *
+ * Dark mode: a `.site-root` is dark when its `data-site-theme` is "dark", unless the
+ * visitor picked a mode — the theme toggle (and the pre-paint script in the site
+ * layout) set `data-site-mode` on <html>, which then wins for every nested root.
  */
 .site-root {
-  --site-primary: #6366f1;
-  --site-accent: #ec4899;
+  --site-primary: var(--site-color-primary, #6366f1);
+  --site-accent: var(--site-color-accent, #ec4899);
   --site-radius: 0.75rem;
+  --site-btn-radius: var(--site-radius);
   --site-font: inherit;
+  --site-font-heading: var(--site-font);
   --site-bg: var(--site-color-background, #ffffff);
   --site-fg: var(--site-color-text, #0f172a);
   --site-muted: var(--site-color-text-muted, var(--site-color-secondary, #64748b));
   --site-surface: var(--site-color-surface, #f8fafc);
+  --site-surface-alt: var(--site-color-surface-alt, var(--site-surface));
   --site-border: var(--site-color-border, #e2e8f0);
+  --site-primary-soft: var(
+    --site-color-primary-soft,
+    color-mix(in srgb, var(--site-primary) 12%, transparent)
+  );
+  --site-primary-hover: color-mix(in srgb, var(--site-primary) 86%, #000);
+  --site-secondary: var(--site-color-secondary, #64748b);
   --site-on-primary: #ffffff;
+  --site-shadow-sm: 0 1px 2px rgb(15 23 42 / 0.05);
+  --site-shadow-md: 0 8px 24px -8px rgb(15 23 42 / 0.12);
+  --site-glass-bg: color-mix(in srgb, var(--site-bg) 82%, transparent);
 
   background: var(--site-bg);
   color: var(--site-fg);
   font-family: var(--site-font);
 }
 
-.site-root[data-site-theme='dark'] {
-  --site-bg: #0b1020;
-  --site-fg: #e2e8f0;
-  --site-muted: #94a3b8;
-  --site-surface: #131a2e;
-  --site-border: #1f2a44;
+html:not([data-site-mode='light']) .site-root[data-site-theme='dark'],
+html[data-site-mode='dark'] .site-root {
+  color-scheme: dark;
+  --site-primary: var(--site-color-primary-dark, var(--site-color-primary, #818cf8));
+  --site-accent: var(--site-color-accent-dark, var(--site-color-accent, #f472b6));
+  --site-secondary: var(--site-color-secondary-dark, #94a3b8);
+  --site-bg: var(--site-color-background-dark, #0b1020);
+  --site-fg: var(--site-color-text-dark, #e2e8f0);
+  --site-muted: var(--site-color-text-muted-dark, #94a3b8);
+  --site-surface: var(--site-color-surface-dark, #131a2e);
+  --site-surface-alt: var(--site-color-surface-alt-dark, #182038);
+  --site-border: var(--site-color-border-dark, #1f2a44);
+  --site-primary-soft: var(
+    --site-color-primary-soft-dark,
+    color-mix(in srgb, var(--site-primary) 16%, transparent)
+  );
+  --site-primary-hover: color-mix(in srgb, var(--site-primary) 82%, #fff);
+  --site-on-primary: var(--site-color-background-dark, #0b1020);
+  --site-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --site-shadow-md: 0 8px 28px -8px rgb(0 0 0 / 0.55);
+}
+
+/* Logo with a separate dark-mode image. */
+.site-root .s-logo-dark {
+  display: none;
+}
+html:not([data-site-mode='light']) .site-root[data-site-theme='dark'] .s-logo-dark,
+html[data-site-mode='dark'] .site-root .s-logo-dark {
+  display: block;
+}
+html:not([data-site-mode='light']) .site-root[data-site-theme='dark'] .s-logo-light,
+html[data-site-mode='dark'] .site-root .s-logo-light {
+  display: none;
+}
+
+/* Headings use the theme's heading font (same as body unless one is set). */
+.site-root :where(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--site-font-heading);
+}
+
+/* Hero / display headline (display preset; falls back to the original 2.25rem → 3.75rem, 800). */
+.site-root .s-display-title {
+  font-family: var(--site-type-display-font, var(--site-font-heading));
+  font-size: var(--site-type-display-size-m, 2.25rem);
+  font-weight: var(--site-type-display-weight, 800);
+  line-height: var(--site-type-display-line-height, 1.1);
+  letter-spacing: var(--site-type-display-letter-spacing, -0.025em);
+}
+@media (min-width: 768px) {
+  .site-root .s-display-title {
+    font-size: var(--site-type-display-size-t, 3.75rem);
+  }
+}
+@media (min-width: 1024px) {
+  .site-root .s-display-title {
+    font-size: var(--site-type-display-size, 3.75rem);
+  }
+}
+/* Big numbers (stats, prices) and card titles use the heading font. */
+.site-root .s-stat-value {
+  font-family: var(--site-font-heading);
+  font-weight: var(--site-type-display-weight, 800);
+  letter-spacing: -0.02em;
+}
+.site-root .s-card-title {
+  font-family: var(--site-type-h3-font, var(--site-font-heading));
+  font-weight: var(--site-type-h3-weight, 700);
+}
+
+/* Shared block headings: sizes, weight and tracking come from the h2 / h1 presets. */
+.site-root .s-section-title {
+  font-family: var(--site-type-h2-font, var(--site-font-heading));
+  font-size: var(--site-type-h2-size-m, 1.875rem);
+  font-weight: var(--site-type-h2-weight, 700);
+  line-height: var(--site-type-h2-line-height, 1.2);
+  letter-spacing: var(--site-type-h2-letter-spacing, -0.025em);
+}
+.site-root .s-post-title {
+  font-family: var(--site-type-h1-font, var(--site-font-heading));
+  font-size: var(--site-type-h1-size-m, 2.25rem);
+  font-weight: var(--site-type-h1-weight, 800);
+  line-height: var(--site-type-h1-line-height, 1.1);
+  letter-spacing: var(--site-type-h1-letter-spacing, -0.025em);
+}
+@media (min-width: 768px) {
+  .site-root .s-section-title {
+    font-size: var(--site-type-h2-size-t, 2.25rem);
+  }
+  .site-root .s-post-title {
+    font-size: var(--site-type-h1-size-t, 3rem);
+  }
+}
+@media (min-width: 1024px) {
+  .site-root .s-section-title {
+    font-size: var(--site-type-h2-size, 2.25rem);
+  }
+  .site-root .s-post-title {
+    font-size: var(--site-type-h1-size, 3rem);
+  }
+}
+
+/* Typography preset picked in a Typography control (`typography.preset`). Comes before
+   the per-property rules (s-fs, s-fw, …) so manual values still override it. */
+.site-root .s-tp {
+  font-family: var(--s-tp-font);
+  font-size: var(--s-tp-size-m);
+  font-weight: var(--s-tp-weight);
+  line-height: var(--s-tp-lh);
+  letter-spacing: var(--s-tp-ls);
+}
+@media (min-width: 768px) {
+  .site-root .s-tp {
+    font-size: var(--s-tp-size-t);
+  }
+}
+@media (min-width: 1024px) {
+  .site-root .s-tp {
+    font-size: var(--s-tp-size-d);
+  }
+}
+.site-root .s-backdrop {
+  -webkit-backdrop-filter: blur(var(--s-blur)) saturate(1.2);
+  backdrop-filter: blur(var(--s-blur)) saturate(1.2);
+}
+
+/* Theme typography presets (Settings → Theme). Mobile-first sizes. */
+.site-root .s-type-display {
+  font-family: var(--site-type-display-font, var(--site-font-heading));
+  font-size: var(--site-type-display-size-m, var(--site-type-display-size));
+  font-weight: var(--site-type-display-weight);
+  line-height: var(--site-type-display-line-height);
+  letter-spacing: var(--site-type-display-letter-spacing);
+}
+.site-root .s-type-h1 {
+  font-family: var(--site-type-h1-font, var(--site-font-heading));
+  font-size: var(--site-type-h1-size-m, var(--site-type-h1-size));
+  font-weight: var(--site-type-h1-weight);
+  line-height: var(--site-type-h1-line-height);
+  letter-spacing: var(--site-type-h1-letter-spacing);
+}
+.site-root .s-type-h2 {
+  font-family: var(--site-type-h2-font, var(--site-font-heading));
+  font-size: var(--site-type-h2-size-m, var(--site-type-h2-size));
+  font-weight: var(--site-type-h2-weight);
+  line-height: var(--site-type-h2-line-height);
+  letter-spacing: var(--site-type-h2-letter-spacing);
+}
+.site-root .s-type-h3 {
+  font-family: var(--site-type-h3-font, var(--site-font-heading));
+  font-size: var(--site-type-h3-size-m, var(--site-type-h3-size));
+  font-weight: var(--site-type-h3-weight);
+  line-height: var(--site-type-h3-line-height);
+  letter-spacing: var(--site-type-h3-letter-spacing);
+}
+.site-root .s-type-h4 {
+  font-family: var(--site-type-h4-font, var(--site-font-heading));
+  font-size: var(--site-type-h4-size-m, var(--site-type-h4-size));
+  font-weight: var(--site-type-h4-weight);
+  line-height: var(--site-type-h4-line-height);
+  letter-spacing: var(--site-type-h4-letter-spacing);
+}
+.site-root .s-type-lead {
+  font-family: var(--site-type-lead-font, var(--site-font));
+  font-size: var(--site-type-lead-size-m, var(--site-type-lead-size));
+  font-weight: var(--site-type-lead-weight);
+  line-height: var(--site-type-lead-line-height);
+  letter-spacing: var(--site-type-lead-letter-spacing);
+}
+.site-root .s-type-body {
+  font-family: var(--site-type-body-font, var(--site-font));
+  font-size: var(--site-type-body-size-m, var(--site-type-body-size));
+  font-weight: var(--site-type-body-weight);
+  line-height: var(--site-type-body-line-height);
+  letter-spacing: var(--site-type-body-letter-spacing);
+}
+.site-root .s-type-eyebrow {
+  font-family: var(--site-type-eyebrow-font, var(--site-font));
+  font-size: var(--site-type-eyebrow-size-m, var(--site-type-eyebrow-size));
+  font-weight: var(--site-type-eyebrow-weight);
+  line-height: var(--site-type-eyebrow-line-height);
+  letter-spacing: var(--site-type-eyebrow-letter-spacing);
+}
+.site-root .s-type-caption {
+  font-family: var(--site-type-caption-font, var(--site-font));
+  font-size: var(--site-type-caption-size-m, var(--site-type-caption-size));
+  font-weight: var(--site-type-caption-weight);
+  line-height: var(--site-type-caption-line-height);
+  letter-spacing: var(--site-type-caption-letter-spacing);
+}
+.site-root .s-type-meta {
+  font-family: var(--site-type-meta-font, var(--site-font));
+  font-size: var(--site-type-meta-size-m, var(--site-type-meta-size));
+  font-weight: var(--site-type-meta-weight);
+  line-height: var(--site-type-meta-line-height);
+  letter-spacing: var(--site-type-meta-letter-spacing);
+}
+.site-root .s-type-button {
+  font-family: var(--site-type-button-font, var(--site-font));
+  font-size: var(--site-type-button-size-m, var(--site-type-button-size));
+  font-weight: var(--site-type-button-weight);
+  line-height: var(--site-type-button-line-height);
+  letter-spacing: var(--site-type-button-letter-spacing);
+}
+@media (min-width: 768px) {
+  .site-root .s-type-display {
+    font-size: var(--site-type-display-size-t, var(--site-type-display-size));
+  }
+  .site-root .s-type-h1 {
+    font-size: var(--site-type-h1-size-t, var(--site-type-h1-size));
+  }
+  .site-root .s-type-h2 {
+    font-size: var(--site-type-h2-size-t, var(--site-type-h2-size));
+  }
+  .site-root .s-type-h3 {
+    font-size: var(--site-type-h3-size-t, var(--site-type-h3-size));
+  }
+  .site-root .s-type-h4 {
+    font-size: var(--site-type-h4-size-t, var(--site-type-h4-size));
+  }
+  .site-root .s-type-lead {
+    font-size: var(--site-type-lead-size-t, var(--site-type-lead-size));
+  }
+  .site-root .s-type-body {
+    font-size: var(--site-type-body-size-t, var(--site-type-body-size));
+  }
+  .site-root .s-type-eyebrow {
+    font-size: var(--site-type-eyebrow-size-t, var(--site-type-eyebrow-size));
+  }
+  .site-root .s-type-caption {
+    font-size: var(--site-type-caption-size-t, var(--site-type-caption-size));
+  }
+  .site-root .s-type-meta {
+    font-size: var(--site-type-meta-size-t, var(--site-type-meta-size));
+  }
+  .site-root .s-type-button {
+    font-size: var(--site-type-button-size-t, var(--site-type-button-size));
+  }
+}
+@media (min-width: 1024px) {
+  .site-root .s-type-display {
+    font-size: var(--site-type-display-size);
+  }
+  .site-root .s-type-h1 {
+    font-size: var(--site-type-h1-size);
+  }
+  .site-root .s-type-h2 {
+    font-size: var(--site-type-h2-size);
+  }
+  .site-root .s-type-h3 {
+    font-size: var(--site-type-h3-size);
+  }
+  .site-root .s-type-h4 {
+    font-size: var(--site-type-h4-size);
+  }
+  .site-root .s-type-lead {
+    font-size: var(--site-type-lead-size);
+  }
+  .site-root .s-type-body {
+    font-size: var(--site-type-body-size);
+  }
+  .site-root .s-type-eyebrow {
+    font-size: var(--site-type-eyebrow-size);
+  }
+  .site-root .s-type-caption {
+    font-size: var(--site-type-caption-size);
+  }
+  .site-root .s-type-meta {
+    font-size: var(--site-type-meta-size);
+  }
+  .site-root .s-type-button {
+    font-size: var(--site-type-button-size);
+  }
 }
 
 .site-root .s-surface {
@@ -63,20 +345,166 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: var(--site-radius);
+  border-radius: var(--site-btn-radius);
   padding: 0.7rem 1.25rem;
   font-size: 0.95rem;
   font-weight: 600;
   transition:
     opacity 150ms,
-    background 150ms;
+    background 150ms,
+    border-color 150ms,
+    transform 150ms;
 }
 .site-root .s-btn:hover {
-  opacity: 0.9;
+  opacity: 0.92;
+}
+.site-root .s-btn:focus-visible,
+.site-root .s-icon-btn:focus-visible {
+  outline: 2px solid var(--site-primary);
+  outline-offset: 2px;
 }
 .site-root .s-btn-primary {
   background: var(--site-primary);
   color: var(--site-on-primary);
+}
+.site-root .s-btn-primary:hover {
+  background: var(--site-primary-hover);
+  opacity: 1;
+}
+.site-root .s-btn-outline {
+  border: 1px solid var(--site-border);
+  background: transparent;
+  color: var(--site-fg);
+}
+.site-root .s-btn-outline:hover {
+  border-color: var(--site-primary);
+  color: var(--site-primary);
+  opacity: 1;
+}
+.site-root .s-btn-soft {
+  background: var(--site-primary-soft);
+  color: var(--site-primary);
+}
+
+/* Round icon button (theme toggle, search, bookmarks, share). */
+.site-root .s-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  color: var(--site-muted);
+  transition:
+    color 150ms,
+    background 150ms,
+    border-color 150ms;
+}
+.site-root .s-icon-btn:hover {
+  color: var(--site-fg);
+  background: var(--site-surface);
+  border-color: var(--site-border);
+}
+
+/* Editorial building blocks */
+.site-root .s-surface-alt {
+  background: var(--site-surface-alt);
+}
+.site-root .s-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: var(--site-btn-radius);
+  background: var(--site-primary-soft);
+  color: var(--site-primary);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+.site-root .s-eyebrow-plain {
+  color: var(--site-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.site-root .s-meta {
+  color: var(--site-muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+.site-root .s-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--site-border);
+  border-radius: 9999px;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--site-fg);
+  transition:
+    background 150ms,
+    color 150ms,
+    border-color 150ms;
+}
+.site-root .s-chip:hover,
+.site-root .s-chip[aria-pressed='true'],
+.site-root .s-chip[aria-current='true'] {
+  border-color: var(--site-primary);
+  background: var(--site-primary);
+  color: var(--site-on-primary);
+}
+.site-root .s-hairline {
+  border-color: var(--site-border);
+}
+
+/* Card variants (`variant` field on card-based blocks). */
+.site-root .s-card {
+  border-radius: var(--site-radius);
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    border-color 200ms ease;
+}
+.site-root .s-card-flat {
+  background: var(--site-surface);
+}
+.site-root .s-card-outline {
+  border: 1px solid var(--site-border);
+  background: var(--site-bg);
+}
+.site-root .s-card-elevated {
+  border: 1px solid var(--site-border);
+  background: var(--site-bg);
+  box-shadow: var(--site-shadow-md);
+}
+.site-root .s-card-glass {
+  border: 1px solid color-mix(in srgb, var(--site-border) 70%, transparent);
+  background: var(--site-glass-bg);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
+}
+.site-root .s-card-none {
+  background: transparent;
+}
+.site-root .s-hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--site-shadow-md);
+}
+.site-root .s-glass {
+  background: var(--site-glass-bg);
+  -webkit-backdrop-filter: blur(var(--s-blur, 14px)) saturate(1.2);
+  backdrop-filter: blur(var(--s-blur, 14px)) saturate(1.2);
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-root .s-hover-lift:hover {
+    transform: none;
+  }
 }
 .site-root .s-btn-secondary {
   border: 1px solid var(--site-border);
@@ -161,18 +589,19 @@
   color: rgb(255 255 255 / 0.8);
 }
 .site-root .s-section-dark {
-  background: #0b1020;
-  color: #e2e8f0;
+  background: var(--site-color-background-dark, #0b1020);
+  color: var(--site-color-text-dark, #e2e8f0);
 }
 .site-root .s-section-dark .s-muted {
-  color: #94a3b8;
+  color: var(--site-color-text-muted-dark, #94a3b8);
 }
 
 /* Section style controls. Values arrive as validated CSS variables set by `resolveSectionStyle`. */
 .site-root .s-fill {
   background: var(--s-fill);
 }
-.site-root[data-site-theme='dark'] .s-fill {
+html:not([data-site-mode='light']) .site-root[data-site-theme='dark'] .s-fill,
+html[data-site-mode='dark'] .site-root .s-fill {
   background: var(--s-fill-dark, var(--s-fill));
 }
 
@@ -697,13 +1126,26 @@
 }
 
 /* Hover overrides: only the variables a block sets are defined, so each rule falls back to the normal value. */
-.site-root :where(.s-hc, .s-hf, .s-hb, .s-hs, .s-hfl) {
+.site-root :where(.s-hc, .s-hf, .s-hb, .s-hs, .s-hfl, .s-hscale, .s-hop) {
   transition:
     color 150ms,
     background 150ms,
     border-color 150ms,
     box-shadow 150ms,
-    filter 150ms;
+    filter 150ms,
+    transform 200ms ease,
+    opacity 200ms ease;
+}
+.site-root .s-hscale:hover {
+  transform: scale(var(--s-h-scale));
+}
+.site-root .s-hop:hover {
+  opacity: var(--s-h-opacity);
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-root .s-hscale:hover {
+    transform: none;
+  }
 }
 .site-root .s-hc:hover {
   color: var(--s-h-color);
@@ -730,21 +1172,62 @@
   }
 }
 
-/* Rich text inherits site colors */
+/* Rich text inherits site colors and the heading font */
 .site-root .s-prose {
   color: var(--site-fg);
 }
 .site-root .s-prose :where(a) {
   color: var(--site-primary);
+  text-underline-offset: 0.2em;
 }
 .site-root .s-prose :where(h1, h2, h3, h4, strong, blockquote) {
   color: inherit;
 }
+.site-root .s-prose :where(h1, h2, h3, h4) {
+  font-family: var(--site-font-heading);
+  font-weight: var(--site-type-h2-weight, 600);
+  letter-spacing: -0.01em;
+}
 .site-root .s-prose :where(code) {
   color: inherit;
 }
+.site-root .s-prose :where(:not(pre) > code) {
+  background: var(--site-surface);
+  border: 1px solid var(--site-border);
+  border-radius: 0.375rem;
+  padding: 0.1em 0.35em;
+  font-weight: 500;
+}
+.site-root .s-prose :where(code)::before,
+.site-root .s-prose :where(code)::after {
+  content: none;
+}
+.site-root .s-prose :where(pre) {
+  background: var(--site-surface);
+  color: var(--site-fg);
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius);
+}
 .site-root .s-prose :where(blockquote) {
   border-left-color: var(--site-primary);
+  font-family: var(--site-font-heading);
+  font-style: italic;
+}
+.site-root .s-prose :where(hr, th, td, thead, tr) {
+  border-color: var(--site-border);
+}
+.site-root .s-prose :where(figcaption) {
+  color: var(--site-muted);
+}
+/* Drop cap on the first paragraph (PostContent / RichText `dropCap`). */
+.site-root .s-prose-dropcap > p:first-of-type::first-letter {
+  float: left;
+  margin: 0.08em 0.12em 0 0;
+  font-family: var(--site-font-heading);
+  font-size: 4.2em;
+  font-weight: 500;
+  line-height: 0.8;
+  color: var(--site-primary);
 }
 
 /* Header Shell Behaviour */
@@ -803,7 +1286,8 @@
   color: var(--chrome-scrolled-fg, inherit);
 }
 
-.site-root[data-site-theme='dark'] .site-header-shell[data-scrolled="true"] .site-chrome.has-scrolled-style {
+html:not([data-site-mode='light']) .site-root[data-site-theme='dark'] .site-header-shell[data-scrolled="true"] .site-chrome.has-scrolled-style,
+html[data-site-mode='dark'] .site-root .site-header-shell[data-scrolled="true"] .site-chrome.has-scrolled-style {
   background: var(--chrome-scrolled-fill-dark, var(--chrome-scrolled-fill, var(--site-bg))) !important;
 }
 

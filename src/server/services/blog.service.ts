@@ -6,9 +6,11 @@ import {
   desc,
   eq,
   exists,
+  gt,
   ilike,
   inArray,
   isNull,
+  lt,
   ne,
   notInArray,
   or,
@@ -255,6 +257,8 @@ async function loadPost(where: SQL | undefined, kind: 'draft' | 'published') {
   const [row] = await db
     .select({
       ...cardSelect,
+      authorImage: users.image,
+      authorBio: users.bio,
       layout: posts.layout,
       templateId: posts.templateId,
       headerTemplateId: posts.headerTemplateId,
@@ -293,6 +297,8 @@ async function loadPost(where: SQL | undefined, kind: 'draft' | 'published') {
     body: content?.body ?? '',
     publishedAt: row.publishedAt?.toISOString() ?? null,
     authorName: row.authorName,
+    authorImage: row.authorImage,
+    authorBio: row.authorBio,
     categories: categoriesByPost.get(row.id) ?? [],
     tags: tagsByPost.get(row.id) ?? [],
     headerTemplateId: row.headerTemplateId,
@@ -373,6 +379,40 @@ export const blogService = {
       size,
       totalPages: Math.max(Math.ceil(total / size), 1),
     };
+  },
+
+  /** The published posts just before and after `publishedAt`, in the same language. */
+  adjacent: async ({
+    postId,
+    language,
+    publishedAt,
+  }: {
+    postId: string;
+    language: string;
+    publishedAt: Date;
+  }): Promise<{ previous: PostCard | null; next: PostCard | null }> => {
+    const base = and(
+      await published(),
+      eq(posts.language, language),
+      ne(posts.id, postId)
+    );
+    const one = (where: SQL | undefined, newestFirst: boolean) =>
+      db
+        .select(cardSelect)
+        .from(posts)
+        .leftJoin(users, eq(users.id, posts.createdBy))
+        .where(where)
+        .orderBy(newestFirst ? desc(posts.publishedAt) : asc(posts.publishedAt))
+        .limit(1);
+    const [older, newer] = await Promise.all([
+      one(and(base, lt(posts.publishedAt, publishedAt)), true),
+      one(and(base, gt(posts.publishedAt, publishedAt)), false),
+    ]);
+    const [previous = null, next = null] = await Promise.all([
+      older.length ? toCards(older).then(c => c[0] ?? null) : null,
+      newer.length ? toCards(newer).then(c => c[0] ?? null) : null,
+    ]);
+    return { previous, next };
   },
 
   /** Posts sharing a category with the given post, newest first, falling back to the latest posts. */

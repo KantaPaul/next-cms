@@ -1041,7 +1041,7 @@ async function ArchiveRouteView({
   });
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-5 py-8 md:px-8">
+    <div className="mx-auto w-full max-w-[var(--site-max-width,72rem)] px-5 py-8 md:px-8">
       {!templateContent && archive.description && (
         <p className="s-muted mb-4 text-base">{archive.description}</p>
       )}
@@ -1430,7 +1430,7 @@ async function TermArchiveRouteView({
   });
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-5 py-8 md:px-8">
+    <div className="mx-auto w-full max-w-[var(--site-max-width,72rem)] px-5 py-8 md:px-8">
       {!templateContent && (
         <div className="mb-6">
           <h1 className="text-3xl font-bold tracking-tight">{term.name}</h1>

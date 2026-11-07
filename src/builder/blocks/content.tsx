@@ -11,6 +11,7 @@ import {
 } from '../style';
 import { BlockList } from './block-list';
 import { ContactFormClient } from './contact-form-client';
+import { CopyButtonClient } from './copy-button-client';
 import { el, type WithSection } from './element';
 import {
   MotionItem,
@@ -191,7 +192,7 @@ export function Gallery(p: GalleryProps) {
   if (!items.length) {
     return p.editing ? (
       <Section section={p.section} editing>
-        <SectionHeading
+        <SectionHeading elements={p.elements}
           eyebrow={p.eyebrow}
           title={p.title}
           subtitle={p.subtitle}
@@ -205,7 +206,7 @@ export function Gallery(p: GalleryProps) {
 
   return (
     <Section section={p.section} editing={p.editing} hasItems>
-      <SectionHeading
+      <SectionHeading elements={p.elements}
         eyebrow={p.eyebrow}
         title={p.title}
         subtitle={p.subtitle}
@@ -269,7 +270,7 @@ export type ContactFormProps = WithSection & {
 export function ContactForm(p: ContactFormProps) {
   return (
     <Section section={p.section} editing={p.editing} innerClassName="max-w-2xl">
-      <SectionHeading title={p.title} subtitle={p.subtitle} />
+      <SectionHeading elements={p.elements} title={p.title} subtitle={p.subtitle} />
       <ContactFormClient
         fields={p.fields ?? []}
         submitText={p.submitText || 'Send message'}
@@ -437,6 +438,9 @@ export function Embed(p: EmbedProps) {
 
 export type CodeProps = WithSection & {
   code?: string;
+  /** Shown in the header bar, e.g. "config.json". */
+  filename?: string;
+  showCopy?: boolean;
 };
 
 export function Code(p: CodeProps) {
@@ -445,14 +449,22 @@ export function Code(p: CodeProps) {
   return (
     <Section section={p.section} editing={p.editing}>
       {code ? (
-        <pre className="s-surface s-border s-muted s-radius overflow-auto rounded-lg border p-4 text-sm">
-          <code>{code}</code>
-        </pre>
-      ) : (
+        <div className="s-surface s-border s-radius overflow-hidden border">
+          {(p.filename || p.showCopy !== false) && (
+            <div className="s-border flex items-center justify-between gap-3 border-b px-4 py-1.5">
+              <span className="s-meta truncate font-mono">{p.filename}</span>
+              {p.showCopy !== false && <CopyButtonClient text={code} />}
+            </div>
+          )}
+          <pre className="overflow-auto p-4 text-sm leading-relaxed">
+            <code className="font-mono">{code}</code>
+          </pre>
+        </div>
+      ) : p.editing ? (
         <div className="s-surface s-border s-muted s-radius flex min-h-40 items-center justify-center border border-dashed text-sm">
           Add code in the sidebar
         </div>
-      )}
+      ) : null}
     </Section>
   );
 }

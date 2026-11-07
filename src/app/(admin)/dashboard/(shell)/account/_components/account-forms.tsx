@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/input';
+import { updateAuthorProfile } from '@/server/actions/profile.actions';
 import {
   disableTotp,
   enableTotp,
@@ -11,9 +12,11 @@ import {
 } from '@/server/actions/staff-auth.actions';
 
 export function AccountForms({
+  profile,
   hasPassword,
   totp,
 }: {
+  profile: { name: string; image: string; bio: string };
   hasPassword: boolean;
   totp: { secret: string; uri: string; enabled: boolean } | null;
 }) {
@@ -23,6 +26,53 @@ export function AccountForms({
 
   return (
     <div className="grid max-w-lg gap-8">
+      <form
+        className="grid gap-3"
+        onSubmit={async event => {
+          event.preventDefault();
+          setError(null);
+          setMessage(null);
+          const result = await updateAuthorProfile(
+            new FormData(event.currentTarget)
+          );
+          if (result.error) setError(result.error);
+          if (result.message) {
+            setMessage(result.message);
+            router.refresh();
+          }
+        }}
+      >
+        <h2 className="text-lg font-medium">Public author profile</h2>
+        <p className="text-sm text-steel-500">
+          Shown on posts you write, in the Author Bio block and post meta.
+        </p>
+        <FormInput
+          name="name"
+          defaultValue={profile.name}
+          placeholder="Display name"
+          maxLength={100}
+          aria-label="Display name"
+        />
+        <FormInput
+          name="image"
+          defaultValue={profile.image}
+          placeholder="Avatar URL (https://… or /media/…)"
+          maxLength={500}
+          aria-label="Avatar URL"
+        />
+        <textarea
+          name="bio"
+          defaultValue={profile.bio}
+          rows={4}
+          maxLength={600}
+          placeholder="A sentence or two about you"
+          aria-label="Bio"
+          className="w-full rounded-md border border-steel-200 bg-transparent px-3 py-2 text-sm dark:border-dark-300"
+        />
+        <Button type="submit" className="justify-self-start">
+          Save profile
+        </Button>
+      </form>
       <form
         className="grid gap-3"
         onSubmit={async event => {

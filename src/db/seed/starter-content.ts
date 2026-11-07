@@ -1,5 +1,6 @@
 import { DEFAULT_SECTION } from '@/builder/blocks/section';
 import type { BuilderData, BuilderItem } from '@/builder/data';
+import { editorialHomePage } from './quiet-editorial';
 
 const block = (
   type: string,
@@ -355,6 +356,17 @@ const blogIndex = page([
 ]);
 
 export const STARTER_TEMPLATES = [
+  {
+    key: 'quiet-editorial-home',
+    name: 'Quiet Editorial home',
+    description:
+      'Featured lead story over a dispatch grid, a spotlight band, editorial principles, and a newsletter. Pair with the Quiet Editorial theme.',
+    category: 'Landing',
+    editorType: 'builder' as const,
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=600&auto=format&fit=crop&q=80',
+    content: editorialHomePage(),
+  },
   {
     key: 'saas-landing',
     name: 'SaaS high-conversion landing',

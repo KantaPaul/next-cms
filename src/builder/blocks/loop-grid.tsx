@@ -20,7 +20,7 @@ export type LoopGridSource = 'posts' | 'collection-entries';
 
 export type LoopGridProps = Omit<QueryLoopProps, 'source' | 'layout'> & {
   source?: LoopGridSource;
-  layout?: 'grid' | 'list' | 'masonry' | 'carousel';
+  layout?: 'grid' | 'list' | 'masonry' | 'carousel' | 'featured';
   templateId?: string;
   fieldFilters?: FieldFilter[];
   equalHeight?: boolean;
@@ -98,7 +98,8 @@ export function LoopGrid({
         editing={editing}
         card={card}
         hasCustomCard={ready}
-        // cardClassName={equalHeight ? 'h-full [&>*]:h-full' : undefined}
+        // Custom cards stretch to the tallest card in their row.
+        cardClassName={equalHeight ? 'h-full [&>*]:h-full' : ''}
       />
     </>
   );

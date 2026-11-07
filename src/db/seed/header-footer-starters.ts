@@ -1603,7 +1603,350 @@ export const MEGA_STARTER_VISUAL: StarterTemplate = {
   },
 };
 
+/* =========================================================================
+   "Quiet Editorial" starters — pair with the Quiet Editorial theme preset
+   (Settings → Theme). Glass sticky header, serif wordmark, hairline rules.
+   ========================================================================= */
+
+export const HEADER_STARTER_EDITORIAL: StarterTemplate = {
+  key: 'quiet-editorial',
+  name: 'Quiet Editorial Header',
+  description:
+    'Announcement line, serif wordmark with tagline, pill navigation, search, saved items, theme switch, and a subscribe button. Glass when scrolled.',
+  category: 'Header',
+  content: {
+    root: {
+      props: {
+        sticky: 'always',
+        transparent: false,
+        shrinkOnScroll: true,
+        hideOnScrollDown: false,
+        shadow: 'none',
+        zIndex: 50,
+        style: {
+          fill: { type: 'color', color: 'var(--site-glass-bg)' },
+          backdropBlur: 14,
+        },
+      },
+    },
+    content: [
+      {
+        type: 'AnnouncementBar',
+        props: {
+          id: 'qe-announcement',
+          text: 'New dispatch: notes on material, light and silence →',
+          link: '/blog',
+          dismissible: true,
+          dismissDays: 14,
+        },
+      },
+      {
+        type: 'HeaderBar',
+        props: {
+          id: 'qe-header-bar',
+          width: 'boxed',
+          layout: 'left-center-right',
+          background: 'transparent',
+          paddingY: 'sm',
+          align: 'center',
+          borderBottom: true,
+        },
+      },
+    ],
+    zones: {
+      'qe-header-bar:left': [
+        {
+          type: 'Logo',
+          props: {
+            id: 'qe-logo',
+            source: 'site',
+            width: 36,
+            link: '/',
+            showSiteName: true,
+            tagline: 'The Editorial Review',
+          },
+        },
+      ],
+      'qe-header-bar:center': [
+        {
+          type: 'NavMenu',
+          props: {
+            id: 'qe-nav',
+            location: 'header',
+            orientation: 'horizontal',
+            activeStyle: 'pill',
+            gap: 'sm',
+          },
+        },
+      ],
+      'qe-header-bar:right': [
+        {
+          type: 'SearchBox',
+          props: {
+            id: 'qe-search',
+            mode: 'icon-modal',
+            placeholder: 'Search dispatches…',
+            liveResults: true,
+          },
+        },
+        { type: 'Bookmarks', props: { id: 'qe-bookmarks', title: 'Saved' } },
+        { type: 'ThemeToggle', props: { id: 'qe-theme' } },
+        {
+          type: 'Button',
+          props: {
+            id: 'qe-cta',
+            label: 'Subscribe',
+            link: '/#subscribe',
+            variant: 'primary',
+            size: 'sm',
+            section: { paddingY: 'none' },
+          },
+        },
+        {
+          type: 'MobileMenu',
+          props: {
+            id: 'qe-mobile',
+            breakpoint: 'mobile',
+            drawerSide: 'right',
+            icon: 'menu',
+            showSearch: true,
+          },
+        },
+      ],
+    },
+  },
+};
+
+export const FOOTER_STARTER_EDITORIAL: StarterTemplate = {
+  key: 'quiet-editorial',
+  name: 'Quiet Editorial Footer',
+  description:
+    'Brand column, two link columns, a compact newsletter, then copyright and legal links on a hairline rule.',
+  category: 'Footer',
+  content: {
+    root: { props: { background: 'muted' } },
+    content: [
+      {
+        type: 'FooterColumns',
+        props: {
+          id: 'qe-footer-main',
+          width: 'boxed',
+          background: 'default',
+          paddingY: 'lg',
+          columns: 4,
+          gap: 'lg',
+          stackOn: 'tablet',
+        },
+      },
+      {
+        type: 'FooterColumns',
+        props: {
+          id: 'qe-footer-bottom',
+          width: 'boxed',
+          background: 'default',
+          paddingY: 'sm',
+          columns: 2,
+          gap: 'sm',
+        },
+      },
+    ],
+    zones: {
+      'qe-footer-main:col1': [
+        {
+          type: 'Logo',
+          props: {
+            id: 'qe-footer-logo',
+            source: 'site',
+            width: 32,
+            link: '/',
+            showSiteName: true,
+            tagline: 'The Editorial Review',
+          },
+        },
+        {
+          type: 'RichText',
+          props: {
+            id: 'qe-footer-about',
+            width: 'normal',
+            content:
+              '<p>Essays on material culture, architecture and the quiet spaces between.</p>',
+            section: { paddingY: 'none' },
+          },
+        },
+        {
+          type: 'SocialIcons',
+          props: {
+            id: 'qe-footer-social',
+            shape: 'round',
+            size: 'sm',
+            align: 'left',
+            items: [
+              { network: 'instagram', url: 'https://instagram.com', label: 'Instagram' },
+              { network: 'x', url: 'https://x.com', label: 'X' },
+              { network: 'linkedin', url: 'https://linkedin.com', label: 'LinkedIn' },
+            ],
+          },
+        },
+      ],
+      'qe-footer-main:col2': [
+        {
+          type: 'FooterLinks',
+          props: {
+            id: 'qe-footer-read',
+            heading: 'Read',
+            source: 'manual',
+            collapseOnMobile: true,
+            links: [
+              { label: 'Latest dispatches', url: '/blog' },
+              { label: 'Curated archive', url: '/blog' },
+              { label: 'Search', url: '/search' },
+            ],
+          },
+        },
+      ],
+      'qe-footer-main:col3': [
+        {
+          type: 'FooterLinks',
+          props: {
+            id: 'qe-footer-about-links',
+            heading: 'About',
+            source: 'manual',
+            collapseOnMobile: true,
+            links: [
+              { label: 'Our ethos', url: '/about' },
+              { label: 'Contributors', url: '/about' },
+              { label: 'Contact', url: '/contact' },
+            ],
+          },
+        },
+      ],
+      'qe-footer-main:col4': [
+        {
+          type: 'Newsletter',
+          props: {
+            id: 'qe-footer-newsletter',
+            title: 'The monthly dispatch',
+            text: 'One considered letter a month. No noise.',
+            placeholder: 'you@example.com',
+            submitText: 'Subscribe',
+            successMessage: 'Thank you — you are on the list.',
+            layout: 'compact',
+            section: { paddingY: 'none', anchor: 'subscribe' },
+          },
+        },
+      ],
+      'qe-footer-bottom:col1': [
+        {
+          type: 'Copyright',
+          props: {
+            id: 'qe-footer-copyright',
+            text: '© {year} {site_name}. All rights reserved.',
+            align: 'left',
+          },
+        },
+      ],
+      'qe-footer-bottom:col2': [
+        {
+          type: 'LegalLinks',
+          props: {
+            id: 'qe-footer-legal',
+            source: 'manual',
+            separator: 'dot',
+            align: 'right',
+            links: [
+              { label: 'Privacy', url: '/privacy' },
+              { label: 'Terms', url: '/terms' },
+              { label: 'Colophon', url: '/about' },
+            ],
+          },
+        },
+      ],
+    },
+  },
+};
+
+export const ARCHIVE_STARTER_EDITORIAL: StarterTemplate = {
+  key: 'quiet-editorial',
+  name: 'Quiet Editorial Archive',
+  description:
+    'Keyword search and category chips over a featured lead post and an outline-card grid.',
+  category: 'Archive',
+  content: {
+    root: { props: {} },
+    content: [
+      {
+        type: 'QueryFilter',
+        props: {
+          id: 'qe-archive-filter',
+          targetLoopId: 'qe-archive',
+          source: 'posts',
+          showKeyword: true,
+          keywordPlaceholder: 'Search the archive…',
+          showCategories: true,
+          categoryStyle: 'chips',
+          showTags: false,
+          showSort: true,
+          showResultCount: true,
+          showActiveChips: true,
+        },
+      },
+      {
+        type: 'QueryLoop',
+        props: {
+          id: 'qe-archive-loop',
+          loopId: 'qe-archive',
+          source: 'posts',
+          eyebrow: 'Curated archive',
+          title: '{archive_title}',
+          subtitle: '{archive_description}',
+          layout: 'featured',
+          columnsDesktop: 3,
+          columnsTablet: 2,
+          columnsMobile: 1,
+          gap: 'lg',
+          pageSize: 10,
+          sortField: 'publishedAt',
+          sortOrder: 'desc',
+          pagination: 'numbered',
+          cardVariant: 'outline',
+          cardHover: true,
+          emptyText: 'No dispatches in this archive yet.',
+        },
+      },
+    ],
+    zones: {},
+  },
+};
+
+export const SEARCH_STARTER_EDITORIAL: StarterTemplate = {
+  key: 'quiet-editorial',
+  name: 'Quiet Editorial Search',
+  description: 'Serif heading, type tabs, thumbnails and highlighted snippets.',
+  category: 'Search',
+  content: {
+    root: { props: {} },
+    content: [
+      {
+        type: 'SearchResults',
+        props: {
+          id: 'qe-search-results',
+          eyebrow: 'Search',
+          title: 'Find a dispatch',
+          subtitle: 'Essays, registers and pages across the review.',
+          showTabs: true,
+          showThumbnails: true,
+          showTypeBadges: true,
+          showSnippets: true,
+          pageSize: 20,
+        },
+      },
+    ],
+    zones: {},
+  },
+};
+
 export const HEADER_STARTERS: StarterTemplate[] = [
+  HEADER_STARTER_EDITORIAL,
   HEADER_STARTER_CLASSIC,
   HEADER_STARTER_CENTERED,
   HEADER_STARTER_MINIMAL,
@@ -1614,6 +1957,7 @@ export const HEADER_STARTERS: StarterTemplate[] = [
 ];
 
 export const FOOTER_STARTERS: StarterTemplate[] = [
+  FOOTER_STARTER_EDITORIAL,
   FOOTER_STARTER_COLUMNS_4,
   FOOTER_STARTER_CENTERED,
   FOOTER_STARTER_DARK_NEWSLETTER,
@@ -1623,6 +1967,7 @@ export const FOOTER_STARTERS: StarterTemplate[] = [
 ];
 
 export const SEARCH_STARTERS: StarterTemplate[] = [
+  SEARCH_STARTER_EDITORIAL,
   SEARCH_STARTER_SIMPLE,
   SEARCH_STARTER_COMPACT,
   SEARCH_STARTER_VISUAL,
@@ -1630,6 +1975,7 @@ export const SEARCH_STARTERS: StarterTemplate[] = [
 ];
 
 export const ARCHIVE_STARTERS: StarterTemplate[] = [
+  ARCHIVE_STARTER_EDITORIAL,
   ARCHIVE_STARTER_GRID,
   ARCHIVE_STARTER_LIST_FILTERS,
   ARCHIVE_STARTER_MAGAZINE,
