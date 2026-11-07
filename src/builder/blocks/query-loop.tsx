@@ -161,6 +161,7 @@ interface DefaultItemCardProps {
   showAuthor?: boolean;
   showDate?: boolean;
   showTerms?: boolean;
+  variant?: 'flat' | 'outline' | 'elevated' | 'glass';
   language?: string;
 }
 
@@ -172,6 +173,7 @@ function DefaultItemCard({
   showAuthor = true,
   showDate = true,
   showTerms = true,
+  variant = 'outline',
   language = 'en',
 }: DefaultItemCardProps) {
   const date = showDate ? formatLoopDate(item.publishedAt, language) : null;
@@ -183,7 +185,8 @@ function DefaultItemCard({
     <MotionItem>
       <article
         className={cn(
-          's-surface s-border s-radius group flex h-full overflow-hidden border',
+          'group flex h-full overflow-hidden transition-all duration-200',
+          `s-card-${variant}`,
           layout === 'list' ? 'flex-col sm:flex-row' : 'flex-col'
         )}
       >
@@ -285,6 +288,7 @@ export interface QueryLoopProps {
   showAuthor?: boolean;
   showDate?: boolean;
   showTerms?: boolean;
+  variant?: 'flat' | 'outline' | 'elevated' | 'glass';
   emptyText?: string;
   isLoading?: boolean;
   // Slots
@@ -385,6 +389,7 @@ export function QueryLoop({
   showAuthor = true,
   showDate = true,
   showTerms = true,
+  variant = 'outline',
   emptyText = 'No matching items found.',
   isLoading = false,
   card,
@@ -402,6 +407,7 @@ export function QueryLoop({
   language = 'en',
   section,
   editing,
+  ...rest
 }: QueryLoopProps) {
   const items =
     loadedItems !== undefined
@@ -460,6 +466,7 @@ export function QueryLoop({
           showAuthor={showAuthor}
           showDate={showDate}
           showTerms={showTerms}
+          variant={variant}
           language={language}
         />
       </LoopItemProvider>
@@ -474,7 +481,12 @@ export function QueryLoop({
 
   return (
     <Section section={section} editing={editing}>
-      <SectionHeading eyebrow={eyebrow} title={title} subtitle={subtitle} />
+      <SectionHeading
+        eyebrow={eyebrow}
+        title={title}
+        subtitle={subtitle}
+        props={rest as any}
+      />
 
       {jsonLd && (
         <script

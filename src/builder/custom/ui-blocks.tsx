@@ -1,18 +1,22 @@
 /**
- * Example first-party component registrations using the typed React component bridge
- * (RFB-03, RFB-06, RFB-22).
- *
- * Demonstrates wrapping existing project components (shadcn/ui primitives)
- * with zero duplicate rendering code, strictly validated schemas, and editor presets.
+ * First-party component registrations using the typed React component bridge
+ * (RFB-03, RFB-06, RFB-22) wired to site tokens (Quiet Editorial).
  */
 
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { defineReactComponent, slot } from '@nextcms/builder-core';
 import type { ReactNode } from 'react';
 import { z } from 'zod';
+import { cn } from '@/lib/utils/cn';
 
 /* ---------- UiBadge ---------- */
+
+const BADGE_VARIANTS = {
+  default: 's-primary-bg border border-transparent shadow-subtle',
+  secondary: 's-surface s-border text-[var(--site-fg)] border',
+  destructive:
+    'bg-rose-900/10 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900/30',
+  outline: 'bg-transparent s-border text-[var(--site-fg)] border',
+};
 
 export const UiBadgeBlock = defineReactComponent<{
   text: string;
@@ -44,7 +48,16 @@ export const UiBadgeBlock = defineReactComponent<{
       props: { variant: 'outline', text: 'Beta' },
     },
   },
-  component: ({ text, variant }) => <Badge variant={variant}>{text}</Badge>,
+  component: ({ text, variant = 'default' }) => (
+    <span
+      className={cn(
+        'inline-flex items-center px-3 py-0.5 rounded-full text-xs font-mono uppercase tracking-wider select-none transition-colors',
+        BADGE_VARIANTS[variant] || BADGE_VARIANTS.default
+      )}
+    >
+      {text}
+    </span>
+  ),
 });
 
 /* ---------- UiCard ---------- */
@@ -75,12 +88,16 @@ export const UiCardBlock = defineReactComponent<{
     },
   },
   component: ({ title, description, children }) => (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        {description && <CardDescription>{description}</CardDescription>}
-      </CardHeader>
-      <CardContent>{children}</CardContent>
-    </Card>
+    <div className="s-card s-card-outline p-6 flex flex-col gap-3">
+      <div className="flex flex-col gap-1">
+        <h3 className="font-serif text-xl font-medium text-[var(--site-fg)] leading-snug">
+          {title}
+        </h3>
+        {description && (
+          <p className="s-muted text-sm leading-relaxed">{description}</p>
+        )}
+      </div>
+      {children && <div className="mt-2 text-sm leading-relaxed">{children}</div>}
+    </div>
   ),
 });

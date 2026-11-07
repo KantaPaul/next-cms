@@ -20,9 +20,7 @@ export {
   Group,
   GroupedSelect,
   Notice,
-  PanelHeading,
   ResponsiveChoose,
-  ResponsiveSelect,
   ResponsiveSlider,
   SelectInput,
   ShowWhen,
@@ -30,7 +28,6 @@ export {
   StateTabs,
   Switcher,
   UnitSlider,
-  VisualChoose,
 } from './primitives';
 export { SectionField, STAGGER_BLOCKS } from './section-inspector';
 export { ShadowControl } from './shadow';

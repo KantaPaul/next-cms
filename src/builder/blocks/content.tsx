@@ -186,7 +186,7 @@ export function Gallery(p: GalleryProps) {
   const items = (p.items ?? []).filter(i => i.url);
   const cols = (p.columns ?? 3) as 2 | 3 | 4;
   const gap = p.gap ?? 'md';
-  const imageEl = el(p, 'image', 's-radius aspect-[4/3] w-full object-cover transition-transform duration-300 hover:scale-105');
+  const imageEl = el(p, 'image', 'aspect-[4/3] w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105');
 
   if (!items.length) {
     return p.editing ? (
@@ -195,6 +195,7 @@ export function Gallery(p: GalleryProps) {
           eyebrow={p.eyebrow}
           title={p.title}
           subtitle={p.subtitle}
+          props={p}
         />
         <div className="s-surface s-border s-muted s-radius flex aspect-[21/9] items-center justify-center border border-dashed text-sm">
           Add images in the sidebar
@@ -209,13 +210,14 @@ export function Gallery(p: GalleryProps) {
         eyebrow={p.eyebrow}
         title={p.title}
         subtitle={p.subtitle}
+        props={p}
       />
       <div className={cn('grid', GALLERY_COLS[cols], GALLERY_GAP[gap])}>
         {items.map((item, i) => (
           <MotionItem
             key={`${item.url}-${i}`}
             as="figure"
-            className="overflow-hidden"
+            className="group s-radius overflow-hidden border border-[color:var(--site-border-subtle)] bg-[var(--site-surface)]"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -226,7 +228,7 @@ export function Gallery(p: GalleryProps) {
               style={imageEl.style}
             />
             {item.caption && (
-              <figcaption className="s-muted mt-2 text-center text-xs">
+              <figcaption className="s-muted px-3 py-2 text-center text-xs">
                 {item.caption}
               </figcaption>
             )}
@@ -269,7 +271,7 @@ export type ContactFormProps = WithSection & {
 export function ContactForm(p: ContactFormProps) {
   return (
     <Section section={p.section} editing={p.editing} innerClassName="max-w-2xl">
-      <SectionHeading title={p.title} subtitle={p.subtitle} />
+      <SectionHeading title={p.title} subtitle={p.subtitle} props={p} />
       <ContactFormClient
         fields={p.fields ?? []}
         submitText={p.submitText || 'Send message'}
@@ -337,7 +339,7 @@ export function Video(p: VideoProps) {
   if (!source) {
     return p.editing ? (
       <Section section={p.section} editing>
-        <div className="s-surface s-border s-muted s-radius flex aspect-video items-center justify-center border border-dashed text-sm">
+        <div className="s-surface s-border s-muted s-radius flex aspect-video items-center justify-center border border-dashed border-[color:var(--site-border-subtle)] text-sm">
           Add a video URL in the sidebar
         </div>
       </Section>
@@ -346,34 +348,36 @@ export function Video(p: VideoProps) {
 
   return (
     <Section section={p.section} editing={p.editing}>
-      {source.kind === 'youtube' ? (
-        <div className="aspect-video w-full">
+      <div className="s-radius overflow-hidden border border-[color:var(--site-border-subtle)] bg-[var(--site-surface)] shadow-sm">
+        {source.kind === 'youtube' ? (
+          <div className="aspect-video w-full">
+            <iframe
+              className="h-full w-full"
+              src={source.src}
+              title="Video player"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+              allowFullScreen
+            />
+          </div>
+        ) : null}
+        {source.kind === 'vimeo' ? (
           <iframe
-            className="s-radius h-full w-full rounded"
+            className="aspect-video h-full w-full"
             src={source.src}
             title="Video player"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+            allow="autoplay"
             allowFullScreen
           />
-        </div>
-      ) : null}
-      {source.kind === 'vimeo' ? (
-        <iframe
-          className="s-radius aspect-video h-full w-full rounded"
-          src={source.src}
-          title="Video player"
-          allow="autoplay"
-          allowFullScreen
-        />
-      ) : null}
-      {source.kind === 'file' ? (
-        <video
-          controls
-          preload="metadata"
-          src={source.src}
-          className="s-radius aspect-video w-full rounded"
-        />
-      ) : null}
+        ) : null}
+        {source.kind === 'file' ? (
+          <video
+            controls
+            preload="metadata"
+            src={source.src}
+            className="aspect-video w-full"
+          />
+        ) : null}
+      </div>
     </Section>
   );
 }
@@ -412,7 +416,7 @@ export function Embed(p: EmbedProps) {
   if (!allowed) {
     return p.editing ? (
       <Section section={p.section} editing>
-        <div className="s-surface s-border s-muted s-radius flex aspect-video items-center justify-center border border-dashed text-sm">
+        <div className="s-surface s-border s-muted s-radius flex aspect-video items-center justify-center border border-dashed border-[color:var(--site-border-subtle)] text-sm">
           Add an embeddable URL in the sidebar
         </div>
       </Section>
@@ -421,14 +425,16 @@ export function Embed(p: EmbedProps) {
 
   return (
     <Section section={p.section} editing={p.editing}>
-      <iframe
-        className="s-radius aspect-video h-full w-full rounded"
-        src={url}
-        title="Embedded content"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-        allowFullScreen
-      />
+      <div className="s-radius overflow-hidden border border-[color:var(--site-border-subtle)] bg-[var(--site-surface)] shadow-sm">
+        <iframe
+          className="aspect-video h-full w-full"
+          src={url}
+          title="Embedded content"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+          allowFullScreen
+        />
+      </div>
     </Section>
   );
 }
@@ -442,14 +448,18 @@ export type CodeProps = WithSection & {
 export function Code(p: CodeProps) {
   const code = p.code ?? '';
 
+  if (!code && !p.editing) {
+    return null;
+  }
+
   return (
     <Section section={p.section} editing={p.editing}>
       {code ? (
-        <pre className="s-surface s-border s-muted s-radius overflow-auto rounded-lg border p-4 text-sm">
+        <pre className="s-surface s-radius overflow-auto border border-[color:var(--site-border-subtle)] p-5 font-mono text-sm leading-relaxed text-[var(--site-fg)] shadow-sm">
           <code>{code}</code>
         </pre>
       ) : (
-        <div className="s-surface s-border s-muted s-radius flex min-h-40 items-center justify-center border border-dashed text-sm">
+        <div className="s-surface s-muted s-radius flex min-h-40 items-center justify-center border border-dashed border-[color:var(--site-border-subtle)] text-sm">
           Add code in the sidebar
         </div>
       )}

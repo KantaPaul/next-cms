@@ -98,7 +98,7 @@ export function LoopGrid({
         editing={editing}
         card={card}
         hasCustomCard={ready}
-        // cardClassName={equalHeight ? 'h-full [&>*]:h-full' : undefined}
+        cardClassName={equalHeight ? 'h-full [&>*]:h-full' : undefined}
       />
     </>
   );

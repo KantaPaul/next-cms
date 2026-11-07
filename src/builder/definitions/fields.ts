@@ -105,7 +105,8 @@ export function groupControl<T = any>(
             ('fill' in props.value && kind === 'background') ||
             ('border' in props.value && kind === 'border') ||
             ('typography' in props.value && kind === 'typography') ||
-            ('filter' in props.value && kind === 'cssFilter')));
+            ('filter' in props.value && kind === 'cssFilter') ||
+            ('shadow' in props.value && kind === 'boxShadow')));
 
       if (isSectionContainer) {
         const s =
@@ -206,6 +207,32 @@ export function groupControl<T = any>(
             Component
           );
         }
+
+        if (kind === 'boxShadow') {
+          return renderGroupShell(
+            opts,
+            opts.states?.includes('hover')
+              ? { normal: s.shadow, hover: s.hover?.shadow }
+              : s.shadow,
+            val => {
+              if (
+                opts.states?.includes('hover') &&
+                val &&
+                typeof val === 'object' &&
+                ('normal' in val || 'hover' in val)
+              ) {
+                setSection({
+                  ...s,
+                  shadow: (val as any).normal,
+                  hover: { ...(s.hover ?? {}), shadow: (val as any).hover },
+                });
+              } else {
+                setSection({ ...s, shadow: val });
+              }
+            },
+            Component
+          );
+        }
       }
 
       return renderGroupShell(opts, props.value, props.onChange, Component);
@@ -256,7 +283,14 @@ export function sectionControls(opts?: { omit?: string[] }): Fields {
       states: ['normal', 'hover'],
     }),
     section_border: groupControl('border', {
-      label: 'Border & Shadow',
+      label: 'Border',
+      tab: 'style',
+      section: 'Border',
+      path: 'section',
+      states: ['normal', 'hover'],
+    }),
+    section_shadow: groupControl('boxShadow', {
+      label: 'Box Shadow',
       tab: 'style',
       section: 'Border',
       path: 'section',
@@ -285,7 +319,7 @@ export function sectionControls(opts?: { omit?: string[] }): Fields {
       label: 'CSS Filters',
       tab: 'style',
       section: 'Filters',
-      path: 'section.filter',
+      path: 'section',
       states: ['normal', 'hover'],
     }),
     section_display: {

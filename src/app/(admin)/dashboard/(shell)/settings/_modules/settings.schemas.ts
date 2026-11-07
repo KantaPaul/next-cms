@@ -20,9 +20,11 @@ export const themeTokensSchema = z.object({
   fontFamily: z.enum([
     'Inter',
     'Plus Jakarta Sans',
+    'Manrope',
     'JetBrains Mono',
     'System',
   ]),
+  headingFont: z.string().max(100).optional(),
   borderRadius: z.enum(['none', 'sm', 'md', 'lg', 'full']),
   colorMode: z.enum(['light', 'dark', 'system']),
   colors: z

@@ -48,9 +48,20 @@ import {
 } from '../../settings/_modules/settings.schemas';
 
 const FONTS: ThemeTokens['fontFamily'][] = [
+  'Manrope',
   'Inter',
   'Plus Jakarta Sans',
   'JetBrains Mono',
+  'System',
+];
+const HEADING_FONTS = [
+  'Newsreader',
+  'Fraunces',
+  'Instrument Serif',
+  'Playfair Display',
+  'Manrope',
+  'Inter',
+  'Plus Jakarta Sans',
   'System',
 ];
 const RADII: ThemeTokens['borderRadius'][] = [
@@ -308,6 +319,18 @@ export function ThemeForm({
             )}
           />
           <Controller
+            name="themeTokens.colors.textMuted"
+            render={({ field }) => (
+              <Field group label="Muted text colour">
+                <ColorInput
+                  label="Muted text colour"
+                  value={field.value ?? '#4a453e'}
+                  onChange={v => field.onChange(v)}
+                />
+              </Field>
+            )}
+          />
+          <Controller
             name="themeTokens.colors.background"
             render={({ field }) => (
               <Field group label="Background colour">
@@ -370,6 +393,29 @@ export function ThemeForm({
             }}
           />
           <Controller
+            name="themeTokens.headingFont"
+            render={({ field }) => {
+              const id = useId();
+              return (
+                <FormItem>
+                  <Label htmlFor={id}>Heading Display Font</Label>
+                  <Select value={field.value ?? 'Newsreader'} onValueChange={field.onChange}>
+                    <SelectTrigger id={id} className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {HEADING_FONTS.map(f => (
+                        <SelectItem key={f} value={f}>
+                          {f}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              );
+            }}
+          />
+          <Controller
             name="themeTokens.borderRadius"
             render={({ field }) => (
               <Field group label="Corner radius">
@@ -421,6 +467,29 @@ export function ThemeForm({
                   {fieldState.error && (
                     <FormMessage>{fieldState.error.message}</FormMessage>
                   )}
+                </FormItem>
+              );
+            }}
+          />
+          <Controller
+            name="themeTokens.headingFont"
+            render={({ field }) => {
+              const id = useId();
+              return (
+                <FormItem>
+                  <Label htmlFor={id}>Heading Display Font</Label>
+                  <Select value={field.value ?? 'Newsreader'} onValueChange={field.onChange}>
+                    <SelectTrigger id={id} className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {HEADING_FONTS.map(f => (
+                        <SelectItem key={f} value={f}>
+                          {f}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </FormItem>
               );
             }}

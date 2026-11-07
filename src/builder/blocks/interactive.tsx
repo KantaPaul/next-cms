@@ -137,7 +137,7 @@ export function Slider(p: SliderProps) {
             <div key={i} className="s-surface s-border s-radius border p-4 shadow-xs">
               <div className="s-muted mb-2.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider">
                 <span>Slide {i + 1}: {item.label || `Slide ${i + 1}`}</span>
-                <span className="rounded bg-black/5 px-2 py-0.5 text-[10px] font-medium dark:bg-white/10">
+                <span className="rounded bg-black/5 px-2 py-0.5 text-[10px] font-medium dark:bg-white/10 [html[data-site-theme=dark]_&]:bg-white/10">
                   Slide drop zone
                 </span>
               </div>
@@ -247,14 +247,14 @@ export type TabsProps = WithSection & {
   items?: InteractivePanelItem[];
   panels?: InteractivePanel[];
   variant?: 'underline' | 'pills';
-  alignment?: 'start' | 'center';
+  alignment?: 'start' | 'center' | 'left';
 };
 
 export function Tabs(p: TabsProps) {
   const items = panelsFrom(p);
   const itemCount = items.length;
   const variant = p.variant ?? 'underline';
-  const alignment = p.alignment ?? 'start';
+  const alignment = (p.alignment === 'left' ? 'start' : p.alignment) ?? 'start';
   const [activeTab, setActiveTab] = useState(0);
   const uid = useId();
   const tabsRef = useRef<(HTMLButtonElement | null)[]>([]);
@@ -287,7 +287,7 @@ export function Tabs(p: TabsProps) {
             <div key={i} className="s-surface s-border s-radius border p-4 shadow-xs">
               <div className="s-muted mb-2.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider">
                 <span>Tab {i + 1}: {item.label || `Tab ${i + 1}`}</span>
-                <span className="rounded bg-black/5 px-2 py-0.5 text-[10px] font-medium dark:bg-white/10">
+                <span className="rounded bg-black/5 px-2 py-0.5 text-[10px] font-medium dark:bg-white/10 [html[data-site-theme=dark]_&]:bg-white/10">
                   Tab drop zone
                 </span>
               </div>
@@ -435,7 +435,7 @@ export function Accordion(p: AccordionProps) {
             <div key={i} className="s-surface s-border s-radius border p-4 shadow-xs">
               <div className="s-muted mb-2.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider">
                 <span>Panel {i + 1}: {item.label || `Panel ${i + 1}`}</span>
-                <span className="rounded bg-black/5 px-2 py-0.5 text-[10px] font-medium dark:bg-white/10">
+                <span className="rounded bg-black/5 px-2 py-0.5 text-[10px] font-medium dark:bg-white/10 [html[data-site-theme=dark]_&]:bg-white/10">
                   Accordion drop zone
                 </span>
               </div>

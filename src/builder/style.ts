@@ -73,6 +73,8 @@ export type Fill = {
   repeat?: 'no-repeat' | 'repeat' | 'repeat-x' | 'repeat-y';
   videoUrl?: string;
   videoFallback?: string;
+  backdropBlur?: number;
+  opacity?: number;
 };
 
 export type ImageSizePreset =
@@ -231,6 +233,8 @@ export type ElementHoverStyle = {
   color?: string;
   fill?: Fill | string;
   borderColor?: string;
+  opacity?: number;
+  scale?: number;
   shadow?: ShadowSettings;
   filter?: FilterSettings;
 };
@@ -271,6 +275,17 @@ export const TEXT_DECORATIONS = [
 ] as const;
 
 export type Typography = {
+  preset?:
+    | 'display'
+    | 'h1'
+    | 'h2'
+    | 'h3'
+    | 'h4'
+    | 'h5'
+    | 'h6'
+    | 'body'
+    | 'eyebrow'
+    | 'caption';
   size?: MaybeResponsive<'' | 'sm' | 'md' | 'lg' | 'xl'>;
   weight?: MaybeResponsive<
     '' | 'regular' | 'medium' | 'bold' | number | string
@@ -809,7 +824,18 @@ export function fillValue(fill: Fill | undefined) {
   if (fill.type === 'color') {
     const color = safeColor(fill.color);
     if (!color) return null;
-    return { light: color, dark: safeColor(fill.colorDark) ?? color };
+    const dark = safeColor(fill.colorDark) ?? color;
+    const op = fill.opacity !== undefined ? clamp(fill.opacity, 0, 1) : undefined;
+    if (op !== undefined && op < 1) {
+      const applyOp = (c: string) => {
+        const rgb = hexToRgb(c);
+        if (rgb) return `rgb(${rgb.r} ${rgb.g} ${rgb.b} / ${op})`;
+        if (c.startsWith('var(')) return `color-mix(in srgb, ${c} ${Math.round(op * 100)}%, transparent)`;
+        return c;
+      };
+      return { light: applyOp(color), dark: applyOp(dark) };
+    }
+    return { light: color, dark };
   }
 
   if (fill.type === 'gradient') {
@@ -941,10 +967,21 @@ export function resolveSectionStyle(
     style['--s-fill-dark'] = fill.dark;
   }
 
+  if (s.fill?.backdropBlur) {
+    outerClasses.push('s-glass');
+    style['--s-backdrop-blur'] = `${s.fill.backdropBlur}px`;
+  }
+  if (s.fill?.opacity !== undefined) {
+    style['--s-bg-opacity'] = String(s.fill.opacity);
+  }
+
   const textColor = safeColor(s.textColor);
   if (textColor) style.color = textColor;
 
   const ty = s.typography;
+  if (ty?.preset) {
+    outerClasses.push(`s-type-${ty.preset}`);
+  }
   const unitSize = responsiveLength(
     ty?.fontSize,
     ty?.fontSizeUnit,
@@ -1093,8 +1130,7 @@ export function resolveSectionStyle(
     ] as const);
 
     if (bs && bs !== 'none') {
-      outerClasses.push('s-bd');
-      style['--s-bd-style'] = bs;
+      outerClasses.push(`s-bd-${bs}`);
       const bc = safeColor(s.border.color);
       if (bc) style['--s-bd-color'] = bc;
       const bw = responsiveSides(s.border.width, 'b', 40, 'px');
@@ -1108,11 +1144,11 @@ export function resolveSectionStyle(
         s.border.radiusUnit,
         PROP_UNITS.radius,
         false,
-        'br',
+        'rad',
         style
       )
     )
-      outerClasses.push('s-br');
+      outerClasses.push('s-rad');
   }
 
   // Shadow: structured object or legacy preset string
@@ -1128,7 +1164,11 @@ export function resolveSectionStyle(
     if (cls) outerClasses.push(cls);
   }
 
-  const filterCss = formatFilter(s.filter);
+  const rawFilter =
+    s.filter && typeof s.filter === 'object' && 'normal' in s.filter
+      ? (s.filter as any).normal
+      : s.filter;
+  const filterCss = formatFilter(rawFilter);
 
   if (filterCss) {
     outerClasses.push('s-filter');
@@ -1220,37 +1260,56 @@ export function resolveSectionStyle(
   }
 
   // Hover states on section: s-hc, s-hf, s-hb, s-hs, s-hfl
-  if (s.hover) {
-    const hColor = safeColor(s.hover.textColor);
+  const hasLegacyHoverFilter = Boolean(
+    s.filter && typeof s.filter === 'object' && 'hover' in s.filter
+  );
+  if (s.hover || hasLegacyHoverFilter) {
+    const hoverObj = s.hover ?? {};
+    const hColor = safeColor(hoverObj.textColor);
     if (hColor) {
       outerClasses.push('s-hc');
       style['--s-h-color'] = hColor;
     }
 
-    if (s.hover.fill) {
-      const f = fillValue(s.hover.fill);
+    if (hoverObj.fill) {
+      const f = fillValue(hoverObj.fill);
       if (f) {
         outerClasses.push('s-hf');
         style['--s-h-fill'] = f.light;
       }
     }
 
-    const hBd = safeColor(s.hover.borderColor);
+    const hBd = safeColor(hoverObj.borderColor);
     if (hBd) {
       outerClasses.push('s-hb');
       style['--s-h-bd'] = hBd;
     }
 
-    if (s.hover.shadow) {
-      const hSh = formatShadow(s.hover.shadow);
+    if (hoverObj.shadow) {
+      const hSh = formatShadow(hoverObj.shadow);
       if (hSh) {
         outerClasses.push('s-hs');
         style['--s-h-shadow'] = hSh;
       }
     }
 
-    if (s.hover.filter) {
-      const hFl = formatFilter(s.hover.filter);
+    if (hoverObj.scale !== undefined || hoverObj.opacity !== undefined) {
+      outerClasses.push('s-hlift');
+      if (hoverObj.scale !== undefined) {
+        style['--s-h-scale'] = String(hoverObj.scale);
+      }
+      if (hoverObj.opacity !== undefined) {
+        style['--s-h-opacity'] = String(hoverObj.opacity);
+      }
+    }
+
+    const hoverFilter =
+      hoverObj.filter ??
+      (s.filter && typeof s.filter === 'object' && 'hover' in s.filter
+        ? (s.filter as any).hover
+        : undefined);
+    if (hoverFilter) {
+      const hFl = formatFilter(hoverFilter);
       if (hFl) {
         outerClasses.push('s-hfl');
         style['--s-h-filter'] = hFl;
@@ -1308,11 +1367,21 @@ export function resolveElementStyle(
         style['--s-fill'] = f.light;
         style['--s-fill-dark'] = f.dark;
       }
+      if (es.fill.backdropBlur) {
+        classes.push('s-glass');
+        style['--s-backdrop-blur'] = `${es.fill.backdropBlur}px`;
+      }
+      if (es.fill.opacity !== undefined) {
+        style['--s-bg-opacity'] = String(es.fill.opacity);
+      }
     }
   }
 
   // Typography
   const ty = es.typography;
+  if (ty?.preset) {
+    classes.push(`s-type-${ty.preset}`);
+  }
   if (ty) {
     const unitSize = responsiveLength(
       ty.fontSize,
@@ -1513,7 +1582,11 @@ export function resolveElementStyle(
   }
 
   // Filter (cssFilter)
-  const filterCss = formatFilter(es.filter);
+  const rawFilter =
+    es.filter && typeof es.filter === 'object' && 'normal' in es.filter
+      ? (es.filter as any).normal
+      : es.filter;
+  const filterCss = formatFilter(rawFilter);
   if (filterCss) {
     classes.push('s-filter');
     style['--s-filter'] = filterCss;
@@ -1545,8 +1618,7 @@ export function resolveElementStyle(
     ] as const);
 
     if (bs && bs !== 'none') {
-      classes.push('s-bd');
-      style['--s-bd-style'] = bs;
+      classes.push(`s-bd-${bs}`);
       const bc = safeColor(es.border.color);
       if (bc) style['--s-bd-color'] = bc;
       const bw = responsiveSides(es.border.width, 'b', 40, 'px');
@@ -1560,13 +1632,13 @@ export function resolveElementStyle(
         es.border.radiusUnit,
         PROP_UNITS.radius,
         false,
-        'br',
+        'rad',
         style
       )
     ) {
-      classes.push('s-br');
+      classes.push('s-rad');
       for (const d of DEVICES) {
-        const key = `--s-br-${DEVICE_SUFFIX[d]}`;
+        const key = `--s-rad-${DEVICE_SUFFIX[d]}`;
         if (!style[key]) {
           const resolved = resolveResponsive(es.border.radius, d, v =>
             typeof v === 'number' && Number.isFinite(v) ? v : undefined
@@ -1611,22 +1683,26 @@ export function resolveElementStyle(
   }
 
   // Hover states: s-hc (color), s-hf (fill), s-hb (border), s-hs (shadow)
-  if (es.hover) {
-    const hColor = safeColor(es.hover.color);
+  const hasLegacyElHoverFilter = Boolean(
+    es.filter && typeof es.filter === 'object' && 'hover' in es.filter
+  );
+  if (es.hover || hasLegacyElHoverFilter) {
+    const hoverObj = es.hover ?? {};
+    const hColor = safeColor(hoverObj.color);
     if (hColor) {
       classes.push('s-hc');
       style['--s-h-color'] = hColor;
     }
 
-    if (es.hover.fill) {
-      if (typeof es.hover.fill === 'string') {
-        const c = safeColor(es.hover.fill);
+    if (hoverObj.fill) {
+      if (typeof hoverObj.fill === 'string') {
+        const c = safeColor(hoverObj.fill);
         if (c) {
           classes.push('s-hf');
           style['--s-h-fill'] = c;
         }
       } else {
-        const f = fillValue(es.hover.fill);
+        const f = fillValue(hoverObj.fill);
         if (f) {
           classes.push('s-hf');
           style['--s-h-fill'] = f.light;
@@ -1634,22 +1710,37 @@ export function resolveElementStyle(
       }
     }
 
-    const hBd = safeColor(es.hover.borderColor);
+    const hBd = safeColor(hoverObj.borderColor);
     if (hBd) {
       classes.push('s-hb');
       style['--s-h-bd'] = hBd;
     }
 
-    if (es.hover.shadow) {
-      const hSh = formatShadow(es.hover.shadow);
+    if (hoverObj.shadow) {
+      const hSh = formatShadow(hoverObj.shadow);
       if (hSh) {
         classes.push('s-hs');
         style['--s-h-shadow'] = hSh;
       }
     }
 
-    if (es.hover.filter) {
-      const hFl = formatFilter(es.hover.filter);
+    if (hoverObj.scale !== undefined || hoverObj.opacity !== undefined) {
+      classes.push('s-hlift');
+      if (hoverObj.scale !== undefined) {
+        style['--s-h-scale'] = String(hoverObj.scale);
+      }
+      if (hoverObj.opacity !== undefined) {
+        style['--s-h-opacity'] = String(hoverObj.opacity);
+      }
+    }
+
+    const hoverFilter =
+      hoverObj.filter ??
+      (es.filter && typeof es.filter === 'object' && 'hover' in es.filter
+        ? (es.filter as any).hover
+        : undefined);
+    if (hoverFilter) {
+      const hFl = formatFilter(hoverFilter);
       if (hFl) {
         classes.push('s-hfl');
         style['--s-h-filter'] = hFl;

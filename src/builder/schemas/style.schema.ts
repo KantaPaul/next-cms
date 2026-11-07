@@ -102,6 +102,8 @@ export const fillSchema = z.object({
   repeat: z.enum(['no-repeat', 'repeat', 'repeat-x', 'repeat-y']).optional(),
   videoUrl: safeUrlSchema.optional(),
   videoFallback: safeUrlSchema.optional(),
+  backdropBlur: z.number().min(0).max(100).optional(),
+  opacity: z.number().min(0).max(1).optional(),
 });
 
 export const imageSizeSchema = z.object({
@@ -131,6 +133,20 @@ export const textStrokeSchema = z.object({
 });
 
 export const typographySchema = z.object({
+  preset: z
+    .enum([
+      'display',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'h5',
+      'h6',
+      'body',
+      'eyebrow',
+      'caption',
+    ])
+    .optional(),
   size: responsive(z.enum(['', 'sm', 'md', 'lg', 'xl'])).optional(),
   weight: responsive(z.union([z.enum(['', 'regular', 'medium', 'bold']), z.number().min(100).max(900), z.string()])).optional(),
   family: z.string().optional(),
@@ -164,11 +180,11 @@ export const animationSchema = z.object({
   entrance: z.enum(['none', '', ...ENTRANCES] as any).optional(),
   exit: z.enum(['none', '', ...EXITS] as any).optional(),
   trigger: z.enum(TRIGGERS as any).optional(),
-  duration: z.number().min(0.2).max(5).optional(),
-  delay: z.number().min(0).max(5).optional(),
+  duration: z.number().min(0).max(5000).optional(),
+  delay: z.number().min(0).max(5000).optional(),
   easing: z.enum(EASINGS as any).optional(),
   once: z.boolean().optional(),
-  stagger: z.number().min(0).max(2).optional(),
+  stagger: z.number().min(0).max(2000).optional(),
   hover: z.enum(['none', '', ...HOVERS] as any).optional(),
   devices: z
     .object({
@@ -190,6 +206,8 @@ export const elementHoverStyleSchema = z.object({
   color: colorSchema.optional(),
   fill: z.union([fillSchema, colorSchema]).optional(),
   borderColor: colorSchema.optional(),
+  opacity: z.number().min(0).max(1).optional(),
+  scale: z.number().min(0.5).max(1.5).optional(),
   shadow: shadowSchema.optional(),
   filter: filterSchema.optional(),
 });

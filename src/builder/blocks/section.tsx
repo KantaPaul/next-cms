@@ -2,15 +2,17 @@ import type { CSSProperties, ReactNode } from 'react';
 import { cn } from '@/lib/utils/cn';
 import { MotionBoundary, MotionSection } from '../motion';
 import {
+  type ElementStyle,
   resolveAnimation,
   resolveLinkProps,
   resolveSectionStyle,
   type SectionSettings,
   type UrlValue,
 } from '../style';
-import { orderedParts } from './element';
+import { el, orderedParts, type WithSection } from './element';
 
 export { MotionItem } from '../motion';
+export { el, orderedParts } from './element';
 export type { SectionSettings } from '../style';
 
 export const DEFAULT_SECTION: SectionSettings = {
@@ -73,7 +75,7 @@ export function Section({
     className
   );
   const inner = cn(
-    'mx-auto w-full max-w-[var(--site-max-width,72rem)]',
+    'mx-auto w-full max-w-[var(--site-max-width,1200px)]',
     styles.innerClasses,
     innerClassName
   );
@@ -126,6 +128,8 @@ export function SectionHeading({
   align = 'center',
   partOrder,
   editing,
+  elements,
+  props,
 }: {
   eyebrow?: string;
   title?: string;
@@ -133,8 +137,29 @@ export function SectionHeading({
   align?: 'left' | 'center';
   partOrder?: string[];
   editing?: boolean;
+  elements?: Record<string, ElementStyle>;
+  props?: WithSection;
 }) {
   if (!eyebrow && !title && !subtitle) return null;
+  const contextProps: WithSection = props ?? {
+    elements,
+    partOrder,
+    editing,
+  };
+  const titleEl = contextProps.elements?.heading
+    ? el(contextProps, 'heading', 's-type-h2')
+    : el(contextProps, 'title', 's-type-h2');
+  const eyebrowEl = el(
+    contextProps,
+    'eyebrow',
+    's-type-eyebrow s-primary-text mb-3'
+  );
+  const subtitleEl = el(
+    contextProps,
+    'subtitle',
+    's-muted s-type-body mt-4 leading-relaxed'
+  );
+
   return (
     <div
       className={cn(
@@ -143,20 +168,25 @@ export function SectionHeading({
       )}
     >
       {orderedParts(
-        { partOrder, editing },
+        {
+          partOrder: contextProps.partOrder ?? partOrder,
+          editing: contextProps.editing ?? editing,
+        },
         {
           eyebrow: eyebrow ? (
-            <p className="s-primary-text mb-3 text-sm font-semibold uppercase tracking-wider">
+            <p className={eyebrowEl.className} style={eyebrowEl.style}>
               {eyebrow}
             </p>
           ) : null,
           title: title ? (
-            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+            <h2 className={titleEl.className} style={titleEl.style}>
               {title}
             </h2>
           ) : null,
           subtitle: subtitle ? (
-            <p className="s-muted mt-4 text-lg leading-relaxed">{subtitle}</p>
+            <p className={subtitleEl.className} style={subtitleEl.style}>
+              {subtitle}
+            </p>
           ) : null,
         }
       )}
@@ -173,7 +203,7 @@ export function ButtonLink({
 }: {
   href?: UrlValue;
   children: ReactNode;
-  variant?: 'primary' | 'secondary' | 'light' | 'ghost-light';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'light' | 'ghost-light';
   className?: string;
   style?: CSSProperties;
 }) {

@@ -131,7 +131,7 @@ export const BLOCK_INFO: Record<string, BlockInfo> = {
   },
   Gallery: {
     description: 'Grid of images',
-    capabilities: ['Several images', 'Column count', 'Lightbox'],
+    capabilities: ['Several images', 'Column count', 'Responsive grid'],
     semanticTag: 'section',
     defaultSize: FULL,
   },

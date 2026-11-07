@@ -156,7 +156,7 @@ export function renderContainerBody({
   const body = (
     <Tag className={cn('s-cntr', resolved.classes)} style={resolved.style}>
       {empty ? (
-        <div className="flex h-32 w-full items-center justify-center rounded-md border border-dashed border-steel-200 bg-steel-50 text-[11px] text-steel-400">
+        <div className="s-surface s-muted s-radius flex h-32 w-full items-center justify-center border border-dashed border-[color:var(--site-border-subtle)] text-[11px]">
           Drop blocks here
         </div>
       ) : (

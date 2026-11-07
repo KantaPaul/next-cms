@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils/cn';
 import type { PostCard, PostTerm, PostView } from '../post-template';
 import { sanitizeRichText } from '../sanitize';
 import { BlogFilters } from './blog-filters-client';
+import { el } from './element';
 import {
   MotionItem,
   Section,
@@ -9,13 +10,19 @@ import {
   type SectionSettings,
 } from './section';
 
-type WithSection = { section?: SectionSettings; editing?: boolean };
+type WithSection = {
+  section?: SectionSettings;
+  elements?: Record<string, any>;
+  partOrder?: string[];
+  editing?: boolean;
+};
 
 export type CardOptions = {
   showImage?: boolean;
   showExcerpt?: boolean;
   showAuthor?: boolean;
   showDate?: boolean;
+  variant?: 'flat' | 'outline' | 'elevated' | 'glass';
 };
 
 const formatDate = (iso: string | null, language: string) =>
@@ -46,7 +53,8 @@ function PostCardItem({
     <MotionItem>
       <article
         className={cn(
-          's-surface s-border s-radius group flex h-full overflow-hidden border',
+          'group flex h-full overflow-hidden transition-all duration-200',
+          `s-card-${options.variant ?? 'outline'}`,
           layout === 'list' ? 'flex-col sm:flex-row' : 'flex-col'
         )}
       >
@@ -234,7 +242,7 @@ export function BlogPosts(p: BlogPostsProps) {
 
   return (
     <Section section={p.section} editing={p.editing} hasItems>
-      <SectionHeading title={p.title} subtitle={p.subtitle} />
+      <SectionHeading title={p.title} subtitle={p.subtitle} props={p} />
       <BlogFilters
         showSearch={!!p.showSearch}
         showCategory={
@@ -292,6 +300,8 @@ export function PostTitle(
   }
 ) {
   const center = p.alignment === 'center';
+  const titleEl = el(p, 'title', 'text-4xl font-extrabold tracking-tight md:text-5xl');
+  const excerptEl = el(p, 'excerpt', 's-muted mt-5 text-lg leading-relaxed md:text-xl');
   return (
     <Section section={p.section} editing={p.editing} innerClassName="max-w-3xl">
       <header className={cn(center && 'text-center')}>
@@ -303,11 +313,11 @@ export function PostTitle(
             ← All posts
           </a>
         )}
-        <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl">
+        <h1 className={titleEl.className} style={titleEl.style}>
           {p.post.title}
         </h1>
         {p.showExcerpt !== false && p.post.excerpt && (
-          <p className="s-muted mt-5 text-lg leading-relaxed md:text-xl">
+          <p className={excerptEl.className} style={excerptEl.style}>
             {p.post.excerpt}
           </p>
         )}
@@ -342,16 +352,19 @@ export function PostFeaturedImage(
   const width = { normal: 'max-w-3xl', wide: 'max-w-5xl', full: 'max-w-none' }[
     p.width ?? 'wide'
   ];
+  const imageEl = el(
+    p,
+    'image',
+    cn('s-radius w-full object-cover', ASPECT[p.aspect ?? 'wide'])
+  );
   return (
     <Section section={p.section} editing={p.editing} innerClassName={width}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={p.post.featuredImage}
         alt=""
-        className={cn(
-          's-radius w-full object-cover',
-          ASPECT[p.aspect ?? 'wide']
-        )}
+        className={imageEl.className}
+        style={imageEl.style}
       />
     </Section>
   );
@@ -441,6 +454,11 @@ const CONTENT_WIDTH = {
 export function PostContent(
   p: PostBlock & { width?: keyof typeof CONTENT_WIDTH }
 ) {
+  const contentEl = el(
+    p,
+    'content',
+    's-prose prose prose-lg max-w-none [&_p]:text-[length:inherit]'
+  );
   return (
     <Section
       section={p.section}
@@ -449,7 +467,8 @@ export function PostContent(
     >
       <article
         lang={p.post.language}
-        className="s-prose prose prose-lg max-w-none [&_p]:text-[length:inherit]"
+        className={contentEl.className}
+        style={contentEl.style}
         dangerouslySetInnerHTML={{ __html: sanitizeRichText(p.post.body) }}
       />
     </Section>
@@ -470,7 +489,7 @@ export function RelatedPosts(
   if (!posts.length) {
     return p.editing ? (
       <Section section={p.section} editing>
-        <SectionHeading title={p.title} />
+        <SectionHeading title={p.title} props={p} />
         <p className="s-muted text-center text-sm">
           Related posts from the same category appear here once more posts are
           published.
@@ -480,8 +499,8 @@ export function RelatedPosts(
   }
 
   return (
-    <Section section={p.section} editing={p.editing} className='py-0 md:py-0' hasItems>
-      <SectionHeading title={p.title} />
+    <Section section={p.section} editing={p.editing} hasItems>
+      <SectionHeading title={p.title} props={p} />
       <PostGrid
         posts={posts}
         layout="grid"

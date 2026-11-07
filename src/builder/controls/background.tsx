@@ -283,6 +283,32 @@ export function BackgroundControl({
           </div>
         </div>
       )}
+
+      {hasCustom && !isExcluded('opacity') && (
+        <Slider
+          label="Fill Opacity"
+          value={
+            fill.opacity !== undefined ? Math.round(fill.opacity * 100) : 100
+          }
+          min={0}
+          max={100}
+          unit="%"
+          onChange={v =>
+            set({ opacity: v === 100 ? undefined : (v ?? 100) / 100 })
+          }
+        />
+      )}
+
+      {hasCustom && !isExcluded('backdropBlur') && (
+        <Slider
+          label="Backdrop Blur"
+          value={fill.backdropBlur ?? 0}
+          min={0}
+          max={40}
+          unit="px"
+          onChange={v => set({ backdropBlur: v || undefined })}
+        />
+      )}
     </div>
   );
 }

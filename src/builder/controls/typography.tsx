@@ -28,6 +28,20 @@ const FAMILY_OPTIONS = [
   ...opts(FONT_FAMILIES),
 ];
 
+const PRESET_OPTIONS = [
+  { value: '', label: 'Custom (None)' },
+  { value: 'display', label: 'Display' },
+  { value: 'h1', label: 'Heading 1 (h1)' },
+  { value: 'h2', label: 'Heading 2 (h2)' },
+  { value: 'h3', label: 'Heading 3 (h3)' },
+  { value: 'h4', label: 'Heading 4 (h4)' },
+  { value: 'h5', label: 'Heading 5 (h5)' },
+  { value: 'h6', label: 'Heading 6 (h6)' },
+  { value: 'body', label: 'Body' },
+  { value: 'eyebrow', label: 'Eyebrow' },
+  { value: 'caption', label: 'Caption' },
+];
+
 const WEIGHT_OPTIONS = [
   { value: '', label: 'Default' },
   { value: '100', label: '100 (Thin)' },
@@ -102,6 +116,17 @@ export function TypographyControl({
   return (
     <ScrollArea className="max-h-96">
       <div className="space-y-4 pr-3">
+        {!isExcluded('preset') && (
+          <SelectInput
+            label="Typography preset"
+            value={t.preset ?? ''}
+            options={PRESET_OPTIONS}
+            onChange={preset =>
+              set({ preset: (preset || undefined) as Typography['preset'] })
+            }
+          />
+        )}
+
         {!isExcluded('family') && (
           <SelectInput
             label="Family"

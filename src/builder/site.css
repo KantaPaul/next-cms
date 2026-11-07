@@ -1,34 +1,133 @@
 /*
- * Public-site design tokens. The builder root (and the public site layout) set these
+ * Public-site design tokens — "Quiet Editorial" system.
+ * The builder root (and the public site layout) set these
  * variables from site settings, so blocks never depend on the admin's own theme.
  */
 .site-root {
-  --site-primary: #6366f1;
-  --site-accent: #ec4899;
+  --site-primary: var(--site-color-primary, #0f5d4a);
+  --site-primary-hover: color-mix(in srgb, var(--site-primary) 85%, #000);
+  --site-accent: var(--site-color-accent, #0f5d4a);
+  --site-secondary: var(--site-color-secondary, #705d49);
   --site-radius: 0.75rem;
-  --site-font: inherit;
-  --site-bg: var(--site-color-background, #ffffff);
-  --site-fg: var(--site-color-text, #0f172a);
-  --site-muted: var(--site-color-text-muted, var(--site-color-secondary, #64748b));
-  --site-surface: var(--site-color-surface, #f8fafc);
-  --site-border: var(--site-color-border, #e2e8f0);
+  --site-radius-sm: 4px;
+  --site-radius-md: 6px;
+  --site-radius-lg: 8px;
+  --site-radius-xl: 12px;
+  --site-radius-full: 9999px;
+  --site-font: var(--site-font-body, "Manrope", system-ui, sans-serif);
+  --site-font-heading: var(--site-font-heading, "Newsreader", Garamond, Georgia, serif);
+  --site-font-body: var(--site-font-body, "Manrope", system-ui, sans-serif);
+  --site-bg: var(--site-color-background, #fef9f1);
+  --site-fg: var(--site-color-text, #1d1b18);
+  --site-muted: var(--site-color-text-muted, #4a453e);
+  --site-surface: var(--site-color-surface, #f8f3ec);
+  --site-surface-alt: #f2ede5;
+  --site-border: var(--site-color-border, #cec5bb);
+  --site-border-subtle: rgba(124, 117, 108, 0.16);
   --site-on-primary: #ffffff;
+  --site-max-width: 1200px;
+
+  /* Spacing Scale */
+  --site-space-1: 0.25rem;
+  --site-space-2: 0.5rem;
+  --site-space-3: 0.75rem;
+  --site-space-4: 1rem;
+  --site-space-6: 1.5rem;
+  --site-space-8: 2rem;
+  --site-space-12: 3rem;
+  --site-space-16: 4rem;
+  --site-space-24: 6rem;
+
+  /* Shadows & Elevations */
+  --site-shadow-subtle: 0 1px 2px rgba(29, 27, 24, 0.04), 0 2px 8px rgba(29, 27, 24, 0.02);
+  --site-shadow-card: 0 4px 20px -2px rgba(29, 27, 24, 0.05);
+
+  /* Glass header & surfaces */
+  --site-header-glass-bg: rgba(254, 249, 241, 0.85);
+  --site-header-glass-blur: 16px;
 
   background: var(--site-bg);
   color: var(--site-fg);
   font-family: var(--site-font);
 }
 
-.site-root[data-site-theme='dark'] {
-  --site-bg: #0b1020;
-  --site-fg: #e2e8f0;
-  --site-muted: #94a3b8;
-  --site-surface: #131a2e;
-  --site-border: #1f2a44;
+.site-root[data-site-theme='dark'],
+html.dark .site-root,
+.dark .site-root {
+  --site-bg: var(--site-color-background-dark, #0e1513);
+  --site-fg: var(--site-color-text-dark, #f2eee8);
+  --site-muted: var(--site-color-text-muted-dark, #b3aca1);
+  --site-surface: var(--site-color-surface-dark, #161d1b);
+  --site-surface-alt: #1b2320;
+  --site-border: var(--site-color-border-dark, #2e3834);
+  --site-border-subtle: rgba(46, 56, 52, 0.6);
+  --site-primary-hover: color-mix(in srgb, var(--site-primary) 85%, #fff);
+  --site-shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --site-shadow-card: 0 4px 24px -2px rgba(0, 0, 0, 0.5);
+  --site-header-glass-bg: rgba(14, 21, 19, 0.85);
+}
+
+/* Typography scale wired to theme presets and serif display */
+.site-root h1, .site-root .s-type-h1 {
+  font-family: var(--site-type-h1-font, var(--site-font-heading));
+  font-size: var(--site-type-h1-size, 3rem);
+  font-weight: var(--site-type-h1-weight, 500);
+  line-height: var(--site-type-h1-line-height, 1.15);
+  letter-spacing: var(--site-type-h1-letter-spacing, -0.02em);
+}
+.site-root h2, .site-root .s-type-h2 {
+  font-family: var(--site-type-h2-font, var(--site-font-heading));
+  font-size: var(--site-type-h2-size, 2.25rem);
+  font-weight: var(--site-type-h2-weight, 500);
+  line-height: var(--site-type-h2-line-height, 1.25);
+  letter-spacing: var(--site-type-h2-letter-spacing, -0.015em);
+}
+.site-root h3, .site-root .s-type-h3 {
+  font-family: var(--site-type-h3-font, var(--site-font-heading));
+  font-size: var(--site-type-h3-size, 1.875rem);
+  font-weight: var(--site-type-h3-weight, 500);
+  line-height: var(--site-type-h3-line-height, 1.3);
+  letter-spacing: var(--site-type-h3-letter-spacing, -0.01em);
+}
+.site-root h4, .site-root .s-type-h4 {
+  font-family: var(--site-type-h4-font, var(--site-font-heading));
+  font-size: var(--site-type-h4-size, 1.5rem);
+  font-weight: var(--site-type-h4-weight, 500);
+  line-height: var(--site-type-h4-line-height, 1.35);
+}
+.site-root .s-type-display {
+  font-family: var(--site-type-display-font, var(--site-font-heading));
+  font-size: var(--site-type-display-size, 4.5rem);
+  font-weight: var(--site-type-display-weight, 400);
+  line-height: var(--site-type-display-line-height, 1.05);
+  letter-spacing: var(--site-type-display-letter-spacing, -0.02em);
+}
+.site-root .s-type-eyebrow {
+  font-family: var(--site-type-eyebrow-font, var(--site-font-body));
+  font-size: var(--site-type-eyebrow-size, 0.75rem);
+  font-weight: var(--site-type-eyebrow-weight, 600);
+  line-height: var(--site-type-eyebrow-line-height, 1.5);
+  letter-spacing: var(--site-type-eyebrow-letter-spacing, 0.08em);
+  text-transform: uppercase;
+}
+.site-root .s-type-body {
+  font-family: var(--site-type-body-font, var(--site-font-body));
+  font-size: var(--site-type-body-size, 1rem);
+  font-weight: var(--site-type-body-weight, 400);
+  line-height: var(--site-type-body-line-height, 1.625);
+}
+.site-root .s-type-caption {
+  font-family: var(--site-type-caption-font, var(--site-font-body));
+  font-size: var(--site-type-caption-size, 0.875rem);
+  font-weight: var(--site-type-caption-weight, 400);
+  line-height: var(--site-type-caption-line-height, 1.5);
 }
 
 .site-root .s-surface {
   background: var(--site-surface);
+}
+.site-root .s-surface-alt {
+  background: var(--site-surface-alt);
 }
 .site-root .s-muted {
   color: var(--site-muted);
@@ -58,34 +157,83 @@
   color: var(--site-primary);
 }
 
+/* Card variants from Stitch: flat, outline, elevated, glass */
+.site-root .s-card {
+  border-radius: var(--site-radius, 16px);
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1), border-color 200ms;
+}
+.site-root .s-card-flat {
+  background: var(--site-surface);
+  border: 1px solid transparent;
+}
+.site-root .s-card-outline {
+  background: var(--site-bg);
+  border: 1px solid var(--site-border);
+}
+.site-root .s-card-elevated {
+  background: var(--site-surface);
+  border: 1px solid var(--site-border);
+  box-shadow: var(--site-shadow-card);
+}
+.site-root .s-card-glass {
+  background: var(--site-header-glass-bg);
+  backdrop-filter: blur(var(--site-header-glass-blur));
+  -webkit-backdrop-filter: blur(var(--site-header-glass-blur));
+  border: 1px solid var(--site-border);
+}
+
+/* Button variants — Quiet Editorial tactile pill style */
 .site-root .s-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: var(--site-radius);
-  padding: 0.7rem 1.25rem;
-  font-size: 0.95rem;
-  font-weight: 600;
-  transition:
-    opacity 150ms,
-    background 150ms;
-}
-.site-root .s-btn:hover {
-  opacity: 0.9;
+  border-radius: 9999px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  user-select: none;
 }
 .site-root .s-btn-primary {
   background: var(--site-primary);
   color: var(--site-on-primary);
+  box-shadow: var(--site-shadow-subtle);
+  border: 1px solid transparent;
+}
+.site-root .s-btn-primary:hover {
+  background: var(--site-primary-hover, color-mix(in srgb, var(--site-primary) 85%, #000));
 }
 .site-root .s-btn-secondary {
   border: 1px solid var(--site-border);
-  background: var(--site-bg);
+  background: var(--site-surface);
   color: var(--site-fg);
 }
+.site-root .s-btn-secondary:hover {
+  background: var(--site-border);
+}
+.site-root .s-btn-outline {
+  border: 1px solid var(--site-border);
+  background: transparent;
+  color: var(--site-fg);
+}
+.site-root .s-btn-outline:hover {
+  background: var(--site-surface);
+}
+.site-root .s-btn-ghost {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--site-muted);
+}
+.site-root .s-btn-ghost:hover {
+  color: var(--site-fg);
+  background: var(--site-surface);
+}
 .site-root .s-btn-light {
-  background: #ffffff;
-  color: #0f172a;
+  background: var(--site-surface);
+  color: var(--site-fg);
+  border: 1px solid var(--site-border);
 }
 .site-root .s-btn-ghost-light {
   border: 1px solid rgb(255 255 255 / 0.45);
@@ -95,10 +243,16 @@
 .site-root .s-input {
   width: 100%;
   border: 1px solid var(--site-border);
-  border-radius: var(--site-radius);
+  border-radius: var(--site-radius-md, 6px);
   background: var(--site-bg);
   color: var(--site-fg);
   padding: 0.6rem 0.8rem;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+.site-root .s-input:focus {
+  outline: none;
+  border-color: var(--site-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--site-primary) 20%, transparent);
 }
 
 /* Country-aware phone input (react-phone-number-input) */
@@ -107,7 +261,7 @@
   align-items: center;
   width: 100%;
   border: 1px solid var(--site-border);
-  border-radius: var(--site-radius);
+  border-radius: var(--site-radius-md, 6px);
   background: var(--site-bg);
   color: var(--site-fg);
   padding: 0;
@@ -158,14 +312,14 @@
   color: var(--site-on-primary);
 }
 .site-root .s-section-primary .s-muted {
-  color: rgb(255 255 255 / 0.8);
+  color: color-mix(in srgb, var(--site-on-primary) 70%, transparent);
 }
 .site-root .s-section-dark {
-  background: #0b1020;
-  color: #e2e8f0;
+  background: var(--site-color-background-dark, #0e1513);
+  color: var(--site-color-text-dark, #f2eee8);
 }
 .site-root .s-section-dark .s-muted {
-  color: #94a3b8;
+  color: var(--site-color-text-muted-dark, #b3aca1);
 }
 
 /* Section style controls. Values arrive as validated CSS variables set by `resolveSectionStyle`. */
@@ -174,6 +328,10 @@
 }
 .site-root[data-site-theme='dark'] .s-fill {
   background: var(--s-fill-dark, var(--s-fill));
+}
+.site-root .s-glass {
+  backdrop-filter: blur(var(--s-backdrop-blur, 16px));
+  -webkit-backdrop-filter: blur(var(--s-backdrop-blur, 16px));
 }
 
 .site-root .s-pt {
@@ -697,13 +855,15 @@
 }
 
 /* Hover overrides: only the variables a block sets are defined, so each rule falls back to the normal value. */
-.site-root :where(.s-hc, .s-hf, .s-hb, .s-hs, .s-hfl) {
+.site-root :where(.s-hc, .s-hf, .s-hb, .s-hs, .s-hfl, .s-hlift) {
   transition:
     color 150ms,
     background 150ms,
     border-color 150ms,
     box-shadow 150ms,
-    filter 150ms;
+    filter 150ms,
+    transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .site-root .s-hc:hover {
   color: var(--s-h-color);
@@ -720,6 +880,10 @@
 .site-root .s-hfl:hover {
   filter: var(--s-h-filter);
 }
+.site-root .s-hlift:hover {
+  transform: scale(var(--s-h-scale, 1));
+  opacity: var(--s-h-opacity, 1);
+}
 
 /* Reduced-motion backstop for animated blocks only; the motion hooks already skip animation. */
 @media (prefers-reduced-motion: reduce) {
@@ -730,27 +894,56 @@
   }
 }
 
-/* Rich text inherits site colors */
+/* Rich text inherits site colors and editorial typography */
 .site-root .s-prose {
   color: var(--site-fg);
 }
 .site-root .s-prose :where(a) {
   color: var(--site-primary);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
 }
-.site-root .s-prose :where(h1, h2, h3, h4, strong, blockquote) {
+.site-root .s-prose :where(a):hover {
+  text-decoration: underline;
+}
+.site-root .s-prose :where(h1, h2, h3, h4) {
+  font-family: var(--site-font-heading, "Newsreader", Garamond, Georgia, serif);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: inherit;
+}
+.site-root .s-prose :where(strong) {
   color: inherit;
 }
 .site-root .s-prose :where(code) {
+  font-family: var(--site-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 0.875em;
   color: inherit;
+  background-color: var(--site-surface);
+  padding: 0.2em 0.4em;
+  border-radius: var(--site-radius-sm, 4px);
+  border: 1px solid var(--site-border-subtle, var(--site-border));
+}
+.site-root .s-prose :where(pre code) {
+  background-color: transparent;
+  padding: 0;
+  border: none;
 }
 .site-root .s-prose :where(blockquote) {
+  font-family: var(--site-font-heading, "Newsreader", Garamond, Georgia, serif);
+  font-style: italic;
+  border-left-width: 2px;
   border-left-color: var(--site-primary);
+  color: inherit;
+}
+.site-root .s-prose :where(hr) {
+  border-top-color: var(--site-border-subtle, var(--site-border));
 }
 
 /* Header Shell Behaviour */
 .site-header-shell {
   width: 100%;
-  transition: transform 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease;
+  transition: transform 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
 }
 
 .site-header-shell[data-sticky="always"] {
@@ -791,20 +984,24 @@
 
 .site-header-shell[data-transparent="true"][data-scrolled="true"] {
   position: sticky;
-  background-color: var(--site-bg) !important;
+  background-color: color-mix(in srgb, var(--site-bg) 88%, transparent) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 .site-header-shell[data-transparent="true"][data-scrolled="true"] > div {
-  background-color: var(--site-bg) !important;
+  background-color: transparent !important;
 }
 
 .site-header-shell[data-scrolled="true"] .site-chrome.has-scrolled-style {
-  background: var(--chrome-scrolled-fill, var(--site-bg)) !important;
+  background: var(--chrome-scrolled-fill, color-mix(in srgb, var(--site-bg) 88%, transparent)) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   color: var(--chrome-scrolled-fg, inherit);
 }
 
 .site-root[data-site-theme='dark'] .site-header-shell[data-scrolled="true"] .site-chrome.has-scrolled-style {
-  background: var(--chrome-scrolled-fill-dark, var(--chrome-scrolled-fill, var(--site-bg))) !important;
+  background: var(--chrome-scrolled-fill-dark, var(--chrome-scrolled-fill, color-mix(in srgb, var(--site-bg) 88%, transparent))) !important;
 }
 
 .site-header-shell[data-scrolled="true"] .site-chrome.has-scrolled-style a {
@@ -839,11 +1036,13 @@
 }
 
 .site-header-shell[data-shadow="always"] {
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+  border-bottom: 1px solid var(--site-border-subtle, var(--site-border));
 }
 
 .site-header-shell[data-shadow="on-scroll"][data-scrolled="true"] {
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+  border-bottom: 1px solid var(--site-border-subtle, var(--site-border));
 }
 
 .site-header-shell[data-shrink="true"][data-scrolled="true"] img {

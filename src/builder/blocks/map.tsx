@@ -24,15 +24,16 @@ export function Map(p: MapProps) {
   useEffect(() => {
     if (!address) return;
     let active = true;
-    const params = new URLSearchParams({ format: 'json', address, limit: '1' });
-    fetch(`https://nominatim.openstreetmap.org/reverse?${params.toString()}`, {
+    const params = new URLSearchParams({ format: 'json', q: address, limit: '1' });
+    fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
       headers: { Accept: 'application/json' },
     })
       .then(response => (response.ok ? response.json() : null))
       .then(data => {
         if (!active) return;
-        const lat = Number(data?.lat);
-        const lon = Number(data?.lon);
+        const item = Array.isArray(data) ? data[0] : data;
+        const lat = Number(item?.lat);
+        const lon = Number(item?.lon);
         if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
         const halfSpan = 0.05;
         const west = lon - halfSpan;
@@ -50,9 +51,10 @@ export function Map(p: MapProps) {
   }, [address]);
 
   if (!address) {
+    if (!p.editing) return null;
     return (
       <Section section={p.section} editing={p.editing}>
-        <div className="s-surface s-border s-muted s-radius flex aspect-[16/9] items-center justify-center border border-dashed text-sm">
+        <div className="s-surface s-muted s-radius flex aspect-[16/9] items-center justify-center border border-dashed border-[color:var(--site-border-subtle)] text-sm">
           Add an address in the sidebar
         </div>
       </Section>
@@ -61,13 +63,15 @@ export function Map(p: MapProps) {
 
   return (
     <Section section={p.section} editing={p.editing}>
-      <p className="s-muted mb-3 text-center text-sm">{address}</p>
-      <iframe
-        className="s-radius aspect-[16/9] w-full rounded border"
-        src={src ?? FALLBACK_SRC}
-        title="Map"
-        loading="lazy"
-      />
+      <p className="s-muted mb-4 text-center text-sm font-medium tracking-wide">{address}</p>
+      <div className="s-radius overflow-hidden border border-[color:var(--site-border-subtle)] bg-[var(--site-surface)] shadow-sm">
+        <iframe
+          className="aspect-[16/9] w-full"
+          src={src ?? FALLBACK_SRC}
+          title="Map"
+          loading="lazy"
+        />
+      </div>
     </Section>
   );
 }

@@ -18,13 +18,37 @@ const RADIUS: Record<ThemeTokens['borderRadius'], string> = {
   full: '9999px',
 };
 
-const FONT_STACK: Record<ThemeTokens['fontFamily'], string> = {
+const FONT_STACK: Record<string, string> = {
   Inter: "'Inter', ui-sans-serif, system-ui, sans-serif",
   'Plus Jakarta Sans':
     "'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif",
+  Manrope: "'Manrope', ui-sans-serif, system-ui, sans-serif",
   'JetBrains Mono': "'JetBrains Mono', ui-monospace, monospace",
   System: 'ui-sans-serif, system-ui, -apple-system, sans-serif',
 };
+
+const HEADING_FONT_STACK: Record<string, string> = {
+  Newsreader: "'Newsreader', Garamond, Georgia, 'Times New Roman', serif",
+  Fraunces: "'Fraunces', Georgia, serif",
+  'Instrument Serif': "'Instrument Serif', Garamond, serif",
+  'Playfair Display': "'Playfair Display', Georgia, serif",
+  Inter: "'Inter', ui-sans-serif, system-ui, sans-serif",
+  'Plus Jakarta Sans':
+    "'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif",
+  Manrope: "'Manrope', ui-sans-serif, system-ui, sans-serif",
+  System: 'ui-sans-serif, system-ui, -apple-system, sans-serif',
+};
+
+function getContrastColor(hex: string): string {
+  if (!hex || !HEX.test(hex)) return '#ffffff';
+  let c = hex.replace('#', '');
+  if (c.length === 3) c = c.split('').map(x => x + x).join('');
+  const r = parseInt(c.substring(0, 2), 16) || 0;
+  const g = parseInt(c.substring(2, 4), 16) || 0;
+  const b = parseInt(c.substring(4, 6), 16) || 0;
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 140 ? '#003829' : '#ffffff';
+}
 
 const HEX = /^#[0-9a-f]{3,8}$/i;
 
@@ -165,18 +189,26 @@ export function themeStyle(
   const styles: Record<string, string> = {
     '--site-primary': t.primaryColor,
     '--site-accent': t.accentColor,
+    '--site-on-primary': getContrastColor(t.primaryColor),
     '--site-radius': RADIUS[t.borderRadius] ?? RADIUS.md,
-    '--site-font': FONT_STACK[t.fontFamily] ?? FONT_STACK.System,
+    '--site-radius-sm': '4px',
+    '--site-radius-md': '6px',
+    '--site-radius-lg': '8px',
+    '--site-radius-xl': '12px',
+    '--site-radius-full': '9999px',
+    '--site-font': FONT_STACK[t.fontFamily] ?? FONT_STACK.Manrope ?? FONT_STACK.System,
+    '--site-font-body': FONT_STACK[t.fontFamily] ?? FONT_STACK.Manrope ?? FONT_STACK.System,
+    '--site-font-heading': (t.headingFont && HEADING_FONT_STACK[t.headingFont]) ? HEADING_FONT_STACK[t.headingFont] : HEADING_FONT_STACK.Newsreader,
 
     // Global color tokens
     '--site-color-primary': colors.primary ?? t.primaryColor,
-    '--site-color-secondary': colors.secondary ?? DEFAULT_GLOBAL_COLORS.secondary ?? '#64748b',
-    '--site-color-text': colors.text ?? DEFAULT_GLOBAL_COLORS.text ?? '#0f172a',
-    '--site-color-text-muted': colors.textMuted ?? DEFAULT_GLOBAL_COLORS.textMuted ?? '#64748b',
+    '--site-color-secondary': colors.secondary ?? DEFAULT_GLOBAL_COLORS.secondary ?? '#705d49',
+    '--site-color-text': colors.text ?? DEFAULT_GLOBAL_COLORS.text ?? '#1d1b18',
+    '--site-color-text-muted': colors.textMuted ?? DEFAULT_GLOBAL_COLORS.textMuted ?? '#4a453e',
     '--site-color-accent': colors.accent ?? t.accentColor,
-    '--site-color-background': colors.background ?? DEFAULT_GLOBAL_COLORS.background ?? '#ffffff',
-    '--site-color-surface': colors.surface ?? DEFAULT_GLOBAL_COLORS.surface ?? '#f8fafc',
-    '--site-color-border': colors.border ?? DEFAULT_GLOBAL_COLORS.border ?? '#e2e8f0',
+    '--site-color-background': colors.background ?? DEFAULT_GLOBAL_COLORS.background ?? '#fef9f1',
+    '--site-color-surface': colors.surface ?? DEFAULT_GLOBAL_COLORS.surface ?? '#f8f3ec',
+    '--site-color-border': colors.border ?? DEFAULT_GLOBAL_COLORS.border ?? '#cec5bb',
   };
 
   // Custom tokens
@@ -222,13 +254,18 @@ export function fontStylesheetUrl(
   tokens?: Partial<ThemeTokens> | null,
   additionalFamilies: string[] = []
 ): string | null {
-  const themeFont = resolveThemeTokens(tokens).fontFamily;
+  const t = resolveThemeTokens(tokens);
+  const themeFont = t.fontFamily;
+  const headingFont = t.headingFont;
   const allFonts: string[] = [];
   if (themeFont && themeFont !== 'System') {
     allFonts.push(themeFont);
   }
+  if (headingFont && headingFont !== 'System' && !allFonts.includes(headingFont)) {
+    allFonts.push(headingFont);
+  }
   for (const f of additionalFamilies) {
-    if (f && f !== 'System' && isGoogleFont(f)) {
+    if (f && f !== 'System' && isGoogleFont(f) && !allFonts.includes(f)) {
       allFonts.push(f);
     }
   }

@@ -25,6 +25,30 @@ export const CURATED_FONTS: FontDefinition[] = [
     isGoogleFont: true,
   },
   {
+    name: 'Manrope',
+    category: 'sans-serif',
+    stack: "'Manrope', ui-sans-serif, system-ui, sans-serif",
+    isGoogleFont: true,
+  },
+  {
+    name: 'Newsreader',
+    category: 'serif',
+    stack: "'Newsreader', Garamond, Georgia, 'Times New Roman', serif",
+    isGoogleFont: true,
+  },
+  {
+    name: 'Fraunces',
+    category: 'serif',
+    stack: "'Fraunces', Georgia, serif",
+    isGoogleFont: true,
+  },
+  {
+    name: 'Instrument Serif',
+    category: 'serif',
+    stack: "'Instrument Serif', Garamond, serif",
+    isGoogleFont: true,
+  },
+  {
     name: 'Roboto',
     category: 'sans-serif',
     stack: "'Roboto', sans-serif",

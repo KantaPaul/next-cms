@@ -272,6 +272,7 @@ export const FeaturesBlock = defineBlock({
   schema: z.object({
     section: sectionSettingsSchema.optional(),
     elements: z.record(z.string(), elementStyleSchema).optional(),
+    variant: z.enum(['flat', 'outline', 'elevated', 'glass']).optional(),
   }).passthrough(),
   render: Features,
   fields: {
@@ -308,8 +309,21 @@ export const FeaturesBlock = defineBlock({
         description: 'Describe the benefit.',
       },
     },
+    heading_style: elementStyle('heading', 'Heading Style', ['typography', 'color']),
     item_title_style: elementStyle('itemTitle', 'Item Title Style', TEXT_PARTS),
     item_desc_style: elementStyle('itemDescription', 'Item Description Style', TEXT_PARTS),
+    variant: {
+      label: 'Card style',
+      tab: 'style',
+      section: 'Card',
+      type: 'select',
+      options: [
+        { label: 'Outline', value: 'outline' },
+        { label: 'Flat', value: 'flat' },
+        { label: 'Elevated', value: 'elevated' },
+        { label: 'Glass', value: 'glass' },
+      ],
+    },
     ...sectionControls(),
   },
   defaults: {
@@ -317,6 +331,7 @@ export const FeaturesBlock = defineBlock({
     title: 'Everything you need',
     subtitle: '',
     columns: 3,
+    variant: 'outline',
     items: [
       {
         icon: 'Zap',
@@ -360,10 +375,21 @@ export const StatsBlock = defineBlock({
   schema: z.object({
     section: sectionSettingsSchema.optional(),
     elements: z.record(z.string(), elementStyleSchema).optional(),
+    columns: z.number().int().min(2).max(4).optional(),
   }).passthrough(),
   render: Stats,
   fields: {
     headline: { label: 'Headline', group: CONTENT, type: 'text' },
+    columns: {
+      label: 'Columns',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: '2', value: 2 },
+        { label: '3', value: 3 },
+        { label: '4', value: 4 },
+      ],
+    },
     items: {
       label: 'Stats',
       group: CONTENT,
@@ -375,12 +401,14 @@ export const StatsBlock = defineBlock({
       },
       defaultItem: { value: '99%', label: 'Label', change: '' },
     },
+    heading_style: elementStyle('heading', 'Heading Style', ['typography', 'color']),
     value_style: elementStyle('value', 'Value Style', TEXT_PARTS),
     label_style: elementStyle('label', 'Label Style', TEXT_PARTS),
     ...sectionControls(),
   },
   defaults: {
     headline: 'Trusted by teams everywhere',
+    columns: 4,
     items: [
       { value: '10k+', label: 'Customers', change: '' },
       { value: '99.9%', label: 'Uptime', change: '' },
@@ -413,6 +441,7 @@ export const PricingBlock = defineBlock({
   schema: z.object({
     section: sectionSettingsSchema.optional(),
     elements: z.record(z.string(), elementStyleSchema).optional(),
+    variant: z.enum(['flat', 'outline', 'elevated', 'glass']).optional(),
   }).passthrough(),
   render: Pricing,
   fields: {
@@ -441,6 +470,16 @@ export const PricingBlock = defineBlock({
           type: 'text',
         },
         period: { label: 'Period label', group: CONTENT, type: 'text' },
+        billingPeriod: {
+          label: 'Billing period override',
+          group: CONTENT,
+          type: 'text',
+        },
+        badge: {
+          label: 'Popular badge text',
+          group: CONTENT,
+          type: 'text',
+        },
         description: { label: 'Description', group: CONTENT, type: 'textarea' },
         features: {
           label: 'Features',
@@ -470,6 +509,8 @@ export const PricingBlock = defineBlock({
         price: '$0',
         yearlyPrice: '',
         period: 'per month',
+        billingPeriod: '',
+        badge: '',
         description: '',
         features: [{ text: 'Feature' }],
         buttonText: 'Choose plan',
@@ -477,6 +518,19 @@ export const PricingBlock = defineBlock({
         popular: false,
       },
     },
+    variant: {
+      label: 'Card style',
+      tab: 'style',
+      section: 'Card',
+      type: 'select',
+      options: [
+        { label: 'Outline', value: 'outline' },
+        { label: 'Flat', value: 'flat' },
+        { label: 'Elevated', value: 'elevated' },
+        { label: 'Glass', value: 'glass' },
+      ],
+    },
+    heading_style: elementStyle('heading', 'Heading Style', ['typography', 'color']),
     plan_title_style: elementStyle('planTitle', 'Plan Title Style', TEXT_PARTS),
     plan_price_style: elementStyle('planPrice', 'Plan Price Style', TEXT_PARTS),
     plan_btn_style: elementStyle('planButton', 'Plan Button Style', BUTTON_PARTS),
@@ -487,6 +541,7 @@ export const PricingBlock = defineBlock({
     title: 'Simple, transparent pricing',
     subtitle: '',
     showToggle: false,
+    variant: 'outline',
     plans: [
       {
         name: 'Starter',
@@ -544,11 +599,35 @@ export const TestimonialsBlock = defineBlock({
   schema: z.object({
     section: sectionSettingsSchema.optional(),
     elements: z.record(z.string(), elementStyleSchema).optional(),
+    columns: z.number().int().min(1).max(3).optional(),
+    variant: z.enum(['flat', 'outline', 'elevated', 'glass']).optional(),
   }).passthrough(),
   render: Testimonials,
   fields: {
     eyebrow: { label: 'Eyebrow', group: CONTENT, type: 'text' },
     title: { label: 'Title', group: CONTENT, type: 'text' },
+    columns: {
+      label: 'Columns',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: '1', value: 1 },
+        { label: '2', value: 2 },
+        { label: '3', value: 3 },
+      ],
+    },
+    variant: {
+      label: 'Card style',
+      tab: 'style',
+      section: 'Card',
+      type: 'select',
+      options: [
+        { label: 'Outline', value: 'outline' },
+        { label: 'Flat', value: 'flat' },
+        { label: 'Elevated', value: 'elevated' },
+        { label: 'Glass', value: 'glass' },
+      ],
+    },
     items: {
       label: 'Testimonials',
       group: CONTENT,
@@ -573,6 +652,7 @@ export const TestimonialsBlock = defineBlock({
         avatar: '',
       },
     },
+    heading_style: elementStyle('heading', 'Heading Style', ['typography', 'color']),
     quote_style: elementStyle('quote', 'Quote Style', TEXT_PARTS),
     author_style: elementStyle('author', 'Author Style', TEXT_PARTS),
     ...sectionControls(),
@@ -580,6 +660,8 @@ export const TestimonialsBlock = defineBlock({
   defaults: {
     eyebrow: 'Testimonials',
     title: 'Loved by our customers',
+    columns: 2,
+    variant: 'outline',
     items: [
       {
         quote: 'It changed how our team ships pages.',
@@ -636,6 +718,7 @@ export const FAQBlock = defineBlock({
       },
       defaultItem: { question: 'Question?', answer: 'Answer.' },
     },
+    heading_style: elementStyle('heading', 'Heading Style', ['typography', 'color']),
     question_style: elementStyle('question', 'Question Style', TEXT_PARTS),
     answer_style: elementStyle('answer', 'Answer Style', TEXT_PARTS),
     ...sectionControls(),
@@ -1061,13 +1144,19 @@ export const NewsletterBlock = defineBlock({
   fields: {
     title: { label: 'Title', group: CONTENT, type: 'text' },
     subtitle: { label: 'Short text', group: CONTENT, type: 'text' },
-    email: { label: 'Email', group: CONTENT, type: 'text' },
+    text: { label: 'Description', group: CONTENT, type: 'textarea' },
+    placeholder: { label: 'Input placeholder', group: CONTENT, type: 'text' },
+    submitText: { label: 'Button text', group: CONTENT, type: 'text' },
+    successMessage: { label: 'Success message', group: CONTENT, type: 'text' },
     ...sectionControls(),
   },
   defaults: {
     title: 'Newsletter',
     subtitle: '',
-    email: '',
+    text: '',
+    placeholder: 'you@example.com',
+    submitText: 'Subscribe',
+    successMessage: 'Thanks! You are on the list.',
     section: {
       paddingY: 'md',
       background: 'default',
@@ -1779,11 +1868,35 @@ export const TeamBlock = defineBlock({
   schema: z.object({
     section: sectionSettingsSchema.optional(),
     elements: z.record(z.string(), elementStyleSchema).optional(),
+    columns: z.number().int().min(2).max(4).optional(),
+    variant: z.enum(['flat', 'outline', 'elevated', 'glass']).optional(),
   }).passthrough(),
   render: Team,
   fields: {
     eyebrow: { label: 'Eyebrow', group: CONTENT, type: 'text' },
     title: { label: 'Title', group: CONTENT, type: 'text' },
+    columns: {
+      label: 'Columns',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: '2', value: 2 },
+        { label: '3', value: 3 },
+        { label: '4', value: 4 },
+      ],
+    },
+    variant: {
+      label: 'Card style',
+      tab: 'style',
+      section: 'Card',
+      type: 'select',
+      options: [
+        { label: 'Outline', value: 'outline' },
+        { label: 'Flat', value: 'flat' },
+        { label: 'Elevated', value: 'elevated' },
+        { label: 'Glass', value: 'glass' },
+      ],
+    },
     items: {
       label: 'Members',
       group: CONTENT,
@@ -1800,11 +1913,14 @@ export const TeamBlock = defineBlock({
       },
       defaultItem: { photo: '', name: '', role: '' },
     },
+    heading_style: elementStyle('heading', 'Heading Style', ['typography', 'color']),
     ...sectionControls(),
   },
   defaults: {
     eyebrow: '',
     title: 'Meet the team',
+    columns: 3,
+    variant: 'outline',
     items: [],
     section: {
       paddingY: 'md',
@@ -1872,6 +1988,7 @@ export const BlogPostsBlock = defineBlock({
   schema: z.object({
     section: sectionSettingsSchema.optional(),
     elements: z.record(z.string(), elementStyleSchema).optional(),
+    variant: z.enum(['flat', 'outline', 'elevated', 'glass']).optional(),
   }).passthrough(),
   render: BlogPosts,
   fields: {
@@ -1997,6 +2114,19 @@ export const BlogPostsBlock = defineBlock({
       render: TagLockField,
     },
     emptyMessage: { label: 'Empty message', group: CONTENT, type: 'text' },
+    variant: {
+      label: 'Card style',
+      tab: 'style',
+      section: 'Card',
+      type: 'select',
+      options: [
+        { label: 'Outline', value: 'outline' },
+        { label: 'Flat', value: 'flat' },
+        { label: 'Elevated', value: 'elevated' },
+        { label: 'Glass', value: 'glass' },
+      ],
+    },
+    heading_style: elementStyle('heading', 'Heading Style', ['typography', 'color']),
     ...sectionControls(),
   },
   defaults: {
@@ -2004,6 +2134,7 @@ export const BlogPostsBlock = defineBlock({
     subtitle: '',
     layout: 'grid',
     columns: 3,
+    variant: 'outline',
     pageSize: 9,
     showSearch: true,
     showCategoryFilter: true,
@@ -2034,9 +2165,64 @@ export const SliderBlock = defineBlock({
   schema: z.object({
     section: sectionSettingsSchema.optional(),
     elements: z.record(z.string(), elementStyleSchema).optional(),
+    loop: z.boolean().optional(),
+    autoplay: z.boolean().optional(),
+    autoplayInterval: z
+      .union([z.literal(3), z.literal(5), z.literal(7), z.literal(10)])
+      .optional(),
+    showArrows: z.boolean().optional(),
+    showDots: z.boolean().optional(),
   }).passthrough(),
   render: Slider,
   fields: {
+    loop: {
+      label: 'Loop slides',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+      ],
+    },
+    autoplay: {
+      label: 'Autoplay',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+      ],
+    },
+    autoplayInterval: {
+      label: 'Autoplay interval',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: '3 seconds', value: 3 },
+        { label: '5 seconds', value: 5 },
+        { label: '7 seconds', value: 7 },
+        { label: '10 seconds', value: 10 },
+      ],
+      when: (props: any) => props.autoplay,
+    },
+    showArrows: {
+      label: 'Navigation arrows',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+      ],
+    },
+    showDots: {
+      label: 'Pagination dots',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+      ],
+    },
     items: {
       label: 'Slides',
       group: CONTENT,
@@ -2047,6 +2233,11 @@ export const SliderBlock = defineBlock({
     ...sectionControls(),
   },
   defaults: {
+    loop: false,
+    autoplay: false,
+    autoplayInterval: 5,
+    showArrows: true,
+    showDots: true,
     items: [{ title: 'Slide 1', content: [] }],
     section: {
       paddingY: 'md',
@@ -2068,9 +2259,29 @@ export const TabsBlock = defineBlock({
   schema: z.object({
     section: sectionSettingsSchema.optional(),
     elements: z.record(z.string(), elementStyleSchema).optional(),
+    variant: z.enum(['underline', 'pills']).optional(),
+    alignment: z.enum(['left', 'center', 'start']).optional(),
   }).passthrough(),
   render: Tabs,
   fields: {
+    variant: {
+      label: 'Style variant',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Underline', value: 'underline' },
+        { label: 'Pills', value: 'pills' },
+      ],
+    },
+    alignment: {
+      label: 'Alignment',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+      ],
+    },
     items: {
       label: 'Tabs',
       group: CONTENT,
@@ -2081,6 +2292,8 @@ export const TabsBlock = defineBlock({
     ...sectionControls(),
   },
   defaults: {
+    variant: 'underline',
+    alignment: 'left',
     items: [{ label: 'Tab 1', content: [] }],
     section: {
       paddingY: 'md',
@@ -2102,9 +2315,19 @@ export const AccordionBlock = defineBlock({
   schema: z.object({
     section: sectionSettingsSchema.optional(),
     elements: z.record(z.string(), elementStyleSchema).optional(),
+    allowMultiple: z.boolean().optional(),
   }).passthrough(),
   render: Accordion,
   fields: {
+    allowMultiple: {
+      label: 'Allow multiple open',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+      ],
+    },
     items: {
       label: 'Items',
       group: CONTENT,
@@ -2115,6 +2338,7 @@ export const AccordionBlock = defineBlock({
     ...sectionControls(),
   },
   defaults: {
+    allowMultiple: false,
     items: [{ title: 'Item 1', content: [] }],
     section: {
       paddingY: 'md',
@@ -2192,6 +2416,8 @@ export const PostFeaturedImageBlock = defineBlock({
   schema: z.object({
     section: sectionSettingsSchema.optional(),
     elements: z.record(z.string(), elementStyleSchema).optional(),
+    aspect: z.enum(['wide', 'video', 'square', 'auto']).optional(),
+    width: z.enum(['normal', 'wide', 'full']).optional(),
   }).passthrough(),
   render: PostFeaturedImage,
   fields: {
@@ -2206,11 +2432,22 @@ export const PostFeaturedImageBlock = defineBlock({
         { label: 'Original', value: 'auto' },
       ],
     },
+    width: {
+      label: 'Width',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Normal (3xl)', value: 'normal' },
+        { label: 'Wide (5xl)', value: 'wide' },
+        { label: 'Full', value: 'full' },
+      ],
+    },
     image_style: elementStyle('image', 'Image Style', MEDIA_PARTS),
     ...sectionControls(),
   },
   defaults: {
     aspect: 'wide',
+    width: 'wide',
     section: {
       paddingY: 'sm',
       background: 'default',
@@ -2332,6 +2569,7 @@ export const RelatedPostsBlock = defineBlock({
   schema: z.object({
     section: sectionSettingsSchema.optional(),
     elements: z.record(z.string(), elementStyleSchema).optional(),
+    variant: z.enum(['flat', 'outline', 'elevated', 'glass']).optional(),
   }).passthrough(),
   render: RelatedPosts,
   fields: {
@@ -2389,12 +2627,26 @@ export const RelatedPostsBlock = defineBlock({
         { label: 'No', value: false },
       ],
     },
+    variant: {
+      label: 'Card style',
+      tab: 'style',
+      section: 'Card',
+      type: 'select',
+      options: [
+        { label: 'Outline', value: 'outline' },
+        { label: 'Flat', value: 'flat' },
+        { label: 'Elevated', value: 'elevated' },
+        { label: 'Glass', value: 'glass' },
+      ],
+    },
+    heading_style: elementStyle('heading', 'Heading Style', ['typography', 'color']),
     ...sectionControls(),
   },
   defaults: {
     title: 'Related posts',
     limit: 3,
     columns: 3,
+    variant: 'outline',
     showImage: true,
     showExcerpt: true,
     showAuthor: false,
@@ -2726,7 +2978,6 @@ export const LogoBlock = defineBlock({
     source: z.enum(['site', 'media']).default('site'),
     mediaUrl: z.string().default(''),
     darkMediaUrl: z.string().default(''),
-    stickyMediaUrl: z.string().default(''),
     width: z.number().default(140),
     link: z.string().default('/'),
     showSiteName: z.boolean().default(true),
@@ -2753,11 +3004,6 @@ export const LogoBlock = defineBlock({
       render: MediaUrlField,
       when: (props: any) => props.source === 'media',
     },
-    stickyMediaUrl: {
-      label: 'Sticky header logo (optional)',
-      type: 'custom',
-      render: MediaUrlField,
-    },
     width: { label: 'Width (px)', type: 'number' },
     link: { label: 'Link URL', type: 'custom', render: UrlField },
     showSiteName: {
@@ -2773,7 +3019,6 @@ export const LogoBlock = defineBlock({
     source: 'site',
     mediaUrl: '',
     darkMediaUrl: '',
-    stickyMediaUrl: '',
     width: 140,
     link: '/',
     showSiteName: true,
@@ -3430,23 +3675,10 @@ export const ThemeToggleBlock = defineBlock({
   label: 'Theme toggle',
   category: 'header',
   icon: 'sun',
-  schema: z.object({
-    icon: z.enum(['sun-moon', 'circle']).default('sun-moon'),
-  }),
+  schema: z.object({}).passthrough(),
   render: ThemeToggle,
-  fields: {
-    icon: {
-      label: 'Icon style',
-      type: 'radio',
-      options: [
-        { label: 'Sun / Moon', value: 'sun-moon' },
-        { label: 'Circle', value: 'circle' },
-      ],
-    },
-  },
-  defaults: {
-    icon: 'sun-moon',
-  },
+  fields: {},
+  defaults: {},
 });
 
 export const LanguageSwitcherNativeBlock = defineBlock({
@@ -3608,6 +3840,7 @@ export const QueryLoopBlock = defineBlock({
       showAuthor: z.boolean().default(true),
       showDate: z.boolean().default(true),
       showTerms: z.boolean().default(true),
+      variant: z.enum(['flat', 'outline', 'elevated', 'glass']).optional(),
       emptyText: z.string().default('No matching items found.'),
       section: sectionSettingsSchema.optional(),
       elements: z.record(z.string(), elementStyleSchema).optional(),
@@ -3763,6 +3996,13 @@ export const QueryLoopBlock = defineBlock({
       min: 1,
       max: 100,
     },
+    offset: {
+      label: 'Offset (skip items)',
+      group: CONTENT,
+      type: 'number',
+      min: 0,
+      max: 100,
+    },
     sortField: {
       label: 'Sort field',
       group: CONTENT,
@@ -3832,6 +4072,18 @@ export const QueryLoopBlock = defineBlock({
     showDate: { label: 'Show published date', group: CONTENT, type: 'toggle' },
     showTerms: { label: 'Show categories/tags', group: CONTENT, type: 'toggle' },
     emptyText: { label: 'Empty state text', group: CONTENT, type: 'text' },
+    variant: {
+      label: 'Card style',
+      tab: 'style',
+      section: 'Card',
+      type: 'select',
+      options: [
+        { label: 'Outline', value: 'outline' },
+        { label: 'Flat', value: 'flat' },
+        { label: 'Elevated', value: 'elevated' },
+        { label: 'Glass', value: 'glass' },
+      ],
+    },
     ...sectionControls(),
   },
   defaults: {
@@ -3841,6 +4093,7 @@ export const QueryLoopBlock = defineBlock({
     sortOrder: 'desc',
     pageSize: 9,
     offset: 0,
+    variant: 'outline',
     excludeCurrent: false,
     eyebrow: '',
     title: 'Latest posts',

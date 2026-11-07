@@ -9,6 +9,7 @@ export type NewsletterProps = WithSection & {
   title?: string;
   subtitle?: string;
   text?: string;
+  placeholder?: string;
   /** Subscriber email. */
   email?: string;
   submitText?: string;
@@ -54,7 +55,7 @@ export function Newsletter(p: NewsletterProps) {
   }
 
   return (
-    <Section section={p.section} editing={p.editing} className='py-0 md:py-0'>
+    <Section section={p.section} editing={p.editing}>
       <div className="mx-auto max-w-2xl text-center">
         {p.title ? (
           <h2 className="text-3xl font-bold tracking-tight md:text-4xl">{p.title}</h2>
@@ -75,7 +76,7 @@ export function Newsletter(p: NewsletterProps) {
             type="email"
             required
             defaultValue={p.email}
-            placeholder="you@example.com"
+            placeholder={p.placeholder || 'you@example.com'}
             className="s-input h-11 w-full"
           />
           {/* Honeypot: bots fill it in; real users never see or submit it. */}

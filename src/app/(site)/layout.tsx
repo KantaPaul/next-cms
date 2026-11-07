@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import Script from 'next/script';
 import { fontStylesheetUrl, themeStyle } from '@/builder/theme';
 import { AdminBar } from '@/components/site/admin-bar';
@@ -31,7 +32,17 @@ export default async function SiteLayout({
       )}`
     : null;
   const fontUrl = fontStylesheetUrl(settings.themeTokens);
-  const mode = settings.themeTokens.colorMode === 'dark' ? 'dark' : 'light';
+  const cookieStore = await cookies();
+  const cookieTheme = cookieStore.get('site_theme')?.value;
+  const configuredMode = settings.themeTokens.colorMode;
+  const mode =
+    cookieTheme === 'light' || cookieTheme === 'dark'
+      ? cookieTheme
+      : configuredMode === 'dark'
+        ? 'dark'
+        : configuredMode === 'system'
+          ? 'system'
+          : 'light';
 
   return (
     <div
@@ -40,6 +51,11 @@ export default async function SiteLayout({
       style={themeStyle(settings.themeTokens)}
     >
       {fontUrl && <link rel="stylesheet" href={fontUrl} precedence="default" />}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `(function(){try{var c=document.cookie.match(/(?:^|;\\s*)site_theme=(light|dark)(?:;|$)/);var t=c?c[1]:(${JSON.stringify(configuredMode)}==='system'?(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):${JSON.stringify(configuredMode==='dark'?'dark':'light')});document.documentElement.setAttribute('data-site-theme',t);if(t==='dark'){document.documentElement.classList.add('dark');}else{document.documentElement.classList.remove('dark');}}catch(e){}})();`,
+        }}
+      />
       <AdminBar />
       {exitPreviewHref && (
         <div
