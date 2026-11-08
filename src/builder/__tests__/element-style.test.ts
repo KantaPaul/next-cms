@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert';
 import { describe, it } from 'node:test';
 import {
@@ -324,5 +325,15 @@ describe('linkEl', () => {
       'text-sm font-medium'
     );
     assert.ok(!withNoColor.className.includes('hover:opacity-80'));
+  });
+});
+
+describe('hover colour', () => {
+  it('beats the inline colour an element sets', () => {
+    const css = readFileSync(new URL('../site.css', import.meta.url), 'utf8');
+    assert.match(
+      css,
+      /\.s-hc:hover\s*\{\s*color:\s*var\(--s-h-color\)\s*!important;/
+    );
   });
 });

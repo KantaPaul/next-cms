@@ -78,7 +78,8 @@ export function el(
  * Resolves classes and inline styles for a link-style element.
  * An element's colour is an inline style, which overrides hover:text-* classes.
  * When an element sets color but no hover.color, linkEl adds hover:opacity-80
- * to keep visible hover feedback. Explicit hover colours work through .s-hc.
+ * to keep visible hover feedback. Explicit hover colours work through .s-hc,
+ * whose rule uses !important to beat the inline colour.
  */
 export function linkEl(
   props: WithSection | undefined,
