@@ -294,3 +294,39 @@ describe('inspector tabs', () => {
     assert.equal(fieldSectionTitle(fields.link_style), 'Link Style');
   });
 });
+
+describe('QueryLoop filter panel styles', () => {
+  const fields =
+    (NATIVE_BLOCKS as any).QueryLoopBlock?.fields ??
+    (Object.values(NATIVE_BLOCKS) as any[]).find(b => b.type === 'QueryLoop')
+      .fields;
+
+  it('hides the controls while the panel is off', () => {
+    assert.equal(
+      fields.filter_panel_style.when({ filterPosition: 'none' }),
+      false
+    );
+    assert.equal(
+      fields.filter_panel_style.when({ filterPosition: 'top' }),
+      true
+    );
+  });
+
+  it('follows the panel options', () => {
+    assert.equal(
+      fields.filter_drawer_toggle_style.when({
+        filterPosition: 'top',
+        filterMobileDrawer: false,
+      }),
+      false
+    );
+    assert.equal(
+      fields.filter_active_chip_style.when({
+        filterPosition: 'top',
+        filterCategoryStyle: 'select',
+        filterTagStyle: 'select',
+      }),
+      false
+    );
+  });
+});

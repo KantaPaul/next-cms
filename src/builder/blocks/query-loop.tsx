@@ -828,6 +828,7 @@ export function QueryLoop({
               activeParams={activeParams}
               preservedHiddenParams={preservedHiddenParams}
               editing={editing}
+              elements={elements}
             />
           </aside>
           <div className="min-w-0">{results}</div>

@@ -5048,6 +5048,46 @@ export const PostTypeEntriesBlock = defineBlock({
   },
 });
 
+/** Styles for QueryLoop's built-in filter panel, shown only while the panel is on. */
+function queryLoopFilterStyles() {
+  const on = (props: any) =>
+    Boolean(props.filterPosition) && props.filterPosition !== 'none';
+  const style = (
+    key: string,
+    label: string,
+    parts: readonly ElementPart[],
+    when: (props: any) => boolean = on
+  ) => elementStyle(key, label, parts, { when });
+  return {
+    filter_panel_style: style('panel', 'Filter Panel Style', BUTTON_PARTS),
+    filter_label_style: style('label', 'Filter Label Style', TEXT_PARTS),
+    filter_input_style: style('input', 'Filter Input Style', FIELD_PARTS),
+    filter_chip_style: style('chip', 'Filter Chip Style', BUTTON_PARTS),
+    filter_active_chip_style: style(
+      'activeChip',
+      'Filter Active Chip Style',
+      BUTTON_PARTS,
+      props =>
+        on(props) &&
+        (props.filterCategoryStyle === 'chips' ||
+          (props.filterTagStyle ?? 'chips') === 'chips')
+    ),
+    filter_button_style: style('button', 'Filter Button Style', BUTTON_PARTS),
+    filter_drawer_toggle_style: style(
+      'drawerToggle',
+      'Filter Mobile Toggle Style',
+      BUTTON_PARTS,
+      props => on(props) && props.filterMobileDrawer !== false
+    ),
+    filter_count_style: style(
+      'count',
+      'Filter Result Count Style',
+      TEXT_PARTS,
+      props => on(props) && props.filterShowResultCount !== false
+    ),
+  };
+}
+
 export const QueryLoopBlock = defineBlock({
   type: 'QueryLoop',
   label: 'Query Loop',
@@ -5370,6 +5410,7 @@ export const QueryLoopBlock = defineBlock({
     table_row_style: elementStyle('tableRow', 'Table Row Style', BUTTON_PARTS, {
       when: (props: any) => props.layout === 'table',
     }),
+    ...queryLoopFilterStyles(),
     ...contentSectionControls(),
   },
   defaults: {
