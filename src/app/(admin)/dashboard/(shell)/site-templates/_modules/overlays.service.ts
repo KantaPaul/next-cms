@@ -1,5 +1,5 @@
 import 'server-only';
-import { and, asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNotNull } from 'drizzle-orm';
 import { db } from '@/db';
 import { globalBlocks } from '@/db/schema';
 import { PERMISSIONS } from '@/config/permissions';
@@ -8,6 +8,7 @@ import { auditService } from '@/server/services/audit.service';
 import { adminSiteId } from '@/server/services/site-context';
 import { revalidatePublicSite } from '@/lib/utils/revalidate-site';
 import { NotFoundException } from '@/lib/utils/error';
+import { normalizeOverlaySettings } from '@/lib/overlays/settings';
 import type { BuilderData } from '@/builder/data';
 import type { ToggleOverlayEnabledInput } from './overlays.schemas';
 
@@ -16,7 +17,17 @@ export type OverlayOption = {
   name: string;
   category: 'Popup' | 'Drawer';
   published: boolean;
+  enabled: boolean;
 };
+
+function isOverlayContentEnabled(
+  content: unknown,
+  category: 'Popup' | 'Drawer'
+): boolean {
+  if (!content || typeof content !== 'object') return false;
+  const data = content as BuilderData;
+  return normalizeOverlaySettings(data.root?.props, category).enabled;
+}
 
 export const overlayAdminService = {
   listOptions: async (): Promise<OverlayOption[]> => {
@@ -26,22 +37,37 @@ export const overlayAdminService = {
         id: globalBlocks.id,
         name: globalBlocks.name,
         category: globalBlocks.category,
+        content: globalBlocks.content,
+        publishedContent: globalBlocks.publishedContent,
         publishedAt: globalBlocks.publishedAt,
       })
       .from(globalBlocks)
       .where(
         and(
           eq(globalBlocks.siteId, siteId),
-          inArray(globalBlocks.category, ['Popup', 'Drawer'])
+          inArray(globalBlocks.category, ['Popup', 'Drawer']),
+          isNotNull(globalBlocks.publishedAt),
+          isNotNull(globalBlocks.publishedContent)
         )
       )
       .orderBy(asc(globalBlocks.name));
-    return rows.map(r => ({
-      id: r.id,
-      name: r.name,
-      category: r.category === 'Drawer' ? 'Drawer' : 'Popup',
-      published: !!r.publishedAt,
-    }));
+    return rows.flatMap(r => {
+      const category = r.category === 'Drawer' ? 'Drawer' : 'Popup';
+      const published = !!r.publishedAt && !!r.publishedContent;
+      const enabled =
+        isOverlayContentEnabled(r.publishedContent, category) &&
+        isOverlayContentEnabled(r.content, category);
+      if (!published || !enabled) return [];
+      return [
+        {
+          id: r.id,
+          name: r.name,
+          category,
+          published: true,
+          enabled: true,
+        },
+      ];
+    });
   },
 
   toggleOverlayEnabled: async (

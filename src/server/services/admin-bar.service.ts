@@ -1,6 +1,6 @@
 import 'server-only';
 import { and, eq, isNull } from 'drizzle-orm';
-import { siteTemplateEditHref } from '@/app/(admin)/dashboard/(shell)/header-footer/_modules/site-template-href';
+import { siteTemplateEditHref } from '@/app/(admin)/dashboard/(shell)/site-templates/_modules/site-template-href';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import { db } from '@/db';

@@ -6,7 +6,7 @@ import { metaObject } from '@/lib/utils/metadata';
 import { requirePermission } from '@/server/services/require-permission';
 import { siteContext, siteSlugPrefix } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
-import { overlayAdminService } from '../header-footer/_modules/overlays.service';
+import { overlayAdminService } from '../site-templates/_modules/overlays.service';
 import { MenusManager } from './_components/menus-manager';
 import { menusService } from './_modules/menus.service';
 

@@ -32,7 +32,9 @@ export default async function GlobalBlockPage({
   if (
     block.category === 'Header' ||
     block.category === 'Footer' ||
-    block.category === 'MegaMenu'
+    block.category === 'MegaMenu' ||
+    block.category === 'Popup' ||
+    block.category === 'Drawer'
   ) {
     redirect(PAGES.DASHBOARD.HEADER_FOOTER_EDIT(id));
   }

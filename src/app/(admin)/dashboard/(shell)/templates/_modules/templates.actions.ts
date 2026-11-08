@@ -1,6 +1,7 @@
 'use server';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, notInArray } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { SITE_TEMPLATE_CATEGORIES } from '@/db/seed/header-footer-starters';
 import { adminSiteId } from '@/server/services/site-context';
 import { revalidatePublicSite } from '@/lib/utils/revalidate-site';
 import { templatesService } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.service';
@@ -24,6 +25,7 @@ import { idSchema } from '@/schemas/shared';
 export const listGlobalBlockOptions = permissionProcedure(
   PERMISSIONS.PAGES_EDIT
 ).query(async () => {
+  const siteId = await adminSiteId();
   const rows = await db
     .select({
       id: globalBlocks.id,
@@ -31,6 +33,12 @@ export const listGlobalBlockOptions = permissionProcedure(
       category: globalBlocks.category,
     })
     .from(globalBlocks)
+    .where(
+      and(
+        eq(globalBlocks.siteId, siteId),
+        notInArray(globalBlocks.category, [...SITE_TEMPLATE_CATEGORIES])
+      )
+    )
     .orderBy(asc(globalBlocks.name));
   return rows.map(r =>
     r.category === 'contact-form'

@@ -2,12 +2,12 @@
 
 import { ExternalLink, Plus } from 'lucide-react';
 import { type CSSProperties, useEffect, useMemo, useState } from 'react';
-import { listOverlayOptions } from '@/app/(admin)/dashboard/(shell)/header-footer/_modules/overlays.actions';
-import type { OverlayOption } from '@/app/(admin)/dashboard/(shell)/header-footer/_modules/overlays.service';
+import { listOverlayOptions } from '@/app/(admin)/dashboard/(shell)/site-templates/_modules/overlays.actions';
+import type { OverlayOption } from '@/app/(admin)/dashboard/(shell)/site-templates/_modules/overlays.service';
 import {
   siteTemplateEditHref,
   siteTemplatesHref,
-} from '@/app/(admin)/dashboard/(shell)/header-footer/_modules/site-template-href';
+} from '@/app/(admin)/dashboard/(shell)/site-templates/_modules/site-template-href';
 import {
   SearchableSelect,
   type SearchableSelectGroup,
@@ -22,9 +22,9 @@ function fetchOverlayOptions(force = false): Promise<OverlayOption[]> {
   if (force || !overlayOptionsRequest) {
     overlayOptionsRequest = listOverlayOptions()
       .then(rows => (Array.isArray(rows) ? rows : []))
-      .catch(() => {
+      .catch(() => [])
+      .finally(() => {
         overlayOptionsRequest = null;
-        return [];
       });
   }
   return overlayOptionsRequest;
@@ -80,30 +80,38 @@ export function OverlaySelect({
   const fetched = useOverlayOptions();
   const options = providedOptions !== undefined ? providedOptions : fetched;
 
+  const activeOptions = useMemo(
+    () =>
+      options
+        ? options.filter(o => o.published && (o.enabled ?? true))
+        : null,
+    [options]
+  );
+
   const groups = useMemo<SearchableSelectGroup[]>(() => {
-    if (!options?.length) return [];
-    const popups = options
+    if (!activeOptions?.length) return [];
+    const popups = activeOptions
       .filter(o => o.category === 'Popup')
       .map(o => ({
         value: o.id,
-        label: `${o.name}${o.published ? '' : ' (draft)'}`,
+        label: o.name,
       }));
-    const drawers = options
+    const drawers = activeOptions
       .filter(o => o.category === 'Drawer')
       .map(o => ({
         value: o.id,
-        label: `${o.name}${o.published ? '' : ' (draft)'}`,
+        label: o.name,
       }));
     const result: SearchableSelectGroup[] = [];
     if (popups.length) result.push({ label: 'Popups', options: popups });
     if (drawers.length) result.push({ label: 'Drawers', options: drawers });
     return result;
-  }, [options]);
+  }, [activeOptions]);
 
   const topLabel =
-    options === null
+    activeOptions === null
       ? 'Loading…'
-      : options.length
+      : activeOptions.length
         ? placeholder
         : emptyLabel;
 
@@ -113,8 +121,8 @@ export function OverlaySelect({
       onValueChange={onChange}
       groups={groups}
       placeholder={topLabel}
-      emptyOptionLabel={options?.length ? placeholder : undefined}
-      missingLabel={options === null ? 'Loading…' : 'Popup/drawer not found'}
+      emptyOptionLabel={activeOptions?.length ? placeholder : undefined}
+      missingLabel={activeOptions === null ? 'Loading…' : 'Popup/drawer not found'}
       searchPlaceholder="Search popups & drawers…"
       emptyMessage={emptyLabel}
       disabled={disabled}

@@ -228,7 +228,7 @@ export const ROUTE_TOPICS: GuideTopic[] = [
     slug: 'guide-header-footer',
     title: 'Header, footer, search, and archive templates',
     group: 'dashboard',
-    path: '/dashboard/header-footer',
+    path: '/dashboard/site-templates',
     summary: 'Design the parts of the site that wrap every page.',
     sections: [
       {

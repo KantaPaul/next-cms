@@ -48,7 +48,9 @@ export default async function TemplatesPage() {
               g.category !== 'Footer' &&
               g.category !== 'Search' &&
               g.category !== 'Archive' &&
-              g.category !== 'MegaMenu'
+              g.category !== 'MegaMenu' &&
+              g.category !== 'Popup' &&
+              g.category !== 'Drawer'
           )
           .map(({ content, ...g }) => ({
             ...g,

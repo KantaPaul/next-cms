@@ -4,7 +4,7 @@
  * the Puck builder and the new editor so both behave the same.
  */
 
-import { siteTemplatesHref } from '@/app/(admin)/dashboard/(shell)/header-footer/_modules/site-template-href';
+import { siteTemplatesHref } from '@/app/(admin)/dashboard/(shell)/site-templates/_modules/site-template-href';
 import { toast } from 'sonner';
 import {
   publishPage,

@@ -16,6 +16,15 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/dashboard/header-footer/:path*',
+        destination: '/dashboard/site-templates/:path*',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

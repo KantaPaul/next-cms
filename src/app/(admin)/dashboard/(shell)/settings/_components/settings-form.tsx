@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { FormItem, FormMessage } from '@/components/ui/form';
-import { siteTemplateEditHref } from '../../header-footer/_modules/site-template-href';
+import { siteTemplateEditHref } from '../../site-templates/_modules/site-template-href';
 
 type SettingsInput = z.infer<typeof settingsSchema>;
 
