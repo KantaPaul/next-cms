@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils/cn';
 import type { PostCard, PostTerm, PostView } from '../post-template';
 import { sanitizeRichText } from '../sanitize';
 import type { ElementStyle } from '../style';
-import { el } from './element';
+import { el, linkEl } from './element';
 import { BlogFilters } from './blog-filters-client';
 import {
   MotionItem,
@@ -22,6 +22,7 @@ export type CardOptions = {
   showExcerpt?: boolean;
   showAuthor?: boolean;
   showDate?: boolean;
+  elements?: Record<string, ElementStyle>;
 };
 
 const formatDate = (iso: string | null, language: string) =>
@@ -51,9 +52,13 @@ function PostCardItem({
   return (
     <MotionItem>
       <article
-        className={cn(
-          's-surface s-border s-radius group flex h-full overflow-hidden border',
-          layout === 'list' ? 'flex-col sm:flex-row' : 'flex-col'
+        {...el(
+          options,
+          'card',
+          cn(
+            's-surface s-border s-radius group flex h-full overflow-hidden border',
+            layout === 'list' ? 'flex-col sm:flex-row' : 'flex-col'
+          )
         )}
       >
         {image && (
@@ -71,28 +76,49 @@ function PostCardItem({
               src={post.featuredImage ?? undefined}
               alt=""
               loading="lazy"
-              className="aspect-video size-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+              {...el(
+                options,
+                'cardImage',
+                'aspect-video size-full object-cover transition-transform duration-300 group-hover:scale-[1.03]'
+              )}
             />
           </a>
         )}
         <div className="flex flex-1 flex-col gap-3 p-5">
           {post.categories.length > 0 && (
-            <p className="s-primary-text text-xs font-semibold uppercase tracking-wider">
+            <p
+              {...el(
+                options,
+                'cardCategory',
+                's-primary-text text-xs font-semibold uppercase tracking-wider'
+              )}
+            >
               {post.categories.map(c => c.name).join(' · ')}
             </p>
           )}
-          <h3 className="s-card-title text-lg leading-snug">
-            <a href={post.url} className="hover:underline">
+          <h3
+            {...el(options, 'cardTitle', 's-card-title text-lg leading-snug')}
+          >
+            <a
+              href={post.url}
+              {...linkEl(options, 'cardTitle', 'hover:underline')}
+            >
               {post.title}
             </a>
           </h3>
           {options.showExcerpt !== false && post.excerpt && (
-            <p className="s-muted line-clamp-3 text-sm leading-relaxed">
+            <p
+              {...el(
+                options,
+                'cardExcerpt',
+                's-muted line-clamp-3 text-sm leading-relaxed'
+              )}
+            >
               {post.excerpt}
             </p>
           )}
           {(date || author) && (
-            <p className="s-muted mt-auto text-xs">
+            <p {...el(options, 'cardMeta', 's-muted mt-auto text-xs')}>
               {author}
               {author && date && ' · '}
               {date && (
@@ -190,15 +216,18 @@ function Pagination({
   active,
   totalPages,
   editing,
+  elements,
 }: {
   active: BlogActiveFilters;
   totalPages: number;
   editing?: boolean;
+  elements?: Record<string, ElementStyle>;
 }) {
   const page = active.page ?? 1;
   if (totalPages <= 1) return null;
   const link =
     's-border s-radius inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-3 text-sm';
+  const pageLinkEl = el({ elements }, 'pagination', link);
 
   return (
     <nav
@@ -209,7 +238,7 @@ function Pagination({
       )}
     >
       {page > 1 && (
-        <a href={pageHref(active, page - 1)} className={link} rel="prev">
+        <a href={pageHref(active, page - 1)} {...pageLinkEl} rel="prev">
           Previous
         </a>
       )}
@@ -218,13 +247,15 @@ function Pagination({
           key={n}
           href={pageHref(active, n)}
           aria-current={n === page ? 'page' : undefined}
-          className={cn(link, n === page && 's-btn-primary border-transparent')}
+          {...(n === page
+            ? { className: cn(link, 's-btn-primary border-transparent') }
+            : pageLinkEl)}
         >
           {n}
         </a>
       ))}
       {page < totalPages && (
-        <a href={pageHref(active, page + 1)} className={link} rel="next">
+        <a href={pageHref(active, page + 1)} {...pageLinkEl} rel="next">
           Next
         </a>
       )}
@@ -240,7 +271,11 @@ export function BlogPosts(p: BlogPostsProps) {
 
   return (
     <Section section={p.section} editing={p.editing} hasItems>
-      <SectionHeading elements={p.elements} title={p.title} subtitle={p.subtitle} />
+      <SectionHeading
+        elements={p.elements}
+        title={p.title}
+        subtitle={p.subtitle}
+      />
       <BlogFilters
         showSearch={!!p.showSearch}
         showCategory={
@@ -254,6 +289,7 @@ export function BlogPosts(p: BlogPostsProps) {
         tags={options.tags}
         active={active}
         editing={p.editing}
+        elements={p.elements}
       />
       {posts.length ? (
         <PostGrid
@@ -263,7 +299,13 @@ export function BlogPosts(p: BlogPostsProps) {
           options={p}
         />
       ) : (
-        <div className="s-border s-muted s-radius rounded-lg border border-dashed px-6 py-14 text-center text-sm">
+        <div
+          {...el(
+            p,
+            'empty',
+            's-border s-muted s-radius rounded-lg border border-dashed px-6 py-14 text-center text-sm'
+          )}
+        >
           {filtering
             ? 'No posts match these filters.'
             : p.emptyMessage ||
@@ -280,6 +322,7 @@ export function BlogPosts(p: BlogPostsProps) {
           active={active}
           totalPages={p.totalPages ?? 1}
           editing={p.editing}
+          elements={p.elements}
         />
       )}
     </Section>
@@ -315,18 +358,24 @@ export function PostTitle(
         {p.showBackLink !== false && p.post.blogUrl && (
           <a
             href={p.post.blogUrl}
-            className="s-primary-text mb-6 inline-block text-sm font-medium hover:underline"
+            {...linkEl(
+              p,
+              'backLink',
+              's-primary-text mb-6 inline-block text-sm font-medium hover:underline'
+            )}
           >
             {p.backLinkLabel || '← All posts'}
           </a>
         )}
-        <h1
-          {...el(p, 'title', 's-post-title')}
-        >
-          {p.post.title}
-        </h1>
+        <h1 {...el(p, 'title', 's-post-title')}>{p.post.title}</h1>
         {p.showExcerpt !== false && p.post.excerpt && (
-          <p className="s-muted mt-5 text-lg leading-relaxed md:text-xl">
+          <p
+            {...el(
+              p,
+              'excerpt',
+              's-muted mt-5 text-lg leading-relaxed md:text-xl'
+            )}
+          >
             {p.post.excerpt}
           </p>
         )}
@@ -402,37 +451,47 @@ export function PostMeta(
 
   return (
     <Section section={p.section} editing={p.editing} innerClassName="max-w-3xl">
-      <div className="s-border flex flex-wrap items-center gap-x-4 gap-y-2 border-y py-4 text-sm">
+      <div
+        {...el(
+          p,
+          'bar',
+          's-border flex flex-wrap items-center gap-x-4 gap-y-2 border-y py-4 text-sm'
+        )}
+      >
         {avatar ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={avatar}
             alt=""
-            className="-mr-2 size-9 rounded-full object-cover"
+            {...el(p, 'avatar', '-mr-2 size-9 rounded-full object-cover')}
           />
         ) : null}
         {author &&
           (authorUrl ? (
-            <a href={authorUrl} className="font-medium hover:underline">
+            <a
+              href={authorUrl}
+              {...linkEl(p, 'author', 'font-medium hover:underline')}
+            >
               By {author}
             </a>
           ) : (
-            <span className="font-medium">By {author}</span>
+            <span {...el(p, 'author', 'font-medium')}>By {author}</span>
           ))}
         {date && (
-          <time dateTime={p.post.publishedAt ?? undefined} className="s-muted">
+          <time
+            dateTime={p.post.publishedAt ?? undefined}
+            {...el(p, 'date', 's-muted')}
+          >
             {date}
           </time>
         )}
-        {minutes > 0 && (
-          <span className="s-muted">{minutes} min read</span>
-        )}
+        {minutes > 0 && <span className="s-muted">{minutes} min read</span>}
         {categories.length > 0 && (
-          <span className="s-primary-text font-semibold">
+          <span {...el(p, 'category', 's-primary-text font-semibold')}>
             {categories.map((c, i) => (
               <span key={c.id || c.slug}>
                 {c.url ? (
-                  <a href={c.url} className="hover:underline">
+                  <a href={c.url} {...linkEl(p, 'category', 'hover:underline')}>
                     {c.name}
                   </a>
                 ) : (
@@ -450,12 +509,22 @@ export function PostMeta(
                 {t.url ? (
                   <a
                     href={t.url}
-                    className="s-soft-primary inline-block rounded-full px-2.5 py-0.5 text-xs font-medium hover:underline"
+                    {...linkEl(
+                      p,
+                      'tag',
+                      's-soft-primary inline-block rounded-full px-2.5 py-0.5 text-xs font-medium hover:underline'
+                    )}
                   >
                     #{t.name}
                   </a>
                 ) : (
-                  <span className="s-soft-primary rounded-full px-2.5 py-0.5 text-xs font-medium">
+                  <span
+                    {...el(
+                      p,
+                      'tag',
+                      's-soft-primary rounded-full px-2.5 py-0.5 text-xs font-medium'
+                    )}
+                  >
                     #{t.name}
                   </span>
                 )}

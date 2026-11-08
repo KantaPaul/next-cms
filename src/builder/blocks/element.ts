@@ -1,11 +1,18 @@
 import { reorderParts } from '@nextcms/builder-core';
-import { createElement, type CSSProperties, Fragment, type ReactNode } from 'react';
+import {
+  createElement,
+  type CSSProperties,
+  Fragment,
+  type ReactNode,
+} from 'react';
 import { cn } from '@/lib/utils/cn';
 import {
   type ElementStyle,
   resolveElementStyle,
   type SectionSettings,
 } from '../style';
+
+export type { ElementStyle };
 
 export type WithSection = {
   section?: SectionSettings;
@@ -65,4 +72,26 @@ export function el(
     className: cn(baseClass, ...resolved.classes),
     style: resolved.style,
   };
+}
+
+/**
+ * Resolves classes and inline styles for a link-style element.
+ * An element's colour is an inline style, which overrides hover:text-* classes.
+ * When an element sets color but no hover.color, linkEl adds hover:opacity-80
+ * to keep visible hover feedback. Explicit hover colours work through .s-hc.
+ */
+export function linkEl(
+  props: WithSection | undefined,
+  key: string,
+  baseClass?: string
+): { className: string; style: CSSProperties } {
+  const result = el(props, key, baseClass);
+  const elementStyle = props?.elements?.[key];
+  if (elementStyle?.color && !elementStyle?.hover?.color) {
+    return {
+      className: cn(result.className, 'hover:opacity-80'),
+      style: result.style,
+    };
+  }
+  return result;
 }

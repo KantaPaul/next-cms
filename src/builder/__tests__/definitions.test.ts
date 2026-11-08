@@ -6,7 +6,13 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { defaultProps, fieldsOf, validateProps } from '@nextcms/builder-core';
+import {
+  defaultProps,
+  fieldSectionTitle,
+  fieldsOf,
+  fieldTabId,
+  validateProps,
+} from '@nextcms/builder-core';
 import { NATIVE_BLOCKS } from '../definitions/native';
 import {
   nativeBlockTypes,
@@ -16,11 +22,20 @@ import {
   pageSchemas,
   editorSetup,
 } from '../definitions';
-import { groupControl, sectionControls } from '../definitions/fields';
+import {
+  contentSectionControls,
+  elementStyle,
+  contentFields,
+  groupControl,
+  sectionControls,
+  TEXT_PARTS,
+} from '../definitions/fields';
 
 describe('page block definitions', () => {
   it('cover every native block', () => {
-    const missing = NATIVE_BLOCKS.map(b => b.type).filter(type => !pageDefinitions[type]);
+    const missing = NATIVE_BLOCKS.map(b => b.type).filter(
+      type => !pageDefinitions[type]
+    );
     assert.deepEqual(missing, []);
   });
 
@@ -32,14 +47,24 @@ describe('page block definitions', () => {
 
   it('accept their own defaults as valid props', () => {
     for (const type of nativeBlockTypes) {
-      const props = defaultProps(pageDefinitions[type]) as Record<string, unknown>;
-      assert.deepEqual(validateProps(pageDefinitions[type], props), { ok: true }, type);
+      const props = defaultProps(pageDefinitions[type]) as Record<
+        string,
+        unknown
+      >;
+      assert.deepEqual(
+        validateProps(pageDefinitions[type], props),
+        { ok: true },
+        type
+      );
     }
   });
 
   it('accept element-level and section-level styles on every block that supports them', () => {
     for (const type of nativeBlockTypes) {
-      const base = defaultProps(pageDefinitions[type]) as Record<string, unknown>;
+      const base = defaultProps(pageDefinitions[type]) as Record<
+        string,
+        unknown
+      >;
       const withStyles: Record<string, unknown> = {
         ...base,
         elements: {
@@ -56,14 +81,25 @@ describe('page block definitions', () => {
       };
       if ('section' in base) {
         withStyles.section = {
-          ...(typeof base.section === 'object' && base.section ? base.section : {}),
+          ...(typeof base.section === 'object' && base.section
+            ? base.section
+            : {}),
           width: 1200,
           widthUnit: 'px',
-          typography: { fontFamily: 'Inter', fontSize: 16, lineHeight: 24, lineHeightUnit: 'px' },
+          typography: {
+            fontFamily: 'Inter',
+            fontSize: 16,
+            lineHeight: 24,
+            lineHeightUnit: 'px',
+          },
           fill: { type: 'color', color: '#ffffff' },
         };
       }
-      assert.deepEqual(validateProps(pageDefinitions[type], withStyles), { ok: true }, type);
+      assert.deepEqual(
+        validateProps(pageDefinitions[type], withStyles),
+        { ok: true },
+        type
+      );
     }
   });
 
@@ -143,6 +179,32 @@ describe('page block definitions', () => {
     assert.deepEqual(sc.section_filter.states, ['normal', 'hover']);
   });
 
+  it('contentSectionControls drops typography, text color and display by default, keeping display when requested', () => {
+    const csc = contentSectionControls() as Record<string, any>;
+    assert.equal(csc.section_typography, undefined);
+    assert.equal(csc.section_text_color, undefined);
+    assert.equal(csc.section_display, undefined);
+    assert.ok(csc.section_background);
+    assert.ok(csc.section_border);
+
+    const cscWithDisplay = contentSectionControls({
+      keepDisplay: true,
+    }) as Record<string, any>;
+    assert.equal(cscWithDisplay.section_typography, undefined);
+    assert.equal(cscWithDisplay.section_text_color, undefined);
+    assert.ok(cscWithDisplay.section_display);
+    assert.ok(cscWithDisplay.section_background);
+  });
+
+  it('elementStyle honours when', () => {
+    const field = elementStyle('title', 'Title Style', TEXT_PARTS, {
+      when: (p: any) => p.showTitle === true,
+    });
+    assert.equal(typeof field.when, 'function');
+    assert.equal(field.when?.({ showTitle: true }), true);
+    assert.equal(field.when?.({ showTitle: false }), false);
+  });
+
   it('scopes CollectionBlock to collection entry editors', () => {
     const entry = editorSetup('entry');
     const entryTemplate = editorSetup('entry-template');
@@ -173,15 +235,62 @@ describe('page block definitions', () => {
     for (const kind of ['collection-block', 'loop-item']) {
       const setup = editorSetup(kind);
       assert.ok(!setup.definitions.CollectionBlock, kind);
-      assert.ok(!setup.groups.some(g => g.types.includes('CollectionBlock')), kind);
+      assert.ok(
+        !setup.groups.some(g => g.types.includes('CollectionBlock')),
+        kind
+      );
     }
     assert.ok(!collectionBlock.definitions.GlobalRef);
 
     // Only collection editors can insert it: elsewhere the insert panel
     // (which lists every known schema) must not see it.
-    for (const kind of ['page', 'post', 'global', 'header', 'footer', 'loop-item']) {
+    for (const kind of [
+      'page',
+      'post',
+      'global',
+      'header',
+      'footer',
+      'loop-item',
+    ]) {
       assert.ok(!editorSetup(kind).schemas.CollectionBlock, kind);
     }
     assert.ok(entry.schemas.CollectionBlock);
+  });
+});
+
+describe('inspector tabs', () => {
+  it('leaves no setting in the catch-all Style > General section', () => {
+    const misplaced: string[] = [];
+    for (const block of Object.values(NATIVE_BLOCKS) as any[]) {
+      for (const [key, field] of Object.entries<any>(block.fields ?? {})) {
+        if (
+          fieldTabId(field) === 'style' &&
+          fieldSectionTitle(field) === 'General'
+        ) {
+          misplaced.push(`${block.type}.${key}`);
+        }
+      }
+    }
+    assert.deepEqual(misplaced, []);
+  });
+
+  it('contentFields sends settings to Content and named ones to Appearance', () => {
+    const fields = contentFields(
+      {
+        links: { label: 'Links', type: 'list' },
+        shape: { label: 'Shape', type: 'radio' },
+        link_style: {
+          label: 'Link Style',
+          type: 'custom',
+          tab: 'style',
+          section: 'Link Style',
+        },
+      } as any,
+      { appearance: ['shape'] }
+    ) as any;
+    assert.equal(fieldTabId(fields.links), 'content');
+    assert.equal(fieldTabId(fields.shape), 'style');
+    assert.equal(fieldSectionTitle(fields.shape), 'Appearance');
+    assert.equal(fieldSectionTitle(fields.link_style), 'Link Style');
   });
 });

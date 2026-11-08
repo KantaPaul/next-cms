@@ -1,27 +1,30 @@
 'use client';
 
 import type { ComponentType } from 'react';
-import { Section, DEFAULT_SECTION, type SectionSettings } from '../blocks/section';
+import { el, type WithSection } from '../blocks/element';
+import { Section } from '../blocks/section';
 
-export type ExampleProps = {
+export type ExampleProps = WithSection & {
   heading?: string;
   body?: string;
-  section?: SectionSettings;
-  editing?: boolean;
 };
 
-function ExampleBlock({
-  heading,
-  body,
-  section,
-  editing,
-}: ExampleProps) {
+function ExampleBlock(p: ExampleProps) {
+  const headingEl = el(p, 'heading', 'text-2xl font-bold tracking-tight');
+  const bodyEl = el(p, 'body', 's-muted mt-2');
+
   return (
-    <Section section={section} editing={editing}>
-      {heading ? (
-        <h2 className="text-2xl font-bold tracking-tight">{heading}</h2>
+    <Section section={p.section} editing={p.editing}>
+      {p.heading ? (
+        <h2 className={headingEl.className} style={headingEl.style}>
+          {p.heading}
+        </h2>
       ) : null}
-      {body ? <p className="s-muted mt-2">{body}</p> : null}
+      {p.body ? (
+        <p className={bodyEl.className} style={bodyEl.style}>
+          {p.body}
+        </p>
+      ) : null}
     </Section>
   );
 }

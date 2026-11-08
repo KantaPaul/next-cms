@@ -37,18 +37,28 @@ export function Audio(p: AudioProps) {
       editing={p.editing}
       innerClassName={WIDTH[p.width ?? 'normal']}
     >
-      <figure {...el(p, 'card', 's-card s-card-outline flex flex-col gap-4 p-5 sm:flex-row sm:items-center')}>
+      <figure
+        {...el(
+          p,
+          'card',
+          's-card s-card-outline flex flex-col gap-4 p-5 sm:flex-row sm:items-center'
+        )}
+      >
         {cover ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={cover}
             alt=""
-            className="size-20 shrink-0 rounded-xl object-cover"
+            {...el(p, 'cover', 'size-20 shrink-0 rounded-xl object-cover')}
           />
         ) : (
           <span
             aria-hidden
-            className="s-soft-primary flex size-14 shrink-0 items-center justify-center rounded-full"
+            {...el(
+              p,
+              'cover',
+              's-soft-primary flex size-14 shrink-0 items-center justify-center rounded-full'
+            )}
           >
             <AudioLines className="size-6" />
           </span>
@@ -57,12 +67,18 @@ export function Audio(p: AudioProps) {
           {(p.title || p.caption) && (
             <figcaption>
               {p.title ? (
-                <p {...el(p, 'title', 'text-lg font-medium [font-family:var(--site-font-heading)]')}>
+                <p
+                  {...el(
+                    p,
+                    'title',
+                    'text-lg font-medium [font-family:var(--site-font-heading)]'
+                  )}
+                >
                   {p.title}
                 </p>
               ) : null}
               {p.caption ? (
-                <p className="s-meta mt-0.5">{p.caption}</p>
+                <p {...el(p, 'caption', 's-meta mt-0.5')}>{p.caption}</p>
               ) : null}
             </figcaption>
           )}
@@ -77,7 +93,9 @@ export function Audio(p: AudioProps) {
               <a href={src}>Download the audio</a>
             </audio>
           ) : (
-            <p className="s-muted text-sm">Add an audio file URL in the sidebar.</p>
+            <p className="s-muted text-sm">
+              Add an audio file URL in the sidebar.
+            </p>
           )}
         </div>
       </figure>

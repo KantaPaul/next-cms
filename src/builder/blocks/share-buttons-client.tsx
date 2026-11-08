@@ -3,6 +3,8 @@
 import { Check, Link2, Mail } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils/cn';
+import type { ElementStyle } from '../style';
+import { el, linkEl } from './element';
 
 export type ShareNetwork = 'copy' | 'x' | 'linkedin' | 'facebook' | 'email';
 
@@ -48,11 +50,13 @@ export function ShareButtonsClient({
   title,
   label,
   align = 'left',
+  elements,
 }: {
   networks: ShareNetwork[];
   title: string;
   label?: string;
   align?: 'left' | 'center';
+  elements?: Record<string, ElementStyle>;
 }) {
   const [url, setUrl] = useState('');
   const [copied, setCopied] = useState(false);
@@ -79,7 +83,13 @@ export function ShareButtonsClient({
       )}
     >
       {label ? (
-        <span className="s-meta mr-1 font-semibold uppercase tracking-[0.14em]">
+        <span
+          {...el(
+            { elements },
+            'label',
+            's-meta mr-1 font-semibold uppercase tracking-[0.14em]'
+          )}
+        >
           {label}
         </span>
       ) : null}
@@ -89,11 +99,15 @@ export function ShareButtonsClient({
             key={network}
             type="button"
             onClick={copy}
-            className="s-icon-btn s-border border"
+            {...el({ elements }, 'icon', 's-icon-btn s-border border')}
             aria-label={copied ? 'Link copied' : LABEL.copy}
             title={copied ? 'Link copied' : LABEL.copy}
           >
-            {copied ? <Check className="size-4" aria-hidden /> : <Glyph network="copy" />}
+            {copied ? (
+              <Check className="size-4" aria-hidden />
+            ) : (
+              <Glyph network="copy" />
+            )}
           </button>
         ) : (
           <a
@@ -101,7 +115,7 @@ export function ShareButtonsClient({
             href={url ? shareHref(network, url, title) : '#'}
             target={network === 'email' ? undefined : '_blank'}
             rel="noopener noreferrer"
-            className="s-icon-btn s-border border"
+            {...linkEl({ elements }, 'icon', 's-icon-btn s-border border')}
             aria-label={LABEL[network]}
             title={LABEL[network]}
           >

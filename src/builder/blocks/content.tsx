@@ -198,12 +198,18 @@ export function Gallery(p: GalleryProps) {
   const items = (p.items ?? []).filter(i => i.url);
   const cols = (p.columns ?? 3) as 2 | 3 | 4;
   const gap = p.gap ?? 'md';
-  const imageEl = el(p, 'image', 's-radius aspect-[4/3] w-full object-cover transition-transform duration-300 hover:scale-105');
+  const imageEl = el(
+    p,
+    'image',
+    's-radius aspect-[4/3] w-full object-cover transition-transform duration-300 hover:scale-105'
+  );
+  const captionEl = el(p, 'caption', 's-muted mt-2 text-center text-xs');
 
   if (!items.length) {
     return p.editing ? (
       <Section section={p.section} editing>
-        <SectionHeading elements={p.elements}
+        <SectionHeading
+          elements={p.elements}
           eyebrow={p.eyebrow}
           title={p.title}
           subtitle={p.subtitle}
@@ -217,7 +223,8 @@ export function Gallery(p: GalleryProps) {
 
   return (
     <Section section={p.section} editing={p.editing} hasItems>
-      <SectionHeading elements={p.elements}
+      <SectionHeading
+        elements={p.elements}
         eyebrow={p.eyebrow}
         title={p.title}
         subtitle={p.subtitle}
@@ -238,7 +245,10 @@ export function Gallery(p: GalleryProps) {
               style={imageEl.style}
             />
             {item.caption && (
-              <figcaption className="s-muted mt-2 text-center text-xs">
+              <figcaption
+                className={captionEl.className}
+                style={captionEl.style}
+              >
                 {item.caption}
               </figcaption>
             )}
@@ -281,7 +291,11 @@ export type ContactFormProps = WithSection & {
 export function ContactForm(p: ContactFormProps) {
   return (
     <Section section={p.section} editing={p.editing} innerClassName="max-w-2xl">
-      <SectionHeading elements={p.elements} title={p.title} subtitle={p.subtitle} />
+      <SectionHeading
+        elements={p.elements}
+        title={p.title}
+        subtitle={p.subtitle}
+      />
       <ContactFormClient
         fields={p.fields ?? []}
         submitText={p.submitText || 'Send message'}
@@ -289,6 +303,7 @@ export function ContactForm(p: ContactFormProps) {
         actionUrl={p.actionUrl}
         formId={p.formId}
         editing={p.editing}
+        elements={p.elements}
       />
     </Section>
   );
@@ -314,22 +329,31 @@ function videoSource(url: string): VideoSource | null {
 
   if (host === 'youtube.com' || host.endsWith('.youtube.com')) {
     const id = u.searchParams.get('v');
-    if (id) return { kind: 'youtube', src: `https://www.youtube.com/embed/${id}` };
+    if (id)
+      return { kind: 'youtube', src: `https://www.youtube.com/embed/${id}` };
     if (u.pathname.startsWith('/embed/')) {
-      return { kind: 'youtube', src: `https://www.youtube.com${u.pathname}${u.search}` };
+      return {
+        kind: 'youtube',
+        src: `https://www.youtube.com${u.pathname}${u.search}`,
+      };
     }
     return null;
   }
 
   if (host === 'youtu.be') {
     const id = u.pathname.replace(/^\//, '');
-    if (id) return { kind: 'youtube', src: `https://www.youtube.com/embed/${id}` };
+    if (id)
+      return { kind: 'youtube', src: `https://www.youtube.com/embed/${id}` };
     return null;
   }
 
   if (host === 'vimeo.com' || host === 'player.vimeo.com') {
     const match = u.pathname.match(/(\d+)/);
-    if (match) return { kind: 'vimeo', src: `https://player.vimeo.com/video/${match[1]}` };
+    if (match)
+      return {
+        kind: 'vimeo',
+        src: `https://player.vimeo.com/video/${match[1]}`,
+      };
     return null;
   }
 
@@ -345,6 +369,7 @@ function videoSource(url: string): VideoSource | null {
 
 export function Video(p: VideoProps) {
   const source = p.url ? videoSource(p.url) : null;
+  const frameEl = el(p, 'frame', 's-radius aspect-video h-full w-full rounded');
 
   if (!source) {
     return p.editing ? (
@@ -361,7 +386,8 @@ export function Video(p: VideoProps) {
       {source.kind === 'youtube' ? (
         <div className="aspect-video w-full">
           <iframe
-            className="s-radius h-full w-full rounded"
+            className={frameEl.className}
+            style={frameEl.style}
             src={source.src}
             title="Video player"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
@@ -371,7 +397,8 @@ export function Video(p: VideoProps) {
       ) : null}
       {source.kind === 'vimeo' ? (
         <iframe
-          className="s-radius aspect-video h-full w-full rounded"
+          className={frameEl.className}
+          style={frameEl.style}
           src={source.src}
           title="Video player"
           allow="autoplay"
@@ -383,7 +410,8 @@ export function Video(p: VideoProps) {
           controls
           preload="metadata"
           src={source.src}
-          className="s-radius aspect-video w-full rounded"
+          className={frameEl.className}
+          style={frameEl.style}
         />
       ) : null}
     </Section>
@@ -420,6 +448,7 @@ export function Embed(p: EmbedProps) {
   const url = p.url?.trim() || '';
   const host = url ? embedHost(url) : null;
   const allowed = !!host && EMBED_HOSTS.has(host);
+  const frameEl = el(p, 'frame', 's-radius aspect-video h-full w-full rounded');
 
   if (!allowed) {
     return p.editing ? (
@@ -434,7 +463,8 @@ export function Embed(p: EmbedProps) {
   return (
     <Section section={p.section} editing={p.editing}>
       <iframe
-        className="s-radius aspect-video h-full w-full rounded"
+        className={frameEl.className}
+        style={frameEl.style}
         src={url}
         title="Embedded content"
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
@@ -456,19 +486,34 @@ export type CodeProps = WithSection & {
 
 export function Code(p: CodeProps) {
   const code = p.code ?? '';
+  const frameEl = el(
+    p,
+    'frame',
+    's-surface s-border s-radius overflow-hidden border'
+  );
+  const headerEl = el(
+    p,
+    'header',
+    's-border flex items-center justify-between gap-3 border-b px-4 py-1.5'
+  );
+  const codeEl = el(p, 'code', 'font-mono');
 
   return (
     <Section section={p.section} editing={p.editing}>
       {code ? (
-        <div className="s-surface s-border s-radius overflow-hidden border">
+        <div className={frameEl.className} style={frameEl.style}>
           {(p.filename || p.showCopy !== false) && (
-            <div className="s-border flex items-center justify-between gap-3 border-b px-4 py-1.5">
+            <div className={headerEl.className} style={headerEl.style}>
               <span className="s-meta truncate font-mono">{p.filename}</span>
-              {p.showCopy !== false && <CopyButtonClient text={code} />}
+              {p.showCopy !== false && (
+                <CopyButtonClient text={code} elements={p.elements} />
+              )}
             </div>
           )}
           <pre className="overflow-auto p-4 text-sm leading-relaxed">
-            <code className="font-mono">{code}</code>
+            <code className={codeEl.className} style={codeEl.style}>
+              {code}
+            </code>
           </pre>
         </div>
       ) : p.editing ? (
@@ -712,7 +757,9 @@ export function Columns(p: ColumnsProps) {
       });
     const gridStyle = columnsGridStyle(
       colItems.length ? colItems : [{ width: 'fill' }, { width: 'fill' }],
-      isFourEqual ? { tabletFallback: 'minmax(0,1fr) minmax(0,1fr)' } : undefined
+      isFourEqual
+        ? { tabletFallback: 'minmax(0,1fr) minmax(0,1fr)' }
+        : undefined
     ) as CSSProperties;
     const gridClass = cn(
       'grid grid-cols-1 s-hcols [&_section>div]:px-0 [&_section]:py-0',
@@ -723,7 +770,11 @@ export function Columns(p: ColumnsProps) {
     return (
       <Section section={p.section} editing={p.editing} hasItems>
         {typeof p.columns === 'function' ? (
-          p.columns({ className: gridClass, style: gridStyle, minEmptyHeight: 80 })
+          p.columns({
+            className: gridClass,
+            style: gridStyle,
+            minEmptyHeight: 80,
+          })
         ) : (
           <div className={gridClass} style={gridStyle}>
             <BlockList items={p.columns} zones={p.zones} nested />

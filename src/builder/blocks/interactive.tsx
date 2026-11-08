@@ -12,9 +12,8 @@ import {
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { renderSlot, type SlotValue } from './content';
-import { Section, type SectionSettings } from './section';
-
-type WithSection = { section?: SectionSettings; editing?: boolean };
+import { el, type WithSection } from './element';
+import { Section } from './section';
 
 export type InteractivePanelItem = {
   label?: string;
@@ -29,7 +28,10 @@ export type InteractivePanel = {
   node?: ReactNode;
 };
 
-function panelsFrom(p: { items?: InteractivePanelItem[]; panels?: InteractivePanel[] }): InteractivePanel[] {
+function panelsFrom(p: {
+  items?: InteractivePanelItem[];
+  panels?: InteractivePanel[];
+}): InteractivePanel[] {
   if (p.panels) return p.panels;
   return (p.items ?? []).map(item => ({
     label: item.label ?? item.title,
@@ -113,7 +115,15 @@ export function Slider(p: SliderProps) {
     }, intervalMs);
 
     return () => clearInterval(timer);
-  }, [p.editing, autoplay, autoplayInterval, isHovered, itemCount, loop, scrollToIndex]);
+  }, [
+    p.editing,
+    autoplay,
+    autoplayInterval,
+    isHovered,
+    itemCount,
+    loop,
+    scrollToIndex,
+  ]);
 
   // Track user swipe / manual scroll snap
   const handleScroll = useCallback(() => {
@@ -134,14 +144,19 @@ export function Slider(p: SliderProps) {
       <Section section={p.section} editing hasItems>
         <div className="flex flex-col gap-5">
           {items.map((item, i) => (
-            <div key={i} className="s-surface s-border s-radius border p-4 shadow-xs">
+            <div
+              key={i}
+              className="s-surface s-border s-radius shadow-xs border p-4"
+            >
               <div className="s-muted mb-2.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider">
-                <span>Slide {i + 1}: {item.label || `Slide ${i + 1}`}</span>
+                <span>
+                  Slide {i + 1}: {item.label || `Slide ${i + 1}`}
+                </span>
                 <span className="rounded bg-black/5 px-2 py-0.5 text-[10px] font-medium dark:bg-white/10">
                   Slide drop zone
                 </span>
               </div>
-              <div className="min-w-0 [&_section]:py-0 [&_section>div]:px-0">
+              <div className="min-w-0 [&_section>div]:px-0 [&_section]:py-0">
                 {item.node}
               </div>
             </div>
@@ -157,6 +172,12 @@ export function Slider(p: SliderProps) {
   }
 
   // Public / preview interactive view
+  const arrowEl = el(
+    p,
+    'arrow',
+    's-surface s-border s-muted absolute top-1/2 z-10 -translate-y-1/2 flex size-10 items-center justify-center rounded-full border shadow-md transition hover:opacity-100 disabled:pointer-events-none disabled:opacity-20'
+  );
+
   return (
     <Section section={p.section} editing={p.editing} hasItems>
       <div
@@ -168,17 +189,21 @@ export function Slider(p: SliderProps) {
         <div
           ref={trackRef}
           onScroll={handleScroll}
-          className="flex w-full overflow-x-auto snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          className="flex w-full snap-x snap-mandatory overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           style={{ scrollSnapType: 'x mandatory' }}
         >
-          {items.map((item, i) => (
-            <div
-              key={i}
-              className="w-full min-w-full shrink-0 snap-center snap-always min-h-0 [&_section]:py-0 [&_section>div]:px-0"
-            >
-              {item.node}
-            </div>
-          ))}
+          {items.map((item, i) => {
+            const slideEl = el(
+              p,
+              'slide',
+              'w-full min-w-full shrink-0 snap-center snap-always min-h-0 [&_section]:py-0 [&_section>div]:px-0'
+            );
+            return (
+              <div key={i} className={slideEl.className} style={slideEl.style}>
+                {item.node}
+              </div>
+            );
+          })}
         </div>
 
         {/* Previous / Next buttons */}
@@ -189,7 +214,8 @@ export function Slider(p: SliderProps) {
               onClick={goToPrev}
               disabled={!loop && currentIndex === 0}
               aria-label="Previous slide"
-              className="s-surface s-border s-muted absolute left-2 top-1/2 z-10 -translate-y-1/2 flex size-10 items-center justify-center rounded-full border shadow-md transition hover:opacity-100 disabled:pointer-events-none disabled:opacity-20"
+              className={cn(arrowEl.className, 'left-2')}
+              style={arrowEl.style}
             >
               <ChevronLeft className="size-5" />
             </button>
@@ -198,7 +224,8 @@ export function Slider(p: SliderProps) {
               onClick={goToNext}
               disabled={!loop && currentIndex === itemCount - 1}
               aria-label="Next slide"
-              className="s-surface s-border s-muted absolute right-2 top-1/2 z-10 -translate-y-1/2 flex size-10 items-center justify-center rounded-full border shadow-md transition hover:opacity-100 disabled:pointer-events-none disabled:opacity-20"
+              className={cn(arrowEl.className, 'right-2')}
+              style={arrowEl.style}
             >
               <ChevronRight className="size-5" />
             </button>
@@ -214,6 +241,16 @@ export function Slider(p: SliderProps) {
           >
             {items.map((item, i) => {
               const active = i === currentIndex;
+              const dotEl = el(
+                p,
+                'dot',
+                cn(
+                  'h-2.5 rounded-full transition-all duration-200',
+                  active
+                    ? 's-primary-bg w-6'
+                    : 's-border bg-[color:var(--site-border)] opacity-60 hover:opacity-100 w-2.5'
+                )
+              );
               return (
                 <button
                   key={i}
@@ -223,12 +260,8 @@ export function Slider(p: SliderProps) {
                   aria-selected={active}
                   aria-label={item.label || `Slide ${i + 1}`}
                   onClick={() => scrollToIndex(i)}
-                  className={cn(
-                    'h-2.5 rounded-full transition-all duration-200',
-                    active
-                      ? 's-primary-bg w-6'
-                      : 's-border bg-[color:var(--site-border)] opacity-60 hover:opacity-100 w-2.5'
-                  )}
+                  className={dotEl.className}
+                  style={dotEl.style}
                 />
               );
             })}
@@ -259,7 +292,10 @@ export function Tabs(p: TabsProps) {
   const uid = useId();
   const tabsRef = useRef<(HTMLButtonElement | null)[]>([]);
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLButtonElement>, index: number) => {
+  const handleKeyDown = (
+    e: KeyboardEvent<HTMLButtonElement>,
+    index: number
+  ) => {
     let targetIndex = -1;
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
       targetIndex = (index + 1) % itemCount;
@@ -284,14 +320,19 @@ export function Tabs(p: TabsProps) {
       <Section section={p.section} editing hasItems>
         <div className="flex flex-col gap-5">
           {items.map((item, i) => (
-            <div key={i} className="s-surface s-border s-radius border p-4 shadow-xs">
+            <div
+              key={i}
+              className="s-surface s-border s-radius shadow-xs border p-4"
+            >
               <div className="s-muted mb-2.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider">
-                <span>Tab {i + 1}: {item.label || `Tab ${i + 1}`}</span>
+                <span>
+                  Tab {i + 1}: {item.label || `Tab ${i + 1}`}
+                </span>
                 <span className="rounded bg-black/5 px-2 py-0.5 text-[10px] font-medium dark:bg-white/10">
                   Tab drop zone
                 </span>
               </div>
-              <div className="min-w-0 [&_section]:py-0 [&_section>div]:px-0">
+              <div className="min-w-0 [&_section>div]:px-0 [&_section]:py-0">
                 {item.node}
               </div>
             </div>
@@ -307,6 +348,19 @@ export function Tabs(p: TabsProps) {
   }
 
   // Public / preview interactive view
+  const tabListEl = el(
+    p,
+    'tabList',
+    variant === 'pills'
+      ? 's-surface s-border inline-flex rounded-full border p-1 text-sm font-medium'
+      : 's-border flex w-full border-b gap-4 text-sm'
+  );
+  const panelEl = el(
+    p,
+    'panel',
+    'mt-6 min-w-0 focus:outline-hidden [&_section]:py-0 [&_section>div]:px-0'
+  );
+
   return (
     <Section section={p.section} editing={p.editing} hasItems>
       <div className="w-full">
@@ -321,14 +375,27 @@ export function Tabs(p: TabsProps) {
             <div
               role="tablist"
               aria-label="Tabs"
-              className="s-surface s-border inline-flex rounded-full border p-1 text-sm font-medium"
+              className={tabListEl.className}
+              style={tabListEl.style}
             >
               {items.map((item, i) => {
                 const active = i === activeTab;
+                const tabEl = el(
+                  p,
+                  active ? 'activeTab' : 'tab',
+                  cn(
+                    'rounded-full px-4 py-1.5 font-medium transition',
+                    active
+                      ? 's-primary-bg shadow-xs'
+                      : 's-muted hover:opacity-90'
+                  )
+                );
                 return (
                   <button
                     key={i}
-                    ref={el => { tabsRef.current[i] = el; }}
+                    ref={elNode => {
+                      tabsRef.current[i] = elNode;
+                    }}
                     type="button"
                     role="tab"
                     id={`tab-${uid}-${i}`}
@@ -337,10 +404,8 @@ export function Tabs(p: TabsProps) {
                     tabIndex={active ? 0 : -1}
                     onClick={() => setActiveTab(i)}
                     onKeyDown={e => handleKeyDown(e, i)}
-                    className={cn(
-                      'rounded-full px-4 py-1.5 font-medium transition',
-                      active ? 's-primary-bg shadow-xs' : 's-muted hover:opacity-90'
-                    )}
+                    className={tabEl.className}
+                    style={tabEl.style}
                   >
                     {item.label || `Tab ${i + 1}`}
                   </button>
@@ -351,14 +416,27 @@ export function Tabs(p: TabsProps) {
             <div
               role="tablist"
               aria-label="Tabs"
-              className="s-border flex w-full border-b gap-4 text-sm"
+              className={tabListEl.className}
+              style={tabListEl.style}
             >
               {items.map((item, i) => {
                 const active = i === activeTab;
+                const tabEl = el(
+                  p,
+                  active ? 'activeTab' : 'tab',
+                  cn(
+                    '-mb-px border-b-2 px-4 py-2.5 font-medium transition',
+                    active
+                      ? 'border-[color:var(--site-primary)] s-primary-text font-semibold'
+                      : 'border-transparent s-muted hover:border-[color:var(--site-border)] hover:opacity-90'
+                  )
+                );
                 return (
                   <button
                     key={i}
-                    ref={el => { tabsRef.current[i] = el; }}
+                    ref={elNode => {
+                      tabsRef.current[i] = elNode;
+                    }}
                     type="button"
                     role="tab"
                     id={`tab-${uid}-${i}`}
@@ -367,12 +445,8 @@ export function Tabs(p: TabsProps) {
                     tabIndex={active ? 0 : -1}
                     onClick={() => setActiveTab(i)}
                     onKeyDown={e => handleKeyDown(e, i)}
-                    className={cn(
-                      '-mb-px border-b-2 px-4 py-2.5 font-medium transition',
-                      active
-                        ? 'border-[color:var(--site-primary)] s-primary-text font-semibold'
-                        : 'border-transparent s-muted hover:border-[color:var(--site-border)] hover:opacity-90'
-                    )}
+                    className={tabEl.className}
+                    style={tabEl.style}
                   >
                     {item.label || `Tab ${i + 1}`}
                   </button>
@@ -389,7 +463,8 @@ export function Tabs(p: TabsProps) {
             id={`tabpanel-${uid}-${activeTab}`}
             aria-labelledby={`tab-${uid}-${activeTab}`}
             tabIndex={0}
-            className="mt-6 min-w-0 focus:outline-hidden [&_section]:py-0 [&_section>div]:px-0"
+            className={panelEl.className}
+            style={panelEl.style}
           >
             {items[activeTab].node}
           </div>
@@ -416,6 +491,18 @@ export function Accordion(p: AccordionProps) {
   const [openIndices, setOpenIndices] = useState<number[]>([0]);
   const uid = useId();
 
+  const itemEl = el(p, 'item', 'py-4');
+  const triggerEl = el(
+    p,
+    'trigger',
+    'flex w-full cursor-pointer items-center justify-between gap-4 text-left font-semibold transition hover:opacity-85'
+  );
+  const panelEl = el(
+    p,
+    'panel',
+    'pt-3 min-w-0 [&_section]:py-0 [&_section>div]:px-0'
+  );
+
   const toggle = (index: number) => {
     if (allowMultiple) {
       setOpenIndices(prev =>
@@ -432,14 +519,19 @@ export function Accordion(p: AccordionProps) {
       <Section section={p.section} editing hasItems>
         <div className="flex flex-col gap-5">
           {items.map((item, i) => (
-            <div key={i} className="s-surface s-border s-radius border p-4 shadow-xs">
+            <div
+              key={i}
+              className="s-surface s-border s-radius shadow-xs border p-4"
+            >
               <div className="s-muted mb-2.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider">
-                <span>Panel {i + 1}: {item.label || `Panel ${i + 1}`}</span>
+                <span>
+                  Panel {i + 1}: {item.label || `Panel ${i + 1}`}
+                </span>
                 <span className="rounded bg-black/5 px-2 py-0.5 text-[10px] font-medium dark:bg-white/10">
                   Accordion drop zone
                 </span>
               </div>
-              <div className="min-w-0 [&_section]:py-0 [&_section>div]:px-0">
+              <div className="min-w-0 [&_section>div]:px-0 [&_section]:py-0">
                 {item.node}
               </div>
             </div>
@@ -462,23 +554,30 @@ export function Accordion(p: AccordionProps) {
           const isOpen = openIndices.includes(i);
           const triggerId = `accordion-trigger-${uid}-${i}`;
           const panelId = `accordion-panel-${uid}-${i}`;
+          const iconEl = el(
+            p,
+            'icon',
+            cn(
+              's-muted size-5 shrink-0 transition-transform duration-200',
+              isOpen && 'rotate-180'
+            )
+          );
 
           return (
-            <div key={i} className="py-4">
+            <div key={i} className={itemEl.className} style={itemEl.style}>
               <button
                 type="button"
                 id={triggerId}
                 aria-expanded={isOpen}
                 aria-controls={panelId}
                 onClick={() => toggle(i)}
-                className="flex w-full cursor-pointer items-center justify-between gap-4 text-left font-semibold transition hover:opacity-85"
+                className={triggerEl.className}
+                style={triggerEl.style}
               >
                 <span>{item.label || `Panel ${i + 1}`}</span>
                 <ChevronDown
-                  className={cn(
-                    's-muted size-5 shrink-0 transition-transform duration-200',
-                    isOpen && 'rotate-180'
-                  )}
+                  className={iconEl.className}
+                  style={iconEl.style}
                   aria-hidden
                 />
               </button>
@@ -487,7 +586,8 @@ export function Accordion(p: AccordionProps) {
                   id={panelId}
                   role="region"
                   aria-labelledby={triggerId}
-                  className="pt-3 min-w-0 [&_section]:py-0 [&_section>div]:px-0"
+                  className={panelEl.className}
+                  style={panelEl.style}
                 >
                   {item.node}
                 </div>

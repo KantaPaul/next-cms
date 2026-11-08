@@ -19,6 +19,8 @@ import {
   useTransition,
 } from 'react';
 import { cn } from '@/lib/utils/cn';
+import type { ElementStyle } from '../style';
+import { el } from './element';
 
 export type TaxonomyControlStyle = 'select' | 'checkboxes' | 'chips';
 
@@ -49,6 +51,7 @@ export interface QueryFilterClientProps {
   totalResults?: number;
   preservedHiddenParams?: Record<string, string>;
   editing?: boolean;
+  elements?: Record<string, ElementStyle>;
 }
 
 export function QueryFilterClient({
@@ -76,7 +79,15 @@ export function QueryFilterClient({
   totalResults = 0,
   preservedHiddenParams = {},
   editing = false,
+  elements,
 }: QueryFilterClientProps) {
+  const styled = { elements };
+  const labelEl = el(styled, 'label', 's-muted');
+  const inputEl = el(
+    styled,
+    'input',
+    's-surface s-border s-radius h-10 border px-3 text-sm'
+  );
   const router = useRouter();
   const pathname = usePathname();
   const rawSearchParams = useSearchParams();
@@ -228,8 +239,7 @@ export function QueryFilterClient({
   );
 
   const selectedTags = useMemo(
-    () =>
-      currentParams.tags ?? (currentParams.tag ? [currentParams.tag] : []),
+    () => currentParams.tags ?? (currentParams.tag ? [currentParams.tag] : []),
     [currentParams.tags, currentParams.tag]
   );
 
@@ -339,7 +349,7 @@ export function QueryFilterClient({
     if (style === 'select') {
       return (
         <label className="flex flex-col gap-1 text-xs font-medium">
-          <span className="s-muted">{label}</span>
+          <span {...labelEl}>{label}</span>
           <select
             name={inputName}
             value={selected[0] ?? ''}
@@ -350,7 +360,7 @@ export function QueryFilterClient({
               })
             }
             aria-label={label}
-            className="s-surface s-border s-radius h-10 border px-3 text-sm"
+            {...inputEl}
           >
             <option value="">All {label.toLowerCase()}</option>
             {options.map(opt => (
@@ -366,7 +376,9 @@ export function QueryFilterClient({
     if (style === 'checkboxes') {
       return (
         <fieldset className="flex flex-col gap-1.5">
-          <legend className="s-muted mb-1 text-xs font-medium">{label}</legend>
+          <legend {...el(styled, 'label', 's-muted mb-1 text-xs font-medium')}>
+            {label}
+          </legend>
           <div className="flex flex-wrap gap-3">
             {options.map(opt => {
               const checked = selected.includes(opt.value);
@@ -397,7 +409,9 @@ export function QueryFilterClient({
     // Chips style
     return (
       <div className="flex flex-col gap-1.5" role="group" aria-label={label}>
-        <span className="s-muted text-xs font-medium">{label}</span>
+        <span {...el(styled, 'label', 's-muted text-xs font-medium')}>
+          {label}
+        </span>
         <div className="flex flex-wrap gap-1.5">
           {options.map(opt => {
             const active = selected.includes(opt.value);
@@ -418,11 +432,15 @@ export function QueryFilterClient({
                   e.preventDefault();
                   toggleMultiValue(selected, opt.value, singleKey, multiKey);
                 }}
-                className={cn(
-                  's-radius inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-                  active
-                    ? 's-primary-bg border-transparent'
-                    : 's-surface s-border hover:opacity-80'
+                {...el(
+                  styled,
+                  active ? 'activeChip' : 'chip',
+                  cn(
+                    's-radius inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                    active
+                      ? 's-primary-bg border-transparent'
+                      : 's-surface s-border hover:opacity-80'
+                  )
                 )}
               >
                 {formatOptionLabel(opt)}
@@ -438,8 +456,13 @@ export function QueryFilterClient({
     <div className="flex flex-col gap-4">
       <div className={fieldGrid}>
         {showKeyword && (
-          <label className={cn('flex flex-col gap-1 text-xs font-medium', !vertical && 'sm:col-span-2')}>
-            <span className="s-muted">Search</span>
+          <label
+            className={cn(
+              'flex flex-col gap-1 text-xs font-medium',
+              !vertical && 'sm:col-span-2'
+            )}
+          >
+            <span {...labelEl}>Search</span>
             <div className="relative flex items-center">
               <Search className="s-muted pointer-events-none absolute left-3 size-4" />
               <input
@@ -449,7 +472,11 @@ export function QueryFilterClient({
                 onChange={e => setDraftKeyword(e.target.value)}
                 placeholder={keywordPlaceholder}
                 aria-label={keywordPlaceholder}
-                className="s-surface s-border s-radius h-10 w-full border pl-9 pr-3 text-sm"
+                {...el(
+                  styled,
+                  'input',
+                  's-surface s-border s-radius h-10 w-full border pl-9 pr-3 text-sm'
+                )}
               />
             </div>
           </label>
@@ -479,7 +506,7 @@ export function QueryFilterClient({
 
         {showSort && (
           <label className="flex flex-col gap-1 text-xs font-medium">
-            <span className="s-muted">Sort by</span>
+            <span {...labelEl}>Sort by</span>
             <select
               name={paramName('sort')}
               value={
@@ -498,7 +525,7 @@ export function QueryFilterClient({
                 });
               }}
               aria-label="Sort by"
-              className="s-surface s-border s-radius h-10 border px-3 text-sm"
+              {...inputEl}
             >
               <option value="publishedAt:desc">Newest first</option>
               <option value="publishedAt:asc">Oldest first</option>
@@ -538,7 +565,7 @@ export function QueryFilterClient({
           {showDateRange && (
             <>
               <label className="flex flex-col gap-1 text-xs font-medium">
-                <span className="s-muted">Published from</span>
+                <span {...labelEl}>Published from</span>
                 <input
                   type="date"
                   name={paramName('from')}
@@ -546,11 +573,11 @@ export function QueryFilterClient({
                   onChange={e =>
                     applyParams({ from: e.target.value || undefined })
                   }
-                  className="s-surface s-border s-radius h-10 border px-3 text-sm"
+                  {...inputEl}
                 />
               </label>
               <label className="flex flex-col gap-1 text-xs font-medium">
-                <span className="s-muted">Published to</span>
+                <span {...labelEl}>Published to</span>
                 <input
                   type="date"
                   name={paramName('to')}
@@ -558,7 +585,7 @@ export function QueryFilterClient({
                   onChange={e =>
                     applyParams({ to: e.target.value || undefined })
                   }
-                  className="s-surface s-border s-radius h-10 border px-3 text-sm"
+                  {...inputEl}
                 />
               </label>
             </>
@@ -567,7 +594,7 @@ export function QueryFilterClient({
           {showNumberRange && (
             <>
               <label className="flex flex-col gap-1 text-xs font-medium">
-                <span className="s-muted">Min {numberRangeLabel}</span>
+                <span {...labelEl}>Min {numberRangeLabel}</span>
                 <input
                   type="number"
                   name={paramName('min')}
@@ -581,11 +608,11 @@ export function QueryFilterClient({
                     })
                   }
                   placeholder="Min"
-                  className="s-surface s-border s-radius h-10 border px-3 text-sm"
+                  {...inputEl}
                 />
               </label>
               <label className="flex flex-col gap-1 text-xs font-medium">
-                <span className="s-muted">Max {numberRangeLabel}</span>
+                <span {...labelEl}>Max {numberRangeLabel}</span>
                 <input
                   type="number"
                   name={paramName('max')}
@@ -599,7 +626,7 @@ export function QueryFilterClient({
                     })
                   }
                   placeholder="Max"
-                  className="s-surface s-border s-radius h-10 border px-3 text-sm"
+                  {...inputEl}
                 />
               </label>
             </>
@@ -628,9 +655,13 @@ export function QueryFilterClient({
       <div className="flex items-center justify-end gap-2">
         <button
           type="submit"
-          className={cn(
-            's-primary-bg rounded-[var(--site-btn-radius)] inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold transition-opacity hover:opacity-90',
-            vertical && 'w-full'
+          {...el(
+            styled,
+            'button',
+            cn(
+              's-primary-bg rounded-[var(--site-btn-radius)] inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold transition-opacity hover:opacity-90',
+              vertical && 'w-full'
+            )
           )}
         >
           <Filter className="size-3.5" />
@@ -642,18 +673,31 @@ export function QueryFilterClient({
 
   return (
     <div
-      className={cn('flex flex-col gap-3', !vertical && 'mb-6', isPending && 'opacity-75')}
+      className={cn(
+        'flex flex-col gap-3',
+        !vertical && 'mb-6',
+        isPending && 'opacity-75'
+      )}
       data-query-filter={targetLoopId || 'main'}
     >
       {/* Mobile drawer trigger button (R585 / QRY-15) */}
       {mobileDrawer && (
-        <div className={cn('flex items-center justify-between', vertical ? 'lg:hidden' : 'sm:hidden')}>
+        <div
+          className={cn(
+            'flex items-center justify-between',
+            vertical ? 'lg:hidden' : 'sm:hidden'
+          )}
+        >
           <button
             type="button"
             onClick={() => setDrawerOpen(prev => !prev)}
             aria-expanded={drawerOpen}
             aria-controls={`filter-drawer-${targetLoopId || 'main'}`}
-            className="s-surface s-border s-radius inline-flex items-center gap-2 border px-3.5 py-2 text-sm font-medium"
+            {...el(
+              styled,
+              'drawerToggle',
+              's-surface s-border s-radius inline-flex items-center gap-2 border px-3.5 py-2 text-sm font-medium'
+            )}
           >
             <SlidersHorizontal className="size-4" />
             Filters
@@ -664,7 +708,10 @@ export function QueryFilterClient({
             )}
           </button>
           {showResultCount && (
-            <span className="s-muted text-xs" aria-live="polite">
+            <span
+              {...el(styled, 'count', 's-muted text-xs')}
+              aria-live="polite"
+            >
               {totalResults} {totalResults === 1 ? 'result' : 'results'}
             </span>
           )}
@@ -679,9 +726,15 @@ export function QueryFilterClient({
         onSubmit={handleFormSubmit}
         role="search"
         aria-label="Filter items"
-        className={cn(
-          's-surface s-border s-radius border p-4',
-          mobileDrawer && !drawerOpen && (vertical ? 'hidden lg:block' : 'hidden sm:block')
+        {...el(
+          styled,
+          'panel',
+          cn(
+            's-surface s-border s-radius border p-4',
+            mobileDrawer &&
+              !drawerOpen &&
+              (vertical ? 'hidden lg:block' : 'hidden sm:block')
+          )
         )}
       >
         {/* Preserve query params belonging to other QueryLoop namespaces */}
@@ -697,7 +750,7 @@ export function QueryFilterClient({
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
           {showResultCount && (
             <p
-              className="s-muted font-medium"
+              {...el(styled, 'count', 's-muted font-medium')}
               aria-live="polite"
               aria-atomic="true"
             >
@@ -725,7 +778,11 @@ export function QueryFilterClient({
                       applyParams(chip.clearPatch, { focusResults: true });
                     }}
                     aria-label={`Remove filter ${chip.label}`}
-                    className="s-surface s-border s-radius inline-flex items-center gap-1 border px-2.5 py-1 text-xs font-medium hover:opacity-80"
+                    {...el(
+                      styled,
+                      'chip',
+                      's-surface s-border s-radius inline-flex items-center gap-1 border px-2.5 py-1 text-xs font-medium hover:opacity-80'
+                    )}
                   >
                     <span>{chip.label}</span>
                     <X className="size-3" />

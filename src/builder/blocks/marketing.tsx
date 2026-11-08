@@ -31,9 +31,17 @@ export type HeroProps = WithSection & {
 export function Hero(p: HeroProps) {
   const centered = p.alignment !== 'left';
   const split = !centered && !!p.imageUrl;
-  const badgeEl = el(p, 'badge', 's-soft-primary mb-6 inline-flex rounded-full px-3 py-1 text-xs font-semibold');
+  const badgeEl = el(
+    p,
+    'badge',
+    's-soft-primary mb-6 inline-flex rounded-full px-3 py-1 text-xs font-semibold'
+  );
   const titleEl = el(p, 'title', 's-display-title');
-  const subtitleEl = el(p, 'subtitle', 's-muted mt-6 text-lg leading-relaxed md:text-xl');
+  const subtitleEl = el(
+    p,
+    'subtitle',
+    's-muted mt-6 text-lg leading-relaxed md:text-xl'
+  );
   const primaryBtnEl = el(p, 'primaryButton');
   const secondaryBtnEl = el(p, 'secondaryButton');
   const imageEl = el(
@@ -110,13 +118,13 @@ export function Hero(p: HeroProps) {
 
 export type FeaturesProps = WithSection &
   CardStyleProps & {
-  showIcons?: boolean;
-  eyebrow?: string;
-  title?: string;
-  subtitle?: string;
-  columns?: 2 | 3 | 4;
-  items: { icon?: string; title: string; description?: string }[];
-};
+    showIcons?: boolean;
+    eyebrow?: string;
+    title?: string;
+    subtitle?: string;
+    columns?: 2 | 3 | 4;
+    items: { icon?: string; title: string; description?: string }[];
+  };
 
 const GRID_COLS = {
   2: 'md:grid-cols-2',
@@ -127,10 +135,16 @@ const GRID_COLS = {
 export function Features(p: FeaturesProps) {
   const itemTitleEl = el(p, 'itemTitle', 'text-lg font-semibold');
   const itemDescEl = el(p, 'itemDescription', 's-muted mt-2 leading-relaxed');
+  const iconEl = el(
+    p,
+    'icon',
+    's-soft-primary s-radius mb-4 inline-flex p-2.5'
+  );
 
   return (
     <Section section={p.section} editing={p.editing} hasItems>
-      <SectionHeading elements={p.elements}
+      <SectionHeading
+        elements={p.elements}
         eyebrow={p.eyebrow}
         title={p.title}
         subtitle={p.subtitle}
@@ -138,26 +152,34 @@ export function Features(p: FeaturesProps) {
         editing={p.editing}
       />
       <div className={cn('grid gap-6', GRID_COLS[p.columns ?? 3])}>
-        {(p.items ?? []).map((item, i) => (
-          <MotionItem
-            key={i}
-            className={cn(cardClass(p), p.cardVariant === 'none' ? 'py-2' : 'p-6')}
-          >
-            {item.icon && p.showIcons !== false && (
-              <div className="s-soft-primary s-radius mb-4 inline-flex p-2.5">
-                <BlockIcon name={item.icon} className="size-5" />
-              </div>
-            )}
-            <h3 className={itemTitleEl.className} style={itemTitleEl.style}>
-              {item.title}
-            </h3>
-            {item.description && (
-              <p className={itemDescEl.className} style={itemDescEl.style}>
-                {item.description}
-              </p>
-            )}
-          </MotionItem>
-        ))}
+        {(p.items ?? []).map((item, i) => {
+          const cardEl = el(
+            p,
+            'card',
+            cn(cardClass(p), p.cardVariant === 'none' ? 'py-2' : 'p-6')
+          );
+          return (
+            <MotionItem
+              key={i}
+              className={cardEl.className}
+              style={cardEl.style}
+            >
+              {item.icon && p.showIcons !== false && (
+                <div className={iconEl.className} style={iconEl.style}>
+                  <BlockIcon name={item.icon} className="size-5" />
+                </div>
+              )}
+              <h3 className={itemTitleEl.className} style={itemTitleEl.style}>
+                {item.title}
+              </h3>
+              {item.description && (
+                <p className={itemDescEl.className} style={itemDescEl.style}>
+                  {item.description}
+                </p>
+              )}
+            </MotionItem>
+          );
+        })}
       </div>
     </Section>
   );
@@ -170,13 +192,23 @@ export type StatsProps = WithSection & {
 };
 
 export function Stats(p: StatsProps) {
-  const valueEl = el(p, 'value', 's-primary-text s-stat-value text-3xl md:text-4xl');
+  const valueEl = el(
+    p,
+    'value',
+    's-primary-text s-stat-value text-3xl md:text-4xl'
+  );
   const labelEl = el(p, 'label', 'mt-1 text-sm font-medium');
+  const headlineEl = el(
+    p,
+    'headline',
+    's-muted mb-8 text-center text-sm font-semibold uppercase tracking-wider'
+  );
+  const changeEl = el(p, 'change', 's-muted mt-1 text-xs');
 
   return (
     <Section section={p.section} editing={p.editing} hasItems>
       {p.headline && (
-        <p className="s-muted mb-8 text-center text-sm font-semibold uppercase tracking-wider">
+        <p className={headlineEl.className} style={headlineEl.style}>
           {p.headline}
         </p>
       )}
@@ -202,7 +234,9 @@ export function Stats(p: StatsProps) {
                   </dt>
                 ),
                 change: item.change ? (
-                  <dd className="s-muted mt-1 text-xs">{item.change}</dd>
+                  <dd className={changeEl.className} style={changeEl.style}>
+                    {item.change}
+                  </dd>
                 ) : null,
               }
             )}
@@ -227,14 +261,14 @@ export type PricingPlan = {
 
 export type PricingProps = WithSection &
   CardStyleProps & {
-  popularLabel?: string;
-  yearlyPeriodLabel?: string;
-  eyebrow?: string;
-  title?: string;
-  subtitle?: string;
-  showToggle?: boolean;
-  plans: PricingPlan[];
-};
+    popularLabel?: string;
+    yearlyPeriodLabel?: string;
+    eyebrow?: string;
+    title?: string;
+    subtitle?: string;
+    showToggle?: boolean;
+    plans: PricingPlan[];
+  };
 
 const featureText = (f: { text: string } | string) =>
   typeof f === 'string' ? f : f.text;
@@ -245,6 +279,14 @@ export function Pricing(p: PricingProps) {
   const planTitleEl = el(p, 'planTitle', 'text-lg font-semibold');
   const planPriceEl = el(p, 'planPrice', 's-stat-value text-4xl');
   const planBtnEl = el(p, 'planButton');
+  const badgeEl = el(
+    p,
+    'badge',
+    's-primary-bg absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-xs font-semibold'
+  );
+  const descEl = el(p, 'description', 's-muted mt-1 text-sm');
+  const periodEl = el(p, 'period', 's-muted text-sm');
+  const featureEl = el(p, 'feature', 'flex gap-2');
 
   const cards = (yearly: boolean) => (
     <div
@@ -254,10 +296,11 @@ export function Pricing(p: PricingProps) {
         'items-stretch'
       )}
     >
-      {plans.map((plan, i) => (
-        <MotionItem
-          key={i}
-          className={cn(
+      {plans.map((plan, i) => {
+        const cardEl = el(
+          p,
+          'card',
+          cn(
             's-radius relative flex flex-col border p-7',
             plan.popular
               ? cn(
@@ -265,62 +308,72 @@ export function Pricing(p: PricingProps) {
                   'shadow-xl ring-2 ring-[color:var(--site-primary)]'
                 )
               : cardClass(p, 's-border s-surface')
-          )}
-        >
-          {plan.popular && (
-            <span className="s-primary-bg absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-xs font-semibold">
-              {p.popularLabel || 'Most popular'}
-            </span>
-          )}
-          <h3 className={planTitleEl.className} style={planTitleEl.style}>
-            {plan.name}
-          </h3>
-          {plan.description && (
-            <p className="s-muted mt-1 text-sm">{plan.description}</p>
-          )}
-          <p className="mt-5 flex items-baseline gap-1">
-            <span className={planPriceEl.className} style={planPriceEl.style}>
-              {yearly && plan.yearlyPrice ? plan.yearlyPrice : plan.price}
-            </span>
-            {plan.period && (
-              <span className="s-muted text-sm">
-                {yearly && plan.yearlyPrice
-                  ? p.yearlyPeriodLabel || 'per year'
-                  : plan.period}
+          )
+        );
+        return (
+          <MotionItem key={i} className={cardEl.className} style={cardEl.style}>
+            {plan.popular && (
+              <span className={badgeEl.className} style={badgeEl.style}>
+                {p.popularLabel || 'Most popular'}
               </span>
             )}
-          </p>
-          <ul className="mt-6 flex-1 space-y-2.5 text-sm">
-            {(plan.features ?? []).map((f, j) => (
-              <li key={j} className="flex gap-2">
-                <Check
-                  className="s-primary-text mt-0.5 size-4 shrink-0"
-                  aria-hidden
-                />
-                {featureText(f)}
-              </li>
-            ))}
-          </ul>
-          {plan.buttonText && (
-            <div className="mt-7 [&>a]:w-full">
-              <ButtonLink
-                href={plan.buttonLink}
-                variant={plan.popular ? 'primary' : 'secondary'}
-                className={planBtnEl.className}
-                style={planBtnEl.style}
-              >
-                {plan.buttonText}
-              </ButtonLink>
-            </div>
-          )}
-        </MotionItem>
-      ))}
+            <h3 className={planTitleEl.className} style={planTitleEl.style}>
+              {plan.name}
+            </h3>
+            {plan.description && (
+              <p className={descEl.className} style={descEl.style}>
+                {plan.description}
+              </p>
+            )}
+            <p className="mt-5 flex items-baseline gap-1">
+              <span className={planPriceEl.className} style={planPriceEl.style}>
+                {yearly && plan.yearlyPrice ? plan.yearlyPrice : plan.price}
+              </span>
+              {plan.period && (
+                <span className={periodEl.className} style={periodEl.style}>
+                  {yearly && plan.yearlyPrice
+                    ? p.yearlyPeriodLabel || 'per year'
+                    : plan.period}
+                </span>
+              )}
+            </p>
+            <ul className="mt-6 flex-1 space-y-2.5 text-sm">
+              {(plan.features ?? []).map((f, j) => (
+                <li
+                  key={j}
+                  className={featureEl.className}
+                  style={featureEl.style}
+                >
+                  <Check
+                    className="s-primary-text mt-0.5 size-4 shrink-0"
+                    aria-hidden
+                  />
+                  {featureText(f)}
+                </li>
+              ))}
+            </ul>
+            {plan.buttonText && (
+              <div className="mt-7 [&>a]:w-full">
+                <ButtonLink
+                  href={plan.buttonLink}
+                  variant={plan.popular ? 'primary' : 'secondary'}
+                  className={planBtnEl.className}
+                  style={planBtnEl.style}
+                >
+                  {plan.buttonText}
+                </ButtonLink>
+              </div>
+            )}
+          </MotionItem>
+        );
+      })}
     </div>
   );
 
   return (
     <Section section={p.section} editing={p.editing} hasItems>
-      <SectionHeading elements={p.elements}
+      <SectionHeading
+        elements={p.elements}
         eyebrow={p.eyebrow}
         title={p.title}
         subtitle={p.subtitle}
@@ -328,7 +381,11 @@ export function Pricing(p: PricingProps) {
         editing={p.editing}
       />
       {p.showToggle && hasYearly ? (
-        <PricingToggle monthly={cards(false)} yearly={cards(true)} />
+        <PricingToggle
+          elements={p.elements}
+          monthly={cards(false)}
+          yearly={cards(true)}
+        />
       ) : (
         cards(false)
       )}
@@ -338,77 +395,93 @@ export function Pricing(p: PricingProps) {
 
 export type TestimonialsProps = WithSection &
   CardStyleProps & {
-  columns?: 1 | 2 | 3;
-  eyebrow?: string;
-  title?: string;
-  items: {
-    quote: string;
-    author: string;
-    role?: string;
-    company?: string;
-    avatar?: string;
-  }[];
-};
+    columns?: 1 | 2 | 3;
+    eyebrow?: string;
+    title?: string;
+    items: {
+      quote: string;
+      author: string;
+      role?: string;
+      company?: string;
+      avatar?: string;
+    }[];
+  };
 
 export function Testimonials(p: TestimonialsProps) {
   const quoteEl = el(p, 'quote', 'flex-1 text-lg leading-relaxed');
   const authorEl = el(p, 'author', 'font-semibold');
+  const quoteIconEl = el(p, 'quoteIcon', 's-primary-text mb-4 size-6');
+  const avatarEl = el(p, 'avatar', 'size-11 rounded-full object-cover');
+  const roleEl = el(p, 'role', 's-muted text-sm');
 
   return (
     <Section section={p.section} editing={p.editing} hasItems>
-      <SectionHeading elements={p.elements} eyebrow={p.eyebrow} title={p.title} />
+      <SectionHeading
+        elements={p.elements}
+        eyebrow={p.eyebrow}
+        title={p.title}
+      />
       <div className={cn('grid gap-6', ITEM_GRID_COLS[p.columns ?? 2])}>
-        {(p.items ?? []).map((item, i) => (
-          <MotionItem
-            as="figure"
-            key={i}
-            className={cn(cardClass(p), 'flex flex-col p-7')}
-          >
-            {orderedParts(
-              { partOrder: p.partOrder, editing: p.editing && i === 0 },
-              {
-                quote: (
-                  <>
-                    <Quote
-                      className="s-primary-text mb-4 size-6"
-                      aria-hidden
-                    />
-                    <blockquote
-                      className={quoteEl.className}
-                      style={quoteEl.style}
-                    >
-                      “{item.quote}”
-                    </blockquote>
-                  </>
-                ),
-                author: (
-                  <figcaption className="mt-6 flex items-center gap-3">
-                    {item.avatar && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={item.avatar}
-                        alt=""
-                        className="size-11 rounded-full object-cover"
+        {(p.items ?? []).map((item, i) => {
+          const cardEl = el(p, 'card', cn(cardClass(p), 'flex flex-col p-7'));
+          return (
+            <MotionItem
+              as="figure"
+              key={i}
+              className={cardEl.className}
+              style={cardEl.style}
+            >
+              {orderedParts(
+                { partOrder: p.partOrder, editing: p.editing && i === 0 },
+                {
+                  quote: (
+                    <>
+                      <Quote
+                        className={quoteIconEl.className}
+                        style={quoteIconEl.style}
+                        aria-hidden
                       />
-                    )}
-                    <div>
-                      <p className={authorEl.className} style={authorEl.style}>
-                        {item.author}
-                      </p>
-                      {(item.role || item.company) && (
-                        <p className="s-muted text-sm">
-                          {[item.role, item.company]
-                            .filter(Boolean)
-                            .join(', ')}
-                        </p>
+                      <blockquote
+                        className={quoteEl.className}
+                        style={quoteEl.style}
+                      >
+                        “{item.quote}”
+                      </blockquote>
+                    </>
+                  ),
+                  author: (
+                    <figcaption className="mt-6 flex items-center gap-3">
+                      {item.avatar && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={item.avatar}
+                          alt=""
+                          className={avatarEl.className}
+                          style={avatarEl.style}
+                        />
                       )}
-                    </div>
-                  </figcaption>
-                ),
-              }
-            )}
-          </MotionItem>
-        ))}
+                      <div>
+                        <p
+                          className={authorEl.className}
+                          style={authorEl.style}
+                        >
+                          {item.author}
+                        </p>
+                        {(item.role || item.company) && (
+                          <p className={roleEl.className} style={roleEl.style}>
+                            {[item.role, item.company]
+                              .filter(Boolean)
+                              .join(', ')}
+                          </p>
+                        )}
+                      </div>
+                    </figcaption>
+                  ),
+                }
+              )}
+            </MotionItem>
+          );
+        })}
       </div>
     </Section>
   );
@@ -421,8 +494,18 @@ export type FaqProps = WithSection & {
 };
 
 export function Faq(p: FaqProps) {
-  const questionEl = el(p, 'question', 'flex cursor-pointer list-none items-center justify-between gap-4 font-semibold');
+  const questionEl = el(
+    p,
+    'question',
+    'flex cursor-pointer list-none items-center justify-between gap-4 font-semibold'
+  );
   const answerEl = el(p, 'answer', 's-muted mt-3 leading-relaxed');
+  const itemEl = el(p, 'item', 'group py-5');
+  const iconEl = el(
+    p,
+    'icon',
+    's-muted text-xl transition group-open:rotate-45'
+  );
 
   return (
     <Section
@@ -431,7 +514,8 @@ export function Faq(p: FaqProps) {
       innerClassName="max-w-3xl"
       hasItems
     >
-      <SectionHeading elements={p.elements}
+      <SectionHeading
+        elements={p.elements}
         eyebrow={p.eyebrow}
         title={p.title}
         partOrder={p.partOrder}
@@ -442,13 +526,15 @@ export function Faq(p: FaqProps) {
           <MotionItem
             as="details"
             key={i}
-            className="group py-5"
+            className={itemEl.className}
+            style={itemEl.style}
             open={p.editing && i === 0}
           >
             <summary className={questionEl.className} style={questionEl.style}>
               {item.question}
               <span
-                className="s-muted text-xl transition group-open:rotate-45"
+                className={iconEl.className}
+                style={iconEl.style}
                 aria-hidden
               >
                 +
@@ -490,10 +576,7 @@ export function Cta(p: CtaProps) {
   const descEl = el(
     p,
     'description',
-    cn(
-      'mx-auto mt-4 max-w-2xl text-lg',
-      onColor ? 'text-white/85' : 's-muted'
-    )
+    cn('mx-auto mt-4 max-w-2xl text-lg', onColor ? 'text-white/85' : 's-muted')
   );
   const primaryBtnEl = el(p, 'primaryButton');
   const secondaryBtnEl = el(p, 'secondaryButton');
@@ -572,10 +655,19 @@ export type LogoCloudProps = WithSection & {
 
 export function LogoCloud(p: LogoCloudProps) {
   const items = (p.items ?? []).filter(i => i.url);
+  const logoEl = el(
+    p,
+    'logo',
+    cn(
+      's-muted max-h-8 w-auto transition duration-200',
+      p.grayscale && 'opacity-70 grayscale hover:opacity-100 hover:grayscale-0'
+    )
+  );
 
   return (
     <Section section={p.section} editing={p.editing} hasItems>
-      <SectionHeading elements={p.elements}
+      <SectionHeading
+        elements={p.elements}
         eyebrow={p.eyebrow}
         title={p.title}
         subtitle={p.subtitle}
@@ -585,7 +677,11 @@ export function LogoCloud(p: LogoCloudProps) {
       />
       <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
         {items.map((item, i) => (
-          <MotionItem key={i} as="div" className="flex items-center justify-center">
+          <MotionItem
+            key={i}
+            as="div"
+            className="flex items-center justify-center"
+          >
             {item.link ? (
               <a
                 {...resolveLinkProps(item.link)}
@@ -595,10 +691,8 @@ export function LogoCloud(p: LogoCloudProps) {
                 <img
                   src={item.url}
                   alt={item.alt ?? ''}
-                  className={cn(
-                  's-muted max-h-8 w-auto transition duration-200',
-                  p.grayscale && 'opacity-70 grayscale hover:opacity-100 hover:grayscale-0'
-                )}
+                  className={logoEl.className}
+                  style={logoEl.style}
                 />
               </a>
             ) : (
@@ -606,10 +700,8 @@ export function LogoCloud(p: LogoCloudProps) {
               <img
                 src={item.url}
                 alt={item.alt ?? ''}
-                className={cn(
-                  's-muted max-h-8 w-auto transition duration-200',
-                  p.grayscale && 'opacity-70 grayscale hover:opacity-100 hover:grayscale-0'
-                )}
+                className={logoEl.className}
+                style={logoEl.style}
               />
             )}
           </MotionItem>
@@ -631,18 +723,22 @@ export type TeamItem = {
 
 export type TeamProps = WithSection &
   CardStyleProps & {
-  columns?: 2 | 3 | 4;
-  eyebrow?: string;
-  title?: string;
-  items?: TeamItem[];
-};
+    columns?: 2 | 3 | 4;
+    eyebrow?: string;
+    title?: string;
+    items?: TeamItem[];
+  };
 
 export function Team(p: TeamProps) {
   const items = p.items ?? [];
+  const photoEl = el(p, 'photo', 's-radius mx-auto size-20 object-cover');
+  const nameEl = el(p, 'name', 'mt-3 font-semibold');
+  const roleEl = el(p, 'role', 's-muted mt-1 text-sm');
 
   return (
     <Section section={p.section} editing={p.editing} hasItems>
-      <SectionHeading elements={p.elements}
+      <SectionHeading
+        elements={p.elements}
         eyebrow={p.eyebrow}
         title={p.title}
         partOrder={p.partOrder}
@@ -655,36 +751,43 @@ export function Team(p: TeamProps) {
             { 2: '', 3: 'lg:grid-cols-3', 4: 'lg:grid-cols-4' }[p.columns ?? 3]
           )}
         >
-          {items.map((item, i) => (
-            <MotionItem
-              key={i}
-              as="div"
-              className={cn(cardClass(p), 'p-6 text-center')}
-            >
-              {item.photo ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={item.photo}
-                  alt={item.name ?? ''}
-                  className="s-radius mx-auto size-20 object-cover"
-                />
-              ) : null}
-              {item.name ? (
-                <p className="mt-3 font-semibold">{item.name}</p>
-              ) : null}
-              {item.role ? (
-                <p className="s-muted mt-1 text-sm">{item.role}</p>
-              ) : null}
-            </MotionItem>
-          ))}
+          {items.map((item, i) => {
+            const cardEl = el(p, 'card', cn(cardClass(p), 'p-6 text-center'));
+            return (
+              <MotionItem
+                key={i}
+                as="div"
+                className={cardEl.className}
+                style={cardEl.style}
+              >
+                {item.photo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={item.photo}
+                    alt={item.name ?? ''}
+                    className={photoEl.className}
+                    style={photoEl.style}
+                  />
+                ) : null}
+                {item.name ? (
+                  <p className={nameEl.className} style={nameEl.style}>
+                    {item.name}
+                  </p>
+                ) : null}
+                {item.role ? (
+                  <p className={roleEl.className} style={roleEl.style}>
+                    {item.role}
+                  </p>
+                ) : null}
+              </MotionItem>
+            );
+          })}
         </div>
-      ) : (
-        p.editing ? (
-          <div className="s-surface s-border s-muted s-radius flex aspect-[16/9] items-center justify-center border border-dashed text-sm">
-            Add team members in the sidebar
-          </div>
-        ) : null
-      )}
+      ) : p.editing ? (
+        <div className="s-surface s-border s-muted s-radius flex aspect-[16/9] items-center justify-center border border-dashed text-sm">
+          Add team members in the sidebar
+        </div>
+      ) : null}
     </Section>
   );
 }
@@ -707,39 +810,57 @@ export type TimelineProps = WithSection & {
 
 export function Timeline(p: TimelineProps) {
   const items = p.items ?? [];
+  const lineEl = el(
+    p,
+    'line',
+    'relative space-y-8 border-l border-[color:var(--site-border)] pl-8'
+  );
+  const dotEl = el(
+    p,
+    'dot',
+    'absolute -left-[37px] size-3 rounded-full bg-[color:var(--site-primary)]'
+  );
+  const dateEl = el(p, 'date', 's-primary-text text-sm font-semibold');
+  const titleEl = el(p, 'title', 'text-lg font-semibold');
+  const bodyEl = el(p, 'body', 's-muted mt-1 leading-relaxed');
 
   return (
     <Section section={p.section} editing={p.editing} hasItems>
-      <SectionHeading elements={p.elements}
+      <SectionHeading
+        elements={p.elements}
         eyebrow={p.eyebrow}
         title={p.title}
         partOrder={p.partOrder}
         editing={p.editing}
       />
       {items.length ? (
-        <ol className="relative space-y-8 border-l border-[color:var(--site-border)] pl-8">
+        <ol className={lineEl.className} style={lineEl.style}>
           {items.map((item, i) => (
             <li key={i} className="relative">
-              <span className="absolute -left-[37px] size-3 rounded-full bg-[color:var(--site-primary)]" />
+              <span className={dotEl.className} style={dotEl.style} />
               {item.date ? (
-                <p className="s-primary-text text-sm font-semibold">{item.date}</p>
+                <p className={dateEl.className} style={dateEl.style}>
+                  {item.date}
+                </p>
               ) : null}
               {item.title ? (
-                <h3 className="text-lg font-semibold">{item.title}</h3>
+                <h3 className={titleEl.className} style={titleEl.style}>
+                  {item.title}
+                </h3>
               ) : null}
               {item.body ? (
-                <p className="s-muted mt-1 leading-relaxed">{item.body}</p>
+                <p className={bodyEl.className} style={bodyEl.style}>
+                  {item.body}
+                </p>
               ) : null}
             </li>
           ))}
         </ol>
-      ) : (
-        p.editing ? (
-          <div className="s-surface s-border s-muted s-radius flex aspect-[16/9] items-center justify-center border border-dashed text-sm">
-            Add timeline entries in the sidebar
-          </div>
-        ) : null
-      )}
+      ) : p.editing ? (
+        <div className="s-surface s-border s-muted s-radius flex aspect-[16/9] items-center justify-center border border-dashed text-sm">
+          Add timeline entries in the sidebar
+        </div>
+      ) : null}
     </Section>
   );
 }

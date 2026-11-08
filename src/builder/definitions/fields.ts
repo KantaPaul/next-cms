@@ -13,11 +13,7 @@ import {
   ElementStyleControl,
 } from '../controls/element-style';
 import { ColorPicker } from '../controls/color-picker';
-import {
-  GROUP_CONTROLS,
-  type GroupKind,
-  GroupShell,
-} from '../controls/groups';
+import { GROUP_CONTROLS, type GroupKind, GroupShell } from '../controls/groups';
 import {
   AttributesSectionControl,
   BackgroundSectionControl,
@@ -31,7 +27,11 @@ import {
   SectionField,
   TypographySectionControl,
 } from '../controls/section-inspector';
-import { IconPickerField, MediaUrlField, UrlField } from '../fields/client-fields';
+import {
+  IconPickerField,
+  MediaUrlField,
+  UrlField,
+} from '../fields/client-fields';
 import type { UrlValue } from '../style';
 
 export const CONTENT = 'Content';
@@ -64,7 +64,12 @@ function renderGroupShell(
     popover: opts.popover,
     states: opts.states,
     hideHeader: opts.hideHeader ?? true,
-    children: ({ value: childVal, onChange: childOnChange, exclude, state }: any) =>
+    children: ({
+      value: childVal,
+      onChange: childOnChange,
+      exclude,
+      state,
+    }: any) =>
       createElement(Component, {
         value: childVal,
         onChange: childOnChange,
@@ -411,6 +416,15 @@ export const MEDIA_PARTS: readonly ElementPart[] = [
   'cssFilter',
 ] as const;
 
+/** Parts for boxed form elements (input, status message): no text effects. */
+export const FIELD_PARTS: readonly ElementPart[] = [
+  'color',
+  'typography',
+  'background',
+  'border',
+  'padding',
+] as const;
+
 export const ALL_PARTS: readonly ElementPart[] = [
   'color',
   'typography',
@@ -429,7 +443,10 @@ export const ALL_PARTS: readonly ElementPart[] = [
  * Style controls for the shared section heading (eyebrow pill, title, subtitle)
  * rendered by `SectionHeading`. Keys match `HEADING_ELEMENTS` in blocks/section.tsx.
  */
-export function headingStyles(opts?: { eyebrow?: boolean; subtitle?: boolean }): Fields {
+export function headingStyles(opts?: {
+  eyebrow?: boolean;
+  subtitle?: boolean;
+}): Fields {
   const fields: Fields = {};
   if (opts?.eyebrow !== false)
     fields.heading_eyebrow_style = elementStyle(
@@ -494,7 +511,8 @@ export function columnsField(
 export function elementStyle(
   key: string,
   label: string,
-  parts: readonly ElementPart[]
+  parts: readonly ElementPart[],
+  opts?: { when?: (props: any) => boolean }
 ): FieldDef {
   return {
     type: 'custom',
@@ -502,12 +520,104 @@ export function elementStyle(
     tab: 'style',
     section: label,
     path: `elements.${key}`,
+    when: opts?.when,
     render: (props: any) =>
       ElementStyleControl({
         parts,
         value: props.value,
         onChange: props.onChange,
       }),
+  };
+}
+
+/**
+ * Section controls for content blocks: drops block-wide typography and text
+ * color (each element has its own style controls), and optionally display
+ * (height/alignment, which only matters for full-band blocks).
+ */
+export function contentSectionControls(opts?: {
+  keepDisplay?: boolean;
+}): Fields {
+  const {
+    section_typography: _typography,
+    section_text_color: _textColor,
+    section_display: _display,
+    ...rest
+  } = sectionControls();
+  if (opts?.keepDisplay && _display) {
+    return {
+      ...rest,
+      section_display: _display,
+    };
+  }
+  return rest;
+}
+
+/**
+ * Sends a block's ungrouped settings to the Content tab. Without a group the
+ * inspector files anything but plain text under Style > General, so links and
+ * toggles end up among the styles. Names in `appearance`, and fields already on
+ * the Style tab without a section, are purely visual and go to Style > Appearance.
+ */
+export function contentFields(
+  fields: Fields,
+  opts?: { appearance?: string[] }
+): Fields {
+  return Object.fromEntries(
+    Object.entries(fields).map(([key, field]) => {
+      if (field?.tab === 'style' && !field.section) {
+        return [key, { ...field, section: 'Appearance' }];
+      }
+      if (!field || field.tab || field.section || field.group)
+        return [key, field];
+      return [
+        key,
+        opts?.appearance?.includes(key)
+          ? { ...field, tab: 'style', section: 'Appearance' }
+          : { ...field, group: CONTENT },
+      ];
+    })
+  ) as Fields;
+}
+
+/**
+ * Card element styles for card-based blocks (BlogPosts, RelatedPosts, QueryLoop,
+ * LoopGrid). `when` hides the card controls only; pagination is independent of
+ * the card, so it stays visible.
+ */
+export function cardStyles(opts?: { when?: (props: any) => boolean }): Fields {
+  return {
+    card_style: elementStyle('card', 'Card Style', BUTTON_PARTS, opts),
+    card_image_style: elementStyle(
+      'cardImage',
+      'Card Image Style',
+      MEDIA_PARTS,
+      opts
+    ),
+    card_category_style: elementStyle(
+      'cardCategory',
+      'Category Style',
+      TEXT_PARTS,
+      opts
+    ),
+    card_title_style: elementStyle(
+      'cardTitle',
+      'Card Title Style',
+      TEXT_PARTS,
+      opts
+    ),
+    card_excerpt_style: elementStyle(
+      'cardExcerpt',
+      'Excerpt Style',
+      TEXT_PARTS,
+      opts
+    ),
+    card_meta_style: elementStyle('cardMeta', 'Meta Style', TEXT_PARTS, opts),
+    pagination_style: elementStyle(
+      'pagination',
+      'Pagination Style',
+      BUTTON_PARTS
+    ),
   };
 }
 

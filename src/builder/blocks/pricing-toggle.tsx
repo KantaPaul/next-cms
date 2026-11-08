@@ -2,15 +2,23 @@
 
 import { type ReactNode, useState } from 'react';
 import { cn } from '@/lib/utils/cn';
+import { el, type ElementStyle } from './element';
 
 export function PricingToggle({
   monthly,
   yearly,
+  elements,
 }: {
   monthly: ReactNode;
   yearly: ReactNode;
+  elements?: Record<string, ElementStyle>;
 }) {
   const [isYearly, setIsYearly] = useState(false);
+  const toggleEl = el(
+    { elements },
+    'toggle',
+    's-surface s-border inline-flex rounded-full border p-1 text-sm'
+  );
 
   return (
     <>
@@ -18,7 +26,8 @@ export function PricingToggle({
         <div
           role="radiogroup"
           aria-label="Billing interval"
-          className="s-surface s-border inline-flex rounded-full border p-1 text-sm"
+          className={toggleEl.className}
+          style={toggleEl.style}
         >
           {(['Monthly', 'Yearly'] as const).map(label => {
             const active = (label === 'Yearly') === isYearly;

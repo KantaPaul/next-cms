@@ -2,10 +2,19 @@
 
 import { Check, Copy } from 'lucide-react';
 import { useState } from 'react';
+import { el, type ElementStyle } from './element';
 
 /** Copies `text` to the clipboard; used by the Code block. */
-export function CopyButtonClient({ text }: { text: string }) {
+export function CopyButtonClient({
+  text,
+  elements,
+}: {
+  text: string;
+  elements?: Record<string, ElementStyle>;
+}) {
   const [copied, setCopied] = useState(false);
+  const btnEl = el({ elements }, 'copyButton', 's-icon-btn size-8');
+
   return (
     <button
       type="button"
@@ -18,7 +27,8 @@ export function CopyButtonClient({ text }: { text: string }) {
           // clipboard blocked
         }
       }}
-      className="s-icon-btn size-8"
+      className={btnEl.className}
+      style={btnEl.style}
       aria-label={copied ? 'Copied' : 'Copy code'}
       title={copied ? 'Copied' : 'Copy code'}
     >

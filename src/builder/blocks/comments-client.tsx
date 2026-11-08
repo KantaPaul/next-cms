@@ -3,6 +3,8 @@
 import { ThumbsDown, ThumbsUp } from 'lucide-react';
 import { type FormEvent, useEffect, useId, useState } from 'react';
 import { cn } from '@/lib/utils/cn';
+import type { ElementStyle } from '../style';
+import { el } from './element';
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -20,6 +22,7 @@ export function CommentForm({
   editing,
   compact,
   onCancel,
+  elements,
 }: {
   postId: string;
   parentId?: string;
@@ -27,9 +30,12 @@ export function CommentForm({
   editing?: boolean;
   compact?: boolean;
   onCancel?: () => void;
+  elements?: Record<string, ElementStyle>;
 }) {
   const id = useId();
-  const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>(
+    'idle'
+  );
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -57,7 +63,9 @@ export function CommentForm({
         setState('sent');
         return;
       }
-      const data = (await response.json().catch(() => ({}))) as { error?: string };
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+      };
       setError(data.error || 'Something went wrong. Please try again.');
       setState('error');
     } catch {
@@ -68,8 +76,12 @@ export function CommentForm({
 
   if (state === 'sent') {
     return (
-      <div role="status" className="s-soft-primary s-radius p-4 text-sm font-medium">
-        {labels.pendingMessage || 'Thanks — your comment is awaiting moderation.'}
+      <div
+        role="status"
+        className="s-soft-primary s-radius p-4 text-sm font-medium"
+      >
+        {labels.pendingMessage ||
+          'Thanks — your comment is awaiting moderation.'}
       </div>
     );
   }
@@ -77,7 +89,14 @@ export function CommentForm({
   return (
     <form
       onSubmit={onSubmit}
-      className={cn('relative flex flex-col gap-3', !compact && 's-card s-card-outline p-5 md:p-6')}
+      {...el(
+        { elements },
+        'form',
+        cn(
+          'relative flex flex-col gap-3',
+          !compact && 's-card s-card-outline p-5 md:p-6'
+        )
+      )}
       aria-label={parentId ? 'Reply to comment' : 'Leave a comment'}
     >
       {!compact && labels.formTitle ? (
@@ -86,7 +105,9 @@ export function CommentForm({
         </h3>
       ) : null}
       <input type="hidden" name="postId" value={postId} />
-      {parentId ? <input type="hidden" name="parentId" value={parentId} /> : null}
+      {parentId ? (
+        <input type="hidden" name="parentId" value={parentId} />
+      ) : null}
       <label htmlFor={`${id}-body`} className="sr-only">
         Comment
       </label>
@@ -98,11 +119,14 @@ export function CommentForm({
         maxLength={3000}
         rows={compact ? 3 : 4}
         placeholder={parentId ? 'Write a reply…' : 'Share your thoughts…'}
-        className="s-input min-h-24 w-full py-2.5"
+        {...el({ elements }, 'input', 's-input min-h-24 w-full py-2.5')}
       />
       <div className="grid gap-3 sm:grid-cols-3">
         <div>
-          <label htmlFor={`${id}-name`} className="s-muted mb-1 block text-xs font-medium">
+          <label
+            htmlFor={`${id}-name`}
+            className="s-muted mb-1 block text-xs font-medium"
+          >
             Name
           </label>
           <input
@@ -111,11 +135,14 @@ export function CommentForm({
             required
             maxLength={80}
             autoComplete="name"
-            className="s-input h-10 w-full"
+            {...el({ elements }, 'input', 's-input h-10 w-full')}
           />
         </div>
         <div>
-          <label htmlFor={`${id}-email`} className="s-muted mb-1 block text-xs font-medium">
+          <label
+            htmlFor={`${id}-email`}
+            className="s-muted mb-1 block text-xs font-medium"
+          >
             Email <span className="font-normal">(not published)</span>
           </label>
           <input
@@ -125,11 +152,14 @@ export function CommentForm({
             required
             maxLength={200}
             autoComplete="email"
-            className="s-input h-10 w-full"
+            {...el({ elements }, 'input', 's-input h-10 w-full')}
           />
         </div>
         <div>
-          <label htmlFor={`${id}-url`} className="s-muted mb-1 block text-xs font-medium">
+          <label
+            htmlFor={`${id}-url`}
+            className="s-muted mb-1 block text-xs font-medium"
+          >
             Website <span className="font-normal">(optional)</span>
           </label>
           <input
@@ -138,7 +168,7 @@ export function CommentForm({
             type="url"
             maxLength={300}
             autoComplete="url"
-            className="s-input h-10 w-full"
+            {...el({ elements }, 'input', 's-input h-10 w-full')}
           />
         </div>
       </div>
@@ -163,12 +193,22 @@ export function CommentForm({
         <button
           type="submit"
           disabled={state === 'sending'}
-          className="s-btn s-btn-primary disabled:opacity-60"
+          {...el(
+            { elements },
+            'button',
+            's-btn s-btn-primary disabled:opacity-60'
+          )}
         >
-          {state === 'sending' ? 'Posting…' : labels.submitLabel || 'Post comment'}
+          {state === 'sending'
+            ? 'Posting…'
+            : labels.submitLabel || 'Post comment'}
         </button>
         {onCancel ? (
-          <button type="button" onClick={onCancel} className="s-btn s-btn-outline">
+          <button
+            type="button"
+            onClick={onCancel}
+            {...el({ elements }, 'button', 's-btn s-btn-outline')}
+          >
             Cancel
           </button>
         ) : null}
@@ -183,11 +223,13 @@ export function ReplyToggle({
   parentId,
   labels,
   editing,
+  elements,
 }: {
   postId: string;
   parentId: string;
   labels: CommentFormLabels;
   editing?: boolean;
+  elements?: Record<string, ElementStyle>;
 }) {
   const [open, setOpen] = useState(false);
   if (!open) {
@@ -195,7 +237,11 @@ export function ReplyToggle({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="s-primary-text text-sm font-semibold hover:underline"
+        {...el(
+          { elements },
+          'action',
+          's-primary-text text-sm font-semibold hover:underline'
+        )}
       >
         Reply
       </button>
@@ -210,6 +256,7 @@ export function ReplyToggle({
         editing={editing}
         compact
         onCancel={() => setOpen(false)}
+        elements={elements}
       />
     </div>
   );
@@ -241,12 +288,14 @@ export function CommentReactions({
   likes: initialLikes,
   dislikes: initialDislikes,
   editing,
+  elements,
 }: {
   postId: string;
   commentId: string;
   likes: number;
   dislikes: number;
   editing?: boolean;
+  elements?: Record<string, ElementStyle>;
 }) {
   const [likes, setLikes] = useState(initialLikes);
   const [dislikes, setDislikes] = useState(initialDislikes);
@@ -277,7 +326,10 @@ export function CommentReactions({
     try {
       const res = await fetch('/api/comments/react', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
         body: JSON.stringify({ commentId, value: next }),
       });
       const data = (await res.json().catch(() => ({}))) as {
@@ -288,7 +340,8 @@ export function CommentReactions({
       };
       if (!res.ok) {
         setError(data.error || 'Couldn’t save your reaction.');
-        if (res.status === 403 && /own comment/i.test(data.error ?? '')) setOwn(true);
+        if (res.status === 403 && /own comment/i.test(data.error ?? ''))
+          setOwn(true);
         return;
       }
       setLikes(data.likes ?? likes);
@@ -320,7 +373,7 @@ export function CommentReactions({
         aria-pressed={mine === 1}
         aria-label={`Like (${likes})`}
         title={own ? ownTitle : 'Like'}
-        className={btn(mine === 1)}
+        {...el({ elements }, 'action', btn(mine === 1))}
       >
         <ThumbsUp className="size-3.5" aria-hidden />
         {likes}
@@ -332,7 +385,7 @@ export function CommentReactions({
         aria-pressed={mine === -1}
         aria-label={`Dislike (${dislikes})`}
         title={own ? ownTitle : 'Dislike'}
-        className={btn(mine === -1)}
+        {...el({ elements }, 'action', btn(mine === -1))}
       >
         <ThumbsDown className="size-3.5" aria-hidden />
         {dislikes}

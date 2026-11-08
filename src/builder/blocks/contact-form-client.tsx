@@ -3,7 +3,9 @@
 import { type FormEvent, useEffect, useState } from 'react';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
+import { cn } from '@/lib/utils/cn';
 import type { ContactFormField } from './content';
+import { el, type ElementStyle } from './element';
 
 const INPUT_TYPES = new Set(['text', 'email', 'tel', 'number', 'date', 'url']);
 
@@ -65,6 +67,7 @@ export function ContactFormClient({
   actionUrl,
   formId,
   editing,
+  elements,
 }: {
   fields: ContactFormField[];
   submitText: string;
@@ -72,11 +75,33 @@ export function ContactFormClient({
   actionUrl?: string;
   formId?: string;
   editing?: boolean;
+  elements?: Record<string, ElementStyle>;
 }) {
   const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>(
     'idle'
   );
   const firstParty = !actionUrl;
+
+  const labelEl = el({ elements }, 'label');
+  const reqEl = el({ elements }, 'required', 's-accent-text');
+  const inputEl = el({ elements }, 'input', 's-input');
+  const choiceEl = el(
+    { elements },
+    'choice',
+    's-choice-row text-sm font-medium'
+  );
+  const helpEl = el({ elements }, 'help', 's-muted text-xs');
+  const buttonEl = el(
+    { elements },
+    'button',
+    's-btn s-btn-primary justify-self-start disabled:opacity-60'
+  );
+  const successEl = el(
+    { elements },
+    'success',
+    's-soft-primary s-radius p-6 text-center font-medium'
+  );
+  const errorEl = el({ elements }, 'error', 'text-sm text-red-600');
 
   useEffect(() => {
     if (!firstParty || !TURNSTILE_SITE_KEY || editing) return;
@@ -106,10 +131,7 @@ export function ContactFormClient({
 
   if (state === 'sent') {
     return (
-      <p
-        role="status"
-        className="s-soft-primary s-radius p-6 text-center font-medium"
-      >
+      <p role="status" className={successEl.className} style={successEl.style}>
         {successMessage}
       </p>
     );
@@ -126,7 +148,8 @@ export function ContactFormClient({
             <label
               key={id}
               htmlFor={id}
-              className="s-choice-row text-sm font-medium"
+              className={choiceEl.className}
+              style={choiceEl.style}
             >
               <input
                 id={id}
@@ -136,9 +159,14 @@ export function ContactFormClient({
                 required={field.required}
                 className="s-choice"
               />
-              <span>
+              <span className={labelEl.className} style={labelEl.style}>
                 {field.label}
-                {field.required && <span className="s-accent-text"> *</span>}
+                {field.required && (
+                  <span className={reqEl.className} style={reqEl.style}>
+                    {' '}
+                    *
+                  </span>
+                )}
               </span>
             </label>
           );
@@ -147,12 +175,24 @@ export function ContactFormClient({
         if (field.type === 'radio') {
           return (
             <fieldset key={id} className="grid gap-2">
-              <legend className="text-sm font-medium">
+              <legend
+                className={
+                  labelEl.className
+                    ? cn('text-sm font-medium', labelEl.className)
+                    : 'text-sm font-medium'
+                }
+                style={labelEl.style}
+              >
                 {field.label}
-                {field.required && <span className="s-accent-text"> *</span>}
+                {field.required && (
+                  <span className={reqEl.className} style={reqEl.style}>
+                    {' '}
+                    *
+                  </span>
+                )}
               </legend>
               {opts.length === 0 ? (
-                <p className="s-muted text-xs">
+                <p className={helpEl.className} style={helpEl.style}>
                   Add options in the sidebar (one per line).
                 </p>
               ) : (
@@ -162,7 +202,8 @@ export function ContactFormClient({
                     <label
                       key={optId}
                       htmlFor={optId}
-                      className="s-choice-row text-sm font-medium"
+                      className={choiceEl.className}
+                      style={choiceEl.style}
                     >
                       <input
                         id={optId}
@@ -187,9 +228,14 @@ export function ContactFormClient({
             htmlFor={id}
             className="grid gap-1.5 text-sm font-medium"
           >
-            <span>
+            <span className={labelEl.className} style={labelEl.style}>
               {field.label}
-              {field.required && <span className="s-accent-text"> *</span>}
+              {field.required && (
+                <span className={reqEl.className} style={reqEl.style}>
+                  {' '}
+                  *
+                </span>
+              )}
             </span>
             {field.type === 'textarea' ? (
               <textarea
@@ -198,14 +244,16 @@ export function ContactFormClient({
                 required={field.required}
                 rows={5}
                 placeholder={field.placeholder}
-                className="s-input"
+                className={inputEl.className}
+                style={inputEl.style}
               />
             ) : field.type === 'select' ? (
               <select
                 id={id}
                 name={field.name}
                 required={field.required}
-                className="s-input"
+                className={inputEl.className}
+                style={inputEl.style}
                 defaultValue=""
               >
                 <option value="" disabled={field.required}>
@@ -231,7 +279,8 @@ export function ContactFormClient({
                 type={INPUT_TYPES.has(field.type) ? field.type : 'text'}
                 required={field.required}
                 placeholder={field.placeholder}
-                className="s-input"
+                className={inputEl.className}
+                style={inputEl.style}
               />
             )}
           </label>
@@ -249,29 +298,27 @@ export function ContactFormClient({
             className="absolute -left-[9999px] h-px w-px overflow-hidden"
           />
           {TURNSTILE_SITE_KEY && (
-            <div
-              className="cf-turnstile"
-              data-sitekey={TURNSTILE_SITE_KEY}
-            />
+            <div className="cf-turnstile" data-sitekey={TURNSTILE_SITE_KEY} />
           )}
         </>
       )}
       {editing && (
-        <p className="s-muted text-xs">
+        <p className={helpEl.className} style={helpEl.style}>
           {firstParty
             ? 'Submissions are saved to the form inbox. Set a form action URL to send them somewhere else instead.'
             : 'This form posts to the action URL in the sidebar.'}
         </p>
       )}
       {state === 'error' && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className={errorEl.className} style={errorEl.style}>
           Something went wrong. Please try again.
         </p>
       )}
       <button
         type="submit"
         disabled={state === 'sending' || editing}
-        className="s-btn s-btn-primary justify-self-start disabled:opacity-60"
+        className={buttonEl.className}
+        style={buttonEl.style}
       >
         {state === 'sending' ? 'Sending…' : submitText}
       </button>

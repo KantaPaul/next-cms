@@ -3,7 +3,7 @@
 import { X } from 'lucide-react';
 import type { CSSProperties } from 'react';
 import { cn } from '@/lib/utils/cn';
-import { el, type WithSection } from './element';
+import { el, linkEl, type WithSection } from './element';
 import { Section } from './section';
 
 /* =========================================================================
@@ -34,9 +34,27 @@ const CLOSE_STYLE_CLASS = {
 };
 
 export function OverlayClose(p: OverlayCloseProps) {
-  const customEl = el(p, 'close');
   const variant = p.variant ?? 'link';
   const label = p.label || (variant === 'link' ? 'No thanks' : 'Close');
+  const linkCloseEl = linkEl(
+    p,
+    'close',
+    'text-xs text-current underline underline-offset-4 opacity-70 transition-opacity hover:opacity-100'
+  );
+  const iconCloseEl = el(
+    p,
+    'close',
+    'inline-flex size-8 items-center justify-center rounded-full text-current opacity-70 transition hover:bg-black/5 hover:opacity-100'
+  );
+  const btnCloseEl = el(
+    p,
+    'close',
+    cn(
+      'inline-flex items-center justify-center transition-colors',
+      CLOSE_BTN_SIZE[p.size ?? 'md'],
+      CLOSE_STYLE_CLASS[p.buttonStyle ?? 'outline']
+    )
+  );
 
   return (
     <Section section={p.section} editing={p.editing}>
@@ -55,11 +73,8 @@ export function OverlayClose(p: OverlayCloseProps) {
             type="button"
             data-overlay-close="true"
             aria-label="Close overlay"
-            className={cn(
-              'inline-flex size-8 items-center justify-center rounded-full text-current opacity-70 transition hover:bg-black/5 hover:opacity-100',
-              customEl.className
-            )}
-            style={customEl.style}
+            className={iconCloseEl.className}
+            style={iconCloseEl.style}
           >
             <X className="size-4" />
           </button>
@@ -67,13 +82,8 @@ export function OverlayClose(p: OverlayCloseProps) {
           <button
             type="button"
             data-overlay-close="true"
-            className={cn(
-              'inline-flex items-center justify-center transition-colors',
-              CLOSE_BTN_SIZE[p.size ?? 'md'],
-              CLOSE_STYLE_CLASS[p.buttonStyle ?? 'outline'],
-              customEl.className
-            )}
-            style={customEl.style}
+            className={btnCloseEl.className}
+            style={btnCloseEl.style}
           >
             {label}
           </button>
@@ -81,11 +91,8 @@ export function OverlayClose(p: OverlayCloseProps) {
           <button
             type="button"
             data-overlay-close="true"
-            className={cn(
-              'text-xs text-current underline underline-offset-4 opacity-70 transition-opacity hover:opacity-100',
-              customEl.className
-            )}
-            style={customEl.style}
+            className={linkCloseEl.className}
+            style={linkCloseEl.style}
           >
             {label}
           </button>

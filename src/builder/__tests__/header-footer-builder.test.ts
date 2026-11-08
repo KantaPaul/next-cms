@@ -2,6 +2,11 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { defaultProps, validateProps } from '@nextcms/builder-core';
 import { editorSetup, pageDefinitions } from '../definitions';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { createElement } from 'react';
+import { Button } from '../blocks/layout';
+import * as starters from '../../db/seed/header-footer-starters';
+import type { StarterTemplate } from '../../db/seed/header-footer-starters';
 import { normalizeGlobalContent } from '../normalize-global-content';
 import { resolveChromeStyle } from '../style';
 import { menuHref } from '@/components/site/menu-links';
@@ -133,13 +138,17 @@ describe('Header & Footer block definitions and schemas', () => {
 
   it('HeaderColumns holds Column blocks', () => {
     const setup = editorSetup('header');
-    assert.deepEqual(setup.schemas.HeaderColumns.slots?.columns?.allow, ['Column']);
+    assert.deepEqual(setup.schemas.HeaderColumns.slots?.columns?.allow, [
+      'Column',
+    ]);
     assert.ok(!setup.schemas.HeaderColumns.slots?.col1);
   });
 
   it('FooterColumns holds Column blocks', () => {
     const setup = editorSetup('footer');
-    assert.deepEqual(setup.schemas.FooterColumns.slots?.columns?.allow, ['Column']);
+    assert.deepEqual(setup.schemas.FooterColumns.slots?.columns?.allow, [
+      'Column',
+    ]);
     assert.ok(!setup.schemas.FooterColumns.slots?.col1);
   });
 });
@@ -188,12 +197,20 @@ describe('Header & Footer starter templates', () => {
         const types = starter.content.content.map(b => b.type);
         assert.ok(types.includes(required), `${starter.key} lacks ${required}`);
         for (const block of starter.content.content) {
-          const def = pageDefinitions[block.type as keyof typeof pageDefinitions];
+          const def =
+            pageDefinitions[block.type as keyof typeof pageDefinitions];
           assert.ok(def, `Unknown block ${block.type}`);
           const validation = validateProps(def, block.props);
-          assert.equal(validation.ok, true, `${starter.key}/${block.type} props invalid`);
+          assert.equal(
+            validation.ok,
+            true,
+            `${starter.key}/${block.type} props invalid`
+          );
         }
-        assert.deepEqual(getStarterContent(category, starter.key), starter.content);
+        assert.deepEqual(
+          getStarterContent(category, starter.key),
+          starter.content
+        );
       }
       assert.equal(getStarterContent(category, 'blank'), null);
     });
@@ -229,9 +246,14 @@ describe('normalizeGlobalContent', () => {
     assert.equal(normalized.content.length, 1);
     // Legacy slots are migrated: the logo moves into a real Column, nothing is lost.
     assert.equal(normalized.zones?.['bar-1:left'], undefined);
-    assert.equal(normalized.zones?.['bar-1-col-left:content']?.[0]?.props.id, 'logo-1');
+    assert.equal(
+      normalized.zones?.['bar-1-col-left:content']?.[0]?.props.id,
+      'logo-1'
+    );
     assert.ok(
-      normalized.zones?.['bar-1:columns']?.some(c => c.props.id === 'bar-1-col-left')
+      normalized.zones?.['bar-1:columns']?.some(
+        c => c.props.id === 'bar-1-col-left'
+      )
     );
   });
 
@@ -248,7 +270,10 @@ describe('menuHref', () => {
     assert.equal(menuHref('/about', 'acme'), '/acme/about');
     assert.equal(menuHref('/acme/about', 'acme'), '/acme/about');
     assert.equal(menuHref('/acme', 'acme'), '/acme');
-    assert.equal(menuHref('https://external.com', 'acme'), 'https://external.com');
+    assert.equal(
+      menuHref('https://external.com', 'acme'),
+      'https://external.com'
+    );
   });
 });
 
@@ -370,17 +395,40 @@ describe('Mega menu builder', () => {
   it('offers only mega menu blocks, with page sections, loops and menus removed', () => {
     const setup = editorSetup('mega-menu');
     const palette = setup.groups.flatMap(g => g.types);
-    for (const type of ['Columns', 'FooterLinks', 'MegaMenuCard', 'RichText', 'Image', 'Button']) {
+    for (const type of [
+      'Columns',
+      'FooterLinks',
+      'MegaMenuCard',
+      'RichText',
+      'Image',
+      'Button',
+    ]) {
       assert.ok(palette.includes(type), `${type} missing`);
       assert.ok(setup.schemas[type], `${type} not insertable`);
     }
-    for (const type of ['Hero', 'Features', 'Pricing', 'QueryLoop', 'ContactForm', 'Video', 'NavMenu', 'MobileMenu', 'HeaderBar', 'GlobalRef']) {
-      assert.ok(!palette.includes(type), `${type} should not be in the palette`);
+    for (const type of [
+      'Hero',
+      'Features',
+      'Pricing',
+      'QueryLoop',
+      'ContactForm',
+      'Video',
+      'NavMenu',
+      'MobileMenu',
+      'HeaderBar',
+      'GlobalRef',
+    ]) {
+      assert.ok(
+        !palette.includes(type),
+        `${type} should not be in the palette`
+      );
       assert.ok(!setup.schemas[type], `${type} should not be insertable`);
     }
     assert.equal(setup.inspectorBlocks.FooterLinks.label, 'Link list');
     // Columns hold only Column blocks, and a Column accepts only mega menu blocks.
-    assert.deepEqual(setup.definitions.Columns.slots?.columns?.allow, ['Column']);
+    assert.deepEqual(setup.definitions.Columns.slots?.columns?.allow, [
+      'Column',
+    ]);
     const slot = setup.definitions.Column.slots?.content;
     assert.ok(slot?.allow?.includes('MegaMenuCard'));
     assert.ok(!slot?.allow?.includes('Hero'));
@@ -393,14 +441,23 @@ describe('Mega menu builder', () => {
   it('removes page-only controls from mega menu blocks', () => {
     const setup = editorSetup('mega-menu');
     for (const [type, block] of Object.entries(setup.inspectorBlocks)) {
-      for (const key of ['section_animation', 'section_filter', 'section_responsive', 'section_attributes']) {
+      for (const key of [
+        'section_animation',
+        'section_filter',
+        'section_responsive',
+        'section_attributes',
+      ]) {
         assert.ok(!(key in block.fields), `${type} still has ${key}`);
       }
     }
-    assert.ok(!('collapseOnMobile' in setup.inspectorBlocks.FooterLinks.fields));
+    assert.ok(
+      !('collapseOnMobile' in setup.inspectorBlocks.FooterLinks.fields)
+    );
     assert.ok(!('showPagination' in setup.inspectorBlocks.BlogPosts.fields));
     // Other builders keep their controls and don't offer the featured card.
-    assert.ok('section_animation' in editorSetup('page').inspectorBlocks.Columns.fields);
+    assert.ok(
+      'section_animation' in editorSetup('page').inspectorBlocks.Columns.fields
+    );
     assert.ok(!editorSetup('page').schemas.MegaMenuCard);
     assert.ok(!editorSetup('header').schemas.MegaMenuCard);
   });
@@ -417,9 +474,79 @@ describe('Mega menu builder', () => {
       for (const block of all) {
         const def = setup.definitions[block.type];
         assert.ok(def, `${starter.key}: ${block.type} not allowed`);
-        assert.equal(validateProps(def, block.props).ok, true, `${starter.key}/${block.type} props invalid`);
+        assert.equal(
+          validateProps(def, block.props).ok,
+          true,
+          `${starter.key}/${block.type} props invalid`
+        );
       }
-      assert.deepEqual(getStarterContent('MegaMenu', starter.key), starter.content);
+      assert.deepEqual(
+        getStarterContent('MegaMenu', starter.key),
+        starter.content
+      );
     }
+  });
+});
+
+describe('Button legacy text', () => {
+  const legacy = { id: 'header-cta', text: 'Get Started', link: '/contact' };
+
+  it('moves text into label when the editor loads the content', () => {
+    const normalized = normalizeGlobalContent({
+      root: { props: {} },
+      content: [],
+      zones: { 'bar:right': [{ type: 'Button', props: legacy }] },
+    });
+    const props = normalized.zones?.['bar:right']?.[0]?.props as Record<
+      string,
+      unknown
+    >;
+    assert.equal(props.label, 'Get Started');
+    assert.equal(props.text, undefined);
+    assert.deepEqual(props.section, { paddingY: 'none' });
+  });
+
+  it('keeps a saved label and section', () => {
+    const section = { paddingY: 'md' };
+    const normalized = normalizeGlobalContent({
+      root: { props: {} },
+      content: [
+        { type: 'Button', props: { ...legacy, label: 'Mine', section } },
+      ],
+      zones: {},
+    });
+    const props = normalized.content[0]?.props as Record<string, unknown>;
+    assert.equal(props.label, 'Mine');
+    assert.deepEqual(props.section, section);
+  });
+
+  it('renders text without section padding, and leaves other buttons alone', () => {
+    const html = renderToStaticMarkup(createElement(Button, legacy));
+    assert.ok(html.includes('Get Started'));
+    assert.ok(html.includes('py-0'));
+    const plain = renderToStaticMarkup(createElement(Button, { label: 'Go' }));
+    assert.ok(plain.includes('Go'));
+    assert.ok(plain.includes('py-14'));
+  });
+
+  it('starters save the button text as label', () => {
+    const templates = Object.values(starters).filter(
+      (s): s is StarterTemplate =>
+        Boolean(s) && typeof s === 'object' && 'content' in s
+    );
+    assert.ok(templates.length > 0);
+    const buttons = templates.flatMap(t => {
+      const found: Array<Record<string, unknown>> = [];
+      JSON.stringify(t.content, (_key, value) => {
+        if (value?.type === 'Button') found.push(value.props);
+        return value;
+      });
+      return found;
+    });
+    assert.ok(buttons.length > 0);
+    assert.deepEqual(
+      buttons.filter(props => 'text' in props),
+      []
+    );
   });
 });

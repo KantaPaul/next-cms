@@ -5,6 +5,8 @@ import { ButtonLink, type SectionSettings, Section } from './section';
 
 export type ButtonProps = WithSection & {
   label?: string;
+  /** Older header starters saved the button text here instead of in `label`. */
+  text?: string;
   link?: UrlValue;
   linkAction?: 'url' | 'overlay';
   overlayId?: string;
@@ -26,7 +28,13 @@ export function Button(p: ButtonProps) {
   const overlayAttr = isOverlayAction ? p.overlayId : undefined;
 
   return (
-    <Section section={p.section} editing={p.editing}>
+    // Those older buttons sit in header rows, so they also skip the section padding.
+    <Section
+      section={
+        p.section ?? (p.text === undefined ? undefined : { paddingY: 'none' })
+      }
+      editing={p.editing}
+    >
       <div
         className={cn(
           'flex w-full',
@@ -44,7 +52,7 @@ export function Button(p: ButtonProps) {
           className={cn(BUTTON_SIZE[p.size ?? 'md'], btnEl.className)}
           style={btnEl.style}
         >
-          {p.label}
+          {p.label || p.text}
         </ButtonLink>
       </div>
     </Section>

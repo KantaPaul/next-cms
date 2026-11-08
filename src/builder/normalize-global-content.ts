@@ -1,12 +1,37 @@
-import {
-  documentToPuck,
-  isBuilderDocument,
-} from '@nextcms/builder-core';
+import { documentToPuck, isBuilderDocument } from '@nextcms/builder-core';
 import type { BuilderData as Data } from '@/builder/data';
 import {
   migrateDocumentColumns,
   migratePuckColumns,
 } from '@/builder/migrations/column-blocks';
+
+/** Moves a Button's legacy `text` prop into `label`, so the inspector shows it. */
+function migrateButtonText(data: Data): Data {
+  const migrate = (items: Data['content']): Data['content'] =>
+    items.map(item => {
+      const props = item.props as Record<string, unknown>;
+      if (item.type !== 'Button' || props.text === undefined) return item;
+      const { text, ...rest } = props;
+      return {
+        ...item,
+        props: {
+          ...rest,
+          label: rest.label || text,
+          section: rest.section ?? { paddingY: 'none' },
+        },
+      } as unknown as Data['content'][number];
+    });
+  return {
+    ...data,
+    content: migrate(data.content),
+    zones: Object.fromEntries(
+      Object.entries(data.zones ?? {}).map(([key, items]) => [
+        key,
+        migrate(items),
+      ])
+    ),
+  };
+}
 
 /**
  * Normalizes raw global block content from the database into BuilderData.
@@ -14,10 +39,12 @@ import {
  */
 export function normalizeGlobalContent(raw: unknown): Data {
   if (isBuilderDocument(raw)) {
-    return documentToPuck(migrateDocumentColumns(raw), {
-      slots: 'zones',
-      ids: 'always',
-    }) as Data;
+    return migrateButtonText(
+      documentToPuck(migrateDocumentColumns(raw), {
+        slots: 'zones',
+        ids: 'always',
+      }) as Data
+    );
   }
 
   let content: Data['content'] = [];
@@ -39,9 +66,11 @@ export function normalizeGlobalContent(raw: unknown): Data {
     }
   }
 
-  return migratePuckColumns({
-    root,
-    content,
-    zones,
-  }) as Data;
+  return migrateButtonText(
+    migratePuckColumns({
+      root,
+      content,
+      zones,
+    }) as Data
+  );
 }

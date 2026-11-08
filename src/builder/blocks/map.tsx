@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { type SectionSettings, Section } from './section';
-
-type WithSection = { section?: SectionSettings; editing?: boolean };
+import { el, type WithSection } from './element';
+import { Section } from './section';
 
 export type MapProps = WithSection & {
   /** Address shown as text and searched on the map. */
@@ -24,7 +23,11 @@ export function Map(p: MapProps) {
   useEffect(() => {
     if (!address) return;
     let active = true;
-    const params = new URLSearchParams({ format: 'json', q: address, limit: '1' });
+    const params = new URLSearchParams({
+      format: 'json',
+      q: address,
+      limit: '1',
+    });
     fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
       headers: { Accept: 'application/json' },
     })
@@ -62,11 +65,21 @@ export function Map(p: MapProps) {
     );
   }
 
+  const captionEl = el(p, 'caption', 's-muted mb-3 text-center text-sm');
+  const frameEl = el(
+    p,
+    'frame',
+    's-radius aspect-[16/9] w-full rounded border'
+  );
+
   return (
     <Section section={p.section} editing={p.editing}>
-      <p className="s-muted mb-3 text-center text-sm">{address}</p>
+      <p className={captionEl.className} style={captionEl.style}>
+        {address}
+      </p>
       <iframe
-        className="s-radius aspect-[16/9] w-full rounded border"
+        className={frameEl.className}
+        style={frameEl.style}
         src={src ?? FALLBACK_SRC}
         title="Map"
         loading="lazy"

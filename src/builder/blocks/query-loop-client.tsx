@@ -14,6 +14,8 @@ import {
   useTransition,
 } from 'react';
 import { cn } from '@/lib/utils/cn';
+import type { ElementStyle } from '../style';
+import { el } from './element';
 
 // ---------------------------------------------------------------------------
 // Loop Item React Context (R575 / QRY-05)
@@ -45,11 +47,18 @@ export function QueryLoopCarousel({
   children,
   gapClass,
   columnsDesktop = 3,
+  elements,
 }: {
   children: ReactNode[];
   gapClass: string;
   columnsDesktop?: number;
+  elements?: Record<string, ElementStyle>;
 }) {
+  const arrowEl = el(
+    { elements },
+    'arrow',
+    's-border s-surface s-radius inline-flex size-9 items-center justify-center border transition-colors hover:opacity-80'
+  );
   const trackRef = useRef<HTMLDivElement>(null);
 
   const scrollByAmount = useCallback((direction: -1 | 1) => {
@@ -75,7 +84,7 @@ export function QueryLoopCarousel({
           type="button"
           onClick={() => scrollByAmount(-1)}
           aria-label="Previous slide"
-          className="s-border s-surface s-radius inline-flex size-9 items-center justify-center border transition-colors hover:opacity-80"
+          {...arrowEl}
         >
           <ChevronLeft className="size-4" />
         </button>
@@ -83,7 +92,7 @@ export function QueryLoopCarousel({
           type="button"
           onClick={() => scrollByAmount(1)}
           aria-label="Next slide"
-          className="s-border s-surface s-radius inline-flex size-9 items-center justify-center border transition-colors hover:opacity-80"
+          {...arrowEl}
         >
           <ChevronRight className="size-4" />
         </button>
@@ -99,7 +108,7 @@ export function QueryLoopCarousel({
         tabIndex={0}
       >
         {children.map((child, idx) => (
-          <div key={idx} className={cn(' shrink-0 snap-start', basisClass)}>
+          <div key={idx} className={cn('shrink-0 snap-start', basisClass)}>
             {child}
           </div>
         ))}
@@ -122,6 +131,7 @@ export interface QueryLoopPaginationProps {
   editing?: boolean;
   /** Pre-built server hrefs for each page (1..totalPages) so crawlable links work without JS. */
   pageHrefs: Record<number, string>;
+  elements?: Record<string, ElementStyle>;
 }
 
 export function QueryLoopPagination({
@@ -133,7 +143,18 @@ export function QueryLoopPagination({
   regionId,
   editing,
   pageHrefs,
+  elements,
 }: QueryLoopPaginationProps) {
+  const pageLinkEl = el(
+    { elements },
+    'pagination',
+    's-border s-surface s-radius rounded border px-3 py-1.5 font-medium transition-colors hover:opacity-80'
+  );
+  const pageNumberEl = el(
+    { elements },
+    'pagination',
+    's-radius min-w-9 rounded px-3 py-1.5 text-center font-medium transition-colors s-surface s-border border hover:opacity-80'
+  );
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -191,32 +212,48 @@ export function QueryLoopPagination({
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, [editing, isPending, lastTriggeredPage, mode, navigateToPage, page, totalPages]);
+  }, [
+    editing,
+    isPending,
+    lastTriggeredPage,
+    mode,
+    navigateToPage,
+    page,
+    totalPages,
+  ]);
 
   if (totalPages <= 1) return null;
 
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
-  const nextHref = pageHrefs[Math.min(page + 1, totalPages)] ?? `?${pageParamKey}=${page + 1}`;
-  const prevHref = pageHrefs[Math.max(page - 1, 1)] ?? `?${pageParamKey}=${Math.max(page - 1, 1)}`;
+  const nextHref =
+    pageHrefs[Math.min(page + 1, totalPages)] ?? `?${pageParamKey}=${page + 1}`;
+  const prevHref =
+    pageHrefs[Math.max(page - 1, 1)] ??
+    `?${pageParamKey}=${Math.max(page - 1, 1)}`;
 
   return (
     <div className="mt-10 flex flex-col items-center gap-4">
-      {(mode === 'load-more' || mode === 'infinite-scroll') && page < totalPages && (
-        <div ref={sentinelRef} className="flex flex-col items-center gap-2">
-          <a
-            href={nextHref}
-            onClick={e => {
-              e.preventDefault();
-              navigateToPage(page + 1, false);
-            }}
-            aria-busy={isPending}
-            className="s-primary-bg s-radius inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90"
-          >
-            {isPending && <Loader2 className="size-4 animate-spin" />}
-            {loadMoreLabel}
-          </a>
-        </div>
-      )}
+      {(mode === 'load-more' || mode === 'infinite-scroll') &&
+        page < totalPages && (
+          <div ref={sentinelRef} className="flex flex-col items-center gap-2">
+            <a
+              href={nextHref}
+              onClick={e => {
+                e.preventDefault();
+                navigateToPage(page + 1, false);
+              }}
+              aria-busy={isPending}
+              {...el(
+                { elements },
+                'loadMore',
+                's-primary-bg s-radius inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90'
+              )}
+            >
+              {isPending && <Loader2 className="size-4 animate-spin" />}
+              {loadMoreLabel}
+            </a>
+          </div>
+        )}
 
       {/* Always render crawlable pagination links underneath (R577 / QRY-07) */}
       <nav
@@ -234,7 +271,7 @@ export function QueryLoopPagination({
               e.preventDefault();
               navigateToPage(page - 1, true);
             }}
-            className="s-border s-surface s-radius rounded border px-3 py-1.5 font-medium transition-colors hover:opacity-80"
+            {...pageLinkEl}
           >
             Previous
           </a>
@@ -248,12 +285,12 @@ export function QueryLoopPagination({
               e.preventDefault();
               navigateToPage(n, true);
             }}
-            className={cn(
-              's-radius min-w-9 rounded px-3 py-1.5 text-center font-medium transition-colors',
-              n === page
-                ? 's-primary-bg'
-                : 's-surface s-border border hover:opacity-80'
-            )}
+            {...(n === page
+              ? {
+                  className:
+                    's-radius min-w-9 rounded px-3 py-1.5 text-center font-medium transition-colors s-primary-bg',
+                }
+              : pageNumberEl)}
           >
             {n}
           </a>
@@ -266,7 +303,7 @@ export function QueryLoopPagination({
               e.preventDefault();
               navigateToPage(page + 1, true);
             }}
-            className="s-border s-surface s-radius rounded border px-3 py-1.5 font-medium transition-colors hover:opacity-80"
+            {...pageLinkEl}
           >
             Next
           </a>

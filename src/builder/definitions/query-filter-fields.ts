@@ -58,10 +58,19 @@ export const FILTER_OPTION_DEFAULTS = {
 type When = (props: any) => boolean;
 
 const toggle = (label: string, when?: When): FieldDef =>
-  ({ label, group: CONTENT, type: 'toggle', ...(when && { when }) }) as FieldDef;
+  ({
+    label,
+    group: CONTENT,
+    type: 'toggle',
+    ...(when && { when }),
+  }) as FieldDef;
 const text = (label: string, when?: When): FieldDef =>
   ({ label, group: CONTENT, type: 'text', ...(when && { when }) }) as FieldDef;
-const styleSelect = (label: string, first: 'select' | 'chips', when: When): FieldDef =>
+const styleSelect = (
+  label: string,
+  first: 'select' | 'chips',
+  when: When
+): FieldDef =>
   ({
     label,
     group: CONTENT,
@@ -86,14 +95,24 @@ export const FILTER_OPTION_FIELDS: Record<FilterOptionKey, FieldDef> = {
   showKeyword: toggle('Show keyword search'),
   keywordPlaceholder: text('Keyword placeholder', p => p.showKeyword !== false),
   showCategories: toggle('Show category filter'),
-  categoryStyle: styleSelect('Category control style', 'select', p => p.showCategories !== false),
+  categoryStyle: styleSelect(
+    'Category control style',
+    'select',
+    p => p.showCategories !== false
+  ),
   showTags: toggle('Show tag filter'),
-  tagStyle: styleSelect('Tag control style', 'chips', p => p.showTags !== false),
+  tagStyle: styleSelect(
+    'Tag control style',
+    'chips',
+    p => p.showTags !== false
+  ),
   showDateRange: toggle('Show date range filter'),
   showNumberRange: toggle('Show number range filter'),
   numberRangeLabel: text('Number range label', p => Boolean(p.showNumberRange)),
   showBooleanToggle: toggle('Show yes/no toggle filter'),
-  booleanToggleLabel: text('Yes/No toggle label', p => Boolean(p.showBooleanToggle)),
+  booleanToggleLabel: text('Yes/No toggle label', p =>
+    Boolean(p.showBooleanToggle)
+  ),
   showSort: toggle('Show sort selector'),
   showResultCount: toggle('Show result count'),
   showActiveChips: toggle('Show active filter chips & clear all'),
@@ -125,7 +144,8 @@ export function prefixedFilterFields(visible: When): Fields {
     const inner = def.when;
     fields[prefixedFilterKey(key)] = {
       ...def,
-      group: 'Filters',
+      tab: 'content',
+      section: 'Filters',
       when: (p: any) =>
         visible(p) && (inner ? inner(unprefixFilterOptions(p)) : true),
     } as FieldDef;

@@ -1,12 +1,7 @@
 'use client';
 
 import { currentSiteMode, type SiteMode, setSiteMode } from '../site-mode';
-import {
-  type FormEvent,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { type FormEvent, useEffect, useRef, useState } from 'react';
 import {
   ArrowUp,
   BookOpen,
@@ -26,7 +21,11 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils/cn';
 import { menuHref } from '@/components/site/menu-links';
 import type { MenuWithItems } from '@/server/services/public-site.service';
-import { liveSearch, type LiveSearchResultItem } from '@/server/actions/site-chrome.actions';
+import {
+  liveSearch,
+  type LiveSearchResultItem,
+} from '@/server/actions/site-chrome.actions';
+import { el, linkEl, type WithSection } from './element';
 
 /* =========================================================================
    MobileMenu Client Component
@@ -39,6 +38,7 @@ export type MobileMenuClientProps = {
   showSearch?: boolean;
   menu?: MenuWithItems | null;
   siteSlug?: string;
+  elements?: WithSection['elements'];
 };
 
 export function MobileMenuClient({
@@ -48,10 +48,14 @@ export function MobileMenuClient({
   showSearch = false,
   menu,
   siteSlug,
+  elements,
 }: MobileMenuClientProps) {
   const [open, setOpen] = useState(false);
-  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>(
+    {}
+  );
   const drawerRef = useRef<HTMLDivElement>(null);
+  const styled = { elements };
 
   // Close on Escape & trap scroll
   useEffect(() => {
@@ -94,7 +98,11 @@ export function MobileMenuClient({
         onClick={() => setOpen(true)}
         aria-label="Open mobile menu"
         aria-expanded={open}
-        className="inline-flex items-center justify-center rounded-md p-2 text-[var(--site-fg)] hover:bg-[var(--site-surface)] hover:text-[var(--site-fg)] transition-colors"
+        {...el(
+          styled,
+          'trigger',
+          'inline-flex items-center justify-center rounded-md p-2 text-[var(--site-fg)] hover:bg-[var(--site-surface)] hover:text-[var(--site-fg)] transition-colors'
+        )}
       >
         {icon === 'dots' ? (
           <MoreVertical className="size-5" />
@@ -108,7 +116,11 @@ export function MobileMenuClient({
         <div className="fixed inset-0 z-[100] flex">
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+            {...el(
+              styled,
+              'backdrop',
+              'fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity'
+            )}
             onClick={() => setOpen(false)}
             aria-hidden="true"
           />
@@ -119,19 +131,29 @@ export function MobileMenuClient({
             role="dialog"
             aria-modal="true"
             aria-label="Mobile Navigation"
-            className={cn(
-              'relative z-10 flex flex-col bg-[var(--site-bg)] text-[var(--site-fg)] shadow-2xl border-[var(--site-border)]',
-              drawerPositionClass
+            {...el(
+              styled,
+              'panel',
+              cn(
+                'relative z-10 flex flex-col bg-[var(--site-bg)] text-[var(--site-fg)] shadow-2xl border-[var(--site-border)]',
+                drawerPositionClass
+              )
             )}
           >
             {/* Drawer Header */}
             <div className="flex items-center justify-between border-b border-[var(--site-border)] px-5 py-4">
-              <span className="font-semibold text-sm">Navigation</span>
+              <span {...el(styled, 'title', 'font-semibold text-sm')}>
+                Navigation
+              </span>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Close menu"
-                className="rounded-md p-1.5 s-muted hover:bg-[var(--site-surface)] transition-colors"
+                {...el(
+                  styled,
+                  'close',
+                  'rounded-md p-1.5 s-muted hover:bg-[var(--site-surface)] transition-colors'
+                )}
               >
                 <X className="size-5" />
               </button>
@@ -164,7 +186,11 @@ export function MobileMenuClient({
                         <Link
                           href={href}
                           onClick={() => setOpen(false)}
-                          className="flex-1 py-2.5 text-base font-medium hover:text-[var(--site-primary)] transition-colors"
+                          {...linkEl(
+                            styled,
+                            'link',
+                            'flex-1 py-2.5 text-base font-medium hover:text-[var(--site-primary)] transition-colors'
+                          )}
                         >
                           {item.label}
                         </Link>
@@ -173,7 +199,11 @@ export function MobileMenuClient({
                             type="button"
                             onClick={e => toggleSubmenu(item.id, e)}
                             aria-expanded={isExpanded}
-                            className="p-2 s-muted hover:text-[var(--site-fg)]"
+                            {...el(
+                              styled,
+                              'subToggle',
+                              'p-2 s-muted hover:text-[var(--site-fg)]'
+                            )}
                           >
                             <ChevronDown
                               className={cn(
@@ -186,13 +216,17 @@ export function MobileMenuClient({
                       </div>
 
                       {hasChildren && isExpanded && (
-                        <ul className="ml-4 flex flex-col space-y-1 border-l border-[var(--site-border)] pl-3 py-1">
+                        <ul className="ml-4 flex flex-col space-y-1 border-l border-[var(--site-border)] py-1 pl-3">
                           {item.children.map(child => (
                             <li key={child.id}>
                               <Link
                                 href={menuHref(child.url, siteSlug)}
                                 onClick={() => setOpen(false)}
-                                className="block py-1.5 text-sm s-muted hover:text-[var(--site-primary)] transition-colors"
+                                {...linkEl(
+                                  styled,
+                                  'subLink',
+                                  'block py-1.5 text-sm s-muted hover:text-[var(--site-primary)] transition-colors'
+                                )}
                               >
                                 {child.label}
                               </Link>
@@ -224,6 +258,7 @@ export type SearchBoxClientProps = {
   siteSlug?: string;
   language?: string;
   className?: string;
+  elements?: WithSection['elements'];
 };
 
 export function SearchBoxClient({
@@ -234,8 +269,10 @@ export function SearchBoxClient({
   siteSlug,
   language,
   className,
+  elements,
 }: SearchBoxClientProps) {
   const router = useRouter();
+  const styled = { elements };
   const [modalOpen, setModalOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<LiveSearchResultItem[]>([]);
@@ -378,32 +415,34 @@ export function SearchBoxClient({
         id={listboxId}
         role="listbox"
         aria-label="Search suggestions"
-        className={cn(
-          'overflow-hidden rounded-xl border border-[var(--site-border)] bg-[var(--site-bg)] p-1.5 shadow-2xl',
-          mode === 'inline'
-            ? cn(
-                'absolute top-full mt-2 w-72 sm:w-80 md:w-96 max-w-[calc(100vw-2rem)] z-50',
-                align === 'right' ? 'right-0' : 'left-0'
-              )
-            : 'mt-3 w-full border-t border-[var(--site-border)] pt-3'
+        {...el(
+          styled,
+          'resultsPanel',
+          cn(
+            'overflow-hidden rounded-xl border border-[var(--site-border)] bg-[var(--site-bg)] p-1.5 shadow-2xl',
+            mode === 'inline'
+              ? cn(
+                  'absolute top-full mt-2 w-72 sm:w-80 md:w-96 max-w-[calc(100vw-2rem)] z-50',
+                  align === 'right' ? 'right-0' : 'left-0'
+                )
+              : 'mt-3 w-full border-t border-[var(--site-border)] pt-3'
+          )
         )}
       >
         {loading && hits.length === 0 ? (
-          <div className="flex items-center justify-center gap-2 py-4 text-xs s-muted">
+          <div className="s-muted flex items-center justify-center gap-2 py-4 text-xs">
             <Loader2 className="size-4 animate-spin text-[var(--site-primary)]" />
             <span>Searching...</span>
           </div>
         ) : hits.length === 0 ? (
-          <div className="py-4 text-center text-xs s-muted">
+          <div className="s-muted py-4 text-center text-xs">
             No matches for &ldquo;
-            <span className="font-medium text-[var(--site-fg)]">
-              {query}
-            </span>
+            <span className="font-medium text-[var(--site-fg)]">{query}</span>
             &rdquo;
           </div>
         ) : (
           <>
-            <div className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider s-muted">
+            <div className="s-muted px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider">
               Results
             </div>
             <ul className="flex flex-col gap-0.5">
@@ -422,14 +461,18 @@ export function SearchBoxClient({
                         setShowFlyout(false);
                         if (mode === 'icon-modal') setModalOpen(false);
                       }}
-                      className={cn(
-                        'flex items-start gap-2.5 rounded-lg px-2.5 py-2 text-xs transition-colors',
-                        isSelected
-                          ? 'bg-[var(--site-surface)] text-[var(--site-primary)]'
-                          : 'hover:bg-[var(--site-surface)] text-[var(--site-fg)]'
+                      {...linkEl(
+                        styled,
+                        'resultItem',
+                        cn(
+                          'flex items-start gap-2.5 rounded-lg px-2.5 py-2 text-xs transition-colors',
+                          isSelected
+                            ? 'bg-[var(--site-surface)] text-[var(--site-primary)]'
+                            : 'hover:bg-[var(--site-surface)] text-[var(--site-fg)]'
+                        )
                       )}
                     >
-                      <div className="mt-0.5 shrink-0 s-muted">
+                      <div className="s-muted mt-0.5 shrink-0">
                         {hit.kind === 'post' ? (
                           <BookOpen className="size-4" />
                         ) : (
@@ -438,13 +481,15 @@ export function SearchBoxClient({
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
-                          <span className="truncate font-medium">{hit.title}</span>
-                          <span className="shrink-0 rounded bg-[var(--site-surface)] px-1 py-0.5 text-[9px] uppercase tracking-wider font-semibold s-muted">
+                          <span className="truncate font-medium">
+                            {hit.title}
+                          </span>
+                          <span className="s-muted shrink-0 rounded bg-[var(--site-surface)] px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wider">
                             {hit.kind}
                           </span>
                         </div>
                         {hit.snippet && (
-                          <p className="mt-0.5 line-clamp-1 text-[11px] s-muted">
+                          <p className="s-muted mt-0.5 line-clamp-1 text-[11px]">
                             {hit.snippet}
                           </p>
                         )}
@@ -466,11 +511,15 @@ export function SearchBoxClient({
                   setShowFlyout(false);
                   if (mode === 'icon-modal') setModalOpen(false);
                 }}
-                className={cn(
-                  'block rounded-md px-2.5 py-1.5 text-center text-xs font-medium text-[var(--site-primary)] transition-colors',
-                  activeIndex === hits.length
-                    ? 'bg-[var(--site-surface)]'
-                    : 'hover:bg-[var(--site-surface)]'
+                {...linkEl(
+                  styled,
+                  'viewAll',
+                  cn(
+                    'block rounded-md px-2.5 py-1.5 text-center text-xs font-medium text-[var(--site-primary)] transition-colors',
+                    activeIndex === hits.length
+                      ? 'bg-[var(--site-surface)]'
+                      : 'hover:bg-[var(--site-surface)]'
+                  )
                 )}
               >
                 View all results for &ldquo;{query}&rdquo; &rarr;
@@ -492,13 +541,17 @@ export function SearchBoxClient({
             setActiveIndex(-1);
           }}
           aria-label="Open search"
-          className="inline-flex items-center justify-center rounded-md p-2 s-muted hover:bg-[var(--site-surface)] transition-colors"
+          {...el(
+            styled,
+            'iconTrigger',
+            'inline-flex items-center justify-center rounded-md p-2 s-muted hover:bg-[var(--site-surface)] transition-colors'
+          )}
         >
           <SearchIcon className="size-4" />
         </button>
 
         {modalOpen && (
-          <div className="fixed inset-0 z-[110] flex items-start justify-center pt-20 px-4">
+          <div className="fixed inset-0 z-[110] flex items-start justify-center px-4 pt-20">
             <div
               className="fixed inset-0 bg-black/50 backdrop-blur-sm"
               onClick={() => {
@@ -508,10 +561,14 @@ export function SearchBoxClient({
             />
             <div
               ref={containerRef}
-              className="relative z-10 w-full max-w-lg rounded-xl border border-[var(--site-border)] bg-[var(--site-bg)] p-4 shadow-2xl"
+              {...el(
+                styled,
+                'modalPanel',
+                'relative z-10 w-full max-w-lg rounded-xl border border-[var(--site-border)] bg-[var(--site-bg)] p-4 shadow-2xl'
+              )}
             >
               <form action={searchPath} method="GET" className="relative">
-                <SearchIcon className="absolute left-3 top-3 size-5 s-muted" />
+                <SearchIcon className="s-muted absolute left-3 top-3 size-5" />
                 <input
                   ref={inputRef}
                   type="search"
@@ -526,7 +583,11 @@ export function SearchBoxClient({
                   onKeyDown={handleKeyDown}
                   onFocus={handleInputFocus}
                   placeholder={placeholder}
-                  className="w-full rounded-lg border border-[var(--site-border)] bg-transparent py-2.5 pl-11 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--site-primary)]"
+                  {...el(
+                    styled,
+                    'input',
+                    'w-full rounded-lg border border-[var(--site-border)] bg-transparent py-2.5 pl-11 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--site-primary)]'
+                  )}
                 />
                 <button
                   type="button"
@@ -534,7 +595,7 @@ export function SearchBoxClient({
                     setModalOpen(false);
                     setShowFlyout(false);
                   }}
-                  className="absolute right-2.5 top-2.5 rounded p-1 s-muted hover:text-[var(--site-fg)]"
+                  className="s-muted absolute right-2.5 top-2.5 rounded p-1 hover:text-[var(--site-fg)]"
                 >
                   <X className="size-4" />
                 </button>
@@ -554,7 +615,7 @@ export function SearchBoxClient({
       className={cn('relative', className || 'w-48 sm:w-64')}
     >
       <form action={searchPath} method="GET" className="relative w-full">
-        <SearchIcon className="absolute left-2.5 top-2.5 size-4 s-muted" />
+        <SearchIcon className="s-muted absolute left-2.5 top-2.5 size-4" />
         <input
           ref={inputRef}
           type="search"
@@ -569,7 +630,11 @@ export function SearchBoxClient({
           onKeyDown={handleKeyDown}
           onFocus={handleInputFocus}
           placeholder={placeholder}
-          className="w-full rounded-md border border-[var(--site-border)] bg-[var(--site-surface)] py-1.5 pl-8 pr-3 text-xs placeholder:text-[var(--site-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--site-primary)]"
+          {...el(
+            styled,
+            'input',
+            'w-full rounded-md border border-[var(--site-border)] bg-[var(--site-surface)] py-1.5 pl-8 pr-3 text-xs placeholder:text-[var(--site-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--site-primary)]'
+          )}
         />
       </form>
       {renderDropdownContent()}
@@ -588,6 +653,7 @@ export type AnnouncementBarClientProps = {
   dismissDays?: number;
   startsAt?: string;
   endsAt?: string;
+  elements?: WithSection['elements'];
 };
 
 export function AnnouncementBarClient({
@@ -597,8 +663,10 @@ export function AnnouncementBarClient({
   dismissDays = 7,
   startsAt,
   endsAt,
+  elements,
 }: AnnouncementBarClientProps) {
   const [dismissed, setDismissed] = useState(true); // start hidden to avoid layout shift before checking storage
+  const styled = { elements };
 
   useEffect(() => {
     // Schedule check
@@ -638,17 +706,27 @@ export function AnnouncementBarClient({
   if (dismissed || !text) return null;
 
   return (
-    <div className="relative w-full bg-[var(--site-primary)] text-[var(--site-on-primary)] px-4 py-2 text-xs sm:text-sm font-medium transition-all">
-      <div className="mx-auto flex max-w-[var(--site-max-width,72rem)] items-center justify-center text-center pr-8 sm:pr-0">
+    <div
+      {...el(
+        styled,
+        'bar',
+        'relative w-full bg-[var(--site-primary)] text-[var(--site-on-primary)] px-4 py-2 text-xs sm:text-sm font-medium transition-all'
+      )}
+    >
+      <div className="mx-auto flex max-w-[var(--site-max-width,72rem)] items-center justify-center pr-8 text-center sm:pr-0">
         {link ? (
           <a
             href={link}
-            className="inline-flex items-center gap-1.5 underline underline-offset-2 hover:opacity-90"
+            {...linkEl(
+              styled,
+              'cta',
+              'inline-flex items-center gap-1.5 underline underline-offset-2 hover:opacity-90'
+            )}
           >
-            <span>{text}</span>
+            <span {...el(styled, 'text', '')}>{text}</span>
           </a>
         ) : (
-          <span>{text}</span>
+          <span {...el(styled, 'text', '')}>{text}</span>
         )}
       </div>
 
@@ -657,7 +735,11 @@ export function AnnouncementBarClient({
           type="button"
           onClick={handleDismiss}
           aria-label="Dismiss announcement"
-          className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 opacity-80 hover:bg-black/10 hover:opacity-100 transition-colors"
+          {...el(
+            styled,
+            'dismiss',
+            'absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 opacity-80 hover:bg-black/10 hover:opacity-100 transition-colors'
+          )}
         >
           <X className="size-3.5" />
         </button>
@@ -676,6 +758,7 @@ export type BackToTopClientProps = {
   icon?: 'arrow' | 'chevron';
   label?: string;
   editing?: boolean;
+  elements?: WithSection['elements'];
 };
 
 export function BackToTopClient({
@@ -684,8 +767,10 @@ export function BackToTopClient({
   icon = 'arrow',
   label = '',
   editing = false,
+  elements,
 }: BackToTopClientProps) {
   const [visible, setVisible] = useState(false);
+  const styled = { elements };
 
   useEffect(() => {
     if (position === 'inline' || editing) {
@@ -730,17 +815,21 @@ export function BackToTopClient({
       onClick={scrollToTop}
       aria-label={label || 'Back to top'}
       title={label || 'Back to top'}
-      className={cn(
-        'group inline-flex items-center justify-center gap-2 rounded-full shadow-md transition-all duration-200',
-        'bg-[var(--site-bg,#ffffff)] text-[var(--site-fg,#1e293b)] border border-[var(--site-border)]',
-        'hover:bg-[var(--site-surface)] hover:shadow-lg hover:-translate-y-0.5',
-        'focus:outline-none focus:ring-2 focus:ring-[var(--site-primary,#3b82f6)]',
-        label ? 'px-4 py-2 text-xs font-medium' : 'p-3',
-        posClasses
+      {...el(
+        styled,
+        'button',
+        cn(
+          'group inline-flex items-center justify-center gap-2 rounded-full shadow-md transition-all duration-200',
+          'bg-[var(--site-bg,#ffffff)] text-[var(--site-fg,#1e293b)] border border-[var(--site-border)]',
+          'hover:bg-[var(--site-surface)] hover:shadow-lg hover:-translate-y-0.5',
+          'focus:outline-none focus:ring-2 focus:ring-[var(--site-primary,#3b82f6)]',
+          label ? 'px-4 py-2 text-xs font-medium' : 'p-3',
+          posClasses
+        )
       )}
     >
       <IconComponent className="size-4 transition-transform group-hover:-translate-y-0.5" />
-      {label && <span>{label}</span>}
+      {label && <span {...el(styled, 'label', '')}>{label}</span>}
     </button>
   );
 }
@@ -751,9 +840,10 @@ export function BackToTopClient({
 
 export type ThemeToggleClientProps = {
   align?: 'left' | 'center' | 'right';
+  elements?: WithSection['elements'];
 };
 
-export function ThemeToggleClient(_props: ThemeToggleClientProps) {
+export function ThemeToggleClient(props: ThemeToggleClientProps) {
   const [theme, setTheme] = useState<SiteMode>('light');
 
   useEffect(() => {
@@ -773,7 +863,7 @@ export function ThemeToggleClient(_props: ThemeToggleClientProps) {
       aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
       aria-pressed={theme === 'dark'}
       title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-      className="s-icon-btn"
+      {...el(props, 'button', 's-icon-btn')}
     >
       {theme === 'dark' ? (
         <Sun className="size-4" />

@@ -3,6 +3,8 @@
 import { Search } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { cn } from '@/lib/utils/cn';
+import type { ElementStyle } from '../style';
+import { el } from './element';
 
 type Option = { slug: string; name: string };
 
@@ -15,6 +17,7 @@ export type BlogFiltersProps = {
   tags: Option[];
   active: { q?: string; category?: string; tag?: string; sort?: string };
   editing?: boolean;
+  elements?: Record<string, ElementStyle>;
 };
 
 const fieldClass =
@@ -68,7 +71,7 @@ export function BlogFilters(p: BlogFiltersProps) {
             name="q"
             defaultValue={p.active.q ?? ''}
             placeholder="Search posts"
-            className={cn(fieldClass, 'w-full pl-9')}
+            {...el(p, 'filterInput', cn(fieldClass, 'w-full pl-9'))}
           />
         </label>
       )}
@@ -79,7 +82,7 @@ export function BlogFilters(p: BlogFiltersProps) {
             name="category"
             defaultValue={p.active.category ?? ''}
             onChange={submitOnChange}
-            className={selectClass}
+            {...el(p, 'filterInput', selectClass)}
           >
             <option value="">All categories</option>
             {p.categories.map(c => (
@@ -97,7 +100,7 @@ export function BlogFilters(p: BlogFiltersProps) {
             name="tag"
             defaultValue={p.active.tag ?? ''}
             onChange={submitOnChange}
-            className={selectClass}
+            {...el(p, 'filterInput', selectClass)}
           >
             <option value="">All tags</option>
             {p.tags.map(t => (
@@ -115,7 +118,7 @@ export function BlogFilters(p: BlogFiltersProps) {
             name="sort"
             defaultValue={p.active.sort ?? ''}
             onChange={submitOnChange}
-            className={selectClass}
+            {...el(p, 'filterInput', selectClass)}
           >
             <option value="">Newest first</option>
             <option value="oldest">Oldest first</option>
@@ -124,7 +127,10 @@ export function BlogFilters(p: BlogFiltersProps) {
         </label>
       )}
       {p.showSearch && (
-        <button type="submit" className="s-btn s-btn-primary h-10">
+        <button
+          type="submit"
+          {...el(p, 'filterButton', 's-btn s-btn-primary h-10')}
+        >
           Search
         </button>
       )}

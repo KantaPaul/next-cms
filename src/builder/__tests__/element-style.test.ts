@@ -5,6 +5,7 @@ import {
   resolveImageSize,
   resolveSectionStyle,
 } from '../style';
+import { linkEl } from '../blocks/element';
 
 describe('resolveElementStyle', () => {
   it('returns empty classes and style when undefined', () => {
@@ -290,5 +291,38 @@ describe('resolveImageSize', () => {
     assert.equal(res.height, 600);
     assert.equal(res.src, 'https://example.com/banner.png?w=800&h=600');
     assert.equal(res.sizes, '(max-width: 800px) 100vw, 800px');
+  });
+});
+
+describe('linkEl', () => {
+  it('returns baseClass and empty style when undefined', () => {
+    const res = linkEl(undefined, 'link', 'text-sm font-medium');
+    assert.equal(res.className, 'text-sm font-medium');
+    assert.deepEqual(res.style, {});
+  });
+
+  it('adds hover feedback only when a colour has no hover colour', () => {
+    const withColorOnly = linkEl(
+      { elements: { link: { color: '#ff0000' } } },
+      'link',
+      'text-sm font-medium'
+    );
+    assert.ok(withColorOnly.className.includes('hover:opacity-80'));
+    assert.equal((withColorOnly.style as any).color, '#ff0000');
+
+    const withHoverColor = linkEl(
+      { elements: { link: { color: '#ff0000', hover: { color: '#00ff00' } } } },
+      'link',
+      'text-sm font-medium'
+    );
+    assert.ok(!withHoverColor.className.includes('hover:opacity-80'));
+    assert.ok(withHoverColor.className.includes('s-hc'));
+
+    const withNoColor = linkEl(
+      { elements: { link: { typography: { fontSize: { desktop: 16 } } } } },
+      'link',
+      'text-sm font-medium'
+    );
+    assert.ok(!withNoColor.className.includes('hover:opacity-80'));
   });
 });

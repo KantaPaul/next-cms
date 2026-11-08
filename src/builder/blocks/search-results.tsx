@@ -4,15 +4,13 @@ import type {
   SearchResultItem,
 } from '@/server/services/search.service';
 import { cn } from '@/lib/utils/cn';
-import {
-  Section,
-  SectionHeading,
-  type SectionSettings,
-} from './section';
+import type { ElementStyle } from '../style';
+import { el } from './element';
+import { Section, SectionHeading, type SectionSettings } from './section';
 
 export interface SearchResultsBlockProps {
   /** Element styles (`elementStyle()` fields), e.g. the section heading. */
-  elements?: Record<string, unknown>;
+  elements?: Record<string, ElementStyle>;
   eyebrow?: string;
   title?: string;
   subtitle?: string;
@@ -133,10 +131,21 @@ export function SearchResults({
   };
 
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+  const styled = { elements };
+  const pageLinkEl = el(
+    styled,
+    'pagination',
+    's-border s-surface s-radius rounded border px-3 py-1.5 font-medium'
+  );
 
   return (
     <Section section={section} editing={editing}>
-      <SectionHeading elements={elements} eyebrow={eyebrow} title={title} subtitle={subtitle} />
+      <SectionHeading
+        elements={elements}
+        eyebrow={eyebrow}
+        title={title}
+        subtitle={subtitle}
+      />
 
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
         {/* Search Form */}
@@ -156,11 +165,19 @@ export function SearchResults({
             defaultValue={query}
             placeholder={placeholder}
             aria-label={placeholder}
-            className="s-surface s-border s-radius h-11 flex-1 border px-4 text-sm"
+            {...el(
+              styled,
+              'input',
+              's-surface s-border s-radius h-11 flex-1 border px-4 text-sm'
+            )}
           />
           <button
             type="submit"
-            className="s-primary-bg s-radius h-11 px-6 text-sm font-semibold transition-opacity hover:opacity-90"
+            {...el(
+              styled,
+              'button',
+              's-primary-bg s-radius h-11 px-6 text-sm font-semibold transition-opacity hover:opacity-90'
+            )}
           >
             Search
           </button>
@@ -186,12 +203,16 @@ export function SearchResults({
                     kind: tab.id,
                     page: 1,
                   })}
-                  className={cn(
-                    's-radius inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors',
-                    isSelected
-                      ? 's-primary-bg'
-                      : 's-surface s-border border hover:opacity-80'
-                  )}
+                  {...(isSelected
+                    ? {
+                        className:
+                          's-radius inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors s-primary-bg',
+                      }
+                    : el(
+                        styled,
+                        'tab',
+                        's-radius inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors s-surface s-border border hover:opacity-80'
+                      ))}
                 >
                   <span>{tab.label}</span>
                   <span className="rounded-full bg-black/10 px-1.5 py-0.5 text-[10px]">
@@ -207,7 +228,7 @@ export function SearchResults({
         <div
           aria-live="polite"
           aria-atomic="true"
-          className="s-muted text-xs font-medium"
+          {...el(styled, 'count', 's-muted text-xs font-medium')}
         >
           {query
             ? `Found ${total} ${total === 1 ? 'result' : 'results'} for “${query}”`
@@ -226,7 +247,11 @@ export function SearchResults({
             {items.map(item => (
               <li
                 key={`${item.kind}-${item.path}`}
-                className="s-surface s-border s-radius flex flex-col gap-4 border p-5 sm:flex-row sm:items-start"
+                {...el(
+                  styled,
+                  'card',
+                  's-surface s-border s-radius flex flex-col gap-4 border p-5 sm:flex-row sm:items-start'
+                )}
               >
                 {showThumbnails && item.thumbnailUrl && (
                   <a
@@ -240,7 +265,11 @@ export function SearchResults({
                       src={item.thumbnailUrl}
                       alt=""
                       loading="lazy"
-                      className="aspect-video size-full object-cover"
+                      {...el(
+                        styled,
+                        'thumbnail',
+                        'aspect-video size-full object-cover'
+                      )}
                     />
                   </a>
                 )}
@@ -248,33 +277,58 @@ export function SearchResults({
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                   <div className="flex flex-wrap items-center gap-2">
                     {item.pinned && (
-                      <span className="s-primary-bg rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                      <span
+                        {...el(
+                          styled,
+                          'badge',
+                          's-primary-bg rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider'
+                        )}
+                      >
                         Pinned
                       </span>
                     )}
                     {showTypeBadges && (
-                      <span className="s-border rounded border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
+                      <span
+                        {...el(
+                          styled,
+                          'badge',
+                          's-border rounded border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider'
+                        )}
+                      >
                         {KIND_BADGE_LABELS[item.kind] ?? item.kind}
                       </span>
                     )}
-                    <span className="s-muted truncate text-xs">{item.path}</span>
+                    <span {...el(styled, 'path', 's-muted truncate text-xs')}>
+                      {item.path}
+                    </span>
                   </div>
 
-                  <h2 className="s-card-title text-lg leading-snug">
+                  <h2
+                    {...el(
+                      styled,
+                      'title',
+                      's-card-title text-lg leading-snug'
+                    )}
+                  >
                     <a href={item.path} className="hover:underline">
                       {item.title}
                     </a>
                   </h2>
 
-                  {showSnippets && (item.highlightedSnippet || item.snippet) && (
-                    <p
-                      className="s-muted text-sm leading-relaxed [&_mark]:rounded [&_mark]:bg-amber-200/70 [&_mark]:px-1 [&_mark]:font-medium [&_mark]:text-current"
-                      // biome-ignore lint/security/noDangerouslySetInnerHtml: HTML-escaped snippet with <mark> tags from highlightTextSnippet
-                      dangerouslySetInnerHTML={{
-                        __html: item.highlightedSnippet || item.snippet,
-                      }}
-                    />
-                  )}
+                  {showSnippets &&
+                    (item.highlightedSnippet || item.snippet) && (
+                      <p
+                        {...el(
+                          styled,
+                          'snippet',
+                          's-muted text-sm leading-relaxed [&_mark]:rounded [&_mark]:bg-amber-200/70 [&_mark]:px-1 [&_mark]:font-medium [&_mark]:text-current'
+                        )}
+                        // biome-ignore lint/security/noDangerouslySetInnerHtml: HTML-escaped snippet with <mark> tags from highlightTextSnippet
+                        dangerouslySetInnerHTML={{
+                          __html: item.highlightedSnippet || item.snippet,
+                        }}
+                      />
+                    )}
                 </div>
               </li>
             ))}
@@ -295,7 +349,7 @@ export function SearchResults({
                   page: page - 1,
                 })}
                 rel="prev"
-                className="s-border s-surface s-radius rounded border px-3 py-1.5 font-medium"
+                {...pageLinkEl}
               >
                 Previous
               </a>
@@ -309,12 +363,16 @@ export function SearchResults({
                   page: n,
                 })}
                 aria-current={n === page ? 'page' : undefined}
-                className={cn(
-                  's-radius min-w-9 rounded px-3 py-1.5 text-center font-medium',
-                  n === page
-                    ? 's-primary-bg'
-                    : 's-surface s-border border hover:opacity-80'
-                )}
+                {...(n === page
+                  ? {
+                      className:
+                        's-radius min-w-9 rounded px-3 py-1.5 text-center font-medium s-primary-bg',
+                    }
+                  : el(
+                      styled,
+                      'pagination',
+                      's-radius min-w-9 rounded px-3 py-1.5 text-center font-medium s-surface s-border border hover:opacity-80'
+                    ))}
               >
                 {n}
               </a>
@@ -327,7 +385,7 @@ export function SearchResults({
                   page: page + 1,
                 })}
                 rel="next"
-                className="s-border s-surface s-radius rounded border px-3 py-1.5 font-medium"
+                {...pageLinkEl}
               >
                 Next
               </a>

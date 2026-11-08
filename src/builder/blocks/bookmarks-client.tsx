@@ -3,6 +3,8 @@
 import { Bookmark, BookmarkCheck, X } from 'lucide-react';
 import { useCallback, useEffect, useId, useState } from 'react';
 import { cn } from '@/lib/utils/cn';
+import type { ElementStyle } from '../style';
+import { el, linkEl } from './element';
 
 /**
  * Visitor bookmarks, kept in this browser only (localStorage). Nothing is sent
@@ -42,9 +44,7 @@ function write(items: SavedItem[]) {
 function safePath(url: string): string | null {
   try {
     const u = new URL(url, window.location.origin);
-    return u.origin === window.location.origin
-      ? u.pathname + u.search
-      : null;
+    return u.origin === window.location.origin ? u.pathname + u.search : null;
   } catch {
     return null;
   }
@@ -94,6 +94,7 @@ export function BookmarkToggle({
   image,
   label,
   className,
+  elements,
 }: {
   /** Defaults to the current page. */
   url?: string;
@@ -102,6 +103,7 @@ export function BookmarkToggle({
   /** Visible text next to the icon; icon-only when empty. */
   label?: string;
   className?: string;
+  elements?: Record<string, ElementStyle>;
 }) {
   const { has, toggle } = useBookmarks();
   const [here, setHere] = useState('');
@@ -116,10 +118,14 @@ export function BookmarkToggle({
       aria-pressed={saved}
       aria-label={label ? undefined : text}
       title={text}
-      className={cn(
-        label ? 's-btn s-btn-outline' : 's-icon-btn s-border border',
-        saved && 'text-[var(--site-primary)]',
-        className
+      {...el(
+        { elements },
+        'button',
+        cn(
+          label ? 's-btn s-btn-outline' : 's-icon-btn s-border border',
+          saved && 'text-[var(--site-primary)]',
+          className
+        )
       )}
     >
       {saved ? (
@@ -136,9 +142,11 @@ export function BookmarkToggle({
 export function BookmarksDrawer({
   title = 'Saved',
   emptyText = 'Nothing saved yet. Use the bookmark button on a post to keep it here.',
+  elements,
 }: {
   title?: string;
   emptyText?: string;
+  elements?: Record<string, ElementStyle>;
 }) {
   const { items, remove } = useBookmarks();
   const [open, setOpen] = useState(false);
@@ -161,14 +169,20 @@ export function BookmarksDrawer({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="s-icon-btn relative"
+        {...el({ elements }, 'trigger', 's-icon-btn relative')}
         aria-label={`${title} (${items.length})`}
         title={title}
         aria-haspopup="dialog"
       >
         <Bookmark className="size-4" aria-hidden />
         {items.length > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex min-w-4 items-center justify-center rounded-full bg-[var(--site-primary)] px-1 text-[10px] font-semibold leading-4 text-[var(--site-on-primary)]">
+          <span
+            {...el(
+              { elements },
+              'badge',
+              'absolute -right-0.5 -top-0.5 flex min-w-4 items-center justify-center rounded-full bg-[var(--site-primary)] px-1 text-[10px] font-semibold leading-4 text-[var(--site-on-primary)]'
+            )}
+          >
             {items.length}
           </span>
         )}
@@ -185,17 +199,24 @@ export function BookmarksDrawer({
             role="dialog"
             aria-modal="true"
             aria-labelledby={headingId}
-            className="s-border relative flex h-full w-full max-w-sm flex-col border-l bg-[var(--site-bg)] text-[var(--site-fg)] shadow-2xl"
+            {...el(
+              { elements },
+              'panel',
+              's-border relative flex h-full w-full max-w-sm flex-col border-l bg-[var(--site-bg)] text-[var(--site-fg)] shadow-2xl'
+            )}
           >
             <div className="s-border flex items-center justify-between border-b px-5 py-4">
-              <h2 id={headingId} className="text-lg font-medium">
+              <h2
+                id={headingId}
+                {...el({ elements }, 'title', 'text-lg font-medium')}
+              >
                 {title}
                 <span className="s-muted ml-2 text-sm">{items.length}</span>
               </h2>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="s-icon-btn"
+                {...el({ elements }, 'close', 's-icon-btn')}
                 aria-label="Close"
                 // biome-ignore lint/a11y/noAutofocus: dialog focus target
                 autoFocus
@@ -208,26 +229,42 @@ export function BookmarksDrawer({
                 {items.map(item => (
                   <li
                     key={item.url}
-                    className="group flex items-center gap-3 rounded-xl p-2 hover:bg-[var(--site-surface)]"
+                    {...el(
+                      { elements },
+                      'item',
+                      'group flex items-center gap-3 rounded-xl p-2 hover:bg-[var(--site-surface)]'
+                    )}
                   >
                     {item.image ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={item.image}
                         alt=""
-                        className="size-12 shrink-0 rounded-lg object-cover"
+                        {...el(
+                          { elements },
+                          'thumbnail',
+                          'size-12 shrink-0 rounded-lg object-cover'
+                        )}
                       />
                     ) : null}
                     <a
                       href={item.url}
-                      className="line-clamp-2 min-w-0 flex-1 text-sm font-medium hover:underline"
+                      {...linkEl(
+                        { elements },
+                        'itemTitle',
+                        'line-clamp-2 min-w-0 flex-1 text-sm font-medium hover:underline'
+                      )}
                     >
                       {item.title}
                     </a>
                     <button
                       type="button"
                       onClick={() => remove(item.url)}
-                      className="s-icon-btn size-8 shrink-0"
+                      {...el(
+                        { elements },
+                        'remove',
+                        's-icon-btn size-8 shrink-0'
+                      )}
                       aria-label={`Remove ${item.title}`}
                     >
                       <X className="size-3.5" aria-hidden />
@@ -236,7 +273,9 @@ export function BookmarksDrawer({
                 ))}
               </ul>
             ) : (
-              <p className="s-muted p-6 text-sm">{emptyText}</p>
+              <p {...el({ elements }, 'empty', 's-muted p-6 text-sm')}>
+                {emptyText}
+              </p>
             )}
           </div>
         </div>

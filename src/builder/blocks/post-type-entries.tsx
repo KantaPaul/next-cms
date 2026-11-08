@@ -1,5 +1,7 @@
 import type { NormalizedListingItem } from '@nextcms/builder-core';
 import { Quote, Star } from 'lucide-react';
+import type { ElementStyle } from '../style';
+import { el } from './element';
 import { Faq, Team, Testimonials } from './marketing';
 import { QueryLoopCarousel } from './query-loop-client';
 import {
@@ -10,15 +12,11 @@ import {
 } from './section';
 
 export type PostTypeEntriesDisplay =
-  | 'cards'
-  | 'team'
-  | 'testimonials'
-  | 'testimonial-slider'
-  | 'faq';
+  'cards' | 'team' | 'testimonials' | 'testimonial-slider' | 'faq';
 
 export interface PostTypeEntriesProps {
   /** Element styles (`elementStyle()` fields), e.g. the section heading. */
-  elements?: Record<string, unknown>;
+  elements?: Record<string, ElementStyle>;
   collectionId?: string;
   postTypeSlug?: string;
   /** Set by the loader when the post type resolved (by id or slug). */
@@ -64,8 +62,16 @@ function str(raw: Raw, ...keys: string[]): string {
 }
 
 const SAMPLE_ITEMS: NormalizedListingItem[] = [
-  ['Alex Morgan', 'Head of Design', 'Working with this team changed how we ship.'],
-  ['Sam Rivera', 'Engineering Lead', 'Fast, thoughtful, and a joy to collaborate with.'],
+  [
+    'Alex Morgan',
+    'Head of Design',
+    'Working with this team changed how we ship.',
+  ],
+  [
+    'Sam Rivera',
+    'Engineering Lead',
+    'Fast, thoughtful, and a joy to collaborate with.',
+  ],
   ['Jordan Lee', 'Product Manager', 'The best partner we have had in years.'],
 ].map(([name, role, quote], i) => ({
   id: `sample-${i}`,
@@ -126,6 +132,7 @@ export function PostTypeEntries({
   }
 
   const raw = (item: NormalizedListingItem) => (item.raw ?? {}) as Raw;
+  const styled = { elements };
 
   if (display === 'team') {
     return (
@@ -133,6 +140,7 @@ export function PostTypeEntries({
         eyebrow={eyebrow}
         title={title}
         section={section}
+        elements={elements}
         editing={editing}
         items={items.map(item => ({
           name: str(raw(item), 'name') || item.title,
@@ -161,6 +169,7 @@ export function PostTypeEntries({
         eyebrow={eyebrow}
         title={title}
         section={section}
+        elements={elements}
         editing={editing}
         items={testimonialItems}
       />
@@ -171,30 +180,47 @@ export function PostTypeEntries({
     return (
       <Section section={section} editing={editing} hasItems>
         <SectionHeading elements={elements} eyebrow={eyebrow} title={title} />
-        <QueryLoopCarousel gapClass="gap-6" columnsDesktop={2}>
+        <QueryLoopCarousel
+          gapClass="gap-6"
+          columnsDesktop={2}
+          elements={elements}
+        >
           {testimonialItems.map((t, i) => (
             <figure
               key={i}
-              className="s-surface s-border s-radius flex h-full flex-col border p-7"
+              {...el(
+                styled,
+                'card',
+                's-surface s-border s-radius flex h-full flex-col border p-7'
+              )}
             >
-              <Quote className="s-primary-text mb-4 size-6" aria-hidden />
+              <Quote
+                {...el(styled, 'quoteIcon', 's-primary-text mb-4 size-6')}
+                aria-hidden
+              />
               {t.rating > 0 && (
                 <div
                   className="mb-3 flex gap-0.5"
                   aria-label={`${Math.min(t.rating, 5)} out of 5`}
                 >
-                  {Array.from({ length: Math.min(Math.round(t.rating), 5) }).map(
-                    (_, s) => (
-                      <Star
-                        key={s}
-                        className="size-4 fill-current text-amber-500"
-                        aria-hidden
-                      />
-                    )
-                  )}
+                  {Array.from({
+                    length: Math.min(Math.round(t.rating), 5),
+                  }).map((_, s) => (
+                    <Star
+                      key={s}
+                      {...el(
+                        styled,
+                        'stars',
+                        'size-4 fill-current text-amber-500'
+                      )}
+                      aria-hidden
+                    />
+                  ))}
                 </div>
               )}
-              <blockquote className="flex-1 text-lg leading-relaxed">
+              <blockquote
+                {...el(styled, 'quote', 'flex-1 text-lg leading-relaxed')}
+              >
                 “{t.quote}”
               </blockquote>
               <figcaption className="mt-6 flex items-center gap-3">
@@ -203,13 +229,17 @@ export function PostTypeEntries({
                   <img
                     src={t.avatar}
                     alt=""
-                    className="size-11 rounded-full object-cover"
+                    {...el(
+                      styled,
+                      'avatar',
+                      'size-11 rounded-full object-cover'
+                    )}
                   />
                 )}
                 <div>
-                  <p className="font-semibold">{t.author}</p>
+                  <p {...el(styled, 'author', 'font-semibold')}>{t.author}</p>
                   {(t.role || t.company) && (
-                    <p className="s-muted text-sm">
+                    <p {...el(styled, 'role', 's-muted text-sm')}>
                       {[t.role, t.company].filter(Boolean).join(', ')}
                     </p>
                   )}
@@ -228,6 +258,7 @@ export function PostTypeEntries({
         eyebrow={eyebrow}
         title={title}
         section={section}
+        elements={elements}
         editing={editing}
         items={items.map(item => ({
           question: str(raw(item), 'question') || item.title,
@@ -250,12 +281,18 @@ export function PostTypeEntries({
                 <img
                   src={item.image}
                   alt=""
-                  className="s-radius mb-4 aspect-[4/3] w-full object-cover"
+                  {...el(
+                    styled,
+                    'image',
+                    's-radius mb-4 aspect-[4/3] w-full object-cover'
+                  )}
                 />
               )}
-              <p className="font-semibold">{item.title}</p>
+              <p {...el(styled, 'title', 'font-semibold')}>{item.title}</p>
               {item.excerpt && (
-                <p className="s-muted mt-2 text-sm">{plain(item.excerpt)}</p>
+                <p {...el(styled, 'excerpt', 's-muted mt-2 text-sm')}>
+                  {plain(item.excerpt)}
+                </p>
               )}
             </>
           );
@@ -263,7 +300,7 @@ export function PostTypeEntries({
             <MotionItem
               key={item.id}
               as="div"
-              className="s-surface s-border s-radius border p-5"
+              {...el(styled, 'card', 's-surface s-border s-radius border p-5')}
             >
               {linkToEntry && !editing ? (
                 <a href={item.url} className="block hover:opacity-90">

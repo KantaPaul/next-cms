@@ -13,7 +13,7 @@ import {
   Youtube,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
-import { el, type WithSection } from './element';
+import { el, linkEl, type WithSection } from './element';
 import type { BuilderItem } from '../data';
 import {
   type ColumnItemRef,
@@ -48,8 +48,10 @@ import {
 /* ---------- HeaderBar ---------- */
 
 /** Live-site slots are arrays; in the editor they're render functions (always "present"). */
-const hasSlotContent = (slot: SlotValue, _zones?: Record<string, BuilderItem[]>) =>
-  typeof slot === 'function' || (Array.isArray(slot) && slot.length > 0);
+const hasSlotContent = (
+  slot: SlotValue,
+  _zones?: Record<string, BuilderItem[]>
+) => typeof slot === 'function' || (Array.isArray(slot) && slot.length > 0);
 
 export type HeaderBarProps = {
   width?: 'boxed' | 'full';
@@ -162,7 +164,11 @@ export function HeaderBar({
         style={style}
       >
         {typeof columns === 'function' ? (
-          columns({ className: gridClass, style: gridStyle, minEmptyHeight: 48 })
+          columns({
+            className: gridClass,
+            style: gridStyle,
+            minEmptyHeight: 48,
+          })
         ) : (
           <div className={gridClass} style={gridStyle}>
             <BlockList items={columns} zones={zones} nested />
@@ -176,9 +182,30 @@ export function HeaderBar({
     const p = rest as HeaderBarProps;
     const centerEmpty = !editing && !hasSlotContent(center, zones);
     const cols = [
-      { key: 'left', slot: left, width: p.leftWidth ?? 'auto', size: p.leftSize, align: p.leftAlign, fallback: 'start' as const },
-      { key: 'center', slot: center, width: p.centerWidth ?? 'fill', size: p.centerSize, align: p.centerAlign, fallback: 'center' as const },
-      { key: 'right', slot: right, width: p.rightWidth ?? 'auto', size: p.rightSize, align: p.rightAlign, fallback: 'end' as const },
+      {
+        key: 'left',
+        slot: left,
+        width: p.leftWidth ?? 'auto',
+        size: p.leftSize,
+        align: p.leftAlign,
+        fallback: 'start' as const,
+      },
+      {
+        key: 'center',
+        slot: center,
+        width: p.centerWidth ?? 'fill',
+        size: p.centerSize,
+        align: p.centerAlign,
+        fallback: 'center' as const,
+      },
+      {
+        key: 'right',
+        slot: right,
+        width: p.rightWidth ?? 'auto',
+        size: p.rightSize,
+        align: p.rightAlign,
+        fallback: 'end' as const,
+      },
     ].filter(c => !(c.key === 'center' && centerEmpty && c.width === 'auto'));
     const stack = p.stackOn ?? 'none';
     return (
@@ -196,21 +223,33 @@ export function HeaderBar({
             containerClass,
             PADDING_Y[paddingY] || PADDING_Y.sm,
             'grid gap-4',
-            stack === 'none' ? 's-hcols-always' : stack === 'tablet' ? 's-hcols-lg' : 's-hcols',
+            stack === 'none'
+              ? 's-hcols-always'
+              : stack === 'tablet'
+                ? 's-hcols-lg'
+                : 's-hcols',
             ALIGN_ITEMS[align] || ALIGN_ITEMS.center
           )}
-          style={{ '--hc-cols': headerGridTemplate(cols) } as React.CSSProperties}
+          style={
+            { '--hc-cols': headerGridTemplate(cols) } as React.CSSProperties
+          }
         >
           {cols.map(c => (
             <div
               key={c.key}
               data-header-col={c.key}
-              className={cn('flex min-w-0 items-center gap-3', headerColJustify(c.align, c.fallback))}
+              className={cn(
+                'flex min-w-0 items-center gap-3',
+                headerColJustify(c.align, c.fallback)
+              )}
             >
               {renderSlot(
                 c.slot,
                 zones,
-                cn('flex items-center gap-3', headerColJustify(c.align, c.fallback))
+                cn(
+                  'flex items-center gap-3',
+                  headerColJustify(c.align, c.fallback)
+                )
               )}
             </div>
           ))}
@@ -270,7 +309,11 @@ export function HeaderBar({
         </div>
         {colStyles.center !== 'hidden' && (
           <div className={colStyles.center}>
-            {renderSlot(center, zones, 'flex items-center gap-4 justify-center')}
+            {renderSlot(
+              center,
+              zones,
+              'flex items-center gap-4 justify-center'
+            )}
           </div>
         )}
         <div className={colStyles.right}>
@@ -353,7 +396,11 @@ export function HeaderColumns({
         )}
       >
         {typeof columns === 'function' ? (
-          columns({ className: gridClass, style: gridStyle, minEmptyHeight: 48 })
+          columns({
+            className: gridClass,
+            style: gridStyle,
+            minEmptyHeight: 48,
+          })
         ) : (
           <div className={gridClass} style={gridStyle}>
             <BlockList items={columns} zones={zones} nested />
@@ -395,13 +442,13 @@ export function HeaderColumns({
         {slots.map((slot, index) => {
           const alignValue = colProps[`col${index + 1}Align`];
           const innerClass = alignValue
-            ? cn('flex items-center gap-3', headerColJustify(alignValue, 'start'))
+            ? cn(
+                'flex items-center gap-3',
+                headerColJustify(alignValue, 'start')
+              )
             : undefined;
           return (
-            <div
-              key={index}
-              className={cn('min-w-0', innerClass)}
-            >
+            <div key={index} className={cn('min-w-0', innerClass)}>
               {renderSlot(slot, zones, innerClass)}
             </div>
           );
@@ -473,13 +520,22 @@ export function FooterColumns({
     const colsCount = colItems.length || 4;
     const gridClass = cn(
       'grid',
-      colsCount === 1 ? 'grid-cols-1' : stackOn === 'tablet' ? 's-hcols-lg' : 's-hcols',
+      colsCount === 1
+        ? 'grid-cols-1'
+        : stackOn === 'tablet'
+          ? 's-hcols-lg'
+          : 's-hcols',
       GAP_STYLES[gap] || GAP_STYLES.lg
     );
     const gridStyle = columnsGridStyle(
       colItems.length
         ? colItems
-        : [{ width: 'fill' }, { width: 'fill' }, { width: 'fill' }, { width: 'fill' }],
+        : [
+            { width: 'fill' },
+            { width: 'fill' },
+            { width: 'fill' },
+            { width: 'fill' },
+          ],
       colsCount >= 4 && stackOn === 'tablet'
         ? { tabletFallback: 'minmax(0,1fr) minmax(0,1fr)' }
         : undefined
@@ -499,7 +555,11 @@ export function FooterColumns({
           )}
         >
           {typeof columns === 'function' ? (
-            columns({ className: gridClass, style: gridStyle, minEmptyHeight: 80 })
+            columns({
+              className: gridClass,
+              style: gridStyle,
+              minEmptyHeight: 80,
+            })
           ) : (
             <div className={gridClass} style={gridStyle}>
               <BlockList items={columns} zones={zones} nested />
@@ -552,9 +612,18 @@ export function FooterColumns({
           FOOTER_PADDINGS[paddingY] || FOOTER_PADDINGS.lg
         )}
       >
-        <div className={cn('grid', gridColsClass, GAP_STYLES[gap] || GAP_STYLES.lg)}>
+        <div
+          className={cn(
+            'grid',
+            gridColsClass,
+            GAP_STYLES[gap] || GAP_STYLES.lg
+          )}
+        >
           {slots.map((slot, index) => (
-            <div key={`footer-col-${index}`} className="min-w-0 flex flex-col space-y-3">
+            <div
+              key={`footer-col-${index}`}
+              className="flex min-w-0 flex-col space-y-3"
+            >
               {renderSlot(slot, zones)}
             </div>
           ))}
@@ -578,6 +647,7 @@ export type LogoProps = {
   siteName?: string;
   siteLogo?: string;
   siteSlug?: string;
+  elements?: WithSection['elements'];
 };
 
 export function Logo({
@@ -591,23 +661,41 @@ export function Logo({
   tagline,
   siteLogo,
   siteSlug,
+  elements,
 }: LogoProps) {
-  const logoUrl =
-    source === 'site' ? siteLogo : mediaUrl || siteLogo;
+  const logoUrl = source === 'site' ? siteLogo : mediaUrl || siteLogo;
   const href = menuHref(link || '/', siteSlug);
+  const styled = { elements };
+  const imgStyle = el(
+    styled,
+    'image',
+    cn('object-contain', darkMediaUrl && 's-logo-light')
+  );
+  const darkImgStyle = el(styled, 'image', 's-logo-dark object-contain');
+  const siteNameStyle = el(
+    styled,
+    'siteName',
+    'truncate [font-family:var(--site-font-heading)]'
+  );
+  const taglineStyle = el(styled, 'tagline', 's-meta truncate font-normal');
 
   return (
     <Link
       href={href}
-      className="inline-flex items-center gap-2.5 font-bold text-lg hover:opacity-90 transition-opacity"
+      className="inline-flex items-center gap-2.5 text-lg font-bold transition-opacity hover:opacity-90"
     >
       {logoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={logoUrl}
           alt={siteName || 'Logo'}
-          style={{ width: `${width}px`, maxWidth: '100%', height: 'auto' }}
-          className={cn('object-contain', darkMediaUrl && 's-logo-light')}
+          style={{
+            width: `${width}px`,
+            maxWidth: '100%',
+            height: 'auto',
+            ...imgStyle.style,
+          }}
+          className={imgStyle.className}
         />
       ) : null}
       {logoUrl && darkMediaUrl ? (
@@ -615,18 +703,19 @@ export function Logo({
         <img
           src={darkMediaUrl}
           alt={siteName || 'Logo'}
-          style={{ width: `${width}px`, maxWidth: '100%', height: 'auto' }}
-          className="s-logo-dark object-contain"
+          style={{
+            width: `${width}px`,
+            maxWidth: '100%',
+            height: 'auto',
+            ...darkImgStyle.style,
+          }}
+          className={darkImgStyle.className}
         />
       ) : null}
       {showSiteName && siteName && (
         <span className="flex min-w-0 flex-col leading-tight">
-          <span className="truncate [font-family:var(--site-font-heading)]">
-            {siteName}
-          </span>
-          {tagline ? (
-            <span className="s-meta truncate font-normal">{tagline}</span>
-          ) : null}
+          <span {...siteNameStyle}>{siteName}</span>
+          {tagline ? <span {...taglineStyle}>{tagline}</span> : null}
         </span>
       )}
     </Link>
@@ -646,6 +735,7 @@ export type NavMenuProps = {
   siteSlug?: string;
   /** Loaded mega menu panels by top-level menu item id. */
   megaMenus?: Record<string, MegaMenuPanelData>;
+  elements?: WithSection['elements'];
 };
 
 const SAMPLE_NAV_MENU = {
@@ -657,7 +747,13 @@ const SAMPLE_NAV_MENU = {
     { id: '1', label: 'Home', url: '/', target: '_self', children: [] },
     { id: '2', label: 'About', url: '/about', target: '_self', children: [] },
     { id: '3', label: 'Blog', url: '/blog', target: '_self', children: [] },
-    { id: '4', label: 'Contact', url: '/contact', target: '_self', children: [] },
+    {
+      id: '4',
+      label: 'Contact',
+      url: '/contact',
+      target: '_self',
+      children: [],
+    },
   ],
 } as unknown as MenuWithItems;
 
@@ -671,6 +767,7 @@ export function NavMenu({
   menu,
   siteSlug,
   megaMenus,
+  elements,
 }: NavMenuProps) {
   const resolvedMenu = menu?.items?.length ? menu : SAMPLE_NAV_MENU;
   const megaPanels =
@@ -678,7 +775,11 @@ export function NavMenu({
       ? Object.fromEntries(
           Object.entries(megaMenus).map(([itemId, panel]) => [
             itemId,
-            <MegaMenuPanel key={itemId} settings={panel.settings} width={panel.width}>
+            <MegaMenuPanel
+              key={itemId}
+              settings={panel.settings}
+              width={panel.width}
+            >
               <BlockList
                 items={panel.blocks as BuilderItem[]}
                 zones={panel.zones as Record<string, BuilderItem[]>}
@@ -699,6 +800,7 @@ export function NavMenu({
         siteSlug={siteSlug}
         megaPanels={megaPanels}
         trigger={dropdownTrigger}
+        elements={elements}
       />
     </nav>
   );
@@ -710,6 +812,7 @@ export type CopyrightProps = {
   text?: string;
   align?: 'left' | 'center' | 'right';
   siteName?: string;
+  elements?: WithSection['elements'];
 };
 
 const ALIGN_CLASS: Record<string, string> = {
@@ -722,6 +825,7 @@ export function Copyright({
   text = '© {year} {site_name}. All rights reserved.',
   align = 'center',
   siteName = 'Site',
+  elements,
 }: CopyrightProps) {
   const year = new Date().getFullYear().toString();
   const renderedText = (text || '')
@@ -730,9 +834,10 @@ export function Copyright({
 
   return (
     <p
-      className={cn(
-        'text-xs s-muted',
-        ALIGN_CLASS[align] || ALIGN_CLASS.center
+      {...el(
+        { elements },
+        'text',
+        cn('text-xs s-muted', ALIGN_CLASS[align] || ALIGN_CLASS.center)
       )}
     >
       {renderedText}
@@ -768,7 +873,7 @@ export function FooterLinks({
   elements,
 }: FooterLinksProps) {
   const styled = { elements };
-  const linkStyle = el(
+  const linkStyle = linkEl(
     styled,
     'link',
     'hover:underline hover:text-[var(--site-fg)] transition-colors'
@@ -779,7 +884,7 @@ export function FooterLinks({
       : links;
 
   const list = (
-    <ul className="flex flex-col space-y-1.5 text-sm s-muted">
+    <ul className="s-muted flex flex-col space-y-1.5 text-sm">
       {(items || []).map((link, idx) => (
         <li key={idx}>
           <a
@@ -901,6 +1006,7 @@ export type SocialIconsProps = {
   shape?: 'plain' | 'round' | 'square';
   size?: 'sm' | 'md' | 'lg';
   align?: 'left' | 'center' | 'right';
+  elements?: WithSection['elements'];
 };
 
 const SOCIAL_ALIGN: Record<string, string> = {
@@ -992,10 +1098,12 @@ export function SocialIcons({
   shape = 'plain',
   size = 'md',
   align = 'left',
+  elements,
 }: SocialIconsProps) {
   const iconClass = SOCIAL_SIZE_ICON[size] || SOCIAL_SIZE_ICON.md;
   const shapeMap = SOCIAL_SHAPE[shape] || SOCIAL_SHAPE.plain;
   const btnClass = shapeMap[size] || shapeMap.md;
+  const styled = { elements };
 
   return (
     <div
@@ -1016,7 +1124,7 @@ export function SocialIcons({
             rel="noopener noreferrer"
             aria-label={aria}
             title={aria}
-            className={btnClass}
+            {...el(styled, 'icon', btnClass)}
           >
             {renderNetworkIcon(networkName, iconClass)}
           </a>
@@ -1039,6 +1147,7 @@ export type ContactInfoProps = {
   showIcons?: boolean;
   layout?: 'vertical' | 'horizontal';
   align?: 'left' | 'center' | 'right';
+  elements?: WithSection['elements'];
 };
 
 const CONTACT_ALIGN: Record<string, string> = {
@@ -1055,13 +1164,15 @@ export function ContactInfo({
   showIcons = true,
   layout = 'vertical',
   align = 'left',
+  elements,
 }: ContactInfoProps) {
   const isHorizontal = layout === 'horizontal';
+  const styled = { elements };
 
   return (
     <div
       className={cn(
-        'text-sm s-muted',
+        's-muted text-sm',
         isHorizontal
           ? 'flex flex-wrap items-center gap-x-6 gap-y-2'
           : 'flex flex-col space-y-2',
@@ -1082,10 +1193,16 @@ export function ContactInfo({
           icon = <MapPin className="size-4 shrink-0" />;
         }
 
+        const iconEl = icon ? (
+          <span {...el(styled, 'icon', 'inline-flex')}>{icon}</span>
+        ) : null;
+
         const content = (
-          <span className="inline-flex items-center gap-2">
-            {showIcons && icon}
-            <span>{item.label ? `${item.label}: ${item.value}` : item.value}</span>
+          <span {...el(styled, 'item', 'inline-flex items-center gap-2')}>
+            {showIcons && iconEl}
+            <span>
+              {item.label ? `${item.label}: ${item.value}` : item.value}
+            </span>
           </span>
         );
 
@@ -1094,7 +1211,11 @@ export function ContactInfo({
             {href ? (
               <a
                 href={href}
-                className="hover:underline hover:text-[var(--site-fg)] transition-colors"
+                {...linkEl(
+                  styled,
+                  'link',
+                  'hover:underline hover:text-[var(--site-fg)] transition-colors'
+                )}
               >
                 {content}
               </a>
@@ -1118,6 +1239,7 @@ export type LegalLinksProps = {
   align?: 'left' | 'center' | 'right';
   menu?: MenuWithItems | null;
   siteSlug?: string;
+  elements?: WithSection['elements'];
 };
 
 const LEGAL_ALIGN: Record<string, string> = {
@@ -1145,6 +1267,7 @@ export function LegalLinks({
   align = 'center',
   menu,
   siteSlug,
+  elements,
 }: LegalLinksProps) {
   const items =
     source === 'menu' && menu?.items?.length
@@ -1152,19 +1275,23 @@ export function LegalLinks({
       : links;
 
   const sepChar = LEGAL_SEPARATORS[separator] ?? '·';
+  const styled = { elements };
 
   return (
     <nav
       aria-label="Legal links"
       className={cn(
-        'flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs s-muted',
+        's-muted flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs',
         LEGAL_ALIGN[align] || LEGAL_ALIGN.center
       )}
     >
       {(items || []).map((link, idx) => (
         <span key={idx} className="inline-flex items-center gap-2.5">
           {idx > 0 && sepChar && (
-            <span className="s-muted select-none" aria-hidden>
+            <span
+              {...el(styled, 'separator', 's-muted select-none')}
+              aria-hidden
+            >
               {sepChar}
             </span>
           )}
@@ -1172,7 +1299,11 @@ export function LegalLinks({
             href={menuHref(link.url, siteSlug)}
             target={link.target}
             rel={link.target === '_blank' ? 'noopener noreferrer' : undefined}
-            className="hover:underline hover:text-[var(--site-fg)] transition-colors"
+            {...linkEl(
+              styled,
+              'link',
+              'hover:underline hover:text-[var(--site-fg)] transition-colors'
+            )}
           >
             {link.label}
           </a>
@@ -1192,6 +1323,10 @@ export function ThemeToggle(props: ThemeToggleProps) {
 
 /* ---------- LanguageSwitcherBlock ---------- */
 
-export function LanguageSwitcherBlock() {
-  return <LanguageSwitcher />;
+export type LanguageSwitcherBlockProps = {
+  elements?: WithSection['elements'];
+};
+
+export function LanguageSwitcherBlock(props: LanguageSwitcherBlockProps) {
+  return <LanguageSwitcher elements={props.elements} />;
 }

@@ -4,6 +4,8 @@
 import { useLoopItem } from './query-loop-client';
 import { formatLoopDate, SAMPLE_LOOP_ITEMS } from './loop-shared';
 import { BookmarkToggle } from './bookmarks-client';
+import type { ElementStyle } from '../style';
+import { el, linkEl } from './element';
 
 // ---------------------------------------------------------------------------
 // LoopItemField Block (R575 / QRY-05)
@@ -25,6 +27,7 @@ export interface LoopItemFieldProps {
   readMoreLabel?: string;
   language?: string;
   editing?: boolean;
+  elements?: Record<string, ElementStyle>;
 }
 
 export function LoopItemField({
@@ -33,7 +36,10 @@ export function LoopItemField({
   linkToItem = true,
   readMoreLabel = 'Read more',
   language = 'en',
+  elements,
 }: LoopItemFieldProps) {
+  const styled = { elements };
+  const imageEl = el(styled, 'image', 'aspect-video size-full object-cover');
   const item = useLoopItem() ?? SAMPLE_LOOP_ITEMS[0];
 
   switch (field) {
@@ -42,26 +48,16 @@ export function LoopItemField({
       return linkToItem ? (
         <a href={item.url} className="block overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={item.image}
-            alt={item.title}
-            loading="lazy"
-            className="aspect-video size-full object-cover"
-          />
+          <img src={item.image} alt={item.title} loading="lazy" {...imageEl} />
         </a>
       ) : (
         /* eslint-disable-next-line @next/next/no-img-element */
-        <img
-          src={item.image}
-          alt={item.title}
-          loading="lazy"
-          className="aspect-video size-full object-cover"
-        />
+        <img src={item.image} alt={item.title} loading="lazy" {...imageEl} />
       );
 
     case 'title':
       return (
-        <h3 className="text-lg font-bold leading-snug">
+        <h3 {...el(styled, 'value', 'text-lg font-bold leading-snug')}>
           {linkToItem ? (
             <a href={item.url} className="hover:underline">
               {item.title}
@@ -75,7 +71,13 @@ export function LoopItemField({
     case 'excerpt':
       if (!item.excerpt) return null;
       return (
-        <p className="s-muted line-clamp-3 text-sm leading-relaxed">
+        <p
+          {...el(
+            styled,
+            'value',
+            's-muted line-clamp-3 text-sm leading-relaxed'
+          )}
+        >
           {item.excerpt}
         </p>
       );
@@ -86,7 +88,7 @@ export function LoopItemField({
       return (
         <time
           dateTime={item.publishedAt ?? undefined}
-          className="s-muted text-xs"
+          {...el(styled, 'value', 's-muted text-xs')}
         >
           {formatted}
         </time>
@@ -95,7 +97,11 @@ export function LoopItemField({
 
     case 'author':
       if (!item.author?.name) return null;
-      return <span className="s-muted text-xs">{item.author.name}</span>;
+      return (
+        <span {...el(styled, 'value', 's-muted text-xs')}>
+          {item.author.name}
+        </span>
+      );
 
     case 'terms': {
       const terms = item.terms ?? [];
@@ -105,7 +111,11 @@ export function LoopItemField({
           {terms.map(t => (
             <span
               key={`${t.taxonomy}-${t.id}`}
-              className="s-primary-text text-xs font-semibold uppercase tracking-wider"
+              {...el(
+                styled,
+                'value',
+                's-primary-text text-xs font-semibold uppercase tracking-wider'
+              )}
             >
               {t.name}
             </span>
@@ -118,7 +128,11 @@ export function LoopItemField({
       return (
         <a
           href={item.url}
-          className="s-primary-text inline-flex items-center gap-1 text-sm font-semibold hover:underline"
+          {...linkEl(
+            styled,
+            'link',
+            's-primary-text inline-flex items-center gap-1 text-sm font-semibold hover:underline'
+          )}
         >
           {readMoreLabel} →
         </a>
@@ -126,11 +140,7 @@ export function LoopItemField({
 
     case 'bookmark':
       return (
-        <BookmarkToggle
-          url={item.url}
-          title={item.title}
-          image={item.image}
-        />
+        <BookmarkToggle url={item.url} title={item.title} image={item.image} />
       );
 
     case 'custom': {
@@ -139,7 +149,7 @@ export function LoopItemField({
           (item as unknown as Record<string, unknown>)[customKey])
         : undefined;
       if (rawVal === undefined || rawVal === null) return null;
-      return <span className="text-sm">{String(rawVal)}</span>;
+      return <span {...el(styled, 'value', 'text-sm')}>{String(rawVal)}</span>;
     }
 
     default:

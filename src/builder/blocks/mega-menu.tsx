@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { cn } from '@/lib/utils/cn';
 import { resolveLinkProps, type UrlValue } from '../style';
+import { el, type WithSection } from './element';
 import { Section, type SectionSettings } from './section';
 
 /* ---------- Featured card (mega menu promo) ---------- */
@@ -15,6 +16,7 @@ export type MegaMenuCardProps = {
   link?: UrlValue | string;
   layout?: 'stacked' | 'overlay' | 'side';
   section?: SectionSettings;
+  elements?: WithSection['elements'];
   editing?: boolean;
 };
 
@@ -28,17 +30,23 @@ export function MegaMenuCard({
   link,
   layout = 'stacked',
   section,
+  elements,
   editing,
 }: MegaMenuCardProps) {
+  const styled = { elements };
   const linkProps = resolveLinkProps(link);
   const image = imageUrl ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={imageUrl}
       alt={imageAlt ?? ''}
-      className={cn(
-        'h-full w-full object-cover',
-        layout === 'overlay' && 'absolute inset-0'
+      {...el(
+        styled,
+        'image',
+        cn(
+          'h-full w-full object-cover',
+          layout === 'overlay' && 'absolute inset-0'
+        )
       )}
     />
   ) : editing ? (
@@ -57,27 +65,42 @@ export function MegaMenuCard({
     >
       {eyebrow && (
         <span
-          className={cn(
-            'text-[11px] font-semibold uppercase tracking-wide',
-            layout === 'overlay' ? 'text-white/80' : 's-primary-text'
+          {...el(
+            styled,
+            'eyebrow',
+            cn(
+              'text-[11px] font-semibold uppercase tracking-wide',
+              layout === 'overlay' ? 'text-white/80' : 's-primary-text'
+            )
           )}
         >
           {eyebrow}
         </span>
       )}
-      {title && <span className="text-base font-semibold leading-snug">{title}</span>}
+      {title && (
+        <span {...el(styled, 'title', 'text-base font-semibold leading-snug')}>
+          {title}
+        </span>
+      )}
       {text && (
         <span
-          className={cn(
-            'text-sm',
-            layout === 'overlay' ? 'text-white/85' : 's-muted'
+          {...el(
+            styled,
+            'text',
+            cn('text-sm', layout === 'overlay' ? 'text-white/85' : 's-muted')
           )}
         >
           {text}
         </span>
       )}
       {linkLabel && (
-        <span className="mt-1 text-sm font-medium underline-offset-4 group-hover:underline">
+        <span
+          {...el(
+            styled,
+            'link',
+            'mt-1 text-sm font-medium underline-offset-4 group-hover:underline'
+          )}
+        >
           {linkLabel} →
         </span>
       )}
@@ -88,10 +111,14 @@ export function MegaMenuCard({
     <Section section={section} editing={editing} innerClassName="max-w-none">
       <a
         {...(editing ? {} : linkProps)}
-        className={cn(
-          'group s-radius s-surface s-border block overflow-hidden border transition hover:shadow-md',
-          layout === 'overlay' && 'relative flex min-h-52 flex-col',
-          layout === 'side' && 'flex items-stretch gap-0'
+        {...el(
+          styled,
+          'card',
+          cn(
+            'group s-radius s-surface s-border block overflow-hidden border transition hover:shadow-md',
+            layout === 'overlay' && 'relative flex min-h-52 flex-col',
+            layout === 'side' && 'flex items-stretch gap-0'
+          )
         )}
       >
         {image && layout !== 'overlay' && (
@@ -105,7 +132,12 @@ export function MegaMenuCard({
           </div>
         )}
         {layout === 'overlay' && image}
-        <div className={cn(layout !== 'overlay' && 'p-4', layout === 'overlay' && 'contents')}>
+        <div
+          className={cn(
+            layout !== 'overlay' && 'p-4',
+            layout === 'overlay' && 'contents'
+          )}
+        >
           {body}
         </div>
       </a>

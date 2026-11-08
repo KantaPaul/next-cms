@@ -2,6 +2,9 @@ import { siteHref } from '@/lib/utils/site-href';
 import type { ReactNode } from 'react';
 import type { MenuWithItems } from '@/server/services/public-site.service';
 import { MegaMenuItem } from './mega-menu-item';
+import { el, linkEl } from '@/builder/blocks/element';
+import type { ElementStyle } from '@/builder/style';
+import { cn } from '@/lib/utils/cn';
 
 /** Menu URLs may be saved with or without the site slug; prefix only once. */
 export function menuHref(url: string, siteSlug?: string) {
@@ -24,6 +27,7 @@ export type MenuLinksProps = {
   megaPanels?: Record<string, ReactNode>;
   /** How mega menu panels open. */
   trigger?: 'hover' | 'click';
+  elements?: Record<string, ElementStyle>;
 };
 
 const gapClasses: Record<string, string> = {
@@ -43,6 +47,7 @@ export function MenuLinks({
   gap = 'md',
   megaPanels,
   trigger = 'hover',
+  elements,
 }: MenuLinksProps) {
   if (!menu?.items.length) return null;
 
@@ -51,23 +56,51 @@ export function MenuLinks({
       ? 'flex flex-col space-y-2'
       : `flex flex-wrap items-center ${gapClasses[gap] || 'gap-5'}`;
 
-  const combinedClass = className ? `${orientationClass} ${className}` : orientationClass;
+  const combinedClass = className
+    ? `${orientationClass} ${className}`
+    : orientationClass;
+  const styled = { elements };
+  const linkStyle = linkEl(
+    styled,
+    'link',
+    'inline-flex items-center gap-1.5 hover:opacity-80 transition-opacity'
+  );
 
   return (
     <ul className={combinedClass}>
       {menu.items.map(item => {
         const href = menuHref(item.url, siteSlug);
-        const isActive = activeUrl && (activeUrl === href || activeUrl.startsWith(href));
+        const isActive =
+          activeUrl && (activeUrl === href || activeUrl.startsWith(href));
 
         let activeCls = '';
         if (isActive) {
-          if (activeStyle === 'underline') activeCls = 'underline underline-offset-4';
+          if (activeStyle === 'underline')
+            activeCls = 'underline underline-offset-4';
           else if (activeStyle === 'bold') activeCls = 'font-bold';
           else if (activeStyle === 'pill')
             activeCls = 's-soft-primary px-2.5 py-1 rounded-full font-semibold';
         }
 
-        const panel = orientation === 'horizontal' ? megaPanels?.[item.id] : null;
+        const linkElProps = {
+          className: cn(linkStyle.className, activeCls),
+          style: linkStyle.style,
+        };
+
+        const badgeEl = item.badge ? (
+          <span
+            {...el(
+              styled,
+              'badge',
+              's-soft-primary rounded-full px-1.5 py-0.5 text-[10px] font-semibold'
+            )}
+          >
+            {item.badge}
+          </span>
+        ) : null;
+
+        const panel =
+          orientation === 'horizontal' ? megaPanels?.[item.id] : null;
         if (panel) {
           return (
             <MegaMenuItem
@@ -78,15 +111,13 @@ export function MenuLinks({
                 <a
                   href={href}
                   target={item.target}
-                  rel={item.target === '_blank' ? 'noopener noreferrer' : undefined}
-                  className={`inline-flex items-center gap-1.5 hover:opacity-80 transition-opacity ${activeCls}`}
+                  rel={
+                    item.target === '_blank' ? 'noopener noreferrer' : undefined
+                  }
+                  {...linkElProps}
                 >
                   {item.label}
-                  {item.badge && (
-                    <span className="s-soft-primary rounded-full px-1.5 py-0.5 text-[10px] font-semibold">
-                      {item.badge}
-                    </span>
-                  )}
+                  {badgeEl}
                 </a>
               }
             />
@@ -99,17 +130,19 @@ export function MenuLinks({
               href={href}
               target={item.target}
               rel={item.target === '_blank' ? 'noopener noreferrer' : undefined}
-              className={`inline-flex items-center gap-1.5 hover:opacity-80 transition-opacity ${activeCls}`}
+              {...linkElProps}
             >
               {item.label}
-              {item.badge && (
-                <span className="s-soft-primary rounded-full px-1.5 py-0.5 text-[10px] font-semibold">
-                  {item.badge}
-                </span>
-              )}
+              {badgeEl}
             </a>
             {depth > 1 && item.children && item.children.length > 0 && (
-              <ul className="s-border invisible absolute left-0 top-full z-20 min-w-44 rounded-md border bg-[var(--site-bg)] p-2 opacity-0 shadow-lg transition group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+              <ul
+                {...el(
+                  styled,
+                  'dropdown',
+                  's-border invisible absolute left-0 top-full z-20 min-w-44 rounded-md border bg-[var(--site-bg)] p-2 opacity-0 shadow-lg transition group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100'
+                )}
+              >
                 {item.children.map(child => (
                   <li key={child.id}>
                     <a
@@ -120,7 +153,11 @@ export function MenuLinks({
                           ? 'noopener noreferrer'
                           : undefined
                       }
-                      className="block rounded px-2 py-1.5 text-sm hover:opacity-80"
+                      {...linkEl(
+                        styled,
+                        'dropdownLink',
+                        'block rounded px-2 py-1.5 text-sm hover:opacity-80'
+                      )}
                     >
                       {child.label}
                     </a>

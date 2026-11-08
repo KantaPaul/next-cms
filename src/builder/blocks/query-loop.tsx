@@ -30,6 +30,8 @@ import {
   SectionHeading,
   type SectionSettings,
 } from './section';
+import type { ElementStyle } from '../style';
+import { el, linkEl } from './element';
 
 // ---------------------------------------------------------------------------
 // Sample Items for Editor Canvas (R575 / QRY-05)
@@ -108,13 +110,16 @@ export function QueryLoopSkeleton({
         className="s-border s-surface s-radius animate-pulse overflow-hidden border"
       >
         <div className="s-border border-b p-4">
-          <div className="h-4 w-1/3 rounded bg-current/10" />
+          <div className="bg-current/10 h-4 w-1/3 rounded" />
         </div>
         {items.map(i => (
-          <div key={i} className="s-border flex items-center gap-4 border-b p-4 last:border-b-0">
-            <div className="h-4 w-2/5 rounded bg-current/10" />
-            <div className="h-4 w-1/4 rounded bg-current/10" />
-            <div className="h-4 w-1/5 rounded bg-current/10" />
+          <div
+            key={i}
+            className="s-border flex items-center gap-4 border-b p-4 last:border-b-0"
+          >
+            <div className="bg-current/10 h-4 w-2/5 rounded" />
+            <div className="bg-current/10 h-4 w-1/4 rounded" />
+            <div className="bg-current/10 h-4 w-1/5 rounded" />
           </div>
         ))}
       </div>
@@ -141,12 +146,12 @@ export function QueryLoopSkeleton({
           key={i}
           className="s-surface s-border s-radius flex flex-col overflow-hidden border"
         >
-          <div className="aspect-video w-full bg-current/10" />
+          <div className="bg-current/10 aspect-video w-full" />
           <div className="flex flex-col gap-3 p-5">
-            <div className="h-3 w-20 rounded bg-current/10" />
-            <div className="h-5 w-4/5 rounded bg-current/10" />
-            <div className="h-4 w-full rounded bg-current/10" />
-            <div className="h-3 w-1/3 rounded bg-current/10" />
+            <div className="bg-current/10 h-3 w-20 rounded" />
+            <div className="bg-current/10 h-5 w-4/5 rounded" />
+            <div className="bg-current/10 h-4 w-full rounded" />
+            <div className="bg-current/10 h-3 w-1/3 rounded" />
           </div>
         </div>
       ))}
@@ -172,6 +177,7 @@ interface DefaultItemCardProps {
   showDate?: boolean;
   showTerms?: boolean;
   language?: string;
+  elements?: Record<string, ElementStyle>;
 }
 
 function DefaultItemCard({
@@ -185,7 +191,9 @@ function DefaultItemCard({
   showDate = true,
   showTerms = true,
   language = 'en',
+  elements,
 }: DefaultItemCardProps) {
+  const styled = { elements };
   const date = showDate ? formatLoopDate(item.publishedAt, language) : null;
   const author = showAuthor ? item.author?.name : null;
   const categories = (item.terms ?? []).filter(t => t.taxonomy === 'category');
@@ -194,14 +202,18 @@ function DefaultItemCard({
   return (
     <MotionItem>
       <article
-        className={cn(
-          cardClass(cardStyle),
-          'group flex h-full overflow-hidden',
-          featured
-            ? 'flex-col lg:flex-row'
-            : layout === 'list'
-              ? 'flex-col sm:flex-row'
-              : 'flex-col'
+        {...el(
+          styled,
+          'card',
+          cn(
+            cardClass(cardStyle),
+            'group flex h-full overflow-hidden',
+            featured
+              ? 'flex-col lg:flex-row'
+              : layout === 'list'
+                ? 'flex-col sm:flex-row'
+                : 'flex-col'
+          )
         )}
       >
         {hasImg && (
@@ -219,9 +231,15 @@ function DefaultItemCard({
               src={item.image ?? undefined}
               alt=""
               loading="lazy"
-              className={cn(
-                'size-full object-cover transition-transform duration-300 group-hover:scale-[1.03]',
-                featured ? 'aspect-[16/10] lg:aspect-auto lg:min-h-[22rem]' : 'aspect-video'
+              {...el(
+                styled,
+                'cardImage',
+                cn(
+                  'size-full object-cover transition-transform duration-300 group-hover:scale-[1.03]',
+                  featured
+                    ? 'aspect-[16/10] lg:aspect-auto lg:min-h-[22rem]'
+                    : 'aspect-video'
+                )
               )}
             />
           </a>
@@ -234,21 +252,25 @@ function DefaultItemCard({
         >
           {showTerms && categories.length > 0 && (
             <p
-              className={
+              {...el(
+                styled,
+                'cardCategory',
                 featured
                   ? 'self-start s-eyebrow'
                   : 's-primary-text text-xs font-semibold uppercase tracking-wider'
-              }
+              )}
             >
               {categories.map(c => c.name).join(' · ')}
             </p>
           )}
           <h3
-            className={cn(
-              'leading-snug',
-              featured
-                ? 's-section-title'
-                : 's-card-title text-lg'
+            {...el(
+              styled,
+              'cardTitle',
+              cn(
+                'leading-snug',
+                featured ? 's-section-title' : 's-card-title text-lg'
+              )
             )}
           >
             <a href={item.url} className="hover:underline">
@@ -257,16 +279,22 @@ function DefaultItemCard({
           </h3>
           {showExcerpt && item.excerpt && (
             <p
-              className={cn(
-                's-muted leading-relaxed',
-                featured ? 'line-clamp-4 text-base md:text-lg' : 'line-clamp-3 text-sm'
+              {...el(
+                styled,
+                'cardExcerpt',
+                cn(
+                  's-muted leading-relaxed',
+                  featured
+                    ? 'line-clamp-4 text-base md:text-lg'
+                    : 'line-clamp-3 text-sm'
+                )
               )}
             >
               {item.excerpt}
             </p>
           )}
           {(date || author) && (
-            <p className="s-muted mt-auto text-xs">
+            <p {...el(styled, 'cardMeta', 's-muted mt-auto text-xs')}>
               {author}
               {author && date && ' · '}
               {date && (
@@ -294,16 +322,13 @@ export type QueryLoopLayout =
   | 'featured';
 
 export type QueryLoopPaginationStyle =
-  | 'numbered'
-  | 'load-more'
-  | 'infinite-scroll'
-  | 'none';
+  'numbered' | 'load-more' | 'infinite-scroll' | 'none';
 
 export type QueryLoopGap = 'sm' | 'md' | 'lg' | 'xl';
 
 export interface QueryLoopProps extends CardStyleProps {
   /** Element styles (`elementStyle()` fields), e.g. the section heading. */
-  elements?: Record<string, unknown>;
+  elements?: Record<string, ElementStyle>;
   loopId?: string;
   source?: ListingSource;
   collectionId?: string;
@@ -388,11 +413,7 @@ const MASONRY_GAP_CLASSES: Record<QueryLoopGap, string> = {
   xl: 'gap-10 space-y-10',
 };
 
-function resolveGridColumnsClass(
-  desktop = 3,
-  tablet = 2,
-  mobile = 1
-): string {
+function resolveGridColumnsClass(desktop = 3, tablet = 2, mobile = 1): string {
   const m = mobile === 2 ? 'grid-cols-2' : 'grid-cols-1';
   const t =
     tablet === 1
@@ -478,11 +499,7 @@ export function QueryLoop({
   ...rest
 }: QueryLoopProps) {
   const items =
-    loadedItems !== undefined
-      ? loadedItems
-      : editing
-        ? SAMPLE_LOOP_ITEMS
-        : [];
+    loadedItems !== undefined ? loadedItems : editing ? SAMPLE_LOOP_ITEMS : [];
   const total = loadedTotal ?? items.length;
   const regionId = `query-loop-${loopId || 'main'}`;
   const pageParamKey = formatNamespacedParam('page', loopId);
@@ -490,16 +507,16 @@ export function QueryLoop({
 
   const hasActiveFilter = Boolean(
     activeParams?.search ||
-      activeParams?.category ||
-      activeParams?.categories?.length ||
-      activeParams?.tag ||
-      activeParams?.tags?.length ||
-      activeParams?.author ||
-      activeParams?.from ||
-      activeParams?.to ||
-      activeParams?.min !== undefined ||
-      activeParams?.max !== undefined ||
-      activeParams?.toggle !== undefined
+    activeParams?.category ||
+    activeParams?.categories?.length ||
+    activeParams?.tag ||
+    activeParams?.tags?.length ||
+    activeParams?.author ||
+    activeParams?.from ||
+    activeParams?.to ||
+    activeParams?.min !== undefined ||
+    activeParams?.max !== undefined ||
+    activeParams?.toggle !== undefined
   );
 
   // Render an item using either the custom `card` slot or the default card
@@ -537,6 +554,7 @@ export function QueryLoop({
           showDate={showDate}
           showTerms={showTerms}
           language={language}
+          elements={elements}
         />
       </LoopItemProvider>
     );
@@ -544,13 +562,10 @@ export function QueryLoop({
 
   // Structured data JSON-LD for visible items (R597 / QRY-27)
   const jsonLd =
-    !editing && items.length > 0
-      ? buildItemListJsonLd(items, title)
-      : null;
+    !editing && items.length > 0 ? buildItemListJsonLd(items, title) : null;
 
   const results = (
     <>
-
       {jsonLd && (
         <script
           type="application/ld+json"
@@ -573,7 +588,8 @@ export function QueryLoop({
       {editing && typeof card === 'function' && !hasCustomCard && (
         <div className="mb-4 rounded-lg border border-dashed border-blue-300/70 bg-blue-50/30 p-3 text-xs text-slate-600">
           <p className="mb-1.5 font-medium text-slate-700">
-            Card template slot (optional — drop blocks here to customize each item card):
+            Card template slot (optional — drop blocks here to customize each
+            item card):
           </p>
           {card({
             itemContext: {
@@ -601,9 +617,14 @@ export function QueryLoop({
           /* Empty state slot (R578 / QRY-08) */
           <div
             data-query-loop-empty
-            className="s-surface s-border s-radius border p-12 text-center"
+            {...el(
+              { elements },
+              'empty',
+              's-surface s-border s-radius border p-12 text-center'
+            )}
           >
-            {typeof emptyState === 'function' && (hasCustomEmptyState || editing) ? (
+            {typeof emptyState === 'function' &&
+            (hasCustomEmptyState || editing) ? (
               emptyState({ minEmptyHeight: 64 })
             ) : (
               <div>
@@ -641,7 +662,11 @@ export function QueryLoop({
                   return (
                     <tr
                       key={item.id}
-                      className="s-border border-b last:border-b-0 hover:bg-black/[0.02]"
+                      {...el(
+                        { elements },
+                        'tableRow',
+                        's-border border-b last:border-b-0 hover:bg-black/[0.02]'
+                      )}
                     >
                       <td className="px-4 py-3 font-medium">
                         <a href={item.url} className="hover:underline">
@@ -677,6 +702,7 @@ export function QueryLoop({
           <QueryLoopCarousel
             gapClass={gapClass}
             columnsDesktop={columnsDesktop}
+            elements={elements}
           >
             {items.map((item, idx) => renderCardForItem(item, idx))}
           </QueryLoopCarousel>
@@ -701,15 +727,19 @@ export function QueryLoop({
         ) : layout === 'featured' ? (
           /* Featured: lead item full width, the rest in the grid */
           <div className={cn('grid', gapClass)}>
-            {items[0] ? (
-              page === 1 ? (
-                renderCardForItem(items[0], 0)
-              ) : null
-            ) : null}
+            {items[0]
+              ? page === 1
+                ? renderCardForItem(items[0], 0)
+                : null
+              : null}
             <div
               className={cn(
                 'grid',
-                resolveGridColumnsClass(columnsDesktop, columnsTablet, columnsMobile),
+                resolveGridColumnsClass(
+                  columnsDesktop,
+                  columnsTablet,
+                  columnsMobile
+                ),
                 gapClass
               )}
             >
@@ -750,6 +780,7 @@ export function QueryLoop({
             regionId={regionId}
             editing={editing}
             pageHrefs={pageHrefs}
+            elements={elements}
           />
         )}
       </div>
@@ -758,7 +789,12 @@ export function QueryLoop({
 
   return (
     <Section section={section} editing={editing}>
-      <SectionHeading elements={elements} eyebrow={eyebrow} title={title} subtitle={subtitle} />
+      <SectionHeading
+        elements={elements}
+        eyebrow={eyebrow}
+        title={title}
+        subtitle={subtitle}
+      />
       {filterPosition === 'none' || !filterPosition ? (
         results
       ) : (
@@ -776,11 +812,15 @@ export function QueryLoop({
             className={cn(
               'min-w-0',
               filterPosition === 'right' && 'lg:order-2',
-              filterSticky && filterPosition !== 'top' && 'lg:sticky lg:top-24 lg:self-start'
+              filterSticky &&
+                filterPosition !== 'top' &&
+                'lg:sticky lg:top-24 lg:self-start'
             )}
           >
             <QueryFilterClient
-              {...(unprefixFilterOptions(rest as Record<string, unknown>) as Partial<QueryFilterClientProps>)}
+              {...(unprefixFilterOptions(
+                rest as Record<string, unknown>
+              ) as Partial<QueryFilterClientProps>)}
               targetLoopId={loopId}
               orientation={filterPosition === 'top' ? 'horizontal' : 'vertical'}
               facets={facets ?? (editing ? SAMPLE_FACETS : undefined)}
@@ -844,7 +884,8 @@ export function blogNodeToQueryLoopProps(
     columnsMobile: 1,
     gap: 'md',
     pageSize: Number(p.pageSize) || 9,
-    lockedCategory: typeof p.lockedCategory === 'string' ? p.lockedCategory : '',
+    lockedCategory:
+      typeof p.lockedCategory === 'string' ? p.lockedCategory : '',
     lockedTag: typeof p.lockedTag === 'string' ? p.lockedTag : '',
     sortField: 'publishedAt',
     sortOrder: 'desc',

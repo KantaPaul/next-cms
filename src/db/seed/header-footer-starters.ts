@@ -7,13 +7,7 @@ import {
 
 /** Global-block categories managed on the Site templates screen. */
 export type SiteTemplateCategory =
-  | 'Header'
-  | 'Footer'
-  | 'Search'
-  | 'Archive'
-  | 'MegaMenu'
-  | 'Popup'
-  | 'Drawer';
+  'Header' | 'Footer' | 'Search' | 'Archive' | 'MegaMenu' | 'Popup' | 'Drawer';
 
 export const SITE_TEMPLATE_CATEGORIES: readonly SiteTemplateCategory[] = [
   'Header',
@@ -40,7 +34,8 @@ export type StarterTemplate = {
 export const HEADER_STARTER_CLASSIC: StarterTemplate = {
   key: 'classic',
   name: 'Classic Header',
-  description: 'Logo left, navigation links center, search & call-to-action button right.',
+  description:
+    'Logo left, navigation links center, search & call-to-action button right.',
   category: 'Header',
   content: {
     root: {
@@ -103,10 +98,11 @@ export const HEADER_STARTER_CLASSIC: StarterTemplate = {
           type: 'Button',
           props: {
             id: 'header-cta',
-            text: 'Get Started',
+            label: 'Get Started',
             link: '/contact',
             variant: 'primary',
             size: 'sm',
+            section: { paddingY: 'none' },
           },
         },
         {
@@ -126,7 +122,8 @@ export const HEADER_STARTER_CLASSIC: StarterTemplate = {
 export const HEADER_STARTER_CENTERED: StarterTemplate = {
   key: 'centered',
   name: 'Centered Logo Header',
-  description: 'Social links left, prominent centered brand logo, search right, navigation below.',
+  description:
+    'Social links left, prominent centered brand logo, search right, navigation below.',
   category: 'Header',
   content: {
     root: {
@@ -174,7 +171,11 @@ export const HEADER_STARTER_CENTERED: StarterTemplate = {
             items: [
               { network: 'x', url: 'https://x.com', label: 'X' },
               { network: 'github', url: 'https://github.com', label: 'GitHub' },
-              { network: 'linkedin', url: 'https://linkedin.com', label: 'LinkedIn' },
+              {
+                network: 'linkedin',
+                url: 'https://linkedin.com',
+                label: 'LinkedIn',
+              },
             ],
           },
         },
@@ -292,7 +293,8 @@ export const HEADER_STARTER_MINIMAL: StarterTemplate = {
 export const HEADER_STARTER_WITH_TOPBAR: StarterTemplate = {
   key: 'with-topbar',
   name: 'Header with Top Bar',
-  description: 'Top announcement & contact bar with main navigation and action button.',
+  description:
+    'Top announcement & contact bar with main navigation and action button.',
   category: 'Header',
   content: {
     root: {
@@ -364,7 +366,11 @@ export const HEADER_STARTER_WITH_TOPBAR: StarterTemplate = {
             items: [
               { network: 'x', url: 'https://x.com', label: 'X' },
               { network: 'github', url: 'https://github.com', label: 'GitHub' },
-              { network: 'linkedin', url: 'https://linkedin.com', label: 'LinkedIn' },
+              {
+                network: 'linkedin',
+                url: 'https://linkedin.com',
+                label: 'LinkedIn',
+              },
             ],
           },
         },
@@ -397,10 +403,11 @@ export const HEADER_STARTER_WITH_TOPBAR: StarterTemplate = {
           type: 'Button',
           props: {
             id: 'header-cta',
-            text: 'Book a demo',
+            label: 'Book a demo',
             link: '/contact',
             variant: 'primary',
             size: 'sm',
+            section: { paddingY: 'none' },
           },
         },
         {
@@ -423,7 +430,8 @@ export const HEADER_STARTER_WITH_TOPBAR: StarterTemplate = {
 export const FOOTER_STARTER_COLUMNS_4: StarterTemplate = {
   key: 'columns-4',
   name: 'Four Columns Footer',
-  description: 'Rich footer with brand overview, product links, company links, newsletter, and legal bar.',
+  description:
+    'Rich footer with brand overview, product links, company links, newsletter, and legal bar.',
   category: 'Footer',
   content: {
     root: {
@@ -514,7 +522,8 @@ export const FOOTER_STARTER_COLUMNS_4: StarterTemplate = {
           props: {
             id: 'footer-newsletter',
             title: 'Subscribe',
-            description: 'Get our latest updates and articles directly to your inbox.',
+            description:
+              'Get our latest updates and articles directly to your inbox.',
             buttonText: 'Join',
           },
         },
@@ -552,8 +561,16 @@ export const FOOTER_STARTER_COLUMNS_4: StarterTemplate = {
             items: [
               { network: 'x', url: 'https://x.com', label: 'X' },
               { network: 'github', url: 'https://github.com', label: 'GitHub' },
-              { network: 'linkedin', url: 'https://linkedin.com', label: 'LinkedIn' },
-              { network: 'youtube', url: 'https://youtube.com', label: 'YouTube' },
+              {
+                network: 'linkedin',
+                url: 'https://linkedin.com',
+                label: 'LinkedIn',
+              },
+              {
+                network: 'youtube',
+                url: 'https://youtube.com',
+                label: 'YouTube',
+              },
             ],
           },
         },
@@ -565,7 +582,8 @@ export const FOOTER_STARTER_COLUMNS_4: StarterTemplate = {
 export const FOOTER_STARTER_CENTERED: StarterTemplate = {
   key: 'simple-centered',
   name: 'Simple Centered Footer',
-  description: 'Minimalist centered footer with brand mark, social links, legal navigation, and copyright.',
+  description:
+    'Minimalist centered footer with brand mark, social links, legal navigation, and copyright.',
   category: 'Footer',
   content: {
     root: {
@@ -608,8 +626,16 @@ export const FOOTER_STARTER_CENTERED: StarterTemplate = {
             items: [
               { network: 'x', url: 'https://x.com', label: 'X' },
               { network: 'github', url: 'https://github.com', label: 'GitHub' },
-              { network: 'linkedin', url: 'https://linkedin.com', label: 'LinkedIn' },
-              { network: 'youtube', url: 'https://youtube.com', label: 'YouTube' },
+              {
+                network: 'linkedin',
+                url: 'https://linkedin.com',
+                label: 'LinkedIn',
+              },
+              {
+                network: 'youtube',
+                url: 'https://youtube.com',
+                label: 'YouTube',
+              },
             ],
           },
         },
@@ -644,7 +670,8 @@ export const FOOTER_STARTER_CENTERED: StarterTemplate = {
 export const FOOTER_STARTER_DARK_NEWSLETTER: StarterTemplate = {
   key: 'dark-newsletter',
   name: 'Dark Footer with Newsletter',
-  description: 'High-contrast inverted footer featuring newsletter subscription, contact info, and back-to-top button.',
+  description:
+    'High-contrast inverted footer featuring newsletter subscription, contact info, and back-to-top button.',
   category: 'Footer',
   content: {
     root: {
@@ -694,7 +721,8 @@ export const FOOTER_STARTER_DARK_NEWSLETTER: StarterTemplate = {
           props: {
             id: 'footer-newsletter',
             title: 'Stay informed with our weekly bulletin',
-            description: 'Insights, product updates, and articles delivered to your inbox.',
+            description:
+              'Insights, product updates, and articles delivered to your inbox.',
             buttonText: 'Subscribe',
           },
         },
@@ -751,8 +779,16 @@ export const FOOTER_STARTER_DARK_NEWSLETTER: StarterTemplate = {
             items: [
               { network: 'x', url: 'https://x.com', label: 'X' },
               { network: 'github', url: 'https://github.com', label: 'GitHub' },
-              { network: 'linkedin', url: 'https://linkedin.com', label: 'LinkedIn' },
-              { network: 'discord', url: 'https://discord.com', label: 'Discord' },
+              {
+                network: 'linkedin',
+                url: 'https://linkedin.com',
+                label: 'LinkedIn',
+              },
+              {
+                network: 'discord',
+                url: 'https://discord.com',
+                label: 'Discord',
+              },
             ],
           },
         },
@@ -800,7 +836,8 @@ export const FOOTER_STARTER_DARK_NEWSLETTER: StarterTemplate = {
 export const SEARCH_STARTER_SIMPLE: StarterTemplate = {
   key: 'simple',
   name: 'Simple Search',
-  description: 'Search box, result type tabs, thumbnails, and highlighted snippets.',
+  description:
+    'Search box, result type tabs, thumbnails, and highlighted snippets.',
   category: 'Search',
   content: {
     root: { props: {} },
@@ -855,7 +892,8 @@ export const SEARCH_STARTER_COMPACT: StarterTemplate = {
 export const ARCHIVE_STARTER_GRID: StarterTemplate = {
   key: 'grid',
   name: 'Archive Grid',
-  description: 'Archive title with a three-column post grid and numbered pages.',
+  description:
+    'Archive title with a three-column post grid and numbered pages.',
   category: 'Archive',
   content: {
     root: { props: {} },
@@ -935,7 +973,8 @@ const MOBILE_MENU = (id = 'header-mobile') => ({
 export const HEADER_STARTER_SPLIT_NAV: StarterTemplate = {
   key: 'split-nav',
   name: 'Split Navigation Header',
-  description: 'Navigation on the left, centered logo, search and call-to-action on the right.',
+  description:
+    'Navigation on the left, centered logo, search and call-to-action on the right.',
   category: 'Header',
   content: {
     root: {
@@ -977,17 +1016,34 @@ export const HEADER_STARTER_SPLIT_NAV: StarterTemplate = {
       'header-bar-split:center': [
         {
           type: 'Logo',
-          props: { id: 'header-logo', source: 'site', width: 140, link: '/', showSiteName: true },
+          props: {
+            id: 'header-logo',
+            source: 'site',
+            width: 140,
+            link: '/',
+            showSiteName: true,
+          },
         },
       ],
       'header-bar-split:right': [
         {
           type: 'SearchBox',
-          props: { id: 'header-search', mode: 'icon-modal', placeholder: 'Search site...' },
+          props: {
+            id: 'header-search',
+            mode: 'icon-modal',
+            placeholder: 'Search site...',
+          },
         },
         {
           type: 'Button',
-          props: { id: 'header-cta', text: 'Contact us', link: '/contact', variant: 'primary', size: 'sm' },
+          props: {
+            id: 'header-cta',
+            label: 'Contact us',
+            link: '/contact',
+            variant: 'primary',
+            size: 'sm',
+            section: { paddingY: 'none' },
+          },
         },
       ],
     },
@@ -997,7 +1053,8 @@ export const HEADER_STARTER_SPLIT_NAV: StarterTemplate = {
 export const HEADER_STARTER_TRANSPARENT: StarterTemplate = {
   key: 'transparent-overlay',
   name: 'Transparent Overlay Header',
-  description: 'Sits over the hero, turns solid and shrinks as visitors scroll. Great for landing pages.',
+  description:
+    'Sits over the hero, turns solid and shrinks as visitors scroll. Great for landing pages.',
   category: 'Header',
   content: {
     root: {
@@ -1027,7 +1084,13 @@ export const HEADER_STARTER_TRANSPARENT: StarterTemplate = {
       'header-bar-overlay:left': [
         {
           type: 'Logo',
-          props: { id: 'header-logo', source: 'site', width: 150, link: '/', showSiteName: true },
+          props: {
+            id: 'header-logo',
+            source: 'site',
+            width: 150,
+            link: '/',
+            showSiteName: true,
+          },
         },
       ],
       'header-bar-overlay:center': [
@@ -1044,7 +1107,14 @@ export const HEADER_STARTER_TRANSPARENT: StarterTemplate = {
       'header-bar-overlay:right': [
         {
           type: 'Button',
-          props: { id: 'header-cta', text: 'Get Started', link: '/contact', variant: 'primary', size: 'sm' },
+          props: {
+            id: 'header-cta',
+            label: 'Get Started',
+            link: '/contact',
+            variant: 'primary',
+            size: 'sm',
+            section: { paddingY: 'none' },
+          },
         },
         MOBILE_MENU(),
       ],
@@ -1055,7 +1125,8 @@ export const HEADER_STARTER_TRANSPARENT: StarterTemplate = {
 export const HEADER_STARTER_LOGO_CTA: StarterTemplate = {
   key: 'logo-cta',
   name: 'Logo + Call to Action',
-  description: 'Distraction-free bar with just the logo and one action button; the menu lives in a drawer on smaller screens.',
+  description:
+    'Distraction-free bar with just the logo and one action button; the menu lives in a drawer on smaller screens.',
   category: 'Header',
   content: {
     root: {
@@ -1085,15 +1156,36 @@ export const HEADER_STARTER_LOGO_CTA: StarterTemplate = {
       'header-bar-cta:left': [
         {
           type: 'Logo',
-          props: { id: 'header-logo', source: 'site', width: 130, link: '/', showSiteName: true },
+          props: {
+            id: 'header-logo',
+            source: 'site',
+            width: 130,
+            link: '/',
+            showSiteName: true,
+          },
         },
       ],
       'header-bar-cta:right': [
         {
           type: 'Button',
-          props: { id: 'header-cta', text: 'Sign up free', link: '/contact', variant: 'primary', size: 'sm' },
+          props: {
+            id: 'header-cta',
+            label: 'Sign up free',
+            link: '/contact',
+            variant: 'primary',
+            size: 'sm',
+            section: { paddingY: 'none' },
+          },
         },
-        { type: 'MobileMenu', props: { id: 'header-mobile', breakpoint: 'tablet', drawerSide: 'right', icon: 'menu' } },
+        {
+          type: 'MobileMenu',
+          props: {
+            id: 'header-mobile',
+            breakpoint: 'tablet',
+            drawerSide: 'right',
+            icon: 'menu',
+          },
+        },
       ],
     },
   },
@@ -1102,7 +1194,8 @@ export const HEADER_STARTER_LOGO_CTA: StarterTemplate = {
 export const FOOTER_STARTER_MINIMAL_LINE: StarterTemplate = {
   key: 'minimal-line',
   name: 'Minimal One-line Footer',
-  description: 'A single slim row with copyright on one side and legal links on the other.',
+  description:
+    'A single slim row with copyright on one side and legal links on the other.',
   category: 'Footer',
   content: {
     root: { props: { background: 'default' } },
@@ -1123,7 +1216,11 @@ export const FOOTER_STARTER_MINIMAL_LINE: StarterTemplate = {
       'footer-cols-line:col1': [
         {
           type: 'Copyright',
-          props: { id: 'footer-copyright', text: '© {year} {site_name}', align: 'left' },
+          props: {
+            id: 'footer-copyright',
+            text: '© {year} {site_name}',
+            align: 'left',
+          },
         },
       ],
       'footer-cols-line:col2': [
@@ -1149,7 +1246,8 @@ export const FOOTER_STARTER_MINIMAL_LINE: StarterTemplate = {
 export const FOOTER_STARTER_BRAND_TWO_COL: StarterTemplate = {
   key: 'brand-two-column',
   name: 'Two-column Brand Footer',
-  description: 'Logo and short about text beside a footer menu, with a muted copyright bar.',
+  description:
+    'Logo and short about text beside a footer menu, with a muted copyright bar.',
   category: 'Footer',
   content: {
     root: { props: { background: 'default' } },
@@ -1181,7 +1279,13 @@ export const FOOTER_STARTER_BRAND_TWO_COL: StarterTemplate = {
       'footer-cols-brand:col1': [
         {
           type: 'Logo',
-          props: { id: 'footer-logo', source: 'site', width: 140, link: '/', showSiteName: true },
+          props: {
+            id: 'footer-logo',
+            source: 'site',
+            width: 140,
+            link: '/',
+            showSiteName: true,
+          },
         },
         {
           type: 'RichText',
@@ -1211,7 +1315,11 @@ export const FOOTER_STARTER_BRAND_TWO_COL: StarterTemplate = {
       'footer-cols-bottom:col1': [
         {
           type: 'Copyright',
-          props: { id: 'footer-copyright', text: '© {year} {site_name}. All rights reserved.', align: 'center' },
+          props: {
+            id: 'footer-copyright',
+            text: '© {year} {site_name}. All rights reserved.',
+            align: 'center',
+          },
         },
       ],
     },
@@ -1221,7 +1329,8 @@ export const FOOTER_STARTER_BRAND_TWO_COL: StarterTemplate = {
 export const FOOTER_STARTER_SOCIAL: StarterTemplate = {
   key: 'social-focused',
   name: 'Social-focused Footer',
-  description: 'Centered brand mark with large social icons, contact details, and copyright.',
+  description:
+    'Centered brand mark with large social icons, contact details, and copyright.',
   category: 'Footer',
   content: {
     root: { props: { background: 'muted' } },
@@ -1242,7 +1351,13 @@ export const FOOTER_STARTER_SOCIAL: StarterTemplate = {
       'footer-cols-social:col1': [
         {
           type: 'Logo',
-          props: { id: 'footer-logo', source: 'site', width: 120, link: '/', showSiteName: false },
+          props: {
+            id: 'footer-logo',
+            source: 'site',
+            width: 120,
+            link: '/',
+            showSiteName: false,
+          },
         },
         {
           type: 'SocialIcons',
@@ -1253,9 +1368,21 @@ export const FOOTER_STARTER_SOCIAL: StarterTemplate = {
             align: 'center',
             items: [
               { network: 'x', url: 'https://x.com', label: 'X' },
-              { network: 'instagram', url: 'https://instagram.com', label: 'Instagram' },
-              { network: 'youtube', url: 'https://youtube.com', label: 'YouTube' },
-              { network: 'linkedin', url: 'https://linkedin.com', label: 'LinkedIn' },
+              {
+                network: 'instagram',
+                url: 'https://instagram.com',
+                label: 'Instagram',
+              },
+              {
+                network: 'youtube',
+                url: 'https://youtube.com',
+                label: 'YouTube',
+              },
+              {
+                network: 'linkedin',
+                url: 'https://linkedin.com',
+                label: 'LinkedIn',
+              },
               { network: 'github', url: 'https://github.com', label: 'GitHub' },
             ],
           },
@@ -1266,12 +1393,18 @@ export const FOOTER_STARTER_SOCIAL: StarterTemplate = {
             id: 'footer-contact',
             layout: 'horizontal',
             showIcons: true,
-            items: [{ kind: 'email', value: 'hello@example.com', label: 'Email' }],
+            items: [
+              { kind: 'email', value: 'hello@example.com', label: 'Email' },
+            ],
           },
         },
         {
           type: 'Copyright',
-          props: { id: 'footer-copyright', text: '© {year} {site_name}', align: 'center' },
+          props: {
+            id: 'footer-copyright',
+            text: '© {year} {site_name}',
+            align: 'center',
+          },
         },
       ],
     },
@@ -1281,7 +1414,8 @@ export const FOOTER_STARTER_SOCIAL: StarterTemplate = {
 export const SEARCH_STARTER_VISUAL: StarterTemplate = {
   key: 'visual',
   name: 'Visual Search',
-  description: 'Large heading, type tabs, and big thumbnails, twelve results per page.',
+  description:
+    'Large heading, type tabs, and big thumbnails, twelve results per page.',
   category: 'Search',
   content: {
     root: { props: {} },
@@ -1308,7 +1442,8 @@ export const SEARCH_STARTER_VISUAL: StarterTemplate = {
 export const SEARCH_STARTER_DETAILED: StarterTemplate = {
   key: 'detailed',
   name: 'Detailed Results',
-  description: 'Snippets, badges, and thumbnails with a friendly empty state, fifty per page.',
+  description:
+    'Snippets, badges, and thumbnails with a friendly empty state, fifty per page.',
   category: 'Search',
   content: {
     root: { props: {} },
@@ -1335,7 +1470,8 @@ export const SEARCH_STARTER_DETAILED: StarterTemplate = {
 export const ARCHIVE_STARTER_MAGAZINE: StarterTemplate = {
   key: 'magazine',
   name: 'Magazine Archive',
-  description: 'Two-column large cards with images, excerpts, and a load-more button.',
+  description:
+    'Two-column large cards with images, excerpts, and a load-more button.',
   category: 'Archive',
   content: {
     root: { props: {} },
@@ -1375,7 +1511,8 @@ export const ARCHIVE_STARTER_MAGAZINE: StarterTemplate = {
 export const ARCHIVE_STARTER_MASONRY_FILTERS: StarterTemplate = {
   key: 'masonry-filters',
   name: 'Masonry with Filters',
-  description: 'Category, tag, and sort filters above a masonry wall that scrolls infinitely.',
+  description:
+    'Category, tag, and sort filters above a masonry wall that scrolls infinitely.',
   category: 'Archive',
   content: {
     root: { props: {} },
@@ -1417,7 +1554,8 @@ export const ARCHIVE_STARTER_MASONRY_FILTERS: StarterTemplate = {
 export const ARCHIVE_STARTER_MINIMAL_LIST: StarterTemplate = {
   key: 'minimal-list',
   name: 'Minimal List',
-  description: 'Text-only list of titles and dates, twenty per page. Ideal for date and author archives.',
+  description:
+    'Text-only list of titles and dates, twenty per page. Ideal for date and author archives.',
   category: 'Archive',
   content: {
     root: { props: {} },
@@ -1453,7 +1591,14 @@ export const ARCHIVE_STARTER_MINIMAL_LIST: StarterTemplate = {
    ========================================================================= */
 
 const MEGA_ROOT = {
-  props: { background: 'default', padding: 'md', radius: 'md', shadow: 'md', maxHeight: 0, previewWidth: 'container' },
+  props: {
+    background: 'default',
+    padding: 'md',
+    radius: 'md',
+    shadow: 'md',
+    maxHeight: 0,
+    previewWidth: 'container',
+  },
 };
 const NO_PAD = { paddingY: 'none', background: 'default' };
 
@@ -1478,7 +1623,13 @@ export const MEGA_STARTER_COLUMNS: StarterTemplate = {
     content: [
       {
         type: 'Columns',
-        props: { id: 'mega-cols', layout: '1-1-1-1', gap: 'md', verticalAlign: 'start', section: NO_PAD },
+        props: {
+          id: 'mega-cols',
+          layout: '1-1-1-1',
+          gap: 'md',
+          verticalAlign: 'start',
+          section: NO_PAD,
+        },
       },
     ],
     zones: {
@@ -1525,7 +1676,13 @@ export const MEGA_STARTER_FEATURED: StarterTemplate = {
     content: [
       {
         type: 'Columns',
-        props: { id: 'mega-cols', layout: '1-1-1-1', gap: 'lg', verticalAlign: 'start', section: NO_PAD },
+        props: {
+          id: 'mega-cols',
+          layout: '1-1-1-1',
+          gap: 'lg',
+          verticalAlign: 'start',
+          section: NO_PAD,
+        },
       },
     ],
     zones: {
@@ -1572,18 +1729,31 @@ export const MEGA_STARTER_FEATURED: StarterTemplate = {
 export const MEGA_STARTER_VISUAL: StarterTemplate = {
   key: 'visual-grid',
   name: 'Visual Grid',
-  description: 'Three image cards with titles. Great for categories or collections.',
+  description:
+    'Three image cards with titles. Great for categories or collections.',
   category: 'MegaMenu',
   content: {
     root: MEGA_ROOT,
     content: [
       {
         type: 'Columns',
-        props: { id: 'mega-cols', layout: '1-1-1', gap: 'md', verticalAlign: 'start', section: NO_PAD },
+        props: {
+          id: 'mega-cols',
+          layout: '1-1-1',
+          gap: 'md',
+          verticalAlign: 'start',
+          section: NO_PAD,
+        },
       },
       {
         type: 'Button',
-        props: { id: 'mega-all', label: 'Browse everything', link: '/blog', alignment: 'left', section: { paddingY: 'sm', background: 'default' } },
+        props: {
+          id: 'mega-all',
+          label: 'Browse everything',
+          link: '/blog',
+          alignment: 'left',
+          section: { paddingY: 'sm', background: 'default' },
+        },
       },
     ],
     zones: Object.fromEntries(
@@ -1797,9 +1967,17 @@ export const FOOTER_STARTER_EDITORIAL: StarterTemplate = {
             size: 'sm',
             align: 'left',
             items: [
-              { network: 'instagram', url: 'https://instagram.com', label: 'Instagram' },
+              {
+                network: 'instagram',
+                url: 'https://instagram.com',
+                label: 'Instagram',
+              },
               { network: 'x', url: 'https://x.com', label: 'X' },
-              { network: 'linkedin', url: 'https://linkedin.com', label: 'LinkedIn' },
+              {
+                network: 'linkedin',
+                url: 'https://linkedin.com',
+                label: 'LinkedIn',
+              },
             ],
           },
         },
@@ -2003,7 +2181,8 @@ export const MEGA_MENU_STARTERS: StarterTemplate[] = [
 export const POPUP_STARTER_NEWSLETTER: StarterTemplate = {
   key: 'newsletter-popup',
   name: 'Newsletter Popup',
-  description: 'Centered modal with headline, subtitle, newsletter signup and close button.',
+  description:
+    'Centered modal with headline, subtitle, newsletter signup and close button.',
   category: 'Popup',
   content: {
     root: {
@@ -2050,7 +2229,8 @@ export const POPUP_STARTER_NEWSLETTER: StarterTemplate = {
           props: {
             section: { paddingY: 'none' },
             id: 'popup-body',
-            content: '<p style="text-align: center;">Get thoughtful perspectives, design notes and curated essays delivered to your inbox every Sunday.</p>',
+            content:
+              '<p style="text-align: center;">Get thoughtful perspectives, design notes and curated essays delivered to your inbox every Sunday.</p>',
           },
         },
         {
@@ -2080,7 +2260,8 @@ export const POPUP_STARTER_NEWSLETTER: StarterTemplate = {
 export const POPUP_STARTER_PROMO: StarterTemplate = {
   key: 'promo-popup',
   name: 'Promo & Discount Popup',
-  description: 'Special promo modal with announcement headline, call to action and dismiss button.',
+  description:
+    'Special promo modal with announcement headline, call to action and dismiss button.',
   category: 'Popup',
   content: {
     root: {
@@ -2135,7 +2316,8 @@ export const POPUP_STARTER_PROMO: StarterTemplate = {
           props: {
             section: { paddingY: 'none' },
             id: 'promo-body',
-            content: '<p style="text-align: center;">Upgrade this week and lock in early-bird pricing for life. Use code <strong>LAUNCH20</strong> at checkout.</p>',
+            content:
+              '<p style="text-align: center;">Upgrade this week and lock in early-bird pricing for life. Use code <strong>LAUNCH20</strong> at checkout.</p>',
           },
         },
         {
@@ -2167,7 +2349,8 @@ export const POPUP_STARTER_PROMO: StarterTemplate = {
 export const DRAWER_STARTER_INFO: StarterTemplate = {
   key: 'info-drawer',
   name: 'Cart / Info Drawer',
-  description: 'Slide-in side drawer from right with overview details, links and actions.',
+  description:
+    'Slide-in side drawer from right with overview details, links and actions.',
   category: 'Drawer',
   content: {
     root: {
@@ -2213,7 +2396,8 @@ export const DRAWER_STARTER_INFO: StarterTemplate = {
           props: {
             section: { paddingY: 'none' },
             id: 'drawer-body',
-            content: '<p>Explore resources, documentation guides and direct help channels.</p>',
+            content:
+              '<p>Explore resources, documentation guides and direct help channels.</p>',
           },
         },
         {
@@ -2244,7 +2428,8 @@ export const DRAWER_STARTER_INFO: StarterTemplate = {
 export const DRAWER_STARTER_COOKIE: StarterTemplate = {
   key: 'cookie-bottom-drawer',
   name: 'Cookie & Notice Drawer',
-  description: 'Slide-in bottom drawer with consent information, accept action and preferences link.',
+  description:
+    'Slide-in bottom drawer with consent information, accept action and preferences link.',
   category: 'Drawer',
   content: {
     root: {
@@ -2303,7 +2488,8 @@ export const DRAWER_STARTER_COOKIE: StarterTemplate = {
           props: {
             section: { paddingY: 'none' },
             id: 'cookie-body',
-            content: '<p>We use essential cookies to make our site work and optional analytics to understand how you interact with our pages.</p>',
+            content:
+              '<p>We use essential cookies to make our site work and optional analytics to understand how you interact with our pages.</p>',
           },
         },
         {
@@ -2354,7 +2540,10 @@ export const DRAWER_STARTERS: StarterTemplate[] = [
   DRAWER_STARTER_COOKIE,
 ];
 
-export const STARTERS_BY_CATEGORY: Record<SiteTemplateCategory, StarterTemplate[]> = {
+export const STARTERS_BY_CATEGORY: Record<
+  SiteTemplateCategory,
+  StarterTemplate[]
+> = {
   Header: HEADER_STARTERS,
   Footer: FOOTER_STARTERS,
   Search: SEARCH_STARTERS,
@@ -2377,6 +2566,8 @@ export function getStarterContent(
   if (!key || key === 'blank') return null;
   const found = STARTERS_BY_CATEGORY[category].find(s => s.key === key);
   return found
-    ? (migratePuckColumns(JSON.parse(JSON.stringify(found.content))) as BuilderData)
+    ? (migratePuckColumns(
+        JSON.parse(JSON.stringify(found.content))
+      ) as BuilderData)
     : null;
 }
