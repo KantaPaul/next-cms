@@ -41,11 +41,11 @@ export const installQuietEditorial = permissionProcedure(
 )
   .input(z.object({}).optional())
   .action(async ({ ctx }) => {
-  const result = await starterKitService.installQuietEditorial(ctx.access);
-  revalidatePath(PAGES.DASHBOARD.THEME);
-  revalidatePath('/dashboard', 'layout');
-  return result;
-});
+    const result = await starterKitService.installQuietEditorial(ctx.access);
+    revalidatePath(PAGES.DASHBOARD.THEME);
+    revalidatePath('/dashboard', 'layout');
+    return result;
+  });
 
 export const updateSiteSettings = permissionProcedure(
   PERMISSIONS.SETTINGS_MANAGE
@@ -69,7 +69,9 @@ export const updateSiteSettings = permissionProcedure(
     const row = await siteSettingsService.update(
       {
         ...input,
-        videoSettings: parsedVideoSettings?.ok ? parsedVideoSettings.data : undefined,
+        videoSettings: parsedVideoSettings?.ok
+          ? parsedVideoSettings.data
+          : undefined,
         searchSettings: normalizedSearchSettings,
       },
       ctx.access
@@ -83,11 +85,17 @@ export const updateBlockSettings = permissionProcedure(
 )
   .input(
     z.object({
-      hidden: z.record(z.enum(BLOCK_EDITOR_KINDS), z.array(z.string().max(100)).max(300)),
+      hidden: z.record(
+        z.enum(BLOCK_EDITOR_KINDS),
+        z.array(z.string().max(100)).max(300)
+      ),
     })
   )
   .action(async ({ input, ctx }) => {
-    const data = await siteSettingsService.updateBlockSettings(input, ctx.access);
+    const data = await siteSettingsService.updateBlockSettings(
+      input,
+      ctx.access
+    );
     revalidatePath(PAGES.DASHBOARD.SETTINGS_BLOCKS);
     return { ok: true, data };
   });
@@ -129,7 +137,8 @@ export const updateManagedLicense = permissionProcedure(
       .limit(1);
 
     const now = new Date();
-    let status: 'active' | 'pending' | 'expired' | 'revoked' | 'inactive' = 'active';
+    let status: 'active' | 'pending' | 'expired' | 'revoked' | 'inactive' =
+      'active';
     let expiresAt: string | null = null;
     const installationId =
       current.managedInstallationPublicId ||
@@ -205,27 +214,27 @@ export const deactivateManagedLicense = permissionProcedure(
 )
   .input(z.object({}).optional())
   .action(async ({ ctx }) => {
-  const siteSettings = await siteSettingsService.get();
-  const current = siteSettings.licenseSettings;
+    const siteSettings = await siteSettingsService.get();
+    const current = siteSettings.licenseSettings;
 
-  const updatedSettings = {
-    ...current,
-    managedLicenseStatus: 'inactive' as const,
-    managedLastCheckedAt: new Date().toISOString(),
-  };
+    const updatedSettings = {
+      ...current,
+      managedLicenseStatus: 'inactive' as const,
+      managedLastCheckedAt: new Date().toISOString(),
+    };
 
-  const res = await siteSettingsService.updateLicenseSettings(
-    updatedSettings,
-    ctx.access
-  );
-  if (!res.ok) {
-    return { ok: false, error: res.error };
-  }
+    const res = await siteSettingsService.updateLicenseSettings(
+      updatedSettings,
+      ctx.access
+    );
+    if (!res.ok) {
+      return { ok: false, error: res.error };
+    }
 
-  revalidatePath(PAGES.DASHBOARD.SETTINGS_LICENSE);
-  revalidatePath(PAGES.DASHBOARD.SETTINGS);
-  return { ok: true, data: updatedSettings };
-});
+    revalidatePath(PAGES.DASHBOARD.SETTINGS_LICENSE);
+    revalidatePath(PAGES.DASHBOARD.SETTINGS);
+    return { ok: true, data: updatedSettings };
+  });
 
 export const updateLicensePolicy = permissionProcedure(
   PERMISSIONS.SETTINGS_MANAGE

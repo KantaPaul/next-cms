@@ -55,9 +55,7 @@ const dateish = z
     return Number.isNaN(d.getTime()) ? null : d;
   });
 
-const language = z
-  .string()
-  .regex(/^[a-z]{2,12}$/, 'Unsupported language');
+const language = z.string().regex(/^[a-z]{2,12}$/, 'Unsupported language');
 
 /** Shared fields without defaults; defaults only belong to creation. */
 const pageFields = {

@@ -9,7 +9,10 @@ const httpsUrl = z
   .string()
   .trim()
   .max(300)
-  .refine(v => v === '' || /^https:\/\/[^\s]+$/i.test(v), 'Links must start with https://');
+  .refine(
+    v => v === '' || /^https:\/\/[^\s]+$/i.test(v),
+    'Links must start with https://'
+  );
 
 const profileSchema = z.object({
   name: z.string().trim().max(100),

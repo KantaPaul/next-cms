@@ -25,7 +25,8 @@ function zodToJsonSchema(schema: z.ZodType): JsonSchema {
       const childType = (child as { type?: string }).type;
       const optional = childType === 'optional' || childType === 'default';
       const inner = optional
-        ? ((child as { def?: { innerType?: z.ZodType } }).def?.innerType ?? child)
+        ? ((child as { def?: { innerType?: z.ZodType } }).def?.innerType ??
+          child)
         : child;
       properties[key] = zodToJsonSchema(inner);
       if (!optional) required.push(key);
@@ -81,7 +82,10 @@ function ok(schemaName: string) {
 
 export function buildOpenApiSpec() {
   const schemas = Object.fromEntries(
-    Object.entries(apiSchemas).map(([name, schema]) => [name, zodToJsonSchema(schema)])
+    Object.entries(apiSchemas).map(([name, schema]) => [
+      name,
+      zodToJsonSchema(schema),
+    ])
   );
 
   return {
@@ -89,7 +93,8 @@ export function buildOpenApiSpec() {
     info: {
       title: 'Next CMS',
       version: '1.0.0',
-      description: 'Read API for published content. Send an API key as a bearer token.',
+      description:
+        'Read API for published content. Send an API key as a bearer token.',
     },
     components: {
       securitySchemes: {
@@ -113,7 +118,12 @@ export function buildOpenApiSpec() {
         get: {
           security: bearer,
           parameters: [
-            { name: 'slug', in: 'path', required: true, schema: { type: 'string' } },
+            {
+              name: 'slug',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' },
+            },
             { name: 'lang', in: 'query', schema: { type: 'string' } },
           ],
           responses: ok('Page'),
@@ -138,7 +148,12 @@ export function buildOpenApiSpec() {
         get: {
           security: bearer,
           parameters: [
-            { name: 'slug', in: 'path', required: true, schema: { type: 'string' } },
+            {
+              name: 'slug',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' },
+            },
             { name: 'lang', in: 'query', schema: { type: 'string' } },
           ],
           responses: ok('Post'),
@@ -147,7 +162,9 @@ export function buildOpenApiSpec() {
       '/api/v1/menus': {
         get: {
           security: bearer,
-          parameters: [{ name: 'location', in: 'query', schema: { type: 'string' } }],
+          parameters: [
+            { name: 'location', in: 'query', schema: { type: 'string' } },
+          ],
           responses: ok('Menus'),
         },
       },
@@ -157,7 +174,11 @@ export function buildOpenApiSpec() {
           parameters: [
             { name: 'q', in: 'query', schema: { type: 'string' } },
             { name: 'folder', in: 'query', schema: { type: 'string' } },
-            { name: 'type', in: 'query', schema: { type: 'string', enum: ['image', 'video', 'document'] } },
+            {
+              name: 'type',
+              in: 'query',
+              schema: { type: 'string', enum: ['image', 'video', 'document'] },
+            },
             { name: 'page', in: 'query', schema: { type: 'integer' } },
             { name: 'limit', in: 'query', schema: { type: 'integer' } },
           ],
@@ -171,7 +192,12 @@ export function buildOpenApiSpec() {
         get: {
           security: bearer,
           parameters: [
-            { name: 'q', in: 'query', required: true, schema: { type: 'string' } },
+            {
+              name: 'q',
+              in: 'query',
+              required: true,
+              schema: { type: 'string' },
+            },
             { name: 'lang', in: 'query', schema: { type: 'string' } },
           ],
           responses: ok('Search'),

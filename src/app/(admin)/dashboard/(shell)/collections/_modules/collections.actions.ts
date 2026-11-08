@@ -31,9 +31,11 @@ export async function createCollection(formData: FormData) {
   const name = String(formData.get('name') ?? '').trim();
   let slug = String(formData.get('slug') ?? '').trim();
   const templatePageId = formData.get('templatePageId') || undefined;
-  const singularName = String(formData.get('singularName') ?? '').trim() || undefined;
+  const singularName =
+    String(formData.get('singularName') ?? '').trim() || undefined;
   const icon = formData.get('icon') || undefined;
-  const description = String(formData.get('description') ?? '').trim() || undefined;
+  const description =
+    String(formData.get('description') ?? '').trim() || undefined;
 
   if (!slug && name) {
     slug = slugify(name);
@@ -67,7 +69,10 @@ export async function createCollection(formData: FormData) {
     revalidatePostTypes();
     return { ok: true, id: row.id, slug: row.slug };
   } catch (error: any) {
-    return { ok: false, error: error.message ?? 'Failed to create collection.' };
+    return {
+      ok: false,
+      error: error.message ?? 'Failed to create collection.',
+    };
   }
 }
 
@@ -121,24 +126,31 @@ export async function updateCollection(formData: FormData) {
   }
 
   try {
-    const updated = await collectionsService.update(parsed.data.id, {
-      ...(parsed.data.name !== undefined ? { name: parsed.data.name } : {}),
-      ...(parsed.data.slug !== undefined ? { slug: parsed.data.slug } : {}),
-      ...(parsed.data.singularName !== undefined
-        ? { singularName: parsed.data.singularName }
-        : {}),
-      ...(parsed.data.icon !== undefined ? { icon: parsed.data.icon } : {}),
-      ...(parsed.data.description !== undefined
-        ? { description: parsed.data.description }
-        : {}),
-      ...(parsed.data.templatePageId !== undefined
-        ? { templatePageId: parsed.data.templatePageId }
-        : {}),
-    }, await actorId());
+    const updated = await collectionsService.update(
+      parsed.data.id,
+      {
+        ...(parsed.data.name !== undefined ? { name: parsed.data.name } : {}),
+        ...(parsed.data.slug !== undefined ? { slug: parsed.data.slug } : {}),
+        ...(parsed.data.singularName !== undefined
+          ? { singularName: parsed.data.singularName }
+          : {}),
+        ...(parsed.data.icon !== undefined ? { icon: parsed.data.icon } : {}),
+        ...(parsed.data.description !== undefined
+          ? { description: parsed.data.description }
+          : {}),
+        ...(parsed.data.templatePageId !== undefined
+          ? { templatePageId: parsed.data.templatePageId }
+          : {}),
+      },
+      await actorId()
+    );
     revalidatePostTypes();
     return { ok: true, slug: updated.slug };
   } catch (error: any) {
-    return { ok: false, error: error.message ?? 'Failed to update collection.' };
+    return {
+      ok: false,
+      error: error.message ?? 'Failed to update collection.',
+    };
   }
 }
 
@@ -148,7 +160,10 @@ export async function deleteCollection(collectionId: string) {
     revalidatePostTypes();
     return { ok: true };
   } catch (error: any) {
-    return { ok: false, error: error.message ?? 'Failed to delete collection.' };
+    return {
+      ok: false,
+      error: error.message ?? 'Failed to delete collection.',
+    };
   }
 }
 
@@ -188,7 +203,10 @@ export async function addCollectionField(formData: FormData) {
       .map(c => c.trim())
       .filter(Boolean);
     if (!list.length) {
-      return { ok: false, error: 'Add at least one choice for a select field.' };
+      return {
+        ok: false,
+        error: 'Add at least one choice for a select field.',
+      };
     }
     config.choices = Array.from(new Set(list));
   }
@@ -226,11 +244,15 @@ export async function updateCollectionField(formData: FormData) {
   }
 
   try {
-    await collectionsService.updateField(String(fieldId), {
-      ...(label !== undefined ? { label: String(label) } : {}),
-      ...(type !== undefined ? { type: type as any } : {}),
-      ...(required !== undefined ? { required } : {}),
-    }, await actorId());
+    await collectionsService.updateField(
+      String(fieldId),
+      {
+        ...(label !== undefined ? { label: String(label) } : {}),
+        ...(type !== undefined ? { type: type as any } : {}),
+        ...(required !== undefined ? { required } : {}),
+      },
+      await actorId()
+    );
     revalidatePostTypes();
     return { ok: true };
   } catch (error: any) {
@@ -271,8 +293,12 @@ export async function createCollectionEntry(formData: FormData) {
       data.title ||
       data.name ||
       data.label ||
-      Object.values(data).find(v => typeof v === 'string' && v.trim().length > 0);
-    slug = candidate ? slugify(String(candidate)) : `entry-${Date.now().toString(36)}`;
+      Object.values(data).find(
+        v => typeof v === 'string' && v.trim().length > 0
+      );
+    slug = candidate
+      ? slugify(String(candidate))
+      : `entry-${Date.now().toString(36)}`;
   }
 
   const parsed = createEntrySchema.safeParse({ collectionId, slug });
@@ -298,11 +324,13 @@ export async function updateCollectionEntry(formData: FormData) {
   const collectionId = formData.get('collectionId');
   const slug = formData.get('slug') || undefined;
 
-  const parsed = z.object({
-    entryId: z.string().min(1),
-    collectionId: z.string().min(1),
-    slug: z.string().trim().min(1).max(200).optional(),
-  }).safeParse({ entryId, collectionId, slug });
+  const parsed = z
+    .object({
+      entryId: z.string().min(1),
+      collectionId: z.string().min(1),
+      slug: z.string().trim().min(1).max(200).optional(),
+    })
+    .safeParse({ entryId, collectionId, slug });
   if (!parsed.success) {
     return { ok: false, error: 'Invalid entry input.' };
   }
@@ -330,7 +358,9 @@ export async function updateCollectionEntry(formData: FormData) {
   }
 }
 
-export async function publishCollectionEntry(formData: FormData): Promise<void> {
+export async function publishCollectionEntry(
+  formData: FormData
+): Promise<void> {
   const entryId = formData.get('entryId') as string;
   const collectionId = formData.get('collectionId') as string;
   try {
@@ -341,7 +371,9 @@ export async function publishCollectionEntry(formData: FormData): Promise<void> 
   }
 }
 
-export async function unpublishCollectionEntry(formData: FormData): Promise<void> {
+export async function unpublishCollectionEntry(
+  formData: FormData
+): Promise<void> {
   const entryId = formData.get('entryId') as string;
   const collectionId = formData.get('collectionId') as string;
   try {
@@ -525,7 +557,10 @@ const entryTranslationSchema = z.object({
 export async function createEntryTranslationAction(input: unknown) {
   const parsed = entryTranslationSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false as const, error: 'Pick a language for the translation.' };
+    return {
+      ok: false as const,
+      error: 'Pick a language for the translation.',
+    };
   }
   try {
     const created = await collectionsService.createEntryTranslation(

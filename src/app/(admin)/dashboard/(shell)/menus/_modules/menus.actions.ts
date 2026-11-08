@@ -54,7 +54,12 @@ export const deleteMenu = manage
   });
 
 export const copyMenu = manage
-  .input(z.object({ id: z.string().min(1), language: z.string().trim().min(2).max(12) }))
+  .input(
+    z.object({
+      id: z.string().min(1),
+      language: z.string().trim().min(2).max(12),
+    })
+  )
   .action(async ({ input, ctx }) => {
     const row = await menusService.copyToLocale(
       input.id,

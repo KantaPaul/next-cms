@@ -9,7 +9,10 @@ import { eq } from 'drizzle-orm';
 import { clampProgress } from '@/lib/video/progress';
 import { validateSession } from '@/lib/auth';
 import { siteSettingsService } from '@/server/services/site-settings.service';
-import { accessProcedure, permissionProcedure } from '@/server/procedures/permission.procedure';
+import {
+  accessProcedure,
+  permissionProcedure,
+} from '@/server/procedures/permission.procedure';
 import { adminSiteId } from '@/server/services/site-context';
 import { parseVideoUrl } from '@/lib/video/parse';
 import { fetchOEmbed } from '@/lib/video/oembed';
@@ -37,10 +40,12 @@ const listSchema = z.object({
 const queryVideosSchema = z.object({
   playlistId: z.string().trim().max(150).nullish(),
   pageSize: z.coerce.number().int().min(1).max(48).nullish(),
-  provider: z.union([
-    z.enum(['youtube', 'vimeo', 'direct', 'all']),
-    z.array(z.enum(['youtube', 'vimeo', 'direct'])),
-  ]).nullish(),
+  provider: z
+    .union([
+      z.enum(['youtube', 'vimeo', 'direct', 'all']),
+      z.array(z.enum(['youtube', 'vimeo', 'direct'])),
+    ])
+    .nullish(),
   providers: z.array(z.enum(['youtube', 'vimeo', 'direct'])).nullish(),
   sources: z.array(z.enum(['youtube', 'vimeo', 'direct'])).nullish(),
 });
@@ -86,9 +91,7 @@ const createPlaylistSchema = z.object({
   description: z.string().optional(),
 });
 
-export const createPlaylist = permissionProcedure(
-  PERMISSIONS.VIDEOS_CREATE
-)
+export const createPlaylist = permissionProcedure(PERMISSIONS.VIDEOS_CREATE)
   .input(createPlaylistSchema)
   .action(async ({ input, ctx }) => {
     const row = await playlistService.create(input, ctx.access);
@@ -103,9 +106,7 @@ const updatePlaylistSchema = z.object({
   description: z.string().optional().nullable(),
 });
 
-export const updatePlaylist = permissionProcedure(
-  PERMISSIONS.VIDEOS_EDIT
-)
+export const updatePlaylist = permissionProcedure(PERMISSIONS.VIDEOS_EDIT)
   .input(updatePlaylistSchema)
   .action(async ({ input, ctx }) => {
     const row = await playlistService.update(input, ctx.access);
@@ -113,9 +114,7 @@ export const updatePlaylist = permissionProcedure(
     return row;
   });
 
-export const deletePlaylist = permissionProcedure(
-  PERMISSIONS.VIDEOS_DELETE
-)
+export const deletePlaylist = permissionProcedure(PERMISSIONS.VIDEOS_DELETE)
   .input(z.object({ id: z.string().min(1) }))
   .action(async ({ input, ctx }) => {
     await playlistService.remove(input, ctx.access);
@@ -132,9 +131,7 @@ const createVideoSchema = z.object({
   visibility: z.enum(['public', 'private']).optional(),
 });
 
-export const createVideo = permissionProcedure(
-  PERMISSIONS.VIDEOS_CREATE
-)
+export const createVideo = permissionProcedure(PERMISSIONS.VIDEOS_CREATE)
   .input(createVideoSchema)
   .action(async ({ input, ctx }) => {
     const row = await videoService.create(input, ctx.access);
@@ -154,9 +151,7 @@ const updateVideoSchema = z.object({
   duration: z.number().int().positive().optional().nullable(),
 });
 
-export const updateVideo = permissionProcedure(
-  PERMISSIONS.VIDEOS_EDIT
-)
+export const updateVideo = permissionProcedure(PERMISSIONS.VIDEOS_EDIT)
   .input(updateVideoSchema)
   .action(async ({ input, ctx }) => {
     const row = await videoService.update(input, ctx.access);
@@ -164,9 +159,7 @@ export const updateVideo = permissionProcedure(
     return row;
   });
 
-export const publishVideo = permissionProcedure(
-  PERMISSIONS.VIDEOS_PUBLISH
-)
+export const publishVideo = permissionProcedure(PERMISSIONS.VIDEOS_PUBLISH)
   .input(z.object({ id: z.string().min(1) }))
   .action(async ({ input, ctx }) => {
     await videoLifecycle.publish(input.id, ctx.access);
@@ -174,9 +167,7 @@ export const publishVideo = permissionProcedure(
     return { ok: true };
   });
 
-export const unpublishVideo = permissionProcedure(
-  PERMISSIONS.VIDEOS_PUBLISH
-)
+export const unpublishVideo = permissionProcedure(PERMISSIONS.VIDEOS_PUBLISH)
   .input(z.object({ id: z.string().min(1) }))
   .action(async ({ input, ctx }) => {
     await videoLifecycle.unpublish(input.id, ctx.access);
@@ -184,9 +175,7 @@ export const unpublishVideo = permissionProcedure(
     return { ok: true };
   });
 
-export const deleteVideo = permissionProcedure(
-  PERMISSIONS.VIDEOS_DELETE
-)
+export const deleteVideo = permissionProcedure(PERMISSIONS.VIDEOS_DELETE)
   .input(z.object({ id: z.string().min(1) }))
   .action(async ({ input, ctx }) => {
     await videoLifecycle.softDelete(input.id, ctx.access);
@@ -198,9 +187,7 @@ const reorderVideosSchema = z.object({
   ids: z.array(z.string().min(1)),
 });
 
-export const reorderVideos = permissionProcedure(
-  PERMISSIONS.VIDEOS_EDIT
-)
+export const reorderVideos = permissionProcedure(PERMISSIONS.VIDEOS_EDIT)
   .input(reorderVideosSchema)
   .action(async ({ input, ctx }) => {
     await videoLifecycle.reorder(input.ids, ctx.access);
@@ -210,7 +197,11 @@ export const reorderVideos = permissionProcedure(
 
 const saveVideoProgressSchema = z.object({
   videoId: z.string().min(1).max(100),
-  position: z.number().min(0).max(24 * 60 * 60).default(0),
+  position: z
+    .number()
+    .min(0)
+    .max(24 * 60 * 60)
+    .default(0),
   duration: z.number().min(0).nullish(),
   completed: z.boolean().optional(),
 });

@@ -54,7 +54,13 @@ export const GET = apiHandler<{ slug: string }>(
     const link = (p: { slug: string; language: string; isHome: boolean }) =>
       absoluteUrl(
         siteUrl,
-        PAGES.SITE.page(p.slug, p.language, p.isHome, site.defaultLocale, siteSlug)
+        PAGES.SITE.page(
+          p.slug,
+          p.language,
+          p.isHome,
+          site.defaultLocale,
+          siteSlug
+        )
       );
 
     const {

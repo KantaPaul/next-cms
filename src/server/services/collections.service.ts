@@ -90,7 +90,7 @@ async function assertCanManagePostTypes(actorId: string) {
  * field type stores: numbers, booleans, and omitted empty optional values.
  */
 export function coerceEntryData(
-  fields: typeof collectionFields.$inferSelect[],
+  fields: (typeof collectionFields.$inferSelect)[],
   data: unknown
 ): Record<string, unknown> {
   const input = (data && typeof data === 'object' ? data : {}) as Record<
@@ -105,7 +105,10 @@ export function coerceEntryData(
       value = value === true || value === 'true' || value === 'on';
     } else if (typeof value === 'string') {
       const trimmed = field.type === 'richtext' ? value : value.trim();
-      if (trimmed === '' || (field.type === 'richtext' && value === '<p></p>')) {
+      if (
+        trimmed === '' ||
+        (field.type === 'richtext' && value === '<p></p>')
+      ) {
         continue;
       }
       value = field.type === 'number' ? Number(trimmed) : trimmed;
@@ -116,7 +119,9 @@ export function coerceEntryData(
 }
 
 /** Builds a Zod object schema from collection field rows and parses entry data. */
-export function buildEntrySchema(fields: typeof collectionFields.$inferSelect[]) {
+export function buildEntrySchema(
+  fields: (typeof collectionFields.$inferSelect)[]
+) {
   const shape: Record<string, z.ZodTypeAny> = {};
 
   for (const field of fields) {
@@ -174,7 +179,7 @@ export function buildEntrySchema(fields: typeof collectionFields.$inferSelect[])
 
 /** Parses entry data against the field schema. Returns { data, error }. */
 export function parseEntryData(
-  fields: typeof collectionFields.$inferSelect[],
+  fields: (typeof collectionFields.$inferSelect)[],
   data: unknown
 ): { data: Record<string, unknown>; error: z.ZodError | null } {
   const schema = buildEntrySchema(fields);
@@ -250,9 +255,7 @@ export const collectionsService = {
     const [row] = await db
       .select()
       .from(collections)
-      .where(
-        and(eq(collections.id, id), eq(collections.siteId, siteId))
-      )
+      .where(and(eq(collections.id, id), eq(collections.siteId, siteId)))
       .limit(1);
     if (!row) throw new NotFoundException('Collection not found');
     return row;
@@ -416,7 +419,10 @@ export const collectionsService = {
           isNull(collectionEntries.deletedAt)
         )
       )
-      .orderBy(desc(collectionEntries.publishedAt), desc(collectionEntries.createdAt))
+      .orderBy(
+        desc(collectionEntries.publishedAt),
+        desc(collectionEntries.createdAt)
+      )
       .limit(1);
 
     if (!entry) return null;
@@ -708,7 +714,13 @@ export const collectionsService = {
   /** Update a field. Requires post_types.manage. */
   async updateField(
     fieldId: string,
-    input: { label?: string; type?: CollectionFieldType; required?: boolean; config?: Record<string, unknown>; position?: number },
+    input: {
+      label?: string;
+      type?: CollectionFieldType;
+      required?: boolean;
+      config?: Record<string, unknown>;
+      position?: number;
+    },
     actorId: string
   ) {
     await assertCanManagePostTypes(actorId);
@@ -718,7 +730,9 @@ export const collectionsService = {
       .select()
       .from(collectionFields)
       .innerJoin(collections, eq(collections.id, collectionFields.collectionId))
-      .where(and(eq(collectionFields.id, fieldId), eq(collections.siteId, siteId)))
+      .where(
+        and(eq(collectionFields.id, fieldId), eq(collections.siteId, siteId))
+      )
       .limit(1);
     if (!field) throw new NotFoundException('Field not found');
 
@@ -754,16 +768,20 @@ export const collectionsService = {
       .select({ id: collectionFields.id })
       .from(collectionFields)
       .innerJoin(collections, eq(collections.id, collectionFields.collectionId))
-      .where(and(eq(collectionFields.id, fieldId), eq(collections.siteId, siteId)))
+      .where(
+        and(eq(collectionFields.id, fieldId), eq(collections.siteId, siteId))
+      )
       .limit(1);
     if (!owned[0]) throw new NotFoundException('Field not found');
     let fieldLabel: string | undefined;
-    const fl = await db.select().from(collectionFields).where(eq(collectionFields.id, fieldId)).limit(1);
+    const fl = await db
+      .select()
+      .from(collectionFields)
+      .where(eq(collectionFields.id, fieldId))
+      .limit(1);
     fieldLabel = (fl[0] as any)?.label;
 
-    await db
-      .delete(collectionFields)
-      .where(eq(collectionFields.id, fieldId));
+    await db.delete(collectionFields).where(eq(collectionFields.id, fieldId));
 
     await auditService.log({
       actorId,
@@ -989,7 +1007,10 @@ export const collectionsService = {
         if (!termsByTax[t.taxonomyId]) termsByTax[t.taxonomyId] = [];
         termsByTax[t.taxonomyId].push(t.termId);
       }
-      await collectionTaxonomiesService.syncEntryTerms(duplicated.id, termsByTax);
+      await collectionTaxonomiesService.syncEntryTerms(
+        duplicated.id,
+        termsByTax
+      );
     }
 
     await auditService.log({
@@ -1178,7 +1199,10 @@ export const collectionsService = {
     const [row] = await db
       .select()
       .from(collectionEntries)
-      .innerJoin(collections, eq(collectionEntries.collectionId, collections.id))
+      .innerJoin(
+        collections,
+        eq(collectionEntries.collectionId, collections.id)
+      )
       .leftJoin(users, eq(users.id, collectionEntries.authorId))
       .where(
         and(
@@ -1373,8 +1397,7 @@ export const collectionsService = {
         featuredImage: input.featuredImage ?? null,
         visibility:
           supports.status && input.visibility ? input.visibility : 'public',
-        layout:
-          supports.template && input.layout ? input.layout : 'template',
+        layout: supports.template && input.layout ? input.layout : 'template',
         templateId:
           supports.template && input.templateId ? input.templateId : null,
         canvas:
@@ -1499,7 +1522,8 @@ export const collectionsService = {
       if (input.layout !== undefined) values.layout = input.layout;
       if (input.templateId !== undefined) values.templateId = input.templateId;
       if (input.canvas !== undefined) values.canvas = input.canvas;
-      if (input.draftCanvas !== undefined) values.draftCanvas = input.draftCanvas;
+      if (input.draftCanvas !== undefined)
+        values.draftCanvas = input.draftCanvas;
     }
     if (supports.status) {
       if (input.visibility !== undefined) values.visibility = input.visibility;

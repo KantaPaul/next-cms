@@ -29,19 +29,20 @@ export const reloadNodeData = permissionProcedure(PERMISSIONS.PAGES_EDIT)
     })
   )
   .action(async ({ input }) => {
-    const { getBatchBlockLoader, getBlockLoader } = await import(
-      '@/builder/loaders'
-    );
-    const { entryRenderContext } = await import(
-      '@/app/(admin)/dashboard/(fullscreen)/_editor/entry-context'
-    );
+    const { getBatchBlockLoader, getBlockLoader } =
+      await import('@/builder/loaders');
+    const { entryRenderContext } =
+      await import('@/app/(admin)/dashboard/(fullscreen)/_editor/entry-context');
     const entry = input.entryId
       ? await entryRenderContext(input.entryId)
       : null;
     const ctx = {
       editor: true,
       language: input.language,
-      ...(entry && { collectionEntry: entry.collectionEntry, post: entry.post }),
+      ...(entry && {
+        collectionEntry: entry.collectionEntry,
+        post: entry.post,
+      }),
     };
     const batch = getBatchBlockLoader(input.type);
     if (batch) {

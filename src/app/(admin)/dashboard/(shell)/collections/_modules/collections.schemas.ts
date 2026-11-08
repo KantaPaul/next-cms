@@ -79,7 +79,9 @@ export const collectionEntrySlugSchema = z.object({
   slug: z.string().trim().min(1, 'Slug is required').max(200),
 });
 
-export type CollectionEntrySlugInput = z.infer<typeof collectionEntrySlugSchema>;
+export type CollectionEntrySlugInput = z.infer<
+  typeof collectionEntrySlugSchema
+>;
 
 export const updateSupportsSchema = z.object({
   id: z.string().min(1),

@@ -10,7 +10,9 @@ import { commentsService } from '@/server/services/comments.service';
 
 const ids = z.array(z.string().min(1).max(100)).min(1).max(200);
 
-export const setCommentStatus = permissionProcedure(PERMISSIONS.COMMENTS_MODERATE)
+export const setCommentStatus = permissionProcedure(
+  PERMISSIONS.COMMENTS_MODERATE
+)
   .input(z.object({ ids, status: z.enum(COMMENT_STATUSES) }))
   .action(async ({ input }) => {
     const updated = await commentsService.setStatus(input.ids, input.status);
@@ -18,7 +20,9 @@ export const setCommentStatus = permissionProcedure(PERMISSIONS.COMMENTS_MODERAT
     return { updated };
   });
 
-export const deleteCommentsForever = permissionProcedure(PERMISSIONS.COMMENTS_MODERATE)
+export const deleteCommentsForever = permissionProcedure(
+  PERMISSIONS.COMMENTS_MODERATE
+)
   .input(z.object({ ids }))
   .action(async ({ input }) => {
     const deleted = await commentsService.deleteForever(input.ids);

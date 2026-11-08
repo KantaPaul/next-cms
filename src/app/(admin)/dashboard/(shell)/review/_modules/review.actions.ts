@@ -20,7 +20,9 @@ export const approveReview = permissionProcedure(PERMISSIONS.PAGES_PUBLISH)
     return row;
   });
 
-export const requestReviewChanges = permissionProcedure(PERMISSIONS.PAGES_PUBLISH)
+export const requestReviewChanges = permissionProcedure(
+  PERMISSIONS.PAGES_PUBLISH
+)
   .input(target.extend({ note: z.string().min(1) }))
   .action(async ({ input, ctx }) => {
     const row = await reviewService.requestChanges(

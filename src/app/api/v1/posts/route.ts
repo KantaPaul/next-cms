@@ -58,7 +58,7 @@ export const GET = apiHandler(
 );
 
 export const POST = apiHandler(
-  async (request) => {
+  async request => {
     const { userId } = await getCurrentUserAndTeamId();
     const access = await accessService.getUserAccess(userId);
     if (!accessService.can(access, PERMISSIONS.PAGES_CREATE)) {
@@ -71,8 +71,8 @@ export const POST = apiHandler(
       throw new ApiRequestError(400, 'Invalid post data.');
     }
 
-    const siteId = await import('@/server/services/site-context').then(
-      m => m.adminSiteId()
+    const siteId = await import('@/server/services/site-context').then(m =>
+      m.adminSiteId()
     );
 
     const [post] = await db

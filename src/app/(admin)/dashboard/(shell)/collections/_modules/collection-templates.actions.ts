@@ -35,7 +35,10 @@ export async function createCollectionTemplateAction(input: unknown) {
   }
   try {
     const access = await getAccess();
-    const created = await collectionTemplatesService.create(parsed.data, access);
+    const created = await collectionTemplatesService.create(
+      parsed.data,
+      access
+    );
     return { ok: true, id: created.id };
   } catch (err: any) {
     return { ok: false, error: err.message ?? 'Failed to create template.' };
@@ -52,7 +55,10 @@ export async function updateCollectionTemplateAction(input: unknown) {
   }
   try {
     const access = await getAccess();
-    const updated = await collectionTemplatesService.update(parsed.data, access);
+    const updated = await collectionTemplatesService.update(
+      parsed.data,
+      access
+    );
     return { ok: true, id: updated.id };
   } catch (err: any) {
     return { ok: false, error: err.message ?? 'Failed to update template.' };
@@ -62,20 +68,28 @@ export async function updateCollectionTemplateAction(input: unknown) {
 export async function duplicateCollectionTemplateAction(input: { id: string }) {
   try {
     const access = await getAccess();
-    const duplicated = await collectionTemplatesService.duplicate(input, access);
+    const duplicated = await collectionTemplatesService.duplicate(
+      input,
+      access
+    );
     return { ok: true, id: duplicated.id };
   } catch (err: any) {
     return { ok: false, error: err.message ?? 'Failed to duplicate template.' };
   }
 }
 
-export async function setDefaultCollectionTemplateAction(input: { id: string }) {
+export async function setDefaultCollectionTemplateAction(input: {
+  id: string;
+}) {
   try {
     const access = await getAccess();
     const updated = await collectionTemplatesService.setDefault(input, access);
     return { ok: true, id: updated.id };
   } catch (err: any) {
-    return { ok: false, error: err.message ?? 'Failed to set default template.' };
+    return {
+      ok: false,
+      error: err.message ?? 'Failed to set default template.',
+    };
   }
 }
 

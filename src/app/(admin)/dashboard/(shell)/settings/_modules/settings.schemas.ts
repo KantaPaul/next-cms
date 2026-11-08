@@ -172,7 +172,9 @@ export const settingsSchema = z.object({
       thumbnails: z.boolean().optional(),
       descriptions: z.boolean().optional(),
       pageSize: z.coerce.number().int().min(1).max(48).optional(),
-      providers: z.record(z.enum(['youtube', 'vimeo', 'direct']), z.boolean()).optional(),
+      providers: z
+        .record(z.enum(['youtube', 'vimeo', 'direct']), z.boolean())
+        .optional(),
       directHostAllowlist: z.array(z.string().max(255)).max(20).optional(),
       progress: z.boolean().optional(),
       resume: z.boolean().optional(),
@@ -192,10 +194,7 @@ export const settingsSchema = z.object({
 export type SettingsInput = z.infer<typeof settingsSchema>;
 
 export const manageLicenseFormSchema = z.object({
-  licenseKey: z
-    .string()
-    .trim()
-    .min(1, 'License key is required'),
+  licenseKey: z.string().trim().min(1, 'License key is required'),
   authorityUrl: z
     .string()
     .trim()
@@ -239,10 +238,7 @@ export const licensePolicyFormSchema = z.object({
     .min(1, 'Window must be at least 1 minute'),
   notifyOnConflict: z.boolean(),
   notifyOnRevocation: z.boolean(),
-  notifyOnExpiryWindowDays: z
-    .number()
-    .int('Must be a whole number')
-    .min(1),
+  notifyOnExpiryWindowDays: z.number().int('Must be a whole number').min(1),
 });
 
 export type LicensePolicyFormInput = z.infer<typeof licensePolicyFormSchema>;

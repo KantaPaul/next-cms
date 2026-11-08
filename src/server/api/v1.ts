@@ -124,7 +124,9 @@ export function apiHandler<P = Record<string, never>>(
     const apiKey = await apiKeysService.verify(key);
     if (!apiKey) return apiError(401, 'Invalid or revoked API key.');
     const siteSlug = new URL(request.url).searchParams.get('site')?.trim();
-    const site = siteSlug ? await siteBySlug(siteSlug) : await siteContext.publicSite();
+    const site = siteSlug
+      ? await siteBySlug(siteSlug)
+      : await siteContext.publicSite();
     if (!site) return apiError(404, 'Site not found.');
     if (apiKey.siteId !== site.id) {
       return apiError(401, 'Invalid or revoked API key.');
@@ -132,15 +134,29 @@ export function apiHandler<P = Record<string, never>>(
 
     // Scope check
     const keyScopes = apiKey.scopes ?? [];
-    if (requiredScopes.length && !requiredScopes.some(s => keyScopes.includes(s))) {
-      return apiError(403, 'API key missing required scope.', limitHeadersPlaceholder());
+    if (
+      requiredScopes.length &&
+      !requiredScopes.some(s => keyScopes.includes(s))
+    ) {
+      return apiError(
+        403,
+        'API key missing required scope.',
+        limitHeadersPlaceholder()
+      );
     }
 
     // R241 / L5-04: Mutating /api/v1 handlers call requireLicense; published public GET stays up
-    if (request.method !== 'GET' && request.method !== 'HEAD' && request.method !== 'OPTIONS') {
+    if (
+      request.method !== 'GET' &&
+      request.method !== 'HEAD' &&
+      request.method !== 'OPTIONS'
+    ) {
       const licenseCheck = await licenseService.requireLicense();
       if (!licenseCheck.ok) {
-        return apiError(403, 'License verification required to execute mutations.');
+        return apiError(
+          403,
+          'License verification required to execute mutations.'
+        );
       }
     }
 
@@ -309,7 +325,9 @@ export const menusResponseSchema = z.object({
       id: z.string(),
       title: z.string(),
       location: z.string(),
-      items: z.array(menuItemSchema.extend({ children: z.array(menuItemSchema) })),
+      items: z.array(
+        menuItemSchema.extend({ children: z.array(menuItemSchema) })
+      ),
     })
   ),
 });
@@ -372,4 +390,3 @@ export const apiSchemas = {
   Settings: settingsResponseSchema,
   Search: searchResponseSchema,
 };
-

@@ -78,7 +78,10 @@ export const getDisplayRules = accessProcedure
   .input(z.object({ templateId: z.string().min(1) }))
   .action(async ({ input }) => {
     const siteId = await adminSiteId();
-    return templateResolverService.getRulesForTemplate(siteId, input.templateId);
+    return templateResolverService.getRulesForTemplate(
+      siteId,
+      input.templateId
+    );
   });
 
 export const saveDisplayRules = accessProcedure

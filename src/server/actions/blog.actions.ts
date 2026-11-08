@@ -67,7 +67,9 @@ const postCommentsSchema = z.object({
 });
 
 /** Approved comments for the Comments block, and whether new ones are accepted site-wide. */
-export async function getPostComments(input: z.input<typeof postCommentsSchema>) {
+export async function getPostComments(
+  input: z.input<typeof postCommentsSchema>
+) {
   const { postId, sort } = postCommentsSchema.parse(input);
   const [{ commentsService }, { siteSettingsService }] = await Promise.all([
     import('@/server/services/comments.service'),

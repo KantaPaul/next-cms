@@ -21,7 +21,9 @@ export const createRedirect = permissionProcedure(PERMISSIONS.SETTINGS_MANAGE)
     return row;
   });
 
-export const acceptRedirectOffer = permissionProcedure(PERMISSIONS.PAGES_PUBLISH)
+export const acceptRedirectOffer = permissionProcedure(
+  PERMISSIONS.PAGES_PUBLISH
+)
   .input(z.object({ fromPath: z.string().min(1), toPath: z.string().min(1) }))
   .action(async ({ input }) => {
     const row = await redirectsService.create({

@@ -98,5 +98,3 @@ export const updateSite = permissionProcedure(PERMISSIONS.SETTINGS_MANAGE)
     revalidatePublicSite();
     return site;
   });
-
-

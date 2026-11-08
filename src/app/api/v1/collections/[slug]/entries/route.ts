@@ -44,10 +44,7 @@ export const POST = apiHandler<{ slug: string }>(
     }
 
     const fields = await collectionsService.getFields(collection.id);
-    const { data, error } = parseEntryData(
-      fields,
-      parsed.data.data
-    );
+    const { data, error } = parseEntryData(fields, parsed.data.data);
     if (error) {
       throw new ApiRequestError(400, `Invalid entry data: ${error.message}`);
     }
@@ -69,5 +66,12 @@ export const POST = apiHandler<{ slug: string }>(
 );
 
 export const OPTIONS = async () => {
-  return new NextResponse(null, { status: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS', 'Access-Control-Allow-Headers': 'Authorization, Content-Type' } });
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
+      'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+    },
+  });
 };

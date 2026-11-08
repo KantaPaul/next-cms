@@ -122,9 +122,9 @@ export function IssueLicenseDialog({
 
         {issuedPlaintextKey ? (
           <div className="space-y-4 py-2">
-            <div className="bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-amber-900 dark:text-amber-200 text-xs">
-              <div className="font-semibold flex items-center gap-1.5 mb-1">
-                <ShieldAlert className="w-4 h-4 text-amber-600" />
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-200">
+              <div className="mb-1 flex items-center gap-1.5 font-semibold">
+                <ShieldAlert className="h-4 w-4 text-amber-600" />
                 Save this key now
               </div>
               Only the SHA-256 hash of this key is stored in the database. You
@@ -133,7 +133,7 @@ export function IssueLicenseDialog({
             </div>
 
             <div>
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block mb-1">
+              <label className="mb-1 block text-xs font-medium text-slate-700 dark:text-slate-300">
                 License Key
               </label>
               <div className="flex items-center gap-2">
@@ -141,7 +141,7 @@ export function IssueLicenseDialog({
                   type="text"
                   readOnly
                   value={issuedPlaintextKey}
-                  className="w-full font-mono text-xs p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 select-all"
+                  className="w-full select-all rounded-lg border border-slate-300 bg-slate-50 p-2.5 font-mono text-xs dark:border-slate-700 dark:bg-slate-900"
                 />
                 <Button
                   type="button"
@@ -151,9 +151,9 @@ export function IssueLicenseDialog({
                   className="shrink-0 gap-1.5"
                 >
                   {hasCopied ? (
-                    <Check className="w-4 h-4 text-emerald-600" />
+                    <Check className="h-4 w-4 text-emerald-600" />
                   ) : (
-                    <Copy className="w-4 h-4" />
+                    <Copy className="h-4 w-4" />
                   )}
                   {hasCopied ? 'Copied' : 'Copy'}
                 </Button>
@@ -168,7 +168,10 @@ export function IssueLicenseDialog({
           </div>
         ) : (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-4 py-2"
+            >
               <FormField
                 control={form.control}
                 name="ownerUserId"
@@ -183,7 +186,8 @@ export function IssueLicenseDialog({
                       />
                     </FormControl>
                     <FormDescription className="text-xs">
-                      User ID from the accounts table to link this license to an owner.
+                      User ID from the accounts table to link this license to an
+                      owner.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

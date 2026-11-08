@@ -58,7 +58,12 @@ export const GET = apiHandler<{ slug: string }>(
         ...rest,
         url: absoluteUrl(
           siteUrl,
-          PAGES.SITE.post(view.slug, view.language, site.defaultLocale, siteSlug)
+          PAGES.SITE.post(
+            view.slug,
+            view.language,
+            site.defaultLocale,
+            siteSlug
+          )
         ),
         blogUrl: blogUrl ? absoluteUrl(siteUrl, blogUrl) : null,
         updatedAt: post.updatedAt,
@@ -124,7 +129,9 @@ export const PATCH = apiHandler<{ slug: string }>(
     const [updated] = await db
       .update(posts)
       .set({
-        ...(parsed.data.title !== undefined ? { title: parsed.data.title } : {}),
+        ...(parsed.data.title !== undefined
+          ? { title: parsed.data.title }
+          : {}),
         ...(parsed.data.slug !== undefined ? { slug: parsed.data.slug } : {}),
         updatedAt: new Date(),
       })

@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { resolveRoute } from '@/server/services/public-site.service';
-import { normalizeSitePath, offerForPublishedPath } from '@/server/services/redirects.service';
-import { buildEntrySchema, RESERVED_COLLECTION_SLUGS } from '@/server/services/collections.service';
+import {
+  normalizeSitePath,
+  offerForPublishedPath,
+} from '@/server/services/redirects.service';
+import {
+  buildEntrySchema,
+  RESERVED_COLLECTION_SLUGS,
+} from '@/server/services/collections.service';
 import { getBlockComponents } from '@/builder/blocks/registry';
 
 describe('R076: Ship Basics Vitest Suite', () => {
@@ -48,14 +54,26 @@ describe('R076: Ship Basics Vitest Suite', () => {
     });
 
     it('throws error on invalid paths without leading slash or with protocol', () => {
-      expect(() => normalizeSitePath('old-page')).toThrow('Paths must start with a single /.');
+      expect(() => normalizeSitePath('old-page')).toThrow(
+        'Paths must start with a single /.'
+      );
       expect(() => normalizeSitePath('https://external.com')).toThrow();
       expect(() => normalizeSitePath('//double-slash')).toThrow();
     });
 
     it('offers redirect on slug change for published items', () => {
-      const before = { status: 'published', slug: 'old-slug', language: 'en', isHome: false };
-      const after = { status: 'published', slug: 'new-slug', language: 'en', isHome: false };
+      const before = {
+        status: 'published',
+        slug: 'old-slug',
+        language: 'en',
+        isHome: false,
+      };
+      const after = {
+        status: 'published',
+        slug: 'new-slug',
+        language: 'en',
+        isHome: false,
+      };
 
       const offer = offerForPublishedPath('page', before, after);
       expect(offer).toEqual({
@@ -65,11 +83,26 @@ describe('R076: Ship Basics Vitest Suite', () => {
     });
 
     it('does not offer redirect when status is not published or path is unchanged', () => {
-      const draft = { status: 'draft', slug: 'old-slug', language: 'en', isHome: false };
-      const published = { status: 'published', slug: 'new-slug', language: 'en', isHome: false };
+      const draft = {
+        status: 'draft',
+        slug: 'old-slug',
+        language: 'en',
+        isHome: false,
+      };
+      const published = {
+        status: 'published',
+        slug: 'new-slug',
+        language: 'en',
+        isHome: false,
+      };
       expect(offerForPublishedPath('page', draft, published)).toBeNull();
 
-      const same = { status: 'published', slug: 'same', language: 'en', isHome: false };
+      const same = {
+        status: 'published',
+        slug: 'same',
+        language: 'en',
+        isHome: false,
+      };
       expect(offerForPublishedPath('page', same, same)).toBeNull();
     });
   });

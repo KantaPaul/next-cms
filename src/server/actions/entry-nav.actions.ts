@@ -24,7 +24,8 @@ export async function getAdjacentEntries(input: {
 }) {
   const parsed = entrySchema.safeParse(input.entry);
   if (!parsed.success) return { previous: null, next: null };
-  const { adjacentEntries } = await import('@/server/services/entry-adjacent.service');
+  const { adjacentEntries } =
+    await import('@/server/services/entry-adjacent.service');
   return adjacentEntries(
     {
       ...parsed.data,

@@ -49,7 +49,9 @@ export const saveEditorDraft = accessProcedure
       baseVersion: z.number().int().min(0),
       patch: z
         .object({
-          root: z.object({ props: z.record(z.string(), z.unknown()) }).optional(),
+          root: z
+            .object({ props: z.record(z.string(), z.unknown()) })
+            .optional(),
           rootSlot: z.array(z.string()).optional(),
           upsert: z.record(z.string(), z.unknown()),
           remove: z.array(z.string()),
@@ -64,7 +66,9 @@ export const saveEditorDraft = accessProcedure
         id: input.id,
         baseVersion: input.baseVersion,
         patch: input.patch as DocumentPatch | undefined,
-        document: isBuilderDocument(input.document) ? input.document : undefined,
+        document: isBuilderDocument(input.document)
+          ? input.document
+          : undefined,
       },
       ctx.access
     )

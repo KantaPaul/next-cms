@@ -35,42 +35,36 @@ const listOptionsInput = z
 
 export const listLoopTemplateOptions = permissionProcedure(
   PERMISSIONS.PAGES_EDIT
-).query(
-  async ({
-    params,
-  }: {
-    params: z.infer<typeof listOptionsInput>;
-  }) => {
-    const input = listOptionsInput.parse(params ?? {});
-    const rows = await loopTemplatesService.list({
-      sourceType: input?.sourceType,
-      collectionId: input?.collectionId ?? null,
-    });
-    return rows.map(r => ({
-      id: r.id,
-      name: r.name,
-      sourceType: r.sourceType,
-      collectionId: r.collectionId,
-      collectionName: r.collectionName,
-      published: !!r.publishedAt,
-    }));
-  }
-);
+).query(async ({ params }: { params: z.infer<typeof listOptionsInput> }) => {
+  const input = listOptionsInput.parse(params ?? {});
+  const rows = await loopTemplatesService.list({
+    sourceType: input?.sourceType,
+    collectionId: input?.collectionId ?? null,
+  });
+  return rows.map(r => ({
+    id: r.id,
+    name: r.name,
+    sourceType: r.sourceType,
+    collectionId: r.collectionId,
+    collectionName: r.collectionName,
+    published: !!r.publishedAt,
+  }));
+});
 
 /** Custom fields of one post type, for field filters, sorts and dynamic tags. */
 export const listCollectionFieldOptions = permissionProcedure(
   PERMISSIONS.PAGES_EDIT
 ).query(async ({ params }: { params: { collectionId: string } }) => {
-    const collectionId = z.string().min(1).parse(params?.collectionId);
-    const fields = await collectionsService.getFields(collectionId);
-    return fields.map(f => ({
-      key: f.key,
-      label: f.label,
-      type: f.type as string,
-      choices: Array.isArray((f.config as { choices?: unknown })?.choices)
-        ? ((f.config as { choices: unknown[] }).choices.map(String) as string[])
-        : [],
-    }));
+  const collectionId = z.string().min(1).parse(params?.collectionId);
+  const fields = await collectionsService.getFields(collectionId);
+  return fields.map(f => ({
+    key: f.key,
+    label: f.label,
+    type: f.type as string,
+    choices: Array.isArray((f.config as { choices?: unknown })?.choices)
+      ? ((f.config as { choices: unknown[] }).choices.map(String) as string[])
+      : [],
+  }));
 });
 
 export const createLoopTemplate = accessProcedure

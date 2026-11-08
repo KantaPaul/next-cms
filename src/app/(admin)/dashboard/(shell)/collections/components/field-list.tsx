@@ -63,7 +63,11 @@ export function FieldList({
   return (
     <div className="space-y-2">
       {fields.map(field => (
-        <FieldRowForm key={field.id} field={field} collectionId={collectionId} />
+        <FieldRowForm
+          key={field.id}
+          field={field}
+          collectionId={collectionId}
+        />
       ))}
     </div>
   );

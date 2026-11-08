@@ -59,7 +59,9 @@ export function CreateEntryForm({
       toast.success(`${singularName} saved as draft.`);
       // Like Pages: continue on the new entry's edit screen.
       if (typeof result.id === 'string') {
-        router.push(PAGES.DASHBOARD.COLLECTION_ENTRY_EDIT(collectionSlug, result.id));
+        router.push(
+          PAGES.DASHBOARD.COLLECTION_ENTRY_EDIT(collectionSlug, result.id)
+        );
         return;
       }
       form.reset(defaultValues);
@@ -68,8 +70,11 @@ export function CreateEntryForm({
   });
 
   const primaryField =
-    fields.find(f => ['title', 'name', 'label', 'heading', 'question', 'author'].includes(f.key))?.key ||
-    fields.find(f => f.type === 'text')?.key;
+    fields.find(f =>
+      ['title', 'name', 'label', 'heading', 'question', 'author'].includes(
+        f.key
+      )
+    )?.key || fields.find(f => f.type === 'text')?.key;
 
   const handleFieldChange = (key: string, value: unknown) => {
     if (key === primaryField && typeof value === 'string') {
@@ -104,7 +109,9 @@ export function CreateEntryForm({
             <FormItem>
               <FormLabel className="flex items-center justify-between">
                 <span>Slug</span>
-                <span className="text-xs font-normal text-muted-foreground">Auto-generated</span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  Auto-generated
+                </span>
               </FormLabel>
               <FormControl>
                 <Input
@@ -115,7 +122,8 @@ export function CreateEntryForm({
                 />
               </FormControl>
               <p className="text-xs text-muted-foreground">
-                Automatically generated dynamically from entry content. No need to input manually.
+                Automatically generated dynamically from entry content. No need
+                to input manually.
               </p>
               <FormMessage />
             </FormItem>

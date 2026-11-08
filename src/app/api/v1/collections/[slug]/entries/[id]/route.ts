@@ -54,10 +54,7 @@ export const PATCH = apiHandler<{ slug: string; id: string }>(
     const values: Record<string, unknown> = {};
     if (parsed.data.slug !== undefined) values.slug = parsed.data.slug;
     if (parsed.data.data !== undefined) {
-      const { data, error } = parseEntryData(
-        fields,
-        parsed.data.data
-      );
+      const { data, error } = parseEntryData(fields, parsed.data.data);
       if (error) {
         throw new ApiRequestError(400, `Invalid entry data: ${error.message}`);
       }
@@ -76,5 +73,12 @@ export const PATCH = apiHandler<{ slug: string; id: string }>(
 );
 
 export const OPTIONS = async () => {
-  return new NextResponse(null, { status: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS', 'Access-Control-Allow-Headers': 'Authorization, Content-Type' } });
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
+      'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+    },
+  });
 };
