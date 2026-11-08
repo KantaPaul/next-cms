@@ -1,7 +1,6 @@
 'use client';
 
-import { Check, ChevronsUpDown, Search } from 'lucide-react';
-import { inputStyle } from '@nextcms/builder-react';
+import { ChevronsUpDown, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { DayPicker } from 'react-day-picker';
 import { listGlobalBlockOptions } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
@@ -18,6 +17,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { cn } from '@/lib/utils/cn';
 import { getAllTaxonomyOptions } from '@/server/actions/blog.actions';
 import { Switcher } from '../controls/primitives';
@@ -328,85 +328,17 @@ export function SearchableSelectField({
   options: { value: string; label: string }[];
   emptyLabel?: string;
 }) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const filtered = useMemo(
-    () =>
-      options.filter(
-        o => !query || o.label.toLowerCase().includes(query.toLowerCase())
-      ),
-    [options, query]
-  );
-  const current = options.find(o => o.value === value);
-
   return (
     <div>
       <FieldLabel label={field.label} />
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            className="flex h-9 w-full items-center justify-between rounded-md border border-steel-200 bg-white px-2 text-sm"
-          >
-            <span className="truncate">{current?.label ?? emptyLabel}</span>
-            <ChevronsUpDown className="size-3.5 shrink-0 text-steel-400" />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent
-          className="w-[var(--radix-popover-trigger-width)] p-2"
-          align="start"
-        >
-          <div className="mb-2 flex items-center gap-1.5 rounded-md border border-steel-200 px-2">
-            <Search className="size-3.5 text-steel-400" />
-            <input
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              placeholder="Search…"
-              className="h-8 w-full border-0 bg-transparent text-sm focus:ring-0"
-            />
-          </div>
-          <ul className="max-h-48 overflow-y-auto">
-            <li>
-              <button
-                type="button"
-                onClick={() => {
-                  onChange(undefined);
-                  setOpen(false);
-                }}
-                className={cn(
-                  'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm',
-                  !value ? 'bg-indigo-50 text-indigo-800' : 'hover:bg-steel-50'
-                )}
-              >
-                {!value && <Check className="size-3.5" />}
-                <span className={!value ? '' : 'pl-5'}>{emptyLabel}</span>
-              </button>
-            </li>
-            {filtered.map(o => (
-              <li key={o.value}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onChange(o.value);
-                    setOpen(false);
-                  }}
-                  className={cn(
-                    'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm',
-                    value === o.value
-                      ? 'bg-indigo-50 text-indigo-800'
-                      : 'hover:bg-steel-50'
-                  )}
-                >
-                  {value === o.value && <Check className="size-3.5" />}
-                  <span className={value === o.value ? '' : 'pl-5'}>
-                    {o.label}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </PopoverContent>
-      </Popover>
+      <SearchableSelect
+        value={value}
+        onValueChange={onChange}
+        options={options}
+        placeholder={emptyLabel}
+        emptyOptionLabel={emptyLabel}
+        aria-label={field.label}
+      />
     </div>
   );
 }
@@ -483,28 +415,27 @@ export function GlobalBlockSelectField({
     };
   }, []);
 
+  const placeholder =
+    options === null
+      ? 'Loading…'
+      : options.length
+        ? 'Choose a global block'
+        : 'No global blocks yet';
+
   return (
     <div>
       <FieldLabel label={field.label} />
-      <select
-        value={value ?? ''}
-        onChange={e => onChange(e.target.value || undefined)}
-        className="h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm"
+      <SearchableSelect
+        value={value}
+        onValueChange={onChange}
+        options={(options ?? []).map(o => ({
+          value: o.id,
+          label: `${o.name} (${o.category})`,
+        }))}
+        placeholder={placeholder}
+        emptyOptionLabel={options?.length ? 'Choose a global block' : undefined}
         aria-label={field.label}
-      >
-        <option value="">
-          {options === null
-            ? 'Loading…'
-            : options.length
-              ? 'Choose a global block'
-              : 'No global blocks yet'}
-        </option>
-        {options?.map(o => (
-          <option key={o.id} value={o.id}>
-            {o.name} ({o.category})
-          </option>
-        ))}
-      </select>
+      />
       <p className="mt-2 text-xs text-steel-500">
         Edits to a global block update every page that uses it.
       </p>
@@ -640,28 +571,27 @@ export function CollectionSelectField({
     };
   }, []);
 
+  const placeholder =
+    options === null
+      ? 'Loading post types…'
+      : options.length
+        ? 'Select a post type'
+        : 'No post types found';
+
   return (
     <div>
       <FieldLabel label={field.label} />
-      <select
-        value={value ?? ''}
-        onChange={e => onChange(e.target.value || undefined)}
-        className="h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm text-foreground"
+      <SearchableSelect
+        value={value}
+        onValueChange={onChange}
+        options={(options ?? []).map(o => ({
+          value: o.id,
+          label: `${o.name} (${o.slug})`,
+        }))}
+        placeholder={placeholder}
+        emptyOptionLabel={options?.length ? 'Select a post type' : undefined}
         aria-label={field.label}
-      >
-        <option value="">
-          {options === null
-            ? 'Loading post types…'
-            : options.length
-              ? 'Select a post type'
-              : 'No post types found'}
-        </option>
-        {options?.map(o => (
-          <option key={o.id} value={o.id}>
-            {o.name} ({o.slug})
-          </option>
-        ))}
-      </select>
+      />
     </div>
   );
 }
@@ -675,26 +605,25 @@ export function CollectionItemFieldSelect({
   const fields = entry?.collection?.fields ?? [];
   // Inside a "Fields to display" row: one field, no "all fields" option.
   const single = Boolean((field as { single?: boolean }).single);
+  const emptyLabel = single
+    ? 'Choose a field…'
+    : 'All fields (full entry preview)';
 
   return (
     <div>
       {/* In a list row the row already labels the control. */}
       {!single && <FieldLabel label={field.label} />}
-      <select
-        value={value ?? ''}
-        onChange={e => onChange(e.target.value || undefined)}
-        className="h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm text-foreground"
+      <SearchableSelect
+        value={value}
+        onValueChange={onChange}
+        options={fields.map(f => ({
+          value: f.key,
+          label: `${f.label} (${f.key})`,
+        }))}
+        placeholder={emptyLabel}
+        emptyOptionLabel={emptyLabel}
         aria-label={field.label}
-      >
-        <option value="">
-          {single ? 'Choose a field…' : 'All fields (full entry preview)'}
-        </option>
-        {fields.map(f => (
-          <option key={f.key} value={f.key}>
-            {f.label} ({f.key})
-          </option>
-        ))}
-      </select>
+      />
       {!single && (
         <p className="mt-1 text-xs text-steel-500">
           Choose a specific field to render, or leave on &ldquo;All fields&rdquo; to show the full entry.
@@ -729,30 +658,30 @@ export function CollectionBlockSelectField({
     };
   }, [collectionId]);
 
+  const placeholder = !collectionId
+    ? 'Open in an entry builder to pick a block'
+    : options === null
+      ? 'Loading…'
+      : options.length
+        ? 'Choose a block'
+        : 'No blocks for this post type yet';
+
   return (
     <div>
       <FieldLabel label={field.label} />
-      <select
-        value={value ?? ''}
-        onChange={e => onChange(e.target.value || undefined)}
-        className="h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm text-foreground"
+      <SearchableSelect
+        value={value}
+        onValueChange={onChange}
+        options={(options ?? []).map(o => ({
+          value: o.id,
+          label: o.name,
+        }))}
+        placeholder={placeholder}
+        emptyOptionLabel={
+          collectionId && options?.length ? 'Choose a block' : undefined
+        }
         aria-label={field.label}
-      >
-        <option value="">
-          {!collectionId
-            ? 'Open in an entry builder to pick a block'
-            : options === null
-              ? 'Loading…'
-              : options.length
-                ? 'Choose a block'
-                : 'No blocks for this post type yet'}
-        </option>
-        {options?.map(o => (
-          <option key={o.id} value={o.id}>
-            {o.name}
-          </option>
-        ))}
-      </select>
+      />
       <p className="mt-2 text-xs text-steel-500">
         Renders this block with the current entry&apos;s data wherever it is
         used.
@@ -790,35 +719,32 @@ export function CollectionBlockPreviewField({
     };
   }, [collectionId]);
 
-  const choose = (id: string) => {
+  const choose = (id: string | undefined) => {
     if (!id || id === currentId) return;
     const url = new URL(window.location.href);
     url.searchParams.set('entry', id);
     window.location.assign(url.toString());
   };
 
+  const placeholder =
+    options === null ? 'Loading…' : 'Sample data (no entries yet)';
+
   return (
     <div>
       {/* The inspector already labels root fields. */}
-      <select
-        value={currentId}
-        onChange={e => choose(e.target.value)}
+      <SearchableSelect
+        value={currentId || undefined}
+        onValueChange={choose}
         disabled={!options?.length}
-        style={inputStyle}
+        options={(options ?? []).map(o => ({
+          value: o.id,
+          label: `${o.label} · ${o.language.toUpperCase()}${
+            o.status === 'published' ? '' : ` · ${o.status}`
+          }`,
+        }))}
+        placeholder={placeholder}
         aria-label={field.label}
-      >
-        {!currentId && (
-          <option value="">
-            {options === null ? 'Loading…' : 'Sample data (no entries yet)'}
-          </option>
-        )}
-        {options?.map(o => (
-          <option key={o.id} value={o.id}>
-            {o.label} · {o.language.toUpperCase()}
-            {o.status === 'published' ? '' : ` · ${o.status}`}
-          </option>
-        ))}
-      </select>
+      />
       <p style={{ margin: '6px 0 0', fontSize: 11, color: 'var(--ne-text-muted)' }}>
         Only changes the preview. The block shows each entry&apos;s own data
         where it is used.

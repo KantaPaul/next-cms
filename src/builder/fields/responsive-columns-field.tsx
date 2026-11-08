@@ -1,5 +1,6 @@
 'use client';
 
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { useCanvasDevice } from '../controls/device-row';
 
 type Device = 'desktop' | 'tablet' | 'mobile';
@@ -31,17 +32,15 @@ export function ResponsiveColumnsField({ name, value, onChange, readOnly, field 
   const safe = options.some(o => o.value === fallback) ? fallback : (options[1]?.value ?? options[0]?.value ?? 1);
 
   return (
-    <select
-      value={safe}
+    <SearchableSelect
+      value={String(safe)}
       disabled={readOnly}
-      onChange={e => onChange(Number(e.target.value))}
-      className="h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm text-foreground"
+      options={options.map(o => ({ value: String(o.value), label: o.label }))}
+      onValueChange={v => {
+        if (v !== undefined) onChange(Number(v));
+      }}
       aria-label={field.label || 'Columns'}
       title={`Editing ${device} columns (switch canvas device to edit other breakpoints)`}
-    >
-      {options.map(o => (
-        <option key={o.value} value={o.value}>{o.label}</option>
-      ))}
-    </select>
+    />
   );
 }

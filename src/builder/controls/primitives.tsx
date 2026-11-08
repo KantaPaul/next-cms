@@ -12,15 +12,26 @@ import {
 import { FormInput } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+  SearchableSelect,
+  type SearchableSelectGroup,
+  type SearchableSelectOption,
+  type SearchableSelectProps,
+} from '@/components/ui/searchable-select';
+import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+
+export {
+  SearchableSelect,
+  type SearchableSelectGroup,
+  type SearchableSelectOption,
+  type SearchableSelectProps,
+};
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils/cn';
@@ -321,25 +332,19 @@ export function SelectInput<T extends string>({
           {aside}
         </ControlLabel>
       )}
-      <Select value={value} onValueChange={v => onChange(v as T)}>
-        <SelectTrigger
-          id={id}
-          size="sm"
-          className={cn(
-            'h-8 w-full text-xs',
-            isInherited && 'opacity-65 text-muted-foreground'
-          )}
-        >
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map(o => (
-            <SelectItem key={o.value} value={o.value} className="text-xs">
-              {o.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <SearchableSelect<T>
+        id={id}
+        size="sm"
+        value={value}
+        options={options}
+        onValueChange={v => {
+          if (v !== undefined) onChange(v);
+        }}
+        className={cn(
+          'h-8 w-full text-xs',
+          isInherited && 'opacity-65 text-muted-foreground'
+        )}
+      />
     </div>
   );
 }
@@ -767,25 +772,16 @@ export function GroupedSelect<T extends string>({
   return (
     <div className="space-y-1.5">
       <ControlLabel label={label} htmlFor={id} />
-      <Select value={value} onValueChange={v => onChange(v as T)}>
-        <SelectTrigger id={id} size="sm" className="h-8 w-full text-xs">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {groups.map(g => (
-            <SelectGroup key={g.label}>
-              <SelectLabel className="text-[10px] text-muted-foreground">
-                {g.label}
-              </SelectLabel>
-              {g.options.map(o => (
-                <SelectItem key={o.value} value={o.value} className="text-xs">
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          ))}
-        </SelectContent>
-      </Select>
+      <SearchableSelect<T>
+        id={id}
+        size="sm"
+        value={value}
+        groups={groups}
+        onValueChange={v => {
+          if (v !== undefined) onChange(v);
+        }}
+        className="h-8 w-full text-xs"
+      />
     </div>
   );
 }

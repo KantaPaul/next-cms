@@ -1,14 +1,17 @@
 'use client';
 
-import { inputStyle } from '@nextcms/builder-react';
 import { ExternalLink, Plus } from 'lucide-react';
-import { type CSSProperties, useEffect, useState } from 'react';
+import { type CSSProperties, useEffect, useMemo, useState } from 'react';
 import { listOverlayOptions } from '@/app/(admin)/dashboard/(shell)/header-footer/_modules/overlays.actions';
 import type { OverlayOption } from '@/app/(admin)/dashboard/(shell)/header-footer/_modules/overlays.service';
 import {
   siteTemplateEditHref,
   siteTemplatesHref,
 } from '@/app/(admin)/dashboard/(shell)/header-footer/_modules/site-template-href';
+import {
+  SearchableSelect,
+  type SearchableSelectGroup,
+} from '@/components/ui/searchable-select';
 import { overlayHref, parseOverlayHref } from '@/lib/overlays/href';
 
 export { overlayHref, parseOverlayHref, type OverlayOption };
@@ -70,55 +73,55 @@ export function OverlaySelect({
   placeholder = 'Select a popup or drawer',
   emptyLabel = 'No popups or drawers yet',
   ariaLabel,
-  className = 'h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm text-foreground dark:border-dark-300 dark:bg-dark-100',
+  className,
   style,
   disabled,
 }: OverlaySelectProps) {
   const fetched = useOverlayOptions();
   const options = providedOptions !== undefined ? providedOptions : fetched;
-  const popups = options?.filter(o => o.category === 'Popup') ?? [];
-  const drawers = options?.filter(o => o.category === 'Drawer') ?? [];
-  const missing =
-    !!value && options !== null && !options.some(o => o.id === value);
+
+  const groups = useMemo<SearchableSelectGroup[]>(() => {
+    if (!options?.length) return [];
+    const popups = options
+      .filter(o => o.category === 'Popup')
+      .map(o => ({
+        value: o.id,
+        label: `${o.name}${o.published ? '' : ' (draft)'}`,
+      }));
+    const drawers = options
+      .filter(o => o.category === 'Drawer')
+      .map(o => ({
+        value: o.id,
+        label: `${o.name}${o.published ? '' : ' (draft)'}`,
+      }));
+    const result: SearchableSelectGroup[] = [];
+    if (popups.length) result.push({ label: 'Popups', options: popups });
+    if (drawers.length) result.push({ label: 'Drawers', options: drawers });
+    return result;
+  }, [options]);
+
+  const topLabel =
+    options === null
+      ? 'Loading…'
+      : options.length
+        ? placeholder
+        : emptyLabel;
 
   return (
-    <select
-      value={value ?? ''}
+    <SearchableSelect
+      value={value}
+      onValueChange={onChange}
+      groups={groups}
+      placeholder={topLabel}
+      emptyOptionLabel={options?.length ? placeholder : undefined}
+      missingLabel={options === null ? 'Loading…' : 'Popup/drawer not found'}
+      searchPlaceholder="Search popups & drawers…"
+      emptyMessage={emptyLabel}
       disabled={disabled}
-      onChange={e => onChange(e.target.value || undefined)}
-      className={style ? undefined : className}
+      className={className}
       style={style}
       aria-label={ariaLabel}
-    >
-      <option value="">
-        {options === null
-          ? 'Loading…'
-          : options.length
-            ? placeholder
-            : emptyLabel}
-      </option>
-      {missing && <option value={value}>Popup/drawer not found</option>}
-      {popups.length > 0 && (
-        <optgroup label="Popups">
-          {popups.map(o => (
-            <option key={o.id} value={o.id}>
-              {o.name}
-              {o.published ? '' : ' (draft)'}
-            </option>
-          ))}
-        </optgroup>
-      )}
-      {drawers.length > 0 && (
-        <optgroup label="Drawers">
-          {drawers.map(o => (
-            <option key={o.id} value={o.id}>
-              {o.name}
-              {o.published ? '' : ' (draft)'}
-            </option>
-          ))}
-        </optgroup>
-      )}
-    </select>
+    />
   );
 }
 
@@ -149,7 +152,6 @@ export function OverlayPickerField({
         onChange={onChange}
         options={options}
         disabled={readOnly}
-        style={inputStyle}
         ariaLabel={field.label ?? 'Popup / Drawer'}
       />
       <div className="mt-2 flex gap-3 text-xs">

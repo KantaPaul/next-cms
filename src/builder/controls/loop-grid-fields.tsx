@@ -9,6 +9,7 @@ import {
   listLoopTemplateOptions,
 } from '@/app/(admin)/dashboard/(shell)/templates/loop/_modules/loop-templates.actions';
 import { listCollectionTermOptions } from '@/app/(admin)/dashboard/(shell)/collections/_modules/collection-taxonomies.actions';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { PAGES } from '@/config/pages';
 
 type LoopFieldProps<T> = {
@@ -114,35 +115,39 @@ export function LoopTemplatePickerField({
   const missing =
     !!value && options !== null && !options.some(o => o.id === value);
 
+  const selectOptions =
+    options?.map(o => ({
+      value: o.id,
+      label: `${o.name}${o.published ? '' : ' (draft)'}`,
+    })) ?? [];
+
+  const placeholderLabel =
+    options === null
+      ? 'Loading templates…'
+      : options.length
+        ? 'Default card (no template)'
+        : 'No templates for this source yet';
+
   return (
     <div>
       {collection && !collectionId ? (
         <p className="text-xs" style={{ color: 'var(--ne-text-muted, #64748b)' }}>Choose a post type first.</p>
       ) : (
         <>
-          <select
-            value={value ?? ''}
-            onChange={e => onChange(e.target.value || undefined)}
-            style={inputStyle}
-            aria-label={field.label}
-          >
-            <option value="">
-              {options === null
+          <SearchableSelect
+            value={value}
+            onValueChange={v => onChange(v || undefined)}
+            options={selectOptions}
+            placeholder={placeholderLabel}
+            emptyOptionLabel={options?.length ? 'Default card (no template)' : undefined}
+            missingLabel={
+              options === null
                 ? 'Loading templates…'
-                : options.length
-                  ? 'Default card (no template)'
-                  : 'No templates for this source yet'}
-            </option>
-            {missing && (
-              <option value={value}>Template not found for this source</option>
-            )}
-            {options?.map(o => (
-              <option key={o.id} value={o.id}>
-                {o.name}
-                {o.published ? '' : ' (draft)'}
-              </option>
-            ))}
-          </select>
+                : 'Template not found for this source'
+            }
+            searchPlaceholder="Search templates…"
+            aria-label={field.label}
+          />
           <div className="mt-2 flex gap-3 text-xs">
             <a
               href={createHref}
@@ -198,21 +203,16 @@ export function LoopSortField({
 
   return (
     <div>
-      <select
+      <SearchableSelect
         value={current}
-        onChange={e => onChange(e.target.value)}
-        style={inputStyle}
+        onValueChange={v => {
+          if (v) onChange(v);
+        }}
+        options={options}
+        missingLabel={current}
+        searchPlaceholder="Search sort fields…"
         aria-label={field.label}
-      >
-        {!options.some(o => o.value === current) && (
-          <option value={current}>{current}</option>
-        )}
-        {options.map(o => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+      />
     </div>
   );
 }
@@ -270,42 +270,43 @@ function FilterValueInput({
 }) {
   if (filter.operator === 'exists') {
     return (
-      <select
-        style={compactStyle}
+      <SearchableSelect
+        size="sm"
+        className="text-xs"
         value={filter.value === false || filter.value === 'false' ? 'false' : 'true'}
-        onChange={e => onChange(e.target.value === 'true')}
-      >
-        <option value="true">yes</option>
-        <option value="false">no</option>
-      </select>
+        onValueChange={v => onChange(v === 'true')}
+        options={[
+          { value: 'true', label: 'yes' },
+          { value: 'false', label: 'no' },
+        ]}
+      />
     );
   }
   if (meta?.type === 'boolean') {
     return (
-      <select
-        style={compactStyle}
+      <SearchableSelect
+        size="sm"
+        className="text-xs"
         value={String(filter.value ?? 'true')}
-        onChange={e => onChange(e.target.value === 'true')}
-      >
-        <option value="true">true</option>
-        <option value="false">false</option>
-      </select>
+        onValueChange={v => onChange(v === 'true')}
+        options={[
+          { value: 'true', label: 'true' },
+          { value: 'false', label: 'false' },
+        ]}
+      />
     );
   }
   if (meta?.type === 'select' && meta.choices.length && filter.operator !== 'in') {
     return (
-      <select
-        style={compactStyle}
+      <SearchableSelect
+        size="sm"
+        className="text-xs"
         value={String(filter.value ?? '')}
-        onChange={e => onChange(e.target.value)}
-      >
-        <option value="">Choose…</option>
-        {meta.choices.map(c => (
-          <option key={c} value={c}>
-            {c}
-          </option>
-        ))}
-      </select>
+        onValueChange={v => onChange(v ?? '')}
+        placeholder="Choose…"
+        emptyOptionLabel="Choose…"
+        options={meta.choices.map(c => ({ value: c, label: c }))}
+      />
     );
   }
   return (
@@ -326,7 +327,6 @@ function FilterValueInput({
 export function CptFieldFiltersField({
   value,
   onChange,
-  field,
   props,
   readOnly,
 }: LoopFieldProps<FieldFilter[] | undefined>) {
@@ -359,27 +359,26 @@ export function CptFieldFiltersField({
               className="grid gap-1.5 rounded-md p-2" style={{ border: '1px solid var(--ne-border, rgba(127,127,127,.35))' }}
             >
               <div className="flex items-center gap-1.5">
-                <select
-                  style={compactStyle}
+                <SearchableSelect
+                  size="sm"
+                  className="text-xs"
                   value={filter.key}
                   disabled={readOnly}
-                  onChange={e => {
-                    const next = fields?.find(f => f.key === e.target.value);
+                  options={
+                    fields?.map(f => ({ value: f.key, label: f.label })) ?? []
+                  }
+                  missingLabel={filter.key}
+                  onValueChange={nextKey => {
+                    if (!nextKey) return;
+                    const next = fields?.find(f => f.key === nextKey);
                     update(index, {
-                      key: e.target.value,
+                      key: nextKey,
                       operator: operatorsFor(next?.type ?? 'text')[0].value,
                       value: next?.type === 'boolean' ? true : '',
                     });
                   }}
                   aria-label="Field"
-                >
-                  {!meta && <option value={filter.key}>{filter.key}</option>}
-                  {fields?.map(f => (
-                    <option key={f.key} value={f.key}>
-                      {f.label}
-                    </option>
-                  ))}
-                </select>
+                />
                 <button
                   type="button"
                   onClick={() => remove(index)}
@@ -390,24 +389,21 @@ export function CptFieldFiltersField({
                 </button>
               </div>
               <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-1.5">
-                <select
-                  style={compactStyle}
+                <SearchableSelect
+                  size="sm"
+                  className="text-xs"
                   value={filter.operator}
                   disabled={readOnly}
-                  onChange={e =>
+                  options={ops}
+                  onValueChange={nextOp => {
+                    if (!nextOp) return;
                     update(index, {
-                      operator: e.target.value as FieldFilterOperator,
-                      ...(e.target.value === 'exists' ? { value: true } : {}),
-                    })
-                  }
+                      operator: nextOp as FieldFilterOperator,
+                      ...(nextOp === 'exists' ? { value: true } : {}),
+                    });
+                  }}
                   aria-label="Condition"
-                >
-                  {ops.map(o => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
+                />
                 <FilterValueInput
                   filter={filter}
                   meta={meta}
@@ -490,20 +486,16 @@ export function CptTermLockField({
   }
 
   return (
-    <select
-      style={compactStyle}
-      value={value ?? ''}
+    <SearchableSelect
+      size="sm"
+      className="text-xs"
+      value={value}
       disabled={readOnly}
-      onChange={e => onChange(e.target.value || undefined)}
+      placeholder="Any term"
+      emptyOptionLabel="Any term"
+      options={terms?.map(t => ({ value: t.slug, label: t.name })) ?? []}
+      onValueChange={v => onChange(v || undefined)}
       aria-label={field.label ?? 'Lock to term'}
-    >
-      <option value="">Any term</option>
-      {terms?.map(t => (
-        <option key={t.id} value={t.slug}>
-          {t.name}
-        </option>
-      ))}
-    </select>
+    />
   );
 }
-

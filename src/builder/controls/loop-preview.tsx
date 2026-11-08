@@ -8,6 +8,7 @@ import {
 } from '@nextcms/builder-core';
 import { inputStyle } from '@nextcms/builder-react';
 import { createContext, type ReactNode, useContext, useMemo } from 'react';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 
 export type LoopItemFieldOption = {
   path: string;
@@ -88,19 +89,14 @@ export function LoopPreviewItemField({
   const { items } = useLoopPreview();
   return (
     <div>
-      <select
-        value={pickPreviewItem(items, value)?.id ?? ''}
-        onChange={e => onChange(e.target.value || undefined)}
-        style={inputStyle}
+      <SearchableSelect
+        value={pickPreviewItem(items, value)?.id}
+        onValueChange={v => onChange(v || undefined)}
+        options={items.map(item => ({ value: item.id, label: item.title }))}
+        placeholder="Sample item (nothing published yet)"
+        disabled={items.length === 0}
         aria-label={field.label}
-      >
-        {items.length === 0 && <option value="">Sample item (nothing published yet)</option>}
-        {items.map(item => (
-          <option key={item.id} value={item.id}>
-            {item.title}
-          </option>
-        ))}
-      </select>
+      />
     </div>
   );
 }
@@ -122,22 +118,15 @@ export function LoopCustomKeyField({
   return (
     <div>
       {fields.length ? (
-        <select
-          value={value ?? ''}
-          onChange={e => onChange(e.target.value)}
-          style={inputStyle}
+        <SearchableSelect
+          value={value}
+          onValueChange={v => onChange(v ?? '')}
+          options={fields.map(f => ({ value: f.path, label: f.label }))}
+          placeholder="Choose a field…"
+          emptyOptionLabel="Choose a field…"
+          missingLabel={value}
           aria-label={field.label}
-        >
-          <option value="">Choose a field…</option>
-          {value && !fields.some(f => f.path === value) && (
-            <option value={value}>{value}</option>
-          )}
-          {fields.map(f => (
-            <option key={f.path} value={f.path}>
-              {f.label}
-            </option>
-          ))}
-        </select>
+        />
       ) : (
         <input
           value={value ?? ''}

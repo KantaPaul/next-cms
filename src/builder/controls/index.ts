@@ -24,6 +24,7 @@ export {
   ResponsiveChoose,
   ResponsiveSelect,
   ResponsiveSlider,
+  SearchableSelect,
   SelectInput,
   ShowWhen,
   Slider,
