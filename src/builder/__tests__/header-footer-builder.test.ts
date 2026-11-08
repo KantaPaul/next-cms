@@ -5,6 +5,7 @@ import { editorSetup, pageDefinitions } from '../definitions';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createElement } from 'react';
 import { Button } from '../blocks/layout';
+import { isActiveHref } from '../../components/site/active-nav-link';
 import * as starters from '../../db/seed/header-footer-starters';
 import type { StarterTemplate } from '../../db/seed/header-footer-starters';
 import { normalizeGlobalContent } from '../normalize-global-content';
@@ -548,5 +549,42 @@ describe('Button legacy text', () => {
       buttons.filter(props => 'text' in props),
       []
     );
+  });
+});
+
+describe('isActiveHref', () => {
+  const home = '/main';
+
+  it('matches the page and pages under it', () => {
+    assert.equal(isActiveHref('/main/blog', '/main/blog', home), true);
+    assert.equal(isActiveHref('/main/blog/', '/main/blog', home), true);
+    assert.equal(
+      isActiveHref('/main/blog/first-post', '/main/blog', home),
+      true
+    );
+  });
+
+  it('splits on path segments', () => {
+    assert.equal(isActiveHref('/main/blogger', '/main/blog', home), false);
+  });
+
+  it('keeps the home link off other pages', () => {
+    assert.equal(isActiveHref('/main', '/main', home), true);
+    assert.equal(isActiveHref('/main/blog', '/main', home), false);
+    assert.equal(isActiveHref('/blog', '/', '/'), false);
+    assert.equal(isActiveHref('/', '/', '/'), true);
+  });
+
+  it('matches pages served without the site slug', () => {
+    assert.equal(isActiveHref('/blog', '/main/blog', home), true);
+    assert.equal(isActiveHref('/blog/first-post', '/main/blog', home), true);
+    assert.equal(isActiveHref('/', '/main', home), true);
+    assert.equal(isActiveHref('/blog', '/main', home), false);
+  });
+
+  it('ignores external and hash links', () => {
+    assert.equal(isActiveHref('/main', 'https://example.com', home), false);
+    assert.equal(isActiveHref('/main', '#top', home), false);
+    assert.equal(isActiveHref('/main', '//example.com/main', home), false);
   });
 });

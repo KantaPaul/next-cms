@@ -105,9 +105,8 @@ const loadBlogPosts: BlockLoader = async (props, ctx) => {
   };
   const language = typeof ctx.language === 'string' ? ctx.language : undefined;
 
-  const { getBlogFilterOptions, queryBlogPosts } = await import(
-    '@/server/actions/blog.actions'
-  );
+  const { getBlogFilterOptions, queryBlogPosts } =
+    await import('@/server/actions/blog.actions');
   const [result, options] = await Promise.all([
     queryBlogPosts({
       language,
@@ -146,9 +145,8 @@ const loadRelatedPosts: BlockLoader = async (props, ctx) => {
       : null);
 
   if (current && (ctx.collectionEntry as any)?.collectionId) {
-    const { resolveRelatedCollectionEntries } = await import(
-      '@/server/actions/listing.actions'
-    );
+    const { resolveRelatedCollectionEntries } =
+      await import('@/server/actions/listing.actions');
     const posts = await resolveRelatedCollectionEntries({
       collectionId: String((ctx.collectionEntry as any).collectionId),
       entryId: current.id,
@@ -193,7 +191,11 @@ const loadComments: BlockLoader = async (props, ctx) => {
 
 const loadAuthorCard: BlockLoader = async (props, ctx) => {
   const post = ctx.post as PostView | undefined;
-  if (props.showLatestPosts === false || !post?.authorId || ctx.collectionEntry) {
+  if (
+    props.showLatestPosts === false ||
+    !post?.authorId ||
+    ctx.collectionEntry
+  ) {
     return { latestPosts: [] };
   }
   const { getAuthorPosts } = await import('@/server/actions/blog.actions');
@@ -210,12 +212,10 @@ const loadAuthorCard: BlockLoader = async (props, ctx) => {
 const loadPostNavigation: BlockLoader = async (props, ctx) => {
   const sameTerm = props.scope === 'same-term';
   const entry = ctx.collectionEntry as
-    | { id?: string; collection?: { slug?: string } }
-    | undefined;
+    { id?: string; collection?: { slug?: string } } | undefined;
   if (entry?.id && entry.collection?.slug) {
-    const { getAdjacentEntries } = await import(
-      '@/server/actions/entry-nav.actions'
-    );
+    const { getAdjacentEntries } =
+      await import('@/server/actions/entry-nav.actions');
     return getAdjacentEntries({
       entry,
       sameTerm,
@@ -255,9 +255,8 @@ const loadGlobalRefs: import('@nextcms/builder-core').BatchBlockLoader<
   ];
   if (ids.length === 0) return {};
 
-  const { getGlobalBlockContent } = await import(
-    '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions'
-  );
+  const { getGlobalBlockContent } =
+    await import('@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions');
   const byId = Object.fromEntries(
     await Promise.all(
       ids.map(async id => [id, await getGlobalBlockContent(id)] as const)
@@ -304,7 +303,11 @@ export function injectPost<T>(value: T, post: PostView | undefined): T {
   }
   if (!value || typeof value !== 'object') return value;
   const item = value as { type?: unknown; props?: Record<string, unknown> };
-  if (typeof item.type === 'string' && item.props && typeof item.props === 'object') {
+  if (
+    typeof item.type === 'string' &&
+    item.props &&
+    typeof item.props === 'object'
+  ) {
     const props: Record<string, unknown> = {};
     for (const [key, child] of Object.entries(item.props)) {
       props[key] = Array.isArray(child) ? injectPost(child, post) : child;
@@ -330,9 +333,8 @@ const loadCollectionBlockRefs: import('@nextcms/builder-core').BatchBlockLoader<
   ];
   if (ids.length === 0) return {};
 
-  const { getCollectionBlockContentAction } = await import(
-    '@/app/(admin)/dashboard/(shell)/collections/_modules/collection-blocks.actions'
-  );
+  const { getCollectionBlockContentAction } =
+    await import('@/app/(admin)/dashboard/(shell)/collections/_modules/collection-blocks.actions');
   const draft = Boolean(ctx.editor || ctx.preview);
   const byId = await getCollectionBlockContentAction(ids, {
     draft,
@@ -365,7 +367,8 @@ const loadCollectionBlockRefs: import('@nextcms/builder-core').BatchBlockLoader<
   await Promise.all(
     Object.entries(byId).map(async ([id, result]) => {
       if (!result?.content) return;
-      if (entryCollectionId && result.collectionId !== entryCollectionId) return;
+      if (entryCollectionId && result.collectionId !== entryCollectionId)
+        return;
       try {
         const data = await resolvePuckData(result.content, nestedCtx);
         const zones = (data.zones ?? {}) as Record<string, BuilderItem[]>;
@@ -433,9 +436,8 @@ const loadVideoLibrary: BlockLoader = async props => {
     providers = [props.provider as 'youtube' | 'vimeo' | 'direct'];
   }
 
-  const { queryVideos } = await import(
-    '@/app/(admin)/dashboard/(shell)/videos/_modules/videos.actions'
-  );
+  const { queryVideos } =
+    await import('@/app/(admin)/dashboard/(shell)/videos/_modules/videos.actions');
   const result = await queryVideos({ playlistId, pageSize, providers });
   const activeSources =
     providers && providers.length > 0
@@ -467,21 +469,24 @@ const loadVideoLibrary: BlockLoader = async props => {
 
 const loadNavMenu: BlockLoader = async (props, ctx) => {
   const location = (props.location === 'footer' ? 'footer' : 'header') as
-    | 'header'
-    | 'footer';
+    'header' | 'footer';
   try {
-    const { getSiteMenu } = await import('@/server/actions/site-chrome.actions');
+    const { getSiteMenu } =
+      await import('@/server/actions/site-chrome.actions');
     const menu = await getSiteMenu({ location, language: ctx.language });
     // Mega menus only open from a horizontal header menu.
-    if (location !== 'header' || props.orientation === 'vertical') return { menu };
-    const { getMegaMenuPanels } = await import('@/server/actions/mega-menu.actions');
+    const siteSlug = ctx.siteSlug as string | undefined;
+    if (location !== 'header' || props.orientation === 'vertical')
+      return { menu, siteSlug };
+    const { getMegaMenuPanels } =
+      await import('@/server/actions/mega-menu.actions');
     const megaMenus = await getMegaMenuPanels(menu, {
       siteId: ctx.siteId,
       language: ctx.language,
       siteSlug: ctx.siteSlug as string | undefined,
       draft: !!ctx.preview,
     }).catch(() => ({}));
-    return { menu, megaMenus };
+    return { menu, siteSlug, megaMenus };
   } catch {
     return {};
   }
@@ -489,10 +494,10 @@ const loadNavMenu: BlockLoader = async (props, ctx) => {
 
 const loadMobileMenu: BlockLoader = async (props, ctx) => {
   const location = (props.menuLocation === 'footer' ? 'footer' : 'header') as
-    | 'header'
-    | 'footer';
+    'header' | 'footer';
   try {
-    const { getSiteMenu } = await import('@/server/actions/site-chrome.actions');
+    const { getSiteMenu } =
+      await import('@/server/actions/site-chrome.actions');
     const menu = await getSiteMenu({ location, language: ctx.language });
     return {
       menu,
@@ -515,10 +520,10 @@ const loadSearchBox: BlockLoader = async (_props, ctx) => {
 const loadFooterLinks: BlockLoader = async (props, ctx) => {
   if (props.source !== 'menu') return {};
   const location = (props.menuLocation === 'header' ? 'header' : 'footer') as
-    | 'header'
-    | 'footer';
+    'header' | 'footer';
   try {
-    const { getSiteMenu } = await import('@/server/actions/site-chrome.actions');
+    const { getSiteMenu } =
+      await import('@/server/actions/site-chrome.actions');
     const menu = await getSiteMenu({ location, language: ctx.language });
     return { menu };
   } catch {
@@ -528,9 +533,8 @@ const loadFooterLinks: BlockLoader = async (props, ctx) => {
 
 const loadLogo: BlockLoader = async (_props, _ctx) => {
   try {
-    const { getSiteBranding } = await import(
-      '@/server/actions/site-chrome.actions'
-    );
+    const { getSiteBranding } =
+      await import('@/server/actions/site-chrome.actions');
     return await getSiteBranding();
   } catch {
     return {};
@@ -539,9 +543,8 @@ const loadLogo: BlockLoader = async (_props, _ctx) => {
 
 const loadCopyright: BlockLoader = async (_props, _ctx) => {
   try {
-    const { getSiteBranding } = await import(
-      '@/server/actions/site-chrome.actions'
-    );
+    const { getSiteBranding } =
+      await import('@/server/actions/site-chrome.actions');
     const { siteName } = await getSiteBranding();
     return { siteName };
   } catch {
@@ -575,12 +578,13 @@ function buildFiltersFromPropsAndParams(
 
   if (source === 'posts' || source === 'pages') {
     const lockedCat =
-      (typeof props.lockedCategory === 'string' && props.lockedCategory.trim()) ||
+      (typeof props.lockedCategory === 'string' &&
+        props.lockedCategory.trim()) ||
       (ctx.archive?.kind === 'category' ? ctx.archive.slug : undefined);
     const cats = lockedCat
       ? [lockedCat]
-      : activeParams.categories ??
-        (activeParams.category ? [activeParams.category] : []);
+      : (activeParams.categories ??
+        (activeParams.category ? [activeParams.category] : []));
     if (cats.length > 0) {
       filters.push({ field: 'categories', operator: 'in', value: cats });
     }
@@ -590,13 +594,14 @@ function buildFiltersFromPropsAndParams(
       (ctx.archive?.kind === 'tag' ? ctx.archive.slug : undefined);
     const tagList = lockedTag
       ? [lockedTag]
-      : activeParams.tags ?? (activeParams.tag ? [activeParams.tag] : []);
+      : (activeParams.tags ?? (activeParams.tag ? [activeParams.tag] : []));
     if (tagList.length > 0) {
       filters.push({ field: 'tags', operator: 'in', value: tagList });
     }
 
     const authorId =
-      (typeof props.lockedAuthorId === 'string' && props.lockedAuthorId.trim()) ||
+      (typeof props.lockedAuthorId === 'string' &&
+        props.lockedAuthorId.trim()) ||
       (ctx.archive?.kind === 'author' ? ctx.archive.id : undefined) ||
       activeParams.author;
     if (authorId) {
@@ -613,7 +618,7 @@ function buildFiltersFromPropsAndParams(
       (ctx.archive?.kind === 'term' ? ctx.archive.slug : undefined);
     const terms = lockedTerm
       ? [lockedTerm]
-      : activeParams.terms ?? (activeParams.term ? [activeParams.term] : []);
+      : (activeParams.terms ?? (activeParams.term ? [activeParams.term] : []));
     if (terms.length > 0) {
       filters.push({ field: 'terms', operator: 'in', value: terms });
     }
@@ -630,11 +635,19 @@ function buildFiltersFromPropsAndParams(
       filters.push({ field: 'tags', operator: 'in', value: tagList });
     }
     if (activeParams.author) {
-      filters.push({ field: 'authorId', operator: 'eq', value: activeParams.author });
+      filters.push({
+        field: 'authorId',
+        operator: 'eq',
+        value: activeParams.author,
+      });
     }
   }
 
-  if (source === 'videos' && typeof props.playlistId === 'string' && props.playlistId.trim()) {
+  if (
+    source === 'videos' &&
+    typeof props.playlistId === 'string' &&
+    props.playlistId.trim()
+  ) {
     filters.push({
       field: 'playlistId',
       operator: 'eq',
@@ -720,8 +733,7 @@ function buildFiltersFromPropsAndParams(
       ? requestedSort
       : allowedSorts[0]!;
   const sortOrder: 'asc' | 'desc' =
-    activeParams.order ??
-    (props.sortOrder === 'asc' ? 'asc' : 'desc');
+    activeParams.order ?? (props.sortOrder === 'asc' ? 'asc' : 'desc');
 
   const limit = Math.min(
     Math.max(Number(props.pageSize) || 9, 1),
@@ -800,12 +812,10 @@ const loadQueryLoop: BlockLoader = async (props, ctx) => {
   }
 
   const currentId =
-    (ctx.post?.id as string | undefined) ??
-    (ctx.pageId as string | undefined);
+    (ctx.post?.id as string | undefined) ?? (ctx.pageId as string | undefined);
 
-  const { resolveListingQuery } = await import(
-    '@/server/actions/listing.actions'
-  );
+  const { resolveListingQuery } =
+    await import('@/server/actions/listing.actions');
   const result = await resolveListingQuery(
     {
       source,
@@ -835,7 +845,10 @@ const loadQueryLoop: BlockLoader = async (props, ctx) => {
   const preserved = buildPreservedParams(ctx.searchParams, loopId);
   const pageHrefs: Record<number, string> = {};
   for (let p = 1; p <= result.totalPages; p++) {
-    const encoded = encodeNamespacedParams({ ...activeParams, page: p }, loopId);
+    const encoded = encodeNamespacedParams(
+      { ...activeParams, page: p },
+      loopId
+    );
     const sp = new URLSearchParams({ ...preserved, ...encoded });
     const qs = sp.toString();
     pageHrefs[p] = qs ? `?${qs}` : '?';
@@ -905,9 +918,8 @@ const loadLoopGrid: BlockLoader = async (props, ctx) => {
 
 /** Published entries of one post type, by id or (for block presets) by slug. */
 const loadPostTypeEntries: BlockLoader = async (props, ctx) => {
-  const { resolvePostTypeEntries } = await import(
-    '@/server/actions/listing.actions'
-  );
+  const { resolvePostTypeEntries } =
+    await import('@/server/actions/listing.actions');
   return resolvePostTypeEntries({
     collectionId:
       typeof props.collectionId === 'string' ? props.collectionId : '',
@@ -943,21 +955,15 @@ function archiveTokenPatch(
 const loadQueryFilter: BlockLoader = async (props, ctx) => {
   const targetLoopId =
     typeof props.targetLoopId === 'string' ? props.targetLoopId.trim() : '';
-  const {
-    source,
-    filters,
-    activeParams,
-    sortField,
-    sortOrder,
-  } = buildFiltersFromPropsAndParams(props, ctx, targetLoopId);
+  const { source, filters, activeParams, sortField, sortOrder } =
+    buildFiltersFromPropsAndParams(props, ctx, targetLoopId);
   const preservedHiddenParams = buildPreservedParams(
     ctx.searchParams,
     targetLoopId
   );
 
-  const { resolveListingQuery } = await import(
-    '@/server/actions/listing.actions'
-  );
+  const { resolveListingQuery } =
+    await import('@/server/actions/listing.actions');
   const collectionId =
     source === 'collection-entries' && typeof props.collectionId === 'string'
       ? props.collectionId.trim()
@@ -1015,9 +1021,8 @@ const loadSearchResults: BlockLoader = async (props, ctx) => {
     };
   }
 
-  const { resolvePaginatedSearch } = await import(
-    '@/server/actions/listing.actions'
-  );
+  const { resolvePaginatedSearch } =
+    await import('@/server/actions/listing.actions');
   const res = await resolvePaginatedSearch({
     q,
     language: typeof ctx.language === 'string' ? ctx.language : undefined,

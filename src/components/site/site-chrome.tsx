@@ -204,7 +204,9 @@ export async function SiteChrome({
     validateRequest().catch(() => null),
   ]);
 
-  const userState: 'guest' | 'logged-in' = session?.user ? 'logged-in' : 'guest';
+  const userState: 'guest' | 'logged-in' = session?.user
+    ? 'logged-in'
+    : 'guest';
   // Popups and drawers are optional extras: a failure here must not take the page down.
   const activeOverlays = await overlayService
     .activeFor({
@@ -213,7 +215,10 @@ export async function SiteChrome({
       entity: currentEntity
         ? {
             type: currentEntity.type,
-            id: typeof currentEntity.id === 'string' ? currentEntity.id : undefined,
+            id:
+              typeof currentEntity.id === 'string'
+                ? currentEntity.id
+                : undefined,
             slug:
               typeof currentEntity.slug === 'string'
                 ? currentEntity.slug
@@ -276,6 +281,7 @@ export async function SiteChrome({
                 <MenuLinks
                   menu={header ?? undefined}
                   siteSlug={siteSlug}
+                  activeStyle="none"
                   className="flex flex-wrap items-center gap-5 text-sm font-medium"
                 />
                 <LanguageSwitcher />
@@ -301,6 +307,7 @@ export async function SiteChrome({
               <MenuLinks
                 menu={footer ?? undefined}
                 siteSlug={siteSlug}
+                activeStyle="none"
                 className="s-muted flex flex-wrap gap-x-6 gap-y-2 text-sm"
               />
             </div>

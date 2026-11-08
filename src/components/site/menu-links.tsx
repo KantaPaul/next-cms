@@ -1,6 +1,7 @@
 import { siteHref } from '@/lib/utils/site-href';
 import type { ReactNode } from 'react';
 import type { MenuWithItems } from '@/server/services/public-site.service';
+import { ActiveNavLink } from './active-nav-link';
 import { MegaMenuItem } from './mega-menu-item';
 import { el, linkEl } from '@/builder/blocks/element';
 import type { ElementStyle } from '@/builder/style';
@@ -18,7 +19,6 @@ export type MenuLinksProps = {
   menu?: MenuWithItems | null;
   className?: string;
   siteSlug?: string;
-  activeUrl?: string;
   activeStyle?: 'underline' | 'pill' | 'bold' | 'none';
   orientation?: 'horizontal' | 'vertical';
   depth?: number;
@@ -40,7 +40,6 @@ export function MenuLinks({
   menu,
   className,
   siteSlug,
-  activeUrl,
   activeStyle = 'underline',
   orientation = 'horizontal',
   depth = 2,
@@ -70,21 +69,27 @@ export function MenuLinks({
     <ul className={combinedClass}>
       {menu.items.map(item => {
         const href = menuHref(item.url, siteSlug);
-        const isActive =
-          activeUrl && (activeUrl === href || activeUrl.startsWith(href));
-
-        let activeCls = '';
-        if (isActive) {
-          if (activeStyle === 'underline')
-            activeCls = 'underline underline-offset-4';
-          else if (activeStyle === 'bold') activeCls = 'font-bold';
-          else if (activeStyle === 'pill')
-            activeCls = 's-soft-primary px-2.5 py-1 rounded-full font-semibold';
-        }
-
-        const linkElProps = {
-          className: cn(linkStyle.className, activeCls),
+        const activeClass =
+          activeStyle === 'underline'
+            ? 'underline underline-offset-4'
+            : activeStyle === 'bold'
+              ? 'font-bold'
+              : activeStyle === 'pill'
+                ? 's-soft-primary px-2.5 py-1 rounded-full font-semibold'
+                : '';
+        const activeEl = el(styled, 'activeLink', activeClass);
+        const linkProps = {
+          href,
+          homeHref: menuHref('/', siteSlug),
+          childHrefs: item.children?.map(child =>
+            menuHref(child.url, siteSlug)
+          ),
+          target: item.target,
+          rel: item.target === '_blank' ? 'noopener noreferrer' : undefined,
+          className: linkStyle.className,
           style: linkStyle.style,
+          activeClassName: activeEl.className,
+          activeStyle: activeEl.style,
         };
 
         const badgeEl = item.badge ? (
@@ -108,17 +113,10 @@ export function MenuLinks({
               trigger={trigger}
               panel={panel}
               link={
-                <a
-                  href={href}
-                  target={item.target}
-                  rel={
-                    item.target === '_blank' ? 'noopener noreferrer' : undefined
-                  }
-                  {...linkElProps}
-                >
+                <ActiveNavLink {...linkProps}>
                   {item.label}
                   {badgeEl}
-                </a>
+                </ActiveNavLink>
               }
             />
           );
@@ -126,15 +124,10 @@ export function MenuLinks({
 
         return (
           <li key={item.id} className="group relative">
-            <a
-              href={href}
-              target={item.target}
-              rel={item.target === '_blank' ? 'noopener noreferrer' : undefined}
-              {...linkElProps}
-            >
+            <ActiveNavLink {...linkProps}>
               {item.label}
               {badgeEl}
-            </a>
+            </ActiveNavLink>
             {depth > 1 && item.children && item.children.length > 0 && (
               <ul
                 {...el(

@@ -4147,6 +4147,11 @@ export const NavMenuBlock = defineBlock({
         ],
       },
       link_style: elementStyle('link', 'Link Style', TEXT_PARTS),
+      active_link_style: elementStyle(
+        'activeLink',
+        'Active Link Style',
+        TEXT_PARTS
+      ),
       dropdown_style: elementStyle('dropdown', 'Dropdown Style', BUTTON_PARTS),
       dropdown_link_style: elementStyle(
         'dropdownLink',
