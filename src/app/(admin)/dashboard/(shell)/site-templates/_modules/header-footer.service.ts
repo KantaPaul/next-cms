@@ -390,6 +390,8 @@ export const headerFooterService = {
   ) => {
     await accessService.assertPermission(access.userId, PERMISSIONS.PAGES_CREATE);
     const siteId = await adminSiteId();
+    const trimmedName = input.name.trim();
+    await assertUniqueTemplateName(siteId, trimmedName);
 
     const starterContent = input.starter
       ? getStarterContent(input.category, input.starter)
@@ -411,7 +413,7 @@ export const headerFooterService = {
       .insert(globalBlocks)
       .values({
         siteId,
-        name: input.name.trim(),
+        name: trimmedName,
         category: input.category,
         content: initialContent,
         createdBy: access.userId,
@@ -440,11 +442,13 @@ export const headerFooterService = {
 
     if (!source) throw new NotFoundException('Template not found');
 
+    const copyName = await nextUniqueCopyName(siteId, source.name);
+
     const [row] = await db
       .insert(globalBlocks)
       .values({
         siteId,
-        name: `${source.name} (Copy)`,
+        name: copyName,
         category: source.category,
         content: source.content,
         createdBy: access.userId,
@@ -468,10 +472,12 @@ export const headerFooterService = {
   ) => {
     await accessService.assertPermission(access.userId, PERMISSIONS.PAGES_EDIT);
     const siteId = await adminSiteId();
+    const trimmedName = input.name.trim();
+    await assertUniqueTemplateName(siteId, trimmedName, input.id);
 
     const [row] = await db
       .update(globalBlocks)
-      .set({ name: input.name.trim() })
+      .set({ name: trimmedName })
       .where(and(eq(globalBlocks.id, input.id), eq(globalBlocks.siteId, siteId)))
       .returning();
 
@@ -510,3 +516,53 @@ export const headerFooterService = {
     return row;
   },
 };
+
+async function assertUniqueTemplateName(
+  siteId: string,
+  name: string,
+  excludeId?: string
+) {
+  const trimmed = name.trim();
+  if (!trimmed) {
+    throw new ApplicationException('Template name is required.');
+  }
+  const existing = await db
+    .select({ id: globalBlocks.id })
+    .from(globalBlocks)
+    .where(
+      and(
+        eq(globalBlocks.siteId, siteId),
+        inArray(globalBlocks.category, [...SITE_TEMPLATE_CATEGORIES]),
+        sql`lower(trim(${globalBlocks.name})) = lower(${trimmed})`
+      )
+    );
+  if (existing.some(row => row.id !== excludeId)) {
+    throw new ApplicationException(
+      `A site template named "${trimmed}" already exists.`
+    );
+  }
+}
+
+async function nextUniqueCopyName(
+  siteId: string,
+  sourceName: string
+): Promise<string> {
+  const rows = await db
+    .select({ name: globalBlocks.name })
+    .from(globalBlocks)
+    .where(
+      and(
+        eq(globalBlocks.siteId, siteId),
+        inArray(globalBlocks.category, [...SITE_TEMPLATE_CATEGORIES])
+      )
+    );
+  const taken = new Set(rows.map(r => r.name.trim().toLowerCase()));
+  const base = sourceName.trim().replace(/\s*\(Copy(?:\s+\d+)?\)$/i, '');
+  let candidate = `${base} (Copy)`;
+  let counter = 2;
+  while (taken.has(candidate.toLowerCase())) {
+    candidate = `${base} (Copy ${counter})`;
+    counter++;
+  }
+  return candidate;
+}

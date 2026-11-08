@@ -129,6 +129,7 @@ export default async function HeaderFooterPage({
       <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
       <HeaderFooterList
         rows={rows}
+        allItems={items.map(i => ({ id: i.id, name: i.name }))}
         totalCount={filtered.length}
         tabCounts={tabCounts}
         kpis={kpis}

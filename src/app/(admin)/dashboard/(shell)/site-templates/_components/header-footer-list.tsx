@@ -253,6 +253,7 @@ function getScheduleStatus(settings?: OverlaySettings | null): {
 
 export function HeaderFooterList({
   rows,
+  allItems = [],
   totalCount,
   tabCounts,
   kpis,
@@ -260,6 +261,7 @@ export function HeaderFooterList({
   can,
 }: {
   rows: HeaderFooterItem[];
+  allItems?: { id: string; name: string }[];
   totalCount: number;
   tabCounts: Record<SiteTemplateCategory, number>;
   kpis: { label: string; value: number | string }[];
@@ -615,6 +617,7 @@ export function HeaderFooterList({
         open={createOpen}
         onOpenChange={setCreateOpen}
         category={activeTab}
+        existingItems={allItems.length ? allItems : rows}
       />
 
       {renaming && (
@@ -622,6 +625,7 @@ export function HeaderFooterList({
           item={renaming}
           open={!!renaming}
           onOpenChange={open => !open && setRenaming(null)}
+          existingItems={allItems.length ? allItems : rows}
         />
       )}
 
@@ -637,21 +641,40 @@ export function HeaderFooterList({
   );
 }
 
+function suggestUniqueName(baseName: string, taken: ReadonlySet<string>): string {
+  const base = baseName.trim();
+  if (!base || !taken.has(base.toLowerCase())) return base;
+  let counter = 2;
+  while (taken.has(`${base} ${counter}`.toLowerCase())) {
+    counter++;
+  }
+  return `${base} ${counter}`;
+}
+
 function NewHeaderFooterDialog({
   open,
   onOpenChange,
   category,
+  existingItems,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   category: SiteTemplateCategory;
+  existingItems: { id: string; name: string }[];
 }) {
   const router = useRouter();
   const starters = STARTERS_BY_CATEGORY[category];
   const blankName = `Blank ${noun(category)}`;
   const defaultStarter = starters[0]?.key ?? 'blank';
-  const nameFor = (key: string) =>
-    key === 'blank' ? blankName : (starters.find(s => s.key === key)?.name ?? '');
+  const takenNames = useMemo(
+    () => new Set(existingItems.map(i => i.name.trim().toLowerCase())),
+    [existingItems]
+  );
+  const nameFor = (key: string) => {
+    const base =
+      key === 'blank' ? blankName : (starters.find(s => s.key === key)?.name ?? '');
+    return suggestUniqueName(base, takenNames);
+  };
   const [name, setName] = useState(() => nameFor(defaultStarter));
   const [nameTouched, setNameTouched] = useState(false);
   const [starter, setStarter] = useState<string>(defaultStarter);
@@ -664,7 +687,7 @@ function NewHeaderFooterDialog({
     setName(nameFor(defaultStarter));
     setNameTouched(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, category]);
+  }, [open, category, takenNames]);
 
   const pickStarter = (key: string) => {
     setStarter(key);
@@ -675,14 +698,18 @@ function NewHeaderFooterDialog({
     }
   };
 
+  const trimmedName = name.trim();
+  const isDuplicate =
+    !!trimmedName && takenNames.has(trimmedName.toLowerCase());
+
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!trimmedName || isDuplicate) return;
 
     startTransition(async () => {
       await handleActionResponse(
         createHeaderFooter({
-          name: name.trim(),
+          name: trimmedName,
           category,
           starter,
         }),
@@ -719,6 +746,11 @@ function NewHeaderFooterDialog({
                 required
                 autoFocus
               />
+              {isDuplicate && (
+                <span className="text-xs font-normal text-red-600 dark:text-red-400">
+                  A site template with this name already exists.
+                </span>
+              )}
             </label>
 
             <div className="flex flex-col gap-2">
@@ -787,7 +819,7 @@ function NewHeaderFooterDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending || !name.trim()}>
+            <Button type="submit" disabled={isPending || !trimmedName || isDuplicate}>
               {isPending ? 'Creating...' : 'Create & open builder'}
             </Button>
           </DialogFooter>
@@ -801,24 +833,39 @@ function RenameDialog({
   item,
   open,
   onOpenChange,
+  existingItems,
 }: {
   item: HeaderFooterItem;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  existingItems: { id: string; name: string }[];
 }) {
   const router = useRouter();
   const [name, setName] = useState(item.name);
   const [isPending, startTransition] = useTransition();
 
+  const takenNames = useMemo(
+    () =>
+      new Set(
+        existingItems
+          .filter(i => i.id !== item.id)
+          .map(i => i.name.trim().toLowerCase())
+      ),
+    [existingItems, item.id]
+  );
+  const trimmedName = name.trim();
+  const isDuplicate =
+    !!trimmedName && takenNames.has(trimmedName.toLowerCase());
+
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!trimmedName || isDuplicate) return;
 
     startTransition(async () => {
       await handleActionResponse(
         renameHeaderFooter({
           id: item.id,
-          name: name.trim(),
+          name: trimmedName,
         }),
         () => {
           toast.success('Renamed successfully');
@@ -846,6 +893,11 @@ function RenameDialog({
                 required
                 autoFocus
               />
+              {isDuplicate && (
+                <span className="text-xs font-normal text-red-600 dark:text-red-400">
+                  A site template with this name already exists.
+                </span>
+              )}
             </label>
           </div>
           <DialogFooter>
@@ -856,7 +908,7 @@ function RenameDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending || !name.trim()}>
+            <Button type="submit" disabled={isPending || !trimmedName || isDuplicate}>
               {isPending ? 'Saving...' : 'Save'}
             </Button>
           </DialogFooter>

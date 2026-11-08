@@ -201,10 +201,26 @@ export const templatesService = {
     access: UserAccess
   ) => {
     await accessService.assertPermission(access.userId, PERMISSIONS.PAGES_EDIT);
+    const siteId = await adminSiteId();
+    const trimmedName = input.name.trim();
+    const duplicates = await db
+      .select({ id: globalBlocks.id })
+      .from(globalBlocks)
+      .where(
+        and(
+          eq(globalBlocks.siteId, siteId),
+          sql`lower(trim(${globalBlocks.name})) = lower(${trimmedName})`
+        )
+      );
+    if (duplicates.some(r => r.id !== input.id)) {
+      throw new ApplicationException(
+        `A template named "${trimmedName}" already exists.`
+      );
+    }
     const [row] = await db
       .update(globalBlocks)
-      .set({ name: input.name, category: input.category || 'General' })
-      .where(and(eq(globalBlocks.id, input.id), eq(globalBlocks.siteId, await adminSiteId())))
+      .set({ name: trimmedName, category: input.category || 'General' })
+      .where(and(eq(globalBlocks.id, input.id), eq(globalBlocks.siteId, siteId)))
       .returning();
     if (!row) throw new NotFoundException('Global block not found');
     await auditService.log({
@@ -263,8 +279,25 @@ export const templatesService = {
       );
     }
 
+    const siteId = await adminSiteId();
+    const trimmedName = input.name.trim();
+    const duplicates = await db
+      .select({ id: globalBlocks.id })
+      .from(globalBlocks)
+      .where(
+        and(
+          eq(globalBlocks.siteId, siteId),
+          sql`lower(trim(${globalBlocks.name})) = lower(${trimmedName})`
+        )
+      );
+    if (duplicates.some(r => r.id !== input.id)) {
+      throw new ApplicationException(
+        `A template named "${trimmedName}" already exists.`
+      );
+    }
+
     const values = {
-      name: input.name,
+      name: trimmedName,
       category: input.category ?? 'General',
       content: input.content as object,
     };
@@ -272,13 +305,13 @@ export const templatesService = {
       ? await db
           .update(globalBlocks)
           .set(values)
-          .where(and(eq(globalBlocks.id, input.id), eq(globalBlocks.siteId, await adminSiteId())))
+          .where(and(eq(globalBlocks.id, input.id), eq(globalBlocks.siteId, siteId)))
           .returning()
       : await db
           .insert(globalBlocks)
           .values({
             ...values,
-            siteId: await adminSiteId(),
+            siteId,
             createdBy: access.userId,
           })
           .returning();
