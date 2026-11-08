@@ -21,6 +21,11 @@ import {
 import { cn } from '@/lib/utils/cn';
 import { getAllTaxonomyOptions } from '@/server/actions/blog.actions';
 import { Switcher } from '../controls/primitives';
+import {
+  OverlaySelect,
+  overlayHref,
+  parseOverlayHref,
+} from '../controls/overlay-picker';
 import { BLOCK_ICONS, ICON_OPTIONS } from '../icons';
 import { normalizeUrlValue, type UrlValue } from '../style';
 
@@ -76,7 +81,7 @@ export function RichTextField({
 
 export type { UrlValue };
 
-export function UrlField({
+export function PlainUrlField({
   value,
   onChange,
   field,
@@ -106,6 +111,72 @@ export function UrlField({
         onChange={e => commit({ url: e.target.value })}
         className="h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm"
       />
+      <Switcher
+        label="Open in new tab"
+        value={v.newTab}
+        onChange={newTab => commit({ newTab })}
+      />
+      <Switcher
+        label="Add nofollow"
+        value={v.nofollow}
+        onChange={nofollow => commit({ nofollow })}
+      />
+    </div>
+  );
+}
+
+export function UrlField({
+  value,
+  onChange,
+  field,
+}: CustomFieldProps<UrlValue | undefined>) {
+  const v = normalizeUrlValue(value);
+  const overlayId = parseOverlayHref(v.url);
+
+  const commit = (patch: Partial<typeof v>) => {
+    const next = { ...v, ...patch };
+    if (!next.newTab && !next.nofollow) {
+      onChange(next.url || undefined);
+      return;
+    }
+    onChange({
+      url: next.url || undefined,
+      newTab: next.newTab || undefined,
+      nofollow: next.nofollow || undefined,
+    });
+  };
+
+  return (
+    <div className="space-y-2">
+      <FieldLabel label={field.label} />
+      {!overlayId && (
+        <input
+          type="url"
+          value={v.url}
+          placeholder="https://… or /path"
+          onChange={e => commit({ url: e.target.value })}
+          className="h-9 w-full rounded-md border border-steel-200 bg-white px-2 text-sm"
+        />
+      )}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between text-xs text-steel-500">
+          <span>Open popup/drawer</span>
+          {overlayId && (
+            <button
+              type="button"
+              onClick={() => commit({ url: '' })}
+              className="font-medium text-indigo-600 hover:underline"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+        <OverlaySelect
+          value={overlayId ?? undefined}
+          onChange={id => commit({ url: id ? overlayHref(id) : '' })}
+          ariaLabel="Open popup/drawer"
+        />
+      </div>
       <Switcher
         label="Open in new tab"
         value={v.newTab}

@@ -34,6 +34,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useId, useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
+import {
+  type OverlayOption,
+  OverlaySelect,
+  overlayHref,
+  parseOverlayHref,
+} from '@/builder/controls/overlay-picker';
 import { Button } from '@/components/ui/button';
 import { PAGES } from '@/config/pages';
 import {
@@ -119,12 +125,14 @@ export function MenusManager({
   menus,
   linkablePages,
   megaMenus = [],
+  overlayOptions = [],
   assigned,
   siteSlug,
 }: {
   menus: MenuDetail[];
   linkablePages: LinkablePage[];
   megaMenus?: MegaMenuOption[];
+  overlayOptions?: OverlayOption[];
   assigned: { header: string | null; footer: string | null };
   siteSlug?: string;
 }) {
@@ -197,6 +205,7 @@ export function MenusManager({
           menu={selected}
           linkablePages={linkablePages}
           megaMenus={megaMenus}
+          overlayOptions={overlayOptions}
           siteSlug={siteSlug}
         />
       ) : (
@@ -285,11 +294,13 @@ function MenuEditor({
   menu,
   linkablePages,
   megaMenus,
+  overlayOptions,
   siteSlug,
 }: {
   menu: MenuDetail;
   linkablePages: LinkablePage[];
   megaMenus: MegaMenuOption[];
+  overlayOptions: OverlayOption[];
   siteSlug?: string;
 }) {
   const router = useRouter();
@@ -595,6 +606,7 @@ function MenuEditor({
                   onChange={patch => update(item.key, patch)}
                   onRemove={() => remove(item.key)}
                   megaMenus={megaMenus}
+                  overlayOptions={overlayOptions}
                   action={
                     <Button
                       type="button"
@@ -632,6 +644,7 @@ function MenuEditor({
                               }
                               onChange={patch => update(child.key, patch)}
                               onRemove={() => remove(child.key)}
+                              overlayOptions={overlayOptions}
                               action={
                                 <Button
                                   type="button"
@@ -689,6 +702,19 @@ function MenuEditor({
             </option>
           ))}
         </select>
+        <OverlaySelect
+          ariaLabel="Add a popup/drawer"
+          className={cn(inputClass, 'w-auto max-w-xs')}
+          options={overlayOptions}
+          placeholder="Add a popup/drawer…"
+          value=""
+          onChange={id => {
+            const overlay = overlayOptions.find(o => o.id === id);
+            if (overlay) {
+              addItem({ label: overlay.name, url: overlayHref(overlay.id) });
+            }
+          }}
+        />
       </div>
     </section>
   );
@@ -702,6 +728,7 @@ function SortableRow({
   onRemove,
   action,
   megaMenus,
+  overlayOptions,
   children,
 }: {
   item: EditorItem;
@@ -712,9 +739,15 @@ function SortableRow({
   action: React.ReactNode;
   /** Set for top-level rows: mega menus this item can open. */
   megaMenus?: MegaMenuOption[];
+  overlayOptions: OverlayOption[];
   children?: React.ReactNode;
 }) {
   const megaName = megaMenus?.find(m => m.id === item.megaMenuId)?.name;
+  const overlayId = parseOverlayHref(item.url);
+  const overlayName = overlayId
+    ? (overlayOptions.find(o => o.id === overlayId)?.name ??
+      'Popup/drawer not found')
+    : null;
   const {
     attributes,
     listeners,
@@ -762,7 +795,9 @@ function SortableRow({
             >
               {item.label || 'Untitled link'}
             </span>
-            <span className="truncate text-xs text-steel-400">{item.url}</span>
+            <span className="truncate text-xs text-steel-400">
+              {overlayName ?? item.url}
+            </span>
             {item.target === '_blank' && (
               <ExternalLink className="size-3 shrink-0 text-steel-400" />
             )}
@@ -801,16 +836,40 @@ function SortableRow({
                 autoFocus
               />
             </label>
-            <label className="flex flex-col gap-1 text-xs font-medium">
-              Link
-              <input
+            <div className="flex flex-col gap-1.5 text-xs font-medium">
+              <div className="flex items-center justify-between">
+                <span>Link</span>
+                {overlayId && (
+                  <button
+                    type="button"
+                    onClick={() => onChange({ url: '/' })}
+                    className="font-medium text-indigo-600 hover:underline"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              {!overlayId && (
+                <input
+                  aria-label="Link"
+                  className={inputClass}
+                  value={item.url}
+                  onChange={e => onChange({ url: e.target.value })}
+                  maxLength={500}
+                  placeholder="/pricing or https://…"
+                />
+              )}
+              <OverlaySelect
+                ariaLabel="Open popup/drawer"
                 className={inputClass}
-                value={item.url}
-                onChange={e => onChange({ url: e.target.value })}
-                maxLength={500}
-                placeholder="/pricing or https://…"
+                options={overlayOptions}
+                placeholder="Open popup/drawer…"
+                value={overlayId ?? undefined}
+                onChange={id =>
+                  onChange({ url: id ? overlayHref(id) : '/' })
+                }
               />
-            </label>
+            </div>
             <label className="flex flex-col gap-1 text-xs font-medium">
               Badge
               <input

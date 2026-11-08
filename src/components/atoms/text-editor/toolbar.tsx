@@ -21,6 +21,11 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import {
+  OverlaySelect,
+  overlayHref,
+  parseOverlayHref,
+} from '@/builder/controls/overlay-picker';
 import { borderColor } from '@/components/atoms/table-grid';
 import { Button } from '@/components/ui/button';
 import {
@@ -310,7 +315,7 @@ export function Toolbar({ className, editor }: ToolbarProps) {
             <LinkIcon className="h-4 w-4" />
           </Toggle>
         </PopoverTrigger>
-        <PopoverContent className="w-80">
+        <PopoverContent className="w-80 space-y-2">
           <div className="flex space-x-2">
             <Input
               placeholder="Paste link"
@@ -319,6 +324,30 @@ export function Toolbar({ className, editor }: ToolbarProps) {
             />
             <Button onClick={setLink}>Add</Button>
           </div>
+          <OverlaySelect
+            value={
+              parseOverlayHref(editor?.getAttributes('link')?.href) ?? undefined
+            }
+            placeholder="Open popup/drawer…"
+            ariaLabel="Open popup/drawer"
+            onChange={id => {
+              if (!id) {
+                editor
+                  .chain()
+                  .focus()
+                  .extendMarkRange('link')
+                  .unsetLink()
+                  .run();
+                return;
+              }
+              editor
+                .chain()
+                .focus()
+                .extendMarkRange('link')
+                .setLink({ href: overlayHref(id) })
+                .run();
+            }}
+          />
         </PopoverContent>
       </Popover>
     </div>

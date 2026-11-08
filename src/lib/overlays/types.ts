@@ -1,3 +1,9 @@
+export {
+  OVERLAY_HREF_PREFIX,
+  overlayHref,
+  parseOverlayHref,
+} from './href';
+
 export type PathRuleKind = 'all' | 'exact' | 'prefix' | 'post-type' | 'entity';
 
 export type PathRule = {

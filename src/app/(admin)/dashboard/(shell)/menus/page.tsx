@@ -6,6 +6,7 @@ import { metaObject } from '@/lib/utils/metadata';
 import { requirePermission } from '@/server/services/require-permission';
 import { siteContext, siteSlugPrefix } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
+import { overlayAdminService } from '../header-footer/_modules/overlays.service';
 import { MenusManager } from './_components/menus-manager';
 import { menusService } from './_modules/menus.service';
 
@@ -31,13 +32,15 @@ export default async function MenusPage() {
     );
   }
 
-  const [list, linkablePages, settings, site, megaMenus] = await Promise.all([
-    menusService.list(),
-    menusService.linkablePages(),
-    siteSettingsService.get(),
-    siteContext.publicSite(),
-    menusService.megaMenuOptions(),
-  ]);
+  const [list, linkablePages, settings, site, megaMenus, overlayOptions] =
+    await Promise.all([
+      menusService.list(),
+      menusService.linkablePages(),
+      siteSettingsService.get(),
+      siteContext.publicSite(),
+      menusService.megaMenuOptions(),
+      overlayAdminService.listOptions(),
+    ]);
   const siteSlug = siteSlugPrefix(site);
   const menus = (
     await Promise.all(list.map(menu => menusService.getWithItems(menu.id)))
@@ -50,6 +53,7 @@ export default async function MenusPage() {
         menus={menus}
         linkablePages={linkablePages}
         megaMenus={megaMenus}
+        overlayOptions={overlayOptions}
         siteSlug={siteSlug}
         assigned={{
           header: settings.headerMenuId,

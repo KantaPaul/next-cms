@@ -1,16 +1,49 @@
 import 'server-only';
-import { eq } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 import { db } from '@/db';
 import { globalBlocks } from '@/db/schema';
 import { PERMISSIONS } from '@/config/permissions';
 import { accessService, type UserAccess } from '@/server/services/access.service';
 import { auditService } from '@/server/services/audit.service';
+import { adminSiteId } from '@/server/services/site-context';
 import { revalidatePublicSite } from '@/lib/utils/revalidate-site';
 import { NotFoundException } from '@/lib/utils/error';
 import type { BuilderData } from '@/builder/data';
 import type { ToggleOverlayEnabledInput } from './overlays.schemas';
 
+export type OverlayOption = {
+  id: string;
+  name: string;
+  category: 'Popup' | 'Drawer';
+  published: boolean;
+};
+
 export const overlayAdminService = {
+  listOptions: async (): Promise<OverlayOption[]> => {
+    const siteId = await adminSiteId();
+    const rows = await db
+      .select({
+        id: globalBlocks.id,
+        name: globalBlocks.name,
+        category: globalBlocks.category,
+        publishedAt: globalBlocks.publishedAt,
+      })
+      .from(globalBlocks)
+      .where(
+        and(
+          eq(globalBlocks.siteId, siteId),
+          inArray(globalBlocks.category, ['Popup', 'Drawer'])
+        )
+      )
+      .orderBy(asc(globalBlocks.name));
+    return rows.map(r => ({
+      id: r.id,
+      name: r.name,
+      category: r.category === 'Drawer' ? 'Drawer' : 'Popup',
+      published: !!r.publishedAt,
+    }));
+  },
+
   toggleOverlayEnabled: async (
     access: UserAccess,
     input: ToggleOverlayEnabledInput

@@ -104,6 +104,7 @@ import {
   LoopTemplatePickerField,
 } from '../controls/loop-grid-fields';
 import { ImageMorphField } from '../controls/image-morph';
+import { OverlayPickerField } from '../controls/overlay-picker';
 import { PageTransitionField } from '../controls/page-transition';
 import { Example } from '../custom/example';
 import {
@@ -114,6 +115,7 @@ import {
   GlobalBlockSelectField,
   IconPickerField,
   MediaUrlField,
+  PlainUrlField,
   RichTextField,
   TagLockField,
   UrlField,
@@ -1558,16 +1560,17 @@ export const ButtonBlock = defineBlock({
       ],
     },
     overlayId: {
-      label: 'Popup / Drawer ID',
+      label: 'Popup / Drawer',
       group: CONTENT,
-      type: 'text',
+      type: 'custom',
+      render: OverlayPickerField,
       when: (p: Record<string, unknown>) => p.linkAction === 'overlay',
     },
     link: {
       label: 'Link',
       group: CONTENT,
       type: 'custom',
-      render: UrlField,
+      render: PlainUrlField,
       when: (p: Record<string, unknown>) => p.linkAction !== 'overlay',
     },
     alignment: {

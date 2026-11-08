@@ -1,7 +1,12 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { isAllowedUri } from '@tiptap/extension-link';
 import { validateProps } from '@nextcms/builder-core';
 import { editorSetup } from '../definitions';
+import { ButtonBlock } from '../definitions/native';
+import { sanitizeRichText } from '../sanitize';
+import { overlayHref, parseOverlayHref } from '@/lib/overlays/href';
+import { menuHref } from '@/components/site/menu-links';
 import {
   POPUP_STARTERS,
   DRAWER_STARTERS,
@@ -169,5 +174,34 @@ describe('Popup & Drawer builder palette and editor setup', () => {
       }
       assert.deepEqual(getStarterContent('Drawer', starter.key), starter.content);
     }
+  });
+
+  it('round-trips overlayHref and parseOverlayHref', () => {
+    const id = '123e4567-e89b-12d3-a456-426614174000';
+    assert.equal(overlayHref(id), `#overlay:${id}`);
+    assert.equal(parseOverlayHref(overlayHref(id)), id);
+    assert.equal(parseOverlayHref(`#overlay: ${id} `), id);
+    assert.equal(parseOverlayHref('#overlay:'), null);
+    assert.equal(parseOverlayHref('#section'), null);
+    assert.equal(parseOverlayHref('https://example.com'), null);
+    assert.equal(parseOverlayHref('/pricing'), null);
+    assert.equal(parseOverlayHref(undefined), null);
+    assert.equal(parseOverlayHref(null), null);
+  });
+
+  it('preserves #overlay:<id> hrefs in sanitizeRichText, TipTap Link, and menuHref', () => {
+    const href = overlayHref('popup-uuid-1');
+    const html = `<p><a href="${href}">Open offer</a></p>`;
+    assert.equal(sanitizeRichText(html), html);
+    assert.ok(isAllowedUri(href));
+    assert.equal(menuHref(href, 'sub-site'), href);
+  });
+
+  it('configures Button overlayId field as a custom picker', () => {
+    const overlayField = ButtonBlock.fields?.overlayId;
+    assert.ok(overlayField);
+    assert.equal(overlayField.type, 'custom');
+    assert.equal(overlayField.label, 'Popup / Drawer');
+    assert.equal(typeof (overlayField as { render?: unknown }).render, 'function');
   });
 });

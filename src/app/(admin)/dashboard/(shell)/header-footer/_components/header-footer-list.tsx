@@ -346,15 +346,7 @@ export function HeaderFooterList({
                 >
                   {row.original.name}
                 </Link>
-                <div className="flex flex-wrap items-center gap-2">
-                  <StatusChip item={row.original} />
-                  <code
-                    className="select-all rounded bg-steel-100 px-1.5 py-0.5 font-mono text-[11px] text-steel-600 dark:bg-dark-200 dark:text-steel-300"
-                    title="Use this ID in a Button's “Open popup/drawer” action, or link to #overlay:<id>"
-                  >
-                    {row.original.id}
-                  </code>
-                </div>
+                <StatusChip item={row.original} />
               </div>
             ),
           },

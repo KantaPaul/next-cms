@@ -5,6 +5,7 @@ import { MegaMenuItem } from './mega-menu-item';
 
 /** Menu URLs may be saved with or without the site slug; prefix only once. */
 export function menuHref(url: string, siteSlug?: string) {
+  if (url.startsWith('#')) return url;
   if (siteSlug && (url === `/${siteSlug}` || url.startsWith(`/${siteSlug}/`)))
     return url;
   return siteHref(url, siteSlug);

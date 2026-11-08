@@ -9,6 +9,11 @@ import {
   useState,
 } from 'react';
 import { toast } from 'sonner';
+import {
+  OverlaySelect,
+  overlayHref,
+  parseOverlayHref,
+} from '@/builder/controls/overlay-picker';
 import { Input } from '@/components/atoms/forms';
 import { Button } from '@/components/ui/button';
 import {
@@ -71,7 +76,7 @@ export function AddLink({ editor, setIsOpen, isOpen }: LinkSelectorProps) {
         </Toggle>
       </PopoverTrigger>
       <PopoverContent
-        className="z-99999 flex w-72 items-center gap-2 rounded-md border border-steel-100 bg-white p-1 shadow-lg dark:border-steel-500 dark:bg-steel-800"
+        className="z-99999 flex w-72 flex-col gap-2 rounded-md border border-steel-100 bg-white p-2 shadow-lg dark:border-steel-500 dark:bg-steel-800"
         align="center"
         sideOffset={15}
       >
@@ -93,6 +98,27 @@ export function AddLink({ editor, setIsOpen, isOpen }: LinkSelectorProps) {
             <CheckIcon size={16} strokeWidth={2} />
           </Button>
         </div>
+        <OverlaySelect
+          value={
+            parseOverlayHref(editor?.getAttributes('link')?.href) ?? undefined
+          }
+          placeholder="Open popup/drawer…"
+          ariaLabel="Open popup/drawer"
+          onChange={id => {
+            if (!id) {
+              editor.chain().focus().extendMarkRange('link').unsetLink().run();
+              setIsOpen(false);
+              return;
+            }
+            editor
+              .chain()
+              .focus()
+              .extendMarkRange('link')
+              .setLink({ href: overlayHref(id) })
+              .run();
+            setIsOpen(false);
+          }}
+        />
       </PopoverContent>
     </Popover>
   );
