@@ -1397,3 +1397,21 @@ html[data-site-mode='dark']
     grid-template-columns: var(--hc-cols, minmax(0, 1fr));
   }
 }
+
+/*
+ * Several blocks in one header column sit in a row. Scoped to the bar's own
+ * columns (the editor canvas adds one wrapper) so mega menu panels rendered
+ * inside the header keep their normal stacking.
+ */
+.site-root [data-header-bar] > div > [data-column] > div,
+.site-root [data-header-bar] > div > * > [data-column] > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: inherit;
+}
+.site-root [data-header-bar] > div > [data-column] > div section,
+.site-root [data-header-bar] > div > * > [data-column] > div section {
+  width: auto;
+}
