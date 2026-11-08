@@ -1,7 +1,10 @@
 import 'server-only';
-import { and, asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, sql } from 'drizzle-orm';
 import { db } from '@/db';
-import { globalBlocks, menuItems, pages, posts, users } from '@/db/schema';
+import { globalBlocks, menuItems, overlayStats, pages, posts, users } from '@/db/schema';
+import type { BuilderData } from '@/builder/data';
+import { normalizeOverlaySettings } from '@/lib/overlays/settings';
+import type { OverlaySettings } from '@/lib/overlays/types';
 import { ApplicationException, NotFoundException } from '@/lib/utils/error';
 import {
   accessService,
@@ -17,6 +20,8 @@ import {
   SEARCH_STARTER_SIMPLE,
   ARCHIVE_STARTER_GRID,
   MEGA_STARTER_COLUMNS,
+  POPUP_STARTER_NEWSLETTER,
+  DRAWER_STARTER_INFO,
   SITE_TEMPLATE_CATEGORIES,
   type SiteTemplateCategory,
 } from '@/db/seed/header-footer-starters';
@@ -41,6 +46,15 @@ export type HeaderFooterItem = {
   menuItemCount: number;
   /** Assigned anywhere: site default, locale, page, display rule or menu item. */
   inUse: boolean;
+  /** Parsed settings for Popup & Drawer templates. */
+  overlaySettings?: OverlaySettings | null;
+  /** Last 30-day stats for Popup & Drawer templates. */
+  overlayStats?: {
+    views: number;
+    closes: number;
+    conversions: number;
+    conversionRate: number;
+  };
 };
 
 const DEFAULT_HEADER_CONTENT = {
@@ -169,7 +183,11 @@ export const headerFooterService = {
   listHeaderFooters: async (): Promise<HeaderFooterItem[]> => {
     const siteId = await adminSiteId();
 
-    const [rows, settings, pageRows, postRows, ruleRows, megaRows] = await Promise.all([
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().slice(0, 10);
+
+    const [rows, settings, pageRows, postRows, ruleRows, megaRows, statRows] = await Promise.all([
       db
         .select({
           id: globalBlocks.id,
@@ -211,7 +229,34 @@ export const headerFooterService = {
         .from(menuItems)
         .innerJoin(globalBlocks, eq(globalBlocks.id, menuItems.megaMenuId))
         .where(eq(globalBlocks.siteId, siteId)),
+      db
+        .select({
+          overlayId: overlayStats.overlayId,
+          views: sql<number>`coalesce(sum(${overlayStats.views}), 0)::int`,
+          closes: sql<number>`coalesce(sum(${overlayStats.closes}), 0)::int`,
+          conversions: sql<number>`coalesce(sum(${overlayStats.conversions}), 0)::int`,
+        })
+        .from(overlayStats)
+        .where(
+          and(
+            eq(overlayStats.siteId, siteId),
+            gte(overlayStats.day, thirtyDaysAgoStr)
+          )
+        )
+        .groupBy(overlayStats.overlayId),
     ]);
+
+    const statCounts: Record<
+      string,
+      { views: number; closes: number; conversions: number }
+    > = {};
+    for (const s of statRows) {
+      statCounts[s.overlayId] = {
+        views: Number(s.views) || 0,
+        closes: Number(s.closes) || 0,
+        conversions: Number(s.conversions) || 0,
+      };
+    }
 
     const megaCounts: Record<string, number> = {};
     for (const r of megaRows) {
@@ -250,6 +295,8 @@ export const headerFooterService = {
       Search: 'searchTemplateId',
       Archive: 'archiveTemplateId',
       MegaMenu: null,
+      Popup: null,
+      Drawer: null,
     } as const;
 
     return rows.map(row => {
@@ -291,6 +338,24 @@ export const headerFooterService = {
           (row.updatedAt && row.publishedAt && new Date(row.updatedAt) > new Date(row.publishedAt)) ||
           JSON.stringify(row.content) !== JSON.stringify(row.publishedContent));
 
+      const isOverlay = row.category === 'Popup' || row.category === 'Drawer';
+      const rootProps: OverlaySettings | undefined =
+        isOverlay && row.content && typeof row.content === 'object'
+          ? normalizeOverlaySettings(
+              (row.content as BuilderData)?.root?.props,
+              row.category as 'Popup' | 'Drawer'
+            )
+          : undefined;
+
+      const stats = statCounts[row.id] ?? {
+        views: 0,
+        closes: 0,
+        conversions: 0,
+      };
+      const views = stats.views;
+      const conversions = stats.conversions;
+      const conversionRate = views > 0 ? (conversions / views) * 100 : 0;
+
       return {
         id: row.id,
         name: row.name,
@@ -308,6 +373,13 @@ export const headerFooterService = {
         ruleCount,
         menuItemCount,
         inUse,
+        overlaySettings: rootProps ?? null,
+        overlayStats: {
+          views,
+          closes: stats.closes,
+          conversions,
+          conversionRate,
+        },
       };
     });
   },
@@ -329,6 +401,8 @@ export const headerFooterService = {
       Search: SEARCH_STARTER_SIMPLE.content,
       Archive: ARCHIVE_STARTER_GRID.content,
       MegaMenu: MEGA_STARTER_COLUMNS.content,
+      Popup: POPUP_STARTER_NEWSLETTER.content,
+      Drawer: DRAWER_STARTER_INFO.content,
     };
     const initialContent =
       starterContent || structuredClone(defaultContent[input.category]);

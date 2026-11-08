@@ -13,6 +13,7 @@ import {
   Youtube,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { el, type WithSection } from './element';
 import type { BuilderItem } from '../data';
 import { renderSlot, type SlotValue } from './content';
 import { MenuLinks, menuHref } from '@/components/site/menu-links';
@@ -609,6 +610,7 @@ export type FooterLinksProps = {
   collapseOnMobile?: boolean;
   menu?: MenuWithItems | null;
   siteSlug?: string;
+  elements?: WithSection['elements'];
 };
 
 export function FooterLinks({
@@ -623,7 +625,14 @@ export function FooterLinks({
   collapseOnMobile = false,
   menu,
   siteSlug,
+  elements,
 }: FooterLinksProps) {
+  const styled = { elements };
+  const linkStyle = el(
+    styled,
+    'link',
+    'hover:underline hover:text-[var(--site-fg)] transition-colors'
+  );
   const items =
     source === 'menu' && menu?.items?.length
       ? menu.items.map(i => ({ label: i.label, url: i.url, target: i.target }))
@@ -637,7 +646,8 @@ export function FooterLinks({
             href={menuHref(link.url, siteSlug)}
             target={link.target}
             rel={link.target === '_blank' ? 'noopener noreferrer' : undefined}
-            className="hover:underline hover:text-[var(--site-fg)] transition-colors"
+            className={linkStyle.className}
+            style={linkStyle.style}
           >
             {link.label}
           </a>
@@ -646,7 +656,13 @@ export function FooterLinks({
     </ul>
   );
   const headingEl = heading ? (
-    <h4 className="font-semibold text-sm tracking-tight text-[var(--site-fg)]">
+    <h4
+      {...el(
+        styled,
+        'heading',
+        'font-semibold text-sm tracking-tight text-[var(--site-fg)]'
+      )}
+    >
       {heading}
     </h4>
   ) : null;
@@ -656,7 +672,13 @@ export function FooterLinks({
     return (
       <div>
         <details className="s-border group border-b py-2 md:hidden">
-          <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-semibold [&::-webkit-details-marker]:hidden">
+          <summary
+            {...el(
+              styled,
+              'heading',
+              'flex cursor-pointer list-none items-center justify-between text-sm font-semibold [&::-webkit-details-marker]:hidden'
+            )}
+          >
             {heading}
             <ChevronDown
               className="size-4 transition-transform group-open:rotate-180"

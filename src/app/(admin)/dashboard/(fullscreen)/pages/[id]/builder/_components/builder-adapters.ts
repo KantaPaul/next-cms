@@ -97,12 +97,37 @@ export function adapterFor(
   page: BuilderPageProps['page'],
   category?: string
 ): Adapter {
-  if (kind === 'header' || kind === 'footer' || kind === 'mega-menu') {
+  if (
+    kind === 'header' ||
+    kind === 'footer' ||
+    kind === 'mega-menu' ||
+    kind === 'popup' ||
+    kind === 'drawer'
+  ) {
     const isHeader = kind === 'header';
     const isMega = kind === 'mega-menu';
-    const category = isMega ? 'MegaMenu' : isHeader ? 'Header' : 'Footer';
+    const isPopup = kind === 'popup';
+    const isDrawer = kind === 'drawer';
+    const category = isMega
+      ? 'MegaMenu'
+      : isPopup
+        ? 'Popup'
+        : isDrawer
+          ? 'Drawer'
+          : isHeader
+            ? 'Header'
+            : 'Footer';
+    const label = isMega
+      ? 'Mega menu'
+      : isPopup
+        ? 'Popup'
+        : isDrawer
+          ? 'Drawer'
+          : isHeader
+            ? 'Header'
+            : 'Footer';
     return {
-      label: isMega ? 'Mega menu' : isHeader ? 'Header' : 'Footer',
+      label,
       backHref: siteTemplatesHref(isMega ? 'megamenu' : kind),
       backLabel: 'Site templates',
       headerPath: '',
@@ -118,9 +143,13 @@ export function adapterFor(
           toast.error(
             isMega
               ? 'A mega menu needs at least one block.'
-              : isHeader
-                ? 'A header needs at least one block.'
-                : 'A footer needs at least one block.'
+              : isPopup
+                ? 'A popup needs at least one block.'
+                : isDrawer
+                  ? 'A drawer needs at least one block.'
+                  : isHeader
+                    ? 'A header needs at least one block.'
+                    : 'A footer needs at least one block.'
           );
           return { error: 'empty' };
         }

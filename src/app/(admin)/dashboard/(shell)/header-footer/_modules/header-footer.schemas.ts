@@ -2,7 +2,15 @@ import { z } from 'zod';
 
 export const createHeaderFooterSchema = z.object({
   name: z.string().trim().min(1).max(150),
-  category: z.enum(['Header', 'Footer', 'Search', 'Archive', 'MegaMenu']),
+  category: z.enum([
+    'Header',
+    'Footer',
+    'Search',
+    'Archive',
+    'MegaMenu',
+    'Popup',
+    'Drawer',
+  ]),
   starter: z.string().optional(),
 });
 

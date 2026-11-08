@@ -2,6 +2,7 @@ import { VideoLibrary } from '@/components/video/video-library';
 import { customComponents } from '../custom';
 import { Example } from '../custom/example';
 
+import { Divider, Heading, OverlayClose } from './overlay';
 import { BlogPosts } from './blog';
 import {
   Code,
@@ -119,6 +120,9 @@ const builtInComponents = {
   LoopItemField,
   QueryFilter,
   SearchResults,
+  OverlayClose,
+  Heading,
+  Divider,
 };
 
 export const getBlockComponents = () => ({

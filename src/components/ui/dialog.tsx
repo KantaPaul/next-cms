@@ -50,13 +50,16 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  overlayStyle,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
+  /** Inline style for the backdrop, e.g. a custom background colour. */
+  overlayStyle?: React.CSSProperties;
 }) {
   return (
     <DialogPortal data-slot="dialog-portal">
-      <DialogOverlay />
+      <DialogOverlay style={overlayStyle} />
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(

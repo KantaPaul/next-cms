@@ -24,6 +24,8 @@ const TYPE_TO_CATEGORY: Record<string, SiteTemplateCategory> = {
   search: 'Search',
   archive: 'Archive',
   megamenu: 'MegaMenu',
+  popup: 'Popup',
+  drawer: 'Drawer',
 };
 
 type Params = Record<string, string | string[] | undefined>;
@@ -85,13 +87,42 @@ export default async function HeaderFooterPage({
   });
   const rows = filtered.slice(offset, offset + limit);
 
-  const kpis = [
-    { label: 'Total', value: inTab.length },
-    { label: 'Published', value: inTab.filter(i => statusOf(i) === 'published').length },
-    { label: 'Draft changes', value: inTab.filter(i => statusOf(i) !== 'published').length },
-    { label: 'In use', value: inTab.filter(i => i.inUse).length },
-    { label: 'Unused', value: inTab.filter(i => !i.inUse).length },
-  ];
+  const isOverlayTab = initialTab === 'Popup' || initialTab === 'Drawer';
+  const totalViews = inTab.reduce(
+    (acc, i) => acc + (i.overlayStats?.views ?? 0),
+    0
+  );
+  const totalConversions = inTab.reduce(
+    (acc, i) => acc + (i.overlayStats?.conversions ?? 0),
+    0
+  );
+  const avgConvRate =
+    totalViews > 0 ? (totalConversions / totalViews) * 100 : 0;
+
+  const kpis = isOverlayTab
+    ? [
+        { label: 'Total', value: inTab.length },
+        {
+          label: 'Enabled',
+          value: inTab.filter(i => i.overlaySettings?.enabled ?? true).length,
+        },
+        { label: '30d Views', value: totalViews },
+        { label: '30d Conversions', value: totalConversions },
+        { label: 'Avg Conv. Rate', value: `${avgConvRate.toFixed(1)}%` },
+      ]
+    : [
+        { label: 'Total', value: inTab.length },
+        {
+          label: 'Published',
+          value: inTab.filter(i => statusOf(i) === 'published').length,
+        },
+        {
+          label: 'Draft changes',
+          value: inTab.filter(i => statusOf(i) !== 'published').length,
+        },
+        { label: 'In use', value: inTab.filter(i => i.inUse).length },
+        { label: 'Unused', value: inTab.filter(i => !i.inUse).length },
+      ];
 
   return (
     <>

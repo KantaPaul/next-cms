@@ -222,7 +222,7 @@ const LOOP_ITEM_ROOT_FIELDS: Record<string, FieldDef> = {
  */
 export function editorSetup(kind: string): EditorSetup {
   const setup = baseEditorSetup(kind);
-  if (kind === 'mega-menu') return setup;
+  if (kind === 'mega-menu' || kind === 'popup' || kind === 'drawer') return setup;
   const keepCollection = kind === 'entry' || kind === 'entry-template';
   const strip = <T,>(record: Record<string, T>) =>
     Object.fromEntries(
@@ -367,7 +367,427 @@ function megaMenuEditorSetup(): EditorSetup {
   };
 }
 
+export const OVERLAY_POPUP_POSITIONS = [
+  { label: 'Center modal', value: 'center' },
+  { label: 'Top bar', value: 'top' },
+  { label: 'Bottom bar', value: 'bottom' },
+  { label: 'Top-left corner', value: 'top-left' },
+  { label: 'Top-right corner', value: 'top-right' },
+  { label: 'Bottom-left corner', value: 'bottom-left' },
+  { label: 'Bottom-right corner', value: 'bottom-right' },
+];
+
+export const OVERLAY_DRAWER_POSITIONS = [
+  { label: 'Right slide-in', value: 'right' },
+  { label: 'Left slide-in', value: 'left' },
+  { label: 'Top slide-in', value: 'top' },
+  { label: 'Bottom slide-in', value: 'bottom' },
+];
+
+export const OVERLAY_ALLOWED_TYPES: readonly string[] = [
+  'Container',
+  'Columns',
+  'Heading',
+  'RichText',
+  'Image',
+  'Button',
+  'Newsletter',
+  'ContactForm',
+  'Spacer',
+  'Divider',
+  'OverlayClose',
+];
+
+export const OVERLAY_GROUPS: BlockGroup[] = [
+  { title: 'Layout', types: ['Container', 'Columns', 'Spacer', 'Divider'] },
+  { title: 'Content', types: ['Heading', 'RichText', 'Image'] },
+  {
+    title: 'Actions & Conversion',
+    types: ['Button', 'OverlayClose', 'Newsletter', 'ContactForm'],
+  },
+];
+
+/** Reads a dotted path from overlay root props (fields store nested values via `path`). */
+function rootValue(props: Record<string, unknown>, path: string): unknown {
+  return path
+    .split('.')
+    .reduce<unknown>(
+      (value, key) =>
+        value && typeof value === 'object'
+          ? (value as Record<string, unknown>)[key]
+          : undefined,
+      props
+    );
+}
+
+const PATH_RULE_ITEM: Record<string, FieldDef> = {
+  kind: {
+    label: 'Match',
+    type: 'select',
+    options: [
+      { label: 'All pages', value: 'all' },
+      { label: 'Path starts with', value: 'prefix' },
+      { label: 'Exact path', value: 'exact' },
+      { label: 'Post type', value: 'post-type' },
+      { label: 'Page or post (id or slug)', value: 'entity' },
+    ],
+  } as FieldDef,
+  value: {
+    label: 'Value',
+    type: 'text',
+    placeholder: '/blog',
+    when: (item: Record<string, unknown>) => item.kind !== 'all',
+  } as FieldDef,
+};
+
+function pathRuleLabel(item: Record<string, unknown>): string {
+  if (item.kind === 'all') return 'All pages';
+  const prefix =
+    item.kind === 'prefix'
+      ? 'Starts with'
+      : item.kind === 'exact'
+        ? 'Exactly'
+        : item.kind === 'post-type'
+          ? 'Post type'
+          : 'Entry';
+  return `${prefix} ${String(item.value ?? '')}`.trim();
+}
+
+export function getOverlayRootFields(
+  variant: 'popup' | 'drawer'
+): Record<string, FieldDef> {
+  const isPopup = variant === 'popup';
+  const positionOptions = isPopup
+    ? OVERLAY_POPUP_POSITIONS
+    : OVERLAY_DRAWER_POSITIONS;
+
+  return {
+    // Layout tab
+    position: {
+      label: 'Position',
+      type: 'select',
+      tab: 'layout',
+      group: 'Layout',
+      path: 'layout.position',
+      options: positionOptions,
+    } as FieldDef,
+    width: {
+      label: 'Width',
+      type: 'text',
+      tab: 'layout',
+      group: 'Layout',
+      path: 'layout.width',
+    } as FieldDef,
+    maxHeight: {
+      label: 'Max height',
+      type: 'text',
+      tab: 'layout',
+      group: 'Layout',
+      path: 'layout.maxHeight',
+    } as FieldDef,
+    background: {
+      label: 'Background color',
+      type: 'text',
+      tab: 'layout',
+      group: 'Layout',
+      path: 'layout.background',
+    } as FieldDef,
+    padding: {
+      label: 'Padding',
+      type: 'select',
+      tab: 'layout',
+      group: 'Layout',
+      path: 'layout.padding',
+      options: [
+        { label: 'None', value: 'none' },
+        { label: 'Small', value: 'sm' },
+        { label: 'Medium', value: 'md' },
+        { label: 'Large', value: 'lg' },
+      ],
+    } as FieldDef,
+    radius: {
+      label: 'Corner radius',
+      type: 'select',
+      tab: 'layout',
+      group: 'Layout',
+      path: 'layout.radius',
+      options: [
+        { label: 'None', value: 'none' },
+        { label: 'Small', value: 'sm' },
+        { label: 'Medium', value: 'md' },
+        { label: 'Large', value: 'lg' },
+        { label: 'Full', value: 'full' },
+      ],
+    } as FieldDef,
+    animation: {
+      label: 'Animation',
+      type: 'select',
+      tab: 'layout',
+      group: 'Layout',
+      path: 'layout.animation',
+      options: [
+        { label: 'Scale', value: 'scale' },
+        { label: 'Slide', value: 'slide' },
+        { label: 'Fade', value: 'fade' },
+        { label: 'None', value: 'none' },
+      ],
+    } as FieldDef,
+    overlay: {
+      label: 'Dim backdrop overlay',
+      type: 'toggle',
+      tab: 'layout',
+      group: 'Layout',
+      path: 'layout.overlay',
+    } as FieldDef,
+    overlayColor: {
+      label: 'Backdrop color',
+      type: 'text',
+      tab: 'layout',
+      group: 'Layout',
+      path: 'layout.overlayColor',
+      when: p => rootValue(p, 'layout.overlay') !== false,
+    } as FieldDef,
+    closeOnOverlay: {
+      label: 'Close on backdrop click',
+      type: 'toggle',
+      tab: 'layout',
+      group: 'Layout',
+      path: 'layout.closeOnOverlay',
+    } as FieldDef,
+    closeOnEsc: {
+      label: 'Close on Escape key',
+      type: 'toggle',
+      tab: 'layout',
+      group: 'Layout',
+      path: 'layout.closeOnEsc',
+    } as FieldDef,
+    showCloseButton: {
+      label: 'Show corner close button (X)',
+      type: 'toggle',
+      tab: 'layout',
+      group: 'Layout',
+      path: 'layout.showCloseButton',
+    } as FieldDef,
+
+    // Trigger tab
+    triggerType: {
+      label: 'Trigger type',
+      type: 'select',
+      tab: 'trigger',
+      group: 'Trigger',
+      path: 'trigger.type',
+      options: [
+        { label: 'Page load (immediate)', value: 'load' },
+        { label: 'Time delay', value: 'delay' },
+        { label: 'Scroll depth', value: 'scroll' },
+        { label: 'Exit intent', value: 'exit' },
+        { label: 'Click on element', value: 'click' },
+      ],
+    } as FieldDef,
+    delaySec: {
+      label: 'Delay in seconds',
+      type: 'number',
+      tab: 'trigger',
+      group: 'Trigger',
+      path: 'trigger.delaySec',
+      when: p => rootValue(p, 'trigger.type') === 'delay',
+    } as FieldDef,
+    scrollPercent: {
+      label: 'Scroll depth (%)',
+      type: 'number',
+      tab: 'trigger',
+      group: 'Trigger',
+      path: 'trigger.scrollPercent',
+      when: p => rootValue(p, 'trigger.type') === 'scroll',
+    } as FieldDef,
+    selector: {
+      label: 'Click selector (e.g. .open-cta)',
+      type: 'text',
+      tab: 'trigger',
+      group: 'Trigger',
+      path: 'trigger.selector',
+      when: p => rootValue(p, 'trigger.type') === 'click',
+    } as FieldDef,
+
+    // Targeting tab
+    userState: {
+      label: 'Target visitors',
+      type: 'select',
+      tab: 'targeting',
+      group: 'Targeting',
+      path: 'targeting.userState',
+      options: [
+        { label: 'All visitors', value: 'all' },
+        { label: 'Guests only', value: 'guest' },
+        { label: 'Logged-in members only', value: 'logged-in' },
+      ],
+    } as FieldDef,
+    includePaths: {
+      label: 'Show on',
+      description: 'Leave empty to show on every page.',
+      type: 'list',
+      tab: 'targeting',
+      group: 'Targeting',
+      path: 'targeting.include',
+      item: PATH_RULE_ITEM,
+      defaultItem: { kind: 'prefix', value: '/' },
+      itemLabel: pathRuleLabel,
+    } as FieldDef,
+    excludePaths: {
+      label: 'Never show on',
+      description: 'Exclusions win over the rules above.',
+      type: 'list',
+      tab: 'targeting',
+      group: 'Targeting',
+      path: 'targeting.exclude',
+      item: PATH_RULE_ITEM,
+      defaultItem: { kind: 'exact', value: '/' },
+      itemLabel: pathRuleLabel,
+    } as FieldDef,
+    deviceSet: {
+      label: 'Devices',
+      type: 'select',
+      tab: 'targeting',
+      group: 'Targeting',
+      path: 'targeting.deviceSet',
+      options: [
+        { label: 'All devices', value: 'all' },
+        { label: 'Desktop only', value: 'desktop' },
+        { label: 'Desktop & tablet', value: 'desktop-tablet' },
+        { label: 'Tablet & mobile', value: 'tablet-mobile' },
+        { label: 'Mobile only', value: 'mobile' },
+      ],
+    } as FieldDef,
+
+    // Frequency tab
+    frequencyMode: {
+      label: 'Frequency',
+      type: 'select',
+      tab: 'frequency',
+      group: 'Frequency',
+      path: 'frequency.mode',
+      options: [
+        { label: 'Every page load', value: 'every-page' },
+        { label: 'Once per session', value: 'once-session' },
+        { label: 'Once every X days', value: 'once-per-days' },
+        { label: 'Once ever (permanent)', value: 'once-ever' },
+      ],
+    } as FieldDef,
+    days: {
+      label: 'Days between displays',
+      type: 'number',
+      tab: 'frequency',
+      group: 'Frequency',
+      path: 'frequency.days',
+      when: p => rootValue(p, 'frequency.mode') === 'once-per-days',
+    } as FieldDef,
+    stopAfterConversion: {
+      label: 'Stop after conversion',
+      type: 'toggle',
+      tab: 'frequency',
+      group: 'Frequency',
+      path: 'frequency.stopAfterConversion',
+    } as FieldDef,
+
+    // Schedule tab
+    enabled: {
+      label: 'Overlay enabled',
+      type: 'toggle',
+      tab: 'schedule',
+      group: 'Schedule',
+      path: 'enabled',
+    } as FieldDef,
+    startsAt: {
+      label: 'Start date & time (ISO)',
+      type: 'text',
+      tab: 'schedule',
+      group: 'Schedule',
+      path: 'startsAt',
+    } as FieldDef,
+    endsAt: {
+      label: 'End date & time (ISO)',
+      type: 'text',
+      tab: 'schedule',
+      group: 'Schedule',
+      path: 'endsAt',
+    } as FieldDef,
+  };
+}
+
+export function overlayEditorSetup(variant: 'popup' | 'drawer'): EditorSetup {
+  const allowed = new Set(OVERLAY_ALLOWED_TYPES);
+  const definitions = Object.fromEntries(
+    Object.entries(pageDefinitions)
+      .filter(([type]) => allowed.has(type))
+      .map(([type, definition]) => {
+        const omit = new Set([
+          'section_animation',
+          'section_filter',
+          'section_responsive',
+          'section_attributes',
+        ]);
+        const fields = Object.fromEntries(
+          Object.entries(definition.fields ?? {}).filter(
+            ([key]) => !omit.has(key)
+          )
+        );
+        const slots = definition.slots
+          ? Object.fromEntries(
+              Object.entries(definition.slots).map(([key, slot]) => [
+                key,
+                {
+                  ...slot,
+                  allow: [...allowed].filter(
+                    t => !(type === 'Columns' && t === 'Columns')
+                  ),
+                },
+              ])
+            )
+          : definition.slots;
+        return [
+          type,
+          {
+            ...definition,
+            fields,
+            slots,
+          } as BlockDefinition,
+        ];
+      })
+  );
+
+  const inspectorBlocks = Object.fromEntries(
+    Object.entries(inspectorOf(definitions)).map(([type, block]) => {
+      const omit = new Set([
+        'section_animation',
+        'section_filter',
+        'section_responsive',
+        'section_attributes',
+      ]);
+      return [
+        type,
+        {
+          ...block,
+          fields: Object.fromEntries(
+            Object.entries(block.fields).filter(([key]) => !omit.has(key))
+          ),
+        },
+      ];
+    })
+  );
+
+  return {
+    definitions,
+    schemas: schemasOf(definitions),
+    inspectorBlocks,
+    rootFields: getOverlayRootFields(variant),
+    groups: OVERLAY_GROUPS,
+    renderKind: 'page',
+  };
+}
+
 function baseEditorSetup(kind: string): EditorSetup {
+  if (kind === 'popup') return overlayEditorSetup('popup');
+  if (kind === 'drawer') return overlayEditorSetup('drawer');
   if (kind === 'mega-menu') return megaMenuEditorSetup();
   if (kind === 'loop-item') {
     const definitions = Object.fromEntries(

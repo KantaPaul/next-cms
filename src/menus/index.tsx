@@ -78,6 +78,8 @@ export function getMenuItems(): {
         { name: 'Archives', href: `${PAGES.DASHBOARD.HEADER_FOOTER}?type=archive` },
         { name: 'Search', href: `${PAGES.DASHBOARD.HEADER_FOOTER}?type=search` },
         { name: 'Mega menus', href: `${PAGES.DASHBOARD.HEADER_FOOTER}?type=megamenu` },
+        { name: 'Popups', href: `${PAGES.DASHBOARD.HEADER_FOOTER}?type=popup` },
+        { name: 'Drawers', href: `${PAGES.DASHBOARD.HEADER_FOOTER}?type=drawer` },
       ],
     },
     {

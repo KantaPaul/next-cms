@@ -191,6 +191,7 @@ export function ButtonLink({
   variant = 'primary',
   className,
   style,
+  ...rest
 }: {
   href?: UrlValue;
   children: ReactNode;
@@ -203,6 +204,8 @@ export function ButtonLink({
     | 'ghost-light';
   className?: string;
   style?: CSSProperties;
+  'data-overlay-open'?: string;
+  [key: `data-${string}`]: unknown;
 }) {
   if (!children) return null;
   const link = resolveLinkProps(href);
@@ -212,6 +215,7 @@ export function ButtonLink({
       className={cn('s-btn', `s-btn-${variant}`, className)}
       style={style}
       {...('target' in link ? { target: link.target, rel: link.rel } : {})}
+      {...rest}
     >
       {children}
     </a>

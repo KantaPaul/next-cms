@@ -30,7 +30,9 @@ export default async function HeaderFooterBuilderPage({
   if (
     block.category !== 'Header' &&
     block.category !== 'Footer' &&
-    block.category !== 'MegaMenu'
+    block.category !== 'MegaMenu' &&
+    block.category !== 'Popup' &&
+    block.category !== 'Drawer'
   ) {
     notFound();
   }
@@ -40,7 +42,11 @@ export default async function HeaderFooterBuilderPage({
       ? 'header'
       : block.category === 'Footer'
         ? 'footer'
-        : 'mega-menu';
+        : block.category === 'MegaMenu'
+          ? 'mega-menu'
+          : block.category === 'Popup'
+            ? 'popup'
+            : 'drawer';
   const isPublished = !!block.publishedAt;
   const hasUnpublishedChanges =
     !isPublished ||

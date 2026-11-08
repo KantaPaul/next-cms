@@ -5,8 +5,11 @@ import { renderBuilderContent } from '@/builder/render-content';
 import { HeaderShell } from '@/components/site/header-shell';
 import { LanguageSwitcher } from '@/components/site/language-switcher';
 import { MenuLinks } from '@/components/site/menu-links';
+import { OverlayHost } from '@/components/site/overlay-host';
 import { siteHref } from '@/lib/utils/site-href';
+import { validateRequest } from '@/server/actions/auth.actions';
 import { blogService, resolvePostRoute } from '@/server/services/blog.service';
+import { overlayService } from '@/server/services/overlay.service';
 import { getPreviewSession } from '@/server/services/preview-session';
 import {
   publicSiteService,
@@ -72,6 +75,8 @@ export async function SiteChrome({
     if (postData?.view) {
       currentEntity = {
         type: 'post',
+        id: (postData.view as { id?: string }).id,
+        slug: postRoute.slug,
         headerTemplateId: postData.view.headerTemplateId,
         footerTemplateId: postData.view.footerTemplateId,
         categoryIds: postData.view.categories?.map(c => c.id),
@@ -93,6 +98,8 @@ export async function SiteChrome({
     if (pageData) {
       currentEntity = {
         type: 'page',
+        id: (pageData as { id?: string }).id,
+        slug: pageRoute.slug,
         headerTemplateId: pageData.headerTemplateId,
         footerTemplateId: pageData.footerTemplateId,
       };
@@ -191,10 +198,41 @@ export async function SiteChrome({
     }
   }
 
-  const [header, footer] = await Promise.all([
+  const [header, footer, session] = await Promise.all([
     publicSiteService.menuFor('header', language, site),
     publicSiteService.menuFor('footer', language, site),
+    validateRequest().catch(() => null),
   ]);
+
+  const userState: 'guest' | 'logged-in' = session?.user ? 'logged-in' : 'guest';
+  // Popups and drawers are optional extras: a failure here must not take the page down.
+  const activeOverlays = await overlayService
+    .activeFor({
+      siteId: site.id,
+      pathname,
+      entity: currentEntity
+        ? {
+            type: currentEntity.type,
+            id: typeof currentEntity.id === 'string' ? currentEntity.id : undefined,
+            slug:
+              typeof currentEntity.slug === 'string'
+                ? currentEntity.slug
+                : undefined,
+          }
+        : null,
+      userState,
+      draft: !!preview,
+      metadata: {
+        themeTokens: settings.themeTokens,
+        siteId: site.id,
+        siteSlug,
+        language,
+      },
+    })
+    .catch(error => {
+      console.error('Failed to load popups/drawers:', error);
+      return [];
+    });
 
   return (
     <>
@@ -271,6 +309,7 @@ export async function SiteChrome({
             </p>
           </footer>
         ))}
+      <OverlayHost overlays={activeOverlays} />
     </>
   );
 }

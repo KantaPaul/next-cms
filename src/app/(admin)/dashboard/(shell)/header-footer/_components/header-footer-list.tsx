@@ -2,7 +2,19 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { Archive, Check, Globe, LayoutPanelTop, LayoutTemplate, PanelBottom, PanelTop, Plus, Search } from 'lucide-react';
+import {
+  Archive,
+  Check,
+  Globe,
+  LayoutPanelTop,
+  LayoutTemplate,
+  Maximize2,
+  PanelBottom,
+  PanelRight,
+  PanelTop,
+  Plus,
+  Search,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useMemo, useState, useTransition } from 'react';
@@ -12,6 +24,8 @@ import {
   STARTERS_BY_CATEGORY,
   type SiteTemplateCategory,
 } from '@/db/seed/header-footer-starters';
+import type { OverlaySettings } from '@/lib/overlays/types';
+import { Switch } from '@/components/ui/switch';
 import {
   ActionDropdown,
   ActionDropdownItem,
@@ -37,6 +51,7 @@ import {
   duplicateHeaderFooter,
   renameHeaderFooter,
 } from '../_modules/header-footer.actions';
+import { toggleOverlayEnabled } from '../_modules/overlays.actions';
 import { siteTemplateEditHref } from '../_modules/site-template-href';
 import { DisplayConditionsDialog } from './display-conditions-dialog';
 
@@ -75,6 +90,18 @@ const TABS: {
     label: 'Mega menus',
     icon: LayoutPanelTop,
     emptyHint: 'Design a wide dropdown panel in the visual builder, then attach it to a top-level item on the Menus screen.',
+  },
+  {
+    value: 'Popup',
+    label: 'Popups',
+    icon: Maximize2,
+    emptyHint: 'Design on-page modal popups with triggers, frequency caps, and visual blocks.',
+  },
+  {
+    value: 'Drawer',
+    label: 'Drawers',
+    icon: PanelRight,
+    emptyHint: 'Design slide-in drawers from any screen edge with custom triggers and actions.',
   },
 ];
 
@@ -165,6 +192,65 @@ function AssignedCell({ item }: { item: HeaderFooterItem }) {
   );
 }
 
+function getTriggerSummary(settings?: OverlaySettings | null): string {
+  if (!settings?.trigger) return '—';
+  const t = settings.trigger;
+  switch (t.type) {
+    case 'load':
+      return 'Page load';
+    case 'delay':
+      return `Delay (${t.delaySec ?? 0}s)`;
+    case 'scroll':
+      return `Scroll (${t.scrollPercent ?? 0}%)`;
+    case 'exit':
+      return 'Exit intent';
+    case 'click':
+      return t.selector ? `Click (${t.selector})` : 'Click trigger';
+    default:
+      return t.type ?? '—';
+  }
+}
+
+function getScheduleStatus(settings?: OverlaySettings | null): {
+  label: string;
+  className: string;
+} {
+  if (!settings?.enabled) {
+    return {
+      label: 'Off',
+      className:
+        'bg-steel-100 text-steel-700 dark:bg-dark-200 dark:text-steel-300',
+    };
+  }
+  const now = Date.now();
+  if (settings.startsAt && new Date(settings.startsAt).getTime() > now) {
+    return {
+      label: 'Scheduled',
+      className:
+        'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300',
+    };
+  }
+  if (settings.endsAt && new Date(settings.endsAt).getTime() < now) {
+    return {
+      label: 'Expired',
+      className:
+        'bg-steel-100 text-steel-700 dark:bg-dark-200 dark:text-steel-300',
+    };
+  }
+  if (settings.startsAt || settings.endsAt) {
+    return {
+      label: 'Active (Scheduled)',
+      className:
+        'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300',
+    };
+  }
+  return {
+    label: 'Enabled',
+    className:
+      'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300',
+  };
+}
+
 export function HeaderFooterList({
   rows,
   totalCount,
@@ -176,7 +262,7 @@ export function HeaderFooterList({
   rows: HeaderFooterItem[];
   totalCount: number;
   tabCounts: Record<SiteTemplateCategory, number>;
-  kpis: { label: string; value: number }[];
+  kpis: { label: string; value: number | string }[];
   initialTab?: SiteTemplateCategory;
   can: { create: boolean; delete: boolean };
 }) {
@@ -229,83 +315,233 @@ export function HeaderFooterList({
     setPendingId(null);
   };
 
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  const handleToggle = async (item: HeaderFooterItem, checked: boolean) => {
+    setTogglingId(item.id);
+    await handleActionResponse(
+      toggleOverlayEnabled({ id: item.id, enabled: checked }),
+      () => {
+        toast.success(`${item.name} ${checked ? 'enabled' : 'disabled'}`);
+        router.refresh();
+      }
+    );
+    setTogglingId(null);
+  };
+
+  const isOverlay = activeTab === 'Popup' || activeTab === 'Drawer';
+
   const columns = useMemo<ColumnDef<HeaderFooterItem>[]>(
-    () => [
-      {
-        id: 'name',
-        header: 'Name',
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <Link
-              href={siteTemplateEditHref(row.original.id, row.original.category)}
-              className="font-medium hover:underline"
-            >
-              {row.original.name}
-            </Link>
-            <StatusChip item={row.original} />
-          </div>
-        ),
-      },
-      {
-        id: 'assigned',
-        header: 'Assigned as',
-        cell: ({ row }) => <AssignedCell item={row.original} />,
-      },
-      {
-        id: 'updatedAt',
-        header: 'Updated',
-        cell: ({ row }) => (
-          <span className="text-xs text-steel-500">
-            {row.original.updatedAt
-              ? format(new Date(row.original.updatedAt), 'MMM d, yyyy')
-              : '—'}
-          </span>
-        ),
-      },
-      {
-        id: 'author',
-        header: 'Author',
-        cell: ({ row }) => (
-          <span className="text-xs text-steel-500">
-            {row.original.createdByName ?? '—'}
-          </span>
-        ),
-      },
-      {
-        id: 'actions',
-        header: () => <span className="sr-only">Actions</span>,
-        cell: ({ row }) => {
-          const item = row.original;
-          return (
-            <div className="flex justify-end">
-              <ActionDropdown isLoading={pendingId === item.id} variant="vertical">
-                <ActionDropdownItem
-                  href={siteTemplateEditHref(item.id, item.category)}
-                  label="Edit in builder"
-                />
-                {item.category !== 'MegaMenu' && (
-                  <ActionDropdownItem
-                    label="Display conditions"
-                    onClick={() => setConditionsItem(item)}
+    () => {
+      if (isOverlay) {
+        return [
+          {
+            id: 'name',
+            header: 'Name',
+            cell: ({ row }) => (
+              <div className="flex min-w-[220px] flex-col items-start gap-1">
+                <Link
+                  href={siteTemplateEditHref(row.original.id, row.original.category)}
+                  className="font-medium hover:underline"
+                >
+                  {row.original.name}
+                </Link>
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusChip item={row.original} />
+                  <code
+                    className="select-all rounded bg-steel-100 px-1.5 py-0.5 font-mono text-[11px] text-steel-600 dark:bg-dark-200 dark:text-steel-300"
+                    title="Use this ID in a Button's “Open popup/drawer” action, or link to #overlay:<id>"
+                  >
+                    {row.original.id}
+                  </code>
+                </div>
+              </div>
+            ),
+          },
+          {
+            id: 'enabled',
+            header: 'Enabled',
+            cell: ({ row }) => {
+              const item = row.original;
+              const isEnabled = item.overlaySettings?.enabled ?? true;
+              return (
+                <div className="flex items-center">
+                  <Switch
+                    checked={isEnabled}
+                    disabled={togglingId === item.id}
+                    onChange={checked => handleToggle(item, checked)}
+                    aria-label={`Toggle ${item.name}`}
                   />
-                )}
-                <ActionDropdownItem label="Duplicate" onClick={() => duplicate(item)} />
-                <ActionDropdownItem label="Rename" onClick={() => setRenaming(item)} />
-                {can.delete && (
-                  <ActionDropdownItem
-                    label="Delete"
-                    className="text-red-600 dark:text-red-400"
-                    onClick={() => remove(item)}
-                  />
-                )}
-              </ActionDropdown>
+                </div>
+              );
+            },
+          },
+          {
+            id: 'status',
+            header: 'Status',
+            cell: ({ row }) => {
+              const s = getScheduleStatus(row.original.overlaySettings);
+              return (
+                <span
+                  className={cn(
+                    'inline-flex items-center rounded px-2 py-0.5 text-xs font-medium',
+                    s.className
+                  )}
+                >
+                  {s.label}
+                </span>
+              );
+            },
+          },
+          {
+            id: 'trigger',
+            header: 'Trigger',
+            cell: ({ row }) => (
+              <span className="text-xs text-steel-700 dark:text-steel-300">
+                {getTriggerSummary(row.original.overlaySettings)}
+              </span>
+            ),
+          },
+          {
+            id: 'views',
+            header: 'Views (30d)',
+            cell: ({ row }) => (
+              <span className="text-xs font-mono text-steel-600 dark:text-steel-400">
+                {row.original.overlayStats?.views?.toLocaleString() ?? 0}
+              </span>
+            ),
+          },
+          {
+            id: 'conversions',
+            header: 'Conv. Rate',
+            cell: ({ row }) => {
+              const stats = row.original.overlayStats;
+              const rate = stats?.conversionRate ?? 0;
+              const convs = stats?.conversions ?? 0;
+              return (
+                <span className="text-xs font-mono text-steel-600 dark:text-steel-400">
+                  {rate.toFixed(1)}% ({convs.toLocaleString()})
+                </span>
+              );
+            },
+          },
+          {
+            id: 'updatedAt',
+            header: 'Updated',
+            cell: ({ row }) => (
+              <span className="text-xs text-steel-500">
+                {row.original.updatedAt
+                  ? format(new Date(row.original.updatedAt), 'MMM d, yyyy')
+                  : '—'}
+              </span>
+            ),
+          },
+          {
+            id: 'actions',
+            header: () => <span className="sr-only">Actions</span>,
+            cell: ({ row }) => {
+              const item = row.original;
+              return (
+                <div className="flex justify-end">
+                  <ActionDropdown isLoading={pendingId === item.id} variant="vertical">
+                    <ActionDropdownItem
+                      href={siteTemplateEditHref(item.id, item.category)}
+                      label="Edit in builder"
+                    />
+                    <ActionDropdownItem label="Duplicate" onClick={() => duplicate(item)} />
+                    <ActionDropdownItem label="Rename" onClick={() => setRenaming(item)} />
+                    {can.delete && (
+                      <ActionDropdownItem
+                        label="Delete"
+                        className="text-red-600 dark:text-red-400"
+                        onClick={() => remove(item)}
+                      />
+                    )}
+                  </ActionDropdown>
+                </div>
+              );
+            },
+          },
+        ];
+      }
+
+      return [
+        {
+          id: 'name',
+          header: 'Name',
+          cell: ({ row }) => (
+            <div className="flex items-center gap-2">
+              <Link
+                href={siteTemplateEditHref(row.original.id, row.original.category)}
+                className="font-medium hover:underline"
+              >
+                {row.original.name}
+              </Link>
+              <StatusChip item={row.original} />
             </div>
-          );
+          ),
         },
-      },
-    ],
+        {
+          id: 'assigned',
+          header: 'Assigned as',
+          cell: ({ row }) => <AssignedCell item={row.original} />,
+        },
+        {
+          id: 'updatedAt',
+          header: 'Updated',
+          cell: ({ row }) => (
+            <span className="text-xs text-steel-500">
+              {row.original.updatedAt
+                ? format(new Date(row.original.updatedAt), 'MMM d, yyyy')
+                : '—'}
+            </span>
+          ),
+        },
+        {
+          id: 'author',
+          header: 'Author',
+          cell: ({ row }) => (
+            <span className="text-xs text-steel-500">
+              {row.original.createdByName ?? '—'}
+            </span>
+          ),
+        },
+        {
+          id: 'actions',
+          header: () => <span className="sr-only">Actions</span>,
+          cell: ({ row }) => {
+            const item = row.original;
+            return (
+              <div className="flex justify-end">
+                <ActionDropdown isLoading={pendingId === item.id} variant="vertical">
+                  <ActionDropdownItem
+                    href={siteTemplateEditHref(item.id, item.category)}
+                    label="Edit in builder"
+                  />
+                  {item.category !== 'MegaMenu' && item.category !== 'Popup' && item.category !== 'Drawer' && (
+                    <ActionDropdownItem
+                      label="Display conditions"
+                      onClick={() => setConditionsItem(item)}
+                    />
+                  )}
+                  <ActionDropdownItem label="Duplicate" onClick={() => duplicate(item)} />
+                  <ActionDropdownItem label="Rename" onClick={() => setRenaming(item)} />
+                  {can.delete && (
+                    <ActionDropdownItem
+                      label="Delete"
+                      className="text-red-600 dark:text-red-400"
+                      onClick={() => remove(item)}
+                    />
+                  )}
+                </ActionDropdown>
+              </div>
+            );
+          },
+        },
+      ];
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [pendingId, can.delete]
+    [pendingId, can.delete, isOverlay, togglingId]
   );
 
   return (

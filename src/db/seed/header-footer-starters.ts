@@ -1,4 +1,8 @@
 import type { BuilderData, BuilderItem } from '@/builder/data';
+import {
+  DEFAULT_DRAWER_SETTINGS,
+  DEFAULT_POPUP_SETTINGS,
+} from '@/lib/overlays/types';
 
 /** Global-block categories managed on the Site templates screen. */
 export type SiteTemplateCategory =
@@ -6,7 +10,9 @@ export type SiteTemplateCategory =
   | 'Footer'
   | 'Search'
   | 'Archive'
-  | 'MegaMenu';
+  | 'MegaMenu'
+  | 'Popup'
+  | 'Drawer';
 
 export const SITE_TEMPLATE_CATEGORIES: readonly SiteTemplateCategory[] = [
   'Header',
@@ -14,6 +20,8 @@ export const SITE_TEMPLATE_CATEGORIES: readonly SiteTemplateCategory[] = [
   'Search',
   'Archive',
   'MegaMenu',
+  'Popup',
+  'Drawer',
 ];
 
 export type StarterTemplate = {
@@ -1991,12 +1999,368 @@ export const MEGA_MENU_STARTERS: StarterTemplate[] = [
   MEGA_STARTER_VISUAL,
 ];
 
+export const POPUP_STARTER_NEWSLETTER: StarterTemplate = {
+  key: 'newsletter-popup',
+  name: 'Newsletter Popup',
+  description: 'Centered modal with headline, subtitle, newsletter signup and close button.',
+  category: 'Popup',
+  content: {
+    root: {
+      props: {
+        ...DEFAULT_POPUP_SETTINGS,
+      },
+    },
+    content: [
+      {
+        type: 'Container',
+        props: {
+          section: { paddingY: 'none' },
+          container: {
+            mode: 'flex',
+            tag: 'div',
+            direction: { desktop: 'column' },
+            wrap: { desktop: 'nowrap' },
+            justify: { desktop: 'start' },
+            alignItems: { desktop: 'stretch' },
+            alignContent: { desktop: 'start' },
+            gap: { desktop: 16 },
+            boxSizing: 'border-box',
+          },
+          id: 'popup-container',
+          width: 'full',
+          paddingY: 'md',
+        },
+      },
+    ],
+    zones: {
+      'popup-container:content': [
+        {
+          type: 'Heading',
+          props: {
+            section: { paddingY: 'none' },
+            id: 'popup-heading',
+            text: 'Join our weekly dispatch',
+            level: 'h2',
+            alignment: 'center',
+          },
+        },
+        {
+          type: 'RichText',
+          props: {
+            section: { paddingY: 'none' },
+            id: 'popup-body',
+            content: '<p style="text-align: center;">Get thoughtful perspectives, design notes and curated essays delivered to your inbox every Sunday.</p>',
+          },
+        },
+        {
+          type: 'Newsletter',
+          props: {
+            section: { paddingY: 'none' },
+            id: 'popup-newsletter',
+            title: '',
+            buttonText: 'Subscribe',
+          },
+        },
+        {
+          type: 'OverlayClose',
+          props: {
+            section: { paddingY: 'none' },
+            id: 'popup-dismiss',
+            label: 'No thanks, maybe later',
+            variant: 'link',
+            alignment: 'center',
+          },
+        },
+      ],
+    },
+  },
+};
+
+export const POPUP_STARTER_PROMO: StarterTemplate = {
+  key: 'promo-popup',
+  name: 'Promo & Discount Popup',
+  description: 'Special promo modal with announcement headline, call to action and dismiss button.',
+  category: 'Popup',
+  content: {
+    root: {
+      props: {
+        ...DEFAULT_POPUP_SETTINGS,
+        layout: {
+          ...DEFAULT_POPUP_SETTINGS.layout,
+          width: '520px',
+        },
+        trigger: {
+          type: 'delay',
+          delaySec: 5,
+        },
+      },
+    },
+    content: [
+      {
+        type: 'Container',
+        props: {
+          section: { paddingY: 'none' },
+          container: {
+            mode: 'flex',
+            tag: 'div',
+            direction: { desktop: 'column' },
+            wrap: { desktop: 'nowrap' },
+            justify: { desktop: 'start' },
+            alignItems: { desktop: 'stretch' },
+            alignContent: { desktop: 'start' },
+            gap: { desktop: 16 },
+            boxSizing: 'border-box',
+          },
+          id: 'promo-container',
+          width: 'full',
+          paddingY: 'md',
+        },
+      },
+    ],
+    zones: {
+      'promo-container:content': [
+        {
+          type: 'Heading',
+          props: {
+            section: { paddingY: 'none' },
+            id: 'promo-heading',
+            text: 'Limited-Time: 20% Off All Plans',
+            level: 'h2',
+            alignment: 'center',
+          },
+        },
+        {
+          type: 'RichText',
+          props: {
+            section: { paddingY: 'none' },
+            id: 'promo-body',
+            content: '<p style="text-align: center;">Upgrade this week and lock in early-bird pricing for life. Use code <strong>LAUNCH20</strong> at checkout.</p>',
+          },
+        },
+        {
+          type: 'Button',
+          props: {
+            section: { paddingY: 'none' },
+            id: 'promo-cta',
+            label: 'Claim Your Discount',
+            link: '/pricing',
+            variant: 'primary',
+            alignment: 'center',
+          },
+        },
+        {
+          type: 'OverlayClose',
+          props: {
+            section: { paddingY: 'none' },
+            id: 'promo-close',
+            label: 'Dismiss offer',
+            variant: 'link',
+            alignment: 'center',
+          },
+        },
+      ],
+    },
+  },
+};
+
+export const DRAWER_STARTER_INFO: StarterTemplate = {
+  key: 'info-drawer',
+  name: 'Cart / Info Drawer',
+  description: 'Slide-in side drawer from right with overview details, links and actions.',
+  category: 'Drawer',
+  content: {
+    root: {
+      props: {
+        ...DEFAULT_DRAWER_SETTINGS,
+      },
+    },
+    content: [
+      {
+        type: 'Container',
+        props: {
+          section: { paddingY: 'none' },
+          container: {
+            mode: 'flex',
+            tag: 'div',
+            direction: { desktop: 'column' },
+            wrap: { desktop: 'nowrap' },
+            justify: { desktop: 'start' },
+            alignItems: { desktop: 'stretch' },
+            alignContent: { desktop: 'start' },
+            gap: { desktop: 16 },
+            boxSizing: 'border-box',
+          },
+          id: 'drawer-container',
+          width: 'full',
+          paddingY: 'md',
+        },
+      },
+    ],
+    zones: {
+      'drawer-container:content': [
+        {
+          type: 'Heading',
+          props: {
+            section: { paddingY: 'none' },
+            id: 'drawer-heading',
+            text: 'Quick Overview',
+            level: 'h3',
+          },
+        },
+        {
+          type: 'RichText',
+          props: {
+            section: { paddingY: 'none' },
+            id: 'drawer-body',
+            content: '<p>Explore resources, documentation guides and direct help channels.</p>',
+          },
+        },
+        {
+          type: 'Button',
+          props: {
+            section: { paddingY: 'none' },
+            id: 'drawer-cta',
+            label: 'Open Documentation',
+            link: '/docs',
+            variant: 'primary',
+          },
+        },
+        {
+          type: 'OverlayClose',
+          props: {
+            section: { paddingY: 'none' },
+            id: 'drawer-close-btn',
+            label: 'Close Drawer',
+            variant: 'button',
+            buttonStyle: 'outline',
+          },
+        },
+      ],
+    },
+  },
+};
+
+export const DRAWER_STARTER_COOKIE: StarterTemplate = {
+  key: 'cookie-bottom-drawer',
+  name: 'Cookie & Notice Drawer',
+  description: 'Slide-in bottom drawer with consent information, accept action and preferences link.',
+  category: 'Drawer',
+  content: {
+    root: {
+      props: {
+        ...DEFAULT_DRAWER_SETTINGS,
+        layout: {
+          ...DEFAULT_DRAWER_SETTINGS.layout,
+          position: 'bottom',
+          width: '100%',
+          maxHeight: '40vh',
+        },
+        trigger: {
+          type: 'load',
+        },
+        frequency: {
+          mode: 'once-ever',
+          stopAfterConversion: true,
+        },
+      },
+    },
+    content: [
+      {
+        type: 'Container',
+        props: {
+          section: { paddingY: 'none' },
+          container: {
+            mode: 'flex',
+            tag: 'div',
+            direction: { desktop: 'column' },
+            wrap: { desktop: 'nowrap' },
+            justify: { desktop: 'start' },
+            alignItems: { desktop: 'stretch' },
+            alignContent: { desktop: 'start' },
+            gap: { desktop: 16 },
+            boxSizing: 'border-box',
+          },
+          id: 'cookie-container',
+          width: 'full',
+          paddingY: 'sm',
+        },
+      },
+    ],
+    zones: {
+      'cookie-container:content': [
+        {
+          type: 'Heading',
+          props: {
+            section: { paddingY: 'none' },
+            id: 'cookie-heading',
+            text: 'We value your privacy',
+            level: 'h4',
+          },
+        },
+        {
+          type: 'RichText',
+          props: {
+            section: { paddingY: 'none' },
+            id: 'cookie-body',
+            content: '<p>We use essential cookies to make our site work and optional analytics to understand how you interact with our pages.</p>',
+          },
+        },
+        {
+          type: 'Columns',
+          props: {
+            section: { paddingY: 'none' },
+            id: 'cookie-actions',
+            columns: 2,
+            gap: 'sm',
+          },
+        },
+      ],
+      'cookie-actions:column1': [
+        {
+          type: 'OverlayClose',
+          props: {
+            section: { paddingY: 'none' },
+            id: 'cookie-accept',
+            label: 'Accept all cookies',
+            variant: 'button',
+            buttonStyle: 'primary',
+          },
+        },
+      ],
+      'cookie-actions:column2': [
+        {
+          type: 'OverlayClose',
+          props: {
+            section: { paddingY: 'none' },
+            id: 'cookie-decline',
+            label: 'Necessary only',
+            variant: 'button',
+            buttonStyle: 'outline',
+          },
+        },
+      ],
+    },
+  },
+};
+
+export const POPUP_STARTERS: StarterTemplate[] = [
+  POPUP_STARTER_NEWSLETTER,
+  POPUP_STARTER_PROMO,
+];
+
+export const DRAWER_STARTERS: StarterTemplate[] = [
+  DRAWER_STARTER_INFO,
+  DRAWER_STARTER_COOKIE,
+];
+
 export const STARTERS_BY_CATEGORY: Record<SiteTemplateCategory, StarterTemplate[]> = {
   Header: HEADER_STARTERS,
   Footer: FOOTER_STARTERS,
   Search: SEARCH_STARTERS,
   Archive: ARCHIVE_STARTERS,
   MegaMenu: MEGA_MENU_STARTERS,
+  Popup: POPUP_STARTERS,
+  Drawer: DRAWER_STARTERS,
 };
 
 export function getStarterContent(

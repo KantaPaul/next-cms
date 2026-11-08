@@ -25,6 +25,8 @@ export type BuilderKind =
   | 'header'
   | 'footer'
   | 'mega-menu'
+  | 'popup'
+  | 'drawer'
   | 'loop-item';
 
 export type BuilderContextValue = {

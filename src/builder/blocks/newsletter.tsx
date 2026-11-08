@@ -2,9 +2,8 @@
 
 import { type FormEvent, useId, useState } from 'react';
 import { cn } from '@/lib/utils/cn';
-import { type SectionSettings, Section } from './section';
-
-type WithSection = { section?: SectionSettings; editing?: boolean };
+import { el, type WithSection } from './element';
+import { Section } from './section';
 
 export type NewsletterProps = WithSection & {
   title?: string;
@@ -15,7 +14,19 @@ export type NewsletterProps = WithSection & {
   successMessage?: string;
   /** "centered" band, or "compact" left-aligned (footers, sidebars). */
   layout?: 'centered' | 'compact';
+  /** Where the submit button sits relative to the email field. */
+  buttonPosition?: 'right' | 'left' | 'top' | 'bottom';
+  /** "auto" fits the label; "full" fills the row (stacked) or shares it with the field (side by side). */
+  buttonWidth?: 'auto' | 'full';
 };
+
+/** Flex direction per button position; DOM order stays input → button. */
+const BUTTON_POSITION_CLASS = {
+  right: 'flex-row',
+  left: 'flex-row-reverse',
+  top: 'flex-col-reverse',
+  bottom: 'flex-col',
+} as const;
 
 const DEFAULT_SUCCESS = 'Thanks! You are on the list.';
 
@@ -23,6 +34,9 @@ export function Newsletter(p: NewsletterProps) {
   const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
   const inputId = useId();
   const compact = p.layout === 'compact';
+  const position = p.buttonPosition ?? 'right';
+  const stacked = position === 'top' || position === 'bottom';
+  const fullButton = (p.buttonWidth ?? (stacked ? 'full' : 'auto')) === 'full';
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -48,15 +62,14 @@ export function Newsletter(p: NewsletterProps) {
   };
 
   if (state === 'sent') {
+    const success = el(
+      p,
+      'success',
+      cn('s-soft-primary s-radius p-6 font-medium', !compact && 'text-center')
+    );
     return (
       <Section section={p.section} editing={p.editing}>
-        <div
-          role="status"
-          className={cn(
-            's-soft-primary s-radius p-6 font-medium',
-            !compact && 'text-center'
-          )}
-        >
+        <div role="status" {...success}>
           {p.successMessage || DEFAULT_SUCCESS}
         </div>
       </Section>
@@ -68,18 +81,20 @@ export function Newsletter(p: NewsletterProps) {
       <div className={compact ? 'max-w-md' : 'mx-auto max-w-2xl text-center'}>
         {p.title ? (
           compact ? (
-            <h3 className="text-lg font-semibold">{p.title}</h3>
+            <h3 {...el(p, 'title', 'text-lg font-semibold')}>{p.title}</h3>
           ) : (
-            <h2 className="s-section-title">{p.title}</h2>
+            <h2 {...el(p, 'title', 's-section-title')}>{p.title}</h2>
           )
         ) : null}
         {p.text ? (
-          <p className={cn('s-muted', compact ? 'mt-2 text-sm' : 'mt-4 text-lg')}>
+          <p
+            {...el(p, 'description', cn('s-muted', compact ? 'mt-2 text-sm' : 'mt-4 text-lg'))}
+          >
             {p.text}
           </p>
         ) : null}
         {p.subtitle ? (
-          <p className={cn('s-muted', compact ? 'mt-1 text-sm' : 'mt-2')}>
+          <p {...el(p, 'subtitle', cn('s-muted', compact ? 'mt-1 text-sm' : 'mt-2'))}>
             {p.subtitle}
           </p>
         ) : null}
@@ -88,6 +103,7 @@ export function Newsletter(p: NewsletterProps) {
           name="newsletter"
           className={cn(
             'relative mt-6 flex max-w-md gap-2',
+            BUTTON_POSITION_CLASS[position] ?? 'flex-row',
             compact ? 'mt-4' : 'mx-auto'
           )}
         >
@@ -100,7 +116,7 @@ export function Newsletter(p: NewsletterProps) {
             type="email"
             required
             placeholder={p.placeholder || 'you@example.com'}
-            className="s-input h-11 w-full"
+            {...el(p, 'input', cn('s-input h-11', stacked ? 'w-full' : 'min-w-0 flex-1'))}
           />
           {/* Honeypot: bots fill it in; real users never see or submit it. */}
           <input
@@ -114,7 +130,16 @@ export function Newsletter(p: NewsletterProps) {
           <button
             type="submit"
             disabled={state === 'sending'}
-            className="s-btn s-btn-primary disabled:opacity-60"
+            {...el(
+              p,
+              'button',
+              cn(
+                's-btn s-btn-primary disabled:opacity-60',
+                !fullButton && 'shrink-0',
+                fullButton && (stacked ? 'w-full' : 'flex-1'),
+                stacked && !fullButton && 'self-start'
+              )
+            )}
           >
             {state === 'sending' ? 'Sending…' : p.submitText || 'Subscribe'}
           </button>

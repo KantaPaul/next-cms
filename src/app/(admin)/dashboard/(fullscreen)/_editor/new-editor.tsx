@@ -83,6 +83,7 @@ import {
   E12ControlsProvider,
 } from '@nextcms/builder-react';
 import { PreferencesPanel } from '@nextcms/builder-react';
+import { cn } from '@/lib/utils/cn';
 import {
   Button as ChromeButton,
   IconButton as ChromeIconButton,
@@ -224,18 +225,22 @@ function EditorSiteRoot({
   collectionEntry,
   loopPreviewItem,
   megaMenu,
+  overlayKind,
   children,
 }: {
   metadata: Record<string, unknown>;
   collectionEntry?: any;
   /** Mega menus preview as a dropdown panel under a mock header bar. */
   megaMenu?: boolean;
+  /** Popups and Drawers preview docked to sides or centered over a mock dimmed page. */
+  overlayKind?: 'popup' | 'drawer' | null;
   /** Loop Item templates: the item the canvas renders, in a card-sized frame. */
   loopPreviewItem?: NormalizedListingItem | null;
   children: ReactNode;
 }) {
   const rootProps = useEditor(state => state.doc.root.props);
   const width = Number(rootProps?.previewWidth) || 400;
+  const layout = ((rootProps as any)?.layout ?? {}) as Record<string, any>;
   return (
     <EntryProvider entry={collectionEntry ?? null}>
       <SiteRoot rootProps={rootProps} metadata={{ ...metadata, editing: true }}>
@@ -263,6 +268,103 @@ function EditorSiteRoot({
               >
                 {children}
               </MegaMenuPanel>
+            </div>
+          </div>
+        ) : overlayKind ? (
+          <div
+            data-overlay-frame
+            className="relative min-h-[85vh] w-full overflow-hidden bg-muted/40 p-4"
+          >
+            {/* Dimmed fake background page */}
+            <div className="pointer-events-none select-none opacity-20 filter blur-[1px]">
+              <div className="s-border mx-auto flex h-14 w-full max-w-5xl items-center justify-between border-b px-4 text-sm">
+                <span className="font-bold text-lg">Acme Corp</span>
+                <div className="flex gap-6">
+                  <span>Home</span>
+                  <span>Products</span>
+                  <span>About</span>
+                  <span>Contact</span>
+                </div>
+              </div>
+              <div className="mx-auto mt-12 max-w-4xl space-y-6 px-4">
+                <div className="h-10 w-2/3 rounded bg-current opacity-30" />
+                <div className="h-5 w-full rounded bg-current opacity-20" />
+                <div className="h-5 w-4/5 rounded bg-current opacity-20" />
+                <div className="grid grid-cols-3 gap-6 pt-8">
+                  <div className="h-36 rounded-lg border border-current opacity-20 p-4" />
+                  <div className="h-36 rounded-lg border border-current opacity-20 p-4" />
+                  <div className="h-36 rounded-lg border border-current opacity-20 p-4" />
+                </div>
+              </div>
+            </div>
+
+            {/* Backdrop overlay */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                backgroundColor:
+                  layout.overlay !== false
+                    ? layout.overlayColor || 'rgba(0,0,0,0.45)'
+                    : 'transparent',
+              }}
+            />
+
+            {/* Overlay preview container */}
+            <div
+              className={cn(
+                'absolute z-20 overflow-y-auto shadow-2xl transition-all',
+                overlayKind === 'drawer'
+                  ? layout.position === 'left'
+                    ? 'top-0 left-0 bottom-0 h-full border-r'
+                    : layout.position === 'top'
+                      ? 'top-0 left-0 right-0 w-full border-b'
+                      : layout.position === 'bottom'
+                        ? 'bottom-0 left-0 right-0 w-full border-t'
+                        : 'top-0 right-0 bottom-0 h-full border-l'
+                  : layout.position === 'top-left'
+                    ? 'top-6 left-6 border'
+                    : layout.position === 'top-right'
+                      ? 'top-6 right-6 border'
+                      : layout.position === 'bottom-left'
+                        ? 'bottom-6 left-6 border'
+                        : layout.position === 'bottom-right'
+                          ? 'bottom-6 right-6 border'
+                          : layout.position === 'top'
+                            ? 'top-6 left-1/2 -translate-x-1/2 border'
+                            : layout.position === 'bottom'
+                              ? 'bottom-6 left-1/2 -translate-x-1/2 border'
+                              : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border',
+                layout.radius === 'none'
+                  ? 'rounded-none'
+                  : layout.radius === 'sm'
+                    ? 'rounded-md'
+                    : layout.radius === 'lg'
+                      ? 'rounded-2xl'
+                      : layout.radius === 'full'
+                        ? 'rounded-3xl'
+                        : 'rounded-xl',
+                layout.padding === 'none'
+                  ? 'p-0'
+                  : layout.padding === 'sm'
+                    ? 'p-3'
+                    : layout.padding === 'lg'
+                      ? 'p-8'
+                      : 'p-6'
+              )}
+              style={{
+                width:
+                  overlayKind === 'drawer' &&
+                  (layout.position === 'top' || layout.position === 'bottom')
+                    ? '100%'
+                    : layout.width ||
+                      (overlayKind === 'drawer' ? '400px' : '480px'),
+                maxHeight:
+                  layout.maxHeight ||
+                  (overlayKind === 'drawer' ? '100%' : '90vh'),
+                backgroundColor: layout.background || 'var(--site-bg, #ffffff)',
+              }}
+            >
+              {children}
             </div>
           </div>
         ) : (
@@ -1048,6 +1150,7 @@ export function NewEditor({
         collectionEntry={collectionEntry}
         loopPreviewItem={loopPreviewItem}
         megaMenu={kind === 'mega-menu'}
+        overlayKind={kind === 'popup' || kind === 'drawer' ? kind : null}
       >
         {children}
       </EditorSiteRoot>
@@ -1153,10 +1256,24 @@ export function NewEditor({
         );
         return;
       }
-      if (kind === 'header' || kind === 'footer' || kind === 'mega-menu') {
-        toast.success(
-          `${kind === 'header' ? 'Header' : kind === 'footer' ? 'Footer' : 'Mega menu'} draft saved`
-        );
+      if (
+        kind === 'header' ||
+        kind === 'footer' ||
+        kind === 'mega-menu' ||
+        kind === 'popup' ||
+        kind === 'drawer'
+      ) {
+        const noun =
+          kind === 'header'
+            ? 'Header'
+            : kind === 'footer'
+              ? 'Footer'
+              : kind === 'mega-menu'
+                ? 'Mega menu'
+                : kind === 'popup'
+                  ? 'Popup'
+                  : 'Drawer';
+        toast.success(`${noun} draft saved`);
         return;
       }
       if (kind === 'page' || kind === 'post') {
@@ -1185,9 +1302,15 @@ export function NewEditor({
             ? 'Page published'
             : kind === 'post'
               ? 'Post published'
-              : kind === 'collection-block'
-                ? 'Block published'
-                : 'Template published'
+              : kind === 'popup'
+                ? 'Popup published'
+                : kind === 'drawer'
+                  ? 'Drawer published'
+                  : kind === 'mega-menu'
+                    ? 'Mega menu published'
+                    : kind === 'collection-block'
+                      ? 'Block published'
+                      : 'Template published'
         );
       });
       setLiveOutcome(ok ? 'success' : 'error');

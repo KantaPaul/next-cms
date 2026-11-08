@@ -6,6 +6,8 @@ import { ButtonLink, type SectionSettings, Section } from './section';
 export type ButtonProps = WithSection & {
   label?: string;
   link?: UrlValue;
+  linkAction?: 'url' | 'overlay';
+  overlayId?: string;
   alignment?: 'center' | 'left' | 'right';
   variant?: 'primary' | 'secondary' | 'outline' | 'soft';
   size?: 'sm' | 'md' | 'lg';
@@ -19,6 +21,10 @@ const BUTTON_SIZE = {
 
 export function Button(p: ButtonProps) {
   const btnEl = el(p, 'button');
+  const isOverlayAction = p.linkAction === 'overlay' && Boolean(p.overlayId);
+  const targetLink = isOverlayAction ? `#overlay:${p.overlayId}` : p.link;
+  const overlayAttr = isOverlayAction ? p.overlayId : undefined;
+
   return (
     <Section section={p.section} editing={p.editing}>
       <div
@@ -32,7 +38,8 @@ export function Button(p: ButtonProps) {
         )}
       >
         <ButtonLink
-          href={p.link}
+          href={targetLink}
+          data-overlay-open={overlayAttr}
           variant={p.variant ?? 'primary'}
           className={cn(BUTTON_SIZE[p.size ?? 'md'], btnEl.className)}
           style={btnEl.style}

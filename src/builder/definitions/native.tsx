@@ -60,6 +60,7 @@ import {
   Timeline,
 } from '../blocks/marketing';
 import { MegaMenuCard } from '../blocks/mega-menu';
+import { Divider, Heading, OverlayClose } from '../blocks/overlay';
 import { Newsletter } from '../blocks/newsletter';
 import { QueryFilter } from '../blocks/query-filters';
 import { Comments } from '../blocks/comments';
@@ -1088,6 +1089,23 @@ export const CodeBlock = defineBlock({
   },
 });
 
+/** Parts for boxed form elements (input, status message): no text effects. */
+const FIELD_PARTS = ['color', 'typography', 'background', 'border', 'padding'] as const;
+
+/**
+ * Section controls minus block-wide typography/text colour (each element has
+ * its own) and height/alignment (does not apply to an inline form).
+ */
+function newsletterSectionControls() {
+  const {
+    section_typography: _typography,
+    section_text_color: _textColor,
+    section_display: _display,
+    ...rest
+  } = sectionControls();
+  return rest;
+}
+
 export const NewsletterBlock = defineBlock({
   type: 'Newsletter',
   label: 'Newsletter',
@@ -1114,12 +1132,37 @@ export const NewsletterBlock = defineBlock({
         { label: 'Compact', value: 'compact' },
       ],
     },
-    ...sectionControls(),
+    buttonPosition: {
+      label: 'Button position',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Right', value: 'right' },
+        { label: 'Left', value: 'left' },
+        { label: 'Top', value: 'top' },
+        { label: 'Bottom', value: 'bottom' },
+      ],
+    },
+    buttonWidth: {
+      label: 'Button width',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Auto', value: 'auto' },
+        { label: 'Full width', value: 'full' },
+      ],
+    },
+    title_style: elementStyle('title', 'Title Style', TEXT_PARTS),
+    description_style: elementStyle('description', 'Description Style', TEXT_PARTS),
+    subtitle_style: elementStyle('subtitle', 'Short Text Style', TEXT_PARTS),
+    input_style: elementStyle('input', 'Input Style', FIELD_PARTS),
+    button_style: elementStyle('button', 'Button Style', BUTTON_PARTS),
+    success_style: elementStyle('success', 'Success Message Style', FIELD_PARTS),
+    ...newsletterSectionControls(),
   },
   defaults: {
     title: 'Newsletter',
     subtitle: '',
-    email: '',
     section: {
       paddingY: 'none',
       background: 'default',
@@ -1505,7 +1548,28 @@ export const ButtonBlock = defineBlock({
   render: Button,
   fields: {
     label: { label: 'Label', group: CONTENT, type: 'text' },
-    link: { label: 'Link', group: CONTENT, type: 'custom', render: UrlField },
+    linkAction: {
+      label: 'Action',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'URL / Page', value: 'url' },
+        { label: 'Open popup/drawer', value: 'overlay' },
+      ],
+    },
+    overlayId: {
+      label: 'Popup / Drawer ID',
+      group: CONTENT,
+      type: 'text',
+      when: (p: Record<string, unknown>) => p.linkAction === 'overlay',
+    },
+    link: {
+      label: 'Link',
+      group: CONTENT,
+      type: 'custom',
+      render: UrlField,
+      when: (p: Record<string, unknown>) => p.linkAction !== 'overlay',
+    },
     alignment: {
       label: 'Alignment',
       group: CONTENT,
@@ -1544,6 +1608,203 @@ export const ButtonBlock = defineBlock({
     label: 'Button',
     link: 'https://www.example.com/',
     alignment: 'center',
+    section: {
+      paddingY: 'none',
+      background: 'default',
+      hideOnMobile: false,
+      hideOnTablet: false,
+      hideOnDesktop: false,
+      anchor: '',
+    },
+  },
+});
+
+export const OverlayCloseBlock = defineBlock({
+  type: 'OverlayClose',
+  label: 'Close overlay',
+  category: 'layout',
+  icon: 'button',
+  inlineProps: ['label'],
+  schema: z
+    .object({
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: OverlayClose,
+  fields: {
+    label: { label: 'Label', group: CONTENT, type: 'text' },
+    variant: {
+      label: 'Type',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Link', value: 'link' },
+        { label: 'Button', value: 'button' },
+        { label: 'Icon (X)', value: 'icon' },
+      ],
+    },
+    buttonStyle: {
+      label: 'Button style',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Primary', value: 'primary' },
+        { label: 'Secondary', value: 'secondary' },
+        { label: 'Outline', value: 'outline' },
+        { label: 'Soft', value: 'soft' },
+        { label: 'Ghost', value: 'ghost' },
+      ],
+    },
+    alignment: {
+      label: 'Alignment',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+        { label: 'Right', value: 'right' },
+      ],
+    },
+    size: {
+      label: 'Size',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'S', value: 'sm' },
+        { label: 'M', value: 'md' },
+        { label: 'L', value: 'lg' },
+      ],
+    },
+    close_style: elementStyle('close', 'Close Style', BUTTON_PARTS),
+    ...sectionControls(),
+  },
+  defaults: {
+    label: 'No thanks',
+    variant: 'link',
+    buttonStyle: 'outline',
+    alignment: 'center',
+    size: 'md',
+    section: {
+      paddingY: 'none',
+      background: 'default',
+      hideOnMobile: false,
+      hideOnTablet: false,
+      hideOnDesktop: false,
+      anchor: '',
+    },
+  },
+});
+
+export const HeadingBlock = defineBlock({
+  type: 'Heading',
+  label: 'Heading',
+  category: 'content',
+  icon: 'type',
+  inlineProps: ['text'],
+  schema: z
+    .object({
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: Heading,
+  fields: {
+    text: { label: 'Text', group: CONTENT, type: 'text' },
+    level: {
+      label: 'Tag',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'H1', value: 'h1' },
+        { label: 'H2', value: 'h2' },
+        { label: 'H3', value: 'h3' },
+        { label: 'H4', value: 'h4' },
+        { label: 'H5', value: 'h5' },
+        { label: 'H6', value: 'h6' },
+      ],
+    },
+    size: {
+      label: 'Size',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Small', value: 'sm' },
+        { label: 'Medium', value: 'md' },
+        { label: 'Large', value: 'lg' },
+        { label: 'Extra Large', value: 'xl' },
+        { label: '2XL', value: '2xl' },
+      ],
+    },
+    alignment: {
+      label: 'Alignment',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+        { label: 'Right', value: 'right' },
+      ],
+    },
+    heading_style: elementStyle('heading', 'Heading Style', TEXT_PARTS),
+    ...sectionControls(),
+  },
+  defaults: {
+    text: 'Heading',
+    level: 'h2',
+    size: 'lg',
+    alignment: 'left',
+    section: {
+      paddingY: 'none',
+      background: 'default',
+      hideOnMobile: false,
+      hideOnTablet: false,
+      hideOnDesktop: false,
+      anchor: '',
+    },
+  },
+});
+
+export const DividerBlock = defineBlock({
+  type: 'Divider',
+  label: 'Divider',
+  category: 'layout',
+  icon: 'minus',
+  schema: z
+    .object({
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: Divider,
+  fields: {
+    style: {
+      label: 'Style',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Solid', value: 'solid' },
+        { label: 'Dashed', value: 'dashed' },
+        { label: 'Dotted', value: 'dotted' },
+      ],
+    },
+    thickness: { label: 'Thickness (px)', group: CONTENT, type: 'number' },
+    spacing: {
+      label: 'Spacing',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Small', value: 'sm' },
+        { label: 'Medium', value: 'md' },
+        { label: 'Large', value: 'lg' },
+      ],
+    },
+    ...sectionControls(),
+  },
+  defaults: {
+    style: 'solid',
+    thickness: 1,
+    spacing: 'md',
     section: {
       paddingY: 'none',
       background: 'default',
@@ -3554,6 +3815,7 @@ export const FooterLinksBlock = defineBlock({
         })
       )
       .default([]),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
   }),
   render: FooterLinks,
   fields: {
@@ -3593,6 +3855,8 @@ export const FooterLinksBlock = defineBlock({
         { label: 'No', value: false },
       ],
     },
+    heading_style: elementStyle('heading', 'Heading Style', TEXT_PARTS),
+    link_style: elementStyle('link', 'Link Style', TEXT_PARTS),
   },
   defaults: {
     heading: 'Quick links',
@@ -5033,6 +5297,9 @@ export const NATIVE_BLOCKS = [
   LoopItemFieldBlock,
   QueryFilterBlock,
   SearchResultsBlock,
+  OverlayCloseBlock,
+  HeadingBlock,
+  DividerBlock,
 ];
 export const PAGE_ROOT_FIELDS = {
   maxWidth: {
