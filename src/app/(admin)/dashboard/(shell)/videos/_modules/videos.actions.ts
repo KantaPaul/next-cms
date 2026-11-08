@@ -25,30 +25,20 @@ import {
   type PlaylistItem,
   type VideoListParams,
 } from './videos.service';
+import {
+  listVideosSchema,
+  queryVideosSchema,
+  createPlaylistSchema,
+  updatePlaylistSchema,
+  createVideoSchema,
+  updateVideoSchema,
+  reorderVideosSchema,
+  listPlaylistsSchema,
+  fetchVideoMetadataSchema,
+} from './videos.schemas';
+import { idSchema } from '@/schemas/shared';
 
 export type { VideoItem, PlaylistItem, VideoListParams };
-
-const listSchema = z.object({
-  search: z.string().optional(),
-  playlistId: z.string().optional(),
-  status: z.enum(['draft', 'published', 'archived']).optional(),
-  provider: z.enum(['youtube', 'vimeo', 'direct']).optional(),
-  page: z.number().int().min(1).optional(),
-  size: z.number().int().min(1).max(100).optional(),
-});
-
-const queryVideosSchema = z.object({
-  playlistId: z.string().trim().max(150).nullish(),
-  pageSize: z.coerce.number().int().min(1).max(48).nullish(),
-  provider: z
-    .union([
-      z.enum(['youtube', 'vimeo', 'direct', 'all']),
-      z.array(z.enum(['youtube', 'vimeo', 'direct'])),
-    ])
-    .nullish(),
-  providers: z.array(z.enum(['youtube', 'vimeo', 'direct'])).nullish(),
-  sources: z.array(z.enum(['youtube', 'vimeo', 'direct'])).nullish(),
-});
 
 /**
  * Public read of published videos for the VideoLibrary block / widget.
@@ -73,23 +63,17 @@ export const queryVideos = async (input: z.infer<typeof queryVideosSchema>) => {
 };
 
 export const listPlaylists = accessProcedure
-  .input(z.object({}))
+  .input(listPlaylistsSchema)
   .action(async () => {
     const siteId = await adminSiteId();
     return playlistService.list(siteId);
   });
 
 export const listVideos = accessProcedure
-  .input(listSchema)
+  .input(listVideosSchema)
   .action(async ({ input }) => {
     return videoService.list(input as VideoListParams);
   });
-
-const createPlaylistSchema = z.object({
-  name: z.string().trim().min(1).max(150),
-  slug: z.string().trim().min(1).max(150),
-  description: z.string().optional(),
-});
 
 export const createPlaylist = permissionProcedure(PERMISSIONS.VIDEOS_CREATE)
   .input(createPlaylistSchema)
@@ -98,13 +82,6 @@ export const createPlaylist = permissionProcedure(PERMISSIONS.VIDEOS_CREATE)
     revalidatePath(PAGES.DASHBOARD.VIDEOS);
     return row;
   });
-
-const updatePlaylistSchema = z.object({
-  id: z.string().min(1),
-  name: z.string().trim().min(1).max(150).optional(),
-  slug: z.string().trim().min(1).max(150).optional(),
-  description: z.string().optional().nullable(),
-});
 
 export const updatePlaylist = permissionProcedure(PERMISSIONS.VIDEOS_EDIT)
   .input(updatePlaylistSchema)
@@ -115,21 +92,12 @@ export const updatePlaylist = permissionProcedure(PERMISSIONS.VIDEOS_EDIT)
   });
 
 export const deletePlaylist = permissionProcedure(PERMISSIONS.VIDEOS_DELETE)
-  .input(z.object({ id: z.string().min(1) }))
+  .input(idSchema)
   .action(async ({ input, ctx }) => {
     await playlistService.remove(input, ctx.access);
     revalidatePath(PAGES.DASHBOARD.VIDEOS);
     return { ok: true };
   });
-
-const createVideoSchema = z.object({
-  title: z.string().trim().min(1).max(200),
-  slug: z.string().trim().min(1).max(200),
-  url: z.string().url(),
-  playlistId: z.string().optional().nullable(),
-  status: z.enum(['draft', 'published', 'archived']).optional(),
-  visibility: z.enum(['public', 'private']).optional(),
-});
 
 export const createVideo = permissionProcedure(PERMISSIONS.VIDEOS_CREATE)
   .input(createVideoSchema)
@@ -138,18 +106,6 @@ export const createVideo = permissionProcedure(PERMISSIONS.VIDEOS_CREATE)
     revalidatePath(PAGES.DASHBOARD.VIDEOS);
     return row;
   });
-
-const updateVideoSchema = z.object({
-  id: z.string().min(1),
-  title: z.string().trim().min(1).max(200).optional(),
-  slug: z.string().trim().min(1).max(200).optional(),
-  url: z.string().url().optional(),
-  playlistId: z.string().optional().nullable(),
-  status: z.enum(['draft', 'published', 'archived']).optional(),
-  visibility: z.enum(['public', 'private']).optional(),
-  thumbnailUrl: z.string().url().optional().nullable(),
-  duration: z.number().int().positive().optional().nullable(),
-});
 
 export const updateVideo = permissionProcedure(PERMISSIONS.VIDEOS_EDIT)
   .input(updateVideoSchema)
@@ -160,7 +116,7 @@ export const updateVideo = permissionProcedure(PERMISSIONS.VIDEOS_EDIT)
   });
 
 export const publishVideo = permissionProcedure(PERMISSIONS.VIDEOS_PUBLISH)
-  .input(z.object({ id: z.string().min(1) }))
+  .input(idSchema)
   .action(async ({ input, ctx }) => {
     await videoLifecycle.publish(input.id, ctx.access);
     revalidatePath(PAGES.DASHBOARD.VIDEOS);
@@ -168,7 +124,7 @@ export const publishVideo = permissionProcedure(PERMISSIONS.VIDEOS_PUBLISH)
   });
 
 export const unpublishVideo = permissionProcedure(PERMISSIONS.VIDEOS_PUBLISH)
-  .input(z.object({ id: z.string().min(1) }))
+  .input(idSchema)
   .action(async ({ input, ctx }) => {
     await videoLifecycle.unpublish(input.id, ctx.access);
     revalidatePath(PAGES.DASHBOARD.VIDEOS);
@@ -176,16 +132,12 @@ export const unpublishVideo = permissionProcedure(PERMISSIONS.VIDEOS_PUBLISH)
   });
 
 export const deleteVideo = permissionProcedure(PERMISSIONS.VIDEOS_DELETE)
-  .input(z.object({ id: z.string().min(1) }))
+  .input(idSchema)
   .action(async ({ input, ctx }) => {
     await videoLifecycle.softDelete(input.id, ctx.access);
     revalidatePath(PAGES.DASHBOARD.VIDEOS);
     return { ok: true };
   });
-
-const reorderVideosSchema = z.object({
-  ids: z.array(z.string().min(1)),
-});
 
 export const reorderVideos = permissionProcedure(PERMISSIONS.VIDEOS_EDIT)
   .input(reorderVideosSchema)
@@ -194,17 +146,6 @@ export const reorderVideos = permissionProcedure(PERMISSIONS.VIDEOS_EDIT)
     revalidatePath(PAGES.DASHBOARD.VIDEOS);
     return { ok: true };
   });
-
-const saveVideoProgressSchema = z.object({
-  videoId: z.string().min(1).max(100),
-  position: z
-    .number()
-    .min(0)
-    .max(24 * 60 * 60)
-    .default(0),
-  duration: z.number().min(0).nullish(),
-  completed: z.boolean().optional(),
-});
 
 /**
  * Public progress save for the video widget. Reads the CMS session directly so
@@ -277,7 +218,7 @@ export const saveVideoProgress = async (input: {
 };
 
 export const fetchVideoMetadata = accessProcedure
-  .input(z.object({ url: z.string().url() }))
+  .input(fetchVideoMetadataSchema)
   .action(async ({ input }) => {
     const parsed = parseVideoUrl(input.url);
     if (!parsed) {

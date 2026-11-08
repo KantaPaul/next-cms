@@ -1,4 +1,3 @@
-import { z } from 'zod';
 import { NextResponse } from 'next/server';
 import { resolveBuilderData } from '@/builder/render-content';
 import { sanitizeRichText } from '@/builder/sanitize';
@@ -8,17 +7,18 @@ import {
   apiHandler,
   apiOptions,
   enumParam,
+  ApiRequestError,
 } from '@/server/api/v1';
 import { blogService } from '@/server/services/blog.service';
 import { siteContext, siteSlugPrefix } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
-import { ApiRequestError } from '@/server/api/v1';
 import { PERMISSIONS } from '@/config/permissions';
 import { accessService } from '@/server/services/access.service';
 import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { db } from '@/db';
 import { posts, postContents } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { apiUpdatePostSchema } from '@/schemas/api/v1/posts';
 
 export const dynamic = 'force-dynamic';
 
@@ -89,12 +89,6 @@ export const GET = apiHandler<{ slug: string }>(
   ['content:read']
 );
 
-const updatePostSchema = z.object({
-  title: z.string().trim().min(1).max(255).optional(),
-  slug: z.string().trim().min(1).max(255).optional(),
-  body: z.string().optional(),
-});
-
 export const PATCH = apiHandler<{ slug: string }>(
   async (request, { params }) => {
     const postSlug = decodeURIComponent(params.slug);
@@ -105,7 +99,7 @@ export const PATCH = apiHandler<{ slug: string }>(
     }
 
     const body = await request.json();
-    const parsed = updatePostSchema.safeParse(body);
+    const parsed = apiUpdatePostSchema.safeParse(body);
     if (!parsed.success) {
       throw new ApiRequestError(400, 'Invalid update data.');
     }

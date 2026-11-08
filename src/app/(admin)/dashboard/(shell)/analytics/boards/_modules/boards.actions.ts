@@ -1,15 +1,16 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
 import { PAGES } from '@/config/pages';
-import {
-  boardLayoutSchema,
-  widgetQuerySchema,
-} from '@/db/schemas/analytics.schema';
 import { accessProcedure } from '@/server/procedures/permission.procedure';
 import { analyticsService } from '@/server/services/analytics.service';
 import { analyticsBoardsService } from '@/server/services/analytics-boards.service';
+import {
+  createBoardSchema,
+  updateBoardSchema,
+  previewWidgetSchema,
+} from './boards.schemas';
+import { idSchema } from '@/schemas/shared';
 
 const boardsBase = PAGES.DASHBOARD.ANALYTICS_BOARDS;
 
@@ -22,11 +23,7 @@ function revalidateBoardPaths(id?: string) {
 }
 
 export const createBoard = accessProcedure
-  .input(
-    z.object({
-      name: z.string().trim().min(1, 'Name is required').max(120),
-    })
-  )
+  .input(createBoardSchema)
   .action(async ({ input, ctx }) => {
     const board = await analyticsBoardsService.create({
       name: input.name,
@@ -37,13 +34,7 @@ export const createBoard = accessProcedure
   });
 
 export const updateBoard = accessProcedure
-  .input(
-    z.object({
-      id: z.string().min(1),
-      name: z.string().trim().min(1).max(120).optional(),
-      layout: boardLayoutSchema.optional(),
-    })
-  )
+  .input(updateBoardSchema)
   .action(async ({ input }) => {
     const board = await analyticsBoardsService.update(input.id, {
       name: input.name,
@@ -61,7 +52,7 @@ export const updateBoard = accessProcedure
   });
 
 export const deleteBoard = accessProcedure
-  .input(z.object({ id: z.string().min(1) }))
+  .input(idSchema)
   .action(async ({ input }) => {
     const ok = await analyticsBoardsService.delete(input.id);
     if (!ok) {
@@ -76,12 +67,7 @@ export const deleteBoard = accessProcedure
   });
 
 export const previewWidget = accessProcedure
-  .input(
-    z.object({
-      query: widgetQuerySchema,
-      boardRange: z.union([z.literal(7), z.literal(30)]),
-    })
-  )
+  .input(previewWidgetSchema)
   .action(async ({ input }) => {
     return analyticsService.widget(input.query, input.boardRange);
   });

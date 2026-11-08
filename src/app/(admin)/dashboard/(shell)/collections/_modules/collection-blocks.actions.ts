@@ -1,23 +1,13 @@
 'use server';
 
-import { z } from 'zod';
 import { getCurrentUserAndTeamId, validateSession } from '@/lib/auth';
 import { collectionBlocksService } from '@/server/services/collection-blocks.service';
 import { accessService } from '@/server/services/access.service';
 import { collectionsService } from '@/server/services/collections.service';
-
-const createSchema = z.object({
-  collectionId: z.string().min(1),
-  name: z.string().trim().min(1, 'Name is required').max(150),
-  description: z.string().trim().max(500).nullish(),
-  fromId: z.string().nullish(),
-});
-
-const updateSchema = z.object({
-  id: z.string().min(1),
-  name: z.string().trim().min(1, 'Name is required').max(150),
-  description: z.string().trim().max(500).nullish(),
-});
+import {
+  createCollectionBlockSchema,
+  updateCollectionBlockSchema,
+} from './collection-blocks.schemas';
 
 async function getAccess() {
   const { userId } = await getCurrentUserAndTeamId();
@@ -25,7 +15,7 @@ async function getAccess() {
 }
 
 export async function createCollectionBlockAction(input: unknown) {
-  const parsed = createSchema.safeParse(input);
+  const parsed = createCollectionBlockSchema.safeParse(input);
   if (!parsed.success) {
     return {
       ok: false,
@@ -42,7 +32,7 @@ export async function createCollectionBlockAction(input: unknown) {
 }
 
 export async function updateCollectionBlockAction(input: unknown) {
-  const parsed = updateSchema.safeParse(input);
+  const parsed = updateCollectionBlockSchema.safeParse(input);
   if (!parsed.success) {
     return {
       ok: false,

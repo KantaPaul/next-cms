@@ -1,16 +1,15 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import { permissionProcedure } from '@/server/procedures/permission.procedure';
 import { apiKeysService } from '@/server/services/api-keys.service';
+import { createApiKeySchema } from './api-keys.schemas';
+import { idSchema } from '@/schemas/shared';
 
 export const createApiKey = permissionProcedure(PERMISSIONS.API_MANAGE)
-  .input(
-    z.object({ name: z.string().trim().min(1, 'Name is required').max(100) })
-  )
+  .input(createApiKeySchema)
   .action(async ({ input, ctx }) => {
     const created = await apiKeysService.create(input.name, ctx.user.userId);
     revalidatePath(PAGES.DASHBOARD.API);
@@ -18,7 +17,7 @@ export const createApiKey = permissionProcedure(PERMISSIONS.API_MANAGE)
   });
 
 export const revokeApiKey = permissionProcedure(PERMISSIONS.API_MANAGE)
-  .input(z.object({ id: z.string().min(1) }))
+  .input(idSchema)
   .action(async ({ input, ctx }) => {
     const row = await apiKeysService.revoke(input.id, ctx.user.userId);
     revalidatePath(PAGES.DASHBOARD.API);

@@ -1,4 +1,3 @@
-import { z } from 'zod';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { collectionEntries, collections } from '@/db/schema';
@@ -12,11 +11,7 @@ import {
   collectionsService,
   parseEntryData,
 } from '@/server/services/collections.service';
-
-const updateEntrySchema = z.object({
-  slug: z.string().trim().min(1).max(200).optional(),
-  data: z.unknown().optional(),
-});
+import { apiUpdateEntrySchema } from '@/schemas/api/v1/collections';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +26,7 @@ export const PATCH = apiHandler<{ slug: string; id: string }>(
 
     const site = await siteContext.publicSite();
     const body = await request.json();
-    const parsed = updateEntrySchema.safeParse(body);
+    const parsed = apiUpdateEntrySchema.safeParse(body);
     if (!parsed.success) {
       throw new ApiRequestError(400, 'Invalid update data.');
     }

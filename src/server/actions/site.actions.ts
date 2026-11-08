@@ -2,7 +2,6 @@
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import { z } from 'zod';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import { DEFAULT_SITE_LOCALES } from '@/db/schemas/sites.schema';
@@ -11,6 +10,10 @@ import { permissionProcedure } from '@/server/procedures/permission.procedure';
 import { SITE_COOKIE, siteContext } from '@/server/services/site-context';
 import { sitesService } from '@/server/services/sites.service';
 import { revalidatePublicSite } from '@/lib/utils/revalidate-site';
+import {
+  createSiteSchema,
+  updateSiteSchema,
+} from '@/app/(admin)/dashboard/(shell)/sites/_modules/sites.schemas';
 
 export async function switchSite(siteId: string) {
   const { userId } = await getCurrentUserAndTeamId();
@@ -27,22 +30,8 @@ export async function switchSite(siteId: string) {
   revalidatePath(PAGES.DASHBOARD.ROOT, 'layout');
 }
 
-const locale = z.object({
-  code: z.string().trim().min(2).max(12),
-  label: z.string().trim().min(1).max(40),
-});
-
 export const createSite = permissionProcedure(PERMISSIONS.SETTINGS_MANAGE)
-  .input(
-    z.object({
-      name: z.string().trim().min(1).max(120),
-      slug: z.string().trim().min(1).max(40),
-      primaryHost: z.string().trim().max(255).nullish(),
-      extraDomains: z.string().trim().max(1000).nullish(),
-      defaultLocale: z.string().trim().min(2).max(12),
-      locales: z.array(locale).min(1),
-    })
-  )
+  .input(createSiteSchema)
   .action(async ({ input, ctx }) => {
     const site = await sitesService.create(
       {
@@ -69,17 +58,7 @@ export const createSite = permissionProcedure(PERMISSIONS.SETTINGS_MANAGE)
   });
 
 export const updateSite = permissionProcedure(PERMISSIONS.SETTINGS_MANAGE)
-  .input(
-    z.object({
-      siteId: z.string().trim().min(1),
-      name: z.string().trim().min(1).max(120),
-      slug: z.string().trim().min(1).max(40),
-      primaryHost: z.string().trim().max(255).nullish(),
-      extraDomains: z.string().trim().max(1000).nullish(),
-      defaultLocale: z.string().trim().min(2).max(12),
-      locales: z.array(locale).min(1),
-    })
-  )
+  .input(updateSiteSchema)
   .action(async ({ input, ctx }) => {
     const site = await sitesService.update(
       input.siteId,

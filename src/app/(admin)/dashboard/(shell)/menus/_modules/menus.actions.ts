@@ -1,44 +1,24 @@
 'use server';
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
-import { MENU_LOCATION } from '@/db/schemas/shared.schema';
 import { permissionProcedure } from '@/server/procedures/permission.procedure';
 import { menusService } from './menus.service';
+import {
+  saveMenuSchema,
+  copyMenuSchema,
+  saveMenuItemsSchema,
+} from './menus.schemas';
+import { idSchema } from '@/schemas/shared';
 
 const manage = permissionProcedure(PERMISSIONS.SETTINGS_MANAGE);
 
-const url = z
-  .string()
-  .trim()
-  .min(1, 'Link is required')
-  .max(500)
-  .refine(
-    v => /^(\/|#|https?:\/\/|mailto:|tel:)/.test(v),
-    'Links must start with /, #, http(s)://, mailto:, or tel:'
-  );
-
-const itemSchema = z.object({
-  label: z.string().trim().min(1, 'Every item needs a label').max(100),
-  url,
-  target: z.enum(['_self', '_blank']),
-  badge: z.string().trim().max(30).nullish(),
-});
-
 export const getMenu = manage
-  .input(z.object({ id: z.string().min(1) }))
+  .input(idSchema)
   .action(async ({ input }) => menusService.getWithItems(input.id));
 
 export const saveMenu = manage
-  .input(
-    z.object({
-      id: z.string().optional(),
-      title: z.string().trim().min(1, 'Title is required').max(100),
-      location: z.enum(MENU_LOCATION),
-      language: z.string().trim().min(2).max(12),
-    })
-  )
+  .input(saveMenuSchema)
   .action(async ({ input, ctx }) => {
     const row = await menusService.saveMenu(input, ctx.user.userId);
     revalidatePath(PAGES.DASHBOARD.MENUS);
@@ -46,7 +26,7 @@ export const saveMenu = manage
   });
 
 export const deleteMenu = manage
-  .input(z.object({ id: z.string().min(1) }))
+  .input(idSchema)
   .action(async ({ input, ctx }) => {
     const row = await menusService.deleteMenu(input.id, ctx.user.userId);
     revalidatePath(PAGES.DASHBOARD.MENUS);
@@ -54,12 +34,7 @@ export const deleteMenu = manage
   });
 
 export const copyMenu = manage
-  .input(
-    z.object({
-      id: z.string().min(1),
-      language: z.string().trim().min(2).max(12),
-    })
-  )
+  .input(copyMenuSchema)
   .action(async ({ input, ctx }) => {
     const row = await menusService.copyToLocale(
       input.id,
@@ -71,20 +46,7 @@ export const copyMenu = manage
   });
 
 export const saveMenuItems = manage
-  .input(
-    z.object({
-      menuId: z.string().min(1),
-      items: z
-        .array(
-          itemSchema.extend({
-            megaMenuId: z.string().min(1).nullish(),
-            megaMenuWidth: z.enum(['container', 'full', 'auto']).optional(),
-            children: z.array(itemSchema).max(50).optional(),
-          })
-        )
-        .max(50),
-    })
-  )
+  .input(saveMenuItemsSchema)
   .action(async ({ input, ctx }) => {
     const menu = await menusService.saveItems(
       input.menuId,

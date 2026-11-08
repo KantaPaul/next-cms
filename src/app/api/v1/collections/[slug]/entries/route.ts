@@ -1,4 +1,3 @@
-import { z } from 'zod';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { collectionEntries, collections } from '@/db/schema';
@@ -12,11 +11,7 @@ import {
   collectionsService,
   parseEntryData,
 } from '@/server/services/collections.service';
-
-const createEntrySchema = z.object({
-  slug: z.string().trim().min(1).max(200),
-  data: z.unknown(),
-});
+import { apiCreateEntrySchema } from '@/schemas/api/v1/collections';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +26,7 @@ export const POST = apiHandler<{ slug: string }>(
 
     const site = await siteContext.publicSite();
     const body = await request.json();
-    const parsed = createEntrySchema.safeParse(body);
+    const parsed = apiCreateEntrySchema.safeParse(body);
     if (!parsed.success) {
       throw new ApiRequestError(400, 'Invalid entry data.');
     }

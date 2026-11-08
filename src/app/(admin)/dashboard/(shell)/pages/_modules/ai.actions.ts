@@ -1,5 +1,4 @@
 'use server';
-import { z } from 'zod';
 import { mediaService } from '@/app/(admin)/dashboard/(shell)/media/_modules/media.service';
 import { pagesServices } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
 import { applyCopy, collectCopy, extractPlainText } from '@/builder/text';
@@ -13,6 +12,14 @@ import {
 } from '@/server/ai/page-generator';
 import { permissionProcedure } from '@/server/procedures/permission.procedure';
 import { storage } from '@/server/storage';
+import {
+  seoResultSchema,
+  rewriteSchema,
+  generateSeoSchema,
+  generateAltTextSchema,
+  rewriteResultSchema,
+  altTextResultSchema,
+} from './ai.schemas';
 
 const aiProcedure = permissionProcedure(PERMISSIONS.PAGES_EDIT).use(
   async ({ ctx }) => {
@@ -33,14 +40,8 @@ export const getAiStatus = permissionProcedure(PERMISSIONS.PAGES_EDIT).query(
   })
 );
 
-const seoResultSchema = z.object({
-  title: z.string().min(1).max(70),
-  description: z.string().min(1).max(170),
-  keywords: z.string().max(300),
-});
-
 export const generateSeo = aiProcedure
-  .input(z.object({ pageId: z.string().min(1) }))
+  .input(generateSeoSchema)
   .action(async ({ input }) => {
     const page = await pagesServices.getById({ id: input.pageId });
     if (!page) throw new ApplicationException('Page not found');
@@ -68,14 +69,6 @@ const REWRITE_INSTRUCTIONS = {
   translate: 'Translate each text faithfully.',
 } as const;
 
-const rewriteSchema = z.object({
-  props: z.record(z.string(), z.unknown()),
-  mode: z.enum(['rewrite', 'shorten', 'expand', 'translate']),
-  language: z.string().optional(),
-  tone: z.string().max(60).optional(),
-  instruction: z.string().trim().max(300).optional(),
-});
-
 export const rewriteBlock = aiProcedure
   .input(rewriteSchema)
   .action(async ({ input }) => {
@@ -95,11 +88,7 @@ Keep any HTML tags exactly as they are and only change the text between them.
 Return a JSON object with exactly the same keys as the input and the new text as values.
 Input:
 ${JSON.stringify(copy, null, 2)}`,
-      z
-        .record(z.string(), z.string())
-        .refine(value => keys.every(k => typeof value[k] === 'string'), {
-          message: `Every key must be present: ${keys.join(', ')}`,
-        }),
+      rewriteResultSchema(keys),
       [],
       input.mode === 'translate' ? 0.2 : 0.7
     );
@@ -108,7 +97,7 @@ ${JSON.stringify(copy, null, 2)}`,
   });
 
 export const generateAltText = aiProcedure
-  .input(z.object({ mediaId: z.string().min(1) }))
+  .input(generateAltTextSchema)
   .action(async ({ input }) => {
     const item = await mediaService.getById(input.mediaId);
     if (!item) throw new ApplicationException('File not found');
@@ -126,7 +115,7 @@ export const generateAltText = aiProcedure
 
     const { alt } = await generateJson(
       'Write concise, descriptive alt text (max 125 characters) for this image for screen-reader users. Do not start with "Image of". Return JSON {"alt": string}.',
-      z.object({ alt: z.string().min(1).max(200) }),
+      altTextResultSchema,
       [imagePart(item.mime, data)],
       0.3
     );

@@ -4,10 +4,8 @@ import {
   normalizeSitePath,
   offerForPublishedPath,
 } from '@/server/services/redirects.service';
-import {
-  buildEntrySchema,
-  RESERVED_COLLECTION_SLUGS,
-} from '@/server/services/collections.service';
+import { RESERVED_COLLECTION_SLUGS } from '@/app/(admin)/dashboard/(shell)/collections/_modules/collections.schemas';
+import { buildEntrySchema } from '@/server/services/collections.service';
 import { getBlockComponents } from '@/builder/blocks/registry';
 
 describe('R076: Ship Basics Vitest Suite', () => {

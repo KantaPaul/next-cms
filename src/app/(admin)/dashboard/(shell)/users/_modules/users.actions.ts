@@ -1,14 +1,18 @@
 'use server';
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
 import { PAGES } from '@/config/pages';
-import { PERMISSIONS, ROLE_NAMES } from '@/config/permissions';
+import { PERMISSIONS } from '@/config/permissions';
 import { permissionProcedure } from '@/server/procedures/permission.procedure';
 import { usersService } from './users.service';
 import { inviteStaff } from '@/server/services/staff-auth.service';
+import {
+  setUserRoleSchema,
+  inviteUserSchema,
+  approveUserActionSchema,
+} from './users.schemas';
 
 export const setUserRole = permissionProcedure(PERMISSIONS.SETTINGS_MANAGE)
-  .input(z.object({ userId: z.string().min(1), role: z.enum(ROLE_NAMES) }))
+  .input(setUserRoleSchema)
   .action(async ({ input, ctx }) => {
     const row = await usersService.setRole(input, ctx.user.userId);
     revalidatePath(PAGES.DASHBOARD.USERS);
@@ -16,13 +20,7 @@ export const setUserRole = permissionProcedure(PERMISSIONS.SETTINGS_MANAGE)
   });
 
 export const inviteUser = permissionProcedure(PERMISSIONS.SETTINGS_MANAGE)
-  .input(
-    z.object({
-      email: z.string().email(),
-      name: z.string().optional(),
-      role: z.enum(ROLE_NAMES).optional(),
-    })
-  )
+  .input(inviteUserSchema)
   .action(async ({ input, ctx }) => {
     const row = await inviteStaff({
       email: input.email,
@@ -37,7 +35,7 @@ export const inviteUser = permissionProcedure(PERMISSIONS.SETTINGS_MANAGE)
 export const approveUserAction = permissionProcedure(
   PERMISSIONS.SETTINGS_MANAGE
 )
-  .input(z.object({ userId: z.string().min(1) }))
+  .input(approveUserActionSchema)
   .action(async ({ input, ctx }) => {
     const row = await usersService.approveUser(input, ctx.user.userId);
     revalidatePath(PAGES.DASHBOARD.USERS);

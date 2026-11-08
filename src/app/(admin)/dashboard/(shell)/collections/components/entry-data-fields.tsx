@@ -1,7 +1,6 @@
 'use client';
 
 import { useFormContext } from 'react-hook-form';
-import { z } from 'zod';
 import { TextEditor } from '@/components/atoms/text-editor';
 import { MediaField } from '@/components/media/media-picker';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -20,6 +19,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { type EntryFormValues } from '../_modules/collections.schemas';
 
 export type EntryFieldConfig = {
   key: string;
@@ -33,11 +33,6 @@ export type EntryFieldConfig = {
 };
 
 // Slug plus one `data-{key}` value per field; data values are validated server-side.
-export const entryFormSchema = z
-  .object({ slug: z.string().optional() })
-  .catchall(z.unknown());
-
-export type EntryFormValues = z.infer<typeof entryFormSchema>;
 
 // Radix Select reserves the empty string, so "None" uses a sentinel value.
 const NONE = '__none__';

@@ -9,47 +9,37 @@ import {
 } from '@/server/procedures/permission.procedure';
 import { collectionsService } from '@/server/services/collections.service';
 import { loopTemplatesService } from '@/server/services/loop-templates.service';
-
-const sourceSchema = z.enum(['posts', 'collection']);
-
-const contentSchema = z.object({
-  root: z
-    .object({ props: z.record(z.string(), z.unknown()).optional() })
-    .optional(),
-  content: z.array(
-    z.object({
-      type: z.string().min(1),
-      props: z.record(z.string(), z.unknown()),
-    })
-  ),
-  zones: z.record(z.string(), z.array(z.unknown())).optional(),
-});
-
-/** Templates for the Loop Grid picker, filtered to the grid's source. */
-const listOptionsInput = z
-  .object({
-    sourceType: sourceSchema.optional(),
-    collectionId: z.string().nullish(),
-  })
-  .optional();
+import {
+  sourceSchema,
+  createLoopTemplateSchema,
+  saveLoopTemplateSchema,
+  listLoopTemplateOptionsSchema,
+} from './loop-templates.schemas';
+import { idSchema } from '@/schemas/shared';
 
 export const listLoopTemplateOptions = permissionProcedure(
   PERMISSIONS.PAGES_EDIT
-).query(async ({ params }: { params: z.infer<typeof listOptionsInput> }) => {
-  const input = listOptionsInput.parse(params ?? {});
-  const rows = await loopTemplatesService.list({
-    sourceType: input?.sourceType,
-    collectionId: input?.collectionId ?? null,
-  });
-  return rows.map(r => ({
-    id: r.id,
-    name: r.name,
-    sourceType: r.sourceType,
-    collectionId: r.collectionId,
-    collectionName: r.collectionName,
-    published: !!r.publishedAt,
-  }));
-});
+).query(
+  async ({
+    params,
+  }: {
+    params: z.infer<typeof listLoopTemplateOptionsSchema>;
+  }) => {
+    const input = listLoopTemplateOptionsSchema.parse(params ?? {});
+    const rows = await loopTemplatesService.list({
+      sourceType: input?.sourceType,
+      collectionId: input?.collectionId ?? null,
+    });
+    return rows.map(r => ({
+      id: r.id,
+      name: r.name,
+      sourceType: r.sourceType,
+      collectionId: r.collectionId,
+      collectionName: r.collectionName,
+      published: !!r.publishedAt,
+    }));
+  }
+);
 
 /** Custom fields of one post type, for field filters, sorts and dynamic tags. */
 export const listCollectionFieldOptions = permissionProcedure(
@@ -68,14 +58,7 @@ export const listCollectionFieldOptions = permissionProcedure(
 });
 
 export const createLoopTemplate = accessProcedure
-  .input(
-    z.object({
-      name: z.string().trim().min(1).max(150),
-      sourceType: sourceSchema,
-      collectionId: z.string().nullish(),
-      content: contentSchema.optional(),
-    })
-  )
+  .input(createLoopTemplateSchema)
   .action(async ({ input, ctx }) => {
     const row = await loopTemplatesService.create(input, ctx.access);
     revalidatePath(PAGES.DASHBOARD.LOOP_TEMPLATES);
@@ -83,13 +66,7 @@ export const createLoopTemplate = accessProcedure
   });
 
 export const saveLoopTemplate = accessProcedure
-  .input(
-    z.object({
-      id: z.string().min(1),
-      name: z.string().trim().min(1).max(150).optional(),
-      content: contentSchema.optional(),
-    })
-  )
+  .input(saveLoopTemplateSchema)
   .action(async ({ input, ctx }) => {
     // Called by the editor's autosave: no revalidatePath, which would make
     // Next re-render the open editor route. The list page is dynamic anyway.
@@ -98,7 +75,7 @@ export const saveLoopTemplate = accessProcedure
   });
 
 export const publishLoopTemplate = accessProcedure
-  .input(z.object({ id: z.string().min(1) }))
+  .input(idSchema)
   .action(async ({ input, ctx }) => {
     // The service revalidates the public site; the open editor stays as is.
     const row = await loopTemplatesService.publish(input.id, ctx.access);
@@ -106,7 +83,7 @@ export const publishLoopTemplate = accessProcedure
   });
 
 export const duplicateLoopTemplate = accessProcedure
-  .input(z.object({ id: z.string().min(1) }))
+  .input(idSchema)
   .action(async ({ input, ctx }) => {
     const row = await loopTemplatesService.duplicate(input.id, ctx.access);
     revalidatePath(PAGES.DASHBOARD.LOOP_TEMPLATES);
@@ -114,7 +91,7 @@ export const duplicateLoopTemplate = accessProcedure
   });
 
 export const deleteLoopTemplate = accessProcedure
-  .input(z.object({ id: z.string().min(1) }))
+  .input(idSchema)
   .action(async ({ input, ctx }) => {
     await loopTemplatesService.delete(input.id, ctx.access);
     revalidatePath(PAGES.DASHBOARD.LOOP_TEMPLATES);

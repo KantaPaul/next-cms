@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { apiSchemas } from '@/server/api/v1';
+import { apiSchemas } from '@/schemas/api/v1/responses';
 
 type JsonSchema = Record<string, unknown>;
 

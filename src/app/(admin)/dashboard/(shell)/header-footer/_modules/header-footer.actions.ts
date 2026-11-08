@@ -1,7 +1,6 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
 import { PAGES } from '@/config/pages';
 import { accessProcedure } from '@/server/procedures/permission.procedure';
 import { revalidatePublicSite } from '@/lib/utils/revalidate-site';
@@ -10,15 +9,17 @@ import { headerFooterService } from './header-footer.service';
 import { templateResolverService } from '@/server/services/template-resolver.service';
 import { collectionsService } from '@/server/services/collections.service';
 import { taxonomyService } from '@/app/(admin)/dashboard/(shell)/taxonomy/_modules/taxonomy.service';
+import {
+  createHeaderFooterSchema,
+  duplicateHeaderFooterSchema,
+  renameHeaderFooterSchema,
+  deleteHeaderFooterSchema,
+  getDisplayRulesSchema,
+  saveDisplayRulesSchema,
+} from './header-footer.schemas';
 
 export const createHeaderFooter = accessProcedure
-  .input(
-    z.object({
-      name: z.string().trim().min(1).max(150),
-      category: z.enum(['Header', 'Footer', 'Search', 'Archive', 'MegaMenu']),
-      starter: z.string().optional(),
-    })
-  )
+  .input(createHeaderFooterSchema)
   .action(async ({ input, ctx }) => {
     const row = await headerFooterService.create(input, ctx.access);
     const siteId = await adminSiteId();
@@ -29,11 +30,7 @@ export const createHeaderFooter = accessProcedure
   });
 
 export const duplicateHeaderFooter = accessProcedure
-  .input(
-    z.object({
-      id: z.string().min(1),
-    })
-  )
+  .input(duplicateHeaderFooterSchema)
   .action(async ({ input, ctx }) => {
     const row = await headerFooterService.duplicate(input, ctx.access);
     const siteId = await adminSiteId();
@@ -44,12 +41,7 @@ export const duplicateHeaderFooter = accessProcedure
   });
 
 export const renameHeaderFooter = accessProcedure
-  .input(
-    z.object({
-      id: z.string().min(1),
-      name: z.string().trim().min(1).max(150),
-    })
-  )
+  .input(renameHeaderFooterSchema)
   .action(async ({ input, ctx }) => {
     const row = await headerFooterService.rename(input, ctx.access);
     const siteId = await adminSiteId();
@@ -60,11 +52,7 @@ export const renameHeaderFooter = accessProcedure
   });
 
 export const deleteHeaderFooter = accessProcedure
-  .input(
-    z.object({
-      id: z.string().min(1),
-    })
-  )
+  .input(deleteHeaderFooterSchema)
   .action(async ({ input, ctx }) => {
     const row = await headerFooterService.delete(input, ctx.access);
     const siteId = await adminSiteId();
@@ -75,7 +63,7 @@ export const deleteHeaderFooter = accessProcedure
   });
 
 export const getDisplayRules = accessProcedure
-  .input(z.object({ templateId: z.string().min(1) }))
+  .input(getDisplayRulesSchema)
   .action(async ({ input }) => {
     const siteId = await adminSiteId();
     return templateResolverService.getRulesForTemplate(
@@ -85,27 +73,7 @@ export const getDisplayRules = accessProcedure
   });
 
 export const saveDisplayRules = accessProcedure
-  .input(
-    z.object({
-      templateId: z.string().min(1),
-      area: z.enum(['header', 'footer', 'search', 'archive']),
-      rules: z.array(
-        z.object({
-          kind: z.enum([
-            'post-type',
-            'category',
-            'tag',
-            'user-state',
-            'role',
-            'archive-type',
-            'search-kind',
-          ]),
-          value: z.string().min(1),
-          priority: z.number().default(0),
-        })
-      ),
-    })
-  )
+  .input(saveDisplayRulesSchema)
   .action(async ({ input }) => {
     const siteId = await adminSiteId();
     const rows = await templateResolverService.saveRulesForTemplate(

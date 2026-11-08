@@ -2,7 +2,6 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FormInput as Input } from '@/components/ui/input';
@@ -25,7 +24,11 @@ import {
   updateCollectionField,
   deleteCollectionField,
 } from '../_modules/collections.actions';
-import { FIELD_TYPES } from '../_modules/collections.schemas';
+import {
+  FIELD_TYPES,
+  type UpdateFieldInput,
+  updateFieldSchema,
+} from '../_modules/collections.schemas';
 import { objectToFormData } from '../_modules/form-helpers';
 import { useFormAction } from '@/hooks/use-form-action';
 
@@ -36,14 +39,6 @@ export type FieldRow = {
   type: string;
   required: boolean;
 };
-
-const updateFieldSchema = z.object({
-  label: z.string().min(1, 'Label is required').max(150),
-  type: z.enum(FIELD_TYPES.map(t => t.value) as [string, ...string[]]),
-  required: z.boolean(),
-});
-
-type UpdateFieldInput = z.infer<typeof updateFieldSchema>;
 
 export function FieldList({
   fields,

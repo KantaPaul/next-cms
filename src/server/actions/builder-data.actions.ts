@@ -1,17 +1,8 @@
 'use server';
 
-import { z } from 'zod';
 import { PERMISSIONS } from '@/config/permissions';
 import { permissionProcedure } from '@/server/procedures/permission.procedure';
-
-/** Blocks whose canvas data can be re-fetched while editing. */
-const RELOADABLE_BLOCKS = [
-  'LoopGrid',
-  'QueryLoop',
-  'PostTypeEntries',
-  'CollectionBlock',
-  'QueryFilter',
-] as const;
+import { reloadNodeDataSchema } from './builder-data.schemas';
 
 /**
  * Re-runs one block's server loader with its current (unsaved) props, so the
@@ -19,15 +10,7 @@ const RELOADABLE_BLOCKS = [
  * draft Loop Item templates are included.
  */
 export const reloadNodeData = permissionProcedure(PERMISSIONS.PAGES_EDIT)
-  .input(
-    z.object({
-      type: z.enum(RELOADABLE_BLOCKS),
-      props: z.record(z.string(), z.unknown()),
-      language: z.string().max(20).optional(),
-      /** Collection entry the canvas renders for (entry and block builders). */
-      entryId: z.string().max(64).optional(),
-    })
-  )
+  .input(reloadNodeDataSchema)
   .action(async ({ input }) => {
     const { getBatchBlockLoader, getBlockLoader } =
       await import('@/builder/loaders');

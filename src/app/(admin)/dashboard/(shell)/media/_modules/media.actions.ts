@@ -1,27 +1,13 @@
 'use server';
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
 import { mediaService } from '@/app/(admin)/dashboard/(shell)/media/_modules/media.service';
 import { PAGES } from '@/config/pages';
 import { accessProcedure } from '@/server/procedures/permission.procedure';
-
-const listSchema = z.object({
-  search: z.string().optional(),
-  folder: z.string().optional(),
-  type: z.enum(['image', 'video', 'document', '']).optional(),
-  page: z.number().int().min(1).optional(),
-  size: z.number().int().min(1).max(100).optional(),
-});
-
-const updateSchema = z.object({
-  id: z.string().min(1),
-  title: z.string().trim().max(255).nullish(),
-  alt: z.string().trim().max(1000).nullish(),
-  folder: z.string().trim().max(60).nullish(),
-});
+import { listMediaSchema, updateMediaSchema } from './media.schemas';
+import { idSchema } from '@/schemas/shared';
 
 export const listMedia = accessProcedure
-  .input(listSchema)
+  .input(listMediaSchema)
   .action(async ({ input }) => {
     const [result, folders] = await Promise.all([
       mediaService.list(input),
@@ -31,7 +17,7 @@ export const listMedia = accessProcedure
   });
 
 export const updateMedia = accessProcedure
-  .input(updateSchema)
+  .input(updateMediaSchema)
   .action(async ({ input, ctx }) => {
     const row = await mediaService.update(input, ctx.access);
     revalidatePath(PAGES.DASHBOARD.MEDIA);
@@ -39,7 +25,7 @@ export const updateMedia = accessProcedure
   });
 
 export const deleteMedia = accessProcedure
-  .input(z.object({ id: z.string().min(1) }))
+  .input(idSchema)
   .action(async ({ input, ctx }) => {
     const row = await mediaService.remove(input, ctx.access);
     revalidatePath(PAGES.DASHBOARD.MEDIA);

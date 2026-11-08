@@ -3,6 +3,7 @@ import { FONT_FAMILIES } from '@/builder/fonts';
 import { parseVideoSettings } from '@/lib/video/settings';
 import { licenseSettingsSchema } from '@/db/schemas/licenses.schema';
 import { authSettingsSchema } from '@/db/schemas/pages.schema';
+import { BLOCK_EDITOR_KINDS } from '@/config/block-manager';
 
 const optionalText = (max: number) =>
   z
@@ -242,3 +243,18 @@ export const licensePolicyFormSchema = z.object({
 });
 
 export type LicensePolicyFormInput = z.infer<typeof licensePolicyFormSchema>;
+
+export const installQuietEditorialSchema = z.object({}).optional();
+
+export const updateBlockSettingsSchema = z.object({
+  hidden: z.record(
+    z.enum(BLOCK_EDITOR_KINDS),
+    z.array(z.string().max(100)).max(300)
+  ),
+});
+
+export const updateVideoSettingsSchema = z.object({
+  providers: z.record(z.enum(['youtube', 'vimeo', 'direct']), z.boolean()),
+});
+
+export const deactivateManagedLicenseSchema = z.object({}).optional();

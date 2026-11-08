@@ -1,15 +1,12 @@
-import { z } from 'zod';
 import { commentVisitor, withVisitorCookie } from '@/lib/comment-visitor';
 import { commentsService } from '@/server/services/comments.service';
-
-const bodySchema = z.object({
-  commentId: z.string().trim().min(1).max(100),
-  value: z.union([z.literal(1), z.literal(-1), z.literal(0)]),
-});
+import { commentReactionSchema } from '@/schemas/api/comments';
 
 /** Like (1), dislike (-1) or clear (0) a comment. Own comments are refused. */
 export async function POST(request: Request) {
-  const parsed = bodySchema.safeParse(await request.json().catch(() => null));
+  const parsed = commentReactionSchema.safeParse(
+    await request.json().catch(() => null)
+  );
   if (!parsed.success) {
     return Response.json({ error: 'Invalid reaction.' }, { status: 400 });
   }

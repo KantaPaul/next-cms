@@ -1,7 +1,5 @@
 'use server';
-import { BLOCK_EDITOR_KINDS } from '@/config/block-manager';
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import { permissionProcedure } from '@/server/procedures/permission.procedure';
@@ -18,6 +16,10 @@ import {
   themeFormSchema,
   manageLicenseFormSchema,
   licensePolicyFormSchema,
+  installQuietEditorialSchema,
+  updateBlockSettingsSchema,
+  updateVideoSettingsSchema,
+  deactivateManagedLicenseSchema,
 } from './settings.schemas';
 
 export const updateThemeSettings = permissionProcedure(
@@ -39,7 +41,7 @@ export const updateThemeSettings = permissionProcedure(
 export const installQuietEditorial = permissionProcedure(
   PERMISSIONS.SETTINGS_MANAGE
 )
-  .input(z.object({}).optional())
+  .input(installQuietEditorialSchema)
   .action(async ({ ctx }) => {
     const result = await starterKitService.installQuietEditorial(ctx.access);
     revalidatePath(PAGES.DASHBOARD.THEME);
@@ -83,14 +85,7 @@ export const updateSiteSettings = permissionProcedure(
 export const updateBlockSettings = permissionProcedure(
   PERMISSIONS.SETTINGS_MANAGE
 )
-  .input(
-    z.object({
-      hidden: z.record(
-        z.enum(BLOCK_EDITOR_KINDS),
-        z.array(z.string().max(100)).max(300)
-      ),
-    })
-  )
+  .input(updateBlockSettingsSchema)
   .action(async ({ input, ctx }) => {
     const data = await siteSettingsService.updateBlockSettings(
       input,
@@ -103,11 +98,7 @@ export const updateBlockSettings = permissionProcedure(
 export const updateVideoSettings = permissionProcedure(
   PERMISSIONS.SETTINGS_MANAGE
 )
-  .input(
-    z.object({
-      providers: z.record(z.enum(['youtube', 'vimeo', 'direct']), z.boolean()),
-    })
-  )
+  .input(updateVideoSettingsSchema)
   .action(async ({ input, ctx }) => {
     const result = await siteSettingsService.updateVideoSettings(
       input,
@@ -212,7 +203,7 @@ export const updateManagedLicense = permissionProcedure(
 export const deactivateManagedLicense = permissionProcedure(
   PERMISSIONS.SETTINGS_MANAGE
 )
-  .input(z.object({}).optional())
+  .input(deactivateManagedLicenseSchema)
   .action(async ({ ctx }) => {
     const siteSettings = await siteSettingsService.get();
     const current = siteSettings.licenseSettings;

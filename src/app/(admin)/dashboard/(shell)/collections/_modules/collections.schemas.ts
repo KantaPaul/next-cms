@@ -5,7 +5,7 @@ import {
   POST_TYPE_ICONS,
 } from '@/config/post-types';
 
-const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+export const COLLECTION_SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 /** Reserved collection slugs owned by the app. */
 export const RESERVED_COLLECTION_SLUGS = [
@@ -28,7 +28,7 @@ export const createCollectionSchema = z.object({
     .max(150)
     .optional()
     .refine(
-      v => !v || slugRegex.test(v),
+      v => !v || COLLECTION_SLUG_REGEX.test(v),
       'Slug can only contain lowercase letters, numbers, and dashes'
     )
     .refine(
@@ -187,3 +187,35 @@ export const entryEditorSchema = z.object({
 });
 
 export type EntryEditorInput = z.infer<typeof entryEditorSchema>;
+
+export const createEntrySchema = z.object({
+  collectionId: z.string().min(1),
+  slug: z.string().trim().max(200).optional(),
+});
+
+export const entryTranslationSchema = z.object({
+  id: z.string().min(1),
+  language: z.string().regex(/^[a-z]{2,12}$/),
+});
+
+/** Inline field editor (label / type / required) on the field list. */
+export const updateFieldSchema = z.object({
+  label: z.string().min(1, 'Label is required').max(150),
+  type: z.enum(FIELD_TYPES.map(t => t.value) as [string, ...string[]]),
+  required: z.boolean(),
+});
+
+export type UpdateFieldInput = z.infer<typeof updateFieldSchema>;
+
+/** Entry create/edit form: slug plus any custom field values. */
+export const entryFormSchema = z
+  .object({ slug: z.string().optional() })
+  .catchall(z.unknown());
+
+export type EntryFormValues = z.infer<typeof entryFormSchema>;
+
+export const updateEntrySchema = z.object({
+  entryId: z.string().min(1),
+  collectionId: z.string().min(1),
+  slug: z.string().trim().min(1).max(200).optional(),
+});

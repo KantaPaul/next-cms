@@ -7,3 +7,16 @@ export const createRedirectSchema = z.object({
 });
 
 export type CreateRedirectInput = z.infer<typeof createRedirectSchema>;
+
+export const redirectInputSchema = z.object({
+  fromPath: z.string().min(1),
+  toPath: z.string().min(1),
+  statusCode: z.union([z.literal(301), z.literal(302)]).optional(),
+});
+
+export const acceptRedirectOfferSchema = z.object({
+  fromPath: z.string().min(1),
+  toPath: z.string().min(1),
+});
+
+export const importRedirectsSchema = z.object({ csv: z.string().min(1) });

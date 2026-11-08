@@ -105,7 +105,7 @@ export const updatePagesSchema = z
   .partial()
   .extend({ id: z.string().min(1) });
 
-export const idSchema = z.object({ id: z.string().min(1) });
+export { idSchema } from '@/schemas/shared';
 
 export const saveDraftSchema = z.object({
   id: z.string().min(1),

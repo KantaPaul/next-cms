@@ -3,18 +3,20 @@
 import { PERMISSIONS } from '@/config/permissions';
 import { permissionProcedure } from '@/server/procedures/permission.procedure';
 import { licenseService } from '@/server/services/license.service';
-import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
+import {
+  issueLicenseActionSchema,
+  suspendLicenseActionSchema,
+  revokeLicenseActionSchema,
+  renewLicenseActionSchema,
+  reassignLicenseActionSchema,
+  adminDeactivateLicenseActionSchema,
+} from './licenses.schemas';
 
 const manage = permissionProcedure(PERMISSIONS.LICENSES_MANAGE);
 
 export const issueLicenseAction = manage
-  .input(
-    z.object({
-      ownerUserId: z.string().optional().nullable(),
-      expiresInDays: z.number().int().min(1).optional(),
-    })
-  )
+  .input(issueLicenseActionSchema)
   .action(async ({ input, ctx }) => {
     const result = await licenseService.issueLicense({
       ownerUserId: input.ownerUserId,
@@ -26,12 +28,7 @@ export const issueLicenseAction = manage
   });
 
 export const suspendLicenseAction = manage
-  .input(
-    z.object({
-      licenseId: z.string().min(1),
-      reason: z.string().optional(),
-    })
-  )
+  .input(suspendLicenseActionSchema)
   .action(async ({ input, ctx }) => {
     const result = await licenseService.suspendLicense(
       input.licenseId,
@@ -44,12 +41,7 @@ export const suspendLicenseAction = manage
   });
 
 export const revokeLicenseAction = manage
-  .input(
-    z.object({
-      licenseId: z.string().min(1),
-      reason: z.string().optional(),
-    })
-  )
+  .input(revokeLicenseActionSchema)
   .action(async ({ input, ctx }) => {
     const result = await licenseService.revokeLicense(
       input.licenseId,
@@ -62,12 +54,7 @@ export const revokeLicenseAction = manage
   });
 
 export const renewLicenseAction = manage
-  .input(
-    z.object({
-      licenseId: z.string().min(1),
-      daysToAdd: z.number().int().min(1).default(365),
-    })
-  )
+  .input(renewLicenseActionSchema)
   .action(async ({ input, ctx }) => {
     const result = await licenseService.renewLicense(
       input.licenseId,
@@ -80,13 +67,7 @@ export const renewLicenseAction = manage
   });
 
 export const reassignLicenseAction = manage
-  .input(
-    z.object({
-      licenseId: z.string().min(1),
-      newPublicKey: z.string().min(10),
-      reason: z.string().min(1),
-    })
-  )
+  .input(reassignLicenseActionSchema)
   .action(async ({ input, ctx }) => {
     const result = await licenseService.reassignLicense({
       licenseId: input.licenseId,
@@ -103,12 +84,7 @@ export const reassignLicenseAction = manage
   });
 
 export const adminDeactivateLicenseAction = manage
-  .input(
-    z.object({
-      licenseId: z.string().min(1),
-      reason: z.string().optional(),
-    })
-  )
+  .input(adminDeactivateLicenseActionSchema)
   .action(async ({ input, ctx }) => {
     const result = await licenseService.adminDeactivateInstallation(
       input.licenseId,

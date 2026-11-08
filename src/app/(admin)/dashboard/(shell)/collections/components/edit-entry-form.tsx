@@ -15,12 +15,11 @@ import {
 import { updateCollectionEntry } from '../_modules/collections.actions';
 import { objectToFormData } from '../_modules/form-helpers';
 import { useFormAction } from '@/hooks/use-form-action';
+import { EntryDataFields, type EntryFieldConfig } from './entry-data-fields';
 import {
-  EntryDataFields,
   entryFormSchema,
-  type EntryFieldConfig,
   type EntryFormValues,
-} from './entry-data-fields';
+} from '../_modules/collections.schemas';
 
 interface EditEntryFormProps {
   entryId: string;

@@ -1,6 +1,5 @@
 'use server';
 
-import { z } from 'zod';
 import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { collectionsService } from '@/server/services/collections.service';
 import { collectionTemplatesService } from '@/server/services/collection-templates.service';
@@ -15,6 +14,9 @@ import {
   createCollectionSchema,
   updateCollectionSchema,
   entryEditorSchema,
+  createEntrySchema,
+  entryTranslationSchema,
+  updateEntrySchema,
 } from './collections.schemas';
 
 /** Every post type screen (list, entries, create, edit, settings). */
@@ -272,11 +274,6 @@ export async function deleteCollectionField(formData: FormData) {
   }
 }
 
-const createEntrySchema = z.object({
-  collectionId: z.string().min(1),
-  slug: z.string().trim().max(200).optional(),
-});
-
 export async function createCollectionEntry(formData: FormData) {
   const collectionId = formData.get('collectionId');
   let slug = String(formData.get('slug') ?? '').trim();
@@ -324,13 +321,7 @@ export async function updateCollectionEntry(formData: FormData) {
   const collectionId = formData.get('collectionId');
   const slug = formData.get('slug') || undefined;
 
-  const parsed = z
-    .object({
-      entryId: z.string().min(1),
-      collectionId: z.string().min(1),
-      slug: z.string().trim().min(1).max(200).optional(),
-    })
-    .safeParse({ entryId, collectionId, slug });
+  const parsed = updateEntrySchema.safeParse({ entryId, collectionId, slug });
   if (!parsed.success) {
     return { ok: false, error: 'Invalid entry input.' };
   }
@@ -547,11 +538,6 @@ export async function duplicateEntryAction(input: { id: string }) {
     return { ok: false, error: error.message ?? 'Failed to duplicate entry.' };
   }
 }
-
-const entryTranslationSchema = z.object({
-  id: z.string().min(1),
-  language: z.string().regex(/^[a-z]{2,12}$/),
-});
 
 /** Copies an entry into another language as a linked draft. */
 export async function createEntryTranslationAction(input: unknown) {

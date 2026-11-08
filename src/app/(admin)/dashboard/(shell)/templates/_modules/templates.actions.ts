@@ -1,7 +1,6 @@
 'use server';
 import { and, asc, eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
 import { adminSiteId } from '@/server/services/site-context';
 import { revalidatePublicSite } from '@/lib/utils/revalidate-site';
 import { templatesService } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.service';
@@ -9,28 +8,18 @@ import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import { db } from '@/db';
 import { globalBlocks, pageTemplates } from '@/db/schema';
-import { EDITOR_TYPE } from '@/db/schemas/shared.schema';
 import {
   accessProcedure,
   permissionProcedure,
 } from '@/server/procedures/permission.procedure';
-
-const blockItemSchema = z.object({
-  type: z.string().min(1),
-  props: z.record(z.string(), z.unknown()),
-});
-
-/** Empty content is allowed on create only; service enforces non-empty on update. */
-const globalBlockContentSchema = z.union([
-  z.array(blockItemSchema),
-  z.object({
-    root: z
-      .object({ props: z.record(z.string(), z.unknown()).optional() })
-      .optional(),
-    content: z.array(blockItemSchema),
-    zones: z.record(z.string(), z.array(blockItemSchema)).optional(),
-  }),
-]);
+import {
+  saveGlobalBlockSchema,
+  publishGlobalBlockSchema,
+  renameGlobalBlockSchema,
+  saveTemplateSchema,
+  updateTemplateSchema,
+} from './templates.schemas';
+import { idSchema } from '@/schemas/shared';
 
 export const listGlobalBlockOptions = permissionProcedure(
   PERMISSIONS.PAGES_EDIT
@@ -141,14 +130,7 @@ export async function getGlobalBlockContent(
 }
 
 export const saveGlobalBlock = accessProcedure
-  .input(
-    z.object({
-      id: z.string().optional(),
-      name: z.string().trim().min(1).max(150),
-      category: z.string().trim().max(50).optional(),
-      content: globalBlockContentSchema,
-    })
-  )
+  .input(saveGlobalBlockSchema)
   .action(async ({ input, ctx }) => {
     const row = await templatesService.saveGlobalBlock(
       input as never,
@@ -161,11 +143,7 @@ export const saveGlobalBlock = accessProcedure
   });
 
 export const publishGlobalBlock = accessProcedure
-  .input(
-    z.object({
-      id: z.string().min(1),
-    })
-  )
+  .input(publishGlobalBlockSchema)
   .action(async ({ input, ctx }) => {
     const row = await templatesService.publishGlobalBlock(input.id, ctx.access);
     const siteId = await adminSiteId();
@@ -177,13 +155,7 @@ export const publishGlobalBlock = accessProcedure
   });
 
 export const renameGlobalBlock = accessProcedure
-  .input(
-    z.object({
-      id: z.string().min(1),
-      name: z.string().trim().min(1).max(150),
-      category: z.string().trim().max(50),
-    })
-  )
+  .input(renameGlobalBlockSchema)
   .action(async ({ input, ctx }) => {
     const row = await templatesService.renameGlobalBlock(input, ctx.access);
     revalidatePath(PAGES.DASHBOARD.TEMPLATES);
@@ -193,7 +165,7 @@ export const renameGlobalBlock = accessProcedure
   });
 
 export const deleteGlobalBlock = accessProcedure
-  .input(z.object({ id: z.string().min(1) }))
+  .input(idSchema)
   .action(async ({ input, ctx }) => {
     const row = await templatesService.deleteGlobalBlock(input, ctx.access);
     revalidatePath(PAGES.DASHBOARD.TEMPLATES);
@@ -203,15 +175,7 @@ export const deleteGlobalBlock = accessProcedure
   });
 
 export const saveTemplate = accessProcedure
-  .input(
-    z.object({
-      name: z.string().trim().min(1).max(150),
-      description: z.string().trim().max(500).nullish(),
-      category: z.string().trim().max(50).optional(),
-      editorType: z.enum(EDITOR_TYPE),
-      content: z.unknown(),
-    })
-  )
+  .input(saveTemplateSchema)
   .action(async ({ input, ctx }) => {
     const row = await templatesService.saveTemplate(input, ctx.access);
     revalidatePath(PAGES.DASHBOARD.TEMPLATES);
@@ -221,7 +185,7 @@ export const saveTemplate = accessProcedure
   });
 
 export const deleteTemplate = accessProcedure
-  .input(z.object({ id: z.string().min(1) }))
+  .input(idSchema)
   .action(async ({ input, ctx }) => {
     const row = await templatesService.deleteTemplate(input, ctx.access);
     revalidatePath(PAGES.DASHBOARD.TEMPLATES);
@@ -231,15 +195,7 @@ export const deleteTemplate = accessProcedure
   });
 
 export const updateTemplate = accessProcedure
-  .input(
-    z.object({
-      id: z.string().min(1),
-      content: z.unknown(),
-      name: z.string().trim().min(1).max(150).optional(),
-      description: z.string().trim().max(500).nullish(),
-      category: z.string().trim().max(50).optional(),
-    })
-  )
+  .input(updateTemplateSchema)
   .action(async ({ input, ctx }) => {
     const row = await templatesService.updateTemplate(input, ctx.access);
     revalidatePath(PAGES.DASHBOARD.TEMPLATES);

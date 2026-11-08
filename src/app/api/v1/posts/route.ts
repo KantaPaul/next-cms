@@ -4,24 +4,17 @@ import {
   apiOptions,
   enumParam,
   pagination,
+  ApiRequestError,
 } from '@/server/api/v1';
 import { BLOG_SORTS, blogService } from '@/server/services/blog.service';
 import { siteContext } from '@/server/services/site-context';
-import { z } from 'zod';
 import { NextResponse } from 'next/server';
-import { ApiRequestError } from '@/server/api/v1';
 import { PERMISSIONS } from '@/config/permissions';
 import { accessService } from '@/server/services/access.service';
 import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { db } from '@/db';
 import { posts, postContents } from '@/db/schema';
-
-const createPostSchema = z.object({
-  title: z.string().trim().min(1).max(255),
-  slug: z.string().trim().min(1).max(255),
-  language: z.string().min(1).max(10),
-  body: z.string().optional(),
-});
+import { apiCreatePostSchema } from '@/schemas/api/v1/posts';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,7 +59,7 @@ export const POST = apiHandler(
     }
 
     const body = await request.json();
-    const parsed = createPostSchema.safeParse(body);
+    const parsed = apiCreatePostSchema.safeParse(body);
     if (!parsed.success) {
       throw new ApiRequestError(400, 'Invalid post data.');
     }

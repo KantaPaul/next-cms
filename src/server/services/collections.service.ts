@@ -43,24 +43,13 @@ import {
   POST_TYPE_PRESETS,
 } from '@/config/post-types';
 import type { SeoInput } from '@/db/validations/pages.validation';
-
-const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
-/** Slugs owned by the app or reserved for future use. */
-export const RESERVED_COLLECTION_SLUGS = [
-  'api',
-  'dashboard',
-  'login',
-  'logout',
-  'media',
-  'sitemap.xml',
-  'robots.txt',
-  '_next',
-  'blog',
-];
+import {
+  COLLECTION_SLUG_REGEX,
+  RESERVED_COLLECTION_SLUGS,
+} from '@/app/(admin)/dashboard/(shell)/collections/_modules/collections.schemas';
 
 function assertSlugValid(slug: string) {
-  if (!slugRegex.test(slug)) {
+  if (!COLLECTION_SLUG_REGEX.test(slug)) {
     throw new ApplicationException(
       'Slug can only contain lowercase letters, numbers, and dashes.'
     );

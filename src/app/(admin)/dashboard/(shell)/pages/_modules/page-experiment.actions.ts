@@ -1,13 +1,16 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
 import { db } from '@/db';
 import { and, eq } from 'drizzle-orm';
 import { pages, pageContents, pageExperiments } from '@/db/schema';
-import { ContentKindType } from '@/db/schemas/shared.schema';
 import { permissionProcedure } from '@/server/procedures/permission.procedure';
 import { PAGES } from '@/config/pages';
+import {
+  startPageExperimentSchema,
+  pickPageExperimentWinnerSchema,
+  endPageExperimentSchema,
+} from './page-experiment.schemas';
 
 const revalidatePage = (id: string) => {
   revalidatePath(PAGES.DASHBOARD.PAGES.EDIT(id));
@@ -15,13 +18,7 @@ const revalidatePage = (id: string) => {
 
 /** Start or update an A/B experiment on a published builder page. Requires pages.publish. */
 export const startPageExperiment = permissionProcedure('pages.publish')
-  .input(
-    z.object({
-      pageId: z.string(),
-      variantContent: z.string(),
-      weight: z.number().min(1).max(99).default(50),
-    })
-  )
+  .input(startPageExperimentSchema)
   .action(async ({ input, ctx }) => {
     const { adminSiteId } = await import('@/server/services/site-context');
     const siteId = await adminSiteId();
@@ -84,12 +81,7 @@ export const startPageExperiment = permissionProcedure('pages.publish')
 
 /** Pick a winner for a page experiment. Requires pages.publish. */
 export const pickPageExperimentWinner = permissionProcedure('pages.publish')
-  .input(
-    z.object({
-      pageId: z.string(),
-      winner: z.enum(['a', 'b']),
-    })
-  )
+  .input(pickPageExperimentWinnerSchema)
   .action(async ({ input, ctx }) => {
     const { adminSiteId } = await import('@/server/services/site-context');
     const siteId = await adminSiteId();
@@ -142,11 +134,7 @@ export const pickPageExperimentWinner = permissionProcedure('pages.publish')
 
 /** End a page experiment without picking a winner. Requires pages.publish. */
 export const endPageExperiment = permissionProcedure('pages.publish')
-  .input(
-    z.object({
-      pageId: z.string(),
-    })
-  )
+  .input(endPageExperimentSchema)
   .action(async ({ input, ctx }) => {
     const { adminSiteId } = await import('@/server/services/site-context');
     const siteId = await adminSiteId();

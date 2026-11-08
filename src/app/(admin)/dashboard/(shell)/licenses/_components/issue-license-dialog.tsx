@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -27,16 +26,10 @@ import {
 } from '@/components/ui/form';
 import { FormInput } from '@/components/ui/input';
 import { issueLicenseAction } from '../_modules/licenses.actions';
-
-const issueLicenseSchema = z.object({
-  ownerUserId: z.string().optional(),
-  expiresInDays: z
-    .number({ message: 'Validity period must be a number' })
-    .int('Must be a whole number of days')
-    .min(1, 'Validity period must be at least 1 day'),
-});
-
-type IssueLicenseFormValues = z.infer<typeof issueLicenseSchema>;
+import {
+  type IssueLicenseFormValues,
+  issueLicenseFormSchema,
+} from '../_modules/licenses.schemas';
 
 interface IssueLicenseDialogProps {
   open: boolean;
@@ -54,7 +47,7 @@ export function IssueLicenseDialog({
   const [hasCopied, setHasCopied] = useState(false);
 
   const form = useForm<IssueLicenseFormValues>({
-    resolver: zodResolver(issueLicenseSchema),
+    resolver: zodResolver(issueLicenseFormSchema),
     defaultValues: {
       ownerUserId: '',
       expiresInDays: 365,

@@ -2,7 +2,36 @@
 
 **Goal:** Move all Zod schema definitions into dedicated, centralized files under `src/schemas/` so schemas are reusable, deduplicated, and easy to maintain.
 
-**Status:** Planning only — implementation not started.
+**Status:** Done (2026-11-08, branch `pobon/zod-schemas`). Implemented with a
+co-located layout instead of the central tree in §2 — see "Outcome" below.
+Sections 1–7 are the original plan, kept for history.
+
+## Outcome
+
+- **Feature schemas live next to their actions**: `_modules/<feature>.schemas.ts`
+  (and `src/server/actions/<name>.schemas.ts` for shared actions). Every
+  `.input(z...)` in a `'use server'` file is now a named, exported schema there.
+- **`src/schemas/`** holds only cross-cutting schemas:
+  - `shared.ts` — `idSchema` (replaced 16 inline `{ id: z.string().min(1) }`;
+    `db/validations/pages.validation.ts` re-exports it).
+  - `api/v1/responses.ts` — OpenAPI response schemas + `apiSchemas` (moved out
+    of `server/api/v1.ts`; v1's response `seoSchema` is now `seoResponseSchema`).
+  - `api/v1/{pages,posts,collections}.ts` — REST request bodies, prefixed
+    `api*` (they are a narrower public contract than the admin schemas, so they
+    were not merged into `db/validations`).
+  - `api/comments.ts` — comment reaction body.
+- **Duplicates resolved**: `createSiteSchema`/`updateSiteSchema` (site action now
+  uses `sites.schemas.ts`), `RESERVED_COLLECTION_SLUGS` + slug regex (service
+  imports `collections.schemas.ts`).
+- **No barrel**: a `src/schemas/index.ts` re-exporting feature schemas would
+  pull server-only imports (e.g. `blog.schemas.ts` → `blog.service`) into
+  client bundles; import from the specific file instead.
+- **Left in place on purpose**: block prop schemas in `src/builder/**`, domain
+  validators in `src/lib/**`, `src/server/services/comments.rules.ts`,
+  `src/server/ai/page-generator.ts`, `db/helpers/parse-search-params.ts`.
+
+---
+
 
 ---
 

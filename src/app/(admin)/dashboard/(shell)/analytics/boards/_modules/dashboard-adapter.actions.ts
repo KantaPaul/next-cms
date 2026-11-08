@@ -12,11 +12,8 @@ import {
   type DashboardRecord,
   type DashboardSaveResult,
   type DashboardSource,
-  dashboardLayoutSchema,
-  dashboardQueryBatchSchema,
 } from '@nextcms/builder-react/dashboard';
 import { revalidatePath } from 'next/cache';
-import { z } from 'zod';
 import { PAGES } from '@/config/pages';
 import {
   toBoardLayout,
@@ -26,11 +23,17 @@ import { ApplicationException } from '@/lib/utils/error';
 import { accessProcedure } from '@/server/procedures/permission.procedure';
 import { analyticsDashboardDataService } from '@/server/services/analytics-dashboard-data.service';
 import { analyticsBoardsService } from '@/server/services/analytics-boards.service';
+import {
+  saveDashboardRecordSchema,
+  listDashboardSourcesSchema,
+  queryDashboardWidgetsSchema,
+} from './dashboard-adapter.schemas';
+import { idSchema } from '@/schemas/shared';
 
 const boardsBase = PAGES.DASHBOARD.ANALYTICS_BOARDS;
 
 export const loadDashboardRecord = accessProcedure
-  .input(z.object({ id: z.string().min(1) }))
+  .input(idSchema)
   .action(async ({ input }): Promise<DashboardRecord> => {
     const board = await analyticsBoardsService.get(input.id);
     if (!board) throw new ApplicationException('Dashboard not found');
@@ -38,14 +41,7 @@ export const loadDashboardRecord = accessProcedure
   });
 
 export const saveDashboardRecord = accessProcedure
-  .input(
-    z.object({
-      id: z.string().min(1),
-      name: z.string().trim().min(1).max(120),
-      layout: dashboardLayoutSchema,
-      expectedVersion: z.number().int().min(0),
-    })
-  )
+  .input(saveDashboardRecordSchema)
   .action(async ({ input }): Promise<DashboardSaveResult> => {
     const mapped = toBoardLayout(input.layout);
     if (!mapped.ok) throw new ApplicationException(mapped.message);
@@ -70,14 +66,14 @@ export const saveDashboardRecord = accessProcedure
   });
 
 export const listDashboardSources = accessProcedure
-  .input(z.object({}))
+  .input(listDashboardSourcesSchema)
   .action(async (): Promise<DashboardSource[]> =>
     analyticsDashboardDataService.sources()
   );
 
 /** The structured query endpoint: a batch of requests, never SQL. */
 export const queryDashboardWidgets = accessProcedure
-  .input(z.object({ requests: dashboardQueryBatchSchema }))
+  .input(queryDashboardWidgetsSchema)
   .action(async ({ input }): Promise<DashboardQueryResponse[]> =>
     analyticsDashboardDataService.query(input.requests)
   );

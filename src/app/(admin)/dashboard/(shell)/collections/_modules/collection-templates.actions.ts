@@ -1,24 +1,12 @@
 'use server';
 
-import { z } from 'zod';
 import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { collectionTemplatesService } from '@/server/services/collection-templates.service';
 import { accessService } from '@/server/services/access.service';
-import { revalidatePath } from 'next/cache';
-import { PAGES } from '@/config/pages';
-
-const createSchema = z.object({
-  collectionId: z.string().min(1),
-  name: z.string().trim().min(1, 'Name is required').max(150),
-  description: z.string().trim().max(500).nullish(),
-  fromId: z.string().nullish(),
-});
-
-const updateSchema = z.object({
-  id: z.string().min(1),
-  name: z.string().trim().min(1, 'Name is required').max(150),
-  description: z.string().trim().max(500).nullish(),
-});
+import {
+  createCollectionTemplateSchema,
+  updateCollectionTemplateSchema,
+} from './collection-templates.schemas';
 
 async function getAccess() {
   const { userId } = await getCurrentUserAndTeamId();
@@ -26,7 +14,7 @@ async function getAccess() {
 }
 
 export async function createCollectionTemplateAction(input: unknown) {
-  const parsed = createSchema.safeParse(input);
+  const parsed = createCollectionTemplateSchema.safeParse(input);
   if (!parsed.success) {
     return {
       ok: false,
@@ -46,7 +34,7 @@ export async function createCollectionTemplateAction(input: unknown) {
 }
 
 export async function updateCollectionTemplateAction(input: unknown) {
-  const parsed = updateSchema.safeParse(input);
+  const parsed = updateCollectionTemplateSchema.safeParse(input);
   if (!parsed.success) {
     return {
       ok: false,

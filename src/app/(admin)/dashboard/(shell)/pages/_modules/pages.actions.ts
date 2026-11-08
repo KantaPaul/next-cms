@@ -14,7 +14,7 @@ import {
 } from '@/db/validations/pages.validation';
 import { accessProcedure } from '@/server/procedures/permission.procedure';
 import { type DocumentPatch, isBuilderDocument } from '@nextcms/builder-core';
-import { z } from 'zod';
+import { saveEditorDraftSchema } from './pages.schemas';
 
 const revalidateAdmin = (id?: string) => {
   revalidatePath(PAGES.DASHBOARD.PAGES.INDEX);
@@ -43,23 +43,7 @@ export const saveDraft = accessProcedure
 
 /** New editor saves (R738, R739): a patch or whole document, checked against `baseVersion`. */
 export const saveEditorDraft = accessProcedure
-  .input(
-    z.object({
-      id: z.string().min(1),
-      baseVersion: z.number().int().min(0),
-      patch: z
-        .object({
-          root: z
-            .object({ props: z.record(z.string(), z.unknown()) })
-            .optional(),
-          rootSlot: z.array(z.string()).optional(),
-          upsert: z.record(z.string(), z.unknown()),
-          remove: z.array(z.string()),
-        })
-        .optional(),
-      document: z.unknown().optional(),
-    })
-  )
+  .input(saveEditorDraftSchema)
   .action(async ({ input, ctx }) =>
     pagesServices.saveEditorDraft(
       {
