@@ -2,7 +2,7 @@ import { siteHref } from '@/lib/utils/site-href';
 import type { ReactNode } from 'react';
 import type { MenuWithItems } from '@/server/services/public-site.service';
 import { ActiveNavLink } from './active-nav-link';
-import { MegaMenuItem } from './mega-menu-item';
+import { DropdownMenuItem, MegaMenuItem } from './mega-menu-item';
 import { el, linkEl } from '@/builder/blocks/element';
 import type { ElementStyle } from '@/builder/style';
 import { cn } from '@/lib/utils/cn';
@@ -104,6 +104,8 @@ export function MenuLinks({
           </span>
         ) : null;
 
+        const hasDropdown = depth > 1 && Boolean(item.children?.length);
+
         const panel =
           orientation === 'horizontal' ? megaPanels?.[item.id] : null;
         if (panel) {
@@ -123,17 +125,29 @@ export function MenuLinks({
         }
 
         return (
-          <li key={item.id} className="group relative">
+          <DropdownMenuItem key={item.id} className="group relative">
             <ActiveNavLink {...linkProps}>
               {item.label}
               {badgeEl}
+              {hasDropdown && (
+                <span className="inline-flex size-5 items-center justify-center opacity-70">
+                  <svg
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    aria-hidden="true"
+                    className="size-3.5 transition-transform group-focus-within:rotate-180 group-hover:rotate-180"
+                  >
+                    <path d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z" />
+                  </svg>
+                </span>
+              )}
             </ActiveNavLink>
-            {depth > 1 && item.children && item.children.length > 0 && (
+            {hasDropdown && (
               <ul
                 {...el(
                   styled,
                   'dropdown',
-                  's-border invisible absolute left-0 top-full z-20 min-w-44 rounded-md border bg-[var(--site-bg)] p-2 opacity-0 shadow-lg transition group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100'
+                  's-border invisible absolute left-0 top-[calc(100%+var(--dropdown-offset,0px))] z-20 min-w-44 rounded-md border bg-[var(--site-bg)] p-2 opacity-0 shadow-lg transition before:absolute before:inset-x-0 before:bottom-full before:h-[var(--dropdown-offset,0px)] group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100'
                 )}
               >
                 {item.children.map(child => (
@@ -158,7 +172,7 @@ export function MenuLinks({
                 ))}
               </ul>
             )}
-          </li>
+          </DropdownMenuItem>
         );
       })}
     </ul>

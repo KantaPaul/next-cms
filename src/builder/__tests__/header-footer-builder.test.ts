@@ -4,7 +4,9 @@ import { defaultProps, validateProps } from '@nextcms/builder-core';
 import { editorSetup, pageDefinitions } from '../definitions';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createElement } from 'react';
+import { readFileSync } from 'node:fs';
 import { Button } from '../blocks/layout';
+import { NavMenu } from '../blocks/site-chrome';
 import { isActiveHref } from '../../components/site/active-nav-link';
 import * as starters from '../../db/seed/header-footer-starters';
 import type { StarterTemplate } from '../../db/seed/header-footer-starters';
@@ -586,5 +588,70 @@ describe('isActiveHref', () => {
     assert.equal(isActiveHref('/main', 'https://example.com', home), false);
     assert.equal(isActiveHref('/main', '#top', home), false);
     assert.equal(isActiveHref('/main', '//example.com/main', home), false);
+  });
+});
+
+describe('mobile menu swap', () => {
+  it('marks the horizontal menu so a mobile menu can replace it', () => {
+    const html = renderToStaticMarkup(
+      createElement(NavMenu, { orientation: 'horizontal' })
+    );
+    assert.ok(html.includes('data-nav-menu="horizontal"'));
+  });
+
+  it('hides it at the mobile menu breakpoint', () => {
+    const css = readFileSync(new URL('../site.css', import.meta.url), 'utf8');
+    assert.match(
+      css,
+      /max-width: 767\.98px[^}]*\[data-mobile-menu\][^}]*\[data-nav-menu='horizontal'\]/
+    );
+    assert.match(
+      css,
+      /max-width: 1023\.98px[^}]*\[data-mobile-menu='tablet'\][^}]*\[data-nav-menu='horizontal'\]/
+    );
+  });
+});
+
+describe('header overlay animations', () => {
+  const css = readFileSync(new URL('../site.css', import.meta.url), 'utf8');
+
+  it('has enter and exit animations for each overlay style', () => {
+    for (const name of ['fade', 'right', 'left', 'pop']) {
+      assert.ok(css.includes(`@keyframes s-ov-${name}-in`), name);
+      assert.ok(css.includes(`@keyframes s-ov-${name}-out`), name);
+    }
+  });
+
+  it('turns them off for reduced motion', () => {
+    assert.match(
+      css,
+      /prefers-reduced-motion: reduce\)\s*\{\s*\.site-root \[data-site-overlay\] \.s-ov-fade/
+    );
+  });
+});
+
+describe('NavMenu dropdown', () => {
+  const menu = {
+    items: [
+      {
+        id: 'a',
+        label: 'Parent',
+        url: '/parent',
+        children: [{ id: 'b', label: 'Child', url: '/child' }],
+      },
+      { id: 'c', label: 'Plain', url: '/plain', children: [] },
+    ],
+  };
+  const render = (depth: number) =>
+    renderToStaticMarkup(
+      createElement(NavMenu, { menu, depth } as Record<string, unknown>)
+    );
+
+  it('shows an icon only on items with a dropdown', () => {
+    assert.equal(render(2).match(/<svg/g)?.length, 1);
+  });
+
+  it('shows no icon when depth leaves the dropdown out', () => {
+    assert.equal(render(1).includes('<svg'), false);
   });
 });

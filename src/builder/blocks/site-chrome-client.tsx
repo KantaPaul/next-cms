@@ -26,6 +26,7 @@ import {
   type LiveSearchResultItem,
 } from '@/server/actions/site-chrome.actions';
 import { el, linkEl, type WithSection } from './element';
+import { SiteOverlay } from './site-overlay-client';
 
 /* =========================================================================
    MobileMenu Client Component
@@ -91,7 +92,10 @@ export function MobileMenuClient({
         : 'inset-y-0 right-0 w-full max-w-sm border-l';
 
   return (
-    <div className={visibilityClass}>
+    <div
+      className={visibilityClass}
+      data-mobile-menu={breakpoint === 'tablet' ? 'tablet' : 'mobile'}
+    >
       {/* Trigger Toggle Button */}
       <button
         type="button"
@@ -112,14 +116,14 @@ export function MobileMenuClient({
       </button>
 
       {/* Drawer Overlay & Content */}
-      {open && (
+      <SiteOverlay open={open}>
         <div className="fixed inset-0 z-[100] flex">
           {/* Backdrop */}
           <div
             {...el(
               styled,
               'backdrop',
-              'fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity'
+              's-ov-fade fixed inset-0 bg-black/50 backdrop-blur-sm'
             )}
             onClick={() => setOpen(false)}
             aria-hidden="true"
@@ -136,6 +140,11 @@ export function MobileMenuClient({
               'panel',
               cn(
                 'relative z-10 flex flex-col bg-[var(--site-bg)] text-[var(--site-fg)] shadow-2xl border-[var(--site-border)]',
+                drawerSide === 'full'
+                  ? 's-ov-pop'
+                  : drawerSide === 'left'
+                    ? 's-ov-left'
+                    : 's-ov-right',
                 drawerPositionClass
               )
             )}
@@ -174,7 +183,7 @@ export function MobileMenuClient({
 
             {/* Nav Items */}
             <div className="flex-1 overflow-y-auto px-4 py-5">
-              <ul className="flex flex-col space-y-1">
+              <ul className="s-ov-stagger flex flex-col space-y-1">
                 {(menu?.items || []).map(item => {
                   const hasChildren = item.children && item.children.length > 0;
                   const isExpanded = !!expandedItems[item.id];
@@ -241,7 +250,7 @@ export function MobileMenuClient({
             </div>
           </div>
         </div>
-      )}
+      </SiteOverlay>
     </div>
   );
 }
@@ -550,10 +559,10 @@ export function SearchBoxClient({
           <SearchIcon className="size-4" />
         </button>
 
-        {modalOpen && (
+        <SiteOverlay open={modalOpen}>
           <div className="fixed inset-0 z-[110] flex items-start justify-center px-4 pt-20">
             <div
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+              className="s-ov-fade fixed inset-0 bg-black/50 backdrop-blur-sm"
               onClick={() => {
                 setModalOpen(false);
                 setShowFlyout(false);
@@ -564,7 +573,7 @@ export function SearchBoxClient({
               {...el(
                 styled,
                 'modalPanel',
-                'relative z-10 w-full max-w-lg rounded-xl border border-[var(--site-border)] bg-[var(--site-bg)] p-4 shadow-2xl'
+                's-ov-pop relative z-10 w-full max-w-lg rounded-xl border border-[var(--site-border)] bg-[var(--site-bg)] p-4 shadow-2xl'
               )}
             >
               <form action={searchPath} method="GET" className="relative">
@@ -604,7 +613,7 @@ export function SearchBoxClient({
               {renderDropdownContent()}
             </div>
           </div>
-        )}
+        </SiteOverlay>
       </div>
     );
   }

@@ -682,7 +682,7 @@ export function Logo({
   return (
     <Link
       href={href}
-      className="inline-flex items-center gap-2.5 text-lg font-bold transition-opacity hover:opacity-90"
+      className="inline-flex min-w-0 max-w-full items-center gap-2.5 text-lg font-bold transition-opacity hover:opacity-90"
     >
       {logoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -790,7 +790,7 @@ export function NavMenu({
       : undefined;
 
   return (
-    <nav aria-label={`${location} navigation`}>
+    <nav aria-label={`${location} navigation`} data-nav-menu={orientation}>
       <MenuLinks
         menu={resolvedMenu}
         orientation={orientation}

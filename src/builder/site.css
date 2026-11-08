@@ -1415,3 +1415,125 @@ html[data-site-mode='dark']
 .site-root [data-header-bar] > div > * > [data-column] > div section {
   width: auto;
 }
+
+/* A header with a mobile menu swaps its horizontal menu for it at the same breakpoint. */
+@media (max-width: 767.98px) {
+  .site-root
+    [data-header-bar]:has([data-mobile-menu])
+    [data-nav-menu='horizontal'] {
+    display: none;
+  }
+}
+@media (max-width: 1023.98px) {
+  .site-root
+    [data-header-bar]:has([data-mobile-menu='tablet'])
+    [data-nav-menu='horizontal'] {
+    display: none;
+  }
+}
+
+/* Header overlays: mobile menu, bookmarks drawer, search popup (SiteOverlay). */
+@keyframes s-ov-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes s-ov-right-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes s-ov-left-in {
+  from {
+    transform: translateX(-100%);
+  }
+}
+@keyframes s-ov-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.97);
+  }
+}
+@keyframes s-ov-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes s-ov-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes s-ov-right-out {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes s-ov-left-out {
+  to {
+    transform: translateX(-100%);
+  }
+}
+@keyframes s-ov-pop-out {
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+}
+.site-root [data-site-overlay] {
+  --s-ov-in: 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  --s-ov-out: 200ms ease-in both;
+}
+.site-root [data-site-overlay='closed'] {
+  pointer-events: none;
+}
+.site-root [data-site-overlay='open'] .s-ov-fade {
+  animation: s-ov-fade-in var(--s-ov-in);
+}
+.site-root [data-site-overlay='open'] .s-ov-right {
+  animation: s-ov-right-in var(--s-ov-in);
+}
+.site-root [data-site-overlay='open'] .s-ov-left {
+  animation: s-ov-left-in var(--s-ov-in);
+}
+.site-root [data-site-overlay='open'] .s-ov-pop {
+  animation: s-ov-pop-in var(--s-ov-in);
+}
+.site-root [data-site-overlay='open'] .s-ov-stagger > * {
+  animation: s-ov-item-in var(--s-ov-in);
+  animation-delay: 80ms;
+}
+.site-root [data-site-overlay='open'] .s-ov-stagger > :nth-child(2) {
+  animation-delay: 120ms;
+}
+.site-root [data-site-overlay='open'] .s-ov-stagger > :nth-child(3) {
+  animation-delay: 160ms;
+}
+.site-root [data-site-overlay='open'] .s-ov-stagger > :nth-child(4) {
+  animation-delay: 200ms;
+}
+.site-root [data-site-overlay='open'] .s-ov-stagger > :nth-child(n + 5) {
+  animation-delay: 240ms;
+}
+.site-root [data-site-overlay='closed'] .s-ov-fade {
+  animation: s-ov-fade-out var(--s-ov-out);
+}
+.site-root [data-site-overlay='closed'] .s-ov-right {
+  animation: s-ov-right-out var(--s-ov-out);
+}
+.site-root [data-site-overlay='closed'] .s-ov-left {
+  animation: s-ov-left-out var(--s-ov-out);
+}
+.site-root [data-site-overlay='closed'] .s-ov-pop {
+  animation: s-ov-pop-out var(--s-ov-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-root [data-site-overlay] .s-ov-fade,
+  .site-root [data-site-overlay] .s-ov-right,
+  .site-root [data-site-overlay] .s-ov-left,
+  .site-root [data-site-overlay] .s-ov-pop,
+  .site-root [data-site-overlay] .s-ov-stagger > * {
+    animation: none;
+  }
+}

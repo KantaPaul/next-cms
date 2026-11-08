@@ -5,6 +5,7 @@ import { useCallback, useEffect, useId, useState } from 'react';
 import { cn } from '@/lib/utils/cn';
 import type { ElementStyle } from '../style';
 import { el, linkEl } from './element';
+import { SiteOverlay } from './site-overlay-client';
 
 /**
  * Visitor bookmarks, kept in this browser only (localStorage). Nothing is sent
@@ -187,12 +188,12 @@ export function BookmarksDrawer({
           </span>
         )}
       </button>
-      {open && (
+      <SiteOverlay open={open}>
         <div className="fixed inset-0 z-[100] flex justify-end">
           <button
             type="button"
             aria-label="Close"
-            className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
+            className="s-ov-fade absolute inset-0 bg-black/40 backdrop-blur-[2px]"
             onClick={() => setOpen(false)}
           />
           <div
@@ -202,7 +203,7 @@ export function BookmarksDrawer({
             {...el(
               { elements },
               'panel',
-              's-border relative flex h-full w-full max-w-sm flex-col border-l bg-[var(--site-bg)] text-[var(--site-fg)] shadow-2xl'
+              's-ov-right s-border relative flex h-full w-full max-w-sm flex-col border-l bg-[var(--site-bg)] text-[var(--site-fg)] shadow-2xl'
             )}
           >
             <div className="s-border flex items-center justify-between border-b px-5 py-4">
@@ -225,7 +226,7 @@ export function BookmarksDrawer({
               </button>
             </div>
             {items.length ? (
-              <ul className="flex-1 space-y-1 overflow-y-auto p-3">
+              <ul className="s-ov-stagger flex-1 space-y-1 overflow-y-auto p-3">
                 {items.map(item => (
                   <li
                     key={item.url}
@@ -279,7 +280,7 @@ export function BookmarksDrawer({
             )}
           </div>
         </div>
-      )}
+      </SiteOverlay>
     </>
   );
 }
