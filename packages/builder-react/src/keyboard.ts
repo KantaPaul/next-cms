@@ -72,8 +72,8 @@ export const SHORTCUTS: [KeyAction, string][] = [
   ['copy', 'Mod + C'],
   ['cut', 'Mod + X'],
   ['paste', 'Mod + V'],
-  ['copy-style', 'Alt + Mod + C'],
-  ['paste-style', 'Alt + Mod + V'],
+  ['copy-style', 'Mod + Shift + C'],
+  ['paste-style', 'Mod + Shift + V'],
   ['inspect', 'Alt + I'],
   ['delete', 'Delete or Backspace'],
   ['undo', 'Mod + Z'],
@@ -97,7 +97,7 @@ export function keyAction(input: KeyInput): KeyAction | null {
   };
 
   if (mod) {
-    if (input.altKey) {
+    if (input.altKey || input.shiftKey) {
       if (isKey('c')) return 'copy-style';
       if (isKey('v')) return 'paste-style';
     }
@@ -210,9 +210,11 @@ export function runKeyAction(
       store.cut();
       return true;
     case 'copy-style':
-      return copyBlockStyle(store, id) !== null;
+      copyBlockStyle(store, id);
+      return true;
     case 'paste-style':
-      return pasteBlockStyle(store, id);
+      pasteBlockStyle(store, id);
+      return true;
     case 'inspect':
       inspectBlock(store, id);
       return true;

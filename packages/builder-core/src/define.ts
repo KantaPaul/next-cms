@@ -392,6 +392,7 @@ export function toBlockSchema(
     label: definition.label,
     ...info,
     defaultProps: base,
+    fields: fieldsOf(definition),
     presets,
     slots: definition.slots,
     arraySlots: definition.arraySlots,
@@ -406,6 +407,7 @@ const INFO_KEYS = [
   'semanticTag',
   'nesting',
   'defaultSize',
+  'parents',
   'reorder',
 ] as const satisfies readonly (keyof BlockInfo)[];
 

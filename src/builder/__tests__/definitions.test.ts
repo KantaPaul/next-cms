@@ -68,7 +68,18 @@ describe('page block definitions', () => {
   });
 
   it('keep slots and nesting rules', () => {
-    assert.deepEqual(pageSchemas.Columns.slots?.column1, { allow: undefined, disallow: ['Columns', 'GlobalRef'] });
+    assert.deepEqual(pageSchemas.Columns.slots?.columns?.allow, ['Column']);
+    assert.deepEqual(pageSchemas.Column.slots?.content?.disallow, [
+      'Column',
+      'Columns',
+      'GlobalRef',
+    ]);
+    assert.deepEqual(pageSchemas.Column.parents, [
+      'Columns',
+      'HeaderBar',
+      'HeaderColumns',
+      'FooterColumns',
+    ]);
     assert.ok(pageSchemas.Container.slots?.content);
     assert.ok(pageSchemas.Tabs.arraySlots?.items?.content);
   });

@@ -1,4 +1,5 @@
 import type { BuilderData, BuilderItem } from '@/builder/data';
+import { migratePuckColumns } from '@/builder/migrations/column-blocks';
 import {
   DEFAULT_DRAWER_SETTINGS,
   DEFAULT_POPUP_SETTINGS,
@@ -2363,11 +2364,19 @@ export const STARTERS_BY_CATEGORY: Record<SiteTemplateCategory, StarterTemplate[
   Drawer: DRAWER_STARTERS,
 };
 
+for (const starters of Object.values(STARTERS_BY_CATEGORY)) {
+  for (const starter of starters) {
+    starter.content = migratePuckColumns(starter.content) as BuilderData;
+  }
+}
+
 export function getStarterContent(
   category: SiteTemplateCategory,
   key?: string
 ): BuilderData | null {
   if (!key || key === 'blank') return null;
   const found = STARTERS_BY_CATEGORY[category].find(s => s.key === key);
-  return found ? JSON.parse(JSON.stringify(found.content)) : null;
+  return found
+    ? (migratePuckColumns(JSON.parse(JSON.stringify(found.content))) as BuilderData)
+    : null;
 }

@@ -124,32 +124,23 @@ describe('Header & Footer block definitions and schemas', () => {
     }
   });
 
-  it('HeaderBar has left, center, right slots and column layout options', () => {
+  it('HeaderBar holds Column blocks and has column layout options', () => {
     const setup = editorSetup('header');
-    assert.ok(setup.schemas.HeaderBar.slots?.left);
-    assert.ok(setup.schemas.HeaderBar.slots?.center);
-    assert.ok(setup.schemas.HeaderBar.slots?.right);
+    assert.deepEqual(setup.schemas.HeaderBar.slots?.columns?.allow, ['Column']);
+    assert.ok(!setup.schemas.HeaderBar.slots?.left);
     assert.ok(setup.inspectorBlocks.HeaderBar.fields.layout);
   });
 
-  it('HeaderColumns has col1 through col6 slots', () => {
+  it('HeaderColumns holds Column blocks', () => {
     const setup = editorSetup('header');
-    assert.ok(setup.schemas.HeaderColumns.slots?.col1);
-    assert.ok(setup.schemas.HeaderColumns.slots?.col2);
-    assert.ok(setup.schemas.HeaderColumns.slots?.col3);
-    assert.ok(setup.schemas.HeaderColumns.slots?.col4);
-    assert.ok(setup.schemas.HeaderColumns.slots?.col5);
-    assert.ok(setup.schemas.HeaderColumns.slots?.col6);
+    assert.deepEqual(setup.schemas.HeaderColumns.slots?.columns?.allow, ['Column']);
+    assert.ok(!setup.schemas.HeaderColumns.slots?.col1);
   });
 
-  it('FooterColumns has col1 through col6 slots', () => {
+  it('FooterColumns holds Column blocks', () => {
     const setup = editorSetup('footer');
-    assert.ok(setup.schemas.FooterColumns.slots?.col1);
-    assert.ok(setup.schemas.FooterColumns.slots?.col2);
-    assert.ok(setup.schemas.FooterColumns.slots?.col3);
-    assert.ok(setup.schemas.FooterColumns.slots?.col4);
-    assert.ok(setup.schemas.FooterColumns.slots?.col5);
-    assert.ok(setup.schemas.FooterColumns.slots?.col6);
+    assert.deepEqual(setup.schemas.FooterColumns.slots?.columns?.allow, ['Column']);
+    assert.ok(!setup.schemas.FooterColumns.slots?.col1);
   });
 });
 
@@ -236,7 +227,12 @@ describe('normalizeGlobalContent', () => {
     assert.equal(rootProps.transparent, true);
     assert.equal(rootProps.zIndex, 60);
     assert.equal(normalized.content.length, 1);
-    assert.equal(normalized.zones?.['bar-1:left']?.length, 1);
+    // Legacy slots are migrated: the logo moves into a real Column, nothing is lost.
+    assert.equal(normalized.zones?.['bar-1:left'], undefined);
+    assert.equal(normalized.zones?.['bar-1-col-left:content']?.[0]?.props.id, 'logo-1');
+    assert.ok(
+      normalized.zones?.['bar-1:columns']?.some(c => c.props.id === 'bar-1-col-left')
+    );
   });
 
   it('handles empty or legacy array formats gracefully with empty root props', () => {
@@ -383,8 +379,9 @@ describe('Mega menu builder', () => {
       assert.ok(!setup.schemas[type], `${type} should not be insertable`);
     }
     assert.equal(setup.inspectorBlocks.FooterLinks.label, 'Link list');
-    // Columns slots accept only mega menu blocks.
-    const slot = setup.definitions.Columns.slots?.column1;
+    // Columns hold only Column blocks, and a Column accepts only mega menu blocks.
+    assert.deepEqual(setup.definitions.Columns.slots?.columns?.allow, ['Column']);
+    const slot = setup.definitions.Column.slots?.content;
     assert.ok(slot?.allow?.includes('MegaMenuCard'));
     assert.ok(!slot?.allow?.includes('Hero'));
     // Panel settings replace page settings.

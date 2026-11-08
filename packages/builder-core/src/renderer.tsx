@@ -123,7 +123,12 @@ function buildProps(
       props[arrayKey] = items;
     } else {
       props[slotPath] = slot;
-      if (slotPath === 'card') {
+      if (slotPath === 'columns') {
+        props.columnItems = childIds
+          .map(id => doc.nodes[id])
+          .filter((n): n is BuilderNode => !!n && !n.meta?.hidden)
+          .map(n => ({ id: n.id, type: n.type, props: n.props, meta: n.meta }));
+      } else if (slotPath === 'card') {
         props.hasCustomCard = childIds.length > 0;
       } else if (slotPath === 'emptyState') {
         props.hasCustomEmptyState = childIds.length > 0;
@@ -142,7 +147,7 @@ export function renderNode(
   options: RenderOptions
 ): ReactNode {
   const node = doc.nodes[id];
-  if (!node) return null;
+  if (!node || (node.meta?.hidden && !options.editing)) return null;
   const Component = options.components[node.type];
   const element = Component ? (
     <Component key={id} {...buildProps(node, doc, options)} />

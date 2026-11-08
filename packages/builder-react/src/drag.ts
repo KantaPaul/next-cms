@@ -68,15 +68,20 @@ export function createDragController(store: EditorStore) {
     const type = typeOf(payload);
     if (!frame || !doc || !type) return { target: null, blockedReason: null };
     const box = frame.getBoundingClientRect();
-    const point = { x: clientX - box.left, y: clientY - box.top };
     if (
-      point.x < 0 ||
-      point.y < 0 ||
-      point.x > box.width ||
-      point.y > box.height
+      clientX < box.left ||
+      clientY < box.top ||
+      clientX > box.right ||
+      clientY > box.bottom
     ) {
       return { target: null, blockedReason: null };
     }
+    const scaleX = frame.clientWidth ? box.width / frame.clientWidth : 1;
+    const scaleY = frame.clientHeight ? box.height / frame.clientHeight : 1;
+    const point = {
+      x: (clientX - box.left) / scaleX,
+      y: (clientY - box.top) / scaleY,
+    };
     const movingId = payload.kind === 'move' ? payload.id : undefined;
     const target = findDropTarget(
       doc,
@@ -133,11 +138,13 @@ export function createDragController(store: EditorStore) {
       const origin = { x: event.clientX, y: event.clientY };
       let last = origin;
       let scrolling = 0;
+      const alreadyMoved = event.type === 'pointermove';
       set({
         payload,
-        active: false,
-        target: null,
-        blockedReason: null,
+        active: alreadyMoved,
+        ...(alreadyMoved
+          ? targetAt(origin.x, origin.y, payload, null)
+          : { target: null, blockedReason: null }),
         pointer: origin,
       });
 
@@ -158,6 +165,9 @@ export function createDragController(store: EditorStore) {
         }
         scrolling = requestAnimationFrame(scroll);
       };
+      if (alreadyMoved) {
+        scrolling = requestAnimationFrame(scroll);
+      }
 
       const onMove = (move: PointerEvent) => {
         last = { x: move.clientX, y: move.clientY };
@@ -172,10 +182,12 @@ export function createDragController(store: EditorStore) {
       const frameWin = frame?.contentWindow;
       const onFrameMove = (move: PointerEvent) => {
         const box = frame?.getBoundingClientRect();
-        if (box) {
+        if (box && frame) {
+          const scaleX = frame.clientWidth ? box.width / frame.clientWidth : 1;
+          const scaleY = frame.clientHeight ? box.height / frame.clientHeight : 1;
           onMove({
-            clientX: move.clientX + box.left,
-            clientY: move.clientY + box.top,
+            clientX: box.left + move.clientX * scaleX,
+            clientY: box.top + move.clientY * scaleY,
           } as PointerEvent);
         }
       };

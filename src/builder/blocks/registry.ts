@@ -7,6 +7,7 @@ import { BlogPosts } from './blog';
 import {
   Code,
   CollectionItem,
+  Column,
   Columns,
   ContactForm,
   Embed,
@@ -70,6 +71,7 @@ const builtInComponents = {
   Testimonials,
   FAQ: Faq,
   CTA: Cta,
+  Column,
   Columns,
   Container,
   RichText,

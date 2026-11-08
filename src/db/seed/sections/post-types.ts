@@ -114,10 +114,18 @@ const POST_TYPES: PostTypeDef[] = [
         [
           block('Columns', {
             layout: '1-2',
-            column1: [items([field('photo')])],
-            column2: [
-              block('PostTitle', { showBackLink: true, showExcerpt: false, alignment: 'left' }),
-              items([field('role', 'lead'), field('location', 'small', true), field('bio', 'body'), field('linkedin', 'small', true)]),
+            columns: [
+              block('Column', {
+                width: '1fr',
+                content: [items([field('photo')])],
+              }),
+              block('Column', {
+                width: '2fr',
+                content: [
+                  block('PostTitle', { showBackLink: true, showExcerpt: false, alignment: 'left' }),
+                  items([field('role', 'lead'), field('location', 'small', true), field('bio', 'body'), field('linkedin', 'small', true)]),
+                ],
+              }),
             ],
           }),
         ],
@@ -218,8 +226,16 @@ const POST_TYPES: PostTypeDef[] = [
           items([field('screenshot')]),
           block('Columns', {
             layout: '2-1',
-            column1: [items([field('summary', 'body')])],
-            column2: [items([field('client', 'body', true), field('launched', 'small', true), field('pages', 'small', true), field('highlight', 'small', true), field('website', 'small', true)], { layout: 'card' })],
+            columns: [
+              block('Column', {
+                width: '2fr',
+                content: [items([field('summary', 'body')])],
+              }),
+              block('Column', {
+                width: '1fr',
+                content: [items([field('client', 'body', true), field('launched', 'small', true), field('pages', 'small', true), field('highlight', 'small', true), field('website', 'small', true)], { layout: 'card' })],
+              }),
+            ],
           }),
         ],
         templateRoot

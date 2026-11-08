@@ -8,6 +8,9 @@
 import {
   type BlockSchemas,
   type BuilderDocument,
+  type BuilderNode,
+  buildColumnSpecsForParent,
+  COLUMN_PARENT_TYPES,
   type Device,
   canPlace,
   canRedo,
@@ -22,6 +25,7 @@ import {
   findPosition,
   type HistoryState,
   insertSubtree,
+  migrateDocumentColumns,
   moveNode,
   type NodeId,
   normalizeDocument,
@@ -77,7 +81,12 @@ export function createEditorStore({
   rules,
   createId = createNodeId,
 }: EditorStoreOptions) {
-  const initial = normalizeDocument(document, schemas);
+  const prepareDoc = (raw: BuilderDocument) =>
+    normalizeDocument(
+      schemas.Column ? migrateDocumentColumns(raw) : raw,
+      schemas
+    );
+  const initial = prepareDoc(document);
   let state: EditorState = {
     history: createHistory(initial),
     doc: initial,
@@ -137,6 +146,242 @@ export function createEditorStore({
     return position ? { position, siblings: slotChildren(state.doc, position) } : null;
   };
 
+  /** When inserting a column-parent block, populate its initial Column children. */
+  const populateInitialColumns = (
+    node: BuilderNode,
+    overrideProps?: Record<string, unknown>
+  ): Record<NodeId, BuilderNode> => {
+    if (
+      !schemas.Column ||
+      !COLUMN_PARENT_TYPES.has(node.type) ||
+      !node.slots.columns ||
+      node.slots.columns.length > 0
+    ) {
+      return { [node.id]: node };
+    }
+    const specs = buildColumnSpecsForParent(node.type, {
+      ...node.props,
+      ...overrideProps,
+    }).filter(s => s.active);
+    const columnNodes: Record<NodeId, BuilderNode> = {};
+    const columnIds: NodeId[] = [];
+    for (const spec of specs) {
+      const col = createNode(schemas.Column, createId('Column'), {
+        width: spec.width,
+        ...(spec.align ? { align: spec.align } : {}),
+      });
+      columnNodes[col.id] = col;
+      columnIds.push(col.id);
+    }
+    const cleanedProps = { ...node.props };
+    if (typeof cleanedProps.columns === 'number') {
+      delete cleanedProps.columns;
+    }
+    return {
+      ...columnNodes,
+      [node.id]: {
+        ...node,
+        props: cleanedProps,
+        slots: { ...node.slots, columns: columnIds },
+      },
+    };
+  };
+
+  /**
+   * Adjusts `slots.columns` when a column parent's `layout` or `columns`
+   * preset control is changed in the inspector.
+   */
+  const syncColumnChildren = (
+    doc: BuilderDocument,
+    id: NodeId,
+    patch: Record<string, unknown>
+  ): BuilderDocument => {
+    const node = doc.nodes[id];
+    if (
+      !node ||
+      !schemas.Column ||
+      !COLUMN_PARENT_TYPES.has(node.type) ||
+      !node.slots.columns
+    ) {
+      return doc;
+    }
+    const hasLayoutChange = 'layout' in patch;
+    const hasColumnsChange = 'columns' in patch;
+    if (!hasLayoutChange && !hasColumnsChange) {
+      if (typeof node.props.columns === 'number') {
+        const cleaned = { ...node.props };
+        delete cleaned.columns;
+        return {
+          ...doc,
+          nodes: { ...doc.nodes, [id]: { ...node, props: cleaned } },
+        };
+      }
+      return doc;
+    }
+    if (hasLayoutChange && node.type === 'HeaderBar' && patch.layout === 'custom') {
+      return doc;
+    }
+
+    const effectiveProps: Record<string, unknown> = { ...node.props };
+    if (hasColumnsChange && patch.columns !== undefined && !Array.isArray(patch.columns)) {
+      effectiveProps.columns = Number(patch.columns);
+    }
+    const specs = buildColumnSpecsForParent(node.type, effectiveProps);
+    const currentIds = node.slots.columns ?? [];
+    const visibleIds = currentIds.filter(
+      cid => doc.nodes[cid] && !doc.nodes[cid].meta?.hidden
+    );
+    const hiddenIds = currentIds.filter(
+      cid => doc.nodes[cid] && doc.nodes[cid].meta?.hidden
+    );
+    const nextNodes: Record<NodeId, BuilderNode> = { ...doc.nodes };
+
+    // Special case for HeaderBar switching between 3 columns and split-2 (where middle column is inactive)
+    if (node.type === 'HeaderBar' && patch.layout === 'split-2' && visibleIds.length === 3) {
+      const [leftId, centerId, rightId] = visibleIds;
+      const leftCol = nextNodes[leftId];
+      const centerCol = nextNodes[centerId];
+      const rightCol = nextNodes[rightId];
+      nextNodes[leftId] = {
+        ...leftCol,
+        props: { ...leftCol.props, width: specs[0].width, align: specs[0].align },
+      };
+      nextNodes[rightId] = {
+        ...rightCol,
+        props: { ...rightCol.props, width: specs[2].width, align: specs[2].align },
+      };
+      const centerHasContent = (centerCol.slots.content ?? []).length > 0;
+      const nextColumnIds: NodeId[] = [leftId];
+      if (centerHasContent) {
+        nextNodes[centerId] = {
+          ...centerCol,
+          meta: { ...centerCol.meta, hidden: true },
+        };
+        nextColumnIds.push(centerId);
+      }
+      nextColumnIds.push(rightId, ...hiddenIds);
+      nextNodes[id] = {
+        ...node,
+        slots: { ...node.slots, columns: nextColumnIds },
+      };
+      return pruneDetached({ ...doc, nodes: nextNodes });
+    }
+
+    if (
+      node.type === 'HeaderBar' &&
+      patch.layout !== 'split-2' &&
+      currentIds.length === 3 &&
+      nextNodes[currentIds[1]]?.meta?.hidden
+    ) {
+      const nextColumnIds = [...currentIds];
+      for (let i = 0; i < 3; i++) {
+        const cid = currentIds[i];
+        const col = nextNodes[cid];
+        const spec = specs[i];
+        if (!col || !spec) continue;
+        const nextMeta = { ...col.meta };
+        delete nextMeta.hidden;
+        nextNodes[cid] = {
+          ...col,
+          props: {
+            ...col.props,
+            width: spec.width,
+            ...(spec.align ? { align: spec.align } : {}),
+          },
+          meta: Object.keys(nextMeta).length ? nextMeta : undefined,
+        };
+      }
+      nextNodes[id] = {
+        ...node,
+        slots: { ...node.slots, columns: nextColumnIds },
+      };
+      return pruneDetached({ ...doc, nodes: nextNodes });
+    }
+
+    const activeSpecs = specs.filter(s => s.active);
+    const remainingHidden = [...hiddenIds];
+    const nextColumnIds: NodeId[] = [];
+
+    for (let i = 0; i < activeSpecs.length; i++) {
+      const spec = activeSpecs[i];
+      if (i < visibleIds.length) {
+        const cid = visibleIds[i];
+        const col = nextNodes[cid];
+        nextNodes[cid] = {
+          ...col,
+          props: {
+            ...col.props,
+            width: spec.width,
+            ...(spec.align ? { align: spec.align } : {}),
+          },
+        };
+        nextColumnIds.push(cid);
+      } else if (remainingHidden.length > 0) {
+        const cid = remainingHidden.shift()!;
+        const col = nextNodes[cid];
+        const nextMeta = { ...col.meta };
+        delete nextMeta.hidden;
+        nextNodes[cid] = {
+          ...col,
+          props: {
+            ...col.props,
+            width: spec.width,
+            ...(spec.align ? { align: spec.align } : {}),
+          },
+          meta: Object.keys(nextMeta).length ? nextMeta : undefined,
+        };
+        nextColumnIds.push(cid);
+      } else {
+        const newCol = createNode(schemas.Column, createId('Column'), {
+          width: spec.width,
+          ...(spec.align ? { align: spec.align } : {}),
+        });
+        nextNodes[newCol.id] = newCol;
+        nextColumnIds.push(newCol.id);
+      }
+    }
+
+    for (let i = activeSpecs.length; i < visibleIds.length; i++) {
+      const cid = visibleIds[i];
+      const col = nextNodes[cid];
+      if ((col.slots.content ?? []).length > 0) {
+        nextNodes[cid] = {
+          ...col,
+          meta: { ...col.meta, hidden: true },
+        };
+        nextColumnIds.push(cid);
+      }
+    }
+
+    nextColumnIds.push(...remainingHidden);
+    const cleanedProps = { ...node.props };
+    if (typeof cleanedProps.columns === 'number' || 'columns' in cleanedProps) {
+      delete cleanedProps.columns;
+    }
+    nextNodes[id] = {
+      ...node,
+      props: cleanedProps,
+      slots: { ...node.slots, columns: nextColumnIds },
+    };
+    return pruneDetached({ ...doc, nodes: nextNodes });
+  };
+
+  /** Checks whether removing `id` from `doc` is allowed (not locked, and not the last visible Column in a parent). */
+  const canRemoveNode = (doc: BuilderDocument, id: NodeId): boolean => {
+    const node = doc.nodes[id];
+    if (!node || node.meta?.locked) return false;
+    if (node.type === 'Column') {
+      const pos = findPosition(doc, id);
+      if (pos && pos.parentId) {
+        const visibleSiblings = slotChildren(doc, pos).filter(
+          sid => sid !== id && doc.nodes[sid] && !doc.nodes[sid].meta?.hidden
+        );
+        if (visibleSiblings.length === 0) return false;
+      }
+    }
+    return true;
+  };
+
   const store = {
     getState: () => state,
     subscribe: (listener: Listener) => {
@@ -150,6 +395,19 @@ export function createEditorStore({
       return allowed(type, { ...slot, index: 0 }, movingId);
     },
 
+    /** Whether at least one of the given blocks can be deleted. */
+    canRemove(ids: NodeId[] = state.selection) {
+      let doc = state.doc;
+      let any = false;
+      for (const id of ids) {
+        if (canRemoveNode(doc, id)) {
+          doc = removeNode(doc, id);
+          any = true;
+        }
+      }
+      return any;
+    },
+
     /**
      * Inserts a new block; returns its id, or null where the block is not
      * allowed. `props` overrides the block's defaults, for inserting a named
@@ -159,8 +417,9 @@ export function createEditorStore({
       const schema = schemas[type];
       if (!schema || !allowed(type, at)) return null;
       const node = createNode(schema, createId(type), props);
+      const subtreeNodes = populateInitialColumns(node, props);
       apply(
-        insertSubtree(state.doc, { rootId: node.id, nodes: { [node.id]: node } }, at),
+        insertSubtree(state.doc, { rootId: node.id, nodes: subtreeNodes }, at),
         `Add ${schema.label ?? type}`,
         { select: [node.id] }
       );
@@ -189,7 +448,9 @@ export function createEditorStore({
 
     remove(ids: NodeId[] = state.selection) {
       let doc = state.doc;
-      for (const id of ids) if (!doc.nodes[id]?.meta?.locked) doc = removeNode(doc, id);
+      for (const id of ids) {
+        if (canRemoveNode(doc, id)) doc = removeNode(doc, id);
+      }
       return apply(doc, ids.length > 1 ? 'Delete blocks' : 'Delete block', { select: [] });
     },
 
@@ -213,8 +474,25 @@ export function createEditorStore({
       const node = updated.nodes[id];
       if (!node) return false;
       const normalized = normalizeNode(node, schemas[node.type]);
-      const doc = pruneDetached({ ...updated, nodes: { ...updated.nodes, [id]: normalized } });
+      const withNormalized = pruneDetached({
+        ...updated,
+        nodes: { ...updated.nodes, [id]: normalized },
+      });
+      const doc = syncColumnChildren(withNormalized, id, patch);
       return apply(doc, 'Edit block', { mergeKey });
+    },
+
+    /** Merges props across multiple nodes as a single undo step. */
+    updateManyProps(
+      patches: Record<NodeId, Record<string, unknown>>,
+      label = 'Edit blocks',
+      mergeKey?: string
+    ) {
+      let doc = state.doc;
+      for (const [id, patch] of Object.entries(patches)) {
+        doc = updateNodeProps(doc, id, patch);
+      }
+      return apply(doc, label, { mergeKey });
     },
 
     updateRootProps(patch: Record<string, unknown>, mergeKey?: string) {
@@ -227,6 +505,15 @@ export function createEditorStore({
      */
     updatePropsLive(id: NodeId, patch: Record<string, unknown>) {
       const doc = updateNodeProps(state.doc, id, patch);
+      if (doc !== state.doc) set({ doc });
+    },
+
+    /** Shows prop changes on multiple nodes without adding an undo step. */
+    updateManyPropsLive(patches: Record<NodeId, Record<string, unknown>>) {
+      let doc = state.doc;
+      for (const [id, patch] of Object.entries(patches)) {
+        doc = updateNodeProps(doc, id, patch);
+      }
       if (doc !== state.doc) set({ doc });
     },
 
@@ -255,6 +542,7 @@ export function createEditorStore({
 
     /** Wraps the selected siblings in a new block of `type`, inside its first slot. */
     wrap(type: string, ids: NodeId[] = state.selection) {
+      if (ids.some(id => state.doc.nodes[id]?.type === 'Column')) return null;
       const schema = schemas[type];
       const slot = schema && Object.keys(schema.slots ?? {})[0];
       const first = ids[0] && findPosition(state.doc, ids[0]);
@@ -354,7 +642,7 @@ export function createEditorStore({
      * or taking the version someone else saved. `saved` marks it as stored.
      */
     replaceDocument(doc: BuilderDocument, options: { label?: string; saved?: boolean } = {}) {
-      const next = normalizeDocument(doc, schemas);
+      const next = prepareDoc(doc);
       const history = commit(state.history, next, { label: options.label ?? 'Replace page' });
       set({
         history,

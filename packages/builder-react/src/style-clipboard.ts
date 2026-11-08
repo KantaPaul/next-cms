@@ -1,11 +1,66 @@
-import type { NodeId } from '@nextcms/builder-core';
+import type { BlockSchema, NodeId } from '@nextcms/builder-core';
+import { showToast } from '@nextcms/editor-ui';
 import type { EditorStore } from './store';
 
 /**
  * Shared in-memory clipboard for copied block styles across canvas context menu,
- * toolbar actions, and keyboard shortcuts (⌥⌘C / ⌥⌘V).
+ * toolbar actions, and keyboard shortcuts (⌘⇧C / ⌘⇧V and ⌥⌘C / ⌥⌘V).
  */
 let copiedBlockStyles: Record<string, unknown> | null = null;
+
+/** Section keys that belong to identity/visibility/motion and must not be overwritten by style paste. */
+const PRESERVED_SECTION_KEYS = new Set([
+  'anchor',
+  'hideOnMobile',
+  'hideOnTablet',
+  'hideOnDesktop',
+  'animation',
+]);
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function deepMergeObjects(
+  base: Record<string, unknown>,
+  patch: Record<string, unknown>
+): Record<string, unknown> {
+  const result: Record<string, unknown> = JSON.parse(JSON.stringify(base));
+  for (const [key, val] of Object.entries(patch)) {
+    if (val === undefined) continue;
+    if (isPlainObject(val) && isPlainObject(result[key])) {
+      result[key] = deepMergeObjects(
+        result[key] as Record<string, unknown>,
+        val
+      );
+    } else {
+      result[key] = JSON.parse(JSON.stringify(val));
+    }
+  }
+  return result;
+}
+
+function targetHasPropKey(
+  schema: BlockSchema | undefined,
+  key: string,
+  value: unknown
+): boolean {
+  if (!schema || (!schema.fields && !schema.defaultProps)) return true;
+  const field = schema.fields?.[key];
+  if (field && key !== 'section' && key !== 'elements') {
+    if (field.type === 'number' && typeof value !== 'number') return false;
+    if (field.type !== 'number' && typeof value === 'number') return false;
+  }
+  if (schema.defaultProps && key in schema.defaultProps) return true;
+  if (schema.fields) {
+    for (const [fieldKey, fieldDef] of Object.entries(schema.fields)) {
+      if (!fieldDef) continue;
+      const rootKey = fieldDef.path ? fieldDef.path.split('.')[0] : fieldKey;
+      if (rootKey === key) return true;
+    }
+  }
+  return false;
+}
 
 export function getCopiedBlockStyles(): Record<string, unknown> | null {
   return copiedBlockStyles;
@@ -34,21 +89,45 @@ export function copyBlockStyle(
 
   const patch: Record<string, unknown> = {};
 
-  // 1. Copy section styling (the unified section object used across native blocks)
-  if (targetNode.props.section && typeof targetNode.props.section === 'object') {
-    patch.section = JSON.parse(JSON.stringify(targetNode.props.section));
+  const schema = store.schemas[targetNode.type];
+  const defaultProps = isPlainObject(schema?.defaultProps)
+    ? schema.defaultProps
+    : undefined;
+
+  // 1. Copy section styling (excluding anchor, hide flags, and animation)
+  const rawSection = isPlainObject(targetNode.props.section)
+    ? isPlainObject(defaultProps?.section)
+      ? deepMergeObjects(defaultProps.section, targetNode.props.section)
+      : targetNode.props.section
+    : isPlainObject(defaultProps?.section)
+      ? defaultProps.section
+      : null;
+  if (rawSection) {
+    const sectionCopy: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(rawSection)) {
+      if (PRESERVED_SECTION_KEYS.has(key) || val === undefined) continue;
+      sectionCopy[key] = JSON.parse(JSON.stringify(val));
+    }
+    if (Object.keys(sectionCopy).length > 0) {
+      patch.section = sectionCopy;
+    }
   }
 
   // 2. Copy per-element styling (Elementor-style element overrides)
-  if (targetNode.props.elements && typeof targetNode.props.elements === 'object') {
+  if (
+    isPlainObject(targetNode.props.elements) &&
+    Object.keys(targetNode.props.elements).length > 0
+  ) {
     patch.elements = JSON.parse(JSON.stringify(targetNode.props.elements));
   }
 
   // 3. Copy any fields explicitly marked with tab: 'style' or styling sections
-  const schema = store.schemas[targetNode.type] as Record<string, unknown> | undefined;
-  const schemaFields = schema?.fields as Record<string, Record<string, unknown>> | undefined;
+  const schemaFields = schema?.fields as
+    | Record<string, Record<string, unknown>>
+    | undefined;
   if (schemaFields) {
     for (const [key, field] of Object.entries(schemaFields)) {
+      if (!field) continue;
       if (
         field.tab === 'style' ||
         field.section === 'Style' ||
@@ -58,15 +137,22 @@ export function copyBlockStyle(
         field.section === 'Border' ||
         field.section === 'Filters'
       ) {
-        if (key in targetNode.props && targetNode.props[key] !== undefined) {
-          patch[key] = JSON.parse(JSON.stringify(targetNode.props[key]));
+        const propKey =
+          typeof field.path === 'string' ? field.path.split('.')[0] : key;
+        if (propKey === 'section' || propKey === 'elements') continue;
+        // A column's width is layout, not style: pasting it would reflow the row.
+        if (targetNode.type === 'Column' && propKey === 'width') continue;
+        const val =
+          targetNode.props[propKey] !== undefined
+            ? targetNode.props[propKey]
+            : defaultProps?.[propKey];
+        if (val !== undefined) {
+          patch[propKey] = JSON.parse(JSON.stringify(val));
         }
       }
     }
-  }
-
-  // 4. Fallback for common styling props
-  if (Object.keys(patch).length === 0) {
+  } else if (Object.keys(patch).length === 0) {
+    // 4. Fallback for schemas without field definitions
     const commonStyleProps = [
       'background',
       'backgroundColor',
@@ -92,7 +178,13 @@ export function copyBlockStyle(
     }
   }
 
+  if (Object.keys(patch).length === 0) {
+    showToast({ type: 'info', message: 'Nothing to copy' });
+    return null;
+  }
+
   copiedBlockStyles = patch;
+  showToast({ type: 'success', message: 'Style copied' });
   return patch;
 }
 
@@ -104,6 +196,7 @@ export function pasteBlockStyle(
   targetId?: NodeId
 ): boolean {
   if (!copiedBlockStyles || Object.keys(copiedBlockStyles).length === 0) {
+    showToast({ type: 'info', message: 'Nothing to paste' });
     return false;
   }
   const id = targetId ?? store.getState().selection[0];
@@ -111,7 +204,36 @@ export function pasteBlockStyle(
   const targetNode = store.getState().doc.nodes[id];
   if (!targetNode || targetNode.meta?.locked) return false;
 
-  store.updateProps(id, JSON.parse(JSON.stringify(copiedBlockStyles)));
+  const targetSchema = store.schemas[targetNode.type];
+  const filteredPatch: Record<string, unknown> = {};
+
+  for (const [key, val] of Object.entries(copiedBlockStyles)) {
+    if (!targetHasPropKey(targetSchema, key, val)) continue;
+    if (key === 'section' && isPlainObject(val)) {
+      const existingSection = isPlainObject(targetNode.props.section)
+        ? targetNode.props.section
+        : {};
+      const cleanSource: Record<string, unknown> = {};
+      for (const [sKey, sVal] of Object.entries(val)) {
+        if (PRESERVED_SECTION_KEYS.has(sKey)) continue;
+        cleanSource[sKey] = sVal;
+      }
+      filteredPatch.section = deepMergeObjects(existingSection, cleanSource);
+    } else {
+      filteredPatch[key] = JSON.parse(JSON.stringify(val));
+    }
+  }
+
+  if (Object.keys(filteredPatch).length === 0) {
+    showToast({
+      type: 'info',
+      message: 'Nothing to paste for this block',
+    });
+    return false;
+  }
+
+  store.updateProps(id, filteredPatch);
+  showToast({ type: 'success', message: 'Style pasted' });
   return true;
 }
 

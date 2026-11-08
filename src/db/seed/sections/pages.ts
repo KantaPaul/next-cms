@@ -169,11 +169,19 @@ function contact(contactFormId: string): BuilderData {
     }),
     block('Columns', {
       layout: '2-1',
-      column1: [block('GlobalRef', { globalBlockId: contactFormId })],
-      column2: [
-        block('RichText', {
-          content: '<h3>Office</h3><p>1 Example Street<br>Dhaka 1212</p><h3>Email</h3><p><a href="mailto:hello@example.com">hello@example.com</a></p>',
-          width: 'full',
+      columns: [
+        block('Column', {
+          width: '2fr',
+          content: [block('GlobalRef', { globalBlockId: contactFormId })],
+        }),
+        block('Column', {
+          width: '1fr',
+          content: [
+            block('RichText', {
+              content: '<h3>Office</h3><p>1 Example Street<br>Dhaka 1212</p><h3>Email</h3><p><a href="mailto:hello@example.com">hello@example.com</a></p>',
+              width: 'full',
+            }),
+          ],
         }),
       ],
     }),
@@ -306,9 +314,20 @@ function components(ctaGlobalId: string): BuilderData {
     })),
     block('Columns', {
       layout: '1-1-1',
-      column1: [block('RichText', { content: '<h3>Column one</h3><p>Columns stack on mobile.</p>', width: 'full' })],
-      column2: [block('RichText', { content: '<h3>Column two</h3><p>Pick a ratio such as 2-1.</p>', width: 'full' })],
-      column3: [block('RichText', { content: '<h3>Column three</h3><p>Any block fits inside.</p>', width: 'full' })],
+      columns: [
+        block('Column', {
+          width: 'fill',
+          content: [block('RichText', { content: '<h3>Column one</h3><p>Columns stack on mobile.</p>', width: 'full' })],
+        }),
+        block('Column', {
+          width: 'fill',
+          content: [block('RichText', { content: '<h3>Column two</h3><p>Pick a ratio such as 2-1.</p>', width: 'full' })],
+        }),
+        block('Column', {
+          width: 'fill',
+          content: [block('RichText', { content: '<h3>Column three</h3><p>Any block fits inside.</p>', width: 'full' })],
+        }),
+      ],
     }),
     block('Slider', {
       items: [

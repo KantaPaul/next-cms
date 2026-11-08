@@ -6,12 +6,33 @@
  * also a slider: arrow keys change the value (Shift for bigger steps).
  */
 
-import type { BuilderNode, Device, NodeId } from '@nextcms/builder-core';
+import type {
+  BuilderDocument,
+  BuilderNode,
+  Device,
+  NodeId,
+} from '@nextcms/builder-core';
 import { ResizeHandle as ResizeHandleView } from '@nextcms/editor-ui';
 import { type KeyboardEvent, type PointerEvent, useState } from 'react';
 import { useEditor, useEditorStore } from './context';
-import { nodeElement } from './dom';
+import { nodeElement, nodeRect } from './dom';
 import type { Rect } from './drop';
+
+export type ResizeNodesContext = {
+  id: NodeId;
+  /** Document state before this resize gesture started. */
+  baseDoc: BuilderDocument;
+  device: Device;
+  /** Rendered widths (px) of nodes in the document at gesture start. */
+  measuredWidths: Record<NodeId, number>;
+  /** Pointer movement in px along the handle axis (for drag). */
+  deltaPx?: number;
+  /** Step delta in handle units (for keyboard arrow keys). */
+  stepDelta?: number;
+  /** True when resetting (double-click). */
+  reset?: boolean;
+  altKey?: boolean;
+};
 
 export type ResizeHandle = {
   id: string;
@@ -32,6 +53,15 @@ export type ResizeHandle = {
     value: number | undefined,
     context: { start: number }
   ) => Record<string, unknown>;
+  /**
+   * Optional multi-node writer (e.g. resizing a column and its right-hand
+   * neighbour together so the row's total width stays constant).
+   */
+  writeNodes?: (context: ResizeNodesContext) => {
+    patches: Record<NodeId, Record<string, unknown>>;
+    value?: number;
+    snapped?: boolean;
+  };
   /** Starting value when nothing is set, from the block's measured size and first element. */
   fallback?: (size: {
     width: number;
@@ -41,7 +71,10 @@ export type ResizeHandle = {
   }) => number;
 };
 
-export type ResizeHandlesFor = (node: BuilderNode) => ResizeHandle[];
+export type ResizeHandlesFor = (
+  node: BuilderNode,
+  doc?: BuilderDocument
+) => ResizeHandle[];
 
 export function clamp(
   value: number,
@@ -114,6 +147,23 @@ function Handle({
       element: wrapper?.firstElementChild ?? null,
     };
   };
+  const measureNodeWidths = (docToMeasure: BuilderDocument): Record<NodeId, number> => {
+    const out: Record<NodeId, number> = {};
+    if (!frame.contentDocument) return out;
+    for (const nid of Object.keys(docToMeasure.nodes)) {
+      const r = nodeRect(frame.contentDocument, nid);
+      if (r && r.width > 0) out[nid] = r.width;
+    }
+    return out;
+  };
+  const frameScale = () => {
+    const box = frame.getBoundingClientRect?.();
+    if (!box) return 1;
+    if (handle.edge === 'right') {
+      return frame.clientWidth ? box.width / frame.clientWidth : 1;
+    }
+    return frame.clientHeight ? box.height / frame.clientHeight : 1;
+  };
   // Read props from the store, not the render, so fast key repeats each count.
   const latest = () => store.getState().doc.nodes[id]?.props ?? props;
   const current = () =>
@@ -126,18 +176,36 @@ function Handle({
     event.currentTarget.setPointerCapture(event.pointerId);
     store.setResizing(true);
     const base = props;
+    const baseDoc = store.getState().doc;
+    const measuredWidths = handle.writeNodes ? measureNodeWidths(baseDoc) : {};
     const start = current();
     const { parentWidth } = measure();
+    const scale = frameScale() || 1;
     const origin = handle.edge === 'right' ? event.clientX : event.clientY;
     const target = event.currentTarget;
 
     const onMove = (move: globalThis.PointerEvent) => {
-      const delta =
+      const rawDelta =
         handle.edge === 'right'
           ? move.clientX - origin
           : handle.edge === 'top'
             ? origin - move.clientY
             : move.clientY - origin;
+      const delta = rawDelta / scale;
+      if (handle.writeNodes) {
+        const res = handle.writeNodes({
+          id,
+          baseDoc,
+          device,
+          measuredWidths,
+          deltaPx: delta,
+          altKey: move.altKey,
+        });
+        if (res.value !== undefined) setLive(res.value);
+        setSnapped(!!res.snapped);
+        store.updateManyPropsLive(res.patches);
+        return;
+      }
       const change = handle.unit === '%' ? (delta / parentWidth) * 100 : delta;
       const next = clamp(start + change, handle, { altKey: move.altKey });
       setLive(next);
@@ -171,6 +239,22 @@ function Handle({
   const onDoubleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
+    if (handle.writeNodes) {
+      const baseDoc = store.getState().doc;
+      const res = handle.writeNodes({
+        id,
+        baseDoc,
+        device,
+        measuredWidths: measureNodeWidths(baseDoc),
+        reset: true,
+      });
+      store.updateManyProps(
+        res.patches,
+        `Reset ${handle.label.toLowerCase()}`,
+        `Reset ${handle.label.toLowerCase()}`
+      );
+      return;
+    }
     const start = current();
     store.updateProps(
       id,
@@ -190,6 +274,24 @@ function Handle({
     event.preventDefault();
     event.stopPropagation();
     const step = (handle.step ?? 1) * (event.shiftKey ? 10 : 1);
+    if (handle.writeNodes) {
+      const baseDoc = store.getState().doc;
+      const res = handle.writeNodes({
+        id,
+        baseDoc,
+        device,
+        measuredWidths: measureNodeWidths(baseDoc),
+        stepDelta: keys[event.key] * step,
+        altKey: event.altKey,
+      });
+      setSnapped(!!res.snapped);
+      store.updateManyProps(
+        res.patches,
+        `Resize ${handle.label.toLowerCase()}`,
+        `resize:${id}:${handle.id}`
+      );
+      return;
+    }
     const start = current();
     const next = clamp(start + keys[event.key] * step, handle, { altKey: event.altKey });
     setSnapped(isSnapped(next, handle, { altKey: event.altKey }));
@@ -246,11 +348,12 @@ export function ResizeHandles({
   frame: HTMLIFrameElement;
   handlesFor: ResizeHandlesFor;
 }) {
-  const node = useEditor(state => state.doc.nodes[id]);
+  const doc = useEditor(state => state.doc);
+  const node = doc.nodes[id];
   if (!node || node.meta?.locked) return null;
   return (
     <>
-      {handlesFor(node).map(handle => (
+      {handlesFor(node, doc).map(handle => (
         <Handle
           key={handle.id}
           id={id}

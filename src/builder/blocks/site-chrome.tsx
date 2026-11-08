@@ -15,7 +15,12 @@ import {
 import { cn } from '@/lib/utils/cn';
 import { el, type WithSection } from './element';
 import type { BuilderItem } from '../data';
-import { renderSlot, type SlotValue } from './content';
+import {
+  type ColumnItemRef,
+  renderSlot,
+  resolveVisibleColumns,
+  type SlotValue,
+} from './content';
 import { MenuLinks, menuHref } from '@/components/site/menu-links';
 import type { MenuWithItems } from '@/server/services/public-site.service';
 import type { MegaMenuPanelData } from '@/server/services/mega-menu.service';
@@ -34,7 +39,11 @@ import {
   ThemeToggleClient,
   type ThemeToggleClientProps,
 } from './site-chrome-client';
-import { headerColJustify, headerGridTemplate } from './header-grid';
+import {
+  columnsGridStyle,
+  headerColJustify,
+  headerGridTemplate,
+} from './header-grid';
 
 /* ---------- HeaderBar ---------- */
 
@@ -66,6 +75,8 @@ export type HeaderBarProps = {
   rightSize?: string;
   rightAlign?: string;
   stackOn?: 'none' | 'mobile' | 'tablet';
+  columns?: SlotValue;
+  columnItems?: ColumnItemRef[];
   left?: SlotValue;
   center?: SlotValue;
   right?: SlotValue;
@@ -103,6 +114,8 @@ export function HeaderBar({
   borderBottom = false,
   align = 'center',
   layout = 'left-center-right',
+  columns,
+  columnItems,
   left,
   center,
   right,
@@ -116,6 +129,48 @@ export function HeaderBar({
       : 'max-w-[var(--site-max-width,72rem)] mx-auto px-4 sm:px-6 lg:px-8';
 
   const style: React.CSSProperties = minHeight ? { minHeight } : {};
+
+  if (typeof columns === 'function' || Array.isArray(columns)) {
+    const p = rest as HeaderBarProps;
+    const colItems = resolveVisibleColumns(columnItems, columns);
+    const stack = p.stackOn ?? 'none';
+    const gridClass = cn(
+      containerClass,
+      PADDING_Y[paddingY] || PADDING_Y.sm,
+      'grid gap-4',
+      stack === 'none'
+        ? 's-hcols-always'
+        : stack === 'tablet'
+          ? 's-hcols-lg'
+          : 's-hcols',
+      ALIGN_ITEMS[align] || ALIGN_ITEMS.center
+    );
+    const gridStyle = columnsGridStyle(
+      colItems.length
+        ? colItems
+        : [{ width: 'auto' }, { width: 'fill' }, { width: 'auto' }]
+    ) as React.CSSProperties;
+
+    return (
+      <div
+        data-header-bar
+        className={cn(
+          'w-full transition-colors',
+          BG_STYLES[background] || BG_STYLES.default,
+          borderBottom && 'border-b border-[var(--site-border)]'
+        )}
+        style={style}
+      >
+        {typeof columns === 'function' ? (
+          columns({ className: gridClass, style: gridStyle, minEmptyHeight: 48 })
+        ) : (
+          <div className={gridClass} style={gridStyle}>
+            <BlockList items={columns} zones={zones} nested />
+          </div>
+        )}
+      </div>
+    );
+  }
 
   if (layout === 'custom') {
     const p = rest as HeaderBarProps;
@@ -152,7 +207,11 @@ export function HeaderBar({
               data-header-col={c.key}
               className={cn('flex min-w-0 items-center gap-3', headerColJustify(c.align, c.fallback))}
             >
-              {renderSlot(c.slot, zones)}
+              {renderSlot(
+                c.slot,
+                zones,
+                cn('flex items-center gap-3', headerColJustify(c.align, c.fallback))
+              )}
             </div>
           ))}
         </div>
@@ -207,15 +266,15 @@ export function HeaderBar({
         )}
       >
         <div className={colStyles.left}>
-          {renderSlot(left, zones)}
+          {renderSlot(left, zones, 'flex items-center gap-3')}
         </div>
         {colStyles.center !== 'hidden' && (
           <div className={colStyles.center}>
-            {renderSlot(center, zones)}
+            {renderSlot(center, zones, 'flex items-center gap-4 justify-center')}
           </div>
         )}
         <div className={colStyles.right}>
-          {renderSlot(right, zones)}
+          {renderSlot(right, zones, 'flex items-center gap-3 justify-end')}
         </div>
       </div>
     </div>
@@ -228,7 +287,8 @@ export type HeaderColumnsProps = {
   width?: 'boxed' | 'full';
   background?: 'default' | 'muted' | 'inverted' | 'primary' | 'transparent';
   paddingY?: 'none' | 'xs' | 'sm' | 'md' | 'lg';
-  columns?: number;
+  columns?: number | SlotValue;
+  columnItems?: ColumnItemRef[];
   gap?: 'sm' | 'md' | 'lg' | 'xl';
   align?: 'center' | 'start' | 'end';
   stackOn?: 'mobile' | 'tablet';
@@ -249,6 +309,7 @@ export function HeaderColumns({
   background = 'default',
   paddingY = 'none',
   columns = 3,
+  columnItems,
   gap = 'md',
   align = 'center',
   stackOn = 'mobile',
@@ -266,6 +327,41 @@ export function HeaderColumns({
     width === 'full'
       ? 'w-full px-4 sm:px-6 lg:px-8'
       : 'max-w-[var(--site-max-width,72rem)] mx-auto px-4 sm:px-6 lg:px-8';
+
+  if (typeof columns === 'function' || Array.isArray(columns)) {
+    const colItems = resolveVisibleColumns(columnItems, columns);
+    const colsCount = colItems.length || 3;
+    const gridClass = cn(
+      containerClass,
+      PADDING_Y[paddingY] || PADDING_Y.none,
+      'grid items-center',
+      colsCount === 1 ? '' : stackOn === 'tablet' ? 's-hcols-lg' : 's-hcols',
+      GAP_STYLES[gap] || GAP_STYLES.md,
+      ALIGN_ITEMS[align] || ALIGN_ITEMS.center
+    );
+    const gridStyle = columnsGridStyle(
+      colItems.length
+        ? colItems
+        : [{ width: 'fill' }, { width: 'fill' }, { width: 'fill' }]
+    ) as React.CSSProperties;
+
+    return (
+      <div
+        className={cn(
+          'w-full transition-colors',
+          BG_STYLES[background] || BG_STYLES.default
+        )}
+      >
+        {typeof columns === 'function' ? (
+          columns({ className: gridClass, style: gridStyle, minEmptyHeight: 48 })
+        ) : (
+          <div className={gridClass} style={gridStyle}>
+            <BlockList items={columns} zones={zones} nested />
+          </div>
+        )}
+      </div>
+    );
+  }
 
   const cols = Math.min(Math.max(Number(columns) || 3, 1), 6);
   const slots = [col1, col2, col3, col4, col5, col6].slice(0, cols);
@@ -298,15 +394,15 @@ export function HeaderColumns({
       >
         {slots.map((slot, index) => {
           const alignValue = colProps[`col${index + 1}Align`];
+          const innerClass = alignValue
+            ? cn('flex items-center gap-3', headerColJustify(alignValue, 'start'))
+            : undefined;
           return (
             <div
               key={index}
-              className={cn(
-                'min-w-0',
-                alignValue && cn('flex items-center gap-3', headerColJustify(alignValue, 'start'))
-              )}
+              className={cn('min-w-0', innerClass)}
             >
-              {renderSlot(slot, zones)}
+              {renderSlot(slot, zones, innerClass)}
             </div>
           );
         })}
@@ -321,7 +417,8 @@ export type FooterColumnsProps = {
   width?: 'boxed' | 'full';
   background?: 'default' | 'muted' | 'inverted' | 'primary';
   paddingY?: 'none' | 'sm' | 'md' | 'lg' | 'xl';
-  columns?: number;
+  columns?: number | SlotValue;
+  columnItems?: ColumnItemRef[];
   gap?: 'sm' | 'md' | 'lg' | 'xl';
   stackOn?: 'mobile' | 'tablet';
   col1?: SlotValue;
@@ -354,6 +451,7 @@ export function FooterColumns({
   background = 'default',
   paddingY = 'lg',
   columns = 4,
+  columnItems,
   gap = 'lg',
   stackOn = 'mobile',
   col1,
@@ -369,6 +467,48 @@ export function FooterColumns({
     width === 'full'
       ? 'w-full px-4 sm:px-6 lg:px-8'
       : 'max-w-[var(--site-max-width,72rem)] mx-auto px-4 sm:px-6 lg:px-8';
+
+  if (typeof columns === 'function' || Array.isArray(columns)) {
+    const colItems = resolveVisibleColumns(columnItems, columns);
+    const colsCount = colItems.length || 4;
+    const gridClass = cn(
+      'grid',
+      colsCount === 1 ? 'grid-cols-1' : stackOn === 'tablet' ? 's-hcols-lg' : 's-hcols',
+      GAP_STYLES[gap] || GAP_STYLES.lg
+    );
+    const gridStyle = columnsGridStyle(
+      colItems.length
+        ? colItems
+        : [{ width: 'fill' }, { width: 'fill' }, { width: 'fill' }, { width: 'fill' }],
+      colsCount >= 4 && stackOn === 'tablet'
+        ? { tabletFallback: 'minmax(0,1fr) minmax(0,1fr)' }
+        : undefined
+    ) as React.CSSProperties;
+
+    return (
+      <div
+        className={cn(
+          'w-full transition-colors',
+          BG_STYLES[background] || BG_STYLES.default
+        )}
+      >
+        <div
+          className={cn(
+            containerClass,
+            FOOTER_PADDINGS[paddingY] || FOOTER_PADDINGS.lg
+          )}
+        >
+          {typeof columns === 'function' ? (
+            columns({ className: gridClass, style: gridStyle, minEmptyHeight: 80 })
+          ) : (
+            <div className={gridClass} style={gridStyle}>
+              <BlockList items={columns} zones={zones} nested />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const cols = Math.min(Math.max(Number(columns) || 4, 1), 6);
   const slots = [col1, col2, col3, col4, col5, col6].slice(0, cols);

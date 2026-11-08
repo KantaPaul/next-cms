@@ -1338,18 +1338,26 @@ html[data-site-mode='dark'] .site-root .site-header-shell[data-scrolled="true"] 
 /* ---------- Header column widths (HeaderBar custom / HeaderColumns) ---------- */
 .site-root .s-hcols,
 .site-root .s-hcols-lg {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: var(--hc-cols-sm, minmax(0, 1fr));
 }
 .site-root .s-hcols-always {
-  grid-template-columns: var(--hc-cols, minmax(0, 1fr));
+  grid-template-columns: var(--hc-cols-sm, var(--hc-cols, minmax(0, 1fr)));
 }
 @media (min-width: 768px) {
   .site-root .s-hcols {
-    grid-template-columns: var(--hc-cols, minmax(0, 1fr));
+    grid-template-columns: var(--hc-cols-md, var(--hc-cols, minmax(0, 1fr)));
+  }
+  .site-root .s-hcols-lg {
+    grid-template-columns: var(--hc-cols-md, minmax(0, 1fr));
+  }
+  .site-root .s-hcols-always {
+    grid-template-columns: var(--hc-cols-md, var(--hc-cols, minmax(0, 1fr)));
   }
 }
 @media (min-width: 1024px) {
-  .site-root .s-hcols-lg {
+  .site-root .s-hcols,
+  .site-root .s-hcols-lg,
+  .site-root .s-hcols-always {
     grid-template-columns: var(--hc-cols, minmax(0, 1fr));
   }
 }

@@ -1,4 +1,5 @@
 export * from './blocks';
+export * from './column-migration';
 export * from './commands';
 export * from './converter';
 export * from './define';

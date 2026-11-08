@@ -3,10 +3,14 @@ import { cn } from '@/lib/utils/cn';
 import type { BuilderItem } from '../data';
 import { sanitizeRichText } from '../sanitize';
 import {
+  type Device,
   type ImageSize,
+  type MaybeResponsive,
   normalizeUrlValue,
   resolveImageSize,
   resolveLinkProps,
+  resolveResponsive,
+  resolveSectionStyle,
   type UrlValue,
 } from '../style';
 import { BlockList } from './block-list';
@@ -14,6 +18,13 @@ import { ContactFormClient } from './contact-form-client';
 import { CopyButtonClient } from './copy-button-client';
 import { el, type WithSection } from './element';
 import {
+  columnsGridStyle,
+  HEADER_COL_JUSTIFY,
+  type HeaderColAlign,
+  headerColJustify,
+} from './header-grid';
+import {
+  DEFAULT_SECTION,
   MotionItem,
   Section,
   SectionHeading,
@@ -476,14 +487,33 @@ export type SlotRender = (props: {
 }) => ReactNode;
 export type SlotValue = ReactNode | BuilderItem[] | SlotRender | undefined;
 
+export type ColumnItemRef = {
+  id?: string;
+  type?: string;
+  props?: Record<string, unknown>;
+  meta?: { hidden?: boolean };
+};
+
+export type ColumnProps = WithSection & {
+  width?: MaybeResponsive<string>;
+  size?: MaybeResponsive<string>;
+  align?: MaybeResponsive<'start' | 'center' | 'end'>;
+  verticalAlign?: MaybeResponsive<'start' | 'center' | 'end'>;
+  content?: SlotValue;
+  zones?: Record<string, BuilderItem[]>;
+};
+
 export type ColumnsProps = WithSection & {
   layout?: '1-1' | '1-1-1' | '1-1-1-1' | '2-1' | '1-2';
   gap?: 'sm' | 'md' | 'lg';
   verticalAlign?: 'start' | 'center' | 'end';
+  columns?: SlotValue;
+  columnItems?: ColumnItemRef[];
   column1?: SlotValue;
   column2?: SlotValue;
   column3?: SlotValue;
   column4?: SlotValue;
+  zones?: Record<string, BuilderItem[]>;
 };
 
 const LAYOUTS = {
@@ -500,18 +530,209 @@ const ALIGN = {
   end: 'items-end',
 };
 
+const COLUMN_PADDING = {
+  none: '',
+  sm: 'py-8 md:py-10',
+  md: 'py-14 md:py-20',
+  lg: 'py-20 md:py-28',
+};
+
+const COLUMN_BG = {
+  default: '',
+  muted: 's-section-muted',
+  primary: 's-section-primary',
+  dark: 's-section-dark',
+};
+
+const COL_ALIGN_MOBILE: Record<HeaderColAlign, string> = {
+  start: 'max-md:justify-start max-md:text-left',
+  center: 'max-md:justify-center max-md:text-center',
+  end: 'max-md:justify-end max-md:text-right',
+};
+const COL_ALIGN_TABLET: Record<HeaderColAlign, string> = {
+  start: 'md:max-lg:justify-start md:max-lg:text-left',
+  center: 'md:max-lg:justify-center md:max-lg:text-center',
+  end: 'md:max-lg:justify-end md:max-lg:text-right',
+};
+const COL_ALIGN_DESKTOP: Record<HeaderColAlign, string> = {
+  start: 'lg:justify-start lg:text-left',
+  center: 'lg:justify-center lg:text-center',
+  end: 'lg:justify-end lg:text-right',
+};
+
+const COL_VALIGN: Record<HeaderColAlign, string> = {
+  start: 'self-start',
+  center: 'self-center',
+  end: 'self-end',
+};
+const COL_VALIGN_MOBILE: Record<HeaderColAlign, string> = {
+  start: 'max-md:self-start',
+  center: 'max-md:self-center',
+  end: 'max-md:self-end',
+};
+const COL_VALIGN_TABLET: Record<HeaderColAlign, string> = {
+  start: 'md:max-lg:self-start',
+  center: 'md:max-lg:self-center',
+  end: 'md:max-lg:self-end',
+};
+const COL_VALIGN_DESKTOP: Record<HeaderColAlign, string> = {
+  start: 'lg:self-start',
+  center: 'lg:self-center',
+  end: 'lg:self-end',
+};
+
+const validAlign = (v: unknown): HeaderColAlign | undefined =>
+  v === 'start' || v === 'center' || v === 'end' ? v : undefined;
+
+function resolveColumnAlignClasses(
+  align?: MaybeResponsive<'start' | 'center' | 'end'>
+): string | undefined {
+  if (!align) return undefined;
+  if (typeof align === 'string') {
+    return HEADER_COL_JUSTIFY[align]
+      ? cn('flex items-center gap-3', headerColJustify(align, 'start'))
+      : undefined;
+  }
+  const d = resolveResponsive(align, 'desktop', validAlign);
+  const t = resolveResponsive(align, 'tablet', validAlign);
+  const m = resolveResponsive(align, 'mobile', validAlign);
+  if (!d && !t && !m) return undefined;
+  if (d === t && t === m && d) {
+    return cn('flex items-center gap-3', headerColJustify(d, 'start'));
+  }
+  return cn(
+    'flex items-center gap-3',
+    m && COL_ALIGN_MOBILE[m],
+    t && COL_ALIGN_TABLET[t],
+    d && COL_ALIGN_DESKTOP[d]
+  );
+}
+
+function resolveColumnVAlignClasses(
+  verticalAlign?: MaybeResponsive<'start' | 'center' | 'end'>
+): string | undefined {
+  if (!verticalAlign) return undefined;
+  if (typeof verticalAlign === 'string') {
+    return COL_VALIGN[verticalAlign];
+  }
+  const d = resolveResponsive(verticalAlign, 'desktop', validAlign);
+  const t = resolveResponsive(verticalAlign, 'tablet', validAlign);
+  const m = resolveResponsive(verticalAlign, 'mobile', validAlign);
+  if (!d && !t && !m) return undefined;
+  if (d === t && t === m && d) {
+    return COL_VALIGN[d];
+  }
+  return cn(
+    m && COL_VALIGN_MOBILE[m],
+    t && COL_VALIGN_TABLET[t],
+    d && COL_VALIGN_DESKTOP[d]
+  );
+}
+
 export function renderSlot(
   slot: SlotValue,
-  zones?: Record<string, BuilderItem[]>
+  zones?: Record<string, BuilderItem[]>,
+  className?: string,
+  style?: CSSProperties
 ) {
-  if (typeof slot === 'function') return slot({ minEmptyHeight: 80 });
+  if (typeof slot === 'function')
+    return slot({
+      className: cn('w-full min-w-0', className),
+      style,
+      minEmptyHeight: 80,
+    });
   if (Array.isArray(slot))
     return <BlockList items={slot} zones={zones} nested />;
   return null;
 }
 
+export function Column(p: ColumnProps) {
+  const s: SectionSettings = {
+    ...DEFAULT_SECTION,
+    paddingY: 'none',
+    ...p.section,
+  };
+  const hidden = cn(
+    s.hideOnMobile && (p.editing ? 'max-md:opacity-30' : 'max-md:hidden'),
+    s.hideOnTablet && (p.editing ? 'md:max-lg:opacity-30' : 'md:max-lg:hidden'),
+    s.hideOnDesktop && (p.editing ? 'lg:opacity-30' : 'lg:hidden')
+  );
+  const styles = resolveSectionStyle(s);
+  const alignClass = resolveColumnAlignClasses(p.align);
+  const vAlignClass = resolveColumnVAlignClasses(p.verticalAlign);
+
+  return (
+    <MotionItem
+      id={s.anchor || undefined}
+      data-column
+      className={cn(
+        'min-w-0',
+        COLUMN_PADDING[s.paddingY ?? 'none'],
+        !styles.hasFill && COLUMN_BG[s.background ?? 'default'],
+        styles.outerClasses,
+        styles.innerClasses,
+        hidden,
+        alignClass,
+        vAlignClass
+      )}
+      style={styles.style}
+    >
+      {renderSlot(p.content, p.zones)}
+    </MotionItem>
+  );
+}
+
+/** Extract visible Column items from either `columnItems` (Document renderer) or inline `columns` array. */
+export function resolveVisibleColumns(
+  columnItems?: ColumnItemRef[],
+  columns?: SlotValue
+): ColumnItemRef[] {
+  if (Array.isArray(columnItems)) return columnItems;
+  if (Array.isArray(columns)) {
+    return (columns as ColumnItemRef[]).filter(
+      c =>
+        c &&
+        typeof c === 'object' &&
+        !c.meta?.hidden &&
+        !(c.props?.__builderMeta as { hidden?: boolean } | undefined)?.hidden
+    );
+  }
+  return [];
+}
+
 /** Nested blocks inside columns render without their own section padding. */
 export function Columns(p: ColumnsProps) {
+  if (typeof p.columns === 'function' || Array.isArray(p.columns)) {
+    const colItems = resolveVisibleColumns(p.columnItems, p.columns);
+    const isFourEqual =
+      colItems.length === 4 &&
+      colItems.every(c => {
+        const w = c.props?.width;
+        return !w || w === 'fill';
+      });
+    const gridStyle = columnsGridStyle(
+      colItems.length ? colItems : [{ width: 'fill' }, { width: 'fill' }],
+      isFourEqual ? { tabletFallback: 'minmax(0,1fr) minmax(0,1fr)' } : undefined
+    ) as CSSProperties;
+    const gridClass = cn(
+      'grid grid-cols-1 s-hcols [&_section>div]:px-0 [&_section]:py-0',
+      GAP[p.gap ?? 'md'],
+      ALIGN[p.verticalAlign ?? 'start']
+    );
+
+    return (
+      <Section section={p.section} editing={p.editing} hasItems>
+        {typeof p.columns === 'function' ? (
+          p.columns({ className: gridClass, style: gridStyle, minEmptyHeight: 80 })
+        ) : (
+          <div className={gridClass} style={gridStyle}>
+            <BlockList items={p.columns} zones={p.zones} nested />
+          </div>
+        )}
+      </Section>
+    );
+  }
+
   const layout = LAYOUTS[p.layout ?? '1-1'] ?? LAYOUTS['1-1'];
   const slots = [p.column1, p.column2, p.column3, p.column4].slice(
     0,

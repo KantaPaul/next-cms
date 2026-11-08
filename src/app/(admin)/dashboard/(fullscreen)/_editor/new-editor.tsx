@@ -882,9 +882,15 @@ export function NewEditor({
   );
   const [globalTarget, setGlobalTarget] = useState<BuilderTarget | null>(null);
 
+  // One store per open document. A save revalidates the route and delivers a
+  // fresh `document` prop; rebuilding from it would wipe undo and the selection.
+  // Deliberate content changes (restore, templates, AI) use `replaceDocument`.
+  const storeKey = `${kind}:${page.id}:${page.language}`;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: see the comment above.
   const store = useMemo(
     () => createEditorStore({ document, schemas: setup.schemas }),
-    [document, setup]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [storeKey]
   );
   // Initialize B9 stores: style classes (R724) and preferences (R733).
   useMemo(() => initStyleClassStore(), []);

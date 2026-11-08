@@ -2,7 +2,7 @@
  * Native blocks (ported from Puck config).
  */
 
-import { defineBlock } from '@nextcms/builder-core';
+import { defineBlock, responsive } from '@nextcms/builder-core';
 import { z } from 'zod';
 import {
   sectionSettingsSchema,
@@ -32,6 +32,7 @@ import { Container, DEFAULT_CONTAINER } from '../blocks/container';
 import {
   Code,
   CollectionItem,
+  Column,
   Columns,
   ContactForm,
   Embed,
@@ -41,6 +42,7 @@ import {
   RichText,
   Video,
 } from '../blocks/content';
+import { SIZE_RE } from '../blocks/header-grid';
 import { CollectionBlockRef } from '../blocks/collection-block';
 import { ResponsiveColumnsField } from '../fields/responsive-columns-field';
 import { ImageMorph } from '../blocks/image-morph';
@@ -778,6 +780,89 @@ export const CTABlock = defineBlock({
   },
 });
 
+const columnWidthValueSchema = z
+  .string()
+  .refine(
+    v =>
+      v === 'auto' ||
+      v === 'fill' ||
+      v === 'custom' ||
+      SIZE_RE.test(v.trim()),
+    {
+      message:
+        'Width must be auto, fill, or a CSS size (px, %, rem, em, fr, ch, vw)',
+    }
+  );
+
+const columnAlignValueSchema = z.enum(['start', 'center', 'end']);
+
+export const ColumnBlock = defineBlock({
+  type: 'Column',
+  label: 'Column',
+  icon: 'columns',
+  parents: ['Columns', 'HeaderBar', 'HeaderColumns', 'FooterColumns'],
+  schema: z
+    .object({
+      width: responsive(columnWidthValueSchema).optional(),
+      align: responsive(columnAlignValueSchema).optional(),
+      verticalAlign: responsive(columnAlignValueSchema).optional(),
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: Column,
+  fields: {
+    width: {
+      label: 'Width',
+      group: CONTENT,
+      tab: 'style',
+      type: 'text',
+      placeholder: 'fill, auto, 50%, 2fr, 240px…',
+      responsive: true,
+    },
+    align: {
+      label: 'Horizontal align',
+      group: CONTENT,
+      tab: 'style',
+      type: 'radio',
+      responsive: true,
+      options: [
+        { label: 'Start', value: 'start' },
+        { label: 'Center', value: 'center' },
+        { label: 'End', value: 'end' },
+      ],
+    },
+    verticalAlign: {
+      label: 'Vertical align',
+      group: CONTENT,
+      tab: 'style',
+      type: 'radio',
+      responsive: true,
+      options: [
+        { label: 'Top', value: 'start' },
+        { label: 'Center', value: 'center' },
+        { label: 'Bottom', value: 'end' },
+      ],
+    },
+    ...sectionControls(),
+  },
+  defaults: {
+    width: 'fill',
+    content: [],
+    section: {
+      paddingY: 'none',
+      background: 'default',
+      hideOnMobile: false,
+      hideOnTablet: false,
+      hideOnDesktop: false,
+      anchor: '',
+    },
+  },
+  slots: {
+    content: { disallow: ['Column', 'Columns', 'GlobalRef'] },
+  },
+});
+
 export const ColumnsBlock = defineBlock({
   type: 'Columns',
   label: 'Columns',
@@ -827,10 +912,7 @@ export const ColumnsBlock = defineBlock({
     layout: '1-1',
     gap: 'md',
     verticalAlign: 'start',
-    column1: [],
-    column2: [],
-    column3: [],
-    column4: [],
+    columns: [],
     section: {
       paddingY: 'md',
       background: 'default',
@@ -841,10 +923,7 @@ export const ColumnsBlock = defineBlock({
     },
   },
   slots: {
-    column1: { allow: undefined, disallow: ['Columns', 'GlobalRef'] },
-    column2: { allow: undefined, disallow: ['Columns', 'GlobalRef'] },
-    column3: { allow: undefined, disallow: ['Columns', 'GlobalRef'] },
-    column4: { allow: undefined, disallow: ['Columns', 'GlobalRef'] },
+    columns: { allow: ['Column'] },
   },
 });
 
@@ -1239,6 +1318,7 @@ export const RichTextBlock = defineBlock({
     },
     width: {
       label: 'Width',
+      tab: 'style',
       group: CONTENT,
       type: 'select',
       options: [
@@ -1303,6 +1383,7 @@ export const ImageNativeBlock = defineBlock({
     },
     width: {
       label: 'Width',
+      tab: 'style',
       group: CONTENT,
       type: 'select',
       options: [
@@ -1977,6 +2058,7 @@ export const CollectionItemBlock = defineBlock({
     },
     align: {
       label: 'Alignment',
+      tab: 'style',
       group: CONTENT,
       type: 'radio',
       options: [
@@ -2689,6 +2771,7 @@ export const PostContentBlock = defineBlock({
   fields: {
     width: {
       label: 'Width',
+      tab: 'style',
       group: CONTENT,
       type: 'select',
       options: [
@@ -2814,6 +2897,7 @@ export const BookmarkButtonBlock = defineBlock({
     label: { label: 'Button text (empty = icon only)', group: CONTENT, type: 'text' },
     align: {
       label: 'Alignment',
+      tab: 'style',
       group: CONTENT,
       type: 'radio',
       options: [
@@ -2823,6 +2907,7 @@ export const BookmarkButtonBlock = defineBlock({
     },
     width: {
       label: 'Width',
+      tab: 'style',
       group: CONTENT,
       type: 'select',
       options: [
@@ -2870,6 +2955,7 @@ export const AudioBlock = defineBlock({
     },
     width: {
       label: 'Width',
+      tab: 'style',
       group: CONTENT,
       type: 'select',
       options: [
@@ -2941,6 +3027,7 @@ export const AuthorBioBlock = defineBlock({
     },
     width: {
       label: 'Width',
+      tab: 'style',
       group: CONTENT,
       type: 'select',
       options: [
@@ -2980,6 +3067,7 @@ const POST_SECTION_DEFAULT = {
 
 const WIDTH_FIELD = {
   label: 'Width',
+  tab: 'style',
   group: CONTENT,
   type: 'select' as const,
   options: [
@@ -3136,6 +3224,7 @@ export const PostNavigationBlock = defineBlock({
     showDate: { label: 'Show date', group: CONTENT, type: 'toggle' },
     width: {
       label: 'Width',
+      tab: 'style',
       group: CONTENT,
       type: 'select',
       options: [
@@ -3197,6 +3286,7 @@ export const ShareButtonsBlock = defineBlock({
     },
     align: {
       label: 'Alignment',
+      tab: 'style',
       group: CONTENT,
       type: 'radio',
       options: [
@@ -3206,6 +3296,7 @@ export const ShareButtonsBlock = defineBlock({
     },
     width: {
       label: 'Width',
+      tab: 'style',
       group: CONTENT,
       type: 'select',
       options: [
@@ -3234,44 +3325,6 @@ export const ShareButtonsBlock = defineBlock({
   },
 });
 
-/** Width / size / align fields for one header column (HeaderBar custom layout, HeaderColumns). */
-const headerColumnFields = (
-  prefix: string,
-  label: string,
-  defaults: { width: 'auto' | 'fill' | 'custom'; align: 'start' | 'center' | 'end' },
-  visible: (props: any) => boolean
-) => ({
-  [`${prefix}Width`]: {
-    label: `${label} width`,
-    type: 'select' as const,
-    options: [
-      { label: 'Fit content', value: 'auto' },
-      { label: 'Fill remaining space', value: 'fill' },
-      { label: 'Custom size', value: 'custom' },
-    ],
-    when: visible,
-  },
-  [`${prefix}Size`]: {
-    label: `${label} size (e.g. 240px, 30%, 2fr)`,
-    type: 'text' as const,
-    when: (props: any) =>
-      visible(props) && (props[`${prefix}Width`] ?? defaults.width) === 'custom',
-  },
-  [`${prefix}Align`]: {
-    label: `${label} alignment`,
-    type: 'radio' as const,
-    options: [
-      { label: 'Start', value: 'start' },
-      { label: 'Center', value: 'center' },
-      { label: 'End', value: 'end' },
-    ],
-    when: visible,
-  },
-});
-
-const headerColWidthSchema = z.enum(['auto', 'fill', 'custom']).optional();
-const headerColAlignSchema = z.enum(['start', 'center', 'end']).optional();
-const headerColSizeSchema = z.string().max(24).optional();
 
 export const HeaderBarBlock = defineBlock({
   type: 'HeaderBar',
@@ -3294,29 +3347,19 @@ export const HeaderBarBlock = defineBlock({
         'custom',
       ])
       .default('left-center-right'),
-    leftWidth: headerColWidthSchema,
-    leftSize: headerColSizeSchema,
-    leftAlign: headerColAlignSchema,
-    centerWidth: headerColWidthSchema,
-    centerSize: headerColSizeSchema,
-    centerAlign: headerColAlignSchema,
-    rightWidth: headerColWidthSchema,
-    rightSize: headerColSizeSchema,
-    rightAlign: headerColAlignSchema,
     stackOn: z.enum(['none', 'mobile', 'tablet']).optional(),
     minHeight: z.string().default(''),
     borderBottom: z.boolean().default(false),
     align: z.enum(['center', 'start', 'end']).default('center'),
-  }),
+  }).passthrough(),
   slots: {
-    left: { label: 'Left slot' },
-    center: { label: 'Center slot' },
-    right: { label: 'Right slot' },
+    columns: { allow: ['Column'] },
   },
   render: HeaderBar,
   fields: {
     width: {
       label: 'Width',
+      tab: 'style',
       type: 'radio',
       options: [
         { label: 'Boxed', value: 'boxed' },
@@ -3338,9 +3381,6 @@ export const HeaderBarBlock = defineBlock({
         { label: 'Custom widths (set each column)', value: 'custom' },
       ],
     },
-    ...headerColumnFields('left', 'Left column', { width: 'auto', align: 'start' }, (p: any) => p.layout === 'custom'),
-    ...headerColumnFields('center', 'Center column', { width: 'fill', align: 'center' }, (p: any) => p.layout === 'custom'),
-    ...headerColumnFields('right', 'Right column', { width: 'auto', align: 'end' }, (p: any) => p.layout === 'custom'),
     stackOn: {
       label: 'Stack columns on',
       type: 'radio',
@@ -3349,10 +3389,10 @@ export const HeaderBarBlock = defineBlock({
         { label: 'Mobile', value: 'mobile' },
         { label: 'Tablet', value: 'tablet' },
       ],
-      when: (p: any) => p.layout === 'custom',
     },
     background: {
       label: 'Background',
+      tab: 'style',
       type: 'select',
       options: [
         { label: 'Default', value: 'default' },
@@ -3364,6 +3404,7 @@ export const HeaderBarBlock = defineBlock({
     },
     paddingY: {
       label: 'Vertical padding',
+      tab: 'style',
       type: 'select',
       options: [
         { label: 'None', value: 'none' },
@@ -3373,9 +3414,10 @@ export const HeaderBarBlock = defineBlock({
         { label: 'Large', value: 'lg' },
       ],
     },
-    minHeight: { label: 'Minimum height (CSS)', type: 'text' },
+    minHeight: { label: 'Minimum height (CSS)', tab: 'style', type: 'text' },
     borderBottom: {
       label: 'Bottom border',
+      tab: 'style',
       type: 'radio',
       options: [
         { label: 'Yes', value: true },
@@ -3384,6 +3426,7 @@ export const HeaderBarBlock = defineBlock({
     },
     align: {
       label: 'Vertical alignment',
+      tab: 'style',
       type: 'radio',
       options: [
         { label: 'Center', value: 'center' },
@@ -3414,40 +3457,19 @@ export const HeaderColumnsBlock = defineBlock({
       .enum(['default', 'muted', 'inverted', 'primary', 'transparent'])
       .default('default'),
     paddingY: z.enum(['none', 'xs', 'sm', 'md', 'lg']).default('none'),
-    columns: z.number().min(1).max(6).default(3),
+    columns: z.union([z.number().min(1).max(6), z.array(z.any())]).optional(),
     gap: z.enum(['sm', 'md', 'lg', 'xl']).default('md'),
     align: z.enum(['center', 'start', 'end']).default('center'),
-    stackOn: z.enum(['mobile', 'tablet']).default('mobile'),    col1Width: headerColWidthSchema,
-    col1Size: headerColSizeSchema,
-    col1Align: headerColAlignSchema,
-    col2Width: headerColWidthSchema,
-    col2Size: headerColSizeSchema,
-    col2Align: headerColAlignSchema,
-    col3Width: headerColWidthSchema,
-    col3Size: headerColSizeSchema,
-    col3Align: headerColAlignSchema,
-    col4Width: headerColWidthSchema,
-    col4Size: headerColSizeSchema,
-    col4Align: headerColAlignSchema,
-    col5Width: headerColWidthSchema,
-    col5Size: headerColSizeSchema,
-    col5Align: headerColAlignSchema,
-    col6Width: headerColWidthSchema,
-    col6Size: headerColSizeSchema,
-    col6Align: headerColAlignSchema,
-  }),
+    stackOn: z.enum(['mobile', 'tablet']).default('mobile'),
+  }).passthrough(),
   slots: {
-    col1: { label: 'Column 1' },
-    col2: { label: 'Column 2' },
-    col3: { label: 'Column 3' },
-    col4: { label: 'Column 4' },
-    col5: { label: 'Column 5' },
-    col6: { label: 'Column 6' },
+    columns: { allow: ['Column'] },
   },
   render: HeaderColumns,
   fields: {
     width: {
       label: 'Width',
+      tab: 'style',
       type: 'radio',
       options: [
         { label: 'Boxed', value: 'boxed' },
@@ -3456,6 +3478,7 @@ export const HeaderColumnsBlock = defineBlock({
     },
     background: {
       label: 'Background',
+      tab: 'style',
       type: 'select',
       options: [
         { label: 'Default', value: 'default' },
@@ -3467,6 +3490,7 @@ export const HeaderColumnsBlock = defineBlock({
     },
     paddingY: {
       label: 'Vertical padding',
+      tab: 'style',
       type: 'select',
       options: [
         { label: 'None', value: 'none' },
@@ -3500,6 +3524,7 @@ export const HeaderColumnsBlock = defineBlock({
     },
     align: {
       label: 'Vertical alignment',
+      tab: 'style',
       type: 'radio',
       options: [
         { label: 'Center', value: 'center' },
@@ -3515,18 +3540,11 @@ export const HeaderColumnsBlock = defineBlock({
         { label: 'Tablet (< 1024px)', value: 'tablet' },
       ],
     },
-    ...headerColumnFields('col1', 'Column 1', { width: 'fill', align: 'start' }, (p: any) => (Number(p.columns) || 3) >= 1),
-    ...headerColumnFields('col2', 'Column 2', { width: 'fill', align: 'start' }, (p: any) => (Number(p.columns) || 3) >= 2),
-    ...headerColumnFields('col3', 'Column 3', { width: 'fill', align: 'start' }, (p: any) => (Number(p.columns) || 3) >= 3),
-    ...headerColumnFields('col4', 'Column 4', { width: 'fill', align: 'start' }, (p: any) => (Number(p.columns) || 3) >= 4),
-    ...headerColumnFields('col5', 'Column 5', { width: 'fill', align: 'start' }, (p: any) => (Number(p.columns) || 3) >= 5),
-    ...headerColumnFields('col6', 'Column 6', { width: 'fill', align: 'start' }, (p: any) => (Number(p.columns) || 3) >= 6),
   },
   defaults: {
     width: 'boxed',
     background: 'default',
     paddingY: 'none',
-    columns: 3,
     gap: 'md',
     align: 'center',
     stackOn: 'mobile',
@@ -3544,22 +3562,18 @@ export const FooterColumnsBlock = defineBlock({
       .enum(['default', 'muted', 'inverted', 'primary'])
       .default('default'),
     paddingY: z.enum(['none', 'sm', 'md', 'lg', 'xl']).default('lg'),
-    columns: z.number().min(1).max(6).default(4),
+    columns: z.union([z.number().min(1).max(6), z.array(z.any())]).optional(),
     gap: z.enum(['sm', 'md', 'lg', 'xl']).default('lg'),
     stackOn: z.enum(['mobile', 'tablet']).default('mobile'),
-  }),
+  }).passthrough(),
   slots: {
-    col1: { label: 'Column 1' },
-    col2: { label: 'Column 2' },
-    col3: { label: 'Column 3' },
-    col4: { label: 'Column 4' },
-    col5: { label: 'Column 5' },
-    col6: { label: 'Column 6' },
+    columns: { allow: ['Column'] },
   },
   render: FooterColumns,
   fields: {
     width: {
       label: 'Width',
+      tab: 'style',
       type: 'radio',
       options: [
         { label: 'Boxed', value: 'boxed' },
@@ -3568,6 +3582,7 @@ export const FooterColumnsBlock = defineBlock({
     },
     background: {
       label: 'Background',
+      tab: 'style',
       type: 'select',
       options: [
         { label: 'Default', value: 'default' },
@@ -3578,6 +3593,7 @@ export const FooterColumnsBlock = defineBlock({
     },
     paddingY: {
       label: 'Vertical padding',
+      tab: 'style',
       type: 'select',
       options: [
         { label: 'None', value: 'none' },
@@ -3622,7 +3638,6 @@ export const FooterColumnsBlock = defineBlock({
     width: 'boxed',
     background: 'default',
     paddingY: 'lg',
-    columns: 4,
     gap: 'lg',
     stackOn: 'mobile',
   },
@@ -3785,6 +3800,7 @@ export const CopyrightBlock = defineBlock({
     text: { label: 'Copyright text', type: 'text' },
     align: {
       label: 'Alignment',
+      tab: 'style',
       type: 'radio',
       options: [
         { label: 'Left', value: 'left' },
@@ -3970,6 +3986,7 @@ export const SearchBoxBlock = defineBlock({
     },
     align: {
       label: 'Dropdown alignment',
+      tab: 'style',
       type: 'radio',
       options: [
         { label: 'Right aligned', value: 'right' },
@@ -4078,6 +4095,7 @@ export const SocialIconsBlock = defineBlock({
     },
     align: {
       label: 'Alignment',
+      tab: 'style',
       type: 'radio',
       options: [
         { label: 'Left', value: 'left' },
@@ -4163,6 +4181,7 @@ export const ContactInfoBlock = defineBlock({
     },
     align: {
       label: 'Alignment',
+      tab: 'style',
       type: 'radio',
       options: [
         { label: 'Left', value: 'left' },
@@ -4259,6 +4278,7 @@ export const LegalLinksBlock = defineBlock({
     },
     align: {
       label: 'Alignment',
+      tab: 'style',
       type: 'radio',
       options: [
         { label: 'Left', value: 'left' },
@@ -5240,6 +5260,7 @@ export const NATIVE_BLOCKS = [
   TestimonialsBlock,
   FAQBlock,
   CTABlock,
+  ColumnBlock,
   ColumnsBlock,
   ContainerBlock,
   VideoBlock,
@@ -5329,6 +5350,7 @@ export const PAGE_ROOT_FIELDS = {
   paddingY: {
     type: 'select',
     label: 'Page padding',
+    tab: 'style',
     group: 'Page',
     options: [
       { label: 'None', value: 'none' },
@@ -5437,6 +5459,7 @@ export const CATEGORIES = {
     components: [
       'HeaderBar',
       'HeaderColumns',
+      'Container',
       'Logo',
       'NavMenu',
       'MobileMenu',
@@ -5455,6 +5478,7 @@ export const CATEGORIES = {
     title: 'Footer',
     components: [
       'FooterColumns',
+      'Container',
       'FooterLinks',
       'SocialIcons',
       'ContactInfo',

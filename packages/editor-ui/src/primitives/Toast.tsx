@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import React from 'react';
 import { createContext, useContext, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { toast as sonnerToast, Toaster } from 'sonner';
 
 /**
@@ -72,7 +73,8 @@ function ToastCard({ id, type = 'info', title, message }: ToastMessage) {
   );
 }
 
-function show(msg: Omit<ToastMessage, 'id'>): string {
+export function showToast(msg: Omit<ToastMessage, 'id'>): string {
+  if (typeof document === 'undefined') return '';
   const id = sonnerToast.custom(
     toastId => <ToastCard {...msg} id={String(toastId)} />,
     {
@@ -89,7 +91,7 @@ function show(msg: Omit<ToastMessage, 'id'>): string {
 }
 
 const api: ToastContextType = {
-  toast: show,
+  toast: showToast,
   dismiss: id => sonnerToast.dismiss(id),
 };
 
@@ -102,15 +104,20 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({
   const outer = useContext(ToastContext);
   const value = useMemo(() => api, []);
   if (outer) return <>{children}</>;
+  const toaster = (
+    <Toaster
+      id={TOASTER_ID}
+      position="bottom-right"
+      gap={8}
+      visibleToasts={4}
+    />
+  );
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <Toaster
-        id={TOASTER_ID}
-        position="bottom-right"
-        gap={8}
-        visibleToasts={4}
-      />
+      {typeof document !== 'undefined' && document.body
+        ? createPortal(toaster, document.body)
+        : toaster}
     </ToastContext.Provider>
   );
 };

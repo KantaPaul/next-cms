@@ -304,7 +304,7 @@ function megaMenuEditorSetup(): EditorSetup {
   const allowed = new Set(MEGA_MENU_GROUPS.flatMap(group => group.types));
   const definitions = Object.fromEntries(
     Object.entries(pageDefinitions)
-      .filter(([type]) => allowed.has(type))
+      .filter(([type]) => allowed.has(type) || type === 'Column')
       .map(([type, definition]) => {
         const omit = new Set([
           ...MEGA_MENU_OMIT_FIELDS,
@@ -313,18 +313,22 @@ function megaMenuEditorSetup(): EditorSetup {
         const fields = Object.fromEntries(
           Object.entries(definition.fields ?? {}).filter(([key]) => !omit.has(key))
         );
-        // Layout slots would otherwise accept any page block. Columns still
-        // can't nest inside Columns.
+        // Layout slots would otherwise accept any page block. Columns slots
+        // keep Column, while Column's content slot applies the mega-menu allow list.
         const slots = definition.slots
           ? Object.fromEntries(
               Object.entries(definition.slots).map(([key, slot]) => [
                 key,
-                {
-                  ...slot,
-                  allow: [...allowed].filter(
-                    t => !(type === 'Columns' && t === 'Columns')
-                  ),
-                },
+                key === 'columns'
+                  ? { ...slot, allow: ['Column'] }
+                  : {
+                      ...slot,
+                      allow: [...allowed].filter(
+                        t =>
+                          !(type === 'Columns' && t === 'Columns') &&
+                          !(type === 'Column' && t === 'Columns')
+                      ),
+                    },
               ])
             )
           : definition.slots;
@@ -718,7 +722,7 @@ export function overlayEditorSetup(variant: 'popup' | 'drawer'): EditorSetup {
   const allowed = new Set(OVERLAY_ALLOWED_TYPES);
   const definitions = Object.fromEntries(
     Object.entries(pageDefinitions)
-      .filter(([type]) => allowed.has(type))
+      .filter(([type]) => allowed.has(type) || type === 'Column')
       .map(([type, definition]) => {
         const omit = new Set([
           'section_animation',
@@ -735,12 +739,16 @@ export function overlayEditorSetup(variant: 'popup' | 'drawer'): EditorSetup {
           ? Object.fromEntries(
               Object.entries(definition.slots).map(([key, slot]) => [
                 key,
-                {
-                  ...slot,
-                  allow: [...allowed].filter(
-                    t => !(type === 'Columns' && t === 'Columns')
-                  ),
-                },
+                key === 'columns'
+                  ? { ...slot, allow: ['Column'] }
+                  : {
+                      ...slot,
+                      allow: [...allowed].filter(
+                        t =>
+                          !(type === 'Columns' && t === 'Columns') &&
+                          !(type === 'Column' && t === 'Columns')
+                      ),
+                    },
               ])
             )
           : definition.slots;

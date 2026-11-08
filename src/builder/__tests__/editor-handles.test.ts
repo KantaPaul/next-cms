@@ -44,4 +44,95 @@ describe('CMS resize handles', () => {
     assert.deepEqual(cmsInlineProps('Hero'), ['title', 'subtitle']);
     assert.ok(cmsInlineProps('CTA')?.includes('title'));
   });
+
+  it('gives Column blocks columnWidth on every column except the last, plus sectionTop/Bottom', () => {
+    const doc = {
+      version: 1 as const,
+      root: { props: {} },
+      rootSlot: ['hb'],
+      nodes: {
+        hb: {
+          id: 'hb',
+          type: 'HeaderBar',
+          props: {},
+          slots: { columns: ['col-1', 'col-2', 'col-3'] },
+        },
+        'col-1': { id: 'col-1', type: 'Column', props: { width: 'auto' }, slots: { content: [] } },
+        'col-2': { id: 'col-2', type: 'Column', props: { width: 'fill' }, slots: { content: [] } },
+        'col-3': { id: 'col-3', type: 'Column', props: { width: 'auto' }, slots: { content: [] } },
+      },
+    };
+    assert.deepEqual(
+      cmsResizeHandles(doc.nodes['col-1'], doc).map(h => h.id),
+      ['columnWidth', 'section-top', 'section-bottom']
+    );
+    assert.deepEqual(
+      cmsResizeHandles(doc.nodes['col-2'], doc).map(h => h.id),
+      ['columnWidth', 'section-top', 'section-bottom']
+    );
+    assert.deepEqual(
+      cmsResizeHandles(doc.nodes['col-3'], doc).map(h => h.id),
+      ['section-top', 'section-bottom']
+    );
+  });
+
+  it('resizes a Column and its right-hand neighbour in %, snapping to 5% with min 5% per device', () => {
+    const doc = {
+      version: 1 as const,
+      root: { props: {} },
+      rootSlot: ['hb'],
+      nodes: {
+        hb: {
+          id: 'hb',
+          type: 'HeaderBar',
+          props: {},
+          slots: { columns: ['col-1', 'col-2'] },
+        },
+        'col-1': { id: 'col-1', type: 'Column', props: { width: 'auto' }, slots: { content: [] } },
+        'col-2': { id: 'col-2', type: 'Column', props: { width: 'fill' }, slots: { content: [] } },
+      },
+    };
+    const handle = cmsResizeHandles(doc.nodes['col-1'], doc).find(h => h.id === 'columnWidth')!;
+    assert.ok(handle.writeNodes);
+
+    // Dragging +120px when col-1 was 240px (20%) and col-2 was 960px (80%) of 1200px total
+    const res = handle.writeNodes({
+      id: 'col-1',
+      baseDoc: doc,
+      device: 'tablet',
+      measuredWidths: { 'col-1': 240, 'col-2': 960 },
+      deltaPx: 140, // +11.67% -> 31.67% -> snaps to 30%
+    });
+    assert.equal(res.value, 30);
+    assert.equal(res.snapped, true);
+    assert.deepEqual(res.patches['col-1'], {
+      width: { desktop: 'auto', tablet: '30%' },
+    });
+    assert.deepEqual(res.patches['col-2'], {
+      width: { desktop: 'fill', tablet: '70%' },
+    });
+
+    // Clamps to minimum 5% of row on both sides
+    const minRes = handle.writeNodes({
+      id: 'col-1',
+      baseDoc: doc,
+      device: 'desktop',
+      measuredWidths: { 'col-1': 240, 'col-2': 960 },
+      deltaPx: -500,
+    });
+    assert.equal(minRes.value, 5);
+    assert.deepEqual(minRes.patches['col-1'], { width: { desktop: '5%' } });
+    assert.deepEqual(minRes.patches['col-2'], { width: { desktop: '95%' } });
+
+    const maxRes = handle.writeNodes({
+      id: 'col-1',
+      baseDoc: doc,
+      device: 'desktop',
+      measuredWidths: { 'col-1': 240, 'col-2': 960 },
+      deltaPx: 1500,
+    });
+    assert.equal(maxRes.value, 95);
+    assert.deepEqual(maxRes.patches['col-1'], { width: { desktop: '95%' } });
+    assert.deepEqual(maxRes.patches['col-2'], { width: { desktop: '5%' } });
+  });
 });

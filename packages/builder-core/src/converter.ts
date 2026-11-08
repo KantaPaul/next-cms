@@ -13,6 +13,10 @@
 
 import type { PuckData, PuckItem } from './puck-data';
 import {
+  migrateDocumentColumns,
+  migratePuckColumns,
+} from './column-migration';
+import {
   DOCUMENT_VERSION,
   type BuilderDocument,
   type BuilderNode,
@@ -255,8 +259,9 @@ export function documentToPuck(
  * Accept either format and return a BuilderDocument.
  */
 export function toDocument(value: unknown): BuilderDocument {
-  if (isBuilderDocument(value)) return value;
-  if (isLegacyPuckData(value)) return puckToDocument(value as PuckData);
+  if (isBuilderDocument(value)) return migrateDocumentColumns(value);
+  if (isLegacyPuckData(value))
+    return migrateDocumentColumns(puckToDocument(value as PuckData));
   return emptyDocument();
 }
 
@@ -264,8 +269,9 @@ export function toDocument(value: unknown): BuilderDocument {
  * Accept either format and return Puck PuckData.
  */
 export function toPuckData(value: unknown): PuckData {
-  if (isBuilderDocument(value)) return documentToPuck(value);
-  if (isLegacyPuckData(value)) return value as PuckData;
+  if (isBuilderDocument(value))
+    return documentToPuck(migrateDocumentColumns(value));
+  if (isLegacyPuckData(value)) return migratePuckColumns(value as PuckData);
   return { root: { props: {} }, content: [], zones: {} };
 }
 

@@ -3,6 +3,7 @@ import { and, asc, eq, gte, inArray, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { globalBlocks, menuItems, overlayStats, pages, posts, users } from '@/db/schema';
 import type { BuilderData } from '@/builder/data';
+import { migratePuckColumns } from '@/builder/migrations/column-blocks';
 import { normalizeOverlaySettings } from '@/lib/overlays/settings';
 import type { OverlaySettings } from '@/lib/overlays/types';
 import { ApplicationException, NotFoundException } from '@/lib/utils/error';
@@ -57,7 +58,7 @@ export type HeaderFooterItem = {
   };
 };
 
-const DEFAULT_HEADER_CONTENT = {
+const DEFAULT_HEADER_CONTENT = migratePuckColumns({
   root: {
     props: {
       sticky: 'off',
@@ -106,9 +107,9 @@ const DEFAULT_HEADER_CONTENT = {
       },
     ],
   },
-};
+}) as BuilderData;
 
-const DEFAULT_FOOTER_CONTENT = {
+const DEFAULT_FOOTER_CONTENT = migratePuckColumns({
   root: {
     props: {
       background: 'default',
@@ -177,7 +178,7 @@ const DEFAULT_FOOTER_CONTENT = {
       },
     ],
   },
-};
+}) as BuilderData;
 
 export const headerFooterService = {
   listHeaderFooters: async (): Promise<HeaderFooterItem[]> => {

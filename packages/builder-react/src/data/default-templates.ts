@@ -60,8 +60,20 @@ export const DEFAULT_TEMPLATES: TemplateItem[] = [
           type: 'Columns',
           props: { gap: 12 },
           slots: {
-            content: ['btn-1', 'btn-2'],
+            columns: ['cta-row-1-col-column1', 'cta-row-1-col-column2'],
           },
+        },
+        'cta-row-1-col-column1': {
+          id: 'cta-row-1-col-column1',
+          type: 'Column',
+          props: { width: 'fill' },
+          slots: { content: ['btn-1'] },
+        },
+        'cta-row-1-col-column2': {
+          id: 'cta-row-1-col-column2',
+          type: 'Column',
+          props: { width: 'fill' },
+          slots: { content: ['btn-2'] },
         },
         'btn-1': {
           id: 'btn-1',
@@ -104,8 +116,30 @@ export const DEFAULT_TEMPLATES: TemplateItem[] = [
           type: 'Columns',
           props: { count: 3, gap: 24 },
           slots: {
-            content: ['card-1', 'card-2', 'card-3'],
+            columns: [
+              'feat-grid-col-column1',
+              'feat-grid-col-column2',
+              'feat-grid-col-column3',
+            ],
           },
+        },
+        'feat-grid-col-column1': {
+          id: 'feat-grid-col-column1',
+          type: 'Column',
+          props: { width: 'fill' },
+          slots: { content: ['card-1'] },
+        },
+        'feat-grid-col-column2': {
+          id: 'feat-grid-col-column2',
+          type: 'Column',
+          props: { width: 'fill' },
+          slots: { content: ['card-2'] },
+        },
+        'feat-grid-col-column3': {
+          id: 'feat-grid-col-column3',
+          type: 'Column',
+          props: { width: 'fill' },
+          slots: { content: ['card-3'] },
         },
         'card-1': {
           id: 'card-1',

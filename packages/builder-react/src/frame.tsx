@@ -9,7 +9,8 @@ import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from 
 import { createPortal } from 'react-dom';
 
 const COPIED = 'data-builder-copied';
-const FRAME_DOC = '<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0"></body></html>';
+const FRAME_DOC =
+  '<!doctype html><html><head><meta charset="utf-8"><style data-builder-drag-guard>[data-builder-node] img, [data-builder-node] a { -webkit-user-drag: none; user-drag: none; }</style></head><body style="margin:0"></body></html>';
 
 /** Editor sheet → its copy in the frame. */
 const copies = new WeakMap<Element, Element>();

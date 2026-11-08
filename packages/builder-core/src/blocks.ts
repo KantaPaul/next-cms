@@ -5,6 +5,7 @@
  */
 
 import type { BuilderDocument, BuilderNode, NodeId } from './document';
+import type { FieldDef } from './fields';
 import { ROOT_SLOT, type SlotRef, subtreeIds } from './tree';
 
 /** Which block types a slot accepts. Empty or missing `allow` accepts all. */
@@ -41,6 +42,8 @@ export type BlockInfo = {
   nesting?: BlockNesting;
   /** Typical rendered size, such as `100% × auto`. */
   defaultSize?: string;
+  /** Block types this block may be placed directly inside; omit to allow any parent whose slot accepts it. */
+  parents?: string[];
   /** Parts the user may reorder; omit to disable reordering. */
   reorder?: BlockReorder;
 };
@@ -49,6 +52,8 @@ export type BlockSchema = BlockInfo & {
   type: string;
   label?: string;
   defaultProps?: Record<string, unknown>;
+  /** Inspector field definitions derived from the block's schema, fields, and traits. */
+  fields?: Record<string, FieldDef>;
   /** Named prop sets shown in the insert panel alongside the plain block (R781). */
   presets?: Record<string, Record<string, unknown>>;
   /** Slots stored directly on the block, such as `content` or `column1`. */
@@ -103,6 +108,10 @@ export function canPlace(
   const parent =
     target.parentId === null ? undefined : doc.nodes[target.parentId];
   if (target.parentId !== null && !parent) return false;
+  const allowedParents = schemas[type]?.parents;
+  if (allowedParents?.length) {
+    if (!parent || !allowedParents.includes(parent.type)) return false;
+  }
   if (options.movingId && target.parentId !== null) {
     if (subtreeIds(doc, options.movingId).includes(target.parentId))
       return false;

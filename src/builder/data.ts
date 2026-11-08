@@ -1,4 +1,12 @@
+import {
+  documentToPuck,
+  isBuilderDocument,
+} from '@nextcms/builder-core';
 import type { EditorTypeType } from '@/db/schemas/shared.schema';
+import {
+  migrateDocumentColumns,
+  migratePuckColumns,
+} from './migrations/column-blocks';
 
 export type BuilderItem = {
   type: string;
@@ -31,8 +39,17 @@ export const normalizeContent = (
   editorType: EditorTypeType,
   content: unknown
 ) => {
-  if (editorType === 'builder')
-    return isBuilderData(content) ? content : emptyBuilderData();
+  if (editorType === 'builder') {
+    if (isBuilderDocument(content)) {
+      return documentToPuck(migrateDocumentColumns(content), {
+        slots: 'zones',
+        ids: 'always',
+      }) as BuilderData;
+    }
+    return isBuilderData(content)
+      ? (migratePuckColumns(content) as BuilderData)
+      : emptyBuilderData();
+  }
   return typeof content === 'string' ? content : '';
 };
 

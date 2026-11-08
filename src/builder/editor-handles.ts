@@ -5,9 +5,13 @@
  */
 
 import {
+  type BuilderDocument,
   type BuilderNode,
   type Device,
+  findPosition,
+  type NodeId,
   resetDeviceValue,
+  slotChildren,
   valueForDevice,
   withDeviceValue,
 } from '@nextcms/builder-core';
@@ -165,6 +169,157 @@ const spacerHeight: ResizeHandle = {
   write: (_props, _device: Device, value) => ({ height: value }),
 };
 
+const parseColumnPercent = (
+  widthProp: unknown,
+  device: Device
+): number | undefined => {
+  const val = valueForDevice(widthProp as any, device);
+  if (typeof val !== 'string') return undefined;
+  const match = val.trim().match(/^(\d+(?:\.\d+)?)%$/);
+  return match ? Number.parseFloat(match[1]) : undefined;
+};
+
+/**
+ * Column width handle on the right edge of each Column except the last.
+ * Dragging changes the column and its right-hand neighbour in %, keeping the
+ * row's total width constant, snapping to 5% with a minimum of 5% of the row.
+ */
+export const columnWidth: ResizeHandle = {
+  id: 'columnWidth',
+  label: 'Column width',
+  edge: 'right',
+  unit: '%',
+  min: 5,
+  max: 95,
+  step: 5,
+  snap: [
+    5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95,
+  ],
+  read: (props, device) => parseColumnPercent(props.width, device),
+  write: (props, device, value) => {
+    if (value === undefined) {
+      const next = resetDeviceValue(props.width as any, device);
+      return { width: next ?? 'fill' };
+    }
+    const clamped = Math.min(95, Math.max(5, Math.round(value / 5) * 5));
+    return {
+      width: withDeviceValue(props.width as any, device, `${clamped}%`),
+    };
+  },
+  writeNodes: ({
+    id,
+    baseDoc,
+    device,
+    measuredWidths,
+    deltaPx,
+    stepDelta,
+    reset,
+    altKey,
+  }) => {
+    const pos = findPosition(baseDoc, id);
+    const visibleCols = pos
+      ? slotChildren(baseDoc, pos).filter(
+          cid => baseDoc.nodes[cid] && !baseDoc.nodes[cid].meta?.hidden
+        )
+      : [id];
+    const idx = visibleCols.indexOf(id);
+    const rightId =
+      idx >= 0 && idx < visibleCols.length - 1
+        ? visibleCols[idx + 1]
+        : undefined;
+    const leftNode = baseDoc.nodes[id];
+    const rightNode = rightId ? baseDoc.nodes[rightId] : undefined;
+    if (!leftNode) return { patches: {} };
+
+    if (reset) {
+      const patches: Record<NodeId, Record<string, unknown>> = {
+        [id]: {
+          width: resetDeviceValue(leftNode.props.width as any, device) ?? 'fill',
+        },
+      };
+      if (rightId && rightNode) {
+        patches[rightId] = {
+          width:
+            resetDeviceValue(rightNode.props.width as any, device) ?? 'fill',
+        };
+      }
+      return { patches };
+    }
+
+    const totalRowWidthPx = visibleCols.reduce(
+      (sum, cid) => sum + (measuredWidths[cid] ?? 0),
+      0
+    );
+    const leftPctProp = parseColumnPercent(leftNode.props.width, device);
+    const rightPctProp = rightNode
+      ? parseColumnPercent(rightNode.props.width, device)
+      : undefined;
+
+    let startLeftPct: number;
+    let startRightPct: number;
+    if (leftPctProp !== undefined && rightPctProp !== undefined) {
+      startLeftPct = leftPctProp;
+      startRightPct = rightPctProp;
+    } else if (totalRowWidthPx > 0 && measuredWidths[id]) {
+      startLeftPct = (measuredWidths[id] / totalRowWidthPx) * 100;
+      startRightPct =
+        rightId && measuredWidths[rightId]
+          ? (measuredWidths[rightId] / totalRowWidthPx) * 100
+          : Math.max(5, 100 - startLeftPct);
+    } else {
+      const fallbackShare = 100 / Math.max(1, visibleCols.length);
+      startLeftPct = leftPctProp ?? fallbackShare;
+      startRightPct = rightPctProp ?? fallbackShare;
+    }
+
+    const combinedPct =
+      visibleCols.length === 2
+        ? 100
+        : Math.round((startLeftPct + startRightPct) * 100) / 100;
+
+    const rawLeft =
+      stepDelta !== undefined
+        ? startLeftPct + stepDelta
+        : startLeftPct + ((deltaPx ?? 0) / (totalRowWidthPx || 100)) * 100;
+
+    const snappedLeft = altKey
+      ? Math.round(rawLeft)
+      : Math.round(rawLeft / 5) * 5;
+    const maxLeft = Math.max(5, combinedPct - 5);
+    const nextLeft = Math.min(maxLeft, Math.max(5, snappedLeft));
+    const nextRight = Math.max(
+      5,
+      Math.round((combinedPct - nextLeft) * 100) / 100
+    );
+
+    const patches: Record<NodeId, Record<string, unknown>> = {
+      [id]: {
+        width: withDeviceValue(
+          leftNode.props.width as any,
+          device,
+          `${nextLeft}%`
+        ),
+      },
+    };
+    if (rightId && rightNode) {
+      patches[rightId] = {
+        width: withDeviceValue(
+          rightNode.props.width as any,
+          device,
+          `${nextRight}%`
+        ),
+      };
+    }
+    return {
+      patches,
+      value: nextLeft,
+      snapped: !altKey && nextLeft % 5 === 0,
+    };
+  },
+  fallback: ({ width, parentWidth }) =>
+    Math.round((width / (parentWidth || 1)) * 100),
+};
+
 /** Blocks whose definition has section settings, even when stored without them. */
 const hasSection = (type: string) => {
   const fields = pageDefinitions[type]?.fields;
@@ -172,8 +327,27 @@ const hasSection = (type: string) => {
   return 'section' in fields || 'section_background' in fields || 'section_layout' in fields;
 };
 
-export function cmsResizeHandles(node: BuilderNode): ResizeHandle[] {
+export function cmsResizeHandles(
+  node: BuilderNode,
+  doc?: BuilderDocument
+): ResizeHandle[] {
   if (node.type === 'Spacer') return [spacerHeight, sectionWidth];
+  if (node.type === 'Column') {
+    if (doc) {
+      const pos = findPosition(doc, node.id);
+      const visibleCols = pos
+        ? slotChildren(doc, pos).filter(
+            cid => doc.nodes[cid] && !doc.nodes[cid].meta?.hidden
+          )
+        : [];
+      const idx = visibleCols.indexOf(node.id);
+      const isLast = idx === -1 || idx === visibleCols.length - 1;
+      return isLast
+        ? [sectionTop, sectionBottom]
+        : [columnWidth, sectionTop, sectionBottom];
+    }
+    return [columnWidth, sectionTop, sectionBottom];
+  }
   return hasSection(node.type) ? [sectionWidth, sectionTop, sectionBottom] : [];
 }
 

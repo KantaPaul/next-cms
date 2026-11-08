@@ -104,14 +104,14 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
       )}
 
       {/* Resize Handles outside component markup */}
-      {showHandles && !locked && !isMoveMode && (
+      {showHandles && onResizeStart && !locked && !isMoveMode && (
         <>
           {handles.map(h => (
             <div
               key={h.id}
               onMouseDown={e => {
                 e.stopPropagation();
-                onResizeStart?.(h.id, e);
+                onResizeStart(h.id, e);
               }}
               className={`absolute w-2.5 h-2.5 bg-white border-2 border-[var(--ne-primary)] rounded-[1px] shadow-xs pointer-events-auto ${h.pos}`}
             />

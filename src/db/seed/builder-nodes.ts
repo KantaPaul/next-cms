@@ -6,6 +6,7 @@
 import { toDocument } from '@nextcms/builder-core';
 import type { BuilderData, BuilderItem } from '@/builder/data';
 import { pageDefinitions } from '@/builder/definitions';
+import { migrateColumnBlocks } from '@/builder/migrations/column-blocks';
 import { documentIssues } from '@/builder/validate-document';
 
 let counter = 0;
@@ -37,14 +38,19 @@ export function page(
   content: BuilderItem[],
   rootProps: Record<string, unknown> = { maxWidth: 'xl', theme: 'site', paddingY: 'none' }
 ): BuilderData {
-  return { root: { props: rootProps }, content, zones: {} } as BuilderData;
+  return migrateColumnBlocks({
+    root: { props: rootProps },
+    content,
+    zones: {},
+  }) as BuilderData;
 }
 
 /** Throws when a document would be rejected by the editor's save check. */
 export function assertValid(name: string, data: unknown) {
-  const issues = documentIssues(toDocument(data));
+  const migrated = migrateColumnBlocks(data);
+  const issues = documentIssues(toDocument(migrated));
   if (issues.length) {
     throw new Error(`Seed content "${name}" is invalid:\n  - ${issues.join('\n  - ')}`);
   }
-  return data;
+  return migrated;
 }

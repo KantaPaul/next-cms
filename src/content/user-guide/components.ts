@@ -31,7 +31,7 @@ const BLOCKS: Record<string, BlockNote> = {
   SearchResults: { label: 'Search results', use: 'The results list on the Search template.', settings: 'Title, placeholder, tabs, thumbnails, type badges, snippets, page size.' },
   BlogPosts: { label: 'Blog posts', use: 'A ready-made list of recent posts with optional filters. Use Query loop when you need a custom card.', settings: 'Layout, columns, page size, filters, locked category or tag.' },
   Container: { label: 'Container', use: 'A flex or grid box that holds any blocks. The building block of custom layouts.', settings: 'Mode (flex/grid), direction, gap, alignment per device, HTML tag.' },
-  Columns: { label: 'Columns', use: 'Two to four columns side by side that stack on mobile.', settings: 'Ratio (1-1, 1-1-1, 2-1…), gap, vertical alignment.' },
+  Columns: { label: 'Columns', use: 'Two to four columns side by side that stack on mobile. Each column is a selectable Column block that can be styled and resized.', settings: 'Ratio (1-1, 1-1-1, 2-1…), gap, vertical alignment.' },
   Slider: { label: 'Slider', use: 'Slides with arrows and dots; each slide holds any blocks.', settings: 'Slides; each slide holds any blocks.' },
   Tabs: { label: 'Tabs', use: 'Switch between panels of content.', settings: 'Tab labels; each tab holds any blocks.' },
   Accordion: { label: 'Accordion', use: 'Collapsible panels for long or optional content.', settings: 'Panel titles; each panel holds any blocks.' },

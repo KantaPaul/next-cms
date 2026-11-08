@@ -55,8 +55,9 @@ describe('Popup & Drawer builder palette and editor setup', () => {
       assert.ok(!setup.schemas[type], `${type} should not be insertable in popup`);
     }
 
-    // Columns slot allows overlay blocks
-    const colSlot = setup.definitions.Columns?.slots?.column1;
+    // Columns hold only Column blocks, and a Column allows overlay blocks
+    assert.deepEqual(setup.definitions.Columns?.slots?.columns?.allow, ['Column']);
+    const colSlot = setup.definitions.Column?.slots?.content;
     assert.ok(colSlot?.allow?.includes('OverlayClose'));
     assert.ok(!colSlot?.allow?.includes('Hero'));
   });

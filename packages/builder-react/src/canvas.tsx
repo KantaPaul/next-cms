@@ -25,6 +25,7 @@ import {
   type ErrorInfo,
   isValidElement,
   type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
   useCallback,
   useEffect,
@@ -33,6 +34,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { createPortal } from 'react-dom';
 import {
   DropLine,
   DropZone,
@@ -42,6 +44,7 @@ import {
   MarqueeBox,
   OverlayNotice,
   SelectionBox,
+  ToastProvider,
   type ToolbarAction,
 } from '@nextcms/editor-ui';
 import {
@@ -79,7 +82,7 @@ import {
   SLOT_PARENT_ATTR,
 } from './dom';
 import type { DragController } from './drag';
-import { useDragState } from './drag';
+import { DRAG_THRESHOLD, useDragState } from './drag';
 import {
   type Point,
   type Rect,
@@ -584,6 +587,7 @@ function Toolbar({
   const type = useEditor(state => state.doc.nodes[id]?.type);
   const name = useEditor(state => state.doc.nodes[id]?.meta?.name);
   const locked = useEditor(state => !!state.doc.nodes[id]?.meta?.locked);
+  const canDelete = useEditor(() => store.canRemove([id]));
   const label = name || ((type && store.schemas[type]?.label) ?? type) || '';
   const icon = 'h-3.5 w-3.5';
   const parent: ToolbarAction = {
@@ -657,6 +661,7 @@ function Toolbar({
           icon: <Trash2 className={icon} />,
           onClick: () => store.remove([id]),
           danger: true,
+          disabled: !canDelete,
         },
       ];
   return (
@@ -702,7 +707,12 @@ function MultiSelectToolbar({
   onRectChange?: (rect: Rect) => void;
 }) {
   const store = useEditorStore();
+  const hasColumn = useEditor(state =>
+    ids.some(id => state.doc.nodes[id]?.type === 'Column')
+  );
+  const canDelete = useEditor(() => store.canRemove(ids));
   const canGroup =
+    !hasColumn &&
     !!store.schemas.Container?.slots &&
     Object.keys(store.schemas.Container.slots ?? {}).length > 0;
   const icon = 'h-3.5 w-3.5';
@@ -740,6 +750,7 @@ function MultiSelectToolbar({
           icon: <Trash2 className={icon} />,
           onClick: () => store.remove(ids),
           danger: true,
+          disabled: !canDelete,
         },
       ]}
     />
@@ -824,21 +835,38 @@ function CanvasOverlay({
   });
   const [rects, setRects] = useState<{
     hovered: Rect | null;
+    hoveredColumn: [NodeId, Rect] | null;
     selected: [NodeId, Rect][];
   }>({
     hovered: null,
+    hoveredColumn: null,
     selected: [],
   });
+
+  const hoveredColumnId = useMemo<NodeId | null>(() => {
+    if (!hovered) return null;
+    if (doc.nodes[hovered]?.type === 'Column') return hovered;
+    return (
+      ancestorIds(doc, hovered).find(id => doc.nodes[id]?.type === 'Column') ??
+      null
+    );
+  }, [doc, hovered]);
 
   // Measure after each commit, once the frame shows the new document.
   useLayoutEffect(() => {
     const activeDoc = frameDoc ?? frame.contentDocument;
     if (!activeDoc) return;
+    const colRect =
+      hoveredColumnId && !selection.includes(hoveredColumnId)
+        ? nodeRect(activeDoc, hoveredColumnId)
+        : null;
     setRects({
       hovered:
         hovered && !selection.includes(hovered)
           ? nodeRect(activeDoc, hovered)
           : null,
+      hoveredColumn:
+        hoveredColumnId && colRect ? [hoveredColumnId, colRect] : null,
       selected: selection.flatMap(id => {
         const rect = nodeRect(activeDoc, id);
         return rect ? [[id, rect] as [NodeId, Rect]] : [];
@@ -865,7 +893,7 @@ function CanvasOverlay({
         bottom: vBottom,
       });
     }
-  }, [frame, frameDoc, doc, selection, hovered, tick]);
+  }, [frame, frameDoc, doc, selection, hovered, hoveredColumnId, tick]);
 
   const primary = rects.selected[0];
   const multi = rects.selected.length > 1;
@@ -916,9 +944,49 @@ function CanvasOverlay({
         pointerEvents: 'none',
       }}
     >
-      {rects.hovered && hovered && !dragState.active && (
-        <HoverBox bounds={rects.hovered} label={labelOf(hovered)} />
+      {rects.hoveredColumn && !dragState.active && (
+        <div
+          data-column-hover={rects.hoveredColumn[0]}
+          style={{
+            position: 'absolute',
+            top: `${rects.hoveredColumn[1].top}px`,
+            left: `${rects.hoveredColumn[1].left}px`,
+            width: `${rects.hoveredColumn[1].width}px`,
+            height: `${rects.hoveredColumn[1].height}px`,
+            pointerEvents: 'none',
+            zIndex: 25,
+          }}
+          className="border border-dashed border-[var(--ne-hover)]/80"
+        >
+          <button
+            type="button"
+            data-column-hover-label={rects.hoveredColumn[0]}
+            aria-label={`Select ${labelOf(rects.hoveredColumn[0])}`}
+            title={`Select ${labelOf(rects.hoveredColumn[0])}`}
+            onClick={event => {
+              event.preventDefault();
+              event.stopPropagation();
+              store.select(rects.hoveredColumn![0]);
+            }}
+            style={{
+              position: 'absolute',
+              top: rects.hoveredColumn[1].top >= 20 ? -18 : 2,
+              right: 2,
+              pointerEvents: 'auto',
+              cursor: 'pointer',
+            }}
+            className="px-1.5 py-0.5 text-[9px] font-sans font-semibold text-[var(--ne-primary)] bg-[var(--ne-surface)] border border-[var(--ne-border)] rounded-[var(--ne-radius-sm)] shadow-2xs hover:bg-[var(--ne-primary-soft)]"
+          >
+            {labelOf(rects.hoveredColumn[0])}
+          </button>
+        </div>
       )}
+      {rects.hovered &&
+        hovered &&
+        hovered !== rects.hoveredColumn?.[0] &&
+        !dragState.active && (
+          <HoverBox bounds={rects.hovered} label={labelOf(hovered)} />
+        )}
       {rects.selected.map(([id, rect], index) => {
         const isMovingSource =
           dragState.active &&
@@ -1129,6 +1197,13 @@ export function EditorCanvas({
   useEffect(() => {
     const doc = frameDoc ?? frame?.contentDocument;
     if (!doc) return;
+    if (doc.head && !doc.head.querySelector('[data-builder-drag-guard]')) {
+      const styleEl = doc.createElement('style');
+      styleEl.setAttribute('data-builder-drag-guard', '');
+      styleEl.textContent =
+        '[data-builder-node] img, [data-builder-node] a { -webkit-user-drag: none; user-drag: none; }';
+      doc.head.appendChild(styleEl);
+    }
     const nodeAt = (target: EventTarget | null) =>
       (target as Element | null)
         ?.closest?.(`[${NODE_ATTR}]`)
@@ -1141,8 +1216,15 @@ export function EditorCanvas({
       }
       return element;
     };
+    let suppressNextClick = false;
     const onClick = (event: MouseEvent) => {
       if (isPreview) return;
+      if (suppressNextClick) {
+        suppressNextClick = false;
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
       // Links and buttons inside blocks must not navigate or submit while editing.
       if (
         (event.target as Element | null)?.closest?.(
@@ -1257,18 +1339,64 @@ export function EditorCanvas({
       setHoverInsert(null);
     };
     const onSubmit = (event: Event) => event.preventDefault();
+    const onDragStart = (event: Event) => {
+      if (!isPreview) event.preventDefault();
+    };
 
-    // Marquee selection: press on empty canvas (not a block, link, or button) and drag.
+    // Press on an unlocked block (>4px movement starts a block drag) or on empty canvas (marquee).
+    let nodeDragStart: { id: NodeId; x: number; y: number } | null = null;
     let marqueeStart: Point | null = null;
     const marqueeRef = { current: false };
     const onPointerDown = (event: PointerEvent) => {
-      if (event.button !== 0) return;
-      const target = event.target as Element | null;
-      if (target?.closest?.(`[${NODE_ATTR}], a, button, [role="button"]`))
+      if (isPreview || event.button !== 0 || store.getState().resizing) return;
+      if (
+        isTypingTarget(event.target) ||
+        doc.querySelector('[contenteditable]:not([contenteditable="false"])')
+      ) {
         return;
+      }
+      const target = event.target as Element | null;
+      const nodeEl = lockedAncestorOrSelf(target);
+      const nodeId = nodeEl?.getAttribute(NODE_ATTR) ?? null;
+      if (nodeId) {
+        // Don't start a block drag from the empty-slot "+" button inside a container.
+        if (target?.closest?.(`[${SLOT_ATTR}] > button`)) return;
+        nodeDragStart = { id: nodeId, x: event.clientX, y: event.clientY };
+        return;
+      }
+      if (target?.closest?.('a, button, [role="button"]')) return;
       marqueeStart = { x: event.clientX, y: event.clientY };
     };
     const onMarqueeMove = (event: PointerEvent) => {
+      if (nodeDragStart) {
+        const dist = Math.hypot(
+          event.clientX - nodeDragStart.x,
+          event.clientY - nodeDragStart.y
+        );
+        if (dist <= DRAG_THRESHOLD) return;
+        const { id } = nodeDragStart;
+        nodeDragStart = null;
+        suppressNextClick = true;
+        event.preventDefault();
+        doc.getSelection()?.removeAllRanges();
+        setHoverInsert(null);
+        const currentSelection = store.getState().selection;
+        if (!currentSelection.includes(id)) {
+          store.select(id);
+        }
+        const vp = toViewportPoint({ x: event.clientX, y: event.clientY });
+        drag.start(
+          { kind: 'move', id },
+          {
+            button: 0,
+            type: 'pointermove',
+            clientX: vp.x,
+            clientY: vp.y,
+            preventDefault: () => {},
+          } as unknown as ReactPointerEvent<Element>
+        );
+        return;
+      }
       if (!marqueeStart) return;
       const current = { x: event.clientX, y: event.clientY };
       const rect = rectFromPoints(marqueeStart, current);
@@ -1281,6 +1409,7 @@ export function EditorCanvas({
       setMarquee(rect);
     };
     const onPointerUp = (event: PointerEvent) => {
+      nodeDragStart = null;
       if (!marqueeStart) return;
       if (marqueeRef.current) {
         const rect = rectFromPoints(marqueeStart, {
@@ -1336,6 +1465,7 @@ export function EditorCanvas({
               id: 'cut',
               label: 'Cut',
               shortcut: 'Mod+X',
+              disabled: !store.canRemove([id]),
               run: () => store.cut(),
             },
             {
@@ -1372,14 +1502,14 @@ export function EditorCanvas({
             {
               id: 'copy-style',
               label: 'Copy Style',
-              shortcut: '⌥⌘C',
+              shortcut: '⇧⌘C',
               separator: true,
               run: () => copyBlockStyle(store, id),
             },
             {
               id: 'paste-style',
               label: 'Paste Style',
-              shortcut: '⌥⌘V',
+              shortcut: '⇧⌘V',
               disabled: !hasCopiedBlockStyles(),
               run: () => pasteBlockStyle(store, id),
             },
@@ -1400,6 +1530,7 @@ export function EditorCanvas({
               label: 'Delete',
               shortcut: 'Del',
               separator: true,
+              disabled: !store.canRemove([id]),
               run: () => store.remove([id]),
             },
             {
@@ -1423,6 +1554,7 @@ export function EditorCanvas({
     };
 
     doc.addEventListener('click', onClick, true);
+    doc.addEventListener('dragstart', onDragStart, true);
     doc.addEventListener('pointermove', onMove);
     doc.addEventListener('pointerdown', onPointerDown);
     doc.addEventListener('pointermove', onMarqueeMove);
@@ -1433,6 +1565,7 @@ export function EditorCanvas({
     return () => {
       cancelAnimationFrame(pending);
       doc.removeEventListener('click', onClick, true);
+      doc.removeEventListener('dragstart', onDragStart, true);
       doc.removeEventListener('pointermove', onMove);
       doc.removeEventListener('pointerdown', onPointerDown);
       doc.removeEventListener('pointermove', onMarqueeMove);
@@ -1441,7 +1574,7 @@ export function EditorCanvas({
       doc.documentElement?.removeEventListener('pointerleave', onLeave);
       doc.removeEventListener('submit', onSubmit, true);
     };
-  }, [frame, frameDoc, store, insertGroups, dragState.active, toViewportPoint]);
+  }, [frame, frameDoc, store, drag, isPreview, insertGroups, dragState.active, toViewportPoint]);
 
   // "/" opens quick insert at the default position (after the selection, or
   // at the end of the page), matching where a click on the insert panel goes.
@@ -1749,32 +1882,40 @@ export function EditorCanvas({
             )}
         </div>
       </div>
-      {dragState.active && (
-        <div
-          aria-hidden
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 2147483647,
-            cursor: 'grabbing',
-          }}
-        >
-          {dragState.pointer && (
+      {dragState.active &&
+        (() => {
+          const dragOverlay = (
             <div
+              aria-hidden
               style={{
                 position: 'fixed',
-                left: dragState.pointer.x + 12,
-                top: dragState.pointer.y + 12,
-                pointerEvents: 'none',
+                inset: 0,
+                zIndex: 2147483647,
+                cursor: 'grabbing',
               }}
-              className="flex items-center gap-1.5 rounded-full border border-[var(--ne-border)] bg-[var(--ne-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--ne-text)] shadow-lg"
             >
-              <GripVertical className="h-3.5 w-3.5 text-neutral-400 shrink-0" />
-              <span className="truncate max-w-[140px]">{dragGhostLabel}</span>
+              {dragState.pointer && (
+                <div
+                  style={{
+                    position: 'fixed',
+                    left: dragState.pointer.x + 12,
+                    top: dragState.pointer.y + 12,
+                    pointerEvents: 'none',
+                  }}
+                  className="ne-ui flex items-center gap-1.5 rounded-full border border-[var(--ne-border)] bg-[var(--ne-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--ne-text)] shadow-lg"
+                >
+                  <GripVertical className="h-3.5 w-3.5 text-neutral-400 shrink-0" />
+                  <span className="truncate max-w-[140px]">
+                    {dragGhostLabel}
+                  </span>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      )}
+          );
+          return typeof document !== 'undefined' && document.body
+            ? createPortal(dragOverlay, document.body)
+            : dragOverlay;
+        })()}
       {!isPreview && (
         <QuickInsertPopover
           target={quickInsert}
@@ -1785,6 +1926,7 @@ export function EditorCanvas({
       {!isPreview && (
         <ContextMenu target={contextMenu} onClose={() => setContextMenu(null)} />
       )}
+      <ToastProvider>{null}</ToastProvider>
     </div>
   );
 }

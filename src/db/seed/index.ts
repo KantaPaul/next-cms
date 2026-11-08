@@ -529,10 +529,18 @@ async function main() {
       block('PostTitle', { showBackLink: true, showExcerpt: true, alignment: 'center' }),
       block('Columns', {
         layout: '2-1',
-        column1: [block('PostContent', { width: 'full' })],
-        column2: [
-          block('PostMeta', {}),
-          block('CTA', { title: 'Try a custom layout', description: 'Open any post in the builder and switch its layout to Custom.', primaryButtonText: 'Sign in', primaryButtonLink: '/login', secondaryButtonText: '', secondaryButtonLink: '', variant: 'subtle' }),
+        columns: [
+          block('Column', {
+            width: '2fr',
+            content: [block('PostContent', { width: 'full' })],
+          }),
+          block('Column', {
+            width: '1fr',
+            content: [
+              block('PostMeta', {}),
+              block('CTA', { title: 'Try a custom layout', description: 'Open any post in the builder and switch its layout to Custom.', primaryButtonText: 'Sign in', primaryButtonLink: '/login', secondaryButtonText: '', secondaryButtonLink: '', variant: 'subtle' }),
+            ],
+          }),
         ],
       }),
       block('RelatedPosts', { title: 'More from the blog', limit: 3, columns: 3 }),

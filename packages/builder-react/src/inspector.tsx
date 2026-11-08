@@ -188,8 +188,46 @@ export function Inspector({
   const node = useEditor(state =>
     selectedId ? state.doc.nodes[selectedId] : undefined
   );
+  const visibleColumnCount = useEditor(state => {
+    if (!selectedId) return undefined;
+    const n = state.doc.nodes[selectedId];
+    if (!n?.slots?.columns) return undefined;
+    return n.slots.columns.filter(
+      cid => state.doc.nodes[cid] && !state.doc.nodes[cid].meta?.hidden
+    ).length;
+  });
   const rootProps = useEditor(state => state.doc.root.props);
   const block = node ? blocks[node.type] : undefined;
+  const effectiveProps = useMemo(() => {
+    if (!node) return {};
+    if (
+      visibleColumnCount !== undefined &&
+      block?.fields?.columns &&
+      typeof node.props.columns !== 'number'
+    ) {
+      return { ...node.props, columns: visibleColumnCount };
+    }
+    return node.props;
+  }, [node, visibleColumnCount, block]);
+  const effectiveDefaultProps = useMemo(() => {
+    if (!node || !block) return undefined;
+    if (
+      visibleColumnCount !== undefined &&
+      block.fields?.columns &&
+      block.defaultProps?.columns === undefined
+    ) {
+      return {
+        ...block.defaultProps,
+        columns:
+          node.type === 'HeaderColumns'
+            ? 3
+            : node.type === 'FooterColumns'
+              ? 4
+              : 2,
+      };
+    }
+    return block.defaultProps;
+  }, [node, block, visibleColumnCount]);
   const responsive = Object.values(
     node ? (block?.fields ?? {}) : rootFields
   ).some(field => field.responsive);
@@ -245,8 +283,8 @@ export function Inspector({
               key={node.id}
               block={block}
               node={node}
-              props={node.props}
-              defaultProps={block.defaultProps}
+              props={effectiveProps}
+              defaultProps={effectiveDefaultProps}
               device={device}
               readOnly={!!node.meta?.locked}
             />
