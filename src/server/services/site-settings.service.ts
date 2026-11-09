@@ -18,6 +18,9 @@ import {
   DEFAULT_READING_SETTINGS,
   DEFAULT_LICENSE_SETTINGS,
   DEFAULT_AUTH_SETTINGS,
+  DEFAULT_CUSTOM_CODE,
+  type CustomCodeSettings,
+  type CustomFont,
   licenseSettingsSchema,
   authSettingsSchema,
   type ThemeTokens,
@@ -61,6 +64,8 @@ export type SiteSettingsInput = {
   seoTitle?: string | null;
   seoDescription?: string | null;
   translations?: Record<string, SiteCopy> | null;
+  customCode?: CustomCodeSettings | null;
+  customFonts?: CustomFont[] | null;
 };
 
 export function localizedSettings(
@@ -137,6 +142,8 @@ async function loadSettings(siteId: string) {
       licenseSettings: (settings?.licenseSettings as LicenseSettings) ?? DEFAULT_LICENSE_SETTINGS,
       authSettings: (settings?.authSettings as AuthSettings) ?? DEFAULT_AUTH_SETTINGS,
       blockSettings: normalizeBlockSettings(settings?.blockSettings),
+      customCode: (settings?.customCode as CustomCodeSettings) ?? DEFAULT_CUSTOM_CODE,
+      customFonts: (settings?.customFonts as CustomFont[]) ?? [],
     };
   } catch {
     return {
@@ -164,6 +171,8 @@ async function loadSettings(siteId: string) {
       licenseSettings: DEFAULT_LICENSE_SETTINGS,
       authSettings: DEFAULT_AUTH_SETTINGS,
       blockSettings: DEFAULT_BLOCK_SETTINGS,
+      customCode: DEFAULT_CUSTOM_CODE,
+      customFonts: [],
       robotsTxt: null,
       googleAnalyticsId: null,
       updatedAt: new Date(),
@@ -218,6 +227,8 @@ export const siteSettingsService = {
         searchSettings: input.searchSettings ?? undefined,
         readingSettings: input.readingSettings ?? undefined,
         licenseSettings: input.licenseSettings ?? undefined,
+        customCode: input.customCode ?? undefined,
+        customFonts: input.customFonts ?? undefined,
         authSettings: undefined,
         updatedAt: new Date(),
       })

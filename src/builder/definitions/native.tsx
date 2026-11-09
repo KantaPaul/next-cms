@@ -48,6 +48,22 @@ import { ResponsiveColumnsField } from '../fields/responsive-columns-field';
 import { ImageMorph } from '../blocks/image-morph';
 import { Accordion, Slider, Tabs } from '../blocks/interactive';
 import { Button, Spacer } from '../blocks/layout';
+import {
+  Icon,
+  IconBox,
+  ImageBox,
+  ProgressBar,
+  StarRating,
+} from '../blocks/basic';
+import { Counter } from '../blocks/counter-client';
+import { Countdown } from '../blocks/countdown-client';
+import { FlipBox } from '../blocks/flip-box';
+import { AnimatedHeadline } from '../blocks/animated-headline-client';
+import { PriceList, TestimonialCarousel } from '../blocks/marketing';
+import { TableOfContents } from '../blocks/toc-client';
+import { Breadcrumbs } from '../blocks/breadcrumbs';
+import { Hotspot } from '../blocks/hotspot-client';
+import { Lottie } from '../blocks/lottie-client';
 import { Map as MapBlock } from '../blocks/map';
 import {
   Cta,
@@ -1145,7 +1161,27 @@ export const VideoLibraryNativeBlock = defineBlock({
       options: [
         { label: 'Sidebar', value: 'sidebar' },
         { label: 'Stacked', value: 'stacked' },
+        { label: 'Grid', value: 'grid' },
       ],
+    },
+    columns: {
+      label: 'Columns',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: '2', value: 2 },
+        { label: '3', value: 3 },
+        { label: '4', value: 4 },
+      ],
+      defaultValue: 3,
+      when: (p: any) => p.layout === 'grid',
+    },
+    overlayId: {
+      label: 'Popup / Drawer',
+      group: CONTENT,
+      type: 'custom',
+      render: OverlayPickerField,
+      when: (p: any) => p.layout === 'grid',
     },
     playlistId: {
       label: 'Playlist ID (optional)',
@@ -1965,7 +2001,7 @@ export const OverlayCloseBlock = defineBlock({
 
 export const LightboxImageBlock = defineBlock({
   type: 'LightboxImage',
-  label: 'Lightbox image',
+  label: 'Lightbox',
   category: 'content',
   icon: 'image',
   schema: z
@@ -1976,6 +2012,52 @@ export const LightboxImageBlock = defineBlock({
     .passthrough(),
   render: LightboxImage,
   fields: {
+    transition: {
+      label: 'Transition',
+      group: 'Animation',
+      section: 'Animation',
+      tab: 'content',
+      type: 'select',
+      options: [
+        { label: 'None', value: 'none' },
+        { label: 'Fade', value: 'fade' },
+        { label: 'Slide', value: 'slide' },
+        { label: 'Zoom', value: 'zoom' },
+      ],
+      defaultValue: 'fade',
+    },
+    transitionSpeed: {
+      label: 'Transition speed',
+      group: 'Animation',
+      section: 'Animation',
+      tab: 'content',
+      type: 'select',
+      options: [
+        { label: 'Fast (200ms)', value: 'fast' },
+        { label: 'Normal (350ms)', value: 'normal' },
+        { label: 'Slow (600ms)', value: 'slow' },
+      ],
+      defaultValue: 'normal',
+      when: (p: any) => p.transition !== 'none',
+    },
+
+    autoplayVideo: {
+      label: 'Autoplay videos',
+      group: 'Video',
+      section: 'Video',
+      tab: 'content',
+      type: 'toggle',
+      defaultValue: true,
+    },
+    saveProgress: {
+      label: 'Save watch progress',
+      group: 'Video',
+      section: 'Video',
+      tab: 'content',
+      type: 'toggle',
+      defaultValue: true,
+    },
+
     fallbackImage: {
       label: 'Fallback image',
       group: 'Source',
@@ -2150,6 +2232,10 @@ export const LightboxImageBlock = defineBlock({
     ...contentSectionControls(),
   },
   defaults: {
+    transition: 'fade',
+    transitionSpeed: 'normal',
+    autoplayVideo: true,
+    saveProgress: true,
     fallbackImage: '',
     fallbackAlt: '',
     fallbackCaption: '',
@@ -2925,6 +3011,29 @@ export const SliderBlock = defineBlock({
     loop: { label: 'Loop slides', group: CONTENT, type: 'toggle' },
     showArrows: { label: 'Show arrows', group: CONTENT, type: 'toggle' },
     showDots: { label: 'Show dots', group: CONTENT, type: 'toggle' },
+    effect: {
+      label: 'Effect',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Slide', value: 'slide' },
+        { label: 'Fade', value: 'fade' },
+        { label: 'Zoom', value: 'zoom' },
+      ],
+      defaultValue: 'slide',
+    },
+    speed: {
+      label: 'Speed',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Fast', value: 'fast' },
+        { label: 'Normal', value: 'normal' },
+        { label: 'Slow', value: 'slow' },
+      ],
+      defaultValue: 'normal',
+      when: (p: any) => p.effect === 'fade' || p.effect === 'zoom',
+    },
     slide_style: elementStyle('slide', 'Slide Style', BUTTON_PARTS),
     arrow_style: elementStyle('arrow', 'Arrow Style', BUTTON_PARTS),
     dot_style: elementStyle('dot', 'Dot Indicator Style', BUTTON_PARTS),
@@ -2935,6 +3044,8 @@ export const SliderBlock = defineBlock({
     showArrows: true,
     showDots: true,
     autoplayInterval: 5,
+    effect: 'slide',
+    speed: 'normal',
     section: {
       paddingY: 'none',
       background: 'default',
@@ -6202,6 +6313,1169 @@ export const MegaMenuCardBlock = defineBlock({
   },
 });
 
+export const IconBlock = defineBlock({
+  type: 'Icon',
+  label: 'Icon',
+  category: 'basic',
+  icon: 'sparkles',
+  schema: z
+    .object({
+      icon: z.string().optional(),
+      size: z.enum(['sm', 'md', 'lg', 'xl']).optional(),
+      alignment: z.enum(['left', 'center', 'right']).optional(),
+      view: z.enum(['default', 'stacked', 'framed']).optional(),
+      shape: z.enum(['circle', 'square']).optional(),
+      link: safeUrlSchema.optional(),
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: Icon,
+  fields: {
+    icon: iconField('Icon'),
+    view: {
+      label: 'View',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Default', value: 'default' },
+        { label: 'Stacked', value: 'stacked' },
+        { label: 'Framed', value: 'framed' },
+      ],
+    },
+    shape: {
+      label: 'Shape',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Circle', value: 'circle' },
+        { label: 'Square', value: 'square' },
+      ],
+    },
+    size: {
+      label: 'Size',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'S', value: 'sm' },
+        { label: 'M', value: 'md' },
+        { label: 'L', value: 'lg' },
+        { label: 'XL', value: 'xl' },
+      ],
+    },
+    alignment: {
+      label: 'Alignment',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+        { label: 'Right', value: 'right' },
+      ],
+    },
+    linkAction: {
+      label: 'Action',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'URL / Page', value: 'url' },
+        { label: 'Open popup/drawer', value: 'overlay' },
+      ],
+    },
+    overlayId: {
+      label: 'Popup / Drawer',
+      group: CONTENT,
+      type: 'custom',
+      render: OverlayPickerField,
+      when: (p: Record<string, unknown>) => p.linkAction === 'overlay',
+    },
+    link: {
+      label: 'Link',
+      group: CONTENT,
+      type: 'custom',
+      render: PlainUrlField,
+      when: (p: Record<string, unknown>) => p.linkAction !== 'overlay',
+    },
+    icon_style: elementStyle('icon', 'Icon Style', BUTTON_PARTS),
+    ...contentSectionControls(),
+  },
+  defaults: {
+    icon: 'Sparkles',
+    view: 'default',
+    shape: 'circle',
+    size: 'md',
+    alignment: 'center',
+    section: { ...DEFAULT_SECTION, paddingY: 'none' },
+  },
+});
+
+export const IconBoxBlock = defineBlock({
+  type: 'IconBox',
+  label: 'Icon Box',
+  category: 'basic',
+  icon: 'box',
+  schema: z
+    .object({
+      icon: z.string().optional(),
+      title: z.string().optional(),
+      description: z.string().optional(),
+      position: z.enum(['top', 'left', 'right']).optional(),
+      alignment: z.enum(['left', 'center', 'right']).optional(),
+      size: z.enum(['sm', 'md', 'lg', 'xl']).optional(),
+      view: z.enum(['default', 'stacked', 'framed']).optional(),
+      shape: z.enum(['circle', 'square']).optional(),
+      link: safeUrlSchema.optional(),
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: IconBox,
+  fields: {
+    icon: iconField('Icon'),
+    title: { label: 'Title', group: CONTENT, type: 'text' },
+    description: { label: 'Description', group: CONTENT, type: 'textarea' },
+    position: {
+      label: 'Icon Position',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Top', value: 'top' },
+        { label: 'Left', value: 'left' },
+        { label: 'Right', value: 'right' },
+      ],
+    },
+    alignment: {
+      label: 'Alignment',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+        { label: 'Right', value: 'right' },
+      ],
+    },
+    size: {
+      label: 'Icon Size',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'S', value: 'sm' },
+        { label: 'M', value: 'md' },
+        { label: 'L', value: 'lg' },
+        { label: 'XL', value: 'xl' },
+      ],
+    },
+    view: {
+      label: 'View',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Default', value: 'default' },
+        { label: 'Stacked', value: 'stacked' },
+        { label: 'Framed', value: 'framed' },
+      ],
+    },
+    shape: {
+      label: 'Shape',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Circle', value: 'circle' },
+        { label: 'Square', value: 'square' },
+      ],
+    },
+    linkAction: {
+      label: 'Action',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'URL / Page', value: 'url' },
+        { label: 'Open popup/drawer', value: 'overlay' },
+      ],
+    },
+    overlayId: {
+      label: 'Popup / Drawer',
+      group: CONTENT,
+      type: 'custom',
+      render: OverlayPickerField,
+      when: (p: Record<string, unknown>) => p.linkAction === 'overlay',
+    },
+    link: {
+      label: 'Link',
+      group: CONTENT,
+      type: 'custom',
+      render: PlainUrlField,
+      when: (p: Record<string, unknown>) => p.linkAction !== 'overlay',
+    },
+    title_style: elementStyle('title', 'Title Style', TEXT_PARTS),
+    description_style: elementStyle('description', 'Description Style', TEXT_PARTS),
+    icon_style: elementStyle('icon', 'Icon Style', BUTTON_PARTS),
+    box_style: elementStyle('box', 'Box Style', BUTTON_PARTS),
+    ...contentSectionControls(),
+  },
+  defaults: {
+    icon: 'Sparkles',
+    title: 'This is the heading',
+    description:
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis.',
+    position: 'top',
+    alignment: 'center',
+    size: 'md',
+    view: 'default',
+    shape: 'circle',
+    section: { ...DEFAULT_SECTION, paddingY: 'sm' },
+  },
+});
+
+export const ImageBoxBlock = defineBlock({
+  type: 'ImageBox',
+  label: 'Image Box',
+  category: 'basic',
+  icon: 'image',
+  schema: z
+    .object({
+      image: z.string().optional(),
+      imageAlt: z.string().optional(),
+      title: z.string().optional(),
+      description: z.string().optional(),
+      position: z.enum(['top', 'left', 'right']).optional(),
+      alignment: z.enum(['left', 'center', 'right']).optional(),
+      imageSize: z.enum(['sm', 'md', 'lg', 'full']).optional(),
+      link: safeUrlSchema.optional(),
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: ImageBox,
+  fields: {
+    image: mediaField('Image'),
+    imageAlt: { label: 'Image alt text', group: CONTENT, type: 'text' },
+    title: { label: 'Title', group: CONTENT, type: 'text' },
+    description: { label: 'Description', group: CONTENT, type: 'textarea' },
+    position: {
+      label: 'Image Position',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Top', value: 'top' },
+        { label: 'Left', value: 'left' },
+        { label: 'Right', value: 'right' },
+      ],
+    },
+    alignment: {
+      label: 'Alignment',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+        { label: 'Right', value: 'right' },
+      ],
+    },
+    imageSize: {
+      label: 'Image Size',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Small', value: 'sm' },
+        { label: 'Medium', value: 'md' },
+        { label: 'Large', value: 'lg' },
+        { label: 'Full', value: 'full' },
+      ],
+    },
+    linkAction: {
+      label: 'Action',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'URL / Page', value: 'url' },
+        { label: 'Open popup/drawer', value: 'overlay' },
+      ],
+    },
+    overlayId: {
+      label: 'Popup / Drawer',
+      group: CONTENT,
+      type: 'custom',
+      render: OverlayPickerField,
+      when: (p: Record<string, unknown>) => p.linkAction === 'overlay',
+    },
+    link: {
+      label: 'Link',
+      group: CONTENT,
+      type: 'custom',
+      render: PlainUrlField,
+      when: (p: Record<string, unknown>) => p.linkAction !== 'overlay',
+    },
+    title_style: elementStyle('title', 'Title Style', TEXT_PARTS),
+    description_style: elementStyle('description', 'Description Style', TEXT_PARTS),
+    image_style: elementStyle('image', 'Image Style', MEDIA_PARTS),
+    box_style: elementStyle('box', 'Box Style', BUTTON_PARTS),
+    ...contentSectionControls(),
+  },
+  defaults: {
+    image: '',
+    imageAlt: '',
+    title: 'This is the heading',
+    description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    position: 'top',
+    alignment: 'center',
+    imageSize: 'md',
+    section: { ...DEFAULT_SECTION, paddingY: 'sm' },
+  },
+});
+
+export const CounterBlock = defineBlock({
+  type: 'Counter',
+  label: 'Counter',
+  category: 'basic',
+  icon: 'hash',
+  schema: z
+    .object({
+      start: z.number().optional(),
+      end: z.number().optional(),
+      duration: z.number().optional(),
+      prefix: z.string().optional(),
+      suffix: z.string().optional(),
+      separator: z.enum(['', ',', '.', ' ']).optional(),
+      title: z.string().optional(),
+      alignment: z.enum(['left', 'center', 'right']).optional(),
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: Counter,
+  fields: {
+    start: { label: 'Starting Number', group: CONTENT, type: 'number' },
+    end: { label: 'Ending Number', group: CONTENT, type: 'number' },
+    duration: { label: 'Animation Duration (ms)', group: CONTENT, type: 'number' },
+    prefix: { label: 'Prefix', group: CONTENT, type: 'text' },
+    suffix: { label: 'Suffix', group: CONTENT, type: 'text' },
+    separator: {
+      label: 'Thousand Separator',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'None', value: '' },
+        { label: 'Comma (,)', value: ',' },
+        { label: 'Dot (.)', value: '.' },
+        { label: 'Space ( )', value: ' ' },
+      ],
+    },
+    title: { label: 'Title', group: CONTENT, type: 'text' },
+    alignment: {
+      label: 'Alignment',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+        { label: 'Right', value: 'right' },
+      ],
+    },
+    number_style: elementStyle('number', 'Number Style', TEXT_PARTS),
+    title_style: elementStyle('title', 'Title Style', TEXT_PARTS),
+    ...contentSectionControls(),
+  },
+  defaults: {
+    start: 0,
+    end: 100,
+    duration: 2000,
+    prefix: '',
+    suffix: '+',
+    separator: ',',
+    title: 'Cool Number',
+    alignment: 'center',
+    section: { ...DEFAULT_SECTION, paddingY: 'sm' },
+  },
+});
+
+export const ProgressBarBlock = defineBlock({
+  type: 'ProgressBar',
+  label: 'Progress Bar',
+  category: 'basic',
+  icon: 'bar-chart',
+  schema: z
+    .object({
+      title: z.string().optional(),
+      percent: z.number().optional(),
+      innerText: z.string().optional(),
+      showPercent: z.boolean().optional(),
+      height: z.number().optional(),
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: ProgressBar,
+  fields: {
+    title: { label: 'Title', group: CONTENT, type: 'text' },
+    percent: { label: 'Percentage', group: CONTENT, type: 'number' },
+    innerText: { label: 'Inner Text', group: CONTENT, type: 'text' },
+    showPercent: { label: 'Show Percentage', group: CONTENT, type: 'toggle' },
+    height: { label: 'Height (px)', group: CONTENT, type: 'number' },
+    title_style: elementStyle('title', 'Title Style', TEXT_PARTS),
+    bar_style: elementStyle('bar', 'Bar Style', BUTTON_PARTS),
+    track_style: elementStyle('track', 'Track Style', BUTTON_PARTS),
+    ...contentSectionControls(),
+  },
+  defaults: {
+    title: 'My Skill',
+    percent: 75,
+    innerText: 'Web Development',
+    showPercent: true,
+    height: 16,
+    section: { ...DEFAULT_SECTION, paddingY: 'sm' },
+  },
+});
+
+export const StarRatingBlock = defineBlock({
+  type: 'StarRating',
+  label: 'Star Rating',
+  category: 'basic',
+  icon: 'star',
+  schema: z
+    .object({
+      rating: z.number().optional(),
+      scale: z.union([z.literal(5), z.literal(10)]).optional(),
+      title: z.string().optional(),
+      showScore: z.boolean().optional(),
+      size: z.enum(['sm', 'md', 'lg']).optional(),
+      alignment: z.enum(['left', 'center', 'right']).optional(),
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: StarRating,
+  fields: {
+    rating: { label: 'Rating', group: CONTENT, type: 'number' },
+    scale: {
+      label: 'Scale',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: '0–5', value: 5 },
+        { label: '0–10', value: 10 },
+      ],
+    },
+    title: { label: 'Title', group: CONTENT, type: 'text' },
+    showScore: { label: 'Show Score', group: CONTENT, type: 'toggle' },
+    size: {
+      label: 'Size',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'S', value: 'sm' },
+        { label: 'M', value: 'md' },
+        { label: 'L', value: 'lg' },
+      ],
+    },
+    alignment: {
+      label: 'Alignment',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+        { label: 'Right', value: 'right' },
+      ],
+    },
+    title_style: elementStyle('title', 'Title Style', TEXT_PARTS),
+    score_style: elementStyle('score', 'Score Style', TEXT_PARTS),
+    ...contentSectionControls(),
+  },
+  defaults: {
+    rating: 4.5,
+    scale: 5,
+    title: 'Rating',
+    showScore: true,
+    size: 'md',
+    alignment: 'left',
+    section: { ...DEFAULT_SECTION, paddingY: 'sm' },
+  },
+});
+
+export const CountdownBlock = defineBlock({
+  type: 'Countdown',
+  label: 'Countdown',
+  category: 'basic',
+  icon: 'clock',
+  schema: z
+    .object({
+      type: z.enum(['due_date', 'evergreen']).optional(),
+      dueDate: z.string().optional(),
+      evergreenHours: z.number().optional(),
+      evergreenMinutes: z.number().optional(),
+      evergreenKey: z.string().optional(),
+      showDays: z.boolean().optional(),
+      showHours: z.boolean().optional(),
+      showMinutes: z.boolean().optional(),
+      showSeconds: z.boolean().optional(),
+      expireAction: z.enum(['hide', 'message', 'redirect']).optional(),
+      expireMessage: z.string().optional(),
+      redirectUrl: z.string().optional(),
+      alignment: z.enum(['left', 'center', 'right']).optional(),
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: Countdown,
+  fields: {
+    type: {
+      label: 'Countdown Type',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Due Date', value: 'due_date' },
+        { label: 'Evergreen (Per Visitor)', value: 'evergreen' },
+      ],
+    },
+    dueDate: {
+      label: 'Due Date (ISO string)',
+      group: CONTENT,
+      type: 'text',
+      when: (p: any) => p.type !== 'evergreen',
+    },
+    evergreenHours: {
+      label: 'Evergreen Hours',
+      group: CONTENT,
+      type: 'number',
+      when: (p: any) => p.type === 'evergreen',
+    },
+    evergreenMinutes: {
+      label: 'Evergreen Minutes',
+      group: CONTENT,
+      type: 'number',
+      when: (p: any) => p.type === 'evergreen',
+    },
+    showDays: { label: 'Show Days', group: CONTENT, type: 'toggle' },
+    showHours: { label: 'Show Hours', group: CONTENT, type: 'toggle' },
+    showMinutes: { label: 'Show Minutes', group: CONTENT, type: 'toggle' },
+    showSeconds: { label: 'Show Seconds', group: CONTENT, type: 'toggle' },
+    expireAction: {
+      label: 'Action After Expire',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Show Message', value: 'message' },
+        { label: 'Hide Countdown', value: 'hide' },
+        { label: 'Redirect', value: 'redirect' },
+      ],
+    },
+    expireMessage: {
+      label: 'Expire Message',
+      group: CONTENT,
+      type: 'text',
+      when: (p: any) => p.expireAction === 'message',
+    },
+    redirectUrl: {
+      label: 'Redirect URL',
+      group: CONTENT,
+      type: 'text',
+      when: (p: any) => p.expireAction === 'redirect',
+    },
+    box_style: elementStyle('box', 'Box Style', BUTTON_PARTS),
+    number_style: elementStyle('number', 'Number Style', TEXT_PARTS),
+    label_style: elementStyle('label', 'Label Style', TEXT_PARTS),
+    ...contentSectionControls(),
+  },
+  defaults: {
+    type: 'due_date',
+    dueDate: '2026-12-31T23:59:59',
+    evergreenHours: 24,
+    evergreenMinutes: 0,
+    showDays: true,
+    showHours: true,
+    showMinutes: true,
+    showSeconds: true,
+    expireAction: 'message',
+    expireMessage: 'This offer has expired.',
+    alignment: 'center',
+    section: { ...DEFAULT_SECTION, paddingY: 'sm' },
+  },
+});
+
+export const FlipBoxBlock = defineBlock({
+  type: 'FlipBox',
+  label: 'Flip Box',
+  category: 'basic',
+  icon: 'layers',
+  schema: z
+    .object({
+      direction: z.enum(['flip-left', 'flip-right', 'flip-up', 'flip-down']).optional(),
+      height: z.number().optional(),
+      frontIcon: z.string().optional(),
+      frontImage: z.string().optional(),
+      frontTitle: z.string().optional(),
+      frontDescription: z.string().optional(),
+      frontBgColor: z.string().optional(),
+      backTitle: z.string().optional(),
+      backDescription: z.string().optional(),
+      backButtonText: z.string().optional(),
+      backButtonLink: safeUrlSchema.optional(),
+      backButtonVariant: z.enum(['primary', 'secondary', 'outline', 'soft']).optional(),
+      backBgColor: z.string().optional(),
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: FlipBox,
+  fields: {
+    direction: {
+      label: 'Flip Effect',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Flip Left', value: 'flip-left' },
+        { label: 'Flip Right', value: 'flip-right' },
+        { label: 'Flip Up', value: 'flip-up' },
+        { label: 'Flip Down', value: 'flip-down' },
+      ],
+    },
+    height: { label: 'Height (px)', group: CONTENT, type: 'number' },
+    frontIcon: iconField('Front Icon'),
+    frontImage: mediaField('Front Image'),
+    frontTitle: { label: 'Front Title', group: CONTENT, type: 'text' },
+    frontDescription: { label: 'Front Description', group: CONTENT, type: 'textarea' },
+    frontBgColor: { label: 'Front Background Color', group: CONTENT, type: 'text' },
+    backTitle: { label: 'Back Title', group: CONTENT, type: 'text' },
+    backDescription: { label: 'Back Description', group: CONTENT, type: 'textarea' },
+    backButtonText: { label: 'Back Button Text', group: CONTENT, type: 'text' },
+    backButtonLink: { label: 'Back Button Link', group: CONTENT, type: 'custom', render: PlainUrlField },
+    backBgColor: { label: 'Back Background Color', group: CONTENT, type: 'text' },
+    front_style: elementStyle('front', 'Front Face Style', BUTTON_PARTS),
+    back_style: elementStyle('back', 'Back Face Style', BUTTON_PARTS),
+    ...contentSectionControls(),
+  },
+  defaults: {
+    direction: 'flip-left',
+    height: 320,
+    frontIcon: 'Sparkles',
+    frontTitle: 'Front Title',
+    frontDescription: 'Hover or tap to reveal back side details.',
+    backTitle: 'Back Title',
+    backDescription: 'Additional information and call to action.',
+    backButtonText: 'Read More',
+    backButtonLink: '/',
+    section: { ...DEFAULT_SECTION, paddingY: 'sm' },
+  },
+});
+
+export const AnimatedHeadlineBlock = defineBlock({
+  type: 'AnimatedHeadline',
+  label: 'Animated Headline',
+  category: 'basic',
+  icon: 'type',
+  schema: z
+    .object({
+      styleType: z.enum(['highlight', 'rotating']).optional(),
+      highlightShape: z.enum(['circle', 'underline', 'curly', 'strikethrough']).optional(),
+      rotatingEffect: z.enum(['typing', 'fade', 'slide']).optional(),
+      beforeText: z.string().optional(),
+      highlightedText: z.string().optional(),
+      rotatingWords: z.array(z.string()).optional(),
+      afterText: z.string().optional(),
+      tag: z.enum(['h1', 'h2', 'h3', 'h4', 'p']).optional(),
+      alignment: z.enum(['left', 'center', 'right']).optional(),
+      strokeColor: z.string().optional(),
+      duration: z.number().optional(),
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: AnimatedHeadline,
+  fields: {
+    styleType: {
+      label: 'Style',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Highlighted', value: 'highlight' },
+        { label: 'Rotating', value: 'rotating' },
+      ],
+    },
+    highlightShape: {
+      label: 'Highlight Shape',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Circle', value: 'circle' },
+        { label: 'Underline', value: 'underline' },
+        { label: 'Curly', value: 'curly' },
+        { label: 'Strikethrough', value: 'strikethrough' },
+      ],
+      when: (p: any) => p.styleType !== 'rotating',
+    },
+    rotatingEffect: {
+      label: 'Rotating Effect',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Typing', value: 'typing' },
+        { label: 'Fade', value: 'fade' },
+        { label: 'Slide', value: 'slide' },
+      ],
+      when: (p: any) => p.styleType === 'rotating',
+    },
+    beforeText: { label: 'Before Text', group: CONTENT, type: 'text' },
+    highlightedText: {
+      label: 'Highlighted Text',
+      group: CONTENT,
+      type: 'text',
+      when: (p: any) => p.styleType !== 'rotating',
+    },
+    afterText: { label: 'After Text', group: CONTENT, type: 'text' },
+    tag: {
+      label: 'HTML Tag',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'H1', value: 'h1' },
+        { label: 'H2', value: 'h2' },
+        { label: 'H3', value: 'h3' },
+        { label: 'H4', value: 'h4' },
+        { label: 'P', value: 'p' },
+      ],
+    },
+    alignment: {
+      label: 'Alignment',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+        { label: 'Right', value: 'right' },
+      ],
+    },
+    heading_style: elementStyle('heading', 'Headline Style', TEXT_PARTS),
+    animated_style: elementStyle('animated', 'Animated Word Style', TEXT_PARTS),
+    ...contentSectionControls(),
+  },
+  defaults: {
+    styleType: 'highlight',
+    highlightShape: 'circle',
+    rotatingEffect: 'typing',
+    beforeText: 'This page is',
+    highlightedText: 'amazing',
+    rotatingWords: ['amazing', 'fast', 'modern'],
+    afterText: 'to read',
+    tag: 'h2',
+    alignment: 'center',
+    section: { ...DEFAULT_SECTION, paddingY: 'sm' },
+  },
+});
+
+export const PriceListBlock = defineBlock({
+  type: 'PriceList',
+  label: 'Price List',
+  category: 'basic',
+  icon: 'dollar-sign',
+  schema: z
+    .object({
+      eyebrow: z.string().optional(),
+      title: z.string().optional(),
+      subtitle: z.string().optional(),
+      leaderStyle: z.enum(['dotted', 'dashed', 'solid', 'none']).optional(),
+      columns: z.union([z.literal(1), z.literal(2)]).optional(),
+      imagePosition: z.enum(['left', 'right']).optional(),
+      items: z
+        .array(
+          z.object({
+            title: z.string(),
+            price: z.string(),
+            description: z.string().optional(),
+            image: z.string().optional(),
+            link: safeUrlSchema.optional(),
+          })
+        )
+        .optional(),
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: PriceList,
+  fields: {
+    title: { label: 'Title', group: CONTENT, type: 'text' },
+    eyebrow: { label: 'Eyebrow', group: CONTENT, type: 'text' },
+    subtitle: { label: 'Subtitle', group: CONTENT, type: 'textarea' },
+    leaderStyle: {
+      label: 'Leader Line Style',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Dotted', value: 'dotted' },
+        { label: 'Dashed', value: 'dashed' },
+        { label: 'Solid', value: 'solid' },
+        { label: 'None', value: 'none' },
+      ],
+    },
+    columns: {
+      label: 'Columns',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: '1 Column', value: 1 },
+        { label: '2 Columns', value: 2 },
+      ],
+    },
+    imagePosition: {
+      label: 'Image Position',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Left', value: 'left' },
+        { label: 'Right', value: 'right' },
+      ],
+    },
+    title_style: elementStyle('itemTitle', 'Item Title Style', TEXT_PARTS),
+    price_style: elementStyle('itemPrice', 'Price Style', TEXT_PARTS),
+    description_style: elementStyle('itemDescription', 'Description Style', TEXT_PARTS),
+    ...contentSectionControls(),
+  },
+  defaults: {
+    title: 'Menu & Pricing',
+    leaderStyle: 'dotted',
+    columns: 1,
+    imagePosition: 'left',
+    items: [
+      {
+        title: 'First Item',
+        price: '$20',
+        description: 'Description of the item with ingredients or features.',
+      },
+      {
+        title: 'Second Item',
+        price: '$35',
+        description: 'Premium selection made with care.',
+      },
+      {
+        title: 'Third Item',
+        price: '$49',
+        description: 'Comprehensive package with all options included.',
+      },
+    ],
+    section: { ...DEFAULT_SECTION, paddingY: 'md' },
+  },
+});
+
+export const TableOfContentsBlock = defineBlock({
+  type: 'TableOfContents',
+  label: 'Table of Contents',
+  category: 'basic',
+  icon: 'list',
+  schema: z
+    .object({
+      title: z.string().optional(),
+      levels: z.array(z.enum(['h2', 'h3', 'h4'])).optional(),
+      collapsible: z.boolean().optional(),
+      defaultCollapsed: z.boolean().optional(),
+      marker: z.enum(['numbers', 'bullets', 'none']).optional(),
+      hierarchical: z.boolean().optional(),
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: TableOfContents,
+  fields: {
+    title: { label: 'Title', group: CONTENT, type: 'text' },
+    collapsible: { label: 'Collapsible', group: CONTENT, type: 'toggle' },
+    defaultCollapsed: { label: 'Default Collapsed', group: CONTENT, type: 'toggle' },
+    marker: {
+      label: 'Marker',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Numbers', value: 'numbers' },
+        { label: 'Bullets', value: 'bullets' },
+        { label: 'None', value: 'none' },
+      ],
+    },
+    hierarchical: { label: 'Hierarchical Indent', group: CONTENT, type: 'toggle' },
+    box_style: elementStyle('box', 'Box Style', BUTTON_PARTS),
+    title_style: elementStyle('title', 'Title Style', TEXT_PARTS),
+    link_style: elementStyle('link', 'Link Style', TEXT_PARTS),
+    ...contentSectionControls(),
+  },
+  defaults: {
+    title: 'Table of Contents',
+    collapsible: true,
+    defaultCollapsed: false,
+    marker: 'numbers',
+    hierarchical: true,
+    levels: ['h2', 'h3'],
+    section: { ...DEFAULT_SECTION, paddingY: 'sm' },
+  },
+});
+
+export const BreadcrumbsBlock = defineBlock({
+  type: 'Breadcrumbs',
+  label: 'Breadcrumbs',
+  category: 'basic',
+  icon: 'navigation',
+  schema: z
+    .object({
+      homeLabel: z.string().optional(),
+      separator: z.string().optional(),
+      showCurrent: z.boolean().optional(),
+      alignment: z.enum(['left', 'center', 'right']).optional(),
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: Breadcrumbs,
+  fields: {
+    homeLabel: { label: 'Home Label', group: CONTENT, type: 'text' },
+    separator: { label: 'Separator', group: CONTENT, type: 'text' },
+    showCurrent: { label: 'Show Current Page', group: CONTENT, type: 'toggle' },
+    alignment: {
+      label: 'Alignment',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+        { label: 'Right', value: 'right' },
+      ],
+    },
+    nav_style: elementStyle('nav', 'Nav Style', BUTTON_PARTS),
+    link_style: elementStyle('link', 'Link Style', TEXT_PARTS),
+    current_style: elementStyle('current', 'Current Page Style', TEXT_PARTS),
+    ...contentSectionControls(),
+  },
+  defaults: {
+    homeLabel: 'Home',
+    separator: '/',
+    showCurrent: true,
+    alignment: 'left',
+    section: { ...DEFAULT_SECTION, paddingY: 'none' },
+  },
+});
+
+export const TestimonialCarouselBlock = defineBlock({
+  type: 'TestimonialCarousel',
+  label: 'Testimonial Carousel',
+  category: 'basic',
+  icon: 'message-square',
+  schema: z
+    .object({
+      eyebrow: z.string().optional(),
+      title: z.string().optional(),
+      sliderPerView: z.number().optional(),
+      sliderAutoplay: z.boolean().optional(),
+      sliderLoop: z.boolean().optional(),
+      items: z
+        .array(
+          z.object({
+            quote: z.string(),
+            author: z.string(),
+            role: z.string().optional(),
+            company: z.string().optional(),
+            avatar: z.string().optional(),
+          })
+        )
+        .optional(),
+      cardVariant: z
+        .enum(['default', 'flat', 'outline', 'elevated', 'glass', 'none'])
+        .optional(),
+      cardHover: z.boolean().optional(),
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: TestimonialCarousel,
+  fields: {
+    eyebrow: { label: 'Eyebrow', group: CONTENT, type: 'text' },
+    title: { label: 'Title', group: CONTENT, type: 'text' },
+    sliderPerView: {
+      label: 'Slides Per View',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: '1', value: 1 },
+        { label: '2', value: 2 },
+        { label: '3', value: 3 },
+      ],
+    },
+    sliderAutoplay: { label: 'Autoplay', group: CONTENT, type: 'toggle' },
+    sliderLoop: { label: 'Infinite Loop', group: CONTENT, type: 'toggle' },
+    ...cardFields(),
+    ...contentSectionControls(),
+  },
+  defaults: {
+    title: 'What Our Clients Say',
+    eyebrow: 'Testimonials',
+    sliderPerView: 2,
+    sliderAutoplay: false,
+    sliderLoop: true,
+    items: [
+      {
+        quote: 'This builder is lightning fast and intuitive.',
+        author: 'Alex Morgan',
+        role: 'CTO',
+        company: 'TechCorp',
+      },
+      {
+        quote: 'We cut our design and publishing time by 75%.',
+        author: 'Sarah Lin',
+        role: 'Head of Growth',
+        company: 'Studio Design',
+      },
+      {
+        quote: 'Elementor users will feel right at home here.',
+        author: 'Dave Wilson',
+        role: 'Agency Founder',
+        company: 'WP Studio',
+      },
+    ],
+    section: { ...DEFAULT_SECTION, paddingY: 'md' },
+  },
+});
+
+export const HotspotBlock = defineBlock({
+  type: 'Hotspot',
+  label: 'Hotspot',
+  category: 'basic',
+  icon: 'target',
+  schema: z
+    .object({
+      image: z.string().optional(),
+      imageAlt: z.string().optional(),
+      pulse: z.boolean().optional(),
+      trigger: z.enum(['hover', 'click']).optional(),
+      spotColor: z.string().optional(),
+      spots: z
+        .array(
+          z.object({
+            id: z.string(),
+            x: z.number(),
+            y: z.number(),
+            title: z.string(),
+            content: z.string().optional(),
+            icon: z.string().optional(),
+            link: safeUrlSchema.optional(),
+          })
+        )
+        .optional(),
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: Hotspot,
+  fields: {
+    image: mediaField('Image'),
+    imageAlt: { label: 'Alt text', group: CONTENT, type: 'text' },
+    trigger: {
+      label: 'Trigger',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Hover', value: 'hover' },
+        { label: 'Click', value: 'click' },
+      ],
+    },
+    pulse: { label: 'Pulse Animation', group: CONTENT, type: 'toggle' },
+    spotColor: { label: 'Spot Color', group: CONTENT, type: 'text' },
+    ...contentSectionControls(),
+  },
+  defaults: {
+    image: '',
+    trigger: 'hover',
+    pulse: true,
+    spotColor: '#4f46e5',
+    spots: [
+      {
+        id: 'spot-1',
+        x: 30,
+        y: 40,
+        title: 'Key Feature',
+        content: 'Contextual info about this part of the image.',
+      },
+    ],
+    section: { ...DEFAULT_SECTION, paddingY: 'md' },
+  },
+});
+
+export const LottieBlock = defineBlock({
+  type: 'Lottie',
+  label: 'Lottie',
+  category: 'basic',
+  icon: 'play-circle',
+  schema: z
+    .object({
+      source: z.enum(['url', 'json']).optional(),
+      url: z.string().optional(),
+      jsonData: z.string().optional(),
+      trigger: z.enum(['load', 'view', 'hover', 'scroll']).optional(),
+      loop: z.boolean().optional(),
+      speed: z.number().optional(),
+      width: z.number().optional(),
+      height: z.number().optional(),
+      alignment: z.enum(['left', 'center', 'right']).optional(),
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: Lottie,
+  fields: {
+    source: {
+      label: 'Source',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'URL', value: 'url' },
+        { label: 'Raw JSON', value: 'json' },
+      ],
+    },
+    url: {
+      label: 'Lottie JSON URL',
+      group: CONTENT,
+      type: 'text',
+      when: (p: any) => p.source !== 'json',
+    },
+    jsonData: {
+      label: 'Lottie JSON',
+      group: CONTENT,
+      type: 'textarea',
+      when: (p: any) => p.source === 'json',
+    },
+    trigger: {
+      label: 'Trigger',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'On Load', value: 'load' },
+        { label: 'When in View', value: 'view' },
+        { label: 'On Hover', value: 'hover' },
+        { label: 'On Page Scroll', value: 'scroll' },
+      ],
+    },
+    loop: { label: 'Loop', group: CONTENT, type: 'toggle' },
+    speed: { label: 'Speed', group: CONTENT, type: 'number' },
+    width: { label: 'Width (px)', group: CONTENT, type: 'number' },
+    height: { label: 'Height (px)', group: CONTENT, type: 'number' },
+    alignment: {
+      label: 'Alignment',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+        { label: 'Right', value: 'right' },
+      ],
+    },
+    ...contentSectionControls(),
+  },
+  defaults: {
+    source: 'url',
+    url: 'https://assets2.lottiefiles.com/packages/lf20_myejioos.json',
+    trigger: 'load',
+    loop: true,
+    speed: 1,
+    width: 300,
+    height: 300,
+    alignment: 'center',
+    section: { ...DEFAULT_SECTION, paddingY: 'sm' },
+  },
+});
+
 export const NATIVE_BLOCKS = [
   exampleBlock,
   MegaMenuCardBlock,
@@ -6277,6 +7551,21 @@ export const NATIVE_BLOCKS = [
   LightboxImageBlock,
   HeadingBlock,
   DividerBlock,
+  IconBlock,
+  IconBoxBlock,
+  ImageBoxBlock,
+  CounterBlock,
+  ProgressBarBlock,
+  StarRatingBlock,
+  CountdownBlock,
+  FlipBoxBlock,
+  AnimatedHeadlineBlock,
+  PriceListBlock,
+  TableOfContentsBlock,
+  BreadcrumbsBlock,
+  TestimonialCarouselBlock,
+  HotspotBlock,
+  LottieBlock,
 ];
 export const PAGE_ROOT_FIELDS = {
   maxWidth: {
@@ -6450,6 +7739,26 @@ export const CATEGORIES = {
       'RichText',
       'Newsletter',
       'Spacer',
+    ],
+  },
+  basic: {
+    title: 'Basic',
+    components: [
+      'Icon',
+      'IconBox',
+      'ImageBox',
+      'Counter',
+      'ProgressBar',
+      'StarRating',
+      'Countdown',
+      'FlipBox',
+      'AnimatedHeadline',
+      'PriceList',
+      'TableOfContents',
+      'Breadcrumbs',
+      'TestimonialCarousel',
+      'Hotspot',
+      'Lottie',
     ],
   },
   heroes: { title: 'Heroes & calls to action', components: ['Hero', 'CTA'] },

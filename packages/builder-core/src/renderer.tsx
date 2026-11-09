@@ -137,6 +137,12 @@ function buildProps(
   }
 
   props.editing = !!options.editing;
+  props.nodeId = node.id;
+  // Copy, never mutate: `props.section` is the stored node's object, and a
+  // written-back id would follow the block into saves and duplicates.
+  if (props.section && typeof props.section === 'object') {
+    props.section = { ...(props.section as Record<string, unknown>), nodeId: node.id };
+  }
   return options.transformProps ? options.transformProps(node, props) : props;
 }
 

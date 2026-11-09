@@ -37,6 +37,7 @@ export interface TypographyGroupProps extends Omit<GroupControlProps, 'title' | 
   tokens?: readonly ColorToken[] | ColorToken[];
   presets?: readonly GroupPreset[] | GroupPreset[];
   onSelectPreset?: (preset: GroupPreset) => void;
+  fontFamilies?: { value: string; label: string }[];
 }
 
 const FONT_FAMILIES = [
@@ -71,6 +72,7 @@ export const TypographyGroup: React.FC<TypographyGroupProps> = ({
   tokens,
   presets = TYPOGRAPHY_PRESETS,
   onSelectPreset,
+  fontFamilies,
   open,
   defaultOpen,
   onOpenChange,
@@ -137,8 +139,9 @@ export const TypographyGroup: React.FC<TypographyGroupProps> = ({
       : Number.parseFloat(String(value.letterSpacing || '0')) || 0;
 
   // Build a concise summary text
+  const families = fontFamilies && fontFamilies.length > 0 ? fontFamilies : FONT_FAMILIES;
   const familyLabel =
-    FONT_FAMILIES.find(f => f.value === value.fontFamily)?.label ||
+    families.find(f => f.value === value.fontFamily)?.label ||
     value.fontFamily ||
     'Inter';
   const summaryText = `${familyLabel} · ${fontSizeNum}px · ${value.fontWeight || '400'}`;
@@ -169,9 +172,9 @@ export const TypographyGroup: React.FC<TypographyGroupProps> = ({
         {/* Font Family */}
         <SelectField
           label="Font Family"
-          value={value.fontFamily || FONT_FAMILIES[0].value}
+          value={value.fontFamily || families[0].value}
           onChange={val => update({ fontFamily: val })}
-          options={FONT_FAMILIES}
+          options={families}
         />
 
         {/* Font Size & Weight */}

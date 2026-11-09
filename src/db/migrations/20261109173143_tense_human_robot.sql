@@ -1,0 +1,2 @@
+ALTER TABLE "site_settings" ADD COLUMN "custom_code" jsonb DEFAULT '{"css":"","headHtml":"","bodyStartHtml":"","bodyEndHtml":""}'::jsonb NOT NULL;--> statement-breakpoint
+ALTER TABLE "site_settings" ADD COLUMN "custom_fonts" jsonb DEFAULT '[]'::jsonb NOT NULL;

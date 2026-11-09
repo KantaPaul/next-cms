@@ -416,6 +416,10 @@ export function Video(p: VideoProps) {
         <OverlayTrigger
           overlayId={p.overlayId}
           aria-label="Play video"
+          lightbox={{
+            video: p.url,
+            poster: p.posterUrl,
+          }}
           className="group/video relative block aspect-video w-full overflow-hidden rounded"
         >
           <div

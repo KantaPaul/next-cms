@@ -5,6 +5,21 @@ import { Example } from '../custom/example';
 import { Divider, Heading, OverlayClose } from './overlay';
 import { BlogPosts } from './blog';
 import {
+  Icon,
+  IconBox,
+  ImageBox,
+  ProgressBar,
+  StarRating,
+} from './basic';
+import { Counter } from './counter-client';
+import { Countdown } from './countdown-client';
+import { FlipBox } from './flip-box';
+import { AnimatedHeadline } from './animated-headline-client';
+import { TableOfContents } from './toc-client';
+import { Breadcrumbs } from './breadcrumbs';
+import { Hotspot } from './hotspot-client';
+import { Lottie } from './lottie-client';
+import {
   Code,
   CollectionItem,
   Column,
@@ -32,9 +47,11 @@ import {
   Hero,
   LogoCloud,
   Pricing,
+  PriceList,
   Stats,
   Team,
   Testimonials,
+  TestimonialCarousel,
   Timeline,
 } from './marketing';
 import { Newsletter } from './newsletter';
@@ -64,7 +81,7 @@ import {
   LanguageSwitcherBlock,
 } from './site-chrome';
 
-const builtInComponents = {
+export const builtInComponents = {
   Hero,
   Features,
   Stats,
@@ -127,6 +144,21 @@ const builtInComponents = {
   LightboxImage,
   Heading,
   Divider,
+  Icon,
+  IconBox,
+  ImageBox,
+  Counter,
+  ProgressBar,
+  StarRating,
+  Countdown,
+  FlipBox,
+  AnimatedHeadline,
+  PriceList,
+  TableOfContents,
+  Breadcrumbs,
+  TestimonialCarousel,
+  Hotspot,
+  Lottie,
 };
 
 export const getBlockComponents = () => ({

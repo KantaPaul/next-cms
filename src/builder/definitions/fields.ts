@@ -33,6 +33,8 @@ import {
   MediaUrlField,
   UrlField,
 } from '../fields/client-fields';
+import { CustomCssControl } from '../controls/custom-css';
+import { MotionEffectsControl } from '../controls/motion-effects';
 import type { UrlValue } from '../style';
 
 export const CONTENT = 'Content';
@@ -365,11 +367,35 @@ export function sectionControls(opts?: { omit?: string[] }): Fields {
     },
     section_animation: {
       type: 'custom',
-      label: 'Motion Effects',
+      label: 'Entrance & Exit Animation',
       tab: 'advanced',
       section: 'Motion Effects',
       path: 'section.animation',
       render: MotionSectionControl,
+    },
+    section_motion_effects: {
+      type: 'custom',
+      label: 'Scroll & Mouse Motion',
+      tab: 'advanced',
+      section: 'Motion Effects',
+      path: 'section.motion',
+      render: (props: any) =>
+        createElement(MotionEffectsControl, {
+          value: props.value,
+          onChange: props.onChange,
+        }),
+    },
+    section_custom_css: {
+      type: 'custom',
+      label: 'Custom CSS',
+      tab: 'advanced',
+      section: 'Custom CSS',
+      path: 'section.customCss',
+      render: (props: any) =>
+        createElement(CustomCssControl, {
+          value: props.value,
+          onChange: props.onChange,
+        }),
     },
     section_responsive: {
       type: 'custom',
@@ -688,6 +714,33 @@ export function sliderFields({
       ],
       defaultValue: 'md',
       when: (p: any) => Boolean(p.slider),
+    },
+    sliderEffect: {
+      label: 'Effect',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Slide', value: 'slide' },
+        { label: 'Fade', value: 'fade' },
+        { label: 'Zoom', value: 'zoom' },
+      ],
+      defaultValue: 'slide',
+      when: (p: any) => Boolean(p.slider),
+    },
+    sliderSpeed: {
+      label: 'Speed',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Fast', value: 'fast' },
+        { label: 'Normal', value: 'normal' },
+        { label: 'Slow', value: 'slow' },
+      ],
+      defaultValue: 'normal',
+      when: (p: any) =>
+        Boolean(
+          p.slider && (p.sliderEffect === 'fade' || p.sliderEffect === 'zoom')
+        ),
     },
     sliderAutoplay: {
       label: 'Autoplay',

@@ -171,6 +171,57 @@ export const CURATED_FONTS: FontDefinition[] = [
 
 export const FONT_FAMILIES = CURATED_FONTS.map(f => f.name);
 
+export type CustomFontWeight = {
+  weight: string;
+  style?: string;
+  mediaKey: string;
+};
+
+export type CustomFont = {
+  family: string;
+  weights: CustomFontWeight[];
+};
+
+const FONT_FORMATS: Record<string, string> = {
+  woff2: 'woff2',
+  woff: 'woff',
+  ttf: 'truetype',
+  otf: 'opentype',
+};
+
+/** Keeps a value inside a quoted CSS string: no quotes, backslashes, angle brackets or newlines. */
+const cssString = (value: string) => value.replace(/['"\\<>\n\r]/g, '');
+
+export function buildCustomFontsCss(customFonts?: CustomFont[]): string {
+  if (!customFonts || customFonts.length === 0) return '';
+  const rules: string[] = [];
+  for (const font of customFonts) {
+    const family = cssString(font.family ?? '').trim();
+    if (!family) continue;
+    for (const w of font.weights || []) {
+      if (!w.mediaKey) continue;
+      const raw =
+        w.mediaKey.startsWith('/') || /^https?:\/\//i.test(w.mediaKey)
+          ? w.mediaKey
+          : `/media/${w.mediaKey}`;
+      const url = cssString(raw);
+      const ext = url.split('?')[0].split('.').pop()?.toLowerCase() ?? '';
+      const format = FONT_FORMATS[ext] ?? 'woff2';
+      const weight = /^\d{3}( \d{3})?$/.test(String(w.weight)) ? w.weight : '400';
+      const style = w.style === 'italic' ? 'italic' : 'normal';
+      rules.push(
+        `@font-face {\n  font-family: '${family}';\n  src: url('${url}') format('${format}');\n  font-weight: ${weight};\n  font-style: ${style};\n  font-display: swap;\n}`
+      );
+    }
+  }
+  return rules.join('\n');
+}
+
+export function getAvailableFontFamilies(customFonts?: CustomFont[]): string[] {
+  const customNames = (customFonts || []).map(f => f.family).filter(Boolean);
+  return Array.from(new Set([...customNames, ...FONT_FAMILIES]));
+}
+
 export const FONT_STACK: Record<string, string> = Object.fromEntries(
   CURATED_FONTS.map(f => [f.name, f.stack])
 );
@@ -181,15 +232,16 @@ export function getFontStack(family: string | undefined): string {
   return `'${family}', sans-serif`;
 }
 
-export function isGoogleFont(family: string | undefined): boolean {
+export function isGoogleFont(family: string | undefined, customFonts?: CustomFont[]): boolean {
   if (!family || family === 'System') return false;
+  if (customFonts?.some(cf => cf.family.toLowerCase() === family.toLowerCase())) return false;
   const entry = CURATED_FONTS.find(f => f.name.toLowerCase() === family.toLowerCase());
   return entry ? Boolean(entry.isGoogleFont) : true;
 }
 
-export function buildGoogleFontsUrl(families: string[]): string | null {
+export function buildGoogleFontsUrl(families: string[], customFonts?: CustomFont[]): string | null {
   const unique = Array.from(
-    new Set(families.map(f => f.trim()).filter(f => isGoogleFont(f)))
+    new Set(families.map(f => f.trim()).filter(f => isGoogleFont(f, customFonts)))
   );
   if (unique.length === 0) return null;
 

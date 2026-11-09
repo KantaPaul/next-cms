@@ -5,6 +5,9 @@ export type OverlayTriggerLightbox = {
   image?: string | null;
   alt?: string | null;
   caption?: string | null;
+  video?: string | null;
+  poster?: string | null;
+  videoId?: string | null;
 };
 
 export type OverlayTriggerProps = Omit<
@@ -40,6 +43,9 @@ export function OverlayTrigger({
       data-overlay-image={lightbox?.image || undefined}
       data-overlay-alt={lightbox?.alt || undefined}
       data-overlay-caption={lightbox?.caption || undefined}
+      data-overlay-video={lightbox?.video || undefined}
+      data-overlay-poster={lightbox?.poster || undefined}
+      data-overlay-video-id={lightbox?.videoId || undefined}
       {...rest}
     >
       {children}

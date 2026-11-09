@@ -1462,6 +1462,13 @@ export default async function SitePage({ params, searchParams }: Params) {
   const siteSlug = siteSlugPrefix(site);
   const segments = sitePathSegments((slug?.join('/') ?? '/'), site);
 
+  const first = segments[0] && decodeURIComponent(segments[0]);
+  if (first === site.defaultLocale && site.locales.some(l => l.code === first)) {
+    const rest = segments.slice(1).join('/');
+    const qs = new URLSearchParams(await searchParams as Record<string, string>).toString();
+    redirect((`${siteSlug ? `/${siteSlug}` : ''}/${rest}`.replace(/\/$/, '') || '/') + (qs ? `?${qs}` : ''));
+  }
+
 
   // Canonical collection URLs live under /collections/...
   {

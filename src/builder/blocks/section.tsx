@@ -9,6 +9,7 @@ import {
   type UrlValue,
 } from '../style';
 import { el, orderedParts } from './element';
+import { sanitizeCss } from '../sanitize';
 
 export { MotionItem } from '../motion';
 export type { SectionSettings } from '../style';
@@ -47,6 +48,8 @@ export function Section({
   innerClassName,
   editing,
   hasItems,
+  id,
+  nodeId,
 }: {
   section?: SectionSettings;
   children: ReactNode;
@@ -54,8 +57,19 @@ export function Section({
   innerClassName?: string;
   editing?: boolean;
   hasItems?: boolean;
+  id?: string;
+  nodeId?: string;
 }) {
   const s = { ...DEFAULT_SECTION, ...section };
+  const elId = id ?? nodeId ?? s.nodeId;
+  const sanitizedCss = s.customCss ? sanitizeCss(s.customCss) : '';
+  const scopedCss =
+    sanitizedCss && elId
+      ? sanitizedCss.replace(
+          /(^|[^_a-zA-Z0-9-])selector(?=[^_a-zA-Z0-9-]|$)/g,
+          `$1[data-el="${elId}"]`
+        )
+      : sanitizedCss;
   const hidden = cn(
     s.hideOnMobile && (editing ? 'max-md:opacity-30' : 'max-md:hidden'),
     s.hideOnTablet && (editing ? 'md:max-lg:opacity-30' : 'md:max-lg:hidden'),
@@ -63,12 +77,15 @@ export function Section({
   );
   const styles = resolveSectionStyle(s);
   const hasVideo = s.fill?.type === 'video' && Boolean(s.fill.videoUrl);
+  const hasBgParallax = Boolean(
+    s.fill?.type === 'image' && (s.fill as { parallax?: boolean })?.parallax
+  );
   const outer = cn(
     'w-full',
     PADDING[s.paddingY ?? 'md'],
     !styles.hasFill && BACKGROUND[s.background ?? 'default'],
     styles.outerClasses,
-    hasVideo && 'relative overflow-hidden',
+    (hasVideo || hasBgParallax) && 'relative overflow-hidden',
     hidden,
     className
   );
@@ -93,6 +110,27 @@ export function Section({
     </div>
   ) : null;
 
+  const bgParallaxLayer = hasBgParallax ? (
+    <div
+      className="absolute inset-0 overflow-hidden pointer-events-none -z-10"
+      aria-hidden="true"
+    >
+      <div
+        data-bg-parallax
+        data-parallax-speed={(s.fill as { parallaxSpeed?: number })?.parallaxSpeed ?? 0.4}
+        className="absolute -top-[20%] -bottom-[20%] inset-x-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${s.fill?.image})` }}
+      />
+    </div>
+  ) : null;
+
+  const customStyleEl = scopedCss ? (
+    <style
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized scoped CSS
+      dangerouslySetInnerHTML={{ __html: scopedCss }}
+    />
+  ) : null;
+
   if (animation) {
     return (
       <MotionSection
@@ -102,16 +140,28 @@ export function Section({
         className={outer}
         innerClassName={inner}
         style={styles.style}
+        data-el={elId || undefined}
+        data-motion={s.motion ? JSON.stringify(s.motion) : undefined}
       >
+        {customStyleEl}
         {videoLayer}
+        {bgParallaxLayer}
         {children}
       </MotionSection>
     );
   }
 
   return (
-    <section id={s.anchor || undefined} className={outer} style={styles.style}>
+    <section
+      id={s.anchor || undefined}
+      className={outer}
+      style={styles.style}
+      data-el={elId || undefined}
+      data-motion={s.motion ? JSON.stringify(s.motion) : undefined}
+    >
+      {customStyleEl}
       {videoLayer}
+      {bgParallaxLayer}
       <div className={inner}>
         {hasItems ? <MotionBoundary>{children}</MotionBoundary> : children}
       </div>

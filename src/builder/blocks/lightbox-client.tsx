@@ -9,7 +9,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import {
   clampLightboxPan,
@@ -17,21 +17,27 @@ import {
   stepLightboxIndex,
   useLightbox,
 } from '@/components/site/lightbox-context';
+import { parseVideoUrl } from '@/lib/video/parse';
+import { VideoPlayer } from '@/components/video/video-player';
+import { saveVideoProgress } from '@/app/(admin)/dashboard/(shell)/videos/_modules/videos.actions';
 import { el, type WithSection } from './element';
 import { Section } from './section';
 
 const DEMO_IMAGES: LightboxItem[] = [
   {
+    type: 'image',
     url: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=1200&auto=format&fit=crop',
     alt: 'Sample 1',
     caption: 'Sample preview artwork 1',
   },
   {
+    type: 'image',
     url: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=1200&auto=format&fit=crop',
     alt: 'Sample 2',
     caption: 'Sample preview artwork 2',
   },
   {
+    type: 'image',
     url: 'https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=1200&auto=format&fit=crop',
     alt: 'Sample 3',
     caption: 'Sample preview artwork 3',
@@ -42,6 +48,33 @@ const DEMO_IMAGES: LightboxItem[] = [
 const CAPTION_ROOM = 36;
 /** Height kept for the thumbnail strip including its padding, in px. */
 const THUMBNAIL_ROOM = { sm: 60, md: 76 };
+
+export type LightboxTransition = 'none' | 'fade' | 'slide' | 'zoom';
+export type LightboxTransitionSpeed = 'fast' | 'normal' | 'slow';
+
+export const DURATION_MS: Record<LightboxTransitionSpeed, number> = {
+  fast: 200,
+  normal: 350,
+  slow: 600,
+};
+
+export function resolveLightboxTransition(
+  transition: LightboxTransition | undefined,
+  reducedMotion: boolean
+): LightboxTransition {
+  if (reducedMotion) return 'none';
+  return transition ?? 'fade';
+}
+
+/** Thumbnail for an item. A video with no poster and no YouTube still gets '' (a play icon). */
+export function getThumbnail(item: LightboxItem): string {
+  if (item.poster) return item.poster;
+  if (item.type !== 'video') return item.url;
+  const parsed = item.url ? parseVideoUrl(item.url) : null;
+  return parsed?.provider === 'youtube'
+    ? `https://i.ytimg.com/vi/${parsed.id}/hqdefault.jpg`
+    : '';
+}
 
 export type LightboxImageProps = WithSection & {
   fallbackImage?: string;
@@ -64,6 +97,11 @@ export type LightboxImageProps = WithSection & {
 
   showThumbnails?: boolean;
   thumbnailSize?: 'sm' | 'md';
+
+  transition?: LightboxTransition;
+  transitionSpeed?: LightboxTransitionSpeed;
+  autoplayVideo?: boolean;
+  saveProgress?: boolean;
 };
 
 export function LightboxImage(p: LightboxImageProps) {
@@ -76,6 +114,7 @@ export function LightboxImage(p: LightboxImageProps) {
     if (p.fallbackImage) {
       return [
         {
+          type: 'image',
           url: p.fallbackImage,
           alt: p.fallbackAlt || undefined,
           caption: p.fallbackCaption || undefined,
@@ -95,6 +134,7 @@ export function LightboxImage(p: LightboxImageProps) {
   ]);
 
   const [index, setIndex] = useState(() => context?.initialIndex ?? 0);
+  const [direction, setDirection] = useState<1 | -1>(1);
 
   useEffect(() => {
     if (context?.initialIndex !== undefined) {
@@ -116,8 +156,10 @@ export function LightboxImage(p: LightboxImageProps) {
   const hasMultiple = count > 1;
   const current = images[index] ?? images[0];
 
-  // Zoom & Pan state
-  const enableZoom = p.enableZoom !== false;
+  const isVideo = current?.type === 'video';
+
+  // Zoom & Pan state (disabled for video)
+  const enableZoom = p.enableZoom !== false && !isVideo;
   const maxZoomNumber = Number(p.maxZoom) || 2;
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -141,10 +183,12 @@ export function LightboxImage(p: LightboxImageProps) {
   const canNext = p.loop !== false || index < count - 1;
 
   const prev = useCallback(() => {
+    setDirection(-1);
     setIndex(i => stepLightboxIndex(i, count, -1, p.loop !== false));
   }, [count, p.loop]);
 
   const next = useCallback(() => {
+    setDirection(1);
     setIndex(i => stepLightboxIndex(i, count, 1, p.loop !== false));
   }, [count, p.loop]);
 
@@ -161,13 +205,13 @@ export function LightboxImage(p: LightboxImageProps) {
     if (images.length <= 1 || typeof window === 'undefined') return;
     const nextIdx = (index + 1) % images.length;
     const prevIdx = (index - 1 + images.length) % images.length;
-    const preload = (url?: string) => {
-      if (!url) return;
+    const preload = (item?: LightboxItem) => {
+      if (!item?.url || item.type === 'video') return;
       const img = new window.Image();
-      img.src = url;
+      img.src = item.url;
     };
-    preload(images[nextIdx]?.url);
-    preload(images[prevIdx]?.url);
+    preload(images[nextIdx]);
+    preload(images[prevIdx]);
   }, [index, images]);
 
   // Keyboard navigation
@@ -192,10 +236,45 @@ export function LightboxImage(p: LightboxImageProps) {
   // Check reduced motion
   const prefersReducedMotion =
     typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
+
+  const effectiveTransition = resolveLightboxTransition(
+    p.transition,
+    prefersReducedMotion
+  );
+  const effectiveSpeed: LightboxTransitionSpeed = p.transitionSpeed ?? 'normal';
+  const durationMs = DURATION_MS[effectiveSpeed];
+
+  const transitionClasses = cn(
+    effectiveTransition === 'fade' &&
+      'lightbox-transition-fade transition-opacity',
+    effectiveTransition === 'slide' &&
+      cn(
+        'lightbox-transition-slide transition-transform',
+        direction >= 0 ? 'lightbox-slide-next' : 'lightbox-slide-prev'
+      ),
+    effectiveTransition === 'zoom' &&
+      'lightbox-transition-zoom transition-transform',
+    effectiveTransition === 'none' &&
+      'lightbox-transition-none transition-none'
+  );
+
+  const animationStyle: React.CSSProperties =
+    effectiveTransition === 'none'
+      ? {}
+      : effectiveTransition === 'fade'
+        ? { animation: `lightboxFadeIn ${durationMs}ms ease-out` }
+        : effectiveTransition === 'slide'
+          ? {
+              animation: `${
+                direction >= 0 ? 'lightboxSlideInNext' : 'lightboxSlideInPrev'
+              } ${durationMs}ms cubic-bezier(0.16, 1, 0.3, 1)`,
+            }
+          : { animation: `lightboxZoomIn ${durationMs}ms ease-out` };
 
   // Zoom & Pan pointer handlers
   const handlePointerDown = (e: ReactPointerEvent<HTMLImageElement>) => {
+    if (isVideo) return;
     // Reset first: a pinch back to 1x must not leave the next click ignored.
     didPanRef.current = false;
     if (!enableZoom || zoom <= 1) return;
@@ -208,7 +287,7 @@ export function LightboxImage(p: LightboxImageProps) {
   };
 
   const handlePointerMove = (e: ReactPointerEvent<HTMLImageElement>) => {
-    if (!isPanningRef.current) return;
+    if (isVideo || !isPanningRef.current) return;
     const dx = e.clientX - panStartRef.current.x;
     const dy = e.clientY - panStartRef.current.y;
     if (Math.abs(dx - pan.x) > 3 || Math.abs(dy - pan.y) > 3) {
@@ -222,6 +301,7 @@ export function LightboxImage(p: LightboxImageProps) {
   };
 
   const handlePointerUp = (e: ReactPointerEvent<HTMLImageElement>) => {
+    if (isVideo) return;
     if (isPanningRef.current) {
       isPanningRef.current = false;
       try {
@@ -233,7 +313,7 @@ export function LightboxImage(p: LightboxImageProps) {
   };
 
   const handleImageClick = () => {
-    if (!enableZoom || didPanRef.current) return;
+    if (isVideo || !enableZoom || didPanRef.current) return;
     if (zoom === 1) {
       setZoom(maxZoomNumber);
     } else {
@@ -288,7 +368,12 @@ export function LightboxImage(p: LightboxImageProps) {
       return;
     }
 
-    if (p.swipe !== false && hasMultiple && zoom === 1 && e.changedTouches[0]) {
+    if (
+      p.swipe !== false &&
+      hasMultiple &&
+      (zoom === 1 || isVideo) &&
+      e.changedTouches[0]
+    ) {
       const deltaX = e.changedTouches[0].clientX - touchStartRef.current.x;
       const deltaY = e.changedTouches[0].clientY - touchStartRef.current.y;
       if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY)) {
@@ -329,10 +414,18 @@ export function LightboxImage(p: LightboxImageProps) {
     ? `calc(${maxHeight} - ${reserved}px)`
     : maxHeight;
 
+  const parsedVideo = isVideo ? parseVideoUrl(current.url) : null;
+
   return (
     <Section section={p.section} editing={p.editing}>
+      <style>{`
+        @keyframes lightboxFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes lightboxSlideInNext { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        @keyframes lightboxSlideInPrev { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+        @keyframes lightboxZoomIn { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+      `}</style>
       <div className="relative flex flex-col items-center justify-center w-full select-none">
-        {/* Main Image Stage */}
+        {/* Main Stage */}
         <div
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
@@ -340,31 +433,71 @@ export function LightboxImage(p: LightboxImageProps) {
           className="relative flex items-center justify-center w-full overflow-hidden"
           style={{ height: stageHeight }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={current.url}
-            alt={current.alt ?? ''}
-            draggable={false}
-            onClick={handleImageClick}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
+          {/* Keyed transition wrapper */}
+          <div
+            key={index}
+            data-lightbox-slide={index}
             className={cn(
-              'w-full h-full touch-none select-none',
-              p.fit === 'cover' ? 'object-cover' : 'object-contain',
-              enableZoom && zoom === 1 && 'cursor-zoom-in',
-              enableZoom && zoom > 1 && 'cursor-grab active:cursor-grabbing',
-              imageEl.className
+              'relative flex items-center justify-center w-full h-full select-none',
+              transitionClasses
             )}
-            style={{
-              ...imageEl.style,
-              transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
-              transition:
-                isPanningRef.current || prefersReducedMotion
-                  ? 'none'
-                  : 'transform 0.2s ease-out',
-            }}
-          />
+            style={animationStyle}
+          >
+            {isVideo ? (
+              parsedVideo ? (
+                <div className="relative aspect-video w-full max-w-5xl max-h-full overflow-hidden rounded-lg shadow-2xl">
+                  <VideoPlayer
+                    parsed={parsedVideo}
+                    poster={current.poster}
+                    title={current.caption || current.alt || 'Video'}
+                    autoPlay={p.autoplayVideo !== false}
+                    onProgress={
+                      current.videoId && p.saveProgress !== false
+                        ? progress => {
+                            void saveVideoProgress({
+                              videoId: current.videoId!,
+                              position: progress.position,
+                              duration: progress.duration,
+                              completed: progress.completed,
+                            });
+                          }
+                        : undefined
+                    }
+                  />
+                </div>
+              ) : (
+                <div className="relative flex aspect-video w-full max-w-3xl items-center justify-center rounded-lg bg-neutral-900 text-neutral-300">
+                  <p className="text-sm">Unable to play video</p>
+                </div>
+              )
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={current.url}
+                alt={current.alt ?? ''}
+                draggable={false}
+                onClick={handleImageClick}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                className={cn(
+                  'w-full h-full touch-none select-none',
+                  p.fit === 'cover' ? 'object-cover' : 'object-contain',
+                  enableZoom && zoom === 1 && 'cursor-zoom-in',
+                  enableZoom && zoom > 1 && 'cursor-grab active:cursor-grabbing',
+                  imageEl.className
+                )}
+                style={{
+                  ...imageEl.style,
+                  transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
+                  transition:
+                    isPanningRef.current || prefersReducedMotion
+                      ? 'none'
+                      : 'transform 0.2s ease-out',
+                }}
+              />
+            )}
+          </div>
 
           {/* Navigation Arrows */}
           {showArrows && (
@@ -450,32 +583,50 @@ export function LightboxImage(p: LightboxImageProps) {
             // "safe" keeps the first thumbnails reachable when the strip overflows.
             style={{ justifyContent: 'safe center' }}
           >
-            {images.map((item, i) => (
-              <button
-                key={`${item.url}-${i}`}
-                type="button"
-                data-overlay-ui=""
-                aria-label={`Go to image ${i + 1}`}
-                aria-current={i === index ? 'true' : undefined}
-                onClick={() => setIndex(i)}
-                className={cn(
-                  'shrink-0 overflow-hidden rounded border transition cursor-pointer',
-                  p.thumbnailSize === 'md' ? 'size-14' : 'size-10',
-                  i === index
-                    ? 'border-blue-500 ring-2 ring-blue-500/50 opacity-100'
-                    : 'border-white/20 opacity-50 hover:opacity-90',
-                  thumbnailEl.className
-                )}
-                style={thumbnailEl.style}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={item.url}
-                  alt={item.alt || ''}
-                  className="h-full w-full object-cover"
-                />
-              </button>
-            ))}
+            {images.map((item, i) => {
+              const thumbUrl = getThumbnail(item);
+              const isItemVideo = item.type === 'video';
+              return (
+                <button
+                  key={`${item.url}-${i}`}
+                  type="button"
+                  data-overlay-ui=""
+                  aria-label={`Go to ${isItemVideo ? 'video' : 'image'} ${i + 1}`}
+                  aria-current={i === index ? 'true' : undefined}
+                  onClick={() => {
+                    setDirection(i >= index ? 1 : -1);
+                    setIndex(i);
+                  }}
+                  className={cn(
+                    'relative shrink-0 overflow-hidden rounded border transition cursor-pointer',
+                    p.thumbnailSize === 'md' ? 'size-14' : 'size-10',
+                    i === index
+                      ? 'border-blue-500 ring-2 ring-blue-500/50 opacity-100'
+                      : 'border-white/20 opacity-50 hover:opacity-90',
+                    thumbnailEl.className
+                  )}
+                  style={thumbnailEl.style}
+                >
+                  {thumbUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={thumbUrl}
+                      alt={item.alt || ''}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-black/40">
+                      <Play className="size-4 text-white" />
+                    </div>
+                  )}
+                  {isItemVideo && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+                      <Play className="size-3.5 fill-white text-white drop-shadow" />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>

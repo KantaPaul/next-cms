@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Search,
   Play,
@@ -14,6 +14,7 @@ import type { ParsedVideo } from '@/lib/video/parse';
 import { saveVideoProgress } from '@/app/(admin)/dashboard/(shell)/videos/_modules/videos.actions';
 import { el, type ElementStyle } from '@/builder/blocks/element';
 import { Section, type SectionSettings } from '@/builder/blocks/section';
+import { OverlayTrigger } from '@/builder/blocks/overlay-trigger';
 import { VideoPlayer } from './video-player';
 
 export type VideoLibraryVideoItem = {
@@ -40,7 +41,9 @@ export type VideoLibrarySettings = {
   enabled: boolean;
   title: string;
   description: string;
-  layout: 'sidebar' | 'stacked';
+  layout: 'sidebar' | 'stacked' | 'grid';
+  columns?: 2 | 3 | 4;
+  overlayId?: string | null;
   defaultPlaylistId: string | null;
   thumbnails: boolean;
   descriptions: boolean;
@@ -61,7 +64,9 @@ export type VideoLibraryProps = {
   settings?: Partial<VideoLibrarySettings> | null;
   title?: string;
   description?: string;
-  layout?: 'sidebar' | 'stacked';
+  layout?: 'sidebar' | 'stacked' | 'grid';
+  columns?: 2 | 3 | 4;
+  overlayId?: string | null;
   source?:
     'all' | 'youtube' | 'vimeo' | 'direct' | ('youtube' | 'vimeo' | 'direct')[];
   sources?: ('youtube' | 'vimeo' | 'direct')[];
@@ -81,6 +86,10 @@ export type VideoLibraryProps = {
     completed: boolean;
   }) => void | Promise<void>;
 };
+
+/** Grid card link or button; keeps a visible focus ring for keyboard users. */
+const GRID_CARD_CLASS =
+  'group block h-full cursor-pointer rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--site-primary)] focus-visible:ring-offset-2';
 
 function formatDuration(seconds: number | null) {
   if (!seconds) return null;
@@ -178,6 +187,8 @@ export function VideoLibrary({
   title,
   description,
   layout = 'sidebar',
+  columns,
+  overlayId,
   source = 'all',
   sources,
   showSearch = true,
@@ -664,6 +675,10 @@ export function VideoLibrary({
   );
 
   const isSidebar = resolvedSettings.layout === 'sidebar';
+  const isGrid = resolvedSettings.layout === 'grid';
+  const gridPlayerRef = useRef<HTMLDivElement>(null);
+  const gridColumns = columns ?? settings?.columns ?? 3;
+  const popupId = overlayId ?? settings?.overlayId ?? null;
 
   return (
     <Section section={section} editing={editing}>
@@ -696,26 +711,164 @@ export function VideoLibrary({
           </div>
         )}
 
-        <div
-          className={cn(
-            'w-full',
-            isSidebar
-              ? 'flex flex-col gap-6 lg:flex-row lg:items-start'
-              : 'flex flex-col gap-6'
-          )}
-        >
-          {isSidebar ? (
-            <>
-              <div className="min-w-0 flex-1">{player}</div>
-              <aside className="w-full shrink-0 lg:w-80">{videoList}</aside>
-            </>
-          ) : (
-            <>
-              <div className="shrink-0">{videoList}</div>
-              {player}
-            </>
-          )}
-        </div>
+        {isGrid ? (
+          <div className="flex flex-col gap-6">
+            {searchControls}
+            {!popupId && selected && (
+              <div ref={gridPlayerRef} className="w-full scroll-mt-24">
+                {player}
+              </div>
+            )}
+            {filtered.length === 0 ? (
+              <div className="s-border rounded-lg border border-dashed p-6 text-center">
+                <p className="text-sm font-medium">No videos found</p>
+                <p className="s-muted mt-1 text-xs">
+                  {searchQuery
+                    ? `No results for "${searchQuery}". Try a different keyword.`
+                    : 'No videos available under this category.'}
+                </p>
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="s-primary-text mt-3 text-xs font-medium hover:underline"
+                  >
+                    Clear search filter
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div
+                data-overlay-group=""
+                className={cn(
+                  'grid grid-cols-1 sm:grid-cols-2 gap-6',
+                  gridColumns === 2
+                    ? 'lg:grid-cols-2'
+                    : gridColumns === 4
+                      ? 'lg:grid-cols-4'
+                      : 'lg:grid-cols-3'
+                )}
+              >
+                {filtered.map(video => {
+                  const cardContent = (
+                    <div className="s-border s-surface group/card flex h-full flex-col overflow-hidden rounded-lg border transition hover:shadow-md">
+                      <div className="relative aspect-video w-full overflow-hidden bg-black/10 dark:bg-white/10">
+                        {video.thumbnailUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={video.thumbnailUrl}
+                            alt=""
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover/card:scale-105"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center">
+                            <Play className="s-muted size-8" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 transition group-hover/card:bg-black/40">
+                          <div className="flex size-11 items-center justify-center rounded-full bg-black/60 text-white shadow-md backdrop-blur-xs transition group-hover/card:scale-110 group-hover/card:bg-black/80">
+                            <Play className="size-5 translate-x-0.5 fill-current" />
+                          </div>
+                        </div>
+                        {video.duration ? (
+                          <span className="absolute bottom-2 right-2 rounded bg-black/80 px-1.5 py-0.5 text-xs font-medium text-white">
+                            {formatDuration(video.duration)}
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <div className="flex flex-1 flex-col p-3.5">
+                        <h3 className="line-clamp-2 text-sm font-semibold group-hover/card:text-[var(--site-primary)]">
+                          {video.title}
+                        </h3>
+                        <div className="s-muted mt-auto pt-2 flex items-center gap-2 text-xs">
+                          <span
+                            className={cn(
+                              'inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase',
+                              video.provider === 'youtube'
+                                ? 'bg-red-500/10 text-red-500'
+                                : video.provider === 'vimeo'
+                                  ? 'bg-sky-500/10 text-sky-500'
+                                  : 'bg-violet-500/10 text-violet-500',
+                              badgeEl.className
+                            )}
+                            style={badgeEl.style}
+                          >
+                            {video.provider}
+                          </span>
+                          {video.completed ? (
+                            <span className="rounded-full bg-green-500/10 px-1.5 py-0.5 text-[10px] font-medium text-green-600">
+                              Watched
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  );
+
+                  return (
+                    <div key={video.id} className="min-w-0">
+                      {popupId ? (
+                        <OverlayTrigger
+                          overlayId={popupId}
+                          aria-label={`Play ${video.title}`}
+                          lightbox={{
+                            video: video.url,
+                            poster: video.thumbnailUrl,
+                            videoId: video.id,
+                            caption: video.title,
+                          }}
+                          className={GRID_CARD_CLASS}
+                        >
+                          {cardContent}
+                        </OverlayTrigger>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedId(video.id);
+                            // The player sits above the grid, which may be off screen.
+                            requestAnimationFrame(() =>
+                              gridPlayerRef.current?.scrollIntoView({
+                                block: 'nearest',
+                                behavior: 'smooth',
+                              })
+                            );
+                          }}
+                          aria-label={`Play ${video.title}`}
+                          className={cn(GRID_CARD_CLASS, 'w-full')}
+                        >
+                          {cardContent}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div
+            className={cn(
+              'w-full',
+              isSidebar
+                ? 'flex flex-col gap-6 lg:flex-row lg:items-start'
+                : 'flex flex-col gap-6'
+            )}
+          >
+            {isSidebar ? (
+              <>
+                <div className="min-w-0 flex-1">{player}</div>
+                <aside className="w-full shrink-0 lg:w-80">{videoList}</aside>
+              </>
+            ) : (
+              <>
+                <div className="shrink-0">{videoList}</div>
+                {player}
+              </>
+            )}
+          </div>
+        )}
       </div>
     </Section>
   );

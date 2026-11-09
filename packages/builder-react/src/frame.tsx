@@ -53,22 +53,37 @@ export function CanvasFrame({
   children,
   title = 'Page canvas',
   style,
+  customFontsCss,
   onReady,
 }: {
   children: ReactNode;
   title?: string;
   style?: CSSProperties;
+  customFontsCss?: string;
   /** Called with the iframe once its document is ready. */
   onReady?: (frame: HTMLIFrameElement, doc: Document) => void;
 }) {
   const ref = useRef<HTMLIFrameElement>(null);
   const [body, setBody] = useState<HTMLElement | null>(null);
 
+  const applyCustomFonts = (doc: Document) => {
+    let fontEl = doc.head.querySelector('style[data-custom-fonts]');
+    if (!fontEl && customFontsCss) {
+      fontEl = doc.createElement('style');
+      fontEl.setAttribute('data-custom-fonts', '');
+      doc.head.appendChild(fontEl);
+    }
+    if (fontEl && fontEl.textContent !== (customFontsCss || '')) {
+      fontEl.textContent = customFontsCss || '';
+    }
+  };
+
   const setup = () => {
     const frame = ref.current;
     const doc = frame?.contentDocument;
     if (!frame || !doc?.body) return;
     syncStyles(document, doc);
+    applyCustomFonts(doc);
     setBody(doc.body);
     onReady?.(frame, doc);
   };
@@ -81,6 +96,7 @@ export function CanvasFrame({
       const doc = frame.contentDocument;
       if (!doc?.body) return;
       syncStyles(document, doc);
+      applyCustomFonts(doc);
       setBody(doc.body);
       onReady?.(frame, doc);
     };

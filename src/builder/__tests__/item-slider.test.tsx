@@ -4,12 +4,14 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
   LogoCloudBlock,
+  SliderBlock,
   TeamBlock,
   TestimonialsBlock,
 } from '../definitions/native';
 import { sliderFields } from '../definitions/fields';
 import { LogoCloud, Team, Testimonials } from '../blocks/marketing';
 import {
+  chunkItemsIntoPages,
   ItemSlider,
   pageToScroll,
   scrollToPage,
@@ -261,5 +263,98 @@ describe('sliderFields defaults', () => {
     assert.equal(f.sliderPauseOnHover.defaultValue, true);
     assert.equal(f.sliderGap.defaultValue, 'md');
     assert.equal(f.sliderInterval.defaultValue, 5);
+    assert.equal(f.sliderEffect.defaultValue, 'slide');
+    assert.equal(f.sliderSpeed.defaultValue, 'normal');
+  });
+
+  it('hides speed when effect is slide or unset, and shows for fade and zoom', () => {
+    const fields = sliderFields();
+    assert.equal(
+      fields.sliderSpeed?.when?.({ slider: true, sliderEffect: 'slide' }),
+      false
+    );
+    assert.equal(
+      fields.sliderSpeed?.when?.({ slider: true, sliderEffect: undefined }),
+      false
+    );
+    assert.equal(
+      fields.sliderSpeed?.when?.({ slider: true, sliderEffect: 'fade' }),
+      true
+    );
+    assert.equal(
+      fields.sliderSpeed?.when?.({ slider: true, sliderEffect: 'zoom' }),
+      true
+    );
+
+    const sliderBlockSpeed = SliderBlock.fields?.speed;
+    assert.equal(sliderBlockSpeed?.when?.({ effect: 'slide' }), false);
+    assert.equal(sliderBlockSpeed?.when?.({ effect: 'fade' }), true);
+    assert.equal(sliderBlockSpeed?.when?.({ effect: 'zoom' }), true);
+  });
+});
+
+describe('Slider Fade and Zoom effects', () => {
+  it('groups items into pages per view with chunkItemsIntoPages', () => {
+    const items = [1, 2, 3, 4, 5, 6, 7];
+    const pagesAt3 = chunkItemsIntoPages(items, 3);
+    assert.equal(pagesAt3.length, 3);
+    assert.deepEqual(pagesAt3[0], [1, 2, 3]);
+    assert.deepEqual(pagesAt3[1], [4, 5, 6]);
+    assert.deepEqual(pagesAt3[2], [7]);
+
+    const pagesAt2 = chunkItemsIntoPages(items, 2);
+    assert.equal(pagesAt2.length, 4);
+    assert.deepEqual(pagesAt2[0], [1, 2]);
+    assert.deepEqual(pagesAt2[1], [3, 4]);
+    assert.deepEqual(pagesAt2[2], [5, 6]);
+    assert.deepEqual(pagesAt2[3], [7]);
+
+    const pagesAt1 = chunkItemsIntoPages(items, 1);
+    assert.equal(pagesAt1.length, 7);
+  });
+
+  it('renders stacked pages for fade and zoom, and unchanged scroll-snap markup when effect is unset', () => {
+    const slides = [
+      createElement('div', { key: '1' }, 'Card 1'),
+      createElement('div', { key: '2' }, 'Card 2'),
+      createElement('div', { key: '3' }, 'Card 3'),
+      createElement('div', { key: '4' }, 'Card 4'),
+    ];
+
+    // 1. Unset effect renders standard scroll snap track
+    const standardHtml = renderToStaticMarkup(
+      createElement(ItemSlider, {
+        sliderPerView: 2,
+        children: slides,
+      })
+    );
+    assert.ok(standardHtml.includes('snap-x snap-mandatory overflow-x-auto'));
+    assert.ok(!standardHtml.includes('slider-effect-fade'));
+    assert.ok(!standardHtml.includes('slider-effect-zoom'));
+
+    // 2. Fade renders stacked pages
+    const fadeHtml = renderToStaticMarkup(
+      createElement(ItemSlider, {
+        sliderEffect: 'fade',
+        sliderSpeed: 'fast',
+        sliderPerView: 2,
+        children: slides,
+      })
+    );
+    assert.ok(fadeHtml.includes('slider-effect-fade'));
+    assert.ok(fadeHtml.includes('[grid-area:stack]'));
+    assert.ok(fadeHtml.includes('opacity-100'));
+
+    // 3. Zoom renders stacked pages with zoom classes
+    const zoomHtml = renderToStaticMarkup(
+      createElement(ItemSlider, {
+        sliderEffect: 'zoom',
+        sliderSpeed: 'slow',
+        sliderPerView: 2,
+        children: slides,
+      })
+    );
+    assert.ok(zoomHtml.includes('slider-effect-zoom'));
+    assert.ok(zoomHtml.includes('scale-100'));
   });
 });

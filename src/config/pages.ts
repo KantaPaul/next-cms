@@ -71,6 +71,7 @@ export const PAGES = {
     COMMENTS: '/dashboard/comments',
     ACCOUNT: '/dashboard/account',
     SETTINGS: '/dashboard/settings',
+    SETTINGS_CUSTOM_CODE: '/dashboard/settings/custom-code',
     SETTINGS_LICENSE: '/dashboard/settings/license',
     SETTINGS_BLOCKS: '/dashboard/settings/blocks',
     THEME: '/dashboard/theme',

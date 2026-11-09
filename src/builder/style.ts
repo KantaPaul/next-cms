@@ -373,6 +373,20 @@ export type GridChildSettings = {
   rowSpan?: Responsive<number>;
 };
 
+export type MotionEffectsSettings = {
+  parallax?: { speed?: number; direction?: 'vertical' | 'horizontal' };
+  mouseTrack?: { strength?: number; direction?: 'opposite' | 'direct' };
+  scrollTransform?: {
+    translateY?: number;
+    rotate?: number;
+    scale?: number;
+    opacity?: number;
+    start?: number;
+    end?: number;
+  };
+  devices?: Device[];
+};
+
 export type SectionSettings = {
   paddingY?: 'none' | 'sm' | 'md' | 'lg';
   background?: 'default' | 'muted' | 'primary' | 'dark';
@@ -401,6 +415,10 @@ export type SectionSettings = {
   zIndex?: number;
   flexItem?: FlexChildSettings;
   gridItem?: GridChildSettings;
+  customCss?: string;
+  motion?: MotionEffectsSettings;
+  id?: string;
+  nodeId?: string;
 };
 
 /* ---------- Container layout settings (R394, R396–R399, R668–R669) ----------

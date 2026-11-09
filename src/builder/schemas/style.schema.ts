@@ -213,6 +213,32 @@ export const elementStyleSchema = z.object({
   hover: elementHoverStyleSchema.optional(),
 });
 
+export const motionEffectsSchema = z.object({
+  parallax: z
+    .object({
+      speed: z.number().min(-10).max(10).optional(),
+      direction: z.enum(['vertical', 'horizontal']).optional(),
+    })
+    .optional(),
+  mouseTrack: z
+    .object({
+      strength: z.number().min(-50).max(50).optional(),
+      direction: z.enum(['opposite', 'direct']).optional(),
+    })
+    .optional(),
+  scrollTransform: z
+    .object({
+      translateY: z.number().optional(),
+      rotate: z.number().optional(),
+      scale: z.number().optional(),
+      opacity: z.number().min(0).max(1).optional(),
+      start: z.number().min(0).max(100).optional(),
+      end: z.number().min(0).max(100).optional(),
+    })
+    .optional(),
+  devices: z.array(z.enum(['desktop', 'tablet', 'mobile'])).optional(),
+});
+
 export const sectionSettingsSchema = z.object({
   paddingY: z.enum(['none', 'sm', 'md', 'lg']).optional(),
   background: z.enum(['default', 'muted', 'primary', 'dark']).optional(),
@@ -248,4 +274,6 @@ export const sectionSettingsSchema = z.object({
   width: responsive(z.number().min(0).max(5000)).optional(),
   widthUnit: lengthUnitSchema.optional(),
   zIndex: z.number().min(0).max(50).optional(),
+  customCss: z.string().max(10000).optional(),
+  motion: motionEffectsSchema.optional(),
 });

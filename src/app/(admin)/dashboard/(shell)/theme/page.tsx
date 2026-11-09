@@ -37,6 +37,7 @@ export default async function ThemePage() {
       <ThemeForm
         themeTokens={settings.themeTokens}
         siteName={settings.siteName}
+        customFonts={settings.customFonts ?? []}
       />
     </>
   );

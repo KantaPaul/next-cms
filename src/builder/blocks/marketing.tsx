@@ -435,6 +435,8 @@ export type TestimonialsProps = WithSection &
     sliderLoop?: boolean;
     sliderArrows?: boolean;
     sliderDots?: boolean;
+    sliderEffect?: 'slide' | 'fade' | 'zoom';
+    sliderSpeed?: 'fast' | 'normal' | 'slow';
   };
 
 export function Testimonials(p: TestimonialsProps) {
@@ -529,6 +531,8 @@ export function Testimonials(p: TestimonialsProps) {
           sliderLoop={p.sliderLoop}
           sliderArrows={p.sliderArrows}
           sliderDots={p.sliderDots}
+          sliderEffect={p.sliderEffect}
+          sliderSpeed={p.sliderSpeed}
           elements={p.elements}
           editing={p.editing}
         >
@@ -718,6 +722,8 @@ export type LogoCloudProps = WithSection & {
   sliderLoop?: boolean;
   sliderArrows?: boolean;
   sliderDots?: boolean;
+  sliderEffect?: 'slide' | 'fade' | 'zoom';
+  sliderSpeed?: 'fast' | 'normal' | 'slow';
 };
 
 export function LogoCloud(p: LogoCloudProps) {
@@ -785,6 +791,8 @@ export function LogoCloud(p: LogoCloudProps) {
           sliderLoop={p.sliderLoop}
           sliderArrows={p.sliderArrows}
           sliderDots={p.sliderDots}
+          sliderEffect={p.sliderEffect}
+          sliderSpeed={p.sliderSpeed}
           elements={p.elements}
           editing={p.editing}
         >
@@ -828,6 +836,8 @@ export type TeamProps = WithSection &
     sliderLoop?: boolean;
     sliderArrows?: boolean;
     sliderDots?: boolean;
+    sliderEffect?: 'slide' | 'fade' | 'zoom';
+    sliderSpeed?: 'fast' | 'normal' | 'slow';
   };
 
 export function Team(p: TeamProps) {
@@ -895,6 +905,8 @@ export function Team(p: TeamProps) {
             sliderLoop={p.sliderLoop}
             sliderArrows={p.sliderArrows}
             sliderDots={p.sliderDots}
+            sliderEffect={p.sliderEffect}
+            sliderSpeed={p.sliderSpeed}
             elements={p.elements}
             editing={p.editing}
           >
@@ -918,6 +930,122 @@ export function Team(p: TeamProps) {
     </Section>
   );
 }
+
+/* =========================================================================
+   Price List Block
+   ========================================================================= */
+
+export type PriceListItem = {
+  title: string;
+  price: string;
+  description?: string;
+  image?: string;
+  link?: UrlValue;
+};
+
+export type PriceListProps = WithSection & {
+  eyebrow?: string;
+  title?: string;
+  subtitle?: string;
+  items: PriceListItem[];
+  leaderStyle?: 'dotted' | 'dashed' | 'solid' | 'none';
+  imagePosition?: 'left' | 'right';
+  columns?: 1 | 2;
+};
+
+export function PriceList(p: PriceListProps) {
+  const items = p.items ?? [];
+  const leader = p.leaderStyle ?? 'dotted';
+  const cols = p.columns ?? 1;
+  const imgPos = p.imagePosition ?? 'left';
+
+  const itemTitleEl = el(p, 'itemTitle', 'font-semibold text-foreground');
+  const itemPriceEl = el(p, 'itemPrice', 'font-bold s-primary-text shrink-0 font-mono');
+  const itemDescEl = el(p, 'itemDescription', 'mt-1 text-sm s-muted');
+  const itemImgEl = el(p, 'itemImage', 'size-14 rounded-lg object-cover shrink-0');
+
+  const leaderClasses = {
+    dotted: 'border-b border-dotted border-current opacity-40',
+    dashed: 'border-b border-dashed border-current opacity-40',
+    solid: 'border-b border-solid border-current opacity-30',
+    none: 'hidden',
+  };
+
+  return (
+    <Section section={p.section} editing={p.editing} id={p.id ?? p.nodeId}>
+      <SectionHeading
+        elements={p.elements}
+        eyebrow={p.eyebrow}
+        title={p.title}
+        subtitle={p.subtitle}
+        partOrder={p.partOrder}
+        editing={p.editing}
+      />
+      <div
+        className={cn(
+          'grid gap-6 md:gap-8 w-full',
+          cols === 2 ? 'md:grid-cols-2' : 'grid-cols-1 max-w-3xl mx-auto'
+        )}
+      >
+        {items.map((item, i) => {
+          const itemNode = (
+            <div
+              key={i}
+              className={cn(
+                'flex gap-4 items-start w-full group',
+                imgPos === 'right' && 'flex-row-reverse'
+              )}
+            >
+              {item.image && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={item.image}
+                  alt=""
+                  className={itemImgEl.className}
+                  style={itemImgEl.style}
+                />
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-3">
+                  <span className={itemTitleEl.className} style={itemTitleEl.style}>
+                    {item.title}
+                  </span>
+                  <div className={cn('flex-1 min-w-[1rem] -mb-1', leaderClasses[leader])} />
+                  <span className={itemPriceEl.className} style={itemPriceEl.style}>
+                    {item.price}
+                  </span>
+                </div>
+                {item.description && (
+                  <p className={itemDescEl.className} style={itemDescEl.style}>
+                    {item.description}
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+
+          if (item.link) {
+            return (
+              <a
+                key={i}
+                href={typeof item.link === 'string' ? item.link : item.link.url}
+                className="block hover:opacity-90 transition-opacity"
+              >
+                {itemNode}
+              </a>
+            );
+          }
+          return itemNode;
+        })}
+      </div>
+    </Section>
+  );
+}
+
+export function TestimonialCarousel(p: TestimonialsProps) {
+  return <Testimonials {...p} slider={true} />;
+}
+
 
 /* =========================================================================
    TIMELINE
@@ -991,3 +1119,5 @@ export function Timeline(p: TimelineProps) {
     </Section>
   );
 }
+
+

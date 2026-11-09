@@ -1,6 +1,10 @@
 import Script from 'next/script';
 import { fontStylesheetUrl, themeStyle } from '@/builder/theme';
+import { buildCustomFontsCss } from '@/builder/fonts';
+import { sanitizeCss } from '@/builder/sanitize';
+import { MotionEffectsClient } from '@/builder/motion-effects-client';
 import { AdminBar } from '@/components/site/admin-bar';
+import { CustomCode } from '@/components/site/custom-code';
 import { PAGES } from '@/config/pages';
 import { getPreviewSession } from '@/server/services/preview-session';
 import { maybePublishScheduled } from '@/server/services/scheduler';
@@ -32,6 +36,8 @@ export default async function SiteLayout({
       )}`
     : null;
   const fontUrl = fontStylesheetUrl(settings.themeTokens);
+  const customFontsCss = buildCustomFontsCss(settings.customFonts);
+  const customCode = settings.customCode;
   const colorMode = settings.themeTokens.colorMode;
   const mode =
     colorMode === 'dark' || colorMode === 'system' ? colorMode : 'light';
@@ -48,7 +54,26 @@ export default async function SiteLayout({
         dangerouslySetInnerHTML={{ __html: siteModeScript(mode) }}
       />
       {fontUrl && <link rel="stylesheet" href={fontUrl} precedence="default" />}
+      {customFontsCss ? (
+        <style
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: internal font definitions
+          dangerouslySetInnerHTML={{ __html: customFontsCss }}
+        />
+      ) : null}
+      {customCode?.css ? (
+        <style
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized admin custom CSS
+          dangerouslySetInnerHTML={{ __html: sanitizeCss(customCode.css) }}
+        />
+      ) : null}
+      {customCode?.headHtml ? (
+        <CustomCode html={customCode.headHtml} slot="head" />
+      ) : null}
+      {customCode?.bodyStartHtml ? (
+        <CustomCode html={customCode.bodyStartHtml} slot="bodyStart" />
+      ) : null}
       <AdminBar />
+      <MotionEffectsClient />
       {exitPreviewHref && (
         <div
           role="status"
@@ -61,6 +86,9 @@ export default async function SiteLayout({
         </div>
       )}
       {children}
+      {customCode?.bodyEndHtml ? (
+        <CustomCode html={customCode.bodyEndHtml} slot="bodyEnd" />
+      ) : null}
       {settings.googleAnalyticsId &&
         /^G-[A-Z0-9]+$/i.test(settings.googleAnalyticsId) && (
           <>

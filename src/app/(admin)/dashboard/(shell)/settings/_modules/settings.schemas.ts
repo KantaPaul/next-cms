@@ -163,6 +163,28 @@ export const settingsSchema = z.object({
       bookmark: z.boolean().optional(),
     })
     .nullish(),
+  customCode: z
+    .object({
+      css: z.string().max(50000).optional(),
+      headHtml: z.string().max(50000).optional(),
+      bodyStartHtml: z.string().max(50000).optional(),
+      bodyEndHtml: z.string().max(50000).optional(),
+    })
+    .optional(),
+  customFonts: z
+    .array(
+      z.object({
+        family: z.string().trim().min(1).max(100),
+        weights: z.array(
+          z.object({
+            weight: z.string().max(20),
+            style: z.string().max(20).optional(),
+            mediaKey: z.string().max(500),
+          })
+        ),
+      })
+    )
+    .optional(),
   videoSettings: z
     .object({
       enabled: z.boolean().optional(),
@@ -256,5 +278,13 @@ export const updateBlockSettingsSchema = z.object({
 export const updateVideoSettingsSchema = z.object({
   providers: z.record(z.enum(['youtube', 'vimeo', 'direct']), z.boolean()),
 });
+
+export const customCodeSchema = z.object({
+  css: z.string().max(50000).optional(),
+  headHtml: z.string().max(50000).optional(),
+  bodyStartHtml: z.string().max(50000).optional(),
+  bodyEndHtml: z.string().max(50000).optional(),
+});
+export type CustomCodeInput = z.infer<typeof customCodeSchema>;
 
 export const deactivateManagedLicenseSchema = z.object({}).optional();

@@ -511,6 +511,31 @@ export const authSettingsSchema = z.object({
 
 export const SITE_SETTINGS_ID = 'default';
 
+export type CustomCodeSettings = {
+  css?: string;
+  headHtml?: string;
+  bodyStartHtml?: string;
+  bodyEndHtml?: string;
+};
+
+export const DEFAULT_CUSTOM_CODE: CustomCodeSettings = {
+  css: '',
+  headHtml: '',
+  bodyStartHtml: '',
+  bodyEndHtml: '',
+};
+
+export type CustomFontWeight = {
+  weight: string;
+  style?: string;
+  mediaKey: string;
+};
+
+export type CustomFont = {
+  family: string;
+  weights: CustomFontWeight[];
+};
+
 export const siteSettings = pgTable('site_settings', {
   id: text('id').primaryKey().default(SITE_SETTINGS_ID),
   siteId: text('site_id').notNull().default(DEFAULT_SITE_ID).unique(),
@@ -557,6 +582,14 @@ export const siteSettings = pgTable('site_settings', {
   blockSettings: jsonb('block_settings')
     .$type<BlockSettings>()
     .default(DEFAULT_BLOCK_SETTINGS)
+    .notNull(),
+  customCode: jsonb('custom_code')
+    .$type<CustomCodeSettings>()
+    .default(DEFAULT_CUSTOM_CODE)
+    .notNull(),
+  customFonts: jsonb('custom_fonts')
+    .$type<CustomFont[]>()
+    .default([])
     .notNull(),
   robotsTxt: text('robots_txt'),
   googleAnalyticsId: varchar('google_analytics_id', { length: 50 }),

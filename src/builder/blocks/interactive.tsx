@@ -43,6 +43,15 @@ function panelsFrom(p: {
    1. SLIDER
    ========================================================================= */
 
+export type SliderEffect = 'slide' | 'fade' | 'zoom';
+export type SliderSpeed = 'fast' | 'normal' | 'slow';
+
+const SLIDER_DURATION_MS: Record<SliderSpeed, number> = {
+  fast: 200,
+  normal: 350,
+  slow: 600,
+};
+
 export type SliderProps = WithSection & {
   items?: InteractivePanelItem[];
   panels?: InteractivePanel[];
@@ -51,6 +60,8 @@ export type SliderProps = WithSection & {
   autoplayInterval?: 3 | 5 | 7 | 10;
   showArrows?: boolean;
   showDots?: boolean;
+  effect?: SliderEffect;
+  speed?: SliderSpeed;
 };
 
 export function Slider(p: SliderProps) {
@@ -61,23 +72,37 @@ export function Slider(p: SliderProps) {
   const autoplayInterval = p.autoplayInterval ?? 5;
   const showArrows = p.showArrows ?? true;
   const showDots = p.showDots ?? true;
+  const effect = p.effect ?? 'slide';
+  const speed = p.speed ?? 'normal';
+  const isFadeOrZoom = effect === 'fade' || effect === 'zoom';
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const trackRef = useRef<HTMLDivElement>(null);
   const uid = useId();
 
-  // Scroll smoothly to a target slide index
-  const scrollToIndex = useCallback((index: number) => {
-    if (!trackRef.current) return;
-    const track = trackRef.current;
-    const slideWidth = track.clientWidth;
-    track.scrollTo({
-      left: index * slideWidth,
-      behavior: 'smooth',
-    });
-    setCurrentIndex(index);
-  }, []);
+  const prefersReducedMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
+
+  // Scroll smoothly to a target slide index (or set index directly for fade/zoom)
+  const scrollToIndex = useCallback(
+    (index: number) => {
+      if (isFadeOrZoom) {
+        setCurrentIndex(index);
+        return;
+      }
+      if (!trackRef.current) return;
+      const track = trackRef.current;
+      const slideWidth = track.clientWidth;
+      track.scrollTo({
+        left: index * slideWidth,
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      });
+      setCurrentIndex(index);
+    },
+    [isFadeOrZoom, prefersReducedMotion]
+  );
 
   const goToPrev = useCallback(() => {
     if (currentIndex > 0) {
@@ -127,7 +152,7 @@ export function Slider(p: SliderProps) {
 
   // Track user swipe / manual scroll snap
   const handleScroll = useCallback(() => {
-    if (!trackRef.current) return;
+    if (isFadeOrZoom || !trackRef.current) return;
     const track = trackRef.current;
     const slideWidth = track.clientWidth;
     if (slideWidth > 0) {
@@ -136,7 +161,38 @@ export function Slider(p: SliderProps) {
         setCurrentIndex(newIndex);
       }
     }
-  }, [currentIndex, itemCount]);
+  }, [currentIndex, isFadeOrZoom, itemCount]);
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        goToPrev();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        goToNext();
+      }
+    },
+    [goToPrev, goToNext]
+  );
+
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    touchStartX.current = null;
+    touchStartY.current = null;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+      if (dx > 0) goToPrev();
+      else goToNext();
+    }
+  };
 
   // In editing mode, stack every panel with its label above its drop zone
   if (p.editing) {
@@ -185,26 +241,78 @@ export function Slider(p: SliderProps) {
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        {/* Scroll snap track */}
-        <div
-          ref={trackRef}
-          onScroll={handleScroll}
-          className="flex w-full snap-x snap-mandatory overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          style={{ scrollSnapType: 'x mandatory' }}
-        >
-          {items.map((item, i) => {
-            const slideEl = el(
-              p,
-              'slide',
-              'w-full min-w-full shrink-0 snap-center snap-always min-h-0 [&_section]:py-0 [&_section>div]:px-0'
-            );
-            return (
-              <div key={i} className={slideEl.className} style={slideEl.style}>
-                {item.node}
-              </div>
-            );
-          })}
-        </div>
+        {isFadeOrZoom ? (
+          /* Fade / Zoom stacked slides */
+          <div
+            tabIndex={0}
+            onKeyDown={handleKeyDown}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            className={cn(
+              'relative w-full overflow-hidden grid [grid-template-areas:"stack"] outline-none',
+              `slider-effect-${effect}`,
+              `slider-speed-${speed}`
+            )}
+          >
+            {items.map((item, i) => {
+              const active = i === currentIndex;
+              const slideEl = el(
+                p,
+                'slide',
+                'w-full min-w-full min-h-0 [&_section]:py-0 [&_section>div]:px-0'
+              );
+              return (
+                <div
+                  key={i}
+                  data-slider-page={i}
+                  aria-hidden={!active}
+                  className={cn(
+                    '[grid-area:stack] w-full transition-all',
+                    slideEl.className,
+                    effect === 'fade' &&
+                      (active
+                        ? 'opacity-100 z-10 pointer-events-auto'
+                        : 'opacity-0 z-0 pointer-events-none'),
+                    effect === 'zoom' &&
+                      (active
+                        ? 'opacity-100 scale-100 z-10 pointer-events-auto'
+                        : 'opacity-0 scale-95 z-0 pointer-events-none'),
+                    prefersReducedMotion && 'transition-none duration-0'
+                  )}
+                  style={{
+                    ...slideEl.style,
+                    transitionDuration: prefersReducedMotion
+                      ? '0ms'
+                      : `${SLIDER_DURATION_MS[speed]}ms`,
+                  }}
+                >
+                  {item.node}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          /* Scroll snap track */
+          <div
+            ref={trackRef}
+            onScroll={handleScroll}
+            className="flex w-full snap-x snap-mandatory overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            style={{ scrollSnapType: 'x mandatory' }}
+          >
+            {items.map((item, i) => {
+              const slideEl = el(
+                p,
+                'slide',
+                'w-full min-w-full shrink-0 snap-center snap-always min-h-0 [&_section]:py-0 [&_section>div]:px-0'
+              );
+              return (
+                <div key={i} className={slideEl.className} style={slideEl.style}>
+                  {item.node}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Previous / Next buttons */}
         {showArrows && itemCount > 1 && (

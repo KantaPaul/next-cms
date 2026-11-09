@@ -8,6 +8,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -15,6 +16,9 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import type { ElementStyle } from '../style';
 import { el } from './element';
+
+export type ItemSliderEffect = 'slide' | 'fade' | 'zoom';
+export type ItemSliderSpeed = 'fast' | 'normal' | 'slow';
 
 export type ItemSliderProps = {
   children?: ReactNode;
@@ -28,6 +32,8 @@ export type ItemSliderProps = {
   sliderLoop?: boolean;
   sliderArrows?: boolean;
   sliderDots?: boolean;
+  sliderEffect?: ItemSliderEffect;
+  sliderSpeed?: ItemSliderSpeed;
   elements?: Record<string, ElementStyle>;
   editing?: boolean;
   ariaLabel?: string;
@@ -96,6 +102,21 @@ function pageStep(clientWidth: number, gap: number): number {
   return clientWidth + gap;
 }
 
+export function chunkItemsIntoPages<T>(items: T[], perView: number): T[][] {
+  const spv = Math.max(1, perView);
+  const pages: T[][] = [];
+  for (let i = 0; i < items.length; i += spv) {
+    pages.push(items.slice(i, i + spv));
+  }
+  return pages;
+}
+
+const DURATION_MS: Record<ItemSliderSpeed, number> = {
+  fast: 200,
+  normal: 350,
+  slow: 600,
+};
+
 /** Scroll position for a page. The last page may be short, so it stops at the end of the track. */
 export function pageToScroll(
   page: number,
@@ -158,6 +179,10 @@ export function ItemSlider(p: ItemSliderProps) {
   const uid = useId();
   const reducedMotion = useReducedMotion();
 
+  const effect = p.sliderEffect ?? 'slide';
+  const speed = p.sliderSpeed ?? 'normal';
+  const isFadeOrZoom = effect === 'fade' || effect === 'zoom';
+
   useEffect(() => {
     const updateSpv = () => {
       setCurrentSpv(getActiveSpv(desktopSpv, tabletSpv, mobileSpv));
@@ -169,13 +194,24 @@ export function ItemSlider(p: ItemSliderProps) {
     return () => window.removeEventListener('resize', updateSpv);
   }, [desktopSpv, tabletSpv, mobileSpv]);
 
-  const pageCount = Math.max(1, Math.ceil(itemCount / currentSpv));
+  const pages = useMemo(
+    () => (isFadeOrZoom ? chunkItemsIntoPages(slides, currentSpv) : []),
+    [isFadeOrZoom, slides, currentSpv]
+  );
+
+  const pageCount = isFadeOrZoom
+    ? Math.max(1, pages.length)
+    : Math.max(1, Math.ceil(itemCount / currentSpv));
   const allFit = itemCount <= currentSpv;
   // Fewer pages after a resize can leave the stored index past the end.
   const currentIndex = Math.min(pageIndex, pageCount - 1);
 
   const goToPage = useCallback(
     (page: number) => {
+      if (isFadeOrZoom) {
+        setPageIndex(page);
+        return;
+      }
       const track = trackRef.current;
       if (!track) return;
       ignoreScrollUntil.current = performance.now() + PROGRAMMATIC_SCROLL_MS;
@@ -185,7 +221,7 @@ export function ItemSlider(p: ItemSliderProps) {
       });
       setPageIndex(page);
     },
-    [reducedMotion]
+    [isFadeOrZoom, reducedMotion]
   );
 
   const goToPrev = useCallback(() => {
@@ -268,6 +304,24 @@ export function ItemSlider(p: ItemSliderProps) {
     's-surface s-border s-muted absolute top-1/2 z-10 -translate-y-1/2 flex size-10 items-center justify-center rounded-full border shadow-md transition hover:opacity-100 disabled:pointer-events-none disabled:opacity-20'
   );
 
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const handleTouchStartFadeZoom = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+  const handleTouchEndFadeZoom = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    touchStartX.current = null;
+    touchStartY.current = null;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+      if (dx > 0) goToPrev();
+      else goToNext();
+    }
+  };
+
   return (
     <div
       role="region"
@@ -277,37 +331,90 @@ export function ItemSlider(p: ItemSliderProps) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Scroll snap track */}
-      <div
-        ref={trackRef}
-        tabIndex={0}
-        role="group"
-        aria-label="Slides"
-        onScroll={handleScroll}
-        onKeyDown={handleKeyDown}
-        className={cn(
-          'flex w-full snap-x snap-mandatory overflow-x-auto scroll-smooth outline-none motion-reduce:scroll-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
-          gapConfig.className,
-          SPV_MOBILE_CLASSES[mobileSpv] ?? '[--slides-per-view:1]',
-          SPV_TABLET_CLASSES[tabletSpv] ?? 'sm:[--slides-per-view:2]',
-          SPV_DESKTOP_CLASSES[desktopSpv] ?? 'lg:[--slides-per-view:3]'
-        )}
-        style={
-          {
-            scrollSnapType: 'x mandatory',
-            '--slider-gap': gapConfig.px,
-          } as CSSProperties
-        }
-      >
-        {slides.map((slide, i) => (
-          <div
-            key={i}
-            className="w-[calc((100%-(var(--slides-per-view)-1)*var(--slider-gap))/var(--slides-per-view))] min-w-[calc((100%-(var(--slides-per-view)-1)*var(--slider-gap))/var(--slides-per-view))] shrink-0 snap-start snap-always min-h-0"
-          >
-            {slide}
-          </div>
-        ))}
-      </div>
+      {isFadeOrZoom ? (
+        /* Fade / Zoom stacked pages */
+        <div
+          tabIndex={0}
+          role="group"
+          aria-label="Slides"
+          onKeyDown={handleKeyDown}
+          onTouchStart={handleTouchStartFadeZoom}
+          onTouchEnd={handleTouchEndFadeZoom}
+          className={cn(
+            'relative w-full overflow-hidden grid [grid-template-areas:"stack"] outline-none',
+            `slider-effect-${effect}`,
+            `slider-speed-${speed}`
+          )}
+        >
+          {pages.map((pageSlides, pageIdx) => {
+            const active = pageIdx === currentIndex;
+            return (
+              <div
+                key={pageIdx}
+                data-slider-page={pageIdx}
+                aria-hidden={!active}
+                className={cn(
+                  '[grid-area:stack] w-full grid transition-all',
+                  gapConfig.className,
+                  effect === 'fade' &&
+                    (active
+                      ? 'opacity-100 z-10 pointer-events-auto'
+                      : 'opacity-0 z-0 pointer-events-none'),
+                  effect === 'zoom' &&
+                    (active
+                      ? 'opacity-100 scale-100 z-10 pointer-events-auto'
+                      : 'opacity-0 scale-95 z-0 pointer-events-none'),
+                  reducedMotion && 'transition-none duration-0'
+                )}
+                style={{
+                  gridTemplateColumns: `repeat(${currentSpv}, minmax(0, 1fr))`,
+                  transitionDuration: reducedMotion
+                    ? '0ms'
+                    : `${DURATION_MS[speed]}ms`,
+                }}
+              >
+                {pageSlides.map((slide, itemIdx) => (
+                  <div key={itemIdx} className="min-w-0">
+                    {slide}
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        /* Scroll snap track */
+        <div
+          ref={trackRef}
+          tabIndex={0}
+          role="group"
+          aria-label="Slides"
+          onScroll={handleScroll}
+          onKeyDown={handleKeyDown}
+          className={cn(
+            'flex w-full snap-x snap-mandatory overflow-x-auto scroll-smooth outline-none motion-reduce:scroll-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+            gapConfig.className,
+            SPV_MOBILE_CLASSES[mobileSpv] ?? '[--slides-per-view:1]',
+            SPV_TABLET_CLASSES[tabletSpv] ?? 'sm:[--slides-per-view:2]',
+            SPV_DESKTOP_CLASSES[desktopSpv] ?? 'lg:[--slides-per-view:3]'
+          )}
+          style={
+            {
+              scrollSnapType: 'x mandatory',
+              '--slider-gap': gapConfig.px,
+            } as CSSProperties
+          }
+        >
+          {slides.map((slide, i) => (
+            <div
+              key={i}
+              className="w-[calc((100%-(var(--slides-per-view)-1)*var(--slider-gap))/var(--slides-per-view))] min-w-[calc((100%-(var(--slides-per-view)-1)*var(--slider-gap))/var(--slides-per-view))] shrink-0 snap-start snap-always min-h-0"
+            >
+              {slide}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Previous / Next buttons */}
       {showArrows && !allFit && pageCount > 1 && (

@@ -45,8 +45,11 @@ import { useFormAction } from '@/hooks/use-form-action';
 import { cn } from '@/lib/utils/cn';
 import {
   installQuietEditorial,
+  updateCustomFonts,
   updateThemeSettings,
 } from '../../settings/_modules/settings.actions';
+import type { CustomFont, CustomFontWeight } from '@/builder/fonts';
+import { MediaPickerDialog } from '@/components/media/media-picker';
 import {
   type ThemeFormInput,
   themeFormSchema,
@@ -155,11 +158,36 @@ function Field({
 export function ThemeForm({
   themeTokens,
   siteName,
+  customFonts = [],
 }: {
   themeTokens: ThemeTokens;
   siteName: string;
+  customFonts?: CustomFont[];
 }) {
   const router = useRouter();
+  const [fontsList, setFontsList] = useState<CustomFont[]>(customFonts);
+  const [fontSaving, setFontSaving] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [newFontFamily, setNewFontFamily] = useState('');
+  const [newFontWeight, setNewFontWeight] = useState('400');
+  const [newFontStyle, setNewFontStyle] = useState<'normal' | 'italic'>('normal');
+  const [newFontMediaKey, setNewFontMediaKey] = useState('');
+
+  const allBodyFonts = Array.from(new Set([...FONTS, ...fontsList.map(f => f.family)]));
+  const allHeadingFonts = Array.from(new Set([...HEADING_FONTS, ...fontsList.map(f => f.family)]));
+
+  const saveFonts = async (updated: CustomFont[]) => {
+    setFontSaving(true);
+    try {
+      await updateCustomFonts({ customFonts: updated });
+      toast.success('Custom fonts updated.');
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update custom fonts');
+    } finally {
+      setFontSaving(false);
+    }
+  };
   const form = useForm<ThemeFormInput>({
     resolver: zodResolver(themeFormSchema) as any,
     defaultValues: { themeTokens },
@@ -434,7 +462,7 @@ export function ThemeForm({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {FONTS.map(f => (
+                      {allBodyFonts.map(f => (
                         <SelectItem key={f} value={f}>
                           {f}
                         </SelectItem>
@@ -496,7 +524,7 @@ export function ThemeForm({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={SAME_AS_BODY}>Same as body</SelectItem>
-                      {HEADING_FONTS.map(f => (
+                      {allHeadingFonts.map(f => (
                         <SelectItem key={f} value={f}>
                           {f}
                         </SelectItem>
@@ -769,6 +797,165 @@ export function ThemeForm({
           />
         </Section>
 
+        <Section
+          title="Custom fonts"
+          description="Upload woff2 or woff font files to use across your theme and page builder typography."
+        >
+          <div className="sm:col-span-2 space-y-4 rounded-lg border border-steel-200 dark:border-dark-300 p-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold">Custom font families</h4>
+              {fontsList.length > 0 && (
+                <span className="text-xs text-steel-500">
+                  {fontsList.length} font{fontsList.length > 1 ? 's' : ''} configured
+                </span>
+              )}
+            </div>
+
+            {fontsList.length === 0 ? (
+              <p className="text-xs text-steel-400 italic">No custom fonts configured yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {fontsList.map((font, idx) => (
+                  <div
+                    key={font.family + idx}
+                    className="rounded border border-steel-100 dark:border-dark-400 p-3 flex flex-col gap-2 bg-steel-50/50 dark:bg-dark-200/50"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-sm">{font.family}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 text-red-500 hover:text-red-700"
+                        onClick={async () => {
+                          const updated = fontsList.filter((_, i) => i !== idx);
+                          setFontsList(updated);
+                          await saveFonts(updated);
+                        }}
+                        title={`Remove ${font.family}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {font.weights.map((w, wIdx) => (
+                        <div
+                          key={wIdx}
+                          className="text-xs rounded bg-white dark:bg-dark-300 border border-steel-200 dark:border-dark-400 px-2 py-1 font-mono text-steel-600 dark:text-steel-300 flex items-center gap-1.5"
+                        >
+                          <span>
+                            {w.weight} {w.style || 'normal'}
+                          </span>
+                          <span
+                            className="text-[10px] text-steel-400 truncate max-w-[150px]"
+                            title={w.mediaKey}
+                          >
+                            ({w.mediaKey})
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="border-t border-steel-100 dark:border-dark-400 pt-3 space-y-3">
+              <h5 className="text-xs font-semibold text-steel-700 dark:text-steel-300">
+                Add a custom font
+              </h5>
+              <div className="grid gap-2 sm:grid-cols-4">
+                <div className="sm:col-span-2">
+                  <Label className="text-xs">Font family name</Label>
+                  <Input
+                    placeholder="e.g. Satoshi"
+                    value={newFontFamily}
+                    onChange={e => setNewFontFamily(e.target.value)}
+                    className="h-8 text-xs"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Weight</Label>
+                  <Input
+                    placeholder="400"
+                    value={newFontWeight}
+                    onChange={e => setNewFontWeight(e.target.value)}
+                    className="h-8 text-xs"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Style</Label>
+                  <Select
+                    value={newFontStyle}
+                    onValueChange={(v: 'normal' | 'italic') => setNewFontStyle(v)}
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="italic">Italic</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-end gap-2">
+                <div className="flex-1 min-w-[200px]">
+                  <Label className="text-xs">Font file (woff2 or woff)</Label>
+                  <Input
+                    placeholder="Media key or URL (e.g. fonts/satoshi.woff2)"
+                    value={newFontMediaKey}
+                    onChange={e => setNewFontMediaKey(e.target.value)}
+                    className="h-8 text-xs font-mono"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPickerOpen(true)}
+                  className="h-8 text-xs"
+                >
+                  Pick from library
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={!newFontFamily.trim() || !newFontMediaKey.trim() || fontSaving}
+                  onClick={async () => {
+                    const fam = newFontFamily.trim();
+                    const existingIdx = fontsList.findIndex(
+                      f => f.family.toLowerCase() === fam.toLowerCase()
+                    );
+                    const newWeight: CustomFontWeight = {
+                      weight: newFontWeight.trim() || '400',
+                      style: newFontStyle,
+                      mediaKey: newFontMediaKey.trim(),
+                    };
+                    let updated: CustomFont[];
+                    if (existingIdx >= 0) {
+                      updated = fontsList.map((f, i) =>
+                        i === existingIdx
+                          ? { ...f, weights: [...f.weights, newWeight] }
+                          : f
+                      );
+                    } else {
+                      updated = [...fontsList, { family: fam, weights: [newWeight] }];
+                    }
+                    setFontsList(updated);
+                    setNewFontMediaKey('');
+                    await saveFonts(updated);
+                  }}
+                  className="h-8 text-xs gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add Font
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Section>
+
         <div className="sticky bottom-0 z-10 -mx-5 flex items-center justify-end gap-3 border-t border-steel-100 bg-white/90 px-5 py-3 backdrop-blur xl:-mx-8 xl:px-8 dark:border-dark-300 dark:bg-dark-100/90">
           {form.formState.isDirty && (
             <span className="text-sm text-steel-500">
@@ -970,6 +1157,22 @@ export function ThemeForm({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <MediaPickerDialog
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        imagesOnly={false}
+        onPick={item => {
+          setNewFontMediaKey(item.url);
+          if (!newFontFamily.trim()) {
+            const inferred = item.filename
+              .replace(/\.[^/.]+$/, '')
+              .replace(/[-_]/g, ' ');
+            setNewFontFamily(
+              inferred.charAt(0).toUpperCase() + inferred.slice(1)
+            );
+          }
+        }}
+      />
     </FormProvider>
   );
 }

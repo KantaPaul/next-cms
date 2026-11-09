@@ -4,8 +4,13 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { validateProps } from '@nextcms/builder-core';
 import { editorSetup } from '../definitions';
-import { ImageBlock as ImageComponent, Gallery } from '../blocks/content';
-import { LightboxImage } from '../blocks/lightbox-client';
+import { ImageBlock as ImageComponent, Gallery, Video } from '../blocks/content';
+import {
+  getThumbnail,
+  LightboxImage,
+  resolveLightboxTransition,
+} from '../blocks/lightbox-client';
+import { LightboxImageBlock } from '../definitions/native';
 import {
   clampLightboxPan,
   collectLightboxItems,
@@ -312,5 +317,241 @@ describe('Lightbox block for the popup builder', () => {
 
     // The selector onInteract uses to skip non-conversion clicks covers them.
     assert.ok(NOT_A_CONVERSION.includes('[data-overlay-ui]'));
+  });
+
+  it('Lightbox items: mixed image and video groups produce the right types and order', () => {
+    type MockElement = {
+      attributes: Record<string, string>;
+      getAttribute(name: string): string | null;
+      closest(sel: string): MockElement | null;
+      querySelectorAll(sel: string): MockElement[];
+      parent?: MockElement;
+      children?: MockElement[];
+    };
+
+    const groupEl: MockElement = {
+      attributes: { 'data-overlay-group': '' },
+      getAttribute(name: string) {
+        return this.attributes[name] ?? null;
+      },
+      closest(sel: string) {
+        return sel === '[data-overlay-group]' ? this : null;
+      },
+      querySelectorAll(_sel: string) {
+        return (this.children ?? []).filter(
+          c =>
+            c.getAttribute('data-overlay-image') ||
+            c.getAttribute('data-overlay-video')
+        );
+      },
+    };
+
+    const trigger1: MockElement = {
+      attributes: {
+        'data-overlay-open': 'popup-mixed',
+        'data-overlay-image': 'https://example.com/photo.jpg',
+        'data-overlay-alt': 'A photo',
+      },
+      getAttribute(name: string) {
+        return this.attributes[name] ?? null;
+      },
+      closest(sel: string) {
+        return sel === '[data-overlay-group]' ? groupEl : null;
+      },
+      querySelectorAll() {
+        return [];
+      },
+    };
+
+    const trigger2: MockElement = {
+      attributes: {
+        'data-overlay-open': 'popup-mixed',
+        'data-overlay-video': 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        'data-overlay-poster': 'https://example.com/poster.jpg',
+        'data-overlay-caption': 'Rick Astley',
+        'data-overlay-video-id': 'vid-123',
+      },
+      getAttribute(name: string) {
+        return this.attributes[name] ?? null;
+      },
+      closest(sel: string) {
+        return sel === '[data-overlay-group]' ? groupEl : null;
+      },
+      querySelectorAll() {
+        return [];
+      },
+    };
+
+    groupEl.children = [trigger1, trigger2];
+
+    const result = collectLightboxItems(trigger1 as never);
+    assert.ok(result);
+    assert.equal(result.images.length, 2);
+    assert.equal(result.images[0].type, 'image');
+    assert.equal(result.images[0].url, 'https://example.com/photo.jpg');
+    assert.equal(result.images[1].type, 'video');
+    assert.equal(
+      result.images[1].url,
+      'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+    );
+    assert.equal(result.images[1].poster, 'https://example.com/poster.jpg');
+    assert.equal(result.images[1].videoId, 'vid-123');
+    assert.equal(result.initialIndex, 0);
+
+    const resultFromVideo = collectLightboxItems(trigger2 as never);
+    assert.ok(resultFromVideo);
+    assert.equal(resultFromVideo.initialIndex, 1);
+  });
+
+  it('Video block popup trigger outputs data-overlay-video and poster attributes', () => {
+    const videoUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+    const posterUrl = 'https://example.com/custom-poster.jpg';
+
+    const html = renderToStaticMarkup(
+      createElement(Video, {
+        url: videoUrl,
+        posterUrl,
+        popupTrigger: true,
+        overlayId: 'popup-lightbox',
+      })
+    );
+
+    assert.ok(html.includes('data-overlay-open="popup-lightbox"'));
+    assert.ok(html.includes(`data-overlay-video="${videoUrl}"`));
+    assert.ok(html.includes(`data-overlay-poster="${posterUrl}"`));
+  });
+
+  it('Lightbox rendering: video renders a player without zoom controls', () => {
+    const videoItem = {
+      type: 'video' as const,
+      url: 'https://example.com/video.mp4',
+      caption: 'Sample Video',
+    };
+
+    const html = renderToStaticMarkup(
+      createElement(
+        LightboxProvider,
+        { value: { images: [videoItem], initialIndex: 0 } },
+        createElement(LightboxImage, {
+          enableZoom: true,
+          showArrows: false,
+          showCounter: false,
+          showThumbnails: false,
+        })
+      )
+    );
+
+    // Video renders native player
+    assert.ok(html.includes('<video'));
+    assert.ok(html.includes('src="https://example.com/video.mp4"'));
+    // Zoom cursor is disabled for videos
+    assert.ok(!html.includes('cursor-zoom-in'));
+    assert.ok(!html.includes('cursor-grab'));
+  });
+
+  it('Lightbox rendering: transitions render the right classes and reduced motion switches to none', () => {
+    const imgItem = {
+      type: 'image' as const,
+      url: 'https://example.com/pic.jpg',
+    };
+
+    const htmlFade = renderToStaticMarkup(
+      createElement(
+        LightboxProvider,
+        { value: { images: [imgItem], initialIndex: 0 } },
+        createElement(LightboxImage, {
+          transition: 'fade',
+          transitionSpeed: 'fast',
+        })
+      )
+    );
+    assert.ok(htmlFade.includes('lightbox-transition-fade'));
+    assert.ok(htmlFade.includes('200ms'));
+
+    const htmlSlide = renderToStaticMarkup(
+      createElement(
+        LightboxProvider,
+        { value: { images: [imgItem], initialIndex: 0 } },
+        createElement(LightboxImage, {
+          transition: 'slide',
+          transitionSpeed: 'slow',
+        })
+      )
+    );
+    assert.ok(htmlSlide.includes('lightbox-transition-slide'));
+    assert.ok(htmlSlide.includes('lightbox-slide-next'));
+    assert.ok(htmlSlide.includes('600ms'));
+
+    const htmlZoom = renderToStaticMarkup(
+      createElement(
+        LightboxProvider,
+        { value: { images: [imgItem], initialIndex: 0 } },
+        createElement(LightboxImage, {
+          transition: 'zoom',
+          transitionSpeed: 'normal',
+        })
+      )
+    );
+    assert.ok(htmlZoom.includes('lightbox-transition-zoom'));
+    assert.ok(htmlZoom.includes('350ms'));
+
+    const htmlNone = renderToStaticMarkup(
+      createElement(
+        LightboxProvider,
+        { value: { images: [imgItem], initialIndex: 0 } },
+        createElement(LightboxImage, {
+          transition: 'none',
+        })
+      )
+    );
+    assert.ok(htmlNone.includes('lightbox-transition-none'));
+
+    // Reduced motion resolution logic
+    assert.equal(resolveLightboxTransition('fade', true), 'none');
+    assert.equal(resolveLightboxTransition('slide', true), 'none');
+    assert.equal(resolveLightboxTransition('zoom', true), 'none');
+    assert.equal(resolveLightboxTransition('fade', false), 'fade');
+  });
+
+  it('Lightbox field rules and naming: label is Lightbox, speed hides for none', () => {
+    assert.equal(LightboxImageBlock.label, 'Lightbox');
+    assert.equal(
+      LightboxImageBlock.fields?.transitionSpeed?.when?.({
+        transition: 'none',
+      }),
+      false
+    );
+    assert.equal(
+      LightboxImageBlock.fields?.transitionSpeed?.when?.({
+        transition: 'fade',
+      }),
+      true
+    );
+    assert.equal(
+      LightboxImageBlock.fields?.transitionSpeed?.when?.({
+        transition: 'slide',
+      }),
+      true
+    );
+  });
+
+  it('Gives a video with no poster a play icon, not a broken image', () => {
+    assert.equal(
+      getThumbnail({ type: 'video', url: 'https://example.com/clip.mp4' }),
+      ''
+    );
+    assert.equal(
+      getThumbnail({ type: 'video', url: 'https://vimeo.com/76979871' }),
+      ''
+    );
+    assert.equal(
+      getThumbnail({ type: 'video', url: 'https://youtu.be/dQw4w9WgXcQ' }),
+      'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg'
+    );
+    assert.equal(
+      getThumbnail({ type: 'video', url: 'https://vimeo.com/1', poster: 'p.jpg' }),
+      'p.jpg'
+    );
+    assert.equal(getThumbnail({ type: 'image', url: 'a.jpg' }), 'a.jpg');
   });
 });

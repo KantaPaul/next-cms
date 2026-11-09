@@ -40,6 +40,7 @@ import {
   resolveArchiveRoute,
 } from '@/lib/listing-seo';
 import {
+  type ResolvedSite,
   siteContext,
   siteSlugPrefix,
 } from '@/server/services/site-context';
@@ -200,21 +201,37 @@ type CardRow = {
   publishedAt: Date | null;
 } & Omit<PostCard, 'url' | 'publishedAt' | 'categories' | 'tags'>;
 
+function blogBase(site: ResolvedSite, language: string): string {
+  const prefix = siteSlugPrefix(site);
+  return `${prefix ? `/${prefix}` : ''}${
+    language !== site.defaultLocale ? `/${language}` : ''
+  }/blog`;
+}
+
 async function toCards(rows: CardRow[]): Promise<PostCard[]> {
   const site = await siteContext.publicSite();
   const { categoriesByPost, tagsByPost } = await loadTerms(rows.map(r => r.id));
-  return rows.map(row => ({
-    ...row,
-    publishedAt: row.publishedAt?.toISOString() ?? null,
-    url: PAGES.SITE.post(
-      row.slug,
-      row.language,
-      site.defaultLocale,
-      siteSlugPrefix(site)
-    ),
-    categories: categoriesByPost.get(row.id) ?? [],
-    tags: tagsByPost.get(row.id) ?? [],
-  }));
+  return rows.map(row => {
+    const base = blogBase(site, row.language);
+    return {
+      ...row,
+      publishedAt: row.publishedAt?.toISOString() ?? null,
+      url: PAGES.SITE.post(
+        row.slug,
+        row.language,
+        site.defaultLocale,
+        siteSlugPrefix(site)
+      ),
+      categories: (categoriesByPost.get(row.id) ?? []).map(c => ({
+        ...c,
+        url: `${base}/category/${c.slug}`,
+      })),
+      tags: (tagsByPost.get(row.id) ?? []).map(t => ({
+        ...t,
+        url: `${base}/tag/${t.slug}`,
+      })),
+    };
+  });
 }
 
 const ORDER: Record<BlogSort, SQL[]> = {
@@ -312,11 +329,9 @@ async function loadPost(where: SQL | undefined, kind: 'draft' | 'published') {
         )
         .then(r => r[0]?.n ?? 0),
     ]);
-  const prefix = siteSlugPrefix(site);
+  const base = blogBase(site, row.language);
   const authorUrl = row.authorId
-    ? `${prefix ? `/${prefix}` : ''}${
-        row.language !== site.defaultLocale ? `/${row.language}` : ''
-      }/blog/author/${row.authorId}`
+    ? `${base}/author/${row.authorId}`
     : null;
 
   const view: PostView = {
@@ -339,8 +354,14 @@ async function loadPost(where: SQL | undefined, kind: 'draft' | 'published') {
     authorPostCount: Number(authorCount),
     allowComments: row.allowComments,
     commentCount: Number(commentCount),
-    categories: categoriesByPost.get(row.id) ?? [],
-    tags: tagsByPost.get(row.id) ?? [],
+    categories: (categoriesByPost.get(row.id) ?? []).map(c => ({
+      ...c,
+      url: `${base}/category/${c.slug}`,
+    })),
+    tags: (tagsByPost.get(row.id) ?? []).map(t => ({
+      ...t,
+      url: `${base}/tag/${t.slug}`,
+    })),
     headerTemplateId: row.headerTemplateId,
     footerTemplateId: row.footerTemplateId,
     blogUrl,

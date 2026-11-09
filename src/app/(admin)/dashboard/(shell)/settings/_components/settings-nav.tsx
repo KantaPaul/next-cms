@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { PAGES } from '@/config/pages';
 import { cn } from '@/lib/utils/cn';
-import { Blocks, Settings, ShieldCheck } from 'lucide-react';
+import { Blocks, Code, Settings, ShieldCheck } from 'lucide-react';
 
 export function SettingsNav() {
   const pathname = usePathname();
@@ -14,6 +14,7 @@ export function SettingsNav() {
     pathname?.startsWith(`${PAGES.DASHBOARD.SETTINGS_LICENSE}/`);
   const isGeneralActive = pathname === PAGES.DASHBOARD.SETTINGS;
   const isBlocksActive = pathname === PAGES.DASHBOARD.SETTINGS_BLOCKS;
+  const isCustomCodeActive = pathname === PAGES.DASHBOARD.SETTINGS_CUSTOM_CODE;
 
   const navItems = [
     {
@@ -21,6 +22,12 @@ export function SettingsNav() {
       href: PAGES.DASHBOARD.SETTINGS,
       icon: Settings,
       active: isGeneralActive,
+    },
+    {
+      title: 'Custom code',
+      href: PAGES.DASHBOARD.SETTINGS_CUSTOM_CODE,
+      icon: Code,
+      active: isCustomCodeActive,
     },
     {
       title: 'Blocks',

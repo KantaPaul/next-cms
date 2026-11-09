@@ -63,3 +63,13 @@ const OPTIONS: sanitizeHtml.IOptions = {
 
 export const sanitizeRichText = (html: unknown) =>
   typeof html === 'string' ? sanitizeHtml(html, OPTIONS) : '';
+
+export function sanitizeCss(css: unknown): string {
+  if (typeof css !== 'string') return '';
+  return css
+    .replace(/<\s*\/\s*style[^>]*>/gi, '')
+    .replace(/@import\b[^;]*;?/gi, '')
+    .replace(/expression\s*\([\s\S]*?\)/gi, '')
+    .replace(/javascript\s*:/gi, '');
+}
+

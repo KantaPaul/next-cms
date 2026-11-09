@@ -84,7 +84,7 @@ describe('entryToPostView', () => {
     assert.equal(postView.authorName, 'Admin User');
     assert.equal(postView.body, '<p>Senior Engineer</p>');
     assert.equal(postView.publishedAt, '2026-03-01T12:00:00.000Z');
-    assert.equal(postView.blogUrl, '/team');
+    assert.equal(postView.blogUrl, '/collections/team');
 
     // Categories come from the first hierarchical taxonomy
     assert.equal(postView.categories.length, 1);

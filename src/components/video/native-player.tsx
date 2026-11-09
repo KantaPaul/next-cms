@@ -24,6 +24,8 @@ export type NativePlayerProps = {
   allowDownload?: boolean;
   /** Resume position in seconds (from saved progress). */
   startPosition?: number | null;
+  /** Start playing as soon as it can. */
+  autoPlay?: boolean;
   onProgress?: (progress: { position: number; duration: number | null; completed: boolean }) => void;
   onPlay?: () => void;
   onPause?: () => void;
@@ -37,6 +39,7 @@ export function NativePlayer({
   lockSeek = false,
   allowDownload = true,
   startPosition,
+  autoPlay = false,
   onProgress,
   onPlay,
   onPause,
@@ -140,7 +143,9 @@ export function NativePlayer({
         src={src}
         poster={poster ?? undefined}
         controls
-        preload="metadata"
+        autoPlay={autoPlay}
+        playsInline
+        preload={autoPlay ? 'auto' : 'metadata'}
         disablePictureInPicture={!allowDownload}
         disableRemotePlayback={!allowDownload}
         onPlay={handlePlay}

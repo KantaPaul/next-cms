@@ -19,6 +19,7 @@ export type VideoPlayerProps = {
   title?: string;
   /** Video duration in seconds. */
   duration?: number | null;
+  autoPlay?: boolean;
   onProgress?: (progress: { position: number; duration: number | null; completed: boolean }) => void;
   onPlay?: () => void;
   onPause?: () => void;
@@ -36,12 +37,20 @@ export function VideoPlayer({
   poster,
   title,
   duration,
+  autoPlay = false,
   onProgress,
   onPlay,
   onPause,
   onEnded,
 }: VideoPlayerProps) {
   const embed = buildEmbed(parsed);
+  const resolvedEmbed =
+    embed && autoPlay
+      ? {
+          ...embed,
+          src: `${embed.src}${embed.src.includes('?') ? '&' : '?'}autoplay=1`,
+        }
+      : embed;
 
   const handleProgress = useCallback(
     (p: { position: number; duration: number | null; completed: boolean }) => {
@@ -61,6 +70,7 @@ export function VideoPlayer({
       <NativePlayer
         src={parsed.id}
         poster={poster}
+        autoPlay={autoPlay}
         duration={duration}
         lockSeek={lockSeek}
         allowDownload
@@ -83,7 +93,7 @@ export function VideoPlayer({
 
   return (
     <EmbedPlayer
-      embed={embed}
+      embed={resolvedEmbed}
       thumbnailUrl={poster}
       start={startPosition}
       title={title}

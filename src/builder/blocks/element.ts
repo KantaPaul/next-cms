@@ -19,6 +19,8 @@ export type WithSection = {
   elements?: Record<string, ElementStyle>;
   partOrder?: string[];
   editing?: boolean;
+  id?: string;
+  nodeId?: string;
 };
 
 /**

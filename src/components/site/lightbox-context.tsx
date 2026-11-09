@@ -3,9 +3,12 @@
 import { createContext, useContext, type ReactNode } from 'react';
 
 export type LightboxItem = {
+  type?: 'image' | 'video';
   url: string;
   alt?: string;
   caption?: string;
+  poster?: string;
+  videoId?: string;
 };
 
 export type LightboxContextValue = {
@@ -30,28 +33,41 @@ function overlayIdOf(trigger: TriggerElement): string | null {
 }
 
 /**
- * The images a clicked trigger opens. Inside a `data-overlay-group` (a Gallery)
- * that is every image opening the same overlay, so an image with its own
- * override isn't mixed in. Returns null when the trigger carries no image.
+ * The items a clicked trigger opens. Inside a `data-overlay-group` (e.g. Gallery
+ * or Video library Grid) that is every item opening the same overlay, so an item with
+ * its own override isn't mixed in. Returns null when the trigger carries no image or video.
  */
 export function collectLightboxItems(
   opener: TriggerElement
 ): LightboxContextValue | null {
-  if (!opener.getAttribute('data-overlay-image')) return null;
+  const hasImage = Boolean(opener.getAttribute('data-overlay-image'));
+  const hasVideo = Boolean(opener.getAttribute('data-overlay-video'));
+  if (!hasImage && !hasVideo) return null;
+
   const openerId = overlayIdOf(opener);
   const group = opener.closest('[data-overlay-group]');
   const triggers = group
-    ? Array.from(group.querySelectorAll('[data-overlay-image]')).filter(
-        trigger => overlayIdOf(trigger) === openerId
-      )
+    ? Array.from(
+        group.querySelectorAll(
+          '[data-overlay-image], [data-overlay-video]'
+        )
+      ).filter(trigger => overlayIdOf(trigger) === openerId)
     : [opener];
   const list = triggers.includes(opener) ? triggers : [opener];
+
   return {
-    images: list.map(trigger => ({
-      url: trigger.getAttribute('data-overlay-image') ?? '',
-      alt: trigger.getAttribute('data-overlay-alt') || undefined,
-      caption: trigger.getAttribute('data-overlay-caption') || undefined,
-    })),
+    images: list.map(trigger => {
+      const videoUrl = trigger.getAttribute('data-overlay-video');
+      const isVideo = Boolean(videoUrl);
+      return {
+        type: isVideo ? ('video' as const) : ('image' as const),
+        url: (isVideo ? videoUrl : trigger.getAttribute('data-overlay-image')) ?? '',
+        alt: trigger.getAttribute('data-overlay-alt') || undefined,
+        caption: trigger.getAttribute('data-overlay-caption') || undefined,
+        poster: trigger.getAttribute('data-overlay-poster') || undefined,
+        videoId: trigger.getAttribute('data-overlay-video-id') || undefined,
+      };
+    }),
     initialIndex: list.indexOf(opener),
   };
 }

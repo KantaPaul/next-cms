@@ -20,7 +20,9 @@ import {
   updateBlockSettingsSchema,
   updateVideoSettingsSchema,
   deactivateManagedLicenseSchema,
+  customCodeSchema,
 } from './settings.schemas';
+import { z } from 'zod';
 
 export const updateThemeSettings = permissionProcedure(
   PERMISSIONS.SETTINGS_MANAGE
@@ -251,4 +253,56 @@ export const updateLicensePolicy = permissionProcedure(
     revalidatePath(PAGES.DASHBOARD.SETTINGS_LICENSE);
     revalidatePath(PAGES.DASHBOARD.SETTINGS);
     return { ok: true, data: updatedSettings };
+  });
+
+export const updateCustomCode = permissionProcedure(
+  PERMISSIONS.SETTINGS_MANAGE
+)
+  .input(customCodeSchema)
+  .action(async ({ input, ctx }) => {
+    const current = await siteSettingsService.get();
+    const row = await siteSettingsService.update(
+      {
+        siteName: current.siteName,
+        customCode: input,
+      },
+      ctx.access
+    );
+    revalidatePath(PAGES.DASHBOARD.SETTINGS);
+    revalidatePath('/dashboard/settings/custom-code');
+    revalidatePath('/', 'layout');
+    return row;
+  });
+
+export const updateCustomFonts = permissionProcedure(
+  PERMISSIONS.SETTINGS_MANAGE
+)
+  .input(
+    z.object({
+      customFonts: z.array(
+        z.object({
+          family: z.string().trim().min(1).max(100),
+          weights: z.array(
+            z.object({
+              weight: z.string().max(20),
+              style: z.string().max(20).optional(),
+              mediaKey: z.string().max(500),
+            })
+          ),
+        })
+      ),
+    })
+  )
+  .action(async ({ input, ctx }) => {
+    const current = await siteSettingsService.get();
+    const row = await siteSettingsService.update(
+      {
+        siteName: current.siteName,
+        customFonts: input.customFonts,
+      },
+      ctx.access
+    );
+    revalidatePath(PAGES.DASHBOARD.THEME);
+    revalidatePath('/', 'layout');
+    return row;
   });

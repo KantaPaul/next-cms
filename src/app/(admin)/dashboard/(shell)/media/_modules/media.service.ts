@@ -24,6 +24,13 @@ export const ALLOWED_MIME = [
   'video/mp4',
   'video/webm',
   'application/pdf',
+  'font/woff2',
+  'font/woff',
+  'font/ttf',
+  'font/otf',
+  'application/font-woff',
+  'application/font-woff2',
+  'application/x-font-woff',
 ];
 
 const sanitizeName = (name: string) =>

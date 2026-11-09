@@ -38,7 +38,7 @@ const BLOCKS: Record<string, BlockNote> = {
     label: 'Testimonials',
     use: 'Show what customers say about you.',
     settings:
-      'Quote, author, role, company, and popup/drawer trigger per item; optional slider mode with autoplay, loop, gap, and per-device visible slides.',
+      'Quote, author, role, company, and popup/drawer trigger per item; optional slider mode with effect (slide, fade, zoom), speed, autoplay, loop, gap, and per-device visible slides.',
   },
   FAQ: {
     label: 'FAQ',
@@ -49,13 +49,13 @@ const BLOCKS: Record<string, BlockNote> = {
     label: 'Logo cloud',
     use: 'Show customers or partners at a glance.',
     settings:
-      'Title, logo items with link, and optional slider mode with autoplay, loop, gap, and per-device visible slides.',
+      'Title, logo items with link, and optional slider mode with effect (slide, fade, zoom), speed, autoplay, loop, gap, and per-device visible slides.',
   },
   Team: {
     label: 'Team',
     use: 'Introduce the people behind the site.',
     settings:
-      'Photo, name, role, and popup/drawer trigger per member; columns or optional slider mode with autoplay, loop, gap, and per-device visible slides.',
+      'Photo, name, role, and popup/drawer trigger per member; columns or optional slider mode with effect (slide, fade, zoom), speed, autoplay, loop, gap, and per-device visible slides.',
   },
   Timeline: {
     label: 'Timeline',
@@ -80,20 +80,22 @@ const BLOCKS: Record<string, BlockNote> = {
       'Columns, gap, images, and popup/drawer trigger with per-image override.',
   },
   LightboxImage: {
-    label: 'Lightbox image',
-    use: 'Displays the clicked picture from an Image or Gallery block inside a popup or drawer, with navigation, zoom, and thumbnails.',
+    label: 'Lightbox',
+    use: 'Displays the clicked picture or video from an Image, Gallery, Video, or Video library block inside a popup or drawer, with slide-change animations, navigation, zoom, and thumbnails.',
     settings:
-      'Fallback image, navigation arrows and counter, zoom, caption position, thumbnails, and element styles.',
+      'Slide transition and speed, autoplay videos, save watch progress, fallback image, navigation arrows and counter, zoom, caption position, thumbnails, and element styles.',
   },
   Video: {
     label: 'Video',
     use: 'Embed one YouTube, Vimeo, or file video.',
-    settings: 'Video URL, or popup/drawer trigger with poster image.',
+    settings:
+      'Video URL, or popup/drawer trigger with poster image (plays directly in a lightbox popup).',
   },
   VideoLibrary: {
     label: 'Video library',
-    use: 'A browsable list of videos from your playlists.',
-    settings: 'Sources, title, search, layout, playlist, page size.',
+    use: 'A browsable list or gallery grid of videos from your playlists.',
+    settings:
+      'Sources, title, search, layout (Sidebar, Stacked, Grid), grid columns, popup lightbox trigger, playlist, page size.',
   },
   Embed: {
     label: 'Embed',
@@ -159,7 +161,8 @@ const BLOCKS: Record<string, BlockNote> = {
   Slider: {
     label: 'Slider',
     use: 'Slides with arrows and dots; each slide holds any blocks.',
-    settings: 'Slides; each slide holds any blocks.',
+    settings:
+      'Slides, effect (slide, fade, zoom), speed, autoplay, loop, arrows, and dots; each slide holds any blocks.',
   },
   Tabs: {
     label: 'Tabs',
