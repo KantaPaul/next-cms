@@ -21,7 +21,7 @@ const BLOCKS: Record<string, BlockNote> = {
     label: 'Features',
     use: 'Explain what your product does in short, scannable items.',
     settings:
-      'Eyebrow, title, subtitle, columns, items with icon, title, and description.',
+      'Eyebrow, title, subtitle, columns, items with icon, title, description, and popup/drawer trigger.',
   },
   Stats: {
     label: 'Stats',
@@ -37,7 +37,8 @@ const BLOCKS: Record<string, BlockNote> = {
   Testimonials: {
     label: 'Testimonials',
     use: 'Show what customers say about you.',
-    settings: 'Quote, author, role, and company per item.',
+    settings:
+      'Quote, author, role, company, and popup/drawer trigger per item; optional slider mode with autoplay, loop, gap, and per-device visible slides.',
   },
   FAQ: {
     label: 'FAQ',
@@ -47,12 +48,14 @@ const BLOCKS: Record<string, BlockNote> = {
   LogoCloud: {
     label: 'Logo cloud',
     use: 'Show customers or partners at a glance.',
-    settings: 'Title and a logo image per item.',
+    settings:
+      'Title, logo items with link, and optional slider mode with autoplay, loop, gap, and per-device visible slides.',
   },
   Team: {
     label: 'Team',
     use: 'Introduce the people behind the site.',
-    settings: 'Photo, name, and role per person.',
+    settings:
+      'Photo, name, role, and popup/drawer trigger per member; columns or optional slider mode with autoplay, loop, gap, and per-device visible slides.',
   },
   Timeline: {
     label: 'Timeline',
@@ -67,17 +70,19 @@ const BLOCKS: Record<string, BlockNote> = {
   Image: {
     label: 'Image',
     use: 'A single picture with alt text and an optional caption or link.',
-    settings: 'Image, alt, caption, aspect ratio, size, fit, link.',
+    settings:
+      'Image, alt, caption, aspect ratio, size, fit, link, or popup/drawer trigger.',
   },
   Gallery: {
     label: 'Gallery',
     use: 'A grid of images that open in a lightbox.',
-    settings: 'Columns, gap, images.',
+    settings:
+      'Columns, gap, images, and popup/drawer trigger with per-image override.',
   },
   Video: {
     label: 'Video',
     use: 'Embed one YouTube, Vimeo, or file video.',
-    settings: 'Video URL.',
+    settings: 'Video URL, or popup/drawer trigger with poster image.',
   },
   VideoLibrary: {
     label: 'Video library',
@@ -173,7 +178,7 @@ const BLOCKS: Record<string, BlockNote> = {
   ImageMorph: {
     label: 'Image morph',
     use: 'Images that blend into one another as the visitor scrolls.',
-    settings: 'Morph images.',
+    settings: 'Morph images, with optional popup/drawer trigger.',
   },
   CollectionItem: {
     label: 'Collection item',

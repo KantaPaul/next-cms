@@ -12,6 +12,7 @@ import {
   type ElementPart,
   ElementStyleControl,
 } from '../controls/element-style';
+import { OverlayPickerField } from '../controls/overlay-picker';
 import { ColorPicker } from '../controls/color-picker';
 import { GROUP_CONTROLS, type GroupKind, GroupShell } from '../controls/groups';
 import {
@@ -625,6 +626,144 @@ export const ALIGN_OPTIONS = [
   { label: 'Center', value: 'center' },
   { label: 'Left', value: 'left' },
 ];
+
+export type SliderDefaults = {
+  desktop?: number;
+  tablet?: number;
+  mobile?: number;
+};
+
+/**
+ * Creates fields for slider mode on marketing blocks (Testimonials, Team, Logo cloud).
+ * Fields are conditionally revealed when `slider` is switched on.
+ */
+export function sliderFields({
+  desktop = 3,
+  tablet = 2,
+  mobile = 1,
+}: SliderDefaults = {}): Fields {
+  const perViewOptions = [1, 2, 3, 4, 5, 6].map(v => ({
+    label: String(v),
+    value: v,
+  }));
+
+  return {
+    slider: {
+      label: 'Enable slider',
+      group: CONTENT,
+      type: 'toggle',
+    },
+    sliderPerView: {
+      label: 'Slides per view (desktop)',
+      group: CONTENT,
+      type: 'select',
+      options: perViewOptions,
+      defaultValue: desktop,
+      when: (p: any) => Boolean(p.slider),
+    },
+    sliderPerViewTablet: {
+      label: 'Slides per view (tablet)',
+      group: CONTENT,
+      type: 'select',
+      options: perViewOptions,
+      defaultValue: tablet,
+      when: (p: any) => Boolean(p.slider),
+    },
+    sliderPerViewMobile: {
+      label: 'Slides per view (mobile)',
+      group: CONTENT,
+      type: 'select',
+      options: perViewOptions,
+      defaultValue: mobile,
+      when: (p: any) => Boolean(p.slider),
+    },
+    sliderGap: {
+      label: 'Slider gap',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: 'Small', value: 'sm' },
+        { label: 'Medium', value: 'md' },
+        { label: 'Large', value: 'lg' },
+      ],
+      defaultValue: 'md',
+      when: (p: any) => Boolean(p.slider),
+    },
+    sliderAutoplay: {
+      label: 'Autoplay',
+      group: CONTENT,
+      type: 'toggle',
+      when: (p: any) => Boolean(p.slider),
+    },
+    sliderInterval: {
+      label: 'Autoplay interval',
+      group: CONTENT,
+      type: 'select',
+      options: [
+        { label: '3 seconds', value: 3 },
+        { label: '5 seconds', value: 5 },
+        { label: '7 seconds', value: 7 },
+        { label: '10 seconds', value: 10 },
+      ],
+      defaultValue: 5,
+      when: (p: any) => Boolean(p.slider && p.sliderAutoplay),
+    },
+    sliderPauseOnHover: {
+      label: 'Pause on hover',
+      group: CONTENT,
+      type: 'toggle',
+      defaultValue: true,
+      when: (p: any) => Boolean(p.slider && p.sliderAutoplay),
+    },
+    sliderLoop: {
+      label: 'Loop slides',
+      group: CONTENT,
+      type: 'toggle',
+      when: (p: any) => Boolean(p.slider),
+    },
+    sliderArrows: {
+      label: 'Show arrows',
+      group: CONTENT,
+      type: 'toggle',
+      defaultValue: true,
+      when: (p: any) => Boolean(p.slider),
+    },
+    sliderDots: {
+      label: 'Show dots',
+      group: CONTENT,
+      type: 'toggle',
+      defaultValue: true,
+      when: (p: any) => Boolean(p.slider),
+    },
+    arrow_style: elementStyle('arrow', 'Arrow Style', BUTTON_PARTS, {
+      when: (p: any) => Boolean(p.slider),
+    }),
+    dot_style: elementStyle('dot', 'Dot Indicator Style', BUTTON_PARTS, {
+      when: (p: any) => Boolean(p.slider),
+    }),
+  };
+}
+
+/**
+ * Creates fields for opening an overlay (popup or drawer) on click.
+ * Works both at the block level and per list item (e.g. card items).
+ */
+export function overlayTriggerFields(): Fields {
+  return {
+    popupTrigger: {
+      label: 'Open popup/drawer on click',
+      group: CONTENT,
+      type: 'toggle',
+    },
+    overlayId: {
+      label: 'Popup / Drawer',
+      group: CONTENT,
+      type: 'custom',
+      render: OverlayPickerField,
+      when: (p: any) => Boolean(p?.popupTrigger),
+    },
+  };
+}
 
 export {
   sectionSettingsSchema as sectionSchema,

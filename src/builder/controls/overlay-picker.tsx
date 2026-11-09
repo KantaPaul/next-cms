@@ -184,6 +184,9 @@ export function OverlayPickerField({
           </a>
         )}
       </div>
+      <p className="mt-1.5 text-[11px] text-muted-foreground opacity-75">
+        Opens only on pages matching the overlay&apos;s display rules.
+      </p>
     </div>
   );
 }

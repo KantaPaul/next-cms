@@ -94,8 +94,11 @@ type BaseField<P> = {
   path?: string;
   /** Inspector section; fields with the same group are shown together (R784). */
   group?: string;
-  /** Show the field only when this returns true; hidden values are kept (BLD-33). */
-  when?: (props: P) => boolean;
+  /**
+   * Show the field only when this returns true; hidden values are kept (BLD-33).
+   * For a field inside a list item, `props` is the item and `parentProps` is the block.
+   */
+  when?: (props: P, parentProps?: Record<string, unknown>) => boolean;
   readOnly?: boolean;
   /** Edit one value per device, with inheritance and reset (R694). */
   responsive?: boolean;
@@ -123,8 +126,13 @@ export type FieldDef<P = Record<string, unknown>> =
       step?: number;
       unit?: string;
     })
-  | (BaseField<P> & { type: 'toggle' })
-  | (BaseField<P> & { type: 'select' | 'radio'; options: FieldOption[] })
+  /** `defaultValue` is what an unset value shows as; it should match the block's render fallback. */
+  | (BaseField<P> & { type: 'toggle'; defaultValue?: boolean })
+  | (BaseField<P> & {
+      type: 'select' | 'radio';
+      options: FieldOption[];
+      defaultValue?: FieldOption['value'];
+    })
   /** Any subset of an allowlisted set of class names, never a raw class string (R782). */
   | (BaseField<P> & { type: 'class-list'; options: FieldOption[] })
   | (BaseField<P> & {

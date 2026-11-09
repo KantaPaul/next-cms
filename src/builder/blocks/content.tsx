@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
+import { Play } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import type { BuilderItem } from '../data';
 import { sanitizeRichText } from '../sanitize';
@@ -17,6 +18,7 @@ import { BlockList } from './block-list';
 import { ContactFormClient } from './contact-form-client';
 import { CopyButtonClient } from './copy-button-client';
 import { el, type WithSection } from './element';
+import { OverlayTrigger } from './overlay-trigger';
 import {
   columnsGridStyle,
   HEADER_COL_JUSTIFY,
@@ -78,6 +80,8 @@ export type ImageProps = WithSection & {
   imageHeight?: number;
   objectFit?: 'cover' | 'contain' | 'fill';
   imageSize?: ImageSize;
+  popupTrigger?: boolean;
+  overlayId?: string;
 };
 
 const ASPECT = {
@@ -155,7 +159,9 @@ export function ImageBlock(p: ImageProps) {
       innerClassName={IMAGE_WIDTH[p.width ?? 'normal']}
     >
       <figure>
-        {normalizeUrlValue(p.link).url ? (
+        {p.popupTrigger && p.overlayId ? (
+          <OverlayTrigger overlayId={p.overlayId}>{img}</OverlayTrigger>
+        ) : normalizeUrlValue(p.link).url ? (
           <a {...resolveLinkProps(p.link)}>{img}</a>
         ) : (
           img
@@ -176,6 +182,7 @@ export type GalleryItem = {
   url?: string;
   alt?: string;
   caption?: string;
+  overlayId?: string;
 };
 
 export type GalleryProps = WithSection & {
@@ -185,6 +192,8 @@ export type GalleryProps = WithSection & {
   items?: GalleryItem[];
   columns?: 2 | 3 | 4;
   gap?: 'sm' | 'md' | 'lg';
+  popupTrigger?: boolean;
+  overlayId?: string;
 };
 
 const GALLERY_COLS = {
@@ -230,30 +239,40 @@ export function Gallery(p: GalleryProps) {
         subtitle={p.subtitle}
       />
       <div className={cn('grid', GALLERY_COLS[cols], GALLERY_GAP[gap])}>
-        {items.map((item, i) => (
-          <MotionItem
-            key={`${item.url}-${i}`}
-            as="figure"
-            className="overflow-hidden"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={item.url}
-              alt={item.alt ?? ''}
-              loading="lazy"
-              className={imageEl.className}
-              style={imageEl.style}
-            />
-            {item.caption && (
-              <figcaption
-                className={captionEl.className}
-                style={captionEl.style}
+        {items.map((item, i) => {
+          const effectiveOverlayId = p.popupTrigger
+            ? item.overlayId || p.overlayId
+            : undefined;
+          return (
+            <MotionItem
+              key={`${item.url}-${i}`}
+              as="figure"
+              className="overflow-hidden"
+            >
+              <OverlayTrigger
+                overlayId={effectiveOverlayId}
+                className="group/gallery-item block h-full w-full overflow-hidden"
               >
-                {item.caption}
-              </figcaption>
-            )}
-          </MotionItem>
-        ))}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={item.url}
+                  alt={item.alt ?? ''}
+                  loading="lazy"
+                  className={imageEl.className}
+                  style={imageEl.style}
+                />
+              </OverlayTrigger>
+              {item.caption && (
+                <figcaption
+                  className={captionEl.className}
+                  style={captionEl.style}
+                >
+                  {item.caption}
+                </figcaption>
+              )}
+            </MotionItem>
+          );
+        })}
       </div>
     </Section>
   );
@@ -313,6 +332,9 @@ export function ContactForm(p: ContactFormProps) {
 
 export type VideoProps = WithSection & {
   url?: string;
+  posterUrl?: string;
+  popupTrigger?: boolean;
+  overlayId?: string;
 };
 
 type VideoSource = { kind: 'youtube' | 'vimeo' | 'file'; src: string };
@@ -371,11 +393,45 @@ export function Video(p: VideoProps) {
   const source = p.url ? videoSource(p.url) : null;
   const frameEl = el(p, 'frame', 's-radius aspect-video h-full w-full rounded');
 
+  if (p.popupTrigger && p.overlayId) {
+    return (
+      <Section section={p.section} editing={p.editing}>
+        <OverlayTrigger
+          overlayId={p.overlayId}
+          aria-label="Play video"
+          className="group/video relative block aspect-video w-full overflow-hidden rounded"
+        >
+          <div
+            className={cn(
+              frameEl.className,
+              'relative flex aspect-video w-full items-center justify-center overflow-hidden bg-black/10 dark:bg-white/10'
+            )}
+            style={frameEl.style}
+          >
+            {p.posterUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={p.posterUrl}
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover/video:scale-105"
+              />
+            ) : null}
+            <div className="relative z-10 flex size-14 items-center justify-center rounded-full bg-black/60 text-white shadow-lg backdrop-blur-xs transition duration-200 group-hover/video:scale-110 group-hover/video:bg-black/80">
+              <Play className="size-6 translate-x-0.5 fill-current" />
+            </div>
+          </div>
+        </OverlayTrigger>
+      </Section>
+    );
+  }
+
   if (!source) {
     return p.editing ? (
       <Section section={p.section} editing>
         <div className="s-surface s-border s-muted s-radius flex aspect-video items-center justify-center border border-dashed text-sm">
-          Add a video URL in the sidebar
+          {p.popupTrigger
+            ? 'Choose a popup or drawer in the sidebar'
+            : 'Add a video URL in the sidebar'}
         </div>
       </Section>
     ) : null;

@@ -3,7 +3,21 @@ import assert from 'node:assert/strict';
 import { isAllowedUri } from '@tiptap/extension-link';
 import { validateProps } from '@nextcms/builder-core';
 import { editorSetup } from '../definitions';
-import { ButtonBlock } from '../definitions/native';
+import {
+  ButtonBlock,
+  FeaturesBlock,
+  GalleryBlock,
+  ImageNativeBlock,
+  ImageMorphBlock,
+  TeamBlock,
+  TestimonialsBlock,
+  VideoBlock,
+} from '../definitions/native';
+import { Features, Team, Testimonials } from '../blocks/marketing';
+import { Gallery, ImageBlock as ImageComponent, Video } from '../blocks/content';
+import { ImageMorph } from '../blocks/image-morph';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { sanitizeRichText } from '../sanitize';
 import { overlayHref, parseOverlayHref } from '@/lib/overlays/href';
 import { menuHref } from '@/components/site/menu-links';
@@ -204,5 +218,189 @@ describe('Popup & Drawer builder palette and editor setup', () => {
     assert.equal(overlayField.type, 'custom');
     assert.equal(overlayField.label, 'Popup / Drawer');
     assert.equal(typeof (overlayField as { render?: unknown }).render, 'function');
+  });
+
+  it('correctly manages when rules for overlay trigger fields on all supported blocks', () => {
+    // Image
+    assert.equal(ImageNativeBlock.fields?.overlayId?.when?.({ popupTrigger: false }), false);
+    assert.equal(ImageNativeBlock.fields?.overlayId?.when?.({ popupTrigger: true }), true);
+    assert.equal(ImageNativeBlock.fields?.link?.when?.({ popupTrigger: false }), true);
+    assert.equal(ImageNativeBlock.fields?.link?.when?.({ popupTrigger: true }), false);
+
+    // Gallery
+    assert.equal(GalleryBlock.fields?.overlayId?.when?.({ popupTrigger: false }), false);
+    assert.equal(GalleryBlock.fields?.overlayId?.when?.({ popupTrigger: true }), true);
+    const galleryItemOverlay = (GalleryBlock.fields?.items as any)?.item?.overlayId;
+    assert.ok(galleryItemOverlay);
+    assert.equal(galleryItemOverlay.when?.({}, { popupTrigger: false }), false);
+    assert.equal(galleryItemOverlay.when?.({}, { popupTrigger: true }), true);
+
+    // Video
+    assert.equal(VideoBlock.fields?.overlayId?.when?.({ popupTrigger: false }), false);
+    assert.equal(VideoBlock.fields?.overlayId?.when?.({ popupTrigger: true }), true);
+    assert.equal(VideoBlock.fields?.posterUrl?.when?.({ popupTrigger: false }), false);
+    assert.equal(VideoBlock.fields?.posterUrl?.when?.({ popupTrigger: true }), true);
+
+    // Image morph
+    assert.equal(ImageMorphBlock.fields?.overlayId?.when?.({ popupTrigger: false }), false);
+    assert.equal(ImageMorphBlock.fields?.overlayId?.when?.({ popupTrigger: true }), true);
+
+    // Features list item
+    const featureItemOverlay = (FeaturesBlock.fields?.items as any)?.item?.overlayId;
+    assert.ok(featureItemOverlay);
+    assert.equal(featureItemOverlay.when?.({ popupTrigger: false }), false);
+    assert.equal(featureItemOverlay.when?.({ popupTrigger: true }), true);
+
+    // Team list item
+    const teamItemOverlay = (TeamBlock.fields?.items as any)?.item?.overlayId;
+    assert.ok(teamItemOverlay);
+    assert.equal(teamItemOverlay.when?.({ popupTrigger: false }), false);
+    assert.equal(teamItemOverlay.when?.({ popupTrigger: true }), true);
+
+    // Testimonials list item
+    const testimonialItemOverlay = (TestimonialsBlock.fields?.items as any)?.item?.overlayId;
+    assert.ok(testimonialItemOverlay);
+    assert.equal(testimonialItemOverlay.when?.({ popupTrigger: false }), false);
+    assert.equal(testimonialItemOverlay.when?.({ popupTrigger: true }), true);
+  });
+
+  it('renders triggers with data-overlay-open and allows Gallery item overrides to beat block default', () => {
+    // 1. Image
+    const imgOffHtml = renderToStaticMarkup(
+      createElement(ImageComponent, {
+        url: 'https://example.com/test.jpg',
+        popupTrigger: false,
+        overlayId: 'popup-1',
+      })
+    );
+    assert.ok(!imgOffHtml.includes('data-overlay-open'));
+
+    const imgOnHtml = renderToStaticMarkup(
+      createElement(ImageComponent, {
+        url: 'https://example.com/test.jpg',
+        popupTrigger: true,
+        overlayId: 'popup-1',
+      })
+    );
+    assert.ok(imgOnHtml.includes('data-overlay-open="popup-1"'));
+    assert.ok(imgOnHtml.includes('href="#overlay:popup-1"'));
+
+    // 2. Gallery (item override beats default)
+    const galleryHtml = renderToStaticMarkup(
+      createElement(Gallery, {
+        popupTrigger: true,
+        overlayId: 'default-popup',
+        items: [
+          { url: 'https://example.com/1.jpg' },
+          { url: 'https://example.com/2.jpg', overlayId: 'override-popup' },
+        ],
+      })
+    );
+    assert.ok(galleryHtml.includes('data-overlay-open="default-popup"'));
+    assert.ok(galleryHtml.includes('data-overlay-open="override-popup"'));
+    assert.ok(galleryHtml.includes('href="#overlay:default-popup"'));
+    assert.ok(galleryHtml.includes('href="#overlay:override-popup"'));
+
+    // Gallery with popupTrigger off
+    const galleryOffHtml = renderToStaticMarkup(
+      createElement(Gallery, {
+        popupTrigger: false,
+        overlayId: 'default-popup',
+        items: [
+          { url: 'https://example.com/1.jpg' },
+          { url: 'https://example.com/2.jpg', overlayId: 'override-popup' },
+        ],
+      })
+    );
+    assert.ok(!galleryOffHtml.includes('data-overlay-open'));
+
+    // 3. Features
+    const featuresHtml = renderToStaticMarkup(
+      createElement(Features, {
+        items: [
+          { title: 'Normal feature' },
+          {
+            title: 'Trigger feature',
+            popupTrigger: true,
+            overlayId: 'feat-drawer',
+          },
+        ],
+      })
+    );
+    assert.ok(featuresHtml.includes('data-overlay-open="feat-drawer"'));
+    assert.ok(featuresHtml.includes('href="#overlay:feat-drawer"'));
+
+    // 4. Testimonials
+    const testimonialsHtml = renderToStaticMarkup(
+      createElement(Testimonials, {
+        items: [
+          { quote: 'Normal quote', author: 'Author 1' },
+          {
+            quote: 'Trigger quote',
+            author: 'Author 2',
+            popupTrigger: true,
+            overlayId: 'testi-popup',
+          },
+        ],
+      })
+    );
+    assert.ok(testimonialsHtml.includes('data-overlay-open="testi-popup"'));
+    assert.ok(testimonialsHtml.includes('href="#overlay:testi-popup"'));
+
+    // 5. Team
+    const teamHtml = renderToStaticMarkup(
+      createElement(Team, {
+        items: [
+          { name: 'Alice' },
+          {
+            name: 'Bob',
+            popupTrigger: true,
+            overlayId: 'team-drawer',
+          },
+        ],
+      })
+    );
+    assert.ok(teamHtml.includes('data-overlay-open="team-drawer"'));
+    assert.ok(teamHtml.includes('href="#overlay:team-drawer"'));
+
+    // 6. Video
+    const videoNormalHtml = renderToStaticMarkup(
+      createElement(Video, {
+        url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      })
+    );
+    assert.ok(videoNormalHtml.includes('<iframe'));
+    assert.ok(!videoNormalHtml.includes('data-overlay-open'));
+
+    const videoTriggerHtml = renderToStaticMarkup(
+      createElement(Video, {
+        url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        posterUrl: 'https://example.com/poster.jpg',
+        popupTrigger: true,
+        overlayId: 'vid-popup',
+      })
+    );
+    assert.ok(!videoTriggerHtml.includes('<iframe'));
+    assert.ok(videoTriggerHtml.includes('data-overlay-open="vid-popup"'));
+    assert.ok(videoTriggerHtml.includes('href="#overlay:vid-popup"'));
+    assert.ok(videoTriggerHtml.includes('src="https://example.com/poster.jpg"'));
+
+    // 7. Image morph
+    const morphHtml = renderToStaticMarkup(
+      createElement(ImageMorph, {
+        popupTrigger: true,
+        overlayId: 'morph-popup',
+      })
+    );
+    assert.ok(morphHtml.includes('data-overlay-open="morph-popup"'));
+    assert.ok(morphHtml.includes('href="#overlay:morph-popup"'));
+
+    const morphOffHtml = renderToStaticMarkup(
+      createElement(ImageMorph, {
+        popupTrigger: false,
+        overlayId: 'morph-popup',
+      })
+    );
+    assert.ok(!morphOffHtml.includes('data-overlay-open'));
   });
 });

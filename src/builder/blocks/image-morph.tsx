@@ -8,6 +8,7 @@ import {
   type MorphData,
   type MorphTiming,
 } from '../morph';
+import { OverlayTrigger } from './overlay-trigger';
 import { type SectionSettings, Section } from './section';
 
 type WithSection = { section?: SectionSettings; editing?: boolean };
@@ -15,6 +16,8 @@ type WithSection = { section?: SectionSettings; editing?: boolean };
 export type ImageMorphProps = WithSection & {
   /** The single custom field: effect, shape, timing, and style groups. */
   morph?: MorphData;
+  popupTrigger?: boolean;
+  overlayId?: string;
 };
 
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
@@ -119,51 +122,56 @@ export function ImageMorph(p: ImageMorphProps) {
   return (
     <Section section={p.section} editing={p.editing}>
       <div className="aspect-video w-full">
-        <svg viewBox="0 0 100 100" className="h-full w-full" role="img" aria-label="Morphing shape">
-          <defs>
-            <clipPath id={clipId}>
-              <path d={d} />
-            </clipPath>
-            {m.effect === 'gradient' ? (
-              <linearGradient
-                id={gradientId}
-                x1={(m.gradient.x1 ?? 0) / 100}
-                y1={(m.gradient.y1 ?? 0) / 100}
-                x2={(m.gradient.x2 ?? 0) / 100}
-                y2={(m.gradient.y2 ?? 0) / 100}
-              >
-                <stop offset={String((m.gradient.start ?? 0) / 100)} stopColor={m.gradient.from} />
-                <stop offset={String((m.gradient.end ?? 0) / 100)} stopColor={m.gradient.to} />
-              </linearGradient>
-            ) : null}
-          </defs>
-          {m.effect === 'image' ? (
-            <g clipPath={`url(#${clipId})`} style={imageStyle}>
-              {m.image.url ? (
-                <image
-                  href={m.image.url}
-                  x={0}
-                  y={0}
-                  width="100"
-                  height="100"
-                  preserveAspectRatio="xMidYMid slice"
-                />
+        <OverlayTrigger
+          overlayId={p.popupTrigger ? p.overlayId : undefined}
+          className="block h-full w-full"
+        >
+          <svg viewBox="0 0 100 100" className="h-full w-full" role="img" aria-label="Morphing shape">
+            <defs>
+              <clipPath id={clipId}>
+                <path d={d} />
+              </clipPath>
+              {m.effect === 'gradient' ? (
+                <linearGradient
+                  id={gradientId}
+                  x1={(m.gradient.x1 ?? 0) / 100}
+                  y1={(m.gradient.y1 ?? 0) / 100}
+                  x2={(m.gradient.x2 ?? 0) / 100}
+                  y2={(m.gradient.y2 ?? 0) / 100}
+                >
+                  <stop offset={String((m.gradient.start ?? 0) / 100)} stopColor={m.gradient.from} />
+                  <stop offset={String((m.gradient.end ?? 0) / 100)} stopColor={m.gradient.to} />
+                </linearGradient>
               ) : null}
-            </g>
-          ) : null}
-          {m.effect === 'color' ? (
-            <path
-              d={d}
-              fill={m.color.fill}
-              stroke={m.color.stroke || undefined}
-              strokeWidth={m.color.strokeWidth || undefined}
-              opacity={m.color.opacity}
-            />
-          ) : null}
-          {m.effect === 'gradient' ? (
-            <path d={d} fill={`url(#${gradientId})`} opacity={m.gradient.opacity} />
-          ) : null}
-        </svg>
+            </defs>
+            {m.effect === 'image' ? (
+              <g clipPath={`url(#${clipId})`} style={imageStyle}>
+                {m.image.url ? (
+                  <image
+                    href={m.image.url}
+                    x={0}
+                    y={0}
+                    width="100"
+                    height="100"
+                    preserveAspectRatio="xMidYMid slice"
+                  />
+                ) : null}
+              </g>
+            ) : null}
+            {m.effect === 'color' ? (
+              <path
+                d={d}
+                fill={m.color.fill}
+                stroke={m.color.stroke || undefined}
+                strokeWidth={m.color.strokeWidth || undefined}
+                opacity={m.color.opacity}
+              />
+            ) : null}
+            {m.effect === 'gradient' ? (
+              <path d={d} fill={`url(#${gradientId})`} opacity={m.gradient.opacity} />
+            ) : null}
+          </svg>
+        </OverlayTrigger>
       </div>
     </Section>
   );

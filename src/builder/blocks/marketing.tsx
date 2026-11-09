@@ -3,6 +3,8 @@ import { cn } from '@/lib/utils/cn';
 import { BlockIcon } from '../icons';
 import { resolveLinkProps, type UrlValue } from '../style';
 import { el, orderedParts, type WithSection } from './element';
+import { ItemSlider } from './item-slider-client';
+import { OverlayTrigger } from './overlay-trigger';
 import { PricingToggle } from './pricing-toggle';
 import {
   ButtonLink,
@@ -116,6 +118,14 @@ export function Hero(p: HeroProps) {
   );
 }
 
+export type FeatureItem = {
+  icon?: string;
+  title: string;
+  description?: string;
+  popupTrigger?: boolean;
+  overlayId?: string;
+};
+
 export type FeaturesProps = WithSection &
   CardStyleProps & {
     showIcons?: boolean;
@@ -123,7 +133,7 @@ export type FeaturesProps = WithSection &
     title?: string;
     subtitle?: string;
     columns?: 2 | 3 | 4;
-    items: { icon?: string; title: string; description?: string }[];
+    items: FeatureItem[];
   };
 
 const GRID_COLS = {
@@ -164,19 +174,24 @@ export function Features(p: FeaturesProps) {
               className={cardEl.className}
               style={cardEl.style}
             >
-              {item.icon && p.showIcons !== false && (
-                <div className={iconEl.className} style={iconEl.style}>
-                  <BlockIcon name={item.icon} className="size-5" />
-                </div>
-              )}
-              <h3 className={itemTitleEl.className} style={itemTitleEl.style}>
-                {item.title}
-              </h3>
-              {item.description && (
-                <p className={itemDescEl.className} style={itemDescEl.style}>
-                  {item.description}
-                </p>
-              )}
+              <OverlayTrigger
+                overlayId={item.popupTrigger ? item.overlayId : undefined}
+                className="block h-full w-full"
+              >
+                {item.icon && p.showIcons !== false && (
+                  <div className={iconEl.className} style={iconEl.style}>
+                    <BlockIcon name={item.icon} className="size-5" />
+                  </div>
+                )}
+                <h3 className={itemTitleEl.className} style={itemTitleEl.style}>
+                  {item.title}
+                </h3>
+                {item.description && (
+                  <p className={itemDescEl.className} style={itemDescEl.style}>
+                    {item.description}
+                  </p>
+                )}
+              </OverlayTrigger>
             </MotionItem>
           );
         })}
@@ -393,18 +408,33 @@ export function Pricing(p: PricingProps) {
   );
 }
 
+export type TestimonialsItem = {
+  quote: string;
+  author: string;
+  role?: string;
+  company?: string;
+  avatar?: string;
+  popupTrigger?: boolean;
+  overlayId?: string;
+};
+
 export type TestimonialsProps = WithSection &
   CardStyleProps & {
     columns?: 1 | 2 | 3;
     eyebrow?: string;
     title?: string;
-    items: {
-      quote: string;
-      author: string;
-      role?: string;
-      company?: string;
-      avatar?: string;
-    }[];
+    items: TestimonialsItem[];
+    slider?: boolean;
+    sliderPerView?: number;
+    sliderPerViewTablet?: number;
+    sliderPerViewMobile?: number;
+    sliderGap?: 'sm' | 'md' | 'lg' | 'small' | 'medium' | 'large';
+    sliderAutoplay?: boolean;
+    sliderInterval?: number;
+    sliderPauseOnHover?: boolean;
+    sliderLoop?: boolean;
+    sliderArrows?: boolean;
+    sliderDots?: boolean;
   };
 
 export function Testimonials(p: TestimonialsProps) {
@@ -414,6 +444,72 @@ export function Testimonials(p: TestimonialsProps) {
   const avatarEl = el(p, 'avatar', 'size-11 rounded-full object-cover');
   const roleEl = el(p, 'role', 's-muted text-sm');
 
+  const renderedItems = (p.items ?? []).map((item, i) => {
+    const cardEl = el(p, 'card', cn(cardClass(p), 'flex flex-col p-7 h-full'));
+    return (
+      <MotionItem
+        as="figure"
+        key={i}
+        className={cardEl.className}
+        style={cardEl.style}
+      >
+        <OverlayTrigger
+          overlayId={item.popupTrigger ? item.overlayId : undefined}
+          className="flex h-full flex-col"
+        >
+          {orderedParts(
+            { partOrder: p.partOrder, editing: p.editing && i === 0 },
+            {
+              quote: (
+                <>
+                  <Quote
+                    className={quoteIconEl.className}
+                    style={quoteIconEl.style}
+                    aria-hidden
+                  />
+                  <blockquote
+                    className={quoteEl.className}
+                    style={quoteEl.style}
+                  >
+                    “{item.quote}”
+                  </blockquote>
+                </>
+              ),
+              author: (
+                <figcaption className="mt-6 flex items-center gap-3">
+                  {item.avatar && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={item.avatar}
+                      alt=""
+                      className={avatarEl.className}
+                      style={avatarEl.style}
+                    />
+                  )}
+                  <div>
+                    <p
+                      className={authorEl.className}
+                      style={authorEl.style}
+                    >
+                      {item.author}
+                    </p>
+                    {(item.role || item.company) && (
+                      <p className={roleEl.className} style={roleEl.style}>
+                        {[item.role, item.company]
+                          .filter(Boolean)
+                          .join(', ')}
+                      </p>
+                    )}
+                  </div>
+                </figcaption>
+              ),
+            }
+          )}
+        </OverlayTrigger>
+      </MotionItem>
+    );
+  });
+
   return (
     <Section section={p.section} editing={p.editing} hasItems>
       <SectionHeading
@@ -421,68 +517,28 @@ export function Testimonials(p: TestimonialsProps) {
         eyebrow={p.eyebrow}
         title={p.title}
       />
-      <div className={cn('grid gap-6', ITEM_GRID_COLS[p.columns ?? 2])}>
-        {(p.items ?? []).map((item, i) => {
-          const cardEl = el(p, 'card', cn(cardClass(p), 'flex flex-col p-7'));
-          return (
-            <MotionItem
-              as="figure"
-              key={i}
-              className={cardEl.className}
-              style={cardEl.style}
-            >
-              {orderedParts(
-                { partOrder: p.partOrder, editing: p.editing && i === 0 },
-                {
-                  quote: (
-                    <>
-                      <Quote
-                        className={quoteIconEl.className}
-                        style={quoteIconEl.style}
-                        aria-hidden
-                      />
-                      <blockquote
-                        className={quoteEl.className}
-                        style={quoteEl.style}
-                      >
-                        “{item.quote}”
-                      </blockquote>
-                    </>
-                  ),
-                  author: (
-                    <figcaption className="mt-6 flex items-center gap-3">
-                      {item.avatar && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={item.avatar}
-                          alt=""
-                          className={avatarEl.className}
-                          style={avatarEl.style}
-                        />
-                      )}
-                      <div>
-                        <p
-                          className={authorEl.className}
-                          style={authorEl.style}
-                        >
-                          {item.author}
-                        </p>
-                        {(item.role || item.company) && (
-                          <p className={roleEl.className} style={roleEl.style}>
-                            {[item.role, item.company]
-                              .filter(Boolean)
-                              .join(', ')}
-                          </p>
-                        )}
-                      </div>
-                    </figcaption>
-                  ),
-                }
-              )}
-            </MotionItem>
-          );
-        })}
-      </div>
+      {p.slider ? (
+        <ItemSlider
+          sliderPerView={p.sliderPerView ?? 2}
+          sliderPerViewTablet={p.sliderPerViewTablet ?? 2}
+          sliderPerViewMobile={p.sliderPerViewMobile ?? 1}
+          sliderGap={p.sliderGap}
+          sliderAutoplay={p.sliderAutoplay}
+          sliderInterval={p.sliderInterval}
+          sliderPauseOnHover={p.sliderPauseOnHover}
+          sliderLoop={p.sliderLoop}
+          sliderArrows={p.sliderArrows}
+          sliderDots={p.sliderDots}
+          elements={p.elements}
+          editing={p.editing}
+        >
+          {renderedItems}
+        </ItemSlider>
+      ) : (
+        <div className={cn('grid gap-6', ITEM_GRID_COLS[p.columns ?? 2])}>
+          {renderedItems}
+        </div>
+      )}
     </Section>
   );
 }
@@ -651,6 +707,17 @@ export type LogoCloudProps = WithSection & {
   title?: string;
   subtitle?: string;
   items?: LogoCloudItem[];
+  slider?: boolean;
+  sliderPerView?: number;
+  sliderPerViewTablet?: number;
+  sliderPerViewMobile?: number;
+  sliderGap?: 'sm' | 'md' | 'lg' | 'small' | 'medium' | 'large';
+  sliderAutoplay?: boolean;
+  sliderInterval?: number;
+  sliderPauseOnHover?: boolean;
+  sliderLoop?: boolean;
+  sliderArrows?: boolean;
+  sliderDots?: boolean;
 };
 
 export function LogoCloud(p: LogoCloudProps) {
@@ -664,6 +731,37 @@ export function LogoCloud(p: LogoCloudProps) {
     )
   );
 
+  const renderedItems = items.map((item, i) => (
+    <MotionItem
+      key={i}
+      as="div"
+      className="flex items-center justify-center h-full"
+    >
+      {item.link ? (
+        <a
+          {...resolveLinkProps(item.link)}
+          className="flex items-center justify-center"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={item.url}
+            alt={item.alt ?? ''}
+            className={logoEl.className}
+            style={logoEl.style}
+          />
+        </a>
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={item.url}
+          alt={item.alt ?? ''}
+          className={logoEl.className}
+          style={logoEl.style}
+        />
+      )}
+    </MotionItem>
+  ));
+
   return (
     <Section section={p.section} editing={p.editing} hasItems>
       <SectionHeading
@@ -675,38 +773,28 @@ export function LogoCloud(p: LogoCloudProps) {
         partOrder={p.partOrder}
         editing={p.editing}
       />
-      <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
-        {items.map((item, i) => (
-          <MotionItem
-            key={i}
-            as="div"
-            className="flex items-center justify-center"
-          >
-            {item.link ? (
-              <a
-                {...resolveLinkProps(item.link)}
-                className="flex items-center justify-center"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={item.url}
-                  alt={item.alt ?? ''}
-                  className={logoEl.className}
-                  style={logoEl.style}
-                />
-              </a>
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={item.url}
-                alt={item.alt ?? ''}
-                className={logoEl.className}
-                style={logoEl.style}
-              />
-            )}
-          </MotionItem>
-        ))}
-      </div>
+      {p.slider ? (
+        <ItemSlider
+          sliderPerView={p.sliderPerView ?? 5}
+          sliderPerViewTablet={p.sliderPerViewTablet ?? 3}
+          sliderPerViewMobile={p.sliderPerViewMobile ?? 2}
+          sliderGap={p.sliderGap}
+          sliderAutoplay={p.sliderAutoplay}
+          sliderInterval={p.sliderInterval}
+          sliderPauseOnHover={p.sliderPauseOnHover}
+          sliderLoop={p.sliderLoop}
+          sliderArrows={p.sliderArrows}
+          sliderDots={p.sliderDots}
+          elements={p.elements}
+          editing={p.editing}
+        >
+          {renderedItems}
+        </ItemSlider>
+      ) : (
+        <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
+          {renderedItems}
+        </div>
+      )}
     </Section>
   );
 }
@@ -719,6 +807,8 @@ export type TeamItem = {
   photo?: string;
   name?: string;
   role?: string;
+  popupTrigger?: boolean;
+  overlayId?: string;
 };
 
 export type TeamProps = WithSection &
@@ -727,6 +817,17 @@ export type TeamProps = WithSection &
     eyebrow?: string;
     title?: string;
     items?: TeamItem[];
+    slider?: boolean;
+    sliderPerView?: number;
+    sliderPerViewTablet?: number;
+    sliderPerViewMobile?: number;
+    sliderGap?: 'sm' | 'md' | 'lg' | 'small' | 'medium' | 'large';
+    sliderAutoplay?: boolean;
+    sliderInterval?: number;
+    sliderPauseOnHover?: boolean;
+    sliderLoop?: boolean;
+    sliderArrows?: boolean;
+    sliderDots?: boolean;
   };
 
 export function Team(p: TeamProps) {
@@ -734,6 +835,43 @@ export function Team(p: TeamProps) {
   const photoEl = el(p, 'photo', 's-radius mx-auto size-20 object-cover');
   const nameEl = el(p, 'name', 'mt-3 font-semibold');
   const roleEl = el(p, 'role', 's-muted mt-1 text-sm');
+
+  const renderedItems = items.map((item, i) => {
+    const cardEl = el(p, 'card', cn(cardClass(p), 'p-6 text-center h-full'));
+    return (
+      <MotionItem
+        key={i}
+        as="div"
+        className={cardEl.className}
+        style={cardEl.style}
+      >
+        <OverlayTrigger
+          overlayId={item.popupTrigger ? item.overlayId : undefined}
+          className="block h-full w-full"
+        >
+          {item.photo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={item.photo}
+              alt={item.name ?? ''}
+              className={photoEl.className}
+              style={photoEl.style}
+            />
+          ) : null}
+          {item.name ? (
+            <p className={nameEl.className} style={nameEl.style}>
+              {item.name}
+            </p>
+          ) : null}
+          {item.role ? (
+            <p className={roleEl.className} style={roleEl.style}>
+              {item.role}
+            </p>
+          ) : null}
+        </OverlayTrigger>
+      </MotionItem>
+    );
+  });
 
   return (
     <Section section={p.section} editing={p.editing} hasItems>
@@ -745,44 +883,33 @@ export function Team(p: TeamProps) {
         editing={p.editing}
       />
       {items.length ? (
-        <div
-          className={cn(
-            'grid gap-6 sm:grid-cols-2',
-            { 2: '', 3: 'lg:grid-cols-3', 4: 'lg:grid-cols-4' }[p.columns ?? 3]
-          )}
-        >
-          {items.map((item, i) => {
-            const cardEl = el(p, 'card', cn(cardClass(p), 'p-6 text-center'));
-            return (
-              <MotionItem
-                key={i}
-                as="div"
-                className={cardEl.className}
-                style={cardEl.style}
-              >
-                {item.photo ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={item.photo}
-                    alt={item.name ?? ''}
-                    className={photoEl.className}
-                    style={photoEl.style}
-                  />
-                ) : null}
-                {item.name ? (
-                  <p className={nameEl.className} style={nameEl.style}>
-                    {item.name}
-                  </p>
-                ) : null}
-                {item.role ? (
-                  <p className={roleEl.className} style={roleEl.style}>
-                    {item.role}
-                  </p>
-                ) : null}
-              </MotionItem>
-            );
-          })}
-        </div>
+        p.slider ? (
+          <ItemSlider
+            sliderPerView={p.sliderPerView ?? 3}
+            sliderPerViewTablet={p.sliderPerViewTablet ?? 2}
+            sliderPerViewMobile={p.sliderPerViewMobile ?? 1}
+            sliderGap={p.sliderGap}
+            sliderAutoplay={p.sliderAutoplay}
+            sliderInterval={p.sliderInterval}
+            sliderPauseOnHover={p.sliderPauseOnHover}
+            sliderLoop={p.sliderLoop}
+            sliderArrows={p.sliderArrows}
+            sliderDots={p.sliderDots}
+            elements={p.elements}
+            editing={p.editing}
+          >
+            {renderedItems}
+          </ItemSlider>
+        ) : (
+          <div
+            className={cn(
+              'grid gap-6 sm:grid-cols-2',
+              { 2: '', 3: 'lg:grid-cols-3', 4: 'lg:grid-cols-4' }[p.columns ?? 3]
+            )}
+          >
+            {renderedItems}
+          </div>
+        )
       ) : p.editing ? (
         <div className="s-surface s-border s-muted s-radius flex aspect-[16/9] items-center justify-center border border-dashed text-sm">
           Add team members in the sidebar

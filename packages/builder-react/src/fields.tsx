@@ -415,6 +415,7 @@ function ListField({
   value,
   onChange,
   readOnly,
+  props: blockProps,
 }: FieldProps<Record<string, unknown>[] | undefined>) {
   const list = field.type === 'list' ? field : undefined;
   const items = value ?? [];
@@ -515,6 +516,7 @@ function ListField({
                     field={inner}
                     value={item[key]}
                     props={item}
+                    parentProps={blockProps}
                     readOnly={readOnly}
                     onChange={next =>
                       update(
@@ -1425,6 +1427,7 @@ export function FieldControl({
   value,
   onChange,
   props,
+  parentProps,
   readOnly,
   bare = false,
 }: {
@@ -1433,6 +1436,7 @@ export function FieldControl({
   value: unknown;
   onChange: (value: unknown) => void;
   props: Record<string, unknown>;
+  parentProps?: Record<string, unknown>;
   readOnly?: boolean;
   bare?: boolean;
 }) {
@@ -1440,7 +1444,7 @@ export function FieldControl({
   const device = useContext(DeviceContext);
   const dynamicDefaults = useContext(DynamicSourcesContext);
   const e12 = useE12Controls();
-  if (field.when && !field.when(props)) return null;
+  if (field.when && !field.when(props, parentProps)) return null;
   const activeTypes = e12
     ? { ...E12_BUILT_IN_FIELDS, ...types }
     : { ...BUILT_IN_FIELDS, ...E12_FIELD_COMPONENTS, ...types };
@@ -1448,7 +1452,14 @@ export function FieldControl({
     activeTypes.text) as unknown as ComponentType<FieldProps<unknown>>;
   const id = fieldControlId(name);
   const responsive = !!field.responsive;
-  const shown = responsive ? valueForDevice(value, device) : value;
+  const stored = responsive ? valueForDevice(value, device) : value;
+  const shown =
+    stored === undefined &&
+    (field.type === 'toggle' ||
+      field.type === 'select' ||
+      field.type === 'radio')
+      ? field.defaultValue
+      : stored;
   const source = responsive ? inheritedFrom(value, device) : null;
   const own = responsive && source === device;
   const isContainer = field.type === 'list' || field.type === 'object';
