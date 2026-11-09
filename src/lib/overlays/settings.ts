@@ -1,3 +1,4 @@
+import { readOverlayLayout } from './layout-style';
 import {
   DEFAULT_DRAWER_SETTINGS,
   DEFAULT_POPUP_SETTINGS,
@@ -114,23 +115,14 @@ export function normalizeOverlaySettings(
       position:
         (str(layout.position) as OverlaySettings['layout']['position']) ??
         d.layout.position,
-      width: str(layout.width) ?? d.layout.width,
-      maxHeight: str(layout.maxHeight) ?? d.layout.maxHeight,
+      ...readOverlayLayout(layout, category),
       overlay: bool(layout.overlay, d.layout.overlay),
-      overlayColor: str(layout.overlayColor) ?? d.layout.overlayColor,
       closeOnOverlay: bool(layout.closeOnOverlay, d.layout.closeOnOverlay),
       closeOnEsc: bool(layout.closeOnEsc, d.layout.closeOnEsc),
       showCloseButton: bool(layout.showCloseButton, d.layout.showCloseButton),
       animation:
         (str(layout.animation) as OverlaySettings['layout']['animation']) ??
         d.layout.animation,
-      radius:
-        (str(layout.radius) as OverlaySettings['layout']['radius']) ??
-        d.layout.radius,
-      padding:
-        (str(layout.padding) as OverlaySettings['layout']['padding']) ??
-        d.layout.padding,
-      background: str(layout.background) ?? d.layout.background,
     },
     trigger: {
       type:

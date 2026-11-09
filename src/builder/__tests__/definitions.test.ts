@@ -21,6 +21,7 @@ import {
   pageRootFields,
   pageSchemas,
   editorSetup,
+  getOverlayRootFields,
 } from '../definitions';
 import {
   contentSectionControls,
@@ -131,6 +132,60 @@ describe('page block definitions', () => {
     );
     assert.equal(fieldsOf(pageDefinitions.Spacer).height.type, 'number');
     assert.ok(pageRootFields.maxWidth);
+  });
+
+  it('gives the page root fields title on page fields only, with tab and section placement', () => {
+    // title is on pageRootFields only
+    assert.ok(pageRootFields.title);
+    assert.equal(pageRootFields.title.type, 'text');
+    assert.equal(pageRootFields.title.tab, 'content');
+    assert.equal(pageRootFields.title.section, 'Page');
+
+    const pageSetup = editorSetup('page');
+    assert.ok(pageSetup.rootFields.title);
+
+    const postSetup = editorSetup('post');
+    assert.equal(postSetup.rootFields.title, undefined);
+
+    const entrySetup = editorSetup('entry');
+    assert.equal(entrySetup.rootFields.title, undefined);
+
+    // root fields have the new tab and section
+    assert.equal(pageRootFields.maxWidth.tab, 'style');
+    assert.equal(pageRootFields.maxWidth.section, 'Layout');
+
+    assert.equal(pageRootFields.paddingY.tab, 'style');
+    assert.equal(pageRootFields.paddingY.section, 'Layout');
+
+    assert.equal(pageRootFields.theme.tab, 'style');
+    assert.equal(pageRootFields.theme.section, 'Appearance');
+
+    assert.equal(pageRootFields.pageTransition.tab, 'advanced');
+    assert.equal(pageRootFields.pageTransition.section, 'Motion');
+  });
+
+  it('uses the global style controls for popup and drawer layout', () => {
+    const fields = getOverlayRootFields('drawer');
+    for (const key of [
+      'width',
+      'maxHeight',
+      'background',
+      'padding',
+      'radius',
+      'overlayColor',
+    ]) {
+      assert.equal(fields[key].type, 'custom', key);
+    }
+
+    const at = (position: string) => ({ layout: { position } });
+    assert.equal(fields.width.when?.(at('right')), true);
+    assert.equal(fields.width.when?.(at('top')), false);
+    assert.equal(fields.maxHeight.when?.(at('left')), false);
+    assert.equal(fields.maxHeight.when?.(at('bottom')), true);
+
+    const popup = getOverlayRootFields('popup');
+    assert.equal(popup.width.when?.(at('top')), true);
+    assert.equal(popup.maxHeight.when?.(at('center')), true);
   });
 
   it('show conditional fields only when they apply', () => {

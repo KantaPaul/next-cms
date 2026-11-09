@@ -83,6 +83,11 @@ import {
   E12ControlsProvider,
 } from '@nextcms/builder-react';
 import { PreferencesPanel } from '@nextcms/builder-react';
+import {
+  readOverlayLayout,
+  resolveBackdropColor,
+  resolveOverlayPanelStyle,
+} from '@/lib/overlays/layout-style';
 import { cn } from '@/lib/utils/cn';
 import {
   Button as ChromeButton,
@@ -241,6 +246,10 @@ function EditorSiteRoot({
   const rootProps = useEditor(state => state.doc.root.props);
   const width = Number(rootProps?.previewWidth) || 400;
   const layout = ((rootProps as any)?.layout ?? {}) as Record<string, any>;
+  const overlayCategory = overlayKind === 'drawer' ? 'Drawer' : 'Popup';
+  const overlayLayout = overlayKind
+    ? readOverlayLayout(layout, overlayCategory)
+    : null;
   return (
     <EntryProvider entry={collectionEntry ?? null}>
       <SiteRoot rootProps={rootProps} metadata={{ ...metadata, editing: true }}>
@@ -304,7 +313,7 @@ function EditorSiteRoot({
               style={{
                 backgroundColor:
                   layout.overlay !== false
-                    ? layout.overlayColor || 'rgba(0,0,0,0.45)'
+                    ? resolveBackdropColor(overlayLayout?.overlayColor)
                     : 'transparent',
               }}
             />
@@ -312,7 +321,7 @@ function EditorSiteRoot({
             {/* Overlay preview container */}
             <div
               className={cn(
-                'absolute z-20 overflow-y-auto shadow-2xl transition-all',
+                's-ov-panel absolute z-20 max-w-full overflow-y-auto shadow-2xl transition-all',
                 overlayKind === 'drawer'
                   ? layout.position === 'left'
                     ? 'top-0 left-0 bottom-0 h-full border-r'
@@ -333,35 +342,17 @@ function EditorSiteRoot({
                             ? 'top-6 left-1/2 -translate-x-1/2 border'
                             : layout.position === 'bottom'
                               ? 'bottom-6 left-1/2 -translate-x-1/2 border'
-                              : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border',
-                layout.radius === 'none'
-                  ? 'rounded-none'
-                  : layout.radius === 'sm'
-                    ? 'rounded-md'
-                    : layout.radius === 'lg'
-                      ? 'rounded-2xl'
-                      : layout.radius === 'full'
-                        ? 'rounded-3xl'
-                        : 'rounded-xl',
-                layout.padding === 'none'
-                  ? 'p-0'
-                  : layout.padding === 'sm'
-                    ? 'p-3'
-                    : layout.padding === 'lg'
-                      ? 'p-8'
-                      : 'p-6'
+                              : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border'
               )}
               style={{
-                width:
-                  overlayKind === 'drawer' &&
-                  (layout.position === 'top' || layout.position === 'bottom')
-                    ? '100%'
-                    : layout.width ||
-                      (overlayKind === 'drawer' ? '400px' : '480px'),
-                maxHeight:
-                  layout.maxHeight ||
-                  (overlayKind === 'drawer' ? '100%' : '90vh'),
-                backgroundColor: layout.background || 'var(--site-bg, #ffffff)',
+                ...(overlayLayout
+                  ? resolveOverlayPanelStyle(
+                      overlayLayout,
+                      overlayCategory,
+                      layout.position
+                    )
+                  : undefined),
+                backgroundColor: overlayLayout?.background,
               }}
             >
               {children}
@@ -956,11 +947,15 @@ export function NewEditor({
   const [focusMode, setFocusMode] = useState(false);
   const [zoom, setZoom] = useState(100);
   const [isPreview, setIsPreview] = useState(false);
-  const [documentTitle, setDocumentTitle] = useState(page.title);
+  const rootTitle = useSyncExternalStore(
+    store.subscribe,
+    () => store.getState().doc.root?.props?.title as string | undefined,
+    () => store.getState().doc.root?.props?.title as string | undefined
+  );
+  const documentTitle = rootTitle || page.title;
 
   const handleRenameDocument = useCallback(
     (name: string) => {
-      setDocumentTitle(name);
       page.title = name;
       store.updateRootProps({ title: name });
     },
@@ -1480,6 +1475,8 @@ export function NewEditor({
             rootLabel={adapter.label ?? 'Page'}
             blocks={setup.inspectorBlocks}
             rootFields={setup.rootFields}
+            rootDefaultProps={kind === 'page' ? { title: page.title } : undefined}
+            settingsHref={kind === 'page' ? `/dashboard/pages/${page.id}/edit` : undefined}
             empty={
               <p className="mb-2 text-xs text-steel-500">
                 Select a block to edit it.
@@ -1729,6 +1726,8 @@ export function NewEditor({
         blocks={setup.inspectorBlocks}
         rootFields={setup.rootFields}
         rootLabel={adapter.label ?? 'Page'}
+        rootDefaultProps={kind === 'page' ? { title: page.title } : undefined}
+        settingsHref={kind === 'page' ? `/dashboard/pages/${page.id}/edit` : undefined}
         categories={setup.groups}
         templates={customTemplates}
         onSaveTemplate={handleSaveTemplate}
@@ -2049,6 +2048,8 @@ export function NewEditor({
                   blocks={setup.inspectorBlocks}
                   rootFields={setup.rootFields}
                   rootLabel={adapter.label ?? 'Page'}
+                  rootDefaultProps={kind === 'page' ? { title: page.title } : undefined}
+                  settingsHref={kind === 'page' ? `/dashboard/pages/${page.id}/edit` : undefined}
                   categories={setup.groups}
                   templates={customTemplates}
                   onSaveTemplate={handleSaveTemplate}
@@ -2070,6 +2071,8 @@ export function NewEditor({
                   blocks={setup.inspectorBlocks}
                   rootFields={setup.rootFields}
                   rootLabel={adapter.label ?? 'Page'}
+                  rootDefaultProps={kind === 'page' ? { title: page.title } : undefined}
+                  settingsHref={kind === 'page' ? `/dashboard/pages/${page.id}/edit` : undefined}
                   categories={setup.groups}
                   templates={customTemplates}
                   onSaveTemplate={handleSaveTemplate}

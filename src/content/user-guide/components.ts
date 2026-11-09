@@ -75,9 +75,15 @@ const BLOCKS: Record<string, BlockNote> = {
   },
   Gallery: {
     label: 'Gallery',
-    use: 'A grid of images that open in a lightbox.',
+    use: 'A grid of images that open in a <a href="#guide-blocks-content">lightbox</a>.',
     settings:
       'Columns, gap, images, and popup/drawer trigger with per-image override.',
+  },
+  LightboxImage: {
+    label: 'Lightbox image',
+    use: 'Displays the clicked picture from an Image or Gallery block inside a popup or drawer, with navigation, zoom, and thumbnails.',
+    settings:
+      'Fallback image, navigation arrows and counter, zoom, caption position, thumbnails, and element styles.',
   },
   Video: {
     label: 'Video',
@@ -346,6 +352,7 @@ const CATEGORY_TOPICS: {
       'RichText',
       'Image',
       'Gallery',
+      'LightboxImage',
       'Video',
       'VideoLibrary',
       'Embed',

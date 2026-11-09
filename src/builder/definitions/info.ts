@@ -99,6 +99,17 @@ export const BLOCK_INFO: Record<string, BlockInfo> = {
     semanticTag: 'div',
     defaultSize: FULL,
   },
+  LightboxImage: {
+    description: 'Dynamic lightbox image viewer for popups and drawers',
+    capabilities: [
+      'Shows clicked Image or Gallery picture',
+      'Next/previous navigation and swipe',
+      'Click or pinch to zoom and pan',
+      'Thumbnail strip and counter',
+    ],
+    semanticTag: 'figure',
+    defaultSize: FULL,
+  },
   Slider: {
     description: 'Slides with navigation',
     capabilities: ['Blocks inside each slide', 'Arrows, dots, and autoplay'],

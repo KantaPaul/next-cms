@@ -13,6 +13,7 @@ export * from './dashboard-adapters';
 export * from './dashboard-data';
 export * from './dashboard-memory';
 export * from './dashboard-shell';
+export * from './device-switch';
 export * from './dom';
 export * from './drag';
 export * from './drop';
@@ -44,6 +45,7 @@ export * from './version-compare';
 // Views (E12 single-panel layout)
 export * from './elements-view';
 export * from './layers-view';
+export * from './settings-panel';
 export * from './settings-view';
 export * from './page-settings-view';
 export * from './history-view';

@@ -1,11 +1,18 @@
 import type { AnchorHTMLAttributes, ReactNode } from 'react';
 import { overlayHref } from '@/lib/overlays/href';
 
+export type OverlayTriggerLightbox = {
+  image?: string | null;
+  alt?: string | null;
+  caption?: string | null;
+};
+
 export type OverlayTriggerProps = Omit<
   AnchorHTMLAttributes<HTMLAnchorElement>,
   'href'
 > & {
   overlayId?: string | null;
+  lightbox?: OverlayTriggerLightbox;
   children: ReactNode;
 };
 
@@ -15,6 +22,7 @@ export type OverlayTriggerProps = Omit<
  */
 export function OverlayTrigger({
   overlayId,
+  lightbox,
   children,
   ...rest
 }: OverlayTriggerProps) {
@@ -29,6 +37,9 @@ export function OverlayTrigger({
       href={overlayHref(id)}
       data-overlay-open={id}
       aria-haspopup="dialog"
+      data-overlay-image={lightbox?.image || undefined}
+      data-overlay-alt={lightbox?.alt || undefined}
+      data-overlay-caption={lightbox?.caption || undefined}
       {...rest}
     >
       {children}

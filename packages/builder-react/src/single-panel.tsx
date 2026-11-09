@@ -38,11 +38,12 @@ import { useEditor, useEditorStore } from './context';
 import type { DragController } from './drag';
 import { type BlockCategory, ElementsView } from './elements-view';
 import { HistoryView } from './history-view';
-import { type InspectorBlock, RootInspector } from './inspector';
+import type { InspectorBlock } from './inspector';
 import { LayersView } from './layers-view';
 import { PageSettingsView } from './page-settings-view';
 import type { SaveQueue } from './save';
 import { SettingsView } from './settings-view';
+import type { FieldComponent } from './fields';
 import {
   TemplateLibraryView,
   type TemplateItem,
@@ -65,6 +66,9 @@ export interface SinglePanelProps {
   /** Document settings (root fields), shown in the Page view. */
   rootFields?: Record<string, FieldDef>;
   rootLabel?: string;
+  rootDefaultProps?: Record<string, unknown>;
+  settingsHref?: string;
+  fieldTypes?: Record<string, FieldComponent>;
   categories?: BlockCategory[];
   templates?: TemplateItem[];
   onApplyTemplate?: (template: TemplateItem) => void;
@@ -112,6 +116,9 @@ export function SinglePanel({
   blocks,
   rootFields,
   rootLabel,
+  rootDefaultProps,
+  settingsHref,
+  fieldTypes,
   categories,
   templates,
   onApplyTemplate,
@@ -431,14 +438,16 @@ export function SinglePanel({
             onDeleteTemplate={onDeleteTemplate}
           />
         )}
-        {activeMode === 'settings' && <SettingsView blocks={blocks} />}
+        {activeMode === 'settings' && (
+          <SettingsView blocks={blocks} fieldTypes={fieldTypes} />
+        )}
         {activeMode === 'page' && (
           <PageSettingsView
-            customRootFields={
-              rootFields && Object.keys(rootFields).length ? (
-                <RootInspector fields={rootFields} label={rootLabel} />
-              ) : undefined
-            }
+            fields={rootFields}
+            label={rootLabel}
+            defaultProps={rootDefaultProps}
+            settingsHref={settingsHref}
+            fieldTypes={fieldTypes}
           />
         )}
         {activeMode === 'history' && <HistoryView queue={queue} />}

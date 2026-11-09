@@ -29,7 +29,20 @@ import {
   shouldShow,
   writeOverlayStorage,
 } from '@/lib/overlays/frequency';
+import {
+  resolveBackdropColor,
+  resolveOverlayPanelStyle,
+} from '@/lib/overlays/layout-style';
 import type { OverlaySettings } from '@/lib/overlays/types';
+import {
+  collectLightboxItems,
+  LightboxProvider,
+  type LightboxContextValue,
+} from '@/components/site/lightbox-context';
+
+/** Clicks on these close the overlay or work its controls, so they aren't conversions. */
+export const NOT_A_CONVERSION =
+  '[data-overlay-close],[data-slot="dialog-close"],[data-overlay-dismiss],[data-overlay-ui]';
 
 export type OverlayHostItem = {
   id: string;
@@ -89,23 +102,12 @@ const POPUP_POSITION: Record<string, string> = {
     'top-auto bottom-8 left-auto right-8 translate-x-0 translate-y-0',
 };
 
-const RADIUS: Record<string, string> = {
-  none: 'rounded-none',
-  sm: 'rounded-md',
-  md: 'rounded-xl',
-  lg: 'rounded-2xl',
-  full: 'rounded-3xl',
-};
-
-const PADDING: Record<string, string> = {
-  none: 'p-0',
-  sm: 'p-4',
-  md: 'p-6',
-  lg: 'p-8 sm:p-10',
-};
-
 export function OverlayHost({ overlays }: { overlays: OverlayHostItem[] }) {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [lightboxData, setLightboxData] = useState<
+    Record<string, LightboxContextValue>
+  >({});
+  const lightboxDataRef = useRef<Record<string, LightboxContextValue>>({});
 
   // Mutable mirrors so trigger listeners never need to re-subscribe when an
   // overlay opens or closes (which would restart delay timers and re-arm exit intent).
@@ -167,6 +169,13 @@ export function OverlayHost({ overlays }: { overlays: OverlayHostItem[] }) {
     if (overlay) report(overlay, 'close');
     activeRef.current = null;
     setActiveId(null);
+    delete lightboxDataRef.current[id];
+    setLightboxData(prev => {
+      if (!prev[id]) return prev;
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
     const next = queueRef.current.shift();
     // Let the exit animation finish before the next one opens.
     if (next) window.setTimeout(() => open(next), 300);
@@ -182,7 +191,7 @@ export function OverlayHost({ overlays }: { overlays: OverlayHostItem[] }) {
       if (!target) return;
       if (
         target.closest(
-          '[data-overlay-close],[data-slot="dialog-close"],[data-overlay-dismiss]'
+          NOT_A_CONVERSION
         )
       )
         return;
@@ -216,25 +225,38 @@ export function OverlayHost({ overlays }: { overlays: OverlayHostItem[] }) {
         return;
       }
 
-      const opener = target.closest<HTMLElement>('[data-overlay-open]');
-      const openerId = opener?.getAttribute('data-overlay-open');
-
-      if (openerId) {
-        event.preventDefault();
-        open(openerId, true);
-        return;
+      const opener = target.closest<HTMLElement>(
+        '[data-overlay-open],a[href^="#overlay:"]'
+      );
+      let openerId: string | null = null;
+      if (opener) {
+        openerId = opener.getAttribute('data-overlay-open');
+        if (!openerId) {
+          const href = opener.getAttribute('href');
+          if (href?.startsWith('#overlay:')) {
+            openerId = href.slice('#overlay:'.length).trim() || null;
+          }
+        }
       }
 
-      const href = target.closest('a')?.getAttribute('href');
-
-      if (href?.startsWith('#overlay:')) {
-        const id = href.slice('#overlay:'.length).trim();
-
-        if (id) {
-          event.preventDefault();
-          open(id, true);
-          return;
+      if (openerId && opener) {
+        event.preventDefault();
+        const lightbox = collectLightboxItems(opener);
+        const id = openerId;
+        if (lightbox) {
+          lightboxDataRef.current[id] = lightbox;
+          setLightboxData(prev => ({ ...prev, [id]: lightbox }));
+        } else {
+          delete lightboxDataRef.current[id];
+          setLightboxData(prev => {
+            if (!prev[id]) return prev;
+            const next = { ...prev };
+            delete next[id];
+            return next;
+          });
         }
+        open(openerId, true);
+        return;
       }
 
       for (const overlay of overlaysRef.current) {
@@ -367,12 +389,14 @@ export function OverlayHost({ overlays }: { overlays: OverlayHostItem[] }) {
       if (!layout.closeOnEsc) event.preventDefault();
     },
   };
+  const backdropColor = resolveBackdropColor(layout.overlayColor);
   const overlayStyle: CSSProperties = layout.overlay
-    ? layout.overlayColor
-      ? { backgroundColor: layout.overlayColor }
+    ? backdropColor
+      ? { backgroundColor: backdropColor }
       : {}
     : { display: 'none' };
   const background = layout.background || undefined;
+  const panelStyle = resolveOverlayPanelStyle(layout, category, layout.position);
 
   // Rendered after the content (with a z-index) so a block's own background can't cover it.
   const closeButton =
@@ -387,6 +411,13 @@ export function OverlayHost({ overlays }: { overlays: OverlayHostItem[] }) {
         <X className="size-4" aria-hidden />
       </button>
     ) : null;
+
+  const currentLightbox = activeId ? lightboxData[activeId] ?? null : null;
+  const contentWithLightbox = (
+    <LightboxProvider value={currentLightbox}>
+      {renderedContent}
+    </LightboxProvider>
+  );
 
   if (category === 'Drawer') {
     const side =
@@ -409,14 +440,12 @@ export function OverlayHost({ overlays }: { overlays: OverlayHostItem[] }) {
           showCloseButton={false}
           overlayStyle={overlayStyle}
           className={cn(
-            'overflow-y-auto shadow-2xl',
-            PADDING[layout.padding ?? 'md'],
+            's-ov-panel overflow-y-auto shadow-2xl',
             noAnimation && '!animate-none !duration-0'
           )}
           style={{
-            width: horizontal ? layout.width || '400px' : undefined,
+            ...panelStyle,
             maxWidth: horizontal ? '100vw' : undefined,
-            maxHeight: horizontal ? undefined : layout.maxHeight || '80vh',
             backgroundColor: background,
           }}
           onClick={onInteract}
@@ -428,7 +457,7 @@ export function OverlayHost({ overlays }: { overlays: OverlayHostItem[] }) {
               <SheetTitle>{name}</SheetTitle>
             </SheetHeader>
           </VisuallyHidden>
-          {renderedContent}
+          {contentWithLightbox}
           {closeButton}
         </SheetContent>
       </Sheet>
@@ -447,18 +476,15 @@ export function OverlayHost({ overlays }: { overlays: OverlayHostItem[] }) {
         showCloseButton={false}
         overlayStyle={overlayStyle}
         className={cn(
-          'block overflow-y-auto shadow-2xl sm:max-w-none',
+          's-ov-panel block overflow-y-auto shadow-2xl sm:max-w-none',
           POPUP_POSITION[layout.position] ?? POPUP_POSITION.center,
-          RADIUS[layout.radius ?? 'md'],
-          PADDING[layout.padding ?? 'md'],
           layout.animation === 'fade' &&
             'data-[state=open]:zoom-in-100 data-[state=closed]:zoom-out-100',
           noAnimation && '!animate-none !duration-0'
         )}
         style={{
-          width: layout.width || '480px',
+          ...panelStyle,
           maxWidth: 'calc(100vw - 2rem)',
-          maxHeight: layout.maxHeight || '90vh',
           backgroundColor: background,
         }}
         onClick={onInteract}
@@ -470,7 +496,7 @@ export function OverlayHost({ overlays }: { overlays: OverlayHostItem[] }) {
             <DialogTitle>{name}</DialogTitle>
           </DialogHeader>
         </VisuallyHidden>
-        {renderedContent}
+        {contentWithLightbox}
         {closeButton}
       </DialogContent>
     </Dialog>

@@ -1,3 +1,10 @@
+import type {
+  LengthUnit,
+  Responsive,
+  Sides,
+  SpacingUnit,
+} from '@/builder/style';
+
 export {
   OVERLAY_HREF_PREFIX,
   overlayHref,
@@ -33,18 +40,40 @@ export type DrawerPosition = 'left' | 'right' | 'top' | 'bottom';
 
 export type OverlayPosition = PopupPosition | DrawerPosition;
 
+/** A per-device length. An empty `value` means "not set" (see `layout-style.ts`). */
+export type OverlayLength = {
+  value?: Responsive<number>;
+  unit?: LengthUnit;
+};
+
+export type OverlayPadding = {
+  value?: Responsive<Sides>;
+  unit?: SpacingUnit;
+};
+
+export type OverlayBackdrop = {
+  color: string;
+  /** 0–100. Kept apart from the color because the color picker has no alpha. */
+  opacity: number;
+};
+
+/**
+ * Saved pages may still hold the older shapes of these fields (`'480px'`,
+ * `'md'`, `'rgba(0,0,0,0.5)'`); `readOverlayLayout` converts them on read.
+ */
 export type OverlayLayout = {
-  width?: string;
-  maxHeight?: string;
+  width?: OverlayLength;
+  /** An empty `value` fits the content. */
+  maxHeight?: OverlayLength;
   position: OverlayPosition;
   overlay: boolean;
-  overlayColor?: string;
+  overlayColor?: OverlayBackdrop;
   closeOnOverlay: boolean;
   closeOnEsc: boolean;
   showCloseButton: boolean;
   animation?: 'fade' | 'scale' | 'slide' | 'none';
-  radius?: 'none' | 'sm' | 'md' | 'lg' | 'full';
-  padding?: 'none' | 'sm' | 'md' | 'lg';
+  radius?: OverlayLength;
+  padding?: OverlayPadding;
   background?: string;
 };
 
@@ -88,17 +117,20 @@ export type OverlayStorageState = {
 export const DEFAULT_POPUP_SETTINGS: OverlaySettings = {
   enabled: true,
   layout: {
-    width: '480px',
-    maxHeight: '90vh',
+    width: { value: { desktop: 480 }, unit: 'px' },
+    maxHeight: { value: { desktop: 90 }, unit: 'vh' },
     position: 'center',
     overlay: true,
-    overlayColor: 'rgba(0, 0, 0, 0.5)',
+    overlayColor: { color: '#000000', opacity: 50 },
     closeOnOverlay: true,
     closeOnEsc: true,
     showCloseButton: true,
     animation: 'scale',
-    radius: 'md',
-    padding: 'md',
+    radius: { value: { desktop: 14 }, unit: 'px' },
+    padding: {
+      value: { desktop: { top: 24, right: 24, bottom: 24, left: 24 } },
+      unit: 'px',
+    },
     background: '#ffffff',
   },
   trigger: {
@@ -121,17 +153,20 @@ export const DEFAULT_POPUP_SETTINGS: OverlaySettings = {
 export const DEFAULT_DRAWER_SETTINGS: OverlaySettings = {
   enabled: true,
   layout: {
-    width: '400px',
-    maxHeight: '100vh',
+    width: { value: { desktop: 400 }, unit: 'px' },
+    maxHeight: { value: { desktop: 100 }, unit: 'vh' },
     position: 'right',
     overlay: true,
-    overlayColor: 'rgba(0, 0, 0, 0.4)',
+    overlayColor: { color: '#000000', opacity: 40 },
     closeOnOverlay: true,
     closeOnEsc: true,
     showCloseButton: true,
     animation: 'slide',
-    radius: 'none',
-    padding: 'md',
+    radius: { value: { desktop: 0 }, unit: 'px' },
+    padding: {
+      value: { desktop: { top: 24, right: 24, bottom: 24, left: 24 } },
+      unit: 'px',
+    },
     background: '#ffffff',
   },
   trigger: {

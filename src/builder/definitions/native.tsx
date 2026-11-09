@@ -63,6 +63,7 @@ import {
 } from '../blocks/marketing';
 import { MegaMenuCard } from '../blocks/mega-menu';
 import { Divider, Heading, OverlayClose } from '../blocks/overlay';
+import { LightboxImage } from '../blocks/lightbox-client';
 import { Newsletter } from '../blocks/newsletter';
 import { QueryFilter } from '../blocks/query-filters';
 import { Comments } from '../blocks/comments';
@@ -1958,6 +1959,216 @@ export const OverlayCloseBlock = defineBlock({
       hideOnTablet: false,
       hideOnDesktop: false,
       anchor: '',
+    },
+  },
+});
+
+export const LightboxImageBlock = defineBlock({
+  type: 'LightboxImage',
+  label: 'Lightbox image',
+  category: 'content',
+  icon: 'image',
+  schema: z
+    .object({
+      section: sectionSettingsSchema.optional(),
+      elements: z.record(z.string(), elementStyleSchema).optional(),
+    })
+    .passthrough(),
+  render: LightboxImage,
+  fields: {
+    fallbackImage: {
+      label: 'Fallback image',
+      group: 'Source',
+      section: 'Source',
+      tab: 'content',
+      type: 'image',
+    },
+    fallbackAlt: {
+      label: 'Fallback alt text',
+      group: 'Source',
+      section: 'Source',
+      tab: 'content',
+      type: 'text',
+    },
+    fallbackCaption: {
+      label: 'Fallback caption',
+      group: 'Source',
+      section: 'Source',
+      tab: 'content',
+      type: 'text',
+    },
+
+    showArrows: {
+      label: 'Show arrows',
+      group: 'Navigation',
+      section: 'Navigation',
+      tab: 'content',
+      type: 'toggle',
+      defaultValue: true,
+    },
+    loop: {
+      label: 'Loop images',
+      group: 'Navigation',
+      section: 'Navigation',
+      tab: 'content',
+      type: 'toggle',
+      defaultValue: true,
+    },
+    keyboard: {
+      label: 'Keyboard arrows',
+      group: 'Navigation',
+      section: 'Navigation',
+      tab: 'content',
+      type: 'toggle',
+      defaultValue: true,
+    },
+    swipe: {
+      label: 'Touch swipe',
+      group: 'Navigation',
+      section: 'Navigation',
+      tab: 'content',
+      type: 'toggle',
+      defaultValue: true,
+    },
+    showCounter: {
+      label: 'Image counter',
+      group: 'Navigation',
+      section: 'Navigation',
+      tab: 'content',
+      type: 'toggle',
+      defaultValue: true,
+    },
+
+    fit: {
+      label: 'Image fit',
+      group: 'Display',
+      section: 'Display',
+      tab: 'content',
+      type: 'select',
+      options: [
+        { label: 'Contain', value: 'contain' },
+        { label: 'Cover', value: 'cover' },
+      ],
+      defaultValue: 'contain',
+    },
+    maxHeight: {
+      label: 'Max height',
+      group: 'Display',
+      section: 'Display',
+      tab: 'content',
+      type: 'select',
+      options: [
+        { label: '80vh', value: '80vh' },
+        { label: '90vh', value: '90vh' },
+        { label: '60vh', value: '60vh' },
+        { label: '100%', value: '100%' },
+        { label: '600px', value: '600px' },
+        { label: '400px', value: '400px' },
+      ],
+      defaultValue: '80vh',
+    },
+    showCaption: {
+      label: 'Show caption',
+      group: 'Display',
+      section: 'Display',
+      tab: 'content',
+      type: 'toggle',
+      defaultValue: true,
+    },
+    captionPosition: {
+      label: 'Caption position',
+      group: 'Display',
+      section: 'Display',
+      tab: 'content',
+      type: 'select',
+      options: [
+        { label: 'Below image', value: 'below' },
+        { label: 'Over image', value: 'over' },
+      ],
+      defaultValue: 'below',
+      when: (p: any) => p.showCaption !== false,
+    },
+
+    enableZoom: {
+      label: 'Enable zoom',
+      group: 'Zoom',
+      section: 'Zoom',
+      tab: 'content',
+      type: 'toggle',
+      defaultValue: true,
+    },
+    maxZoom: {
+      label: 'Max zoom',
+      group: 'Zoom',
+      section: 'Zoom',
+      tab: 'content',
+      type: 'select',
+      options: [
+        { label: '2x', value: 2 },
+        { label: '3x', value: 3 },
+        { label: '4x', value: 4 },
+      ],
+      defaultValue: 2,
+      when: (p: any) => p.enableZoom !== false,
+    },
+
+    showThumbnails: {
+      label: 'Show thumbnails',
+      group: 'Thumbnails',
+      section: 'Thumbnails',
+      tab: 'content',
+      type: 'toggle',
+      defaultValue: true,
+    },
+    thumbnailSize: {
+      label: 'Thumbnail size',
+      group: 'Thumbnails',
+      section: 'Thumbnails',
+      tab: 'content',
+      type: 'select',
+      options: [
+        { label: 'Small', value: 'sm' },
+        { label: 'Medium', value: 'md' },
+      ],
+      defaultValue: 'sm',
+      when: (p: any) => p.showThumbnails !== false,
+    },
+
+    image_style: elementStyle('image', 'Image Style', MEDIA_PARTS),
+    arrow_style: elementStyle('arrow', 'Arrow Style', BUTTON_PARTS, {
+      when: (p: any) => p.showArrows !== false,
+    }),
+    counter_style: elementStyle('counter', 'Counter Style', TEXT_PARTS, {
+      when: (p: any) => p.showCounter !== false,
+    }),
+    caption_style: elementStyle('caption', 'Caption Style', TEXT_PARTS, {
+      when: (p: any) => p.showCaption !== false,
+    }),
+    thumbnail_style: elementStyle('thumbnail', 'Thumbnail Style', MEDIA_PARTS, {
+      when: (p: any) => p.showThumbnails !== false,
+    }),
+    ...contentSectionControls(),
+  },
+  defaults: {
+    fallbackImage: '',
+    fallbackAlt: '',
+    fallbackCaption: '',
+    showArrows: true,
+    loop: true,
+    keyboard: true,
+    swipe: true,
+    showCounter: true,
+    fit: 'contain',
+    maxHeight: '80vh',
+    showCaption: true,
+    captionPosition: 'below',
+    enableZoom: true,
+    maxZoom: 2,
+    showThumbnails: true,
+    thumbnailSize: 'sm',
+    section: {
+      paddingY: 'none',
+      background: 'default',
     },
   },
 });
@@ -6063,6 +6274,7 @@ export const NATIVE_BLOCKS = [
   QueryFilterBlock,
   SearchResultsBlock,
   OverlayCloseBlock,
+  LightboxImageBlock,
   HeadingBlock,
   DividerBlock,
 ];
@@ -6070,6 +6282,8 @@ export const PAGE_ROOT_FIELDS = {
   maxWidth: {
     type: 'select',
     label: 'Content width',
+    tab: 'style',
+    section: 'Layout',
     group: 'Page',
     options: [
       { label: 'Narrow (768px)', value: 'md' },
@@ -6081,6 +6295,8 @@ export const PAGE_ROOT_FIELDS = {
   theme: {
     type: 'select',
     label: 'Color mode',
+    tab: 'style',
+    section: 'Appearance',
     group: 'Page',
     options: [
       { label: 'Follow site settings', value: 'site' },
@@ -6092,6 +6308,7 @@ export const PAGE_ROOT_FIELDS = {
     type: 'select',
     label: 'Page padding',
     tab: 'style',
+    section: 'Layout',
     group: 'Page',
     options: [
       { label: 'None', value: 'none' },
@@ -6103,6 +6320,8 @@ export const PAGE_ROOT_FIELDS = {
   pageTransition: {
     type: 'custom',
     label: 'Page transition',
+    tab: 'advanced',
+    section: 'Motion',
     group: 'Page',
     render: PageTransitionField,
   },

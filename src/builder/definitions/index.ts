@@ -20,6 +20,14 @@ import {
 import { withInfo } from './info';
 import { customBlockDefinitions } from '../custom';
 import { LoopPreviewItemField } from '../controls/loop-preview';
+import {
+  OverlayBackdropField,
+  OverlayBackgroundField,
+  OverlayHeightField,
+  OverlayPaddingField,
+  OverlayRadiusField,
+  OverlayWidthField,
+} from '../controls/overlay-layout';
 import { CollectionBlockPreviewField } from '../fields/client-fields';
 
 /** Blocks offered only inside a collection's own entry/entry-template builders. */
@@ -91,7 +99,15 @@ export const pageInspectorBlocks: Record<string, InspectorBlock> = Object.fromEn
   ])
 );
 
-export const pageRootFields = PAGE_ROOT_FIELDS as Record<string, FieldDef>;
+export const pageRootFields: Record<string, FieldDef> = {
+  title: {
+    type: 'text',
+    label: 'Title',
+    tab: 'content',
+    section: 'Page',
+  },
+  ...(PAGE_ROOT_FIELDS as Record<string, FieldDef>),
+};
 
 const customGroups: BlockGroup[] = [
   {
@@ -190,6 +206,8 @@ const COLLECTION_BLOCK_ROOT_FIELDS: Record<string, FieldDef> = {
   previewEntry: {
     label: 'Preview with',
     type: 'custom',
+    tab: 'content',
+    section: 'Preview',
     render: CollectionBlockPreviewField,
   } as FieldDef,
   ...(PAGE_ROOT_FIELDS as Record<string, FieldDef>),
@@ -200,11 +218,15 @@ const LOOP_ITEM_ROOT_FIELDS: Record<string, FieldDef> = {
   previewItemId: {
     label: 'Preview with',
     type: 'custom',
+    tab: 'content',
+    section: 'Preview',
     render: LoopPreviewItemField,
   } as FieldDef,
   previewWidth: {
     label: 'Preview width',
     type: 'select',
+    tab: 'content',
+    section: 'Preview',
     options: [
       { label: 'Narrow card (320px)', value: '320' },
       { label: 'Card (400px)', value: '400' },
@@ -244,6 +266,8 @@ export const MEGA_MENU_ROOT_FIELDS: Record<string, FieldDef> = {
   previewWidth: {
     label: 'Preview width',
     type: 'select',
+    tab: 'content',
+    section: 'Preview',
     group: 'Panel',
     options: [
       { label: 'Site width', value: 'container' },
@@ -254,6 +278,8 @@ export const MEGA_MENU_ROOT_FIELDS: Record<string, FieldDef> = {
   background: {
     label: 'Background',
     type: 'select',
+    tab: 'style',
+    section: 'Panel',
     group: 'Panel',
     options: [
       { label: 'Site background', value: 'default' },
@@ -264,6 +290,8 @@ export const MEGA_MENU_ROOT_FIELDS: Record<string, FieldDef> = {
   padding: {
     label: 'Padding',
     type: 'select',
+    tab: 'style',
+    section: 'Panel',
     group: 'Panel',
     options: [
       { label: 'Small', value: 'sm' },
@@ -274,6 +302,8 @@ export const MEGA_MENU_ROOT_FIELDS: Record<string, FieldDef> = {
   radius: {
     label: 'Corner radius',
     type: 'select',
+    tab: 'style',
+    section: 'Panel',
     group: 'Panel',
     options: [
       { label: 'None', value: 'none' },
@@ -285,6 +315,8 @@ export const MEGA_MENU_ROOT_FIELDS: Record<string, FieldDef> = {
   shadow: {
     label: 'Shadow',
     type: 'select',
+    tab: 'style',
+    section: 'Panel',
     group: 'Panel',
     options: [
       { label: 'None', value: 'none' },
@@ -296,6 +328,8 @@ export const MEGA_MENU_ROOT_FIELDS: Record<string, FieldDef> = {
   maxHeight: {
     label: 'Max height (px, 0 = none)',
     type: 'number',
+    tab: 'style',
+    section: 'Panel',
     group: 'Panel',
   } as FieldDef,
 };
@@ -394,6 +428,7 @@ export const OVERLAY_ALLOWED_TYPES: readonly string[] = [
   'Heading',
   'RichText',
   'Image',
+  'LightboxImage',
   'Button',
   'Newsletter',
   'ContactForm',
@@ -404,7 +439,7 @@ export const OVERLAY_ALLOWED_TYPES: readonly string[] = [
 
 export const OVERLAY_GROUPS: BlockGroup[] = [
   { title: 'Layout', types: ['Container', 'Columns', 'Spacer', 'Divider'] },
-  { title: 'Content', types: ['Heading', 'RichText', 'Image'] },
+  { title: 'Content', types: ['Heading', 'RichText', 'Image', 'LightboxImage'] },
   {
     title: 'Actions & Conversion',
     types: ['Button', 'OverlayClose', 'Newsletter', 'ContactForm'],
@@ -464,8 +499,14 @@ export function getOverlayRootFields(
   const positionOptions = isPopup
     ? OVERLAY_POPUP_POSITIONS
     : OVERLAY_DRAWER_POSITIONS;
+  const overlayCategory = isPopup ? 'Popup' : 'Drawer';
+  /** Top and bottom drawers span the screen; left and right ones its height. */
+  const isEdgeDrawer = (p: Record<string, unknown>) => {
+    const position = rootValue(p, 'layout.position');
+    return !isPopup && (position === 'top' || position === 'bottom');
+  };
 
-  return {
+  const rawFields: Record<string, FieldDef> = {
     // Layout tab
     position: {
       label: 'Position',
@@ -477,52 +518,51 @@ export function getOverlayRootFields(
     } as FieldDef,
     width: {
       label: 'Width',
-      type: 'text',
+      type: 'custom',
       tab: 'layout',
       group: 'Layout',
       path: 'layout.width',
-    } as FieldDef,
+      overlayCategory,
+      render: OverlayWidthField,
+      when: (p: Record<string, unknown>) => !isEdgeDrawer(p),
+    } as unknown as FieldDef,
     maxHeight: {
       label: 'Max height',
-      type: 'text',
+      type: 'custom',
       tab: 'layout',
       group: 'Layout',
       path: 'layout.maxHeight',
-    } as FieldDef,
+      overlayCategory,
+      render: OverlayHeightField,
+      when: (p: Record<string, unknown>) => isPopup || isEdgeDrawer(p),
+    } as unknown as FieldDef,
     background: {
       label: 'Background color',
-      type: 'text',
+      type: 'custom',
       tab: 'layout',
       group: 'Layout',
       path: 'layout.background',
-    } as FieldDef,
+      overlayCategory,
+      render: OverlayBackgroundField,
+    } as unknown as FieldDef,
     padding: {
       label: 'Padding',
-      type: 'select',
+      type: 'custom',
       tab: 'layout',
       group: 'Layout',
       path: 'layout.padding',
-      options: [
-        { label: 'None', value: 'none' },
-        { label: 'Small', value: 'sm' },
-        { label: 'Medium', value: 'md' },
-        { label: 'Large', value: 'lg' },
-      ],
-    } as FieldDef,
+      overlayCategory,
+      render: OverlayPaddingField,
+    } as unknown as FieldDef,
     radius: {
       label: 'Corner radius',
-      type: 'select',
+      type: 'custom',
       tab: 'layout',
       group: 'Layout',
       path: 'layout.radius',
-      options: [
-        { label: 'None', value: 'none' },
-        { label: 'Small', value: 'sm' },
-        { label: 'Medium', value: 'md' },
-        { label: 'Large', value: 'lg' },
-        { label: 'Full', value: 'full' },
-      ],
-    } as FieldDef,
+      overlayCategory,
+      render: OverlayRadiusField,
+    } as unknown as FieldDef,
     animation: {
       label: 'Animation',
       type: 'select',
@@ -545,12 +585,15 @@ export function getOverlayRootFields(
     } as FieldDef,
     overlayColor: {
       label: 'Backdrop color',
-      type: 'text',
+      type: 'custom',
       tab: 'layout',
       group: 'Layout',
       path: 'layout.overlayColor',
-      when: p => rootValue(p, 'layout.overlay') !== false,
-    } as FieldDef,
+      overlayCategory,
+      render: OverlayBackdropField,
+      when: (p: Record<string, unknown>) =>
+        rootValue(p, 'layout.overlay') !== false,
+    } as unknown as FieldDef,
     closeOnOverlay: {
       label: 'Close on backdrop click',
       type: 'toggle',
@@ -716,6 +759,16 @@ export function getOverlayRootFields(
       path: 'endsAt',
     } as FieldDef,
   };
+
+  return Object.fromEntries(
+    Object.entries(rawFields).map(([key, field]) => [
+      key,
+      {
+        ...field,
+        section: field.section ?? field.group,
+      },
+    ])
+  );
 }
 
 export function overlayEditorSetup(variant: 'popup' | 'drawer'): EditorSetup {

@@ -2530,9 +2530,62 @@ export const DRAWER_STARTER_COOKIE: StarterTemplate = {
   },
 };
 
+export const POPUP_STARTER_LIGHTBOX: StarterTemplate = {
+  key: 'image-lightbox',
+  name: 'Image lightbox',
+  description:
+    'Wide popup lightbox for Image and Gallery clicks with navigation, zoom, and thumbnails.',
+  category: 'Popup',
+  content: {
+    root: {
+      props: {
+        ...DEFAULT_POPUP_SETTINGS,
+        layout: {
+          ...DEFAULT_POPUP_SETTINGS.layout,
+          width: '90vw',
+          maxHeight: '90vh',
+          padding: 'none',
+          background: '#0b0f17',
+          overlayColor: 'rgba(0,0,0,0.85)',
+          animation: 'fade',
+        },
+        trigger: {
+          type: 'click',
+        },
+        frequency: {
+          mode: 'every-page',
+        },
+      },
+    },
+    content: [
+      {
+        type: 'LightboxImage',
+        props: {
+          section: { paddingY: 'none' },
+          id: 'popup-lightbox-image',
+          showArrows: true,
+          loop: true,
+          keyboard: true,
+          swipe: true,
+          showCounter: true,
+          fit: 'contain',
+          maxHeight: '80vh',
+          showCaption: true,
+          captionPosition: 'below',
+          enableZoom: true,
+          maxZoom: 2,
+          showThumbnails: true,
+          thumbnailSize: 'sm',
+        },
+      },
+    ],
+  },
+};
+
 export const POPUP_STARTERS: StarterTemplate[] = [
   POPUP_STARTER_NEWSLETTER,
   POPUP_STARTER_PROMO,
+  POPUP_STARTER_LIGHTBOX,
 ];
 
 export const DRAWER_STARTERS: StarterTemplate[] = [

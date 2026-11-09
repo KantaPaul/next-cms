@@ -1432,6 +1432,33 @@ html[data-site-mode='dark']
   }
 }
 
+/*
+ * Popup and Drawer panel size (see resolveOverlayPanelStyle). Not scoped to
+ * .site-root: on the site these panels are portaled to <body>.
+ */
+.s-ov-panel {
+  width: var(--ov-w-m);
+  max-height: var(--ov-mh-m);
+  padding: var(--ov-p-m);
+  border-radius: var(--ov-rad-m);
+}
+@media (min-width: 768px) {
+  .s-ov-panel {
+    width: var(--ov-w-t);
+    max-height: var(--ov-mh-t);
+    padding: var(--ov-p-t);
+    border-radius: var(--ov-rad-t);
+  }
+}
+@media (min-width: 1024px) {
+  .s-ov-panel {
+    width: var(--ov-w-d);
+    max-height: var(--ov-mh-d);
+    padding: var(--ov-p-d);
+    border-radius: var(--ov-rad-d);
+  }
+}
+
 /* Header overlays: mobile menu, bookmarks drawer, search popup (SiteOverlay). */
 @keyframes s-ov-fade-in {
   from {

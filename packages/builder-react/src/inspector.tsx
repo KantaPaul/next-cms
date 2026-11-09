@@ -6,28 +6,22 @@
  */
 
 import {
-  DEVICES,
   type Device,
   type FieldDef,
   type InspectorTabDef,
   inheritedFrom,
   resetDeviceValue,
-  valueForDevice,
   layoutFields,
   fieldChanged,
-  DEFAULT_TABS,
 } from '@nextcms/builder-core';
 import {
   FieldRow as FieldRowFrame,
-  IconButton,
   InspectorTabs as InspectorTabsBar,
-  SlidingIndicator,
-  useSlidingIndicator,
 } from '@nextcms/editor-ui';
-import { Monitor, Smartphone, Tablet } from 'lucide-react';
-import type { CSSProperties, ReactNode } from 'react';
-import { useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
+import { useMemo, useState } from 'react';
 import { useEditor, useEditorStore } from './context';
+import { DeviceSwitch } from './device-switch';
 import {
   DeviceProvider,
   type FieldComponent,
@@ -36,7 +30,10 @@ import {
   fieldControlId,
   fieldValueAccess,
 } from './fields';
+import { PageSettingsView } from './page-settings-view';
 import { PartOrderField } from './part-order-field';
+
+export { DeviceSwitch };
 
 export type InspectorBlock = {
   label: string;
@@ -46,60 +43,6 @@ export type InspectorBlock = {
   /** Default props for changed-field dots and reset (R722). */
   defaultProps?: Record<string, unknown>;
 };
-
-const DEVICE_ICONS: Record<Device, typeof Monitor> = {
-  desktop: Monitor,
-  tablet: Tablet,
-  mobile: Smartphone,
-};
-
-/** Desktop, tablet, and mobile buttons; switches the canvas and per-device fields. */
-export function DeviceSwitch({ style }: { style?: CSSProperties }) {
-  const store = useEditorStore();
-  const device = useEditor(state => state.device);
-  const groupRef = useRef<HTMLFieldSetElement>(null);
-  useSlidingIndicator(groupRef, device);
-  return (
-    <fieldset
-      ref={groupRef}
-      aria-label="Edit for device"
-      style={
-        {
-          position: 'relative',
-          display: 'inline-flex',
-          gap: 2,
-          border: 0,
-          margin: 0,
-          padding: 0,
-          '--ne-ind-bg': 'var(--ne-primary-soft)',
-          '--ne-ind-shadow': 'none',
-          ...style,
-        } as CSSProperties
-      }
-    >
-      <SlidingIndicator />
-      {DEVICES.map(d => {
-        const Icon = DEVICE_ICONS[d];
-        const label = d[0].toUpperCase() + d.slice(1);
-        return (
-          <IconButton
-            key={d}
-            size="sm"
-            // The sliding indicator draws the active background.
-            style={device === d ? { color: 'var(--ne-primary)' } : undefined}
-            data-ne-active={device === d ? 'true' : undefined}
-            aria-pressed={device === d}
-            aria-label={label}
-            tooltip={label}
-            onClick={() => store.setDevice(d)}
-          >
-            <Icon style={{ width: 14, height: 14 }} />
-          </IconButton>
-        );
-      })}
-    </fieldset>
-  );
-}
 
 /** One field row with a changed-field dot and reset controls (R722), drawn by editor-ui's FieldRow. */
 function FieldRow({
@@ -167,6 +110,7 @@ export function Inspector({
   fieldTypes,
   empty,
   rootLabel = 'Page',
+  settingsHref,
 }: {
   blocks: Record<string, InspectorBlock>;
   /** Page settings shown when nothing is selected. */
@@ -178,8 +122,8 @@ export function Inspector({
   empty?: ReactNode;
   /** Label for the root document (e.g. 'Page', 'Header', 'Footer'). */
   rootLabel?: string;
+  settingsHref?: string;
 }) {
-  const store = useEditorStore();
   const device = useEditor(state => state.device);
   const selectedId = useEditor(state =>
     state.selection.length === 1 ? state.selection[0] : null
@@ -196,7 +140,7 @@ export function Inspector({
       cid => state.doc.nodes[cid] && !state.doc.nodes[cid].meta?.hidden
     ).length;
   });
-  const rootProps = useEditor(state => state.doc.root.props);
+
   const block = node ? blocks[node.type] : undefined;
   const effectiveProps = useMemo(() => {
     if (!node) return {};
@@ -228,18 +172,38 @@ export function Inspector({
     }
     return block.defaultProps;
   }, [node, block, visibleColumnCount]);
-  const responsive = Object.values(
-    node ? (block?.fields ?? {}) : rootFields
-  ).some(field => field.responsive);
 
-  const rootBlock = useMemo<InspectorBlock>(
-    () => ({
-      label: rootLabel,
-      fields: rootFields,
-      defaultProps: rootDefaultProps,
-    }),
-    [rootLabel, rootFields, rootDefaultProps]
-  );
+  const responsive = node
+    ? Object.values(block?.fields ?? {}).some(field => field.responsive)
+    : false;
+
+  // Nothing selected: render PageSettingsView so the split layout matches
+  if (!node && count === 0) {
+    return (
+      <FieldTypesProvider types={fieldTypes}>
+        <DeviceProvider value={device}>
+          <div
+            style={{
+              display: 'grid',
+              gap: 4,
+              gridTemplateColumns: 'minmax(0, 1fr)',
+              font: '13px/1.4 system-ui, sans-serif',
+              color: 'var(--ne-text, inherit)',
+            }}
+          >
+            {empty}
+            <PageSettingsView
+              fields={rootFields}
+              label={rootLabel}
+              defaultProps={rootDefaultProps}
+              settingsHref={settingsHref}
+              fieldTypes={fieldTypes}
+            />
+          </div>
+        </DeviceProvider>
+      </FieldTypesProvider>
+    );
+  }
 
   return (
     <FieldTypesProvider types={fieldTypes}>
@@ -267,9 +231,7 @@ export function Inspector({
             >
               {count > 1
                 ? `${count} blocks selected`
-                : node
-                  ? (block?.label ?? node.type)
-                  : rootLabel}
+                : (block?.label ?? node?.type)}
             </h2>
             {responsive && <DeviceSwitch />}
           </div>
@@ -294,62 +256,7 @@ export function Inspector({
               No settings for this block.
             </p>
           )}
-          {!node && count === 0 && (
-            <>
-              {empty}
-              <InspectorTabs
-                key="root"
-                block={rootBlock}
-                node={null as any}
-                props={rootProps}
-                defaultProps={rootDefaultProps}
-                device={device}
-                readOnly={false}
-                isRoot
-              />
-            </>
-          )}
         </div>
-      </DeviceProvider>
-    </FieldTypesProvider>
-  );
-}
-
-/**
- * Document (root) settings on their own, whatever is selected: for views
- * like Page Settings that always edit the document.
- */
-export function RootInspector({
-  fields,
-  defaultProps = {},
-  label = 'Page',
-  fieldTypes,
-}: {
-  fields: Record<string, FieldDef>;
-  defaultProps?: Record<string, unknown>;
-  label?: string;
-  fieldTypes?: Record<string, FieldComponent>;
-}) {
-  const device = useEditor(state => state.device);
-  const rootProps = useEditor(state => state.doc.root.props);
-  const block = useMemo<InspectorBlock>(
-    () => ({ label, fields, defaultProps }),
-    [label, fields, defaultProps]
-  );
-  if (Object.keys(fields).length === 0) return null;
-  return (
-    <FieldTypesProvider types={fieldTypes}>
-      <DeviceProvider value={device}>
-        <InspectorTabs
-          key="root"
-          block={block}
-          node={null as any}
-          props={rootProps}
-          defaultProps={defaultProps}
-          device={device}
-          readOnly={false}
-          isRoot
-        />
       </DeviceProvider>
     </FieldTypesProvider>
   );
@@ -357,12 +264,11 @@ export function RootInspector({
 
 type InspectorTabsProps = {
   block: InspectorBlock;
-  node: { id: string; type?: string } | null;
+  node: { id: string; type?: string };
   props: Record<string, unknown>;
   defaultProps?: Record<string, unknown>;
   device: Device;
   readOnly?: boolean;
-  isRoot?: boolean;
 };
 
 function InspectorTabs({
@@ -372,13 +278,11 @@ function InspectorTabs({
   defaultProps = {},
   device,
   readOnly,
-  isRoot = false,
 }: InspectorTabsProps) {
   const store = useEditorStore();
   const [query, setQuery] = useState('');
   const [pickedTab, setPickedTab] = useState<string | null>(null);
-  const reorder =
-    !isRoot && node?.type ? store.schemas[node.type]?.reorder : undefined;
+  const reorder = node?.type ? store.schemas[node.type]?.reorder : undefined;
 
   const layoutResult = useMemo(
     () =>
@@ -441,7 +345,7 @@ function InspectorTabs({
           gridTemplateColumns: 'minmax(0, 1fr)',
         }}
       >
-        {reorder && activeTab === 'content' && !query.trim() && node && (
+        {reorder && activeTab === 'content' && !query.trim() && (
           <PartOrderField
             nodeId={node.id}
             reorder={reorder}
@@ -466,22 +370,18 @@ function InspectorTabs({
           return (
             <FieldRow
               key={name}
-              name={`${isRoot ? 'root' : (node?.id ?? 'root')}.${name}`}
+              name={`${node.id}.${name}`}
               field={field}
               props={props}
               defaultProps={defaultProps}
               device={device}
               onChange={value => {
                 const patch = access.write(props, value);
-                if (isRoot) {
-                  store.updateRootProps(patch, `root.${targetPath}`);
-                } else if (node) {
-                  store.updateProps(
-                    node.id,
-                    patch,
-                    `${node.id}.${targetPath}`
-                  );
-                }
+                store.updateProps(
+                  node.id,
+                  patch,
+                  `${node.id}.${targetPath}`
+                );
               }}
               readOnly={readOnly}
             />

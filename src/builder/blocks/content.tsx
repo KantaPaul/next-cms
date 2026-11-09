@@ -160,7 +160,16 @@ export function ImageBlock(p: ImageProps) {
     >
       <figure>
         {p.popupTrigger && p.overlayId ? (
-          <OverlayTrigger overlayId={p.overlayId}>{img}</OverlayTrigger>
+          <OverlayTrigger
+            overlayId={p.overlayId}
+            lightbox={{
+              image: p.url,
+              alt: p.alt,
+              caption: p.caption,
+            }}
+          >
+            {img}
+          </OverlayTrigger>
         ) : normalizeUrlValue(p.link).url ? (
           <a {...resolveLinkProps(p.link)}>{img}</a>
         ) : (
@@ -238,7 +247,10 @@ export function Gallery(p: GalleryProps) {
         title={p.title}
         subtitle={p.subtitle}
       />
-      <div className={cn('grid', GALLERY_COLS[cols], GALLERY_GAP[gap])}>
+      <div
+        className={cn('grid', GALLERY_COLS[cols], GALLERY_GAP[gap])}
+        data-overlay-group=""
+      >
         {items.map((item, i) => {
           const effectiveOverlayId = p.popupTrigger
             ? item.overlayId || p.overlayId
@@ -252,6 +264,11 @@ export function Gallery(p: GalleryProps) {
               <OverlayTrigger
                 overlayId={effectiveOverlayId}
                 className="group/gallery-item block h-full w-full overflow-hidden"
+                lightbox={{
+                  image: item.url,
+                  alt: item.alt,
+                  caption: item.caption,
+                }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img

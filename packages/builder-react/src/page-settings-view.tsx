@@ -1,121 +1,109 @@
 /**
  * Page settings view (E12): inspector for document-level / root settings
- * (title, slug, metadata, global styles). Bound to store.updateRootProps.
+ * (title, layout, metadata, overlay controls). Built on shared SettingsPanel
+ * and bound to store.updateRootProps.
  */
 
-import { ControlRow } from '@nextcms/editor-ui';
-import React from 'react';
+import type { FieldDef } from '@nextcms/builder-core';
+import { ExternalLink } from 'lucide-react';
+import React, { useMemo } from 'react';
 import { useEditor, useEditorStore } from './context';
+import type { FieldComponent } from './fields';
+import { SettingsPanel } from './settings-panel';
 
 export interface PageSettingsViewProps {
+  fields?: Record<string, FieldDef>;
+  label?: string;
+  defaultProps?: Record<string, unknown>;
+  settingsHref?: string;
+  fieldTypes?: Record<string, FieldComponent>;
   className?: string;
-  customRootFields?: React.ReactNode;
+
+  /** "Show only changed", controlled. */
+  changedOnly?: boolean;
+  defaultChangedOnly?: boolean;
+  onChangedOnlyChange?: (changedOnly: boolean) => void;
+  onChangedCountChange?: (count: number) => void;
+  hideChangedFilter?: boolean;
 }
 
 export function PageSettingsView({
+  fields = {},
+  label = 'Page',
+  defaultProps = {},
+  settingsHref,
+  fieldTypes,
   className,
-  customRootFields,
+  changedOnly,
+  defaultChangedOnly = false,
+  onChangedOnlyChange,
+  onChangedCountChange,
+  hideChangedFilter = false,
 }: PageSettingsViewProps) {
   const store = useEditorStore();
-  const root = useEditor(state => state.doc.root);
-  const props = root.props || {};
+  const rootProps = useEditor(state => state.doc.root?.props || {});
 
-  const update = (patch: Record<string, unknown>) => {
-    store.updateRootProps(patch, 'page.settings');
-  };
+  const hasFields = Object.keys(fields).length > 0;
+  if (!hasFields) {
+    return (
+      <div
+        className={className}
+        style={{
+          padding: 16,
+          textAlign: 'center',
+          color: 'var(--ne-text-muted)',
+          fontSize: 12,
+        }}
+      >
+        <p style={{ margin: '16px 0 8px' }}>
+          No settings for this {label.toLowerCase()}.
+        </p>
+      </div>
+    );
+  }
 
-  const title = String(props.title ?? '');
-  const slug = String(props.slug ?? '');
-  const description = String(props.description ?? '');
+  const effectiveProps = useMemo(
+    () => ({ ...defaultProps, ...rootProps }),
+    [defaultProps, rootProps]
+  );
 
-  return (
-    <div
-      className={className}
+  const headerExtras = settingsHref ? (
+    <a
+      href={settingsHref}
+      target="_blank"
+      rel="noreferrer"
       style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 12,
-        padding: 12,
-        font: 'var(--ne-text-body)',
-        color: 'var(--ne-text)',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        fontSize: 11,
+        color: 'var(--ne-primary)',
+        textDecoration: 'none',
       }}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <span style={{ fontSize: 13, fontWeight: 600 }}>Page Settings</span>
-        <span style={{ fontSize: 11, color: 'var(--ne-text-muted)' }}>
-          Configure document metadata, URLs, and SEO.
-        </span>
-      </div>
+      URL & SEO settings
+      <ExternalLink size={11} />
+    </a>
+  ) : undefined;
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {/* Page Title */}
-        <ControlRow label="Page Title" htmlFor="page-setting-title">
-          <input
-            id="page-setting-title"
-            type="text"
-            value={title}
-            placeholder="e.g. Home, About Us"
-            onChange={e => update({ title: e.target.value })}
-            style={{
-              width: '100%',
-              height: 28,
-              padding: '0 8px',
-              borderRadius: 4,
-              border: '1px solid var(--ne-border)',
-              background: 'var(--ne-surface)',
-              color: 'var(--ne-text)',
-              fontSize: 12,
-              outline: 'none',
-            }}
-          />
-        </ControlRow>
-
-        {/* Slug */}
-        <ControlRow label="URL Slug" htmlFor="page-setting-slug">
-          <input
-            id="page-setting-slug"
-            type="text"
-            value={slug}
-            placeholder="e.g. /home"
-            onChange={e => update({ slug: e.target.value })}
-            style={{
-              width: '100%',
-              height: 28,
-              padding: '0 8px',
-              borderRadius: 4,
-              border: '1px solid var(--ne-border)',
-              background: 'var(--ne-surface)',
-              color: 'var(--ne-text)',
-              fontSize: 12,
-              outline: 'none',
-            }}
-          />
-        </ControlRow>
-
-        {/* Description */}
-        <ControlRow label="Description" htmlFor="page-setting-description">
-          <textarea
-            id="page-setting-description"
-            rows={3}
-            value={description}
-            placeholder="Brief meta description for search engines..."
-            onChange={e => update({ description: e.target.value })}
-            style={{
-              width: '100%',
-              padding: '6px 8px',
-              borderRadius: 4,
-              border: '1px solid var(--ne-border)',
-              background: 'var(--ne-surface)',
-              color: 'var(--ne-text)',
-              fontSize: 12,
-              outline: 'none',
-              resize: 'vertical',
-            }}
-          />
-        </ControlRow>
-
-        {customRootFields}
-      </div>
-    </div>
+  return (
+    <SettingsPanel
+      className={className}
+      panelKey="root"
+      label={label}
+      fields={fields}
+      props={effectiveProps}
+      defaultProps={defaultProps}
+      fieldTypes={fieldTypes}
+      headerExtras={headerExtras}
+      changedOnly={changedOnly}
+      defaultChangedOnly={defaultChangedOnly}
+      onChangedOnlyChange={onChangedOnlyChange}
+      onChangedCountChange={onChangedCountChange}
+      hideChangedFilter={hideChangedFilter}
+      onPatch={(patch, path) => {
+        store.updateRootProps(patch, `root.${path}`);
+      }}
+    />
   );
 }

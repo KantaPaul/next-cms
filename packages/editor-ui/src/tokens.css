@@ -186,6 +186,15 @@
   background: var(--ne-text-muted);
 }
 
+.ne-no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.ne-no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Dotted canvas backdrop behind the page frame. */
 .ne-canvas-bg {
   background-color: var(--ne-canvas-bg);

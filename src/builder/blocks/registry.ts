@@ -21,6 +21,7 @@ import { CollectionBlockRef } from './collection-block';
 import { MegaMenuCard } from './mega-menu';
 import { Container } from './container';
 import { ImageMorph } from './image-morph';
+import { LightboxImage } from './lightbox-client';
 import { Accordion, Slider, Tabs } from './interactive';
 import { Button, Spacer } from './layout';
 import { Map as MapBlock } from './map';
@@ -123,6 +124,7 @@ const builtInComponents = {
   QueryFilter,
   SearchResults,
   OverlayClose,
+  LightboxImage,
   Heading,
   Divider,
 };
