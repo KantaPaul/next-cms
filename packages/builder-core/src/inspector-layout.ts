@@ -134,6 +134,17 @@ export function fieldChanged(
   return JSON.stringify(shown) !== JSON.stringify(defaultShown);
 }
 
+/** Whether a field's control shows on `device`, given its `devices` and `when`. */
+export function fieldVisible(
+  field: FieldDef,
+  props: Record<string, unknown>,
+  device: Device,
+  parentProps?: Record<string, unknown>
+): boolean {
+  if (field.devices && !field.devices.includes(device)) return false;
+  return !field.when || field.when(props, parentProps);
+}
+
 export type LayoutSection = {
   title: string;
   fields: Array<[string, FieldDef]>;
@@ -167,7 +178,7 @@ function startCase(str: string): string {
 /**
  * Organizes fields into tabs and collapsible sections:
  * - Preserves declaration order of fields and sections.
- * - Drops fields where `when(props)` evaluates to false.
+ * - Drops fields hidden by `when(props)` or `devices` (see `fieldVisible`).
  * - Drops tabs that have no visible fields.
  * - Calculates changed count per section and tab.
  */
@@ -195,7 +206,7 @@ export function layoutFields({
 
   for (const [name, field] of Object.entries(fields)) {
     // 1. Conditional visibility
-    if (field.when && !field.when(props)) continue;
+    if (!fieldVisible(field, props, device)) continue;
 
     // 2. Read values through path
     const targetPath = field.path ?? name;

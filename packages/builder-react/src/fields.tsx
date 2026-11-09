@@ -13,6 +13,7 @@ import {
   type DynamicBinding,
   type DynamicSourceDef,
   type FieldDef,
+  fieldVisible,
   getPath,
   setPath,
   inheritedFrom,
@@ -1444,7 +1445,7 @@ export function FieldControl({
   const device = useContext(DeviceContext);
   const dynamicDefaults = useContext(DynamicSourcesContext);
   const e12 = useE12Controls();
-  if (field.when && !field.when(props, parentProps)) return null;
+  if (!fieldVisible(field, props, device, parentProps)) return null;
   const activeTypes = e12
     ? { ...E12_BUILT_IN_FIELDS, ...types }
     : { ...BUILT_IN_FIELDS, ...E12_FIELD_COMPONENTS, ...types };

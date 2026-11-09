@@ -164,6 +164,61 @@ describe('layoutFields engine', () => {
     assert.ok(!allFieldKeys.includes('hiddenField'));
   });
 
+  describe('devices', () => {
+    const keysOn = (
+      device: 'desktop' | 'tablet' | 'mobile',
+      deviceFields: Record<string, FieldDef>,
+      deviceProps: Record<string, unknown> = {}
+    ) =>
+      layoutFields({ fields: deviceFields, props: deviceProps, device }).tabs.flatMap(t =>
+        t.sections.flatMap(s => s.fields.map(([k]) => k))
+      );
+
+    it('keeps a field on listed devices and drops it on the others', () => {
+      const f: Record<string, FieldDef> = {
+        small: { type: 'text', tab: 'content', section: 'Main', devices: ['tablet', 'mobile'] },
+      };
+      assert.deepEqual(keysOn('desktop', f), []);
+      assert.deepEqual(keysOn('tablet', f), ['small']);
+      assert.deepEqual(keysOn('mobile', f), ['small']);
+    });
+
+    it('shows a field without `devices` on every device', () => {
+      const f: Record<string, FieldDef> = {
+        always: { type: 'text', tab: 'content', section: 'Main' },
+      };
+      assert.deepEqual(keysOn('desktop', f), ['always']);
+      assert.deepEqual(keysOn('tablet', f), ['always']);
+      assert.deepEqual(keysOn('mobile', f), ['always']);
+    });
+
+    it('requires both `devices` and `when` to pass', () => {
+      const f: Record<string, FieldDef> = {
+        both: {
+          type: 'text',
+          tab: 'content',
+          section: 'Main',
+          devices: ['mobile'],
+          when: p => !!p.on,
+        },
+      };
+      assert.deepEqual(keysOn('mobile', f, { on: true }), ['both']);
+      assert.deepEqual(keysOn('mobile', f, { on: false }), []);
+      assert.deepEqual(keysOn('desktop', f, { on: true }), []);
+    });
+
+    it('drops a tab whose fields are all hidden on the device', () => {
+      const f: Record<string, FieldDef> = {
+        always: { type: 'text', tab: 'content', section: 'Main' },
+        mobileColor: { type: 'color', tab: 'style', section: 'Colors', devices: ['mobile'] },
+      };
+      const tabIds = (device: 'desktop' | 'mobile') =>
+        layoutFields({ fields: f, props: {}, device }).tabs.map(t => t.def.id);
+      assert.deepEqual(tabIds('desktop'), ['content']);
+      assert.deepEqual(tabIds('mobile'), ['content', 'style']);
+    });
+  });
+
   it('drops tabs that have no visible fields (dynamic tabs)', () => {
     // Only style fields present
     const styleOnlyFields: Record<string, FieldDef> = {

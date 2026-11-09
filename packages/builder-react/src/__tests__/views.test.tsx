@@ -10,7 +10,7 @@ import { PageSettingsView } from '../page-settings-view';
 import { SettingsView } from '../settings-view';
 import { SinglePanel } from '../single-panel';
 import { createEditorStore } from '../store';
-import { fieldValueAccess } from '../fields';
+import { DeviceProvider, FieldControl, fieldValueAccess } from '../fields';
 
 const SCHEMAS = {
   Heading: {
@@ -124,6 +124,57 @@ describe('Single Panel Layout Views (Phase 6)', () => {
       // Number fields live on the Style tab; Content is shown first.
       assert.match(html, /title="Style \(⌥S\)"/);
       assert.doesNotMatch(html, /Heading Level/);
+    });
+
+    it('shows a device-limited control only on its devices', () => {
+      const schemas = {
+        ...SCHEMAS,
+        Heading: {
+          ...SCHEMAS.Heading,
+          fields: {
+            ...SCHEMAS.Heading.fields,
+            mobileNote: {
+              type: 'text' as const,
+              label: 'Mobile Note',
+              tab: 'content',
+              section: 'Content',
+              devices: ['mobile' as const],
+            },
+          },
+        },
+      };
+      const store = createEditorStore({ document: INITIAL_DOC, schemas });
+      store.select('h1');
+      const render = () =>
+        renderToStaticMarkup(
+          <EditorProvider store={store}>
+            <SettingsView blocks={schemas as any} />
+          </EditorProvider>
+        );
+
+      assert.doesNotMatch(render(), /Mobile Note/);
+      store.setDevice('mobile');
+      assert.match(render(), /Mobile Note/);
+      store.setDevice('tablet');
+      assert.doesNotMatch(render(), /Mobile Note/);
+    });
+
+    it('hides a device-limited control rendered directly by FieldControl', () => {
+      const render = (device: 'desktop' | 'mobile') =>
+        renderToStaticMarkup(
+          <DeviceProvider value={device}>
+            <FieldControl
+              name="nested"
+              field={{ type: 'text', label: 'Nested Note', devices: ['mobile'] }}
+              value="x"
+              props={{}}
+              onChange={() => {}}
+            />
+          </DeviceProvider>
+        );
+
+      assert.doesNotMatch(render('desktop'), /Nested Note/);
+      assert.match(render('mobile'), /Nested Note/);
     });
 
     it('renders multi-selection batch action state when >1 blocks are selected', () => {

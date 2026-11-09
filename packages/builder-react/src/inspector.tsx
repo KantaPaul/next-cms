@@ -13,6 +13,7 @@ import {
   resetDeviceValue,
   layoutFields,
   fieldChanged,
+  fieldVisible,
 } from '@nextcms/builder-core';
 import {
   FieldRow as FieldRowFrame,
@@ -62,7 +63,7 @@ function FieldRow({
   onChange: (value: unknown) => void;
   readOnly?: boolean;
 }) {
-  if (field.when && !field.when(props)) return null;
+  if (!fieldVisible(field, props, device)) return null;
   const access = fieldValueAccess(field, name);
   const value = access.read(props);
   const defaultValue = access.read(defaultProps);

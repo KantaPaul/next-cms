@@ -99,6 +99,12 @@ type BaseField<P> = {
    * For a field inside a list item, `props` is the item and `parentProps` is the block.
    */
   when?: (props: P, parentProps?: Record<string, unknown>) => boolean;
+  /**
+   * Show the field only on these devices; all devices when omitted. Combines with
+   * `when`. Hidden values are kept, and this doesn't make the value per-device
+   * (see `responsive`).
+   */
+  devices?: Device[];
   readOnly?: boolean;
   /** Edit one value per device, with inheritance and reset (R694). */
   responsive?: boolean;
