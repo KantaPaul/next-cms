@@ -46,6 +46,7 @@ export function CollectionItem(p: CollectionItemProps) {
 
 export type RichTextProps = WithSection & {
   content: string;
+  filteredHtml?: string;
   width?: 'narrow' | 'normal' | 'wide';
 };
 
@@ -62,7 +63,9 @@ export function RichText(p: RichTextProps) {
       <div
         className={contentEl.className}
         style={contentEl.style}
-        dangerouslySetInnerHTML={{ __html: sanitizeRichText(p.content) }}
+        dangerouslySetInnerHTML={{
+          __html: p.filteredHtml ?? sanitizeRichText(p.content),
+        }}
       />
     </Section>
   );

@@ -25,7 +25,7 @@ export function MailchimpAudienceField({
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetch('/api/integrations/mailchimp/lists')
+    fetch('/api/plugins/mailchimp/lists')
       .then(res => res.json())
       .then(data => {
         if (cancelled) return;
@@ -37,7 +37,9 @@ export function MailchimpAudienceField({
       })
       .catch(err => {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to load audiences');
+          setError(
+            err instanceof Error ? err.message : 'Failed to load audiences'
+          );
         }
       })
       .finally(() => {
@@ -60,7 +62,8 @@ export function MailchimpAudienceField({
         <p className="text-xs text-red-500">{error}</p>
       ) : audiences.length === 0 ? (
         <div className="text-xs text-muted-foreground">
-          No audiences found. Ensure your Mailchimp API key is saved in Settings &gt; Integrations.
+          No audiences found. Ensure your Mailchimp API key is saved in
+          Dashboard &gt; Plugins &gt; Mailchimp.
         </div>
       ) : (
         <select

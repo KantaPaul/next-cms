@@ -19,6 +19,8 @@ export type PostView = {
   excerpt: string | null;
   featuredImage: string | null;
   body: string;
+  /** Body HTML after `sanitizeRichText` + `content.html` plugin filters. */
+  filteredBody?: string;
   publishedAt: string | null;
   authorName: string | null;
   authorUrl?: string | null;

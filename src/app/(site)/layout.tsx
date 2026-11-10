@@ -15,6 +15,7 @@ import { maybePublishScheduled } from '@/server/services/scheduler';
 import { siteContext, siteSlugPrefix } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 import { siteModeScript } from '@/builder/site-mode';
+import { resolveSiteHead } from '@/server/plugins/site-head';
 
 /**
  * Site shell: theme, admin bar, preview banner, consent, and analytics. Header and footer
@@ -33,6 +34,7 @@ export default async function SiteLayout({
     getPreviewSession(),
     cookies(),
   ]);
+  const pluginHead = await resolveSiteHead(site.id);
   const siteSlug = siteSlugPrefix(site);
   const consentCookie = jar.get(CONSENT_COOKIE_NAME)?.value ?? null;
   const exitPreviewHref = preview
@@ -89,11 +91,43 @@ export default async function SiteLayout({
           dangerouslySetInnerHTML={{ __html: sanitizeCss(customCode.css) }}
         />
       ) : null}
+      {pluginHead.nonScriptItems.map((item, idx) => {
+        if (item.type === 'meta') {
+          return <meta key={`plugin-head-meta-${idx}`} {...item.attrs} />;
+        }
+        if (item.type === 'link') {
+          return <link key={`plugin-head-link-${idx}`} {...(item.attrs as any)} />;
+        }
+        return null;
+      })}
       <ConsentProvider
         settings={settings.consent}
         initialCookie={consentCookie}
         siteSlug={siteSlug}
       >
+        {pluginHead.nonScriptItems
+          .filter(
+            (item): item is Extract<typeof item, { type: 'html' }> =>
+              item.type === 'html'
+          )
+          .map((item, idx) => (
+            <CustomCode
+              key={`plugin-head-html-${idx}`}
+              id={`plugin-head-html-${idx}`}
+              html={item.html}
+              slot="head"
+              category="necessary"
+            />
+          ))}
+        {pluginHead.scriptSnippets.map(snippet => (
+          <CustomCode
+            key={snippet.id}
+            id={snippet.id}
+            html={snippet.html}
+            slot="head"
+            category={snippet.category}
+          />
+        ))}
         {customCode?.headHtml ? (
           <CustomCode
             html={customCode.headHtml}

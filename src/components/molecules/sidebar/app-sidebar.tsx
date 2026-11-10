@@ -10,14 +10,20 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { APP_VERSION } from '@/lib/utils/app-version';
-import { NavMain, type SidebarPostType } from './nav-main';
+import { NavMain, type SidebarPluginPage, type SidebarPostType } from './nav-main';
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   /** Post types listed as their own menu items, like Posts. */
   postTypes?: SidebarPostType[];
+  /** Enabled plugin admin pages shown under Plugins. */
+  pluginPages?: SidebarPluginPage[];
 }
 
-export function AppSidebar({ postTypes = [], ...props }: AppSidebarProps) {
+export function AppSidebar({
+  postTypes = [],
+  pluginPages = [],
+  ...props
+}: AppSidebarProps) {
   const { state } = useSidebar();
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -31,7 +37,7 @@ export function AppSidebar({ postTypes = [], ...props }: AppSidebarProps) {
       </SidebarHeader>
       <SidebarContent>
         <ScrollArea>
-          <NavMain postTypes={postTypes} />
+          <NavMain postTypes={postTypes} pluginPages={pluginPages} />
         </ScrollArea>
       </SidebarContent>
     </Sidebar>

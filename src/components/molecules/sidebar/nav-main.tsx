@@ -35,9 +35,21 @@ export type SidebarPostType = {
   taxonomies?: { id: string; key: string; name: string }[];
 };
 
+export type SidebarPluginPage = {
+  name: string;
+  href: string;
+  permission?: string;
+};
+
 type NavItem = ReturnType<typeof getMenuItems>[number];
 
-export function NavMain({ postTypes = [] }: { postTypes?: SidebarPostType[] }) {
+export function NavMain({
+  postTypes = [],
+  pluginPages = [],
+}: {
+  postTypes?: SidebarPostType[];
+  pluginPages?: SidebarPluginPage[];
+}) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { permissions } = useAccess();
@@ -52,10 +64,25 @@ export function NavMain({ postTypes = [] }: { postTypes?: SidebarPostType[] }) {
       permission: PERMISSIONS.PAGES_EDIT,
       postType: type,
     }));
+  const visiblePluginPages = pluginPages.filter(
+    p => !p.permission || permissions.includes(p.permission)
+  );
   const menuItems = getMenuItems()
-    .flatMap(item =>
-      item.name === 'Posts' ? [item, ...postTypeItems] : [item]
-    )
+    .flatMap(item => {
+      if (item.name === 'Posts') return [item, ...postTypeItems];
+      if (item.name === 'Plugins' && visiblePluginPages.length > 0) {
+        return [
+          {
+            ...item,
+            children: [
+              { name: 'All plugins', href: PAGES.DASHBOARD.PLUGINS },
+              ...visiblePluginPages.map(p => ({ name: p.name, href: p.href })),
+            ],
+          },
+        ];
+      }
+      return [item];
+    })
     .filter(item => !item.permission || permissions.includes(item.permission));
 
   // Inside one post type's screens, highlight that type, not "Post types".

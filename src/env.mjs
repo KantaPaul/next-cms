@@ -36,6 +36,7 @@ export const env = createEnv({
     GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
 
     CRON_SECRET: z.string().optional(),
+    PLUGIN_SECRET_KEY: z.string().optional(),
 
     MAIL_FROM: z.string().optional(),
     FORM_NOTIFY_TO: z.string().optional(),
@@ -94,6 +95,7 @@ export const env = createEnv({
     GEMINI_MODEL: process.env.GEMINI_MODEL,
 
     CRON_SECRET: process.env.CRON_SECRET,
+    PLUGIN_SECRET_KEY: process.env.PLUGIN_SECRET_KEY,
 
     MAIL_FROM: process.env.MAIL_FROM,
     FORM_NOTIFY_TO: process.env.FORM_NOTIFY_TO,

@@ -11,6 +11,7 @@ import { PAGES } from '@/config/pages';
 import { getSession } from '@/server/actions/auth.actions';
 import { collectionsService } from '@/server/services/collections.service';
 import { collectionTaxonomiesService } from '@/server/services/collection-taxonomies.service';
+import { pluginsService } from '@/server/plugins/plugins.service';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 
 /** Active post types for the sidebar; an empty list if they can't be loaded. */
@@ -41,6 +42,23 @@ async function sidebarPostTypes() {
   }
 }
 
+async function sidebarPluginPages() {
+  try {
+    const items = await pluginsService.listForDashboard();
+    return items
+      .filter(p => p.enabled && p.adminPages.length > 0)
+      .flatMap(p =>
+        p.adminPages.map(page => ({
+          name: page.navLabel ?? page.title,
+          href: PAGES.DASHBOARD.PLUGIN_PAGE(p.id, page.slug),
+          permission: page.permission,
+        }))
+      );
+  } catch {
+    return [];
+  }
+}
+
 export default async function SidebarProvider({
   children,
 }: {
@@ -48,9 +66,10 @@ export default async function SidebarProvider({
 }) {
   const session = await getSession();
   if (!session?.user?.id) redirect('/login');
-  const [postTypes, settings] = await Promise.all([
+  const [postTypes, settings, pluginPages] = await Promise.all([
     sidebarPostTypes(),
     siteSettingsService.get().catch(() => null),
+    sidebarPluginPages(),
   ]);
   const siteMode = settings?.siteMode?.mode ?? 'live';
   const backupFailed = settings?.backupSettings?.lastStatus === 'failed';
@@ -58,7 +77,7 @@ export default async function SidebarProvider({
 
   return (
     <AppSidebarProvider>
-      <AppSidebar postTypes={postTypes} />
+      <AppSidebar postTypes={postTypes} pluginPages={pluginPages} />
       <SidebarInset>
         <Header />
         {siteMode !== 'live' && (

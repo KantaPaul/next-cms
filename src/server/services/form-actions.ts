@@ -8,13 +8,18 @@ import {
   formSubmissions,
 } from '@/db/schema';
 import { env } from '@/env.mjs';
-import { sendMail } from '@/server/services/mail';
-import { webhookService } from '@/server/services/webhook.service';
-import { siteSettingsService } from '@/server/services/site-settings.service';
 import { safeFetch } from '@/server/lib/safe-fetch';
-import { upsertMailchimpMember } from '@/server/integrations/mailchimp';
+import { buildPluginContext } from '@/server/plugins/context';
+import { applyFilters, runActionNow } from '@/server/plugins/hooks';
+import { pluginsService } from '@/server/plugins/plugins.service';
+import { sendMail } from '@/server/services/mail';
 
-export type FormActionType = 'email' | 'redirect' | 'webhook' | 'mailchimp';
+export type FormActionType =
+  | 'email'
+  | 'redirect'
+  | 'webhook'
+  | 'mailchimp'
+  | (string & {});
 
 export type FormActionsConfig = {
   actions?: FormActionType[];
@@ -31,6 +36,7 @@ export type FormActionsConfig = {
   mailchimpLastNameField?: string;
   mailchimpTags?: string;
   mailchimpDoubleOptIn?: boolean;
+  [key: string]: unknown;
 };
 
 export type ExecuteActionsParams = {
@@ -80,7 +86,8 @@ export const formActionsService = {
             ? payload[config.emailReplyToField]?.trim()
             : undefined;
           const replyTo =
-            replyToRaw && /^[^\s@<>,;"]+@[^\s@<>,;"]+\.[^\s@<>,;"]+$/.test(replyToRaw)
+            replyToRaw &&
+            /^[^\s@<>,;"]+@[^\s@<>,;"]+\.[^\s@<>,;"]+$/.test(replyToRaw)
               ? replyToRaw
               : undefined;
 
@@ -187,91 +194,88 @@ export const formActionsService = {
       }
     }
 
-    // 3. Mailchimp action
-    if (actions.includes('mailchimp')) {
+    // 3. Plugin-contributed form actions (`form.actions` filter)
+    const pluginActions = await applyFilters('form.actions', [], { siteId });
+    const pluginActionsById = new Map(pluginActions.map(a => [a.id, a]));
+    const builtinSet = new Set(['email', 'redirect', 'webhook']);
+
+    for (const actionId of actions) {
+      if (builtinSet.has(actionId)) continue;
+      const pluginAction = pluginActionsById.get(actionId);
+      if (!pluginAction) continue;
+
       const at = new Date().toISOString();
       try {
-        const settings = await siteSettingsService.get();
-        const apiKey = settings.integrations?.mailchimp?.apiKey?.trim();
-        const listId = config.mailchimpListId?.trim();
-
-        if (!apiKey) {
+        const pluginId = pluginAction.pluginId ?? actionId;
+        const settings = await pluginsService.getServerSettings(
+          siteId,
+          pluginId
+        );
+        const ctx = await buildPluginContext({
+          pluginId,
+          siteId,
+          settings,
+        });
+        const res = await pluginAction.run(
+          {
+            submissionId,
+            siteId,
+            payload,
+            files: files.map(f => ({
+              field: f.field,
+              name: f.name,
+              size: f.size,
+              mime: f.mime,
+            })),
+            config: config as Record<string, unknown>,
+          },
+          ctx
+        );
+        if (res) {
           actionLog.push({
-            action: 'mailchimp',
-            status: 'skipped',
-            message:
-              'No Mailchimp API key configured in Settings > Integrations.',
-            at,
-          });
-        } else if (!listId) {
-          actionLog.push({
-            action: 'mailchimp',
-            status: 'error',
-            error: 'No Mailchimp audience (list) selected.',
+            action: actionId,
+            status: res.status,
+            ...(res.message ? { message: res.message } : {}),
+            ...(res.error ? { error: res.error } : {}),
             at,
           });
         } else {
-          const emailFieldName = config.mailchimpEmailField?.trim() || 'email';
-          const email = payload[emailFieldName]?.trim();
-
-          if (!email) {
-            actionLog.push({
-              action: 'mailchimp',
-              status: 'error',
-              error: `Field "${emailFieldName}" was empty or not submitted.`,
-              at,
-            });
-          } else {
-            const firstName = config.mailchimpFirstNameField
-              ? payload[config.mailchimpFirstNameField]?.trim()
-              : payload.firstName?.trim() || payload.name?.trim();
-            const lastName = config.mailchimpLastNameField
-              ? payload[config.mailchimpLastNameField]?.trim()
-              : payload.lastName?.trim();
-            const tags = config.mailchimpTags
-              ? config.mailchimpTags
-                  .split(',')
-                  .map(t => t.trim())
-                  .filter(Boolean)
-              : undefined;
-
-            await upsertMailchimpMember(apiKey, listId, {
-              email,
-              firstName,
-              lastName,
-              tags,
-              doubleOptIn: config.mailchimpDoubleOptIn ?? false,
-            });
-
-            actionLog.push({
-              action: 'mailchimp',
-              status: 'success',
-              message: `Member ${email} upserted to audience ${listId}.`,
-              at,
-            });
-          }
+          actionLog.push({
+            action: actionId,
+            status: 'success',
+            at,
+          });
         }
       } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
         actionLog.push({
-          action: 'mailchimp',
+          action: actionId,
           status: 'error',
-          error: err instanceof Error ? err.message : String(err),
+          error: message,
           at,
         });
+        if (pluginAction.pluginId) {
+          await pluginsService.recordPluginError(
+            siteId,
+            pluginAction.pluginId,
+            `Form action "${actionId}": ${message}`
+          );
+        }
       }
     }
 
-    // Always fire the global form.submitted webhook event
-    try {
-      await webhookService.deliver(
-        submissionId,
-        'form.submitted',
-        { id: submissionId, type: 'form' },
-        siteId
-      );
-    } catch {
-      // webhookService.deliver catches internally, but guard just in case
-    }
+    // Fire `form.submitted` hook (built-in webhook subscriber + enabled plugins)
+    await runActionNow('form.submitted', {
+      submissionId,
+      siteId,
+      payload,
+      files: files.map(f => ({
+        field: f.field,
+        name: f.name,
+        size: f.size,
+        mime: f.mime,
+      })),
+    });
 
     // Update submission record with actionLog
     await db

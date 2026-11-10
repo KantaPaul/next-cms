@@ -34,6 +34,7 @@ import {
 import {
   type BlockAction,
   BlockList,
+  BlockNotice,
   Breadcrumb,
   type Command,
   CommandPalette,
@@ -162,6 +163,14 @@ import {
   rendererComponents,
   SiteRoot,
 } from '@/builder/renderer';
+import {
+  PluginFormActionsProvider,
+  type SerializedPluginFormAction,
+} from '@/builder/fields/plugin-editor-context';
+import {
+  pluginFormActionFields,
+  pluginInspectorFields,
+} from '@/plugins/client-blocks';
 import { useAiEnabled } from '@/components/ai/use-ai-status';
 import { maybeOfferRedirect } from '@/components/dashboard/redirect-offer';
 import { Button } from '@/components/ui/button';
@@ -198,6 +207,12 @@ export type NewEditorProps = BuilderPageProps & {
   issues?: string[];
   /** Block manager: block types left out of the insert panel. */
   hiddenBlocks?: string[];
+  /** Enabled plugin ids for this site. */
+  enabledPluginIds?: string[];
+  /** Block types owned by disabled plugins (`blockType -> pluginName`). */
+  disabledPluginBlocks?: Record<string, string>;
+  /** Enabled plugin-contributed form actions for ContactForm. */
+  pluginFormActions?: SerializedPluginFormAction[];
   /** Collection-scoped block presets for the insert panel. */
   collectionBlocks?: { id: string; name: string }[];
   /** Pages and posts for "Specific Page/Blog Post" bindings. */
@@ -764,6 +779,8 @@ const NO_DYNAMIC_REFS: DynamicRefOptions = { pages: [], posts: [] };
 
 const NO_PREVIEW_ITEMS: NormalizedListingItem[] = [];
 const NO_HIDDEN_BLOCKS: string[] = [];
+const NO_DISABLED_PLUGIN_BLOCKS: Record<string, string> = {};
+const NO_PLUGIN_FORM_ACTIONS: SerializedPluginFormAction[] = [];
 const NO_COLLECTION_BLOCKS: { id: string; name: string }[] = [];
 
 const DEFAULT_DYNAMIC_SOURCES: DynamicSourcesValue = {
@@ -793,6 +810,9 @@ export function NewEditor({
   draftVersion = 0,
   issues = [],
   hiddenBlocks = NO_HIDDEN_BLOCKS,
+  enabledPluginIds,
+  disabledPluginBlocks = NO_DISABLED_PLUGIN_BLOCKS,
+  pluginFormActions = NO_PLUGIN_FORM_ACTIONS,
   dynamicRefs = NO_DYNAMIC_REFS,
   shell = 'legacy',
   layout,
@@ -802,17 +822,73 @@ export function NewEditor({
   // already uses them still renders and edits normally.
   const setup = useMemo(() => {
     let next = baseSetup;
-    if (hiddenBlocks.length) {
-      const hidden = new Set(hiddenBlocks);
+    const omittedFromInsert = new Set([
+      ...hiddenBlocks,
+      ...Object.keys(disabledPluginBlocks),
+    ]);
+    if (omittedFromInsert.size > 0) {
       next = {
         ...next,
         groups: next.groups
           .map(group => ({
             ...group,
-            types: group.types.filter(type => !hidden.has(type)),
+            types: group.types.filter(type => !omittedFromInsert.has(type)),
           }))
           .filter(group => group.types.length > 0),
       };
+    }
+    if (pluginFormActions.length > 0 && next.inspectorBlocks.ContactForm) {
+      const extraFields: Record<string, any> = {};
+      for (const action of pluginFormActions) {
+        const clientOverride = pluginFormActionFields[action.id];
+        if (clientOverride) {
+          for (const [key, fieldDef] of Object.entries(clientOverride)) {
+            extraFields[key] = {
+              ...fieldDef,
+              when:
+                fieldDef.when ??
+                ((p: Record<string, unknown>) =>
+                  Array.isArray(p.actions) && p.actions.includes(action.id)),
+            };
+          }
+        }
+        if (action.fields) {
+          for (const [key, meta] of Object.entries(action.fields)) {
+            if (extraFields[key]) continue;
+            const customRender = meta.fieldKey
+              ? pluginInspectorFields[meta.fieldKey]
+              : undefined;
+            extraFields[key] = {
+              label: meta.label,
+              description: meta.description,
+              placeholder: meta.placeholder,
+              tab: 'content',
+              section: 'Actions',
+              group: 'Actions',
+              type: customRender ? 'custom' : meta.type,
+              ...(customRender ? { render: customRender } : {}),
+              ...(meta.options ? { options: meta.options } : {}),
+              when: (p: Record<string, unknown>) =>
+                Array.isArray(p.actions) && p.actions.includes(action.id),
+            };
+          }
+        }
+      }
+      if (Object.keys(extraFields).length > 0) {
+        next = {
+          ...next,
+          inspectorBlocks: {
+            ...next.inspectorBlocks,
+            ContactForm: {
+              ...next.inspectorBlocks.ContactForm,
+              fields: {
+                ...next.inspectorBlocks.ContactForm.fields,
+                ...extraFields,
+              },
+            },
+          },
+        };
+      }
     }
     if (kind === 'entry' || kind === 'entry-template') {
       const collectionName =
@@ -859,7 +935,16 @@ export function NewEditor({
       }
     }
     return next;
-  }, [baseSetup, hiddenBlocks, kind, collectionBlocks, collectionEntry, document]);
+  }, [
+    baseSetup,
+    hiddenBlocks,
+    disabledPluginBlocks,
+    pluginFormActions,
+    kind,
+    collectionBlocks,
+    collectionEntry,
+    document,
+  ]);
   const adapter = useMemo(
     () => adapterFor(kind, page, category),
     [kind, page, category]
@@ -1100,8 +1185,28 @@ export function NewEditor({
     [themeTokens, motionPreview, page.language, setup.renderKind, post]
   );
   const components = useMemo(
-    () => rendererComponents(setup.renderKind),
-    [setup.renderKind]
+    () => rendererComponents(setup.renderKind, enabledPluginIds),
+    [setup.renderKind, enabledPluginIds]
+  );
+  const renderUnknownBlock = useCallback(
+    (node: { type: string }) => {
+      const disabledPlugin = disabledPluginBlocks[node.type];
+      if (disabledPlugin) {
+        return (
+          <BlockNotice
+            title="Plugin disabled"
+            detail={`This block belongs to the "${disabledPlugin}" plugin, which is currently disabled. Enable it under Dashboard → Plugins or remove this block.`}
+          />
+        );
+      }
+      return (
+        <BlockNotice
+          title={`Unknown block: ${node.type}`}
+          detail="This block type is not installed. It is kept in the page; delete it or install the block."
+        />
+      );
+    },
+    [disabledPluginBlocks]
   );
   const transformProps = useMemo(
     () => cmsTransformProps(metadata, setup.renderKind),
@@ -1458,6 +1563,7 @@ export function NewEditor({
       stateStyle={stateStyle}
       dynamicContext={dynamicContext}
       isPreview={isPreview}
+      renderUnknown={renderUnknownBlock}
       previewAddress={
         adapter.previewHref
           ? adapter.previewHref.replace(/^https?:\/\//, '')
@@ -1757,6 +1863,7 @@ export function NewEditor({
       />
     );
     return (
+      <PluginFormActionsProvider actions={pluginFormActions}>
       <E12ControlsProvider value={true}>
         <EditorProvider store={store}>
           <DynamicRefsProvider value={refChoices}>
@@ -1868,10 +1975,12 @@ export function NewEditor({
           </DynamicRefsProvider>
         </EditorProvider>
       </E12ControlsProvider>
+      </PluginFormActionsProvider>
     );
   }
 
   return (
+    <PluginFormActionsProvider actions={pluginFormActions}>
     <E12ControlsProvider value={true}>
       <EditorProvider store={store}>
         <DynamicRefsProvider value={refChoices}>
@@ -2148,5 +2257,6 @@ export function NewEditor({
           </DynamicRefsProvider>
       </EditorProvider>
     </E12ControlsProvider>
+    </PluginFormActionsProvider>
   );
 }

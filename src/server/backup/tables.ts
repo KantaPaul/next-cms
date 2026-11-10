@@ -1,5 +1,6 @@
 import { inArray, eq } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
+import { SERVER_PLUGINS_BY_ID } from '@/plugins/generated/server-registry';
 import {
   analyticsDashboards,
   apiKeys,
@@ -29,6 +30,8 @@ import {
   pageTags,
   pageTemplates,
   pageViews,
+  pluginKv,
+  plugins,
   postCategories,
   postContents,
   postRevisions,
@@ -62,6 +65,7 @@ export const EXCLUDED_SECRETS = [
   'api_keys.hashed_key',
   'site_settings.integrations.mailchimp.apiKey',
   'webhook_subscriptions.secret',
+  'plugins.settings (secret fields)',
 ] as const;
 
 export type BackupTableSpec = {
@@ -132,6 +136,27 @@ export function scrubWebhookSubscriptionRow(
 ): Record<string, unknown> {
   const { secret: _s, ...rest } = row;
   return rest;
+}
+
+export function scrubPluginBackupRow(
+  row: Record<string, unknown>
+): Record<string, unknown> {
+  const settings =
+    row.settings && typeof row.settings === 'object' && !Array.isArray(row.settings)
+      ? { ...(row.settings as Record<string, unknown>) }
+      : {};
+  const pluginId = typeof row.pluginId === 'string' ? row.pluginId : '';
+  const fieldDefs = SERVER_PLUGINS_BY_ID[pluginId]?.settings?.fields ?? {};
+  for (const [key, val] of Object.entries(settings)) {
+    if (
+      fieldDefs[key]?.secret ||
+      (typeof val === 'string' && val.startsWith('enc:v1:')) ||
+      /secret|apikey|api_key|token|password/i.test(key)
+    ) {
+      delete settings[key];
+    }
+  }
+  return { ...row, settings };
 }
 
 /**
@@ -629,6 +654,23 @@ export const BACKUP_TABLES: BackupTableSpec[] = [
     dateColumns: STANDARD_DATES,
     // API keys cannot be restored without their hashes; keep existing keys untouched.
     replaceOnRestore: false,
+  },
+  {
+    name: 'plugins',
+    table: plugins,
+    idCol: plugins.id,
+    scope: { kind: 'site', siteCol: plugins.siteId },
+    scrub: scrubPluginBackupRow,
+    dateColumns: [...STANDARD_DATES, 'installedAt', 'lastErrorAt'],
+    replaceOnRestore: true,
+  },
+  {
+    name: 'plugin_kv',
+    table: pluginKv,
+    idCol: pluginKv.id,
+    scope: { kind: 'site', siteCol: pluginKv.siteId },
+    dateColumns: STANDARD_DATES,
+    replaceOnRestore: true,
   },
 ];
 

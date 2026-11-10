@@ -3,7 +3,12 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   output: 'standalone',
   // Workspace packages ship TypeScript source; Next compiles them like app code.
-  transpilePackages: ['@nextcms/builder-core', '@nextcms/builder-react', '@nextcms/editor-ui'],
+  transpilePackages: [
+    '@nextcms/builder-core',
+    '@nextcms/builder-react',
+    '@nextcms/editor-ui',
+    '@nextcms/plugin-sdk',
+  ],
   typescript: {
     ignoreBuildErrors: false,
   },

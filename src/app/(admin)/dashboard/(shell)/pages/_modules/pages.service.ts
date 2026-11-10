@@ -21,6 +21,7 @@ import {
 import { emptyContentFor, normalizeContent } from '@/builder/data';
 import { planEditorSave } from '@/builder/editor-save';
 import { PERMISSIONS } from '@/config/permissions';
+import { doAction } from '@/server/plugins/hooks';
 import { offerForPublishedPath } from '@/server/services/redirects.service';
 import { searchIndex } from '@/server/services/search.service';
 import { db } from '@/db';
@@ -521,7 +522,17 @@ export const pagesServices = {
       return page;
     });
 
-    if (created.status === 'published') revalidatePublicSite();
+    if (created.status === 'published') {
+      revalidatePublicSite();
+      await doAction('content.published', {
+        id: created.id,
+        type: 'page',
+        slug: created.slug,
+        title: created.title,
+        siteId: created.siteId,
+        actorId: access.userId,
+      });
+    }
     return created;
   },
 
@@ -624,8 +635,27 @@ export const pagesServices = {
     });
 
     if (wasPublished || updated.status === 'published') revalidatePublicSite();
-    if (updated.status === 'published') await searchIndex.syncPage(updated.id);
-    else if (wasPublished) await searchIndex.removePage(updated.id);
+    if (updated.status === 'published') {
+      await searchIndex.syncPage(updated.id);
+      await doAction('content.published', {
+        id: updated.id,
+        type: 'page',
+        slug: updated.slug,
+        title: updated.title,
+        siteId: updated.siteId,
+        actorId: access.userId,
+      });
+    } else if (wasPublished) {
+      await searchIndex.removePage(updated.id);
+      await doAction('content.unpublished', {
+        id: updated.id,
+        type: 'page',
+        slug: updated.slug,
+        title: updated.title,
+        siteId: updated.siteId,
+        actorId: access.userId,
+      });
+    }
     return {
       ...updated,
       redirectOffer: offerForPublishedPath('page', existing, updated),
@@ -769,6 +799,14 @@ export const pagesServices = {
     });
     revalidatePublicSite();
     await searchIndex.syncPage(page.id);
+    await doAction('content.published', {
+      id: page.id,
+      type: 'page',
+      slug: page.slug,
+      title: page.title,
+      siteId: page.siteId,
+      actorId: access.userId,
+    });
     return { ...page, redirectOffer: null };
   },
 
@@ -792,6 +830,14 @@ export const pagesServices = {
       targetName: page.title,
     });
     revalidatePublicSite();
+    await doAction('content.unpublished', {
+      id: page.id,
+      type: 'page',
+      slug: page.slug,
+      title: page.title,
+      siteId: page.siteId,
+      actorId: access.userId,
+    });
     return page;
   },
 
@@ -891,6 +937,14 @@ export const pagesServices = {
       targetName: page.title,
     });
     if (page.status === 'published') revalidatePublicSite();
+    await doAction('content.deleted', {
+      id: page.id,
+      type: 'page',
+      slug: page.slug,
+      title: page.title,
+      siteId: page.siteId,
+      actorId: access.userId,
+    });
     return page;
   },
 
@@ -1095,12 +1149,19 @@ export const pagesServices = {
   /** Publishes every scheduled page whose time has come. Safe to call repeatedly. */
   publishDueScheduled: async () => {
     const due = await db
-      .select({ id: pages.id, title: pages.title, createdBy: pages.createdBy })
+      .select({
+        id: pages.id,
+        siteId: pages.siteId,
+        slug: pages.slug,
+        title: pages.title,
+        createdBy: pages.createdBy,
+      })
       .from(pages)
       .where(
         and(eq(pages.status, 'scheduled'), lte(pages.scheduledAt, new Date()))
       );
 
+    const publishedIds: string[] = [];
     for (const page of due) {
       try {
         await db.transaction(async tx => {
@@ -1117,13 +1178,23 @@ export const pagesServices = {
             tx
           );
         });
+        publishedIds.push(page.id);
+        await doAction('content.published', {
+          id: page.id,
+          type: 'page',
+          slug: page.slug,
+          title: page.title,
+          siteId: page.siteId,
+          actorId: null,
+          scheduled: true,
+        });
       } catch (error) {
         console.error('[pages.publishDueScheduled] failed for', page.id, error);
       }
     }
 
-    if (due.length) revalidatePublicSite();
-    return due.map(p => p.id);
+    if (publishedIds.length) revalidatePublicSite();
+    return publishedIds;
   },
 
   listForSelect: async (ids?: string[]) =>

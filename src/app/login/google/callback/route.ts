@@ -8,6 +8,7 @@ import type { User } from '@/db/schemas/auth.schema';
 import { UserStatus } from '@/db/schemas/shared.schema';
 import { login } from '@/server/actions/auth.actions';
 import { AuthService } from '@/server/services/auth.services';
+import { doAction } from '@/server/plugins/hooks';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 import { authRateLimitService } from '@/server/services/auth-rate-limit.service';
 
@@ -158,6 +159,7 @@ export async function GET(request: Request): Promise<Response> {
 
       await authRateLimitService.clearFailedLogins(clientIp, user.email);
       await login(dbUser.id);
+      await doAction('user.signed_in', { userId: dbUser.id, method: 'google' });
     } else {
       // Existing user checks
       if (existingUser.status !== UserStatus.Active) {
@@ -186,6 +188,10 @@ export async function GET(request: Request): Promise<Response> {
 
       await authRateLimitService.clearFailedLogins(clientIp, user.email);
       await login(existingUser.id);
+      await doAction('user.signed_in', {
+        userId: existingUser.id,
+        method: 'google',
+      });
     }
 
     const nextPath = getSafeNextPath(url.searchParams.get('next'));

@@ -5,19 +5,25 @@ import {
   type NodeId,
   toDocument,
 } from '@nextcms/builder-core';
-import { editorSetup } from '@/builder/definitions';
 import { migrateCollectionItems } from '@/builder/collection-item-migrate';
-import { hiddenBlocksFor } from '@/config/block-manager';
-import { siteSettingsService } from '@/server/services/site-settings.service';
+import { editorSetup } from '@/builder/definitions';
+import type { SerializedPluginFormAction } from '@/builder/fields/plugin-editor-context';
 import { loadDocumentData } from '@/builder/loaders';
 import type { PostView } from '@/builder/post-template';
 import { documentIssues } from '@/builder/validate-document';
+import { hiddenBlocksFor } from '@/config/block-manager';
+import { PLUGIN_BLOCK_OWNER } from '@/plugins/client-blocks';
+import { SERVER_PLUGINS_BY_ID } from '@/plugins/generated/server-registry';
+import { applyFilters } from '@/server/plugins/hooks';
+import { pluginsService } from '@/server/plugins/plugins.service';
+import { collectionBlocksService } from '@/server/services/collection-blocks.service';
 import {
   type DynamicRefItem,
   type DynamicRefOptions,
   dynamicRefsService,
 } from '@/server/services/dynamic-refs.service';
-import { collectionBlocksService } from '@/server/services/collection-blocks.service';
+import { adminSiteId } from '@/server/services/site-context';
+import { siteSettingsService } from '@/server/services/site-settings.service';
 
 export type EditorData = {
   document: BuilderDocument;
@@ -33,6 +39,12 @@ export type EditorData = {
   collectionBlocks?: { id: string; name: string }[];
   /** Block manager: block types left out of this editor's insert panel. */
   hiddenBlocks: string[];
+  /** Enabled plugin ids for this site. */
+  enabledPluginIds: string[];
+  /** Block types owned by disabled plugins (`blockType -> pluginName`). */
+  disabledPluginBlocks: Record<string, string>;
+  /** Enabled plugin-contributed form actions for ContactForm. */
+  pluginFormActions: SerializedPluginFormAction[];
 };
 
 /** Adds records the document already points at that fell outside the option list. */
@@ -68,7 +80,16 @@ export async function loadEditorData({
     collectionId ||
     collectionEntry?.collection?.id ||
     collectionEntry?.collectionId;
-  const [loaded, options, picked, settings, collectionBlocks] = await Promise.all([
+  const siteId = await adminSiteId();
+  const [
+    loaded,
+    options,
+    picked,
+    settings,
+    collectionBlocks,
+    enabledPluginSet,
+    rawFormActions,
+  ] = await Promise.all([
     loadDocumentData(document, {
       language,
       themeTokens,
@@ -82,7 +103,27 @@ export async function loadEditorData({
     resolvedCollectionId && (kind === 'entry' || kind === 'entry-template')
       ? collectionBlocksService.options(resolvedCollectionId).catch(() => [])
       : Promise.resolve([]),
+    pluginsService.getEnabledIds(siteId),
+    applyFilters('form.actions', [], { siteId }),
   ]);
+
+  const disabledPluginBlocks: Record<string, string> = {};
+  for (const [blockType, pluginId] of Object.entries(PLUGIN_BLOCK_OWNER)) {
+    if (!enabledPluginSet.has(pluginId)) {
+      disabledPluginBlocks[blockType] =
+        SERVER_PLUGINS_BY_ID[pluginId]?.name ?? pluginId;
+    }
+  }
+
+  const pluginFormActions: SerializedPluginFormAction[] = rawFormActions.map(
+    a => ({
+      id: a.id,
+      label: a.label,
+      pluginId: a.pluginId ?? a.id,
+      fields: a.fields,
+    })
+  );
+
   return {
     document,
     loaded,
@@ -92,6 +133,9 @@ export async function loadEditorData({
       kind,
       setup.groups.flatMap(group => group.types)
     ),
+    enabledPluginIds: Array.from(enabledPluginSet),
+    disabledPluginBlocks,
+    pluginFormActions,
     dynamicRefs: {
       pages: withPicked(options.pages, picked.pageRef),
       posts: withPicked(options.posts, picked.postRef),

@@ -6,6 +6,7 @@ import { getGlobalBlockContent } from '@/app/(admin)/dashboard/(shell)/templates
 import { renderBuilderContent } from '@/builder/render-content';
 import { withSingleExtras } from '@/builder/post-template';
 import { sanitizeRichText } from '@/builder/sanitize';
+import { applyFilters } from '@/server/plugins/hooks';
 import {
   type CollectionEntryWithFields,
   EntryProvider,
@@ -1792,6 +1793,19 @@ export default async function SitePage({ params, searchParams }: Params) {
     );
   }
 
+  const htmlContent = await applyFilters(
+    'content.html',
+    sanitizeRichText(page.content),
+    {
+      kind: 'page',
+      id: page.id,
+      slug: page.slug,
+      title: page.title,
+      language: page.language,
+      siteId: page.siteId,
+    }
+  );
+
   return (
     <>
       {beacon}
@@ -1816,7 +1830,7 @@ export default async function SitePage({ params, searchParams }: Params) {
         </header>
         <div
           className="s-prose prose prose-lg max-w-none"
-          dangerouslySetInnerHTML={{ __html: sanitizeRichText(page.content) }}
+          dangerouslySetInnerHTML={{ __html: htmlContent }}
         />
       </article>
     </>

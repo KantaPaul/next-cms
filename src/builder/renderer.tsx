@@ -35,6 +35,7 @@ import {
   RelatedPosts,
 } from './blocks/blog';
 import { getBlockComponents } from './blocks/registry';
+import { PLUGIN_BLOCK_OWNER } from '@/plugins/client-blocks';
 import { resolvePanels } from './resolve-panels';
 import { type LoaderContext, resolveDocumentData } from './loaders';
 import type { LocaleLinkMap } from '@/lib/utils/locale-links';
@@ -86,8 +87,24 @@ const POST_BLOCKS = {
 };
 
 /** Every component a kind of content can render; mirrors the Puck configs. */
-export function rendererComponents(kind: RenderKind): BlockComponents {
-  const page = getBlockComponents() as unknown as BlockComponents;
+export function rendererComponents(
+  kind: RenderKind,
+  enabledPluginIds?: Set<string> | string[]
+): BlockComponents {
+  const rawPage = getBlockComponents() as unknown as BlockComponents;
+  const enabledSet = enabledPluginIds
+    ? enabledPluginIds instanceof Set
+      ? enabledPluginIds
+      : new Set(enabledPluginIds)
+    : null;
+  const page = enabledSet
+    ? Object.fromEntries(
+        Object.entries(rawPage).filter(([type]) => {
+          const owner = PLUGIN_BLOCK_OWNER[type];
+          return !owner || enabledSet.has(owner);
+        })
+      )
+    : rawPage;
   if (kind === 'page') return page;
   return {
     ...page,
@@ -151,8 +168,12 @@ function renderOptions(
   metadata: RenderMetadata,
   kind: RenderKind
 ): RenderOptions {
+  const enabledPluginIds = metadata.enabledPluginIds as
+    | Set<string>
+    | string[]
+    | undefined;
   return {
-    components: rendererComponents(kind),
+    components: rendererComponents(kind, enabledPluginIds),
     editing: !!metadata.editing,
     transformProps: cmsTransformProps(metadata, kind),
     wrapNode: (node, element) => {
@@ -339,7 +360,23 @@ export async function renderDocumentWithLoaders(
       document={document}
       metadata={{
         ...metadata,
-        ...(prefix && post?.body ? { post: { ...post, body: prefixHtmlLinks(post.body, siteSlug, localeLinks) } } : {}),
+        ...(prefix && post?.body
+          ? {
+              post: {
+                ...post,
+                body: prefixHtmlLinks(post.body, siteSlug, localeLinks),
+                ...(post.filteredBody
+                  ? {
+                      filteredBody: prefixHtmlLinks(
+                        post.filteredBody,
+                        siteSlug,
+                        localeLinks
+                      ),
+                    }
+                  : {}),
+              },
+            }
+          : {}),
         language: metadata.language ?? mergedCtx.language,
         themeTokens: metadata.themeTokens ?? mergedCtx.themeTokens,
       }}

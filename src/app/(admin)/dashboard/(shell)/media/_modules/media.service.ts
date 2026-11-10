@@ -11,6 +11,7 @@ import {
   type UserAccess,
 } from '@/server/services/access.service';
 import { auditService } from '@/server/services/audit.service';
+import { doAction } from '@/server/plugins/hooks';
 import { adminSiteId } from '@/server/services/site-context';
 import { storage } from '@/server/storage';
 
@@ -179,6 +180,16 @@ export const mediaService = {
       targetType: 'media',
       targetId: row.id,
       targetName: row.filename,
+    });
+    await doAction('media.uploaded', {
+      id: row.id,
+      key: row.key,
+      url: row.url,
+      filename: row.filename,
+      mime: row.mime,
+      size: row.size,
+      siteId: row.siteId,
+      actorId: access.userId,
     });
     return row;
   },

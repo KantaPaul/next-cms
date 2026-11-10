@@ -143,7 +143,6 @@ import {
 } from '../fields/client-fields';
 import { ContactFormOptionsField } from '../fields/contact-form-options-field';
 import { ContactFormActionsField } from '../fields/contact-form-actions-field';
-import { MailchimpAudienceField } from '../fields/mailchimp-audience-field';
 import {
   type ElementPart,
   ElementStyleControl,
@@ -1927,59 +1926,6 @@ export const ContactFormBlock = defineBlock({
       section: ACTIONS,
       type: 'text',
       when: p => Array.isArray(p.actions) && p.actions.includes('webhook'),
-    },
-    mailchimpListId: {
-      label: 'Mailchimp audience',
-      group: ACTIONS,
-      tab: 'content',
-      section: ACTIONS,
-      type: 'custom',
-      render: MailchimpAudienceField,
-      when: p => Array.isArray(p.actions) && p.actions.includes('mailchimp'),
-    },
-    mailchimpEmailField: {
-      label: 'Subscriber email field name',
-      group: ACTIONS,
-      tab: 'content',
-      section: ACTIONS,
-      type: 'text',
-      when: p => Array.isArray(p.actions) && p.actions.includes('mailchimp'),
-    },
-    mailchimpFirstNameField: {
-      label: 'First name field name (optional)',
-      group: ACTIONS,
-      tab: 'content',
-      section: ACTIONS,
-      type: 'text',
-      when: p => Array.isArray(p.actions) && p.actions.includes('mailchimp'),
-    },
-    mailchimpLastNameField: {
-      label: 'Last name field name (optional)',
-      group: ACTIONS,
-      tab: 'content',
-      section: ACTIONS,
-      type: 'text',
-      when: p => Array.isArray(p.actions) && p.actions.includes('mailchimp'),
-    },
-    mailchimpTags: {
-      label: 'Tags (comma separated)',
-      group: ACTIONS,
-      tab: 'content',
-      section: ACTIONS,
-      type: 'text',
-      when: p => Array.isArray(p.actions) && p.actions.includes('mailchimp'),
-    },
-    mailchimpDoubleOptIn: {
-      label: 'Require double opt-in',
-      group: ACTIONS,
-      tab: 'content',
-      section: ACTIONS,
-      type: 'radio',
-      when: p => Array.isArray(p.actions) && p.actions.includes('mailchimp'),
-      options: [
-        { label: 'Yes', value: true },
-        { label: 'No', value: false },
-      ],
     },
     label_style: elementStyle('label', 'Field Label Style', TEXT_PARTS),
     required_style: elementStyle(

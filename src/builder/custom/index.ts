@@ -8,12 +8,17 @@
 
 import type { BlockDefinition } from '@nextcms/builder-core';
 import type { ComponentType } from 'react';
+import {
+  pluginBlockDefinitions,
+  pluginComponents,
+} from '@/plugins/client-blocks';
 import { Example } from './example';
 import { UiBadgeBlock, UiCardBlock } from './ui-blocks';
 
 export const customBlockDefinitions: BlockDefinition[] = [
   UiBadgeBlock,
   UiCardBlock,
+  ...pluginBlockDefinitions,
 ];
 
 export const customComponents: Record<
@@ -23,4 +28,5 @@ export const customComponents: Record<
   example: Example,
   UiBadge: UiBadgeBlock.render as ComponentType<Record<string, unknown>>,
   UiCard: UiCardBlock.render as ComponentType<Record<string, unknown>>,
+  ...pluginComponents,
 };

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { PAGES } from '@/config/pages';
 import { cn } from '@/lib/utils/cn';
-import { Blocks, Code, Cookie, Plug, Settings, ShieldCheck } from 'lucide-react';
+import { Blocks, Code, Cookie, Settings, ShieldCheck } from 'lucide-react';
 
 export function SettingsNav() {
   const pathname = usePathname();
@@ -16,8 +16,6 @@ export function SettingsNav() {
   const isConsentActive = pathname === PAGES.DASHBOARD.SETTINGS_CONSENT;
   const isBlocksActive = pathname === PAGES.DASHBOARD.SETTINGS_BLOCKS;
   const isCustomCodeActive = pathname === PAGES.DASHBOARD.SETTINGS_CUSTOM_CODE;
-  const isIntegrationsActive =
-    pathname === PAGES.DASHBOARD.SETTINGS_INTEGRATIONS;
 
   const navItems = [
     {
@@ -31,12 +29,6 @@ export function SettingsNav() {
       href: PAGES.DASHBOARD.SETTINGS_CONSENT,
       icon: Cookie,
       active: isConsentActive,
-    },
-    {
-      title: 'Integrations',
-      href: PAGES.DASHBOARD.SETTINGS_INTEGRATIONS,
-      icon: Plug,
-      active: isIntegrationsActive,
     },
     {
       title: 'Custom code',

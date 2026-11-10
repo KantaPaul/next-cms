@@ -28,6 +28,7 @@ import {
   type CollectionFieldType,
 } from '@/db/schema';
 import { accessService } from '@/server/services/access.service';
+import { doAction } from '@/server/plugins/hooks';
 import { searchIndex } from '@/server/services/search.service';
 import { adminSiteId, siteContext } from '@/server/services/site-context';
 import { auditService } from './audit.service';
@@ -1419,6 +1420,16 @@ export const collectionsService = {
       }
     }
 
+    await doAction('entry.changed', {
+      id: row.id,
+      type: 'entry',
+      collectionId: row.collectionId,
+      slug: row.slug,
+      action: 'created',
+      siteId: row.siteId,
+      actorId,
+    });
+
     return row;
   },
 
@@ -1560,6 +1571,16 @@ export const collectionsService = {
       console.error('Failed to sync collection entry search document:', err);
     }
 
+    await doAction('entry.changed', {
+      id: row.id,
+      type: 'entry',
+      collectionId: row.collectionId,
+      slug: row.slug,
+      action: 'updated',
+      siteId: row.siteId,
+      actorId,
+    });
+
     return row;
   },
 
@@ -1600,6 +1621,15 @@ export const collectionsService = {
     } catch (err) {
       console.error('Failed to sync collection entry search document:', err);
     }
+    await doAction('entry.changed', {
+      id: row.id,
+      type: 'entry',
+      collectionId: row.collectionId,
+      slug: row.slug,
+      action: 'published',
+      siteId: row.siteId,
+      actorId,
+    });
     return row;
   },
 
@@ -1636,6 +1666,15 @@ export const collectionsService = {
       targetName: entry.slug,
     });
     await searchIndex.removeCollectionEntry(id);
+    await doAction('entry.changed', {
+      id: row.id,
+      type: 'entry',
+      collectionId: row.collectionId,
+      slug: row.slug,
+      action: 'unpublished',
+      siteId: row.siteId,
+      actorId,
+    });
     return row;
   },
 
@@ -1662,6 +1701,15 @@ export const collectionsService = {
       targetName: entry.slug,
     });
     await searchIndex.removeCollectionEntry(id);
+    await doAction('entry.changed', {
+      id: entry.id,
+      type: 'entry',
+      collectionId: entry.collectionId,
+      slug: entry.slug,
+      action: 'deleted',
+      siteId: entry.siteId,
+      actorId,
+    });
   },
 
   /** Get one entry by id with author, template, and assigned taxonomy terms. */
@@ -1706,6 +1754,8 @@ export const collectionsService = {
     const due = await db
       .select({
         id: collectionEntries.id,
+        siteId: collectionEntries.siteId,
+        collectionId: collectionEntries.collectionId,
         slug: collectionEntries.slug,
         authorId: collectionEntries.authorId,
         scheduledAt: collectionEntries.scheduledAt,
@@ -1748,6 +1798,15 @@ export const collectionsService = {
             err
           );
         }
+        await doAction('entry.changed', {
+          id: entry.id,
+          type: 'entry',
+          collectionId: entry.collectionId,
+          slug: entry.slug,
+          action: 'published',
+          siteId: entry.siteId,
+          actorId: entry.authorId,
+        });
       } catch (error) {
         console.error(
           '[collections.publishDueScheduledEntries] failed for',

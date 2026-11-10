@@ -19,6 +19,10 @@ import {
 } from './native';
 import { withInfo } from './info';
 import { customBlockDefinitions } from '../custom';
+import {
+  PLUGIN_BLOCK_OWNER,
+  pluginBlockDefinitions,
+} from '@/plugins/client-blocks';
 import { LoopPreviewItemField } from '../controls/loop-preview';
 import {
   OverlayBackdropField,
@@ -109,11 +113,27 @@ export const pageRootFields: Record<string, FieldDef> = {
   ...(PAGE_ROOT_FIELDS as Record<string, FieldDef>),
 };
 
+const nonPluginCustomBlocks = customBlockDefinitions.filter(
+  b => !(b.type in PLUGIN_BLOCK_OWNER)
+);
+
 const customGroups: BlockGroup[] = [
-  {
-    title: 'Custom UI Components',
-    types: customBlockDefinitions.map(b => b.type),
-  },
+  ...(nonPluginCustomBlocks.length > 0
+    ? [
+        {
+          title: 'Custom UI Components',
+          types: nonPluginCustomBlocks.map(b => b.type),
+        },
+      ]
+    : []),
+  ...(pluginBlockDefinitions.length > 0
+    ? [
+        {
+          title: 'Plugins',
+          types: pluginBlockDefinitions.map(b => b.type),
+        },
+      ]
+    : []),
 ];
 
 export const pageBlockGroups: BlockGroup[] = [
@@ -133,7 +153,10 @@ export const pageBlockGroups: BlockGroup[] = [
 ];
 
 const postDefinitions: Record<string, BlockDefinition> = Object.fromEntries(
-  NATIVE_BLOCKS.map(block => [block.type, withInfo(block)])
+  [...NATIVE_BLOCKS, ...pluginBlockDefinitions].map(block => [
+    block.type,
+    withInfo(block),
+  ])
 );
 
 const collectionDesignDefinitions: Record<string, BlockDefinition> =
@@ -913,12 +936,15 @@ function baseEditorSetup(kind: string): EditorSetup {
       schemas: schemasOf(postDefinitions),
       inspectorBlocks: inspectorOf(postDefinitions),
       rootFields: PAGE_ROOT_FIELDS as Record<string, FieldDef>,
-      groups: isCollectionEntry
-        ? [
-            { title: 'Collection blocks', types: ['CollectionBlock'] },
-            ...groupsOf([]),
-          ]
-        : groupsOf([]),
+      groups: [
+        ...(isCollectionEntry
+          ? [{ title: 'Collection blocks', types: ['CollectionBlock'] }]
+          : []),
+        ...groupsOf([]),
+        ...(pluginBlockDefinitions.length > 0
+          ? [{ title: 'Plugins', types: pluginBlockDefinitions.map(b => b.type) }]
+          : []),
+      ],
       renderKind: 'post',
     };
   }

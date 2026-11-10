@@ -19,7 +19,6 @@ import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { db } from '@/db';
 import { pages } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { webhookService } from '@/server/services/webhook.service';
 import { apiUpdatePageSchema } from '@/schemas/api/v1/pages';
 
 export const dynamic = 'force-dynamic';
@@ -162,13 +161,6 @@ export const POST = apiHandler<{ slug: string }>(
     }
 
     await pagesServices.publish({ id: page.id }, access);
-
-    await webhookService.deliver(
-      page.id,
-      'content.published',
-      { id: page.id, type: 'page' },
-      site.id
-    );
 
     return NextResponse.json({ id: page.id, status: 'published' });
   },

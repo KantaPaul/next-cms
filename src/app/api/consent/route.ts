@@ -25,7 +25,7 @@ const payloadSchema = z.object({
   receiptId: z.string().max(100).optional(),
 });
 
-export function hashConsentVisitorKey(rawKey: string): string {
+function hashConsentVisitorKey(rawKey: string): string {
   return createHash('sha256').update(`consent:${rawKey}`).digest('hex');
 }
 

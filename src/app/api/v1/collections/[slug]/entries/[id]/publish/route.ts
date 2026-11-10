@@ -7,7 +7,7 @@ import { PERMISSIONS } from '@/config/permissions';
 import { accessService } from '@/server/services/access.service';
 import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { siteContext } from '@/server/services/site-context';
-import { webhookService } from '@/server/services/webhook.service';
+import { doAction } from '@/server/plugins/hooks';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,13 +37,15 @@ export const POST = apiHandler<{ slug: string; id: string }>(
       .set({ status: 'published', publishedAt: new Date() })
       .where(eq(collectionEntries.id, entryId));
 
-    // Fire webhooks
-    await webhookService.deliver(
-      entryId,
-      'entry.changed',
-      { id: entryId, type: 'entry' as const },
-      site.id
-    );
+    await doAction('entry.changed', {
+      id: entryId,
+      type: 'entry',
+      collectionId: entry.collectionId,
+      slug: entry.slug,
+      action: 'published',
+      siteId: site.id,
+      actorId: userId,
+    });
 
     return NextResponse.json({ id: entryId, status: 'published' });
   },

@@ -1,3 +1,5 @@
+import { PLUGIN_PERMISSIONS } from '@/plugins/generated/permissions';
+
 export const PERMISSIONS = {
   PAGES_CREATE: 'pages.create',
   PAGES_EDIT: 'pages.edit',
@@ -16,7 +18,8 @@ export const PERMISSIONS = {
   COMMENTS_MODERATE: 'comments.moderate',
 } as const;
 
-export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
+export type BuiltinPermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
+export type PermissionKey = BuiltinPermissionKey | (string & {});
 
 export const ROLE_NAMES = ['Admin', 'Editor', 'Author', 'Viewer'] as const;
 export type RoleName = (typeof ROLE_NAMES)[number];
@@ -101,6 +104,16 @@ export const PERMISSION_MATRIX: {
     label: 'Approve, reply to, and remove blog comments',
     roles: { Admin: true, Editor: true, Author: false, Viewer: false },
   },
+  ...PLUGIN_PERMISSIONS.map(perm => ({
+    key: perm.key as PermissionKey,
+    label: perm.label,
+    roles: {
+      Admin: perm.roles?.Admin ?? true,
+      Editor: perm.roles?.Editor ?? false,
+      Author: perm.roles?.Author ?? false,
+      Viewer: perm.roles?.Viewer ?? false,
+    },
+  })),
 ];
 
 export const ROLE_DESCRIPTIONS: Record<RoleName, string> = {

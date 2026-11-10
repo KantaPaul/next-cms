@@ -5,7 +5,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { clientIp } from '@/server/lib/client-ip';
-import { getMailchimpDc } from '@/server/integrations/mailchimp';
 import { isPrivateOrReservedIp, safeFetch } from '@/server/lib/safe-fetch';
 
 const publicLookup = async () => [{ address: '93.184.216.34', family: 4 }];
@@ -76,12 +75,5 @@ describe('clientIp', () => {
 
   it('falls back to X-Real-IP', () => {
     assert.equal(clientIp(new Headers({ 'x-real-ip': '198.51.100.7' })), '198.51.100.7');
-  });
-});
-
-describe('Mailchimp datacenter', () => {
-  it('rejects a key suffix that would change the API host', () => {
-    assert.throws(() => getMailchimpDc('abc-evil.com/x'), /datacenter/);
-    assert.equal(getMailchimpDc('abc-us21'), 'us21');
   });
 });

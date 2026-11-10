@@ -16,6 +16,7 @@ import {
   recordAuthAttempt,
 } from '@/server/services/auth-attempts';
 import { auditService } from '@/server/services/audit.service';
+import { doAction } from '@/server/plugins/hooks';
 import { isMailConfigured, sendMail } from '@/server/services/mail';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 import { authRateLimitService } from '@/server/services/auth-rate-limit.service';
@@ -118,6 +119,7 @@ export const staffAuth = {
       return { error: null, userId: user.id, totp: true };
     }
     await clearAuthAttempts({ email: normalized });
+    await doAction('user.signed_in', { userId: user.id, method: 'password' });
     return { error: null, userId: user.id, totp: false };
   },
 
@@ -137,6 +139,7 @@ export const staffAuth = {
     }
     await clearPending();
     await clearAuthAttempts({ email: user.email });
+    await doAction('user.signed_in', { userId: user.id, method: 'totp' });
     return { error: null, userId: user.id };
   },
 
@@ -228,6 +231,7 @@ export const staffAuth = {
       return { error: null, userId: user.id, totp: true };
     }
     await clearAuthAttempts({ email: user.email });
+    await doAction('user.signed_in', { userId: user.id, method: 'magic_link' });
     return { error: null, userId: user.id, totp: false };
   },
 

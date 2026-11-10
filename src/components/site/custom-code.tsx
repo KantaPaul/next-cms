@@ -16,17 +16,21 @@ export function CustomCode({
   html,
   slot,
   category = 'marketing',
+  id,
 }: {
   html: string;
   slot: Slot;
   category?: ConsentCategory;
+  id?: string;
 }) {
   const { hasConsent } = useConsent();
   const allowed = hasConsent(category);
 
   useEffect(() => {
     if (!allowed || !html.trim()) return;
-    const marker = `data-custom-code-${slot}`;
+    const marker = id
+      ? `data-custom-code-${slot}-${id}`
+      : `data-custom-code-${slot}`;
     if (document.querySelector(`[${marker}]`)) return;
     const range = document.createRange();
     range.selectNode(slot === 'head' ? document.head : document.body);

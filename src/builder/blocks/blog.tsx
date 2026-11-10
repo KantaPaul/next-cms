@@ -562,7 +562,9 @@ export function PostContent(
             p.dropCap && 's-prose-dropcap'
           )
         )}
-        dangerouslySetInnerHTML={{ __html: sanitizeRichText(p.post.body) }}
+        dangerouslySetInnerHTML={{
+          __html: p.post.filteredBody ?? sanitizeRichText(p.post.body),
+        }}
       />
     </Section>
   );

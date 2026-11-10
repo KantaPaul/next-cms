@@ -13,6 +13,7 @@ import { PAGES } from '@/config/pages';
 import { revalidatePublicSite } from '@/lib/utils/revalidate-site';
 import { hashIdentifier } from '@/server/services/auth-rate-limit.service';
 import { verifyTurnstile } from '@/server/services/forms.service';
+import { doAction } from '@/server/plugins/hooks';
 import { sendMail } from '@/server/services/mail';
 import { adminSiteId, siteContext } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
@@ -157,18 +158,30 @@ export const commentsService = {
     );
     if (!decision.ok) return decision;
 
-    await db.insert(comments).values({
-      siteId: site.id,
+    const [inserted] = await db
+      .insert(comments)
+      .values({
+        siteId: site.id,
+        postId: input.postId,
+        parentId: input.parentId ?? null,
+        authorName: input.authorName,
+        authorEmail: input.authorEmail.toLowerCase(),
+        authorUrl: input.authorUrl ?? null,
+        body: input.body,
+        status: decision.status,
+        ipHash,
+        voterHash: voterHashOf(meta.voterKey),
+        userAgent: meta.userAgent.slice(0, 300) || null,
+      })
+      .returning({ id: comments.id });
+
+    await doAction('comment.created', {
+      id: inserted.id,
       postId: input.postId,
       parentId: input.parentId ?? null,
       authorName: input.authorName,
-      authorEmail: input.authorEmail.toLowerCase(),
-      authorUrl: input.authorUrl ?? null,
-      body: input.body,
       status: decision.status,
-      ipHash,
-      voterHash: voterHashOf(meta.voterKey),
-      userAgent: meta.userAgent.slice(0, 300) || null,
+      siteId: site.id,
     });
 
     if (decision.status === 'pending' && env.FORM_NOTIFY_TO && post) {

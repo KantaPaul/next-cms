@@ -157,6 +157,8 @@ export type EditorCanvasProps = {
   dynamicContext?: DynamicContext;
   /** When true, hides editing overlays (selection box, hover box, floating toolbar, etc.) for live preview. */
   isPreview?: boolean;
+  /** Optional override for unknown/disabled block placeholders on the canvas. */
+  renderUnknown?: (node: BuilderNode) => ReactNode;
   /** Address displayed in the browser-style frame header. */
   previewAddress?: string;
   style?: CSSProperties;
@@ -398,7 +400,7 @@ function makeRenderSlot(
 }
 
 /** Editor-only notice in place of a block (R797). */
-function BlockNotice({ title, detail }: { title: string; detail?: string }) {
+export function BlockNotice({ title, detail }: { title: string; detail?: string }) {
   return (
     <div
       role="note"
@@ -466,9 +468,15 @@ function CanvasDocument({
   onInsertHere,
   stateStyle,
   dynamicContext,
+  renderUnknown: customRenderUnknown,
 }: Pick<
   EditorCanvasProps,
-  'components' | 'transformProps' | 'loaded' | 'renderRoot' | 'dynamicContext'
+  | 'components'
+  | 'transformProps'
+  | 'loaded'
+  | 'renderRoot'
+  | 'dynamicContext'
+  | 'renderUnknown'
 > & {
   /** Bumped per block after inline editing, so its DOM is rebuilt by React. */
   remount: Record<NodeId, number>;
@@ -506,7 +514,7 @@ function CanvasDocument({
     components,
     editing: true,
     wrapNode,
-    renderUnknown,
+    renderUnknown: customRenderUnknown ?? renderUnknown,
     renderSlot: makeRenderSlot(onInsertHere, onAddHero),
     transformProps: (node, rawProps) => {
       const props = previewDynamic(rawProps, dynamicContext ?? {}) as Record<
@@ -1103,6 +1111,7 @@ export function EditorCanvas({
   stateStyle,
   dynamicContext,
   isPreview = false,
+  renderUnknown: customRenderUnknown,
   previewAddress = 'preview.site.local/home',
   style,
 }: EditorCanvasProps) {
@@ -1825,6 +1834,7 @@ export function EditorCanvas({
               onInsertHere={onInsertHere}
               stateStyle={stateStyle}
               dynamicContext={dynamicContext}
+              renderUnknown={customRenderUnknown}
             />
           </CanvasFrame>
           {frame && !isPreview && (

@@ -11,3 +11,4 @@ export * from '@/db/schemas/webhooks.schema';
 export * from '@/db/schemas/licenses.schema';
 export * from '@/db/schemas/overlays.schema';
 export * from '@/db/schemas/essentials.schema';
+export * from '@/db/schemas/plugins.schema';

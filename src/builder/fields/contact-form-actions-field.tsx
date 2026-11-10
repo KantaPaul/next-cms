@@ -1,13 +1,13 @@
 'use client';
 
-import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { usePluginFormActions } from './plugin-editor-context';
 
-const ACTION_OPTIONS = [
+const BUILTIN_ACTION_OPTIONS = [
   { value: 'email', label: 'Email notification' },
   { value: 'redirect', label: 'Redirect to URL' },
   { value: 'webhook', label: 'Webhook' },
-  { value: 'mailchimp', label: 'Mailchimp' },
 ];
 
 type Props = {
@@ -23,6 +23,11 @@ export function ContactFormActionsField({
   onChange,
   value,
 }: Props) {
+  const pluginActions = usePluginFormActions();
+  const options = [
+    ...BUILTIN_ACTION_OPTIONS,
+    ...pluginActions.map(a => ({ value: a.id, label: a.label })),
+  ];
   const selected = Array.isArray(value) ? value : [];
 
   const toggle = (actionVal: string) => {
@@ -39,7 +44,7 @@ export function ContactFormActionsField({
         {field.label || 'Actions after submit'}
       </Label>
       <div className="space-y-2 rounded-md border p-3">
-        {ACTION_OPTIONS.map(opt => {
+        {options.map(opt => {
           const checked = selected.includes(opt.value);
           const id = `${name}-${opt.value}`;
           return (

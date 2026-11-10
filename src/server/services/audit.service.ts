@@ -20,7 +20,10 @@ export type AuditAction =
   | 'deactivate'
   | 'suspend'
   | 'renew'
-  | 'reassign';
+  | 'reassign'
+  | 'enable'
+  | 'disable'
+  | 'plugin_error';
 
 export type AuditTarget =
   | 'page'
@@ -44,7 +47,8 @@ export type AuditTarget =
   | 'import_job'
   | 'privacy_request'
   | 'backup'
-  | 'consent';
+  | 'consent'
+  | 'plugin';
 
 export const auditService = {
   log: async (

@@ -15,6 +15,7 @@ import {
 import { postTemplatesService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
 import { isBuilderData } from '@/builder/data';
 import { PERMISSIONS } from '@/config/permissions';
+import { doAction } from '@/server/plugins/hooks';
 import { offerForPublishedPath } from '@/server/services/redirects.service';
 import { searchIndex } from '@/server/services/search.service';
 import { db } from '@/db';
@@ -458,7 +459,17 @@ export const postsService = {
       return post;
     });
 
-    if (created.status === 'published') revalidatePublicSite();
+    if (created.status === 'published') {
+      revalidatePublicSite();
+      await doAction('content.published', {
+        id: created.id,
+        type: 'post',
+        slug: created.slug,
+        title: created.title,
+        siteId: created.siteId,
+        actorId: access.userId,
+      });
+    }
     return created;
   },
 
@@ -544,8 +555,27 @@ export const postsService = {
     });
 
     if (wasPublished || updated.status === 'published') revalidatePublicSite();
-    if (updated.status === 'published') await searchIndex.syncPost(updated.id);
-    else if (wasPublished) await searchIndex.removePost(updated.id);
+    if (updated.status === 'published') {
+      await searchIndex.syncPost(updated.id);
+      await doAction('content.published', {
+        id: updated.id,
+        type: 'post',
+        slug: updated.slug,
+        title: updated.title,
+        siteId: updated.siteId,
+        actorId: access.userId,
+      });
+    } else if (wasPublished) {
+      await searchIndex.removePost(updated.id);
+      await doAction('content.unpublished', {
+        id: updated.id,
+        type: 'post',
+        slug: updated.slug,
+        title: updated.title,
+        siteId: updated.siteId,
+        actorId: access.userId,
+      });
+    }
     return {
       ...updated,
       redirectOffer: offerForPublishedPath('post', existing, updated),
@@ -742,6 +772,14 @@ export const postsService = {
     });
     revalidatePublicSite();
     await searchIndex.syncPost(post.id);
+    await doAction('content.published', {
+      id: post.id,
+      type: 'post',
+      slug: post.slug,
+      title: post.title,
+      siteId: post.siteId,
+      actorId: access.userId,
+    });
     return { ...post, redirectOffer: null };
   },
 
@@ -765,6 +803,14 @@ export const postsService = {
       targetName: post.title,
     });
     revalidatePublicSite();
+    await doAction('content.unpublished', {
+      id: post.id,
+      type: 'post',
+      slug: post.slug,
+      title: post.title,
+      siteId: post.siteId,
+      actorId: access.userId,
+    });
     return post;
   },
 
@@ -871,6 +917,14 @@ export const postsService = {
       targetName: post.title,
     });
     if (post.status === 'published') revalidatePublicSite();
+    await doAction('content.deleted', {
+      id: post.id,
+      type: 'post',
+      slug: post.slug,
+      title: post.title,
+      siteId: post.siteId,
+      actorId: access.userId,
+    });
     return post;
   },
 
@@ -962,12 +1016,19 @@ export const postsService = {
   /** Publishes every scheduled post whose time has come. Safe to call repeatedly. */
   publishDueScheduled: async () => {
     const due = await db
-      .select({ id: posts.id, title: posts.title, createdBy: posts.createdBy })
+      .select({
+        id: posts.id,
+        siteId: posts.siteId,
+        slug: posts.slug,
+        title: posts.title,
+        createdBy: posts.createdBy,
+      })
       .from(posts)
       .where(
         and(eq(posts.status, 'scheduled'), lte(posts.scheduledAt, new Date()))
       );
 
+    const publishedIds: string[] = [];
     for (const post of due) {
       try {
         await db.transaction(async tx => {
@@ -984,13 +1045,23 @@ export const postsService = {
             tx
           );
         });
+        publishedIds.push(post.id);
+        await doAction('content.published', {
+          id: post.id,
+          type: 'post',
+          slug: post.slug,
+          title: post.title,
+          siteId: post.siteId,
+          actorId: null,
+          scheduled: true,
+        });
       } catch (error) {
         console.error('[posts.publishDueScheduled] failed for', post.id, error);
       }
     }
 
-    if (due.length) revalidatePublicSite();
-    return due.map(p => p.id);
+    if (publishedIds.length) revalidatePublicSite();
+    return publishedIds;
   },
 };
 

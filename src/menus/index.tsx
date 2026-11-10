@@ -15,6 +15,7 @@ import {
   Newspaper,
   Palette,
   Play,
+  Plug,
   Settings,
   Share2,
   ShieldCheck,
@@ -128,6 +129,12 @@ export function getMenuItems(): {
       name: 'Settings',
       href: PAGES.DASHBOARD.SETTINGS,
       icon: <Settings className="w-[18px]" />,
+      permission: PERMISSIONS.SETTINGS_MANAGE,
+    },
+    {
+      name: 'Plugins',
+      href: PAGES.DASHBOARD.PLUGINS,
+      icon: <Plug className="w-[18px]" />,
       permission: PERMISSIONS.SETTINGS_MANAGE,
     },
     {

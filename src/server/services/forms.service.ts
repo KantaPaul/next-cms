@@ -750,6 +750,7 @@ export const formsService = {
     }
 
     const actionsConfig: FormActionsConfig = {
+      ...(formProps && typeof formProps === 'object' ? formProps : {}),
       actions,
       emailTo: typeof formProps?.emailTo === 'string' ? formProps.emailTo : undefined,
       emailSubject:
@@ -769,30 +770,6 @@ export const formsService = {
         typeof formProps?.webhookSecret === 'string'
           ? formProps.webhookSecret
           : undefined,
-      mailchimpListId:
-        typeof formProps?.mailchimpListId === 'string'
-          ? formProps.mailchimpListId
-          : undefined,
-      mailchimpEmailField:
-        typeof formProps?.mailchimpEmailField === 'string'
-          ? formProps.mailchimpEmailField
-          : undefined,
-      mailchimpFirstNameField:
-        typeof formProps?.mailchimpFirstNameField === 'string'
-          ? formProps.mailchimpFirstNameField
-          : undefined,
-      mailchimpLastNameField:
-        typeof formProps?.mailchimpLastNameField === 'string'
-          ? formProps.mailchimpLastNameField
-          : undefined,
-      mailchimpTags:
-        typeof formProps?.mailchimpTags === 'string'
-          ? formProps.mailchimpTags
-          : undefined,
-      mailchimpDoubleOptIn:
-        typeof formProps?.mailchimpDoubleOptIn === 'boolean'
-          ? formProps.mailchimpDoubleOptIn
-          : false,
     };
 
     const afterAction = async () => {
