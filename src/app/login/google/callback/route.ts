@@ -1,4 +1,5 @@
 import { OAuth2RequestError } from 'arctic';
+import { clientIp as proxyClientIp } from '@/server/lib/client-ip';
 import { cookies } from 'next/headers';
 
 import { google } from '@/auth';
@@ -69,10 +70,8 @@ export async function GET(request: Request): Promise<Response> {
     });
   }
 
-  const clientIp =
-    request.headers.get('x-forwarded-for')?.split(',')[0] ||
-    request.headers.get('x-real-ip') ||
-    'unknown';
+  // The lockout key must not be something the client can rotate at will.
+  const clientIp = proxyClientIp(request.headers);
 
   // R276: Check rate limit / lockout for IP
   const ipLockout = await authRateLimitService.checkLockout(clientIp);

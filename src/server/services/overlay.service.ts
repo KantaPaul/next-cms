@@ -89,6 +89,8 @@ export const overlayService = {
               ? metadata.language
               : 'en',
           ...metadata,
+          // After the page's metadata, so a popup form is looked up as this popup.
+          globalBlock: { id: row.id },
         },
       });
 

@@ -6,6 +6,7 @@ import { cookies, headers } from 'next/headers';
 import { db } from '@/db';
 import { sessions, users, UserStatus } from '@/db/schema';
 import { siteSettingsService } from '@/server/services/site-settings.service';
+import { clientIp } from '@/server/lib/client-ip';
 
 export interface Session {
   id: string;
@@ -44,9 +45,7 @@ async function getClientInfo() {
   try {
     const headersList = await headers();
     const userAgent = headersList.get('user-agent') || '';
-    const forwardedFor = headersList.get('x-forwarded-for');
-    const realIp = headersList.get('x-real-ip');
-    const userIp = forwardedFor?.split(',')[0] || realIp || 'unknown';
+    const userIp = clientIp(headersList);
 
     return { userIp, userAgent };
   } catch (error) {

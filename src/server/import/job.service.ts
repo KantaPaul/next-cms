@@ -118,6 +118,34 @@ function inferMime(headerContentType: string | null, filename: string): string {
   return EXT_TO_MIME[ext] ?? cleanHeader ?? 'application/octet-stream';
 }
 
+/** The response body, or null once it passes `maxBytes` (the download is cancelled). */
+async function readCapped(
+  res: Response,
+  maxBytes: number
+): Promise<ArrayBuffer | null> {
+  if (!res.body) return new ArrayBuffer(0);
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel().catch(() => {});
+      return null;
+    }
+    chunks.push(value);
+  }
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return out.buffer;
+}
+
 function filenameFromUrl(urlStr: string, fallback = 'imported-media'): string {
   try {
     const u = new URL(urlStr);
@@ -1154,8 +1182,10 @@ export const importJobService = {
               );
             }
 
-            const arrBuf = await res.arrayBuffer();
-            if (arrBuf.byteLength > maxBytes) {
+            // Read as a stream and stop at the limit: a server that sends no
+            // Content-Length must not be able to fill memory first.
+            const arrBuf = await readCapped(res, maxBytes);
+            if (!arrBuf) {
               throw new Error(
                 `Media exceeds ${env.MEDIA_MAX_UPLOAD_MB} MB limit`
               );

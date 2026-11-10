@@ -1,15 +1,11 @@
 import { NextResponse } from 'next/server';
+import { clientIp } from '@/server/lib/client-ip';
 import { licenseService, GENERIC_LICENSE_ERROR } from '@/server/services/license.service';
 
 export const dynamic = 'force-dynamic';
 
-function getClientIp(request: Request): string {
-  const forwarded = request.headers.get('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0].trim();
-  const realIp = request.headers.get('x-real-ip');
-  if (realIp) return realIp.trim();
-  return '127.0.0.1';
-}
+// The first X-Forwarded-For entry is client-written; clientIp() takes the proxy-added one.
+const getClientIp = (request: Request): string => clientIp(request.headers);
 
 /**
  * POST /api/licenses/activate (R234 / L4-01)

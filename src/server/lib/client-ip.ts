@@ -8,7 +8,10 @@
  * first entry, as before, let a client dodge limits by sending a new fake IP
  * on every request.
  */
-export function clientIp(headers: Headers, trustedHops = 1): string {
+export function clientIp(
+  headers: Pick<Headers, 'get'>,
+  trustedHops = 1
+): string {
   const forwarded = (headers.get('x-forwarded-for') ?? '')
     .split(',')
     .map(part => part.trim())

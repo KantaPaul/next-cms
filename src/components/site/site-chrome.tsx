@@ -157,6 +157,7 @@ export async function SiteChrome({
         customHeader = await renderBuilderContent({
           content: headerBlock.content,
           metadata: {
+            globalBlock: { id: headerTemplateId },
             themeTokens: settings.themeTokens,
             language,
             siteId: site.id,
@@ -186,6 +187,7 @@ export async function SiteChrome({
         customFooter = await renderBuilderContent({
           content: footerBlock.content,
           metadata: {
+            globalBlock: { id: footerTemplateId },
             themeTokens: settings.themeTokens,
             language,
             siteId: site.id,

@@ -113,7 +113,12 @@ export function cmsTransformProps(
     }
     if (node.type === 'ContactForm') {
       const nodeId = node.id || (props.id as string | undefined);
-      const globalId = (props.formId as string | undefined) || undefined;
+      // A saved form's own id wins; then the global block being rendered
+      // (header, footer, popup), which the server can look up like any saved form.
+      const globalId =
+        (props.formId as string | undefined) ||
+        (metadata.globalBlock as { id?: string } | undefined)?.id ||
+        undefined;
       const formSource = globalId
         ? { kind: 'global' as const, id: globalId, nodeId }
         : kind === 'post' && (realPost?.id || (metadata.post as any)?.id)

@@ -1,4 +1,5 @@
 import { createId } from '@paralleldrive/cuid2';
+import { clientIp } from '@/server/lib/client-ip';
 import { COMMENTER_COOKIE } from '@/server/services/comments.rules';
 
 const ONE_YEAR = 60 * 60 * 24 * 365;
@@ -6,10 +7,8 @@ const VALID = /^[a-z0-9]{16,40}$/;
 
 /** IP and commenter-cookie key for a comment API request. */
 export function commentVisitor(request: Request) {
-  const ip =
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    request.headers.get('x-real-ip') ||
-    'unknown';
+  // Per-visitor limits must not trust the client-written start of X-Forwarded-For.
+  const ip = clientIp(request.headers);
   const raw = request.headers
     .get('cookie')
     ?.split(/;\s*/)

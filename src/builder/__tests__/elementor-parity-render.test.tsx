@@ -116,3 +116,27 @@ describe('Section', () => {
     assert.equal(out.match(/example\.com\/a\.jpg/g)?.length, 1);
   });
 });
+
+describe('Forms in headers, footers and popups', () => {
+  const node = { id: 'ContactForm-h1', type: 'ContactForm', props: {} } as never;
+
+  it('are tagged with the global block being rendered, not the page', () => {
+    const props = cmsTransformProps(
+      { page: { id: 'page-1', title: 'Home' }, globalBlock: { id: 'header-9' } },
+      'page'
+    )(node, {});
+    assert.deepEqual(props.formSource, { kind: 'global', id: 'header-9', nodeId: 'ContactForm-h1' });
+  });
+
+  it('keep a saved form id first', () => {
+    const props = cmsTransformProps({ globalBlock: { id: 'header-9' } }, 'page')(node, {
+      formId: 'form-3',
+    });
+    assert.equal((props.formSource as { id: string }).id, 'form-3');
+  });
+
+  it('on a page body still use the page', () => {
+    const props = cmsTransformProps({ page: { id: 'page-1', title: 'Home' } }, 'page')(node, {});
+    assert.deepEqual(props.formSource, { kind: 'page', id: 'page-1', nodeId: 'ContactForm-h1' });
+  });
+});
