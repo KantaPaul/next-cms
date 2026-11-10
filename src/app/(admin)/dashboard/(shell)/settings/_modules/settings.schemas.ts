@@ -4,6 +4,11 @@ import { parseVideoSettings } from '@/lib/video/settings';
 import { licenseSettingsSchema } from '@/db/schemas/licenses.schema';
 import { authSettingsSchema } from '@/db/schemas/pages.schema';
 import { BLOCK_EDITOR_KINDS } from '@/config/block-manager';
+import {
+  backupSettingsSchema,
+  consentSettingsSchema,
+  siteModeSettingsSchema,
+} from '@/lib/site-essentials-types';
 
 const optionalText = (max: number) =>
   z
@@ -212,7 +217,10 @@ export const settingsSchema = z.object({
     .nullish(),
   licenseSettings: licenseSettingsSchema.optional(),
   authSettings: authSettingsSchema.optional(),
+  siteMode: siteModeSettingsSchema.optional(),
 });
+
+export { backupSettingsSchema, consentSettingsSchema, siteModeSettingsSchema };
 
 export type SettingsInput = z.infer<typeof settingsSchema>;
 

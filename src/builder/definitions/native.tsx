@@ -27,6 +27,7 @@ import {
   ShareButtons,
 } from '../blocks/post-extras';
 import { Audio } from '../blocks/audio';
+import { PrivacyRequest } from '../blocks/privacy-request';
 import { BookmarksDrawer } from '../blocks/bookmarks-client';
 import { Container, DEFAULT_CONTAINER } from '../blocks/container';
 import {
@@ -2023,6 +2024,76 @@ export const ContactFormBlock = defineBlock({
       { label: 'Email', name: 'email', type: 'email', required: true },
       { label: 'Message', name: 'message', type: 'textarea', required: true },
     ],
+    section: {
+      paddingY: 'md',
+      background: 'default',
+      hideOnMobile: false,
+      hideOnTablet: false,
+      hideOnDesktop: false,
+      anchor: '',
+    },
+  },
+});
+
+export const PrivacyRequestBlock = defineBlock({
+  type: 'PrivacyRequest',
+  label: 'Privacy request',
+  category: 'contact',
+  icon: 'shield-check',
+  schema: z.object({
+    title: z.string().default('Privacy request'),
+    subtitle: z
+      .string()
+      .default(
+        'Request an export of your personal data or ask us to erase it.'
+      ),
+    allowExport: z.boolean().default(true),
+    allowErase: z.boolean().default(true),
+    submitText: z.string().default('Send confirmation link'),
+    successMessage: z
+      .string()
+      .default(
+        'If that email address is valid, we sent a confirmation link (valid for 24 hours).'
+      ),
+    section: sectionSettingsSchema.optional(),
+    elements: z.record(z.string(), elementStyleSchema).optional(),
+  }),
+  render: PrivacyRequest,
+  fields: {
+    title: { label: 'Title', group: CONTENT, type: 'text' },
+    subtitle: { label: 'Subtitle', group: CONTENT, type: 'textarea' },
+    allowExport: {
+      label: 'Allow export requests',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+      ],
+    },
+    allowErase: {
+      label: 'Allow erasure requests',
+      group: CONTENT,
+      type: 'radio',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+      ],
+    },
+    submitText: { label: 'Submit button', group: CONTENT, type: 'text' },
+    successMessage: { label: 'Success message', group: CONTENT, type: 'text' },
+    button_style: elementStyle('button', 'Submit Button Style', BUTTON_PARTS),
+    ...headingStyles({ eyebrow: false }),
+    ...contentSectionControls(),
+  },
+  defaults: {
+    title: 'Privacy request',
+    subtitle: 'Request an export of your personal data or ask us to erase it.',
+    allowExport: true,
+    allowErase: true,
+    submitText: 'Send confirmation link',
+    successMessage:
+      'If that email address is valid, we sent a confirmation link (valid for 24 hours).',
     section: {
       paddingY: 'md',
       background: 'default',
@@ -4770,6 +4841,8 @@ export const FooterLinksBlock = defineBlock({
     source: z.enum(['menu', 'manual']).default('manual'),
     menuLocation: z.enum(['header', 'footer']).default('footer'),
     collapseOnMobile: z.boolean().default(false),
+    showCookieSettings: z.boolean().default(false),
+    cookieSettingsLabel: z.string().default('Cookie Settings'),
     links: z
       .array(
         z.object({
@@ -4819,6 +4892,19 @@ export const FooterLinksBlock = defineBlock({
         { label: 'No', value: false },
       ],
     },
+    showCookieSettings: {
+      label: 'Show Cookie Settings link',
+      type: 'radio',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+      ],
+    },
+    cookieSettingsLabel: {
+      label: 'Cookie Settings label',
+      type: 'text',
+      when: (props: any) => Boolean(props.showCookieSettings),
+    },
     heading_style: elementStyle('heading', 'Heading Style', TEXT_PARTS),
     link_style: elementStyle('link', 'Link Style', TEXT_PARTS),
   }),
@@ -4827,6 +4913,8 @@ export const FooterLinksBlock = defineBlock({
     source: 'manual',
     menuLocation: 'footer',
     collapseOnMobile: false,
+    showCookieSettings: false,
+    cookieSettingsLabel: 'Cookie Settings',
     links: [
       { label: 'Privacy Policy', url: '/privacy' },
       { label: 'Terms of Service', url: '/terms' },
@@ -5253,6 +5341,8 @@ export const LegalLinksBlock = defineBlock({
     menuLocation: z.enum(['header', 'footer']).default('footer'),
     separator: z.enum(['dot', 'pipe', 'dash', 'none']).default('dot'),
     align: z.enum(['left', 'center', 'right']).default('center'),
+    showCookieSettings: z.boolean().default(true),
+    cookieSettingsLabel: z.string().default('Cookie Settings'),
     links: z
       .array(
         z.object({
@@ -5264,7 +5354,7 @@ export const LegalLinksBlock = defineBlock({
       .default([
         { label: 'Privacy Policy', url: '/privacy' },
         { label: 'Terms of Service', url: '/terms' },
-        { label: 'Cookie Settings', url: '/cookies' },
+        { label: 'Cookie Settings', url: '#cookie-settings' },
       ]),
     elements: z.record(z.string(), elementStyleSchema).optional(),
   }),
@@ -5317,6 +5407,19 @@ export const LegalLinksBlock = defineBlock({
       },
       defaultItem: { label: 'Link', url: '#' },
     },
+    showCookieSettings: {
+      label: 'Show Cookie Settings link',
+      type: 'radio',
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+      ],
+    },
+    cookieSettingsLabel: {
+      label: 'Cookie Settings label',
+      type: 'text',
+      when: (props: any) => Boolean(props.showCookieSettings),
+    },
     link_style: elementStyle('link', 'Link Style', TEXT_PARTS),
     separator_style: elementStyle('separator', 'Separator Style', TEXT_PARTS, {
       when: (props: any) => props.separator !== 'none',
@@ -5330,8 +5433,10 @@ export const LegalLinksBlock = defineBlock({
     links: [
       { label: 'Privacy Policy', url: '/privacy' },
       { label: 'Terms of Service', url: '/terms' },
-      { label: 'Cookie Settings', url: '/cookies' },
+      { label: 'Cookie Settings', url: '#cookie-settings' },
     ],
+    showCookieSettings: true,
+    cookieSettingsLabel: 'Cookie Settings',
   },
 });
 
@@ -7704,6 +7809,7 @@ export const NATIVE_BLOCKS = [
   ImageNativeBlock,
   GalleryBlock,
   ContactFormBlock,
+  PrivacyRequestBlock,
   ButtonBlock,
   SpacerBlock,
   CollectionItemBlock,
@@ -7994,7 +8100,10 @@ export const CATEGORIES = {
       'Newsletter',
     ],
   },
-  contact: { title: 'Contact form', components: ['ContactForm'] },
+  contact: {
+    title: 'Contact form',
+    components: ['ContactForm', 'PrivacyRequest'],
+  },
   blog: {
     title: 'Blog & Listings',
     components: [

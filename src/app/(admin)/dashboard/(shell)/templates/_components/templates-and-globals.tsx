@@ -69,6 +69,7 @@ const DEFAULT_GLOBAL_CATEGORIES = [
   'Hero',
   'Features',
   'CTA',
+  'Maintenance',
 ] as const;
 
 const NEW_CATEGORY_VALUE = '__new_category__';

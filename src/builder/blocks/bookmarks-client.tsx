@@ -2,6 +2,7 @@
 
 import { Bookmark, BookmarkCheck, X } from 'lucide-react';
 import { useCallback, useEffect, useId, useState } from 'react';
+import { useConsent } from '@/components/site/consent-provider';
 import { cn } from '@/lib/utils/cn';
 import type { ElementStyle } from '../style';
 import { el, linkEl } from './element';
@@ -52,8 +53,14 @@ function safePath(url: string): string | null {
 }
 
 export function useBookmarks() {
+  const { hasConsent } = useConsent();
+  const functionalAllowed = hasConsent('functional');
   const [items, setItems] = useState<SavedItem[]>([]);
   useEffect(() => {
+    if (!functionalAllowed) {
+      setItems([]);
+      return;
+    }
     const sync = () => setItems(read());
     sync();
     window.addEventListener(EVENT, sync);
@@ -62,21 +69,39 @@ export function useBookmarks() {
       window.removeEventListener(EVENT, sync);
       window.removeEventListener('storage', sync);
     };
-  }, []);
-  const toggle = useCallback((item: SavedItem) => {
-    const path = safePath(item.url);
-    if (!path) return;
-    const current = read();
-    const exists = current.some(i => i.url === path);
-    write(
-      exists
-        ? current.filter(i => i.url !== path)
-        : [{ ...item, url: path }, ...current]
-    );
-  }, []);
+  }, [functionalAllowed]);
+  const toggle = useCallback(
+    (item: SavedItem) => {
+      const path = safePath(item.url);
+      if (!path) return;
+      if (!functionalAllowed) {
+        setItems(prev => {
+          const exists = prev.some(i => i.url === path);
+          return exists
+            ? prev.filter(i => i.url !== path)
+            : [{ ...item, url: path }, ...prev].slice(0, MAX);
+        });
+        return;
+      }
+      const current = read();
+      const exists = current.some(i => i.url === path);
+      write(
+        exists
+          ? current.filter(i => i.url !== path)
+          : [{ ...item, url: path }, ...current]
+      );
+    },
+    [functionalAllowed]
+  );
   const remove = useCallback(
-    (url: string) => write(read().filter(i => i.url !== url)),
-    []
+    (url: string) => {
+      if (!functionalAllowed) {
+        setItems(prev => prev.filter(i => i.url !== url));
+        return;
+      }
+      write(read().filter(i => i.url !== url));
+    },
+    [functionalAllowed]
   );
   const has = useCallback(
     (url: string) => {

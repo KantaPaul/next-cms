@@ -2,6 +2,8 @@ import { createId } from '@paralleldrive/cuid2';
 import { cookies, headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { analyticsService } from '@/server/services/analytics.service';
+import { siteSettingsService } from '@/server/services/site-settings.service';
+import { CONSENT_COOKIE_NAME, hasCategoryConsent } from '@/lib/consent';
 import { db } from '@/db';
 import { eq } from 'drizzle-orm';
 import { pageExperiments } from '@/db/schema';
@@ -44,6 +46,17 @@ export async function POST(request: Request) {
   // Skip when a preview session is active
   if (jar.get('cms_preview')?.value || jar.get('__prerender_bypass')?.value) {
     return NextResponse.json({ ok: true, recorded: false, reason: 'preview' });
+  }
+
+  // Gate analytics cookies and view recording on analytics consent
+  const settings = await siteSettingsService.getPublic().catch(() => null);
+  const consentCookie = jar.get(CONSENT_COOKIE_NAME)?.value;
+  if (!hasCategoryConsent(consentCookie, settings?.consent, 'analytics')) {
+    return NextResponse.json({
+      ok: true,
+      recorded: false,
+      reason: 'consent_required',
+    });
   }
 
   let visitorId = jar.get(COOKIE)?.value;

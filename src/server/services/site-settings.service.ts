@@ -1,4 +1,5 @@
 import 'server-only';
+import { randomBytes } from 'node:crypto';
 import {
   type BlockSettings,
   DEFAULT_BLOCK_SETTINGS,
@@ -32,6 +33,17 @@ import {
   type LicenseSettings,
   type AuthSettings,
 } from '@/db/schema';
+import {
+  type BackupSettings,
+  type ConsentSettings,
+  DEFAULT_BACKUP_SETTINGS,
+  DEFAULT_CONSENT_SETTINGS,
+  DEFAULT_SITE_MODE,
+  type SiteModeSettings,
+  backupSettingsSchema,
+  consentSettingsSchema,
+  siteModeSettingsSchema,
+} from '@/lib/site-essentials-types';
 import type { SiteCopy } from '@/db/schemas/sites.schema';
 import { parseVideoSettings } from '@/lib/video/settings';
 import { adminSiteId, siteContext } from '@/server/services/site-context';
@@ -68,6 +80,9 @@ export type SiteSettingsInput = {
   translations?: Record<string, SiteCopy> | null;
   customCode?: CustomCodeSettings | null;
   customFonts?: CustomFont[] | null;
+  siteMode?: SiteModeSettings;
+  consent?: ConsentSettings;
+  backupSettings?: BackupSettings;
 };
 
 export function localizedSettings(
@@ -119,6 +134,10 @@ async function loadSettings(siteId: string) {
         ...row,
         themeTokens: resolveThemeTokens(row.themeTokens),
         blockSettings: normalizeBlockSettings(row.blockSettings),
+        siteMode: (row.siteMode as SiteModeSettings) ?? DEFAULT_SITE_MODE,
+        consent: (row.consent as ConsentSettings) ?? DEFAULT_CONSENT_SETTINGS,
+        backupSettings:
+          (row.backupSettings as BackupSettings) ?? DEFAULT_BACKUP_SETTINGS,
       };
 
     const [created] = await db
@@ -148,6 +167,10 @@ async function loadSettings(siteId: string) {
       customFonts: (settings?.customFonts as CustomFont[]) ?? [],
       integrations:
         (settings?.integrations as SiteIntegrations) ?? DEFAULT_INTEGRATIONS,
+      siteMode: (settings?.siteMode as SiteModeSettings) ?? DEFAULT_SITE_MODE,
+      consent: (settings?.consent as ConsentSettings) ?? DEFAULT_CONSENT_SETTINGS,
+      backupSettings:
+        (settings?.backupSettings as BackupSettings) ?? DEFAULT_BACKUP_SETTINGS,
     };
   } catch {
     return {
@@ -178,6 +201,9 @@ async function loadSettings(siteId: string) {
       customCode: DEFAULT_CUSTOM_CODE,
       customFonts: [],
       integrations: DEFAULT_INTEGRATIONS,
+      siteMode: DEFAULT_SITE_MODE,
+      consent: DEFAULT_CONSENT_SETTINGS,
+      backupSettings: DEFAULT_BACKUP_SETTINGS,
       robotsTxt: null,
       googleAnalyticsId: null,
       updatedAt: new Date(),
@@ -192,9 +218,20 @@ async function authSettingsSiteId() {
 export const siteSettingsService = {
   get: cache(async () => loadSettings(await adminSiteId())),
 
+  getForSite: async (siteId: string) => loadSettings(siteId),
+
   getPublic: cache(async () => {
     const settings = await loadSettings((await siteContext.publicSite()).id);
-    return { ...settings, integrations: DEFAULT_INTEGRATIONS };
+    return {
+      ...settings,
+      integrations: DEFAULT_INTEGRATIONS,
+      backupSettings: DEFAULT_BACKUP_SETTINGS,
+      siteMode: {
+        mode: settings.siteMode.mode,
+        pageBlockId: settings.siteMode.pageBlockId ?? null,
+        excludePaths: settings.siteMode.excludePaths ?? [],
+      } as SiteModeSettings,
+    };
   }),
 
   getAuthSettings: cache(async (): Promise<AuthSettings> => {
@@ -225,6 +262,19 @@ export const siteSettingsService = {
       authSettingsToSave = parsed;
     }
 
+    let siteModeToSave: SiteModeSettings | undefined = undefined;
+    if (input.siteMode) {
+      const parsed = siteModeSettingsSchema.parse(input.siteMode);
+      const token =
+        parsed.bypassToken ??
+        current.siteMode?.bypassToken ??
+        (parsed.mode !== 'live' ? randomBytes(24).toString('base64url') : null);
+      siteModeToSave = {
+        ...parsed,
+        bypassToken: token,
+      };
+    }
+
     const [row] = await db
       .update(siteSettings)
       .set({
@@ -237,6 +287,11 @@ export const siteSettingsService = {
         licenseSettings: input.licenseSettings ?? undefined,
         customCode: input.customCode ?? undefined,
         customFonts: input.customFonts ?? undefined,
+        siteMode: siteModeToSave ?? undefined,
+        consent: input.consent ? consentSettingsSchema.parse(input.consent) : undefined,
+        backupSettings: input.backupSettings
+          ? backupSettingsSchema.parse(input.backupSettings)
+          : undefined,
         authSettings: undefined,
         updatedAt: new Date(),
       })
@@ -412,6 +467,86 @@ export const siteSettingsService = {
       targetName: 'Site settings (integrations)',
     });
 
+    return row;
+  },
+
+  regenerateSiteModeBypassToken: async (access: UserAccess) => {
+    await accessService.assertPermission(
+      access.userId,
+      PERMISSIONS.SETTINGS_MANAGE
+    );
+    const siteId = await adminSiteId();
+    const current = await loadSettings(siteId);
+    const nextToken = randomBytes(24).toString('base64url');
+    const nextSiteMode: SiteModeSettings = {
+      ...current.siteMode,
+      bypassToken: nextToken,
+    };
+    await db
+      .update(siteSettings)
+      .set({ siteMode: nextSiteMode, updatedAt: new Date() })
+      .where(eq(siteSettings.siteId, siteId));
+    await auditService.log({
+      actorId: access.userId,
+      action: 'settings_change',
+      targetType: 'settings',
+      targetId: siteId,
+      targetName: 'Site mode bypass link rotated',
+    });
+    revalidatePublicSite();
+    return nextSiteMode;
+  },
+
+  updateConsent: async (input: unknown, access: UserAccess) => {
+    await accessService.assertPermission(
+      access.userId,
+      PERMISSIONS.SETTINGS_MANAGE
+    );
+    const parsed = consentSettingsSchema.parse(input);
+    const siteId = await adminSiteId();
+    await loadSettings(siteId);
+    const [row] = await db
+      .update(siteSettings)
+      .set({ consent: parsed, updatedAt: new Date() })
+      .where(eq(siteSettings.siteId, siteId))
+      .returning();
+    await auditService.log({
+      actorId: access.userId,
+      action: 'settings_change',
+      targetType: 'settings',
+      targetId: siteId,
+      targetName: 'Cookie consent settings',
+    });
+    revalidatePublicSite();
+    return row;
+  },
+
+  updateBackupSettings: async (input: unknown, access: UserAccess) => {
+    await accessService.assertPermission(
+      access.userId,
+      PERMISSIONS.SETTINGS_MANAGE
+    );
+    const siteId = await adminSiteId();
+    const current = await loadSettings(siteId);
+    const parsed = backupSettingsSchema.parse(input);
+    const next: BackupSettings = {
+      ...parsed,
+      lastRunAt: current.backupSettings?.lastRunAt ?? null,
+      lastStatus: current.backupSettings?.lastStatus ?? null,
+      lastError: current.backupSettings?.lastError ?? null,
+    };
+    const [row] = await db
+      .update(siteSettings)
+      .set({ backupSettings: next, updatedAt: new Date() })
+      .where(eq(siteSettings.siteId, siteId))
+      .returning();
+    await auditService.log({
+      actorId: access.userId,
+      action: 'settings_change',
+      targetType: 'settings',
+      targetId: siteId,
+      targetName: 'Backup schedule settings',
+    });
     return row;
   },
 };

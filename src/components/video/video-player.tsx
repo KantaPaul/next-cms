@@ -20,6 +20,7 @@ export type VideoPlayerProps = {
   /** Video duration in seconds. */
   duration?: number | null;
   autoPlay?: boolean;
+  editing?: boolean;
   onProgress?: (progress: { position: number; duration: number | null; completed: boolean }) => void;
   onPlay?: () => void;
   onPause?: () => void;
@@ -38,6 +39,7 @@ export function VideoPlayer({
   title,
   duration,
   autoPlay = false,
+  editing = false,
   onProgress,
   onPlay,
   onPause,
@@ -97,6 +99,7 @@ export function VideoPlayer({
       thumbnailUrl={poster}
       start={startPosition}
       title={title}
+      editing={editing}
       onUnavailable={() => {
         // Fallback already rendered by EmbedPlayer
       }}

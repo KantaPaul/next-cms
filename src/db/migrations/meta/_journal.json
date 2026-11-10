@@ -239,6 +239,13 @@
       "when": 1794288637599,
       "tag": "20261110053037_wordpress_import",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1794299398752,
+      "tag": "20261110082958_site_essentials",
+      "breakpoints": true
     }
   ]
 }

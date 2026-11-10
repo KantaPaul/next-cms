@@ -21,6 +21,8 @@ import {
   updateVideoSettingsSchema,
   deactivateManagedLicenseSchema,
   customCodeSchema,
+  consentSettingsSchema,
+  backupSettingsSchema,
 } from './settings.schemas';
 import { z } from 'zod';
 
@@ -81,6 +83,41 @@ export const updateSiteSettings = permissionProcedure(
       ctx.access
     );
     revalidatePath(PAGES.DASHBOARD.SETTINGS);
+    revalidatePath('/dashboard', 'layout');
+    return row;
+  });
+
+export const regenerateSiteModeBypassToken = permissionProcedure(
+  PERMISSIONS.SETTINGS_MANAGE
+)
+  .input(z.object({}).optional())
+  .action(async ({ ctx }) => {
+    const nextSiteMode = await siteSettingsService.regenerateSiteModeBypassToken(
+      ctx.access
+    );
+    revalidatePath(PAGES.DASHBOARD.SETTINGS);
+    return nextSiteMode;
+  });
+
+export const updateConsentSettings = permissionProcedure(
+  PERMISSIONS.SETTINGS_MANAGE
+)
+  .input(consentSettingsSchema)
+  .action(async ({ input, ctx }) => {
+    const row = await siteSettingsService.updateConsent(input, ctx.access);
+    revalidatePath(PAGES.DASHBOARD.SETTINGS_CONSENT);
+    revalidatePath(PAGES.DASHBOARD.SETTINGS);
+    revalidatePath('/', 'layout');
+    return row;
+  });
+
+export const updateBackupSettingsAction = permissionProcedure(
+  PERMISSIONS.SETTINGS_MANAGE
+)
+  .input(backupSettingsSchema)
+  .action(async ({ input, ctx }) => {
+    const row = await siteSettingsService.updateBackupSettings(input, ctx.access);
+    revalidatePath(PAGES.DASHBOARD.TOOLS_BACKUPS);
     return row;
   });
 

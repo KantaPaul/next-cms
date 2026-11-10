@@ -194,6 +194,12 @@ export const BLOCK_INFO: Record<string, BlockInfo> = {
     semanticTag: 'form',
     defaultSize: FULL,
   },
+  PrivacyRequest: {
+    description: 'GDPR data export and erasure request form',
+    capabilities: ['Export or erase toggle', 'Email confirmation link'],
+    semanticTag: 'section',
+    defaultSize: FULL,
+  },
   CollectionItem: {
     description: 'Field from the current collection item',
     capabilities: ['Bound to a collection field'],

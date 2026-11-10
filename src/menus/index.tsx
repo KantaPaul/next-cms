@@ -161,6 +161,8 @@ export function getMenuItems(): {
       permission: PERMISSIONS.SETTINGS_MANAGE,
       children: [
         { name: 'Import', href: PAGES.DASHBOARD.TOOLS_IMPORT },
+        { name: 'Privacy', href: PAGES.DASHBOARD.TOOLS_PRIVACY },
+        { name: 'Backups', href: PAGES.DASHBOARD.TOOLS_BACKUPS },
       ],
     },
   ];

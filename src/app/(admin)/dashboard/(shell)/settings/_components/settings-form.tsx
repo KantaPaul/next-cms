@@ -5,18 +5,23 @@ import { useForm, FormProvider, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { AlertTriangle, Loader2, Plus, Save, Trash2 } from 'lucide-react';
+import { AlertTriangle, Copy, Loader2, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { MediaField } from '@/components/media/media-picker';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { PAGES } from '@/config/pages';
 import { cn } from '@/lib/utils/cn';
-import { updateSiteSettings } from '../_modules/settings.actions';
+import {
+  regenerateSiteModeBypassToken,
+  updateSiteSettings,
+} from '../_modules/settings.actions';
 import { useFormAction } from '@/hooks/use-form-action';
 import { settingsSchema } from '../_modules/settings.schemas';
 import { type ThemeTokens, type AuthSettings } from '@/db/schemas/pages.schema';
+import type { SiteModeSettings } from '@/lib/site-essentials-types';
 import { FormInput as Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -122,6 +127,7 @@ function NullableSelect({
 
 export function SettingsForm({
   settings,
+  siteSlug = null,
   menus,
   templates = [],
   fallbackSiteUrl,
@@ -177,7 +183,9 @@ export function SettingsForm({
       }>;
     } | null;
     authSettings?: AuthSettings | null;
+    siteMode?: SiteModeSettings | null;
   };
+  siteSlug?: string | null;
   menus: { id: string; title: string; location: string; language: string }[];
   templates?: {
     id: string;
@@ -208,6 +216,54 @@ export function SettingsForm({
       },
     }
   );
+
+  const [regeneratingToken, setRegeneratingToken] = useState(false);
+  const globalBlockOptions = templates
+    .filter(t => t.kind === 'global')
+    .sort((a, b) => {
+      const aMaint = a.category === 'Maintenance' ? 0 : 1;
+      const bMaint = b.category === 'Maintenance' ? 0 : 1;
+      return aMaint - bMaint || a.name.localeCompare(b.name);
+    });
+
+  const handleRegenerateBypass = async () => {
+    setRegeneratingToken(true);
+    try {
+      const res = (await regenerateSiteModeBypassToken({})) as {
+        bypassToken?: string | null;
+      };
+      if (res?.bypassToken) {
+        form.setValue('siteMode.bypassToken', res.bypassToken, {
+          shouldDirty: false,
+        });
+        toast.success('Preview bypass link regenerated.');
+        router.refresh();
+      }
+    } catch {
+      toast.error('Could not regenerate preview link.');
+    } finally {
+      setRegeneratingToken(false);
+    }
+  };
+
+  const handleCopyPreviewLink = async (token?: string | null) => {
+    if (!token) {
+      toast.error('Save or regenerate a preview link first.');
+      return;
+    }
+    const base =
+      typeof window !== 'undefined'
+        ? window.location.origin
+        : (settings.siteUrl || fallbackSiteUrl).replace(/\/$/, '');
+    const prefix = siteSlug ? `/${siteSlug}` : '';
+    const url = `${base}${prefix}/?bypass=${encodeURIComponent(token)}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('Preview link copied to clipboard.');
+    } catch {
+      toast.error('Could not copy link.');
+    }
+  };
 
   const menuSelect = (key: 'headerMenuId' | 'footerMenuId') => (
     <Controller
@@ -1103,6 +1159,161 @@ export function SettingsForm({
                       <SelectItem value="60">60 minutes</SelectItem>
                     </SelectContent>
                   </Select>
+                </Field>
+              );
+            }}
+          />
+        </Section>
+
+        <Section
+          title="Site mode"
+          description="Put the public site into maintenance (HTTP 503) or coming soon (HTTP 200, noindex) mode while keeping the dashboard and staff access open."
+        >
+          <Controller
+            name="siteMode.mode"
+            render={({ field }) => {
+              const id = useId();
+              return (
+                <Field label="Public visibility mode">
+                  <Select
+                    value={field.value ?? 'live'}
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger id={id} className={inputClass}>
+                      <SelectValue placeholder="Choose mode" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="live">Live (public)</SelectItem>
+                      <SelectItem value="maintenance">
+                        Maintenance (503 + Retry-After)
+                      </SelectItem>
+                      <SelectItem value="coming_soon">
+                        Coming soon (200 + noindex)
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Field>
+              );
+            }}
+          />
+
+          <Controller
+            name="siteMode.pageBlockId"
+            render={({ field }) => (
+              <Field
+                label="Custom message block"
+                hint="Pick a global block (such as one in the Maintenance category) or leave empty for the default screen."
+              >
+                <div className="flex items-center gap-2">
+                  <div className="min-w-0 flex-1">
+                    <SearchableSelect
+                      value={field.value ?? undefined}
+                      onValueChange={next => field.onChange(next || null)}
+                      options={globalBlockOptions.map(g => ({
+                        value: g.id,
+                        label: g.name,
+                      }))}
+                      placeholder={
+                        globalBlockOptions.length
+                          ? 'Default built-in page'
+                          : 'No global blocks yet'
+                      }
+                      emptyOptionLabel="Default built-in page"
+                      aria-label="Custom message block"
+                    />
+                  </div>
+                  {field.value && (
+                    <Button asChild type="button" variant="outline" size="sm">
+                      <Link href={PAGES.DASHBOARD.GLOBAL_BLOCK(field.value)}>
+                        Edit
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="siteMode.bypassToken"
+            render={({ field }) => {
+              const token = field.value ?? '';
+              const base = (settings.siteUrl || fallbackSiteUrl).replace(
+                /\/$/,
+                ''
+              );
+              const prefix = siteSlug ? `/${siteSlug}` : '';
+              const previewUrl = token
+                ? `${base}${prefix}/?bypass=${token}`
+                : 'Generated automatically when enabling maintenance or coming soon mode';
+              return (
+                <Field
+                  label="Shareable preview link"
+                  wide
+                  hint="Visitors opening this link receive a bypass cookie so they can preview the site while it is offline."
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Input
+                      readOnly
+                      value={previewUrl}
+                      className="min-w-[220px] flex-1 font-mono text-xs"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={!token}
+                      onClick={() => handleCopyPreviewLink(token)}
+                    >
+                      <Copy className="mr-1.5 size-3.5" />
+                      Copy preview link
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={regeneratingToken}
+                      onClick={handleRegenerateBypass}
+                    >
+                      <RefreshCw
+                        className={cn(
+                          'mr-1.5 size-3.5',
+                          regeneratingToken && 'animate-spin'
+                        )}
+                      />
+                      Regenerate link
+                    </Button>
+                  </div>
+                </Field>
+              );
+            }}
+          />
+
+          <Controller
+            name="siteMode.excludePaths"
+            render={({ field }) => {
+              const text = Array.isArray(field.value)
+                ? field.value.join('\n')
+                : '';
+              return (
+                <Field
+                  label="Excluded paths"
+                  wide
+                  hint="One path per line (e.g. /privacy or /contact/*). Staff, /dashboard, /login, /api, /media, robots.txt, and sitemap.xml are always allowed."
+                >
+                  <textarea
+                    value={text}
+                    onChange={e => {
+                      const lines = e.target.value
+                        .split(/\r?\n/)
+                        .map(l => l.trim())
+                        .filter(Boolean);
+                      field.onChange(lines);
+                    }}
+                    rows={3}
+                    placeholder="/privacy&#10;/terms"
+                    className={cn(inputClass, 'h-auto py-2 font-mono text-xs')}
+                  />
                 </Field>
               );
             }}

@@ -1,3 +1,5 @@
+import { AlertTriangle } from 'lucide-react';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { AppSidebar } from '@/components/molecules/sidebar/app-sidebar';
 import Header from '@/components/organisms/header/header';
@@ -5,9 +7,11 @@ import {
   SidebarProvider as AppSidebarProvider,
   SidebarInset,
 } from '@/components/ui/sidebar';
+import { PAGES } from '@/config/pages';
 import { getSession } from '@/server/actions/auth.actions';
 import { collectionsService } from '@/server/services/collections.service';
 import { collectionTaxonomiesService } from '@/server/services/collection-taxonomies.service';
+import { siteSettingsService } from '@/server/services/site-settings.service';
 
 /** Active post types for the sidebar; an empty list if they can't be loaded. */
 async function sidebarPostTypes() {
@@ -44,13 +48,55 @@ export default async function SidebarProvider({
 }) {
   const session = await getSession();
   if (!session?.user?.id) redirect('/login');
-  const postTypes = await sidebarPostTypes();
+  const [postTypes, settings] = await Promise.all([
+    sidebarPostTypes(),
+    siteSettingsService.get().catch(() => null),
+  ]);
+  const siteMode = settings?.siteMode?.mode ?? 'live';
+  const backupFailed = settings?.backupSettings?.lastStatus === 'failed';
+  const backupError = settings?.backupSettings?.lastError;
 
   return (
     <AppSidebarProvider>
       <AppSidebar postTypes={postTypes} />
       <SidebarInset>
         <Header />
+        {siteMode !== 'live' && (
+          <div
+            role="status"
+            className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-300 bg-amber-50 px-5 py-2 text-xs font-medium text-amber-950 xl:px-8 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200"
+          >
+            <span className="inline-flex items-center gap-2">
+              <AlertTriangle className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+              {siteMode === 'coming_soon'
+                ? 'Coming soon mode is active — public visitors see the coming-soon screen (200 noindex).'
+                : 'Maintenance mode is active — public visitors see a 503 maintenance page.'}
+            </span>
+            <Link
+              href={PAGES.DASHBOARD.SETTINGS}
+              className="underline underline-offset-2 hover:opacity-80"
+            >
+              Manage in Settings
+            </Link>
+          </div>
+        )}
+        {backupFailed && (
+          <div
+            role="alert"
+            className="flex flex-wrap items-center justify-between gap-2 border-b border-rose-300 bg-rose-50 px-5 py-2 text-xs font-medium text-rose-950 xl:px-8 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-200"
+          >
+            <span className="inline-flex items-center gap-2">
+              <AlertTriangle className="size-3.5 shrink-0 text-rose-600 dark:text-rose-400" />
+              Last scheduled backup failed{backupError ? `: ${backupError}` : '.'}
+            </span>
+            <Link
+              href={PAGES.DASHBOARD.TOOLS_BACKUPS}
+              className="underline underline-offset-2 hover:opacity-80"
+            >
+              View backups
+            </Link>
+          </div>
+        )}
         <div className="bg-background text-foreground @container flex h-full flex-1 flex-col p-5 has-[.sticky-footer]:pb-28 xl:p-8">
           {children}
         </div>

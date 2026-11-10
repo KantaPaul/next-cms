@@ -15,6 +15,7 @@ import { saveVideoProgress } from '@/app/(admin)/dashboard/(shell)/videos/_modul
 import { el, type ElementStyle } from '@/builder/blocks/element';
 import { Section, type SectionSettings } from '@/builder/blocks/section';
 import { OverlayTrigger } from '@/builder/blocks/overlay-trigger';
+import { useConsent } from '@/components/site/consent-provider';
 import { VideoPlayer } from './video-player';
 
 export type VideoLibraryVideoItem = {
@@ -216,6 +217,11 @@ export function VideoLibrary({
 
   // Grid layout without a popup: the player above the grid that a card scrolls to.
   const gridPlayerRef = useRef<HTMLDivElement>(null);
+  const { hasConsent } = useConsent();
+  const canFetchExternalThumb = editing || hasConsent('marketing');
+  const canShowThumb = (video: VideoLibraryVideoItem) =>
+    Boolean(video.thumbnailUrl) &&
+    (video.provider === 'direct' || canFetchExternalThumb);
   const isDemo = editing && (!videos || videos.length === 0);
   const items = useMemo(() => {
     if (videos && videos.length > 0) return videos;
@@ -428,9 +434,14 @@ export function VideoLibrary({
             startPosition={
               resolvedSettings.resume ? (selected.position ?? null) : null
             }
-            poster={resolvedSettings.thumbnails ? selected.thumbnailUrl : null}
+            poster={
+              resolvedSettings.thumbnails && canShowThumb(selected)
+                ? selected.thumbnailUrl
+                : null
+            }
             duration={selected.duration ?? undefined}
             title={selected.title}
+            editing={editing}
             lockSeek={
               resolvedSettings.progress ? selected.provider === 'direct' : false
             }
@@ -618,10 +629,10 @@ export function VideoLibrary({
                   style={listItemEl.style}
                 >
                   <div className="s-surface relative h-16 w-28 shrink-0 overflow-hidden rounded-md">
-                    {resolvedSettings.thumbnails && video.thumbnailUrl ? (
+                    {resolvedSettings.thumbnails && canShowThumb(video) ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={video.thumbnailUrl}
+                        src={video.thumbnailUrl!}
                         alt=""
                         className={thumbEl.className}
                         style={thumbEl.style}
@@ -754,10 +765,10 @@ export function VideoLibrary({
                   const cardContent = (
                     <div className="s-border s-surface group/card flex h-full flex-col overflow-hidden rounded-lg border transition hover:shadow-md">
                       <div className="relative aspect-video w-full overflow-hidden bg-black/10 dark:bg-white/10">
-                        {video.thumbnailUrl ? (
+                        {resolvedSettings.thumbnails && canShowThumb(video) ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
-                            src={video.thumbnailUrl}
+                            src={video.thumbnailUrl!}
                             alt=""
                             className="h-full w-full object-cover transition-transform duration-300 group-hover/card:scale-105"
                           />

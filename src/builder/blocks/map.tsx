@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useConsent } from '@/components/site/consent-provider';
+import { ConsentEmbedPlaceholder } from '@/components/site/embed-consent-gate';
 import { el, type WithSection } from './element';
 import { Section } from './section';
 
@@ -15,13 +17,18 @@ const FALLBACK_SRC =
 /**
  * Shows the address as text and as an OpenStreetMap embed. The embed centers on
  * the address via forward geocoding; until it resolves the world view renders.
+ * Gated on marketing consent so no third-party request happens before consent.
  */
 export function Map(p: MapProps) {
   const address = p.address?.trim() ?? '';
   const [src, setSrc] = useState<string | null>(null);
+  const { hasConsent, acceptCategory } = useConsent();
+  const [loadedOnce, setLoadedOnce] = useState(false);
+
+  const canLoad = Boolean(p.editing) || hasConsent('marketing') || loadedOnce;
 
   useEffect(() => {
-    if (!address) return;
+    if (!address || !canLoad) return;
     let active = true;
     const params = new URLSearchParams({
       format: 'json',
@@ -52,7 +59,7 @@ export function Map(p: MapProps) {
     return () => {
       active = false;
     };
-  }, [address]);
+  }, [address, canLoad]);
 
   if (!address) {
     if (!p.editing) return null;
@@ -77,13 +84,22 @@ export function Map(p: MapProps) {
       <p className={captionEl.className} style={captionEl.style}>
         {address}
       </p>
-      <iframe
-        className={frameEl.className}
-        style={frameEl.style}
-        src={src ?? FALLBACK_SRC}
-        title="Map"
-        loading="lazy"
-      />
+      {canLoad ? (
+        <iframe
+          className={frameEl.className}
+          style={frameEl.style}
+          src={src ?? FALLBACK_SRC}
+          title="Map"
+          loading="lazy"
+        />
+      ) : (
+        <ConsentEmbedPlaceholder
+          provider="OpenStreetMap"
+          title={address}
+          onLoadOnce={() => setLoadedOnce(true)}
+          onAlwaysAllow={() => void acceptCategory('marketing')}
+        />
+      )}
     </Section>
   );
 }

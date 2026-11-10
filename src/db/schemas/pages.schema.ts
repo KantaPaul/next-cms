@@ -30,6 +30,14 @@ import {
 } from '@/db/schemas/licenses.schema';
 import type { SiteCopy } from '@/db/schemas/sites.schema';
 import {
+  type BackupSettings,
+  type ConsentSettings,
+  DEFAULT_BACKUP_SETTINGS,
+  DEFAULT_CONSENT_SETTINGS,
+  DEFAULT_SITE_MODE,
+  type SiteModeSettings,
+} from '@/lib/site-essentials-types';
+import {
   ContentKind,
   contentKindEnum,
   EditorType,
@@ -602,6 +610,18 @@ export const siteSettings = pgTable('site_settings', {
   integrations: jsonb('integrations')
     .$type<SiteIntegrations>()
     .default(DEFAULT_INTEGRATIONS)
+    .notNull(),
+  siteMode: jsonb('site_mode')
+    .$type<SiteModeSettings>()
+    .default(DEFAULT_SITE_MODE)
+    .notNull(),
+  consent: jsonb('consent')
+    .$type<ConsentSettings>()
+    .default(DEFAULT_CONSENT_SETTINGS)
+    .notNull(),
+  backupSettings: jsonb('backup_settings')
+    .$type<BackupSettings>()
+    .default(DEFAULT_BACKUP_SETTINGS)
     .notNull(),
   robotsTxt: text('robots_txt'),
   googleAnalyticsId: varchar('google_analytics_id', { length: 50 }),

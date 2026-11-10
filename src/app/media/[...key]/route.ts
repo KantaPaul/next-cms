@@ -9,6 +9,9 @@ export async function GET(
 ) {
   const { key: parts } = await params;
   const key = parts.map(decodeURIComponent).join('/');
+  if (key.startsWith('backups/') || key.startsWith('gdpr-exports/')) {
+    return new Response('Not found', { status: 404 });
+  }
 
   const driver = storage();
   if (!driver.read) return new Response('Not found', { status: 404 });

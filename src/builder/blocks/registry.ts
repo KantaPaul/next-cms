@@ -55,6 +55,7 @@ import {
   Timeline,
 } from './marketing';
 import { Newsletter } from './newsletter';
+import { PrivacyRequest } from './privacy-request';
 import { Audio } from './audio';
 import { BookmarksDrawer } from './bookmarks-client';
 import { PostTypeEntries } from './post-type-entries';
@@ -159,6 +160,7 @@ export const builtInComponents = {
   TestimonialCarousel,
   Hotspot,
   Lottie,
+  PrivacyRequest,
 };
 
 export const getBlockComponents = () => ({

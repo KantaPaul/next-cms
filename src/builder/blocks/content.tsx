@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { Play } from 'lucide-react';
+import { EmbedConsentGate } from '@/components/site/embed-consent-gate';
 import { cn } from '@/lib/utils/cn';
 import type { BuilderItem } from '../data';
 import { sanitizeRichText } from '../sanitize';
@@ -499,26 +500,30 @@ export function Video(p: VideoProps) {
   return (
     <Section section={p.section} editing={p.editing}>
       {source.kind === 'youtube' ? (
-        <div className="aspect-video w-full">
+        <EmbedConsentGate provider="YouTube video" editing={p.editing}>
+          <div className="aspect-video w-full">
+            <iframe
+              className={frameEl.className}
+              style={frameEl.style}
+              src={source.src}
+              title="Video player"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+              allowFullScreen
+            />
+          </div>
+        </EmbedConsentGate>
+      ) : null}
+      {source.kind === 'vimeo' ? (
+        <EmbedConsentGate provider="Vimeo video" editing={p.editing}>
           <iframe
             className={frameEl.className}
             style={frameEl.style}
             src={source.src}
             title="Video player"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+            allow="autoplay"
             allowFullScreen
           />
-        </div>
-      ) : null}
-      {source.kind === 'vimeo' ? (
-        <iframe
-          className={frameEl.className}
-          style={frameEl.style}
-          src={source.src}
-          title="Video player"
-          allow="autoplay"
-          allowFullScreen
-        />
+        </EmbedConsentGate>
       ) : null}
       {source.kind === 'file' ? (
         <video
@@ -559,6 +564,15 @@ function embedHost(url: string): string | null {
   }
 }
 
+function embedProviderLabel(host: string | null): string {
+  if (!host) return 'Third-party embed';
+  if (host.includes('youtube') || host === 'youtu.be') return 'YouTube video';
+  if (host.includes('vimeo')) return 'Vimeo video';
+  if (host.includes('google')) return 'Google Maps embed';
+  if (host.includes('openstreetmap')) return 'OpenStreetMap embed';
+  return `${host} embed`;
+}
+
 export function Embed(p: EmbedProps) {
   const url = p.url?.trim() || '';
   const host = url ? embedHost(url) : null;
@@ -577,15 +591,21 @@ export function Embed(p: EmbedProps) {
 
   return (
     <Section section={p.section} editing={p.editing}>
-      <iframe
-        className={frameEl.className}
-        style={frameEl.style}
-        src={url}
-        title="Embedded content"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-        allowFullScreen
-      />
+      <EmbedConsentGate
+        provider={embedProviderLabel(host)}
+        title={url}
+        editing={p.editing}
+      >
+        <iframe
+          className={frameEl.className}
+          style={frameEl.style}
+          src={url}
+          title="Embedded content"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+          allowFullScreen
+        />
+      </EmbedConsentGate>
     </Section>
   );
 }

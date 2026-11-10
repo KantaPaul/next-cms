@@ -15,7 +15,8 @@ import {
   siteBySlug,
   siteContext,
 } from '@/server/services/site-context';
-import { localizedSettings } from '@/server/services/site-settings.service';
+import { localizedSettings, siteSettingsService } from '@/server/services/site-settings.service';
+import type { SiteModeValue } from '@/lib/site-essentials-types';
 
 export type AdminBarEdit = {
   kind: 'page' | 'post' | 'search' | 'archive';
@@ -26,6 +27,7 @@ export type AdminBarEdit = {
 export type AdminBarData = {
   user: { name: string; email: string };
   siteName: string;
+  siteMode?: SiteModeValue;
   edit: AdminBarEdit | null;
   links: {
     dashboard: string;
@@ -161,13 +163,15 @@ export const adminBarService = {
       accessService.can(access, key);
 
     const site = await siteForPath(pathname);
-    const edit = can(PERMISSIONS.PAGES_EDIT)
-      ? await editFor(pathname, lang, site)
-      : null;
+    const [edit, siteSettingsRow] = await Promise.all([
+      can(PERMISSIONS.PAGES_EDIT) ? editFor(pathname, lang, site) : null,
+      siteSettingsService.getForSite(site.id).catch(() => null),
+    ]);
 
     return {
       user: { name: user.name || user.email, email: user.email },
       siteName: site.name,
+      siteMode: siteSettingsRow?.siteMode?.mode ?? 'live',
       edit,
       links: {
         dashboard: PAGES.DASHBOARD.ROOT,

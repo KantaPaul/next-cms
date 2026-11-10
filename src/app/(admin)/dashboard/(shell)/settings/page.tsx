@@ -5,7 +5,7 @@ import { PERMISSIONS } from '@/config/permissions';
 import { env } from '@/env.mjs';
 import { metaObject } from '@/lib/utils/metadata';
 import { requirePermission } from '@/server/services/require-permission';
-import { siteContext } from '@/server/services/site-context';
+import { siteContext, siteSlugPrefix } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { ExportWebsiteButton } from '@/components/dashboard/export-website-button';
@@ -89,7 +89,14 @@ export default async function SettingsPage() {
             pinnedResults: settings.searchSettings?.pinnedResults ?? [],
           },
           authSettings,
+          siteMode: {
+            mode: settings.siteMode?.mode ?? 'live',
+            pageBlockId: settings.siteMode?.pageBlockId ?? null,
+            bypassToken: settings.siteMode?.bypassToken ?? null,
+            excludePaths: settings.siteMode?.excludePaths ?? [],
+          },
         }}
+        siteSlug={siteSlugPrefix(site) ?? null}
         menus={menus.map(m => ({
           id: m.id,
           title: m.title,

@@ -1,14 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useConsent } from '@/components/site/consent-provider';
+import { ConsentEmbedPlaceholder } from '@/components/site/embed-consent-gate';
 import type { EmbedResult } from '@/lib/video/embed';
 
 /**
- * EmbedPlayer — YouTube/Vimeo iframe player with unavailable fallback.
- *
- * Renders an iframe using the allowlisted embed src. If the iframe errors,
- * an unavailable fallback is shown; providers render their own message
- * when the owner disallows embedding.
+ * EmbedPlayer — YouTube/Vimeo iframe player with unavailable fallback
+ * and marketing cookie consent gating.
  */
 export type EmbedPlayerProps = {
   embed: EmbedResult;
@@ -19,6 +18,7 @@ export type EmbedPlayerProps = {
   start?: number | null;
   /** Accessible title for the iframe. */
   title?: string;
+  editing?: boolean;
   onUnavailable?: () => void;
 };
 
@@ -29,11 +29,14 @@ export function EmbedPlayer({
   height,
   start = null,
   title,
+  editing = false,
   onUnavailable,
 }: EmbedPlayerProps) {
   const [mounted, setMounted] = useState(false);
   const [isUnavailable, setIsUnavailable] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [loadedOnce, setLoadedOnce] = useState(false);
+  const { hasConsent, acceptCategory } = useConsent();
 
   // Mount the iframe on the client only: a server-rendered iframe can finish
   // loading before hydration, so React never sees `load` and the overlay sticks.
@@ -43,6 +46,7 @@ export function EmbedPlayer({
   useEffect(() => {
     setIsLoaded(false);
     setIsUnavailable(false);
+    setLoadedOnce(false);
   }, [embed?.src]);
 
   const resolvedSrc =
@@ -52,6 +56,32 @@ export function EmbedPlayer({
 
   const hasCustomDimensions = width !== undefined || height !== undefined;
   const containerStyle = hasCustomDimensions ? { width, height } : undefined;
+
+  if (!embed) {
+    return (
+      <div
+        className="relative flex aspect-video h-full w-full items-center justify-center rounded-lg bg-neutral-900"
+        style={containerStyle}
+      >
+        <p className="text-sm text-neutral-400">Unsupported video provider</p>
+      </div>
+    );
+  }
+
+  const canLoad = editing || hasConsent('marketing') || loadedOnce;
+  if (!canLoad) {
+    const providerLabel =
+      embed.provider === 'youtube' ? 'YouTube video' : 'Vimeo video';
+    return (
+      <ConsentEmbedPlaceholder
+        provider={providerLabel}
+        title={title}
+        style={containerStyle}
+        onLoadOnce={() => setLoadedOnce(true)}
+        onAlwaysAllow={() => void acceptCategory('marketing')}
+      />
+    );
+  }
 
   if (isUnavailable) {
     return (
@@ -75,17 +105,6 @@ export function EmbedPlayer({
             />
           )}
         </div>
-      </div>
-    );
-  }
-
-  if (!embed) {
-    return (
-      <div
-        className="relative flex aspect-video h-full w-full items-center justify-center rounded-lg bg-neutral-900"
-        style={containerStyle}
-      >
-        <p className="text-sm text-neutral-400">Unsupported video provider</p>
       </div>
     );
   }

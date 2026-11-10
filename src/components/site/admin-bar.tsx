@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  AlertTriangle,
   ChevronDown,
   Eye,
   LayoutTemplate,
@@ -154,6 +155,17 @@ function BarContents({ bar }: { bar: Bar }) {
             <Eye className="size-3" />
             Preview / Draft
           </span>
+        )}
+        {bar.siteMode && bar.siteMode !== 'live' && (
+          <a
+            href={links.settings ?? links.dashboard}
+            className="ml-1 inline-flex items-center gap-1 rounded bg-rose-500/90 px-1.5 py-1 text-[11px] font-semibold text-white hover:bg-rose-500"
+          >
+            <AlertTriangle className="size-3" />
+            {bar.siteMode === 'coming_soon'
+              ? 'Coming soon mode is on'
+              : 'Maintenance mode is on'}
+          </a>
         )}
       </div>
       <div className="flex shrink-0 items-center gap-0.5">

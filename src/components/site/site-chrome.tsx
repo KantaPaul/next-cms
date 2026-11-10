@@ -315,6 +315,13 @@ export async function SiteChrome({
             </div>
             <p className="s-muted pb-8 text-center text-xs">
               © {new Date().getFullYear()} {copy.siteName}
+              {' · '}
+              <a
+                href="#cookie-settings"
+                className="hover:underline hover:text-[var(--site-fg)]"
+              >
+                Cookie settings
+              </a>
             </p>
           </footer>
         ))}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useConsent } from '@/components/site/consent-provider';
 
 type Props = {
   path: string;
@@ -11,9 +12,17 @@ type Props = {
 
 export function ViewBeacon({ pageId, postId, path, variant }: Props) {
   const sent = useRef(false);
+  const { hasConsent } = useConsent();
+  const analyticsAllowed = hasConsent('analytics');
 
   useEffect(() => {
-    if (sent.current || !path || (!pageId && !postId) || (pageId && postId)) {
+    if (
+      !analyticsAllowed ||
+      sent.current ||
+      !path ||
+      (!pageId && !postId) ||
+      (pageId && postId)
+    ) {
       return;
     }
     sent.current = true;
@@ -42,7 +51,7 @@ export function ViewBeacon({ pageId, postId, path, variant }: Props) {
     }).catch(() => {
       // Ignore network errors — analytics must never break the page.
     });
-  }, [pageId, postId, path]);
+  }, [pageId, postId, path, variant, analyticsAllowed]);
 
   return null;
 }

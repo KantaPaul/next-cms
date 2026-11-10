@@ -1,17 +1,31 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useConsent } from '@/components/site/consent-provider';
+import type { ConsentCategory } from '@/lib/site-essentials-types';
 
 type Slot = 'head' | 'bodyStart' | 'bodyEnd';
 
 /**
- * Adds the admin's custom head/body code to the page once per full load.
+ * Adds the admin's custom head/body code to the page once per full load,
+ * waiting for consent on the snippet's assigned category (marketing by default).
  * HTML set with `dangerouslySetInnerHTML` never runs its `<script>` tags, so
  * analytics and pixel snippets need a parsed fragment, which does run them.
  */
-export function CustomCode({ html, slot }: { html: string; slot: Slot }) {
+export function CustomCode({
+  html,
+  slot,
+  category = 'marketing',
+}: {
+  html: string;
+  slot: Slot;
+  category?: ConsentCategory;
+}) {
+  const { hasConsent } = useConsent();
+  const allowed = hasConsent(category);
+
   useEffect(() => {
-    if (!html.trim()) return;
+    if (!allowed || !html.trim()) return;
     const marker = `data-custom-code-${slot}`;
     if (document.querySelector(`[${marker}]`)) return;
     const range = document.createRange();
@@ -24,6 +38,6 @@ export function CustomCode({ html, slot }: { html: string; slot: Slot }) {
     if (slot === 'head') document.head.append(fragment);
     else if (slot === 'bodyStart') document.body.prepend(fragment);
     else document.body.append(fragment);
-  }, [html, slot]);
+  }, [html, slot, allowed]);
   return null;
 }

@@ -853,6 +853,8 @@ export type FooterLinksProps = {
   menuLocation?: 'header' | 'footer';
   links?: { label: string; url: string; target?: string }[];
   collapseOnMobile?: boolean;
+  showCookieSettings?: boolean;
+  cookieSettingsLabel?: string;
   menu?: MenuWithItems | null;
   siteSlug?: string;
   elements?: WithSection['elements'];
@@ -868,6 +870,8 @@ export function FooterLinks({
     { label: 'Contact Support', url: '/contact' },
   ],
   collapseOnMobile = false,
+  showCookieSettings = false,
+  cookieSettingsLabel = 'Cookie Settings',
   menu,
   siteSlug,
   elements,
@@ -878,10 +882,17 @@ export function FooterLinks({
     'link',
     'hover:underline hover:text-[var(--site-fg)] transition-colors'
   );
-  const items =
+  const baseItems =
     source === 'menu' && menu?.items?.length
       ? menu.items.map(i => ({ label: i.label, url: i.url, target: i.target }))
       : links;
+  const items =
+    showCookieSettings && !baseItems.some(i => i.url === '#cookie-settings')
+      ? [
+          ...baseItems,
+          { label: cookieSettingsLabel || 'Cookie Settings', url: '#cookie-settings' },
+        ]
+      : baseItems;
 
   const list = (
     <ul className="s-muted flex flex-col space-y-1.5 text-sm">
@@ -1237,6 +1248,8 @@ export type LegalLinksProps = {
   links?: { label: string; url: string; target?: string }[];
   separator?: 'dot' | 'pipe' | 'dash' | 'none';
   align?: 'left' | 'center' | 'right';
+  showCookieSettings?: boolean;
+  cookieSettingsLabel?: string;
   menu?: MenuWithItems | null;
   siteSlug?: string;
   elements?: WithSection['elements'];
@@ -1261,18 +1274,27 @@ export function LegalLinks({
   links = [
     { label: 'Privacy Policy', url: '/privacy' },
     { label: 'Terms of Service', url: '/terms' },
-    { label: 'Cookie Settings', url: '/cookies' },
+    { label: 'Cookie Settings', url: '#cookie-settings' },
   ],
   separator = 'dot',
   align = 'center',
+  showCookieSettings = true,
+  cookieSettingsLabel = 'Cookie Settings',
   menu,
   siteSlug,
   elements,
 }: LegalLinksProps) {
-  const items =
+  const baseItems =
     source === 'menu' && menu?.items?.length
       ? menu.items.map(i => ({ label: i.label, url: i.url, target: i.target }))
       : links;
+  const items =
+    showCookieSettings && !baseItems.some(i => i.url === '#cookie-settings')
+      ? [
+          ...baseItems,
+          { label: cookieSettingsLabel || 'Cookie Settings', url: '#cookie-settings' },
+        ]
+      : baseItems;
 
   const sepChar = LEGAL_SEPARATORS[separator] ?? '·';
   const styled = { elements };

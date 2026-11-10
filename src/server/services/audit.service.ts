@@ -41,7 +41,10 @@ export type AuditTarget =
   | 'collection_entry'
   | 'video'
   | 'license'
-  | 'import_job';
+  | 'import_job'
+  | 'privacy_request'
+  | 'backup'
+  | 'consent';
 
 export const auditService = {
   log: async (
