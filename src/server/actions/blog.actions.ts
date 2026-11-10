@@ -40,13 +40,15 @@ export async function getAuthorPosts(input: z.input<typeof authorPostsSchema>) {
 export async function getPostComments(
   input: z.input<typeof postCommentsSchema>
 ) {
-  const { postId, sort } = postCommentsSchema.parse(input);
+  const { postId, targetKind, sort } = postCommentsSchema.parse(input);
   const [{ commentsService }, { siteSettingsService }] = await Promise.all([
     import('@/server/services/comments.service'),
     import('@/server/services/site-settings.service'),
   ]);
   const [result, settings] = await Promise.all([
-    commentsService.forPost(postId, sort),
+    targetKind === 'entry'
+      ? commentsService.forEntry(postId, sort)
+      : commentsService.forPost(postId, sort),
     siteSettingsService.getPublic(),
   ]);
   return { ...result, open: settings.readingSettings?.comments !== false };

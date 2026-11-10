@@ -987,6 +987,7 @@ export const collectionsService = {
         canvas: source.canvas,
         draftCanvas: source.draftCanvas,
         seo: source.seo,
+        allowComments: source.allowComments,
       })
       .returning();
 
@@ -1096,6 +1097,7 @@ export const collectionsService = {
           canvas: source.draftCanvas ?? source.canvas,
           draftCanvas: source.draftCanvas ?? source.canvas,
           seo: source.seo,
+          allowComments: source.allowComments,
         })
         .returning();
       return row;
@@ -1293,6 +1295,7 @@ export const collectionsService = {
       seo?: SeoInput | null;
       terms?: Record<string, string[]>;
       language?: string | null;
+      allowComments?: boolean;
     },
     actorId: string
   ) {
@@ -1397,6 +1400,10 @@ export const collectionsService = {
             ? (input.draftCanvas as any)
             : null,
         seo: supports.seo && input.seo ? input.seo : null,
+        allowComments:
+          supports.comments && input.allowComments !== undefined
+            ? input.allowComments
+            : true,
       })
       .returning();
 
@@ -1450,6 +1457,7 @@ export const collectionsService = {
       draftCanvas?: unknown;
       seo?: SeoInput | null;
       terms?: Record<string, string[]>;
+      allowComments?: boolean;
     },
     actorId: string
   ) {
@@ -1517,6 +1525,9 @@ export const collectionsService = {
     }
     if (supports.seo && input.seo !== undefined) {
       values.seo = input.seo;
+    }
+    if (supports.comments && input.allowComments !== undefined) {
+      values.allowComments = input.allowComments;
     }
     if (supports.template) {
       if (input.layout !== undefined) values.layout = input.layout;

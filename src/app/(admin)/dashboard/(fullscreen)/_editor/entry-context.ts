@@ -2,7 +2,12 @@ import 'server-only';
 import { entryToPostView, type PostView } from '@/builder/post-template';
 import { collectionsService } from '@/server/services/collections.service';
 
-type CollectionInfo = { id: string; name: string; slug: string };
+type CollectionInfo = {
+  id: string;
+  name: string;
+  slug: string;
+  supports?: unknown;
+};
 
 export type EntryRenderContext = {
   /** The entry with its collection and fields, for `EntryProvider` and loaders. */
@@ -37,6 +42,7 @@ export async function entryRenderContext(
     id: info.id,
     name: info.name,
     slug: info.slug,
+    supports: info.supports,
     fields,
   };
   return {

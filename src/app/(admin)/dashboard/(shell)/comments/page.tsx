@@ -91,8 +91,9 @@ export default async function CommentsPage({
           isStaff: Boolean(r.userId),
           body: r.body,
           createdAt: r.createdAt.toISOString(),
-          postTitle: r.postTitle,
-          postUrl: commentsService.postUrl(r.postSlug, r.postLanguage),
+          postTitle: r.targetTitle,
+          postUrl: r.targetUrl,
+          targetTypeLabel: r.targetTypeLabel,
         }))}
       />
       {pages > 1 && (

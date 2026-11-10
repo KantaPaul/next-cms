@@ -1,7 +1,24 @@
 import 'server-only';
-import { and, asc, count, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gt,
+  inArray,
+  isNull,
+  or,
+  type SQL,
+  sql,
+} from 'drizzle-orm';
+import { entryTitle, normalizePostTypeSupports } from '@/config/post-types';
+import { PAGES } from '@/config/pages';
 import { db } from '@/db';
 import {
+  collectionEntries,
+  collectionFields,
+  collections,
   type CommentStatus,
   commentReactions,
   comments,
@@ -9,13 +26,17 @@ import {
   users,
 } from '@/db/schema';
 import { env } from '@/env.mjs';
-import { PAGES } from '@/config/pages';
+import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { revalidatePublicSite } from '@/lib/utils/revalidate-site';
+import { doAction } from '@/server/plugins/hooks';
 import { hashIdentifier } from '@/server/services/auth-rate-limit.service';
 import { verifyTurnstile } from '@/server/services/forms.service';
-import { doAction } from '@/server/plugins/hooks';
 import { sendMail } from '@/server/services/mail';
-import { adminSiteId, siteContext } from '@/server/services/site-context';
+import {
+  adminSiteId,
+  siteContext,
+  siteSlugPrefix,
+} from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 import {
   COMMENT_RATE_WINDOW_MS,
@@ -69,6 +90,68 @@ const publicSelect = {
   createdAt: comments.createdAt,
 };
 
+async function loadCommentsTree(
+  targetWhere: SQL,
+  sort: 'oldest' | 'newest' = 'oldest'
+): Promise<{ items: PublicComment[]; total: number }> {
+  const rows = await db
+    .select(publicSelect)
+    .from(comments)
+    .where(
+      and(
+        targetWhere,
+        eq(comments.status, 'approved'),
+        isNull(comments.deletedAt)
+      )
+    )
+    .orderBy(asc(comments.createdAt))
+    .limit(500);
+  const totals = await reactionTotals(rows.map(r => r.id));
+
+  const toPublic = (r: (typeof rows)[number]): PublicComment => ({
+    id: r.id,
+    authorName: r.authorName,
+    authorUrl: r.authorUrl,
+    isStaff: Boolean(r.userId),
+    body: r.body,
+    createdAt: r.createdAt.toISOString(),
+    likes: totals.get(r.id)?.likes ?? 0,
+    dislikes: totals.get(r.id)?.dislikes ?? 0,
+    replies: [],
+  });
+  const top = rows.filter(r => !r.parentId).map(toPublic);
+  const byId = new Map(top.map(c => [c.id, c]));
+  for (const r of rows) {
+    if (r.parentId) byId.get(r.parentId)?.replies.push(toPublic(r));
+  }
+  if (sort === 'newest') top.reverse();
+  return { items: top, total: rows.length };
+}
+
+function isEntryCommentsOpen(row: {
+  entryStatus: string | null;
+  entryVisibility: string | null;
+  entryScheduledAt: Date | null;
+  entryDeletedAt: Date | null;
+  entryAllowComments: boolean | null;
+  collectionStatus: string | null;
+  collectionDeletedAt: Date | null;
+  collectionSupports: unknown;
+}) {
+  const supports = normalizePostTypeSupports(row.collectionSupports);
+  const published =
+    row.entryStatus === 'published' &&
+    row.entryVisibility === 'public' &&
+    !row.entryDeletedAt &&
+    !row.collectionDeletedAt &&
+    row.collectionStatus === 'active' &&
+    (!row.entryScheduledAt || new Date(row.entryScheduledAt) <= new Date());
+  return {
+    published,
+    allowComments: supports.comments && row.entryAllowComments === true,
+  };
+}
+
 export const commentsService = {
   /** Visitor submission from the Comments block (POST /api/comments). */
   submit: async (
@@ -81,6 +164,7 @@ export const commentsService = {
     };
     const parsed = commentInputSchema.safeParse({
       postId: read('postId'),
+      targetKind: read('targetKind'),
       parentId: read('parentId'),
       authorName: read('authorName'),
       authorEmail: read('authorEmail'),
@@ -95,34 +179,68 @@ export const commentsService = {
       };
     }
     const input = parsed.data;
+    const isEntry = input.targetKind === 'entry';
     const site = await siteContext.publicSite();
     const ipHash = ipHashOf(meta.ip);
     const since = new Date(Date.now() - COMMENT_RATE_WINDOW_MS);
 
-    const [[post], parentRows, [recent], settings] = await Promise.all([
-      db
-        .select({
-          id: posts.id,
-          slug: posts.slug,
-          title: posts.title,
-          language: posts.language,
-          status: posts.status,
-          visibility: posts.visibility,
-          deletedAt: posts.deletedAt,
-          allowComments: posts.allowComments,
-        })
-        .from(posts)
-        .where(and(eq(posts.id, input.postId), eq(posts.siteId, site.id)))
-        .limit(1),
+    const [targetRow, parentRows, [recent], settings] = await Promise.all([
+      isEntry
+        ? db
+            .select({
+              id: collectionEntries.id,
+              slug: collectionEntries.slug,
+              data: collectionEntries.data,
+              collectionId: collectionEntries.collectionId,
+              entryStatus: collectionEntries.status,
+              entryVisibility: collectionEntries.visibility,
+              entryScheduledAt: collectionEntries.scheduledAt,
+              entryDeletedAt: collectionEntries.deletedAt,
+              entryAllowComments: collectionEntries.allowComments,
+              collectionStatus: collections.status,
+              collectionDeletedAt: collections.deletedAt,
+              collectionSupports: collections.supports,
+            })
+            .from(collectionEntries)
+            .innerJoin(
+              collections,
+              eq(collections.id, collectionEntries.collectionId)
+            )
+            .where(
+              and(
+                eq(collectionEntries.id, input.postId),
+                eq(collectionEntries.siteId, site.id)
+              )
+            )
+            .limit(1)
+            .then(rows => rows[0] ?? null)
+        : db
+            .select({
+              id: posts.id,
+              slug: posts.slug,
+              title: posts.title,
+              language: posts.language,
+              status: posts.status,
+              visibility: posts.visibility,
+              deletedAt: posts.deletedAt,
+              allowComments: posts.allowComments,
+            })
+            .from(posts)
+            .where(and(eq(posts.id, input.postId), eq(posts.siteId, site.id)))
+            .limit(1)
+            .then(rows => rows[0] ?? null),
       input.parentId
         ? db
             .select({
               postId: comments.postId,
+              collectionEntryId: comments.collectionEntryId,
               parentId: comments.parentId,
               status: comments.status,
             })
             .from(comments)
-            .where(and(eq(comments.id, input.parentId), isNull(comments.deletedAt)))
+            .where(
+              and(eq(comments.id, input.parentId), isNull(comments.deletedAt))
+            )
             .limit(1)
         : Promise.resolve([]),
       db
@@ -135,21 +253,30 @@ export const commentsService = {
     const honeypot = String(formData.get('company') ?? '').trim().length > 0;
     const turnstileOk = honeypot
       ? true
-      : await verifyTurnstile(String(formData.get('cf-turnstile-response') ?? ''));
+      : await verifyTurnstile(
+          String(formData.get('cf-turnstile-response') ?? '')
+        );
+
+    const targetPost = targetRow
+      ? 'entryStatus' in targetRow
+        ? {
+            id: targetRow.id,
+            ...isEntryCommentsOpen(targetRow),
+          }
+        : {
+            id: targetRow.id,
+            published:
+              targetRow.status === 'published' &&
+              targetRow.visibility === 'public' &&
+              !targetRow.deletedAt,
+            allowComments: targetRow.allowComments,
+          }
+      : null;
 
     const decision = decideComment(
       input,
       {
-        post: post
-          ? {
-              id: post.id,
-              published:
-                post.status === 'published' &&
-                post.visibility === 'public' &&
-                !post.deletedAt,
-              allowComments: post.allowComments,
-            }
-          : null,
+        post: targetPost,
         commentsEnabled: settings.readingSettings?.comments !== false,
         parent: parentRows[0] ?? null,
         recentFromIp: Number(recent?.n ?? 0),
@@ -162,7 +289,8 @@ export const commentsService = {
       .insert(comments)
       .values({
         siteId: site.id,
-        postId: input.postId,
+        postId: isEntry ? null : input.postId,
+        collectionEntryId: isEntry ? input.postId : null,
         parentId: input.parentId ?? null,
         authorName: input.authorName,
         authorEmail: input.authorEmail.toLowerCase(),
@@ -177,18 +305,30 @@ export const commentsService = {
 
     await doAction('comment.created', {
       id: inserted.id,
-      postId: input.postId,
+      postId: isEntry ? null : input.postId,
+      collectionEntryId: isEntry ? input.postId : null,
       parentId: input.parentId ?? null,
       authorName: input.authorName,
       status: decision.status,
       siteId: site.id,
     });
 
-    if (decision.status === 'pending' && env.FORM_NOTIFY_TO && post) {
+    if (decision.status === 'pending' && env.FORM_NOTIFY_TO && targetRow) {
+      let targetTitle = '';
+      if ('title' in targetRow) {
+        targetTitle = targetRow.title;
+      } else {
+        const fields = await db
+          .select({ key: collectionFields.key, type: collectionFields.type })
+          .from(collectionFields)
+          .where(eq(collectionFields.collectionId, targetRow.collectionId));
+        targetTitle =
+          entryTitle(targetRow.data, fields) || targetRow.slug;
+      }
       try {
         await sendMail({
           to: env.FORM_NOTIFY_TO,
-          subject: `New comment on “${post.title}”`,
+          subject: `New comment on “${targetTitle}”`,
           text: `${input.authorName} <${input.authorEmail}> wrote:\n\n${input.body}\n\nApprove or remove it under Dashboard → Comments.`,
         });
       } catch (err) {
@@ -203,39 +343,29 @@ export const commentsService = {
   forPost: async (
     postId: string,
     sort: 'oldest' | 'newest' = 'oldest'
-  ): Promise<{ items: PublicComment[]; total: number }> => {
-    const rows = await db
-      .select(publicSelect)
+  ): Promise<{ items: PublicComment[]; total: number }> =>
+    loadCommentsTree(eq(comments.postId, postId), sort),
+
+  /** Approved comments for one collection entry, with their approved replies. */
+  forEntry: async (
+    entryId: string,
+    sort: 'oldest' | 'newest' = 'oldest'
+  ): Promise<{ items: PublicComment[]; total: number }> =>
+    loadCommentsTree(eq(comments.collectionEntryId, entryId), sort),
+
+  /** Approved comment count for one collection entry. */
+  approvedCountForEntry: async (entryId: string): Promise<number> => {
+    const [row] = await db
+      .select({ n: count() })
       .from(comments)
       .where(
         and(
-          eq(comments.postId, postId),
+          eq(comments.collectionEntryId, entryId),
           eq(comments.status, 'approved'),
           isNull(comments.deletedAt)
         )
-      )
-      .orderBy(asc(comments.createdAt))
-      .limit(500);
-    const totals = await reactionTotals(rows.map(r => r.id));
-
-    const toPublic = (r: (typeof rows)[number]): PublicComment => ({
-      id: r.id,
-      authorName: r.authorName,
-      authorUrl: r.authorUrl,
-      isStaff: Boolean(r.userId),
-      body: r.body,
-      createdAt: r.createdAt.toISOString(),
-      likes: totals.get(r.id)?.likes ?? 0,
-      dislikes: totals.get(r.id)?.dislikes ?? 0,
-      replies: [],
-    });
-    const top = rows.filter(r => !r.parentId).map(toPublic);
-    const byId = new Map(top.map(c => [c.id, c]));
-    for (const r of rows) {
-      if (r.parentId) byId.get(r.parentId)?.replies.push(toPublic(r));
-    }
-    if (sort === 'newest') top.reverse();
-    return { items: top, total: rows.length };
+      );
+    return Number(row?.n ?? 0);
   },
 
   /**
@@ -255,23 +385,51 @@ export const commentsService = {
         voterHash: comments.voterHash,
         ipHash: comments.ipHash,
         deletedAt: comments.deletedAt,
+        postId: comments.postId,
+        collectionEntryId: comments.collectionEntryId,
         postStatus: posts.status,
         postVisibility: posts.visibility,
-        allowComments: posts.allowComments,
+        postDeletedAt: posts.deletedAt,
+        postAllowComments: posts.allowComments,
+        entryStatus: collectionEntries.status,
+        entryVisibility: collectionEntries.visibility,
+        entryScheduledAt: collectionEntries.scheduledAt,
+        entryDeletedAt: collectionEntries.deletedAt,
+        entryAllowComments: collectionEntries.allowComments,
+        collectionStatus: collections.status,
+        collectionDeletedAt: collections.deletedAt,
+        collectionSupports: collections.supports,
       })
       .from(comments)
-      .innerJoin(posts, eq(posts.id, comments.postId))
+      .leftJoin(posts, eq(posts.id, comments.postId))
+      .leftJoin(
+        collectionEntries,
+        eq(collectionEntries.id, comments.collectionEntryId)
+      )
+      .leftJoin(
+        collections,
+        eq(collections.id, collectionEntries.collectionId)
+      )
       .where(and(eq(comments.id, input.commentId), eq(comments.siteId, site.id)))
       .limit(1);
     const settings = await siteSettingsService.getPublic();
+    let targetOpen = false;
+    if (row) {
+      if (row.postId) {
+        targetOpen =
+          row.postStatus === 'published' &&
+          row.postVisibility === 'public' &&
+          !row.postDeletedAt &&
+          row.postAllowComments === true;
+      } else if (row.collectionEntryId) {
+        const state = isEntryCommentsOpen(row);
+        targetOpen = state.published && state.allowComments;
+      }
+    }
     const decision = decideReaction(
       row && !row.deletedAt ? row : null,
       { voterHash, ipHash },
-      Boolean(row) &&
-        row.postStatus === 'published' &&
-        row.postVisibility === 'public' &&
-        row.allowComments &&
-        settings.readingSettings?.comments !== false
+      targetOpen && settings.readingSettings?.comments !== false
     );
     if (!decision.ok) return decision;
 
@@ -326,11 +484,17 @@ export const commentsService = {
     };
   },
 
-  /** The current visitor's reactions and own comments on one post (for button states). */
-  visitorState: async (postId: string, meta: { ip: string; voterKey: string | null }) => {
+  /** The current visitor's reactions and own comments on one post or entry (for button states). */
+  visitorState: async (
+    targetId: string,
+    meta: { ip: string; voterKey: string | null },
+    targetKind: 'post' | 'entry' = 'post'
+  ) => {
     // Without a cookie yet, only the network match applies.
     const voterHash = meta.voterKey ? voterHashOf(meta.voterKey) : 'none';
     const ipHash = ipHashOf(meta.ip);
+    const targetCol =
+      targetKind === 'entry' ? comments.collectionEntryId : comments.postId;
     const [reactions, own] = await Promise.all([
       db
         .select({ commentId: commentReactions.commentId, value: commentReactions.value })
@@ -338,7 +502,7 @@ export const commentsService = {
         .innerJoin(comments, eq(comments.id, commentReactions.commentId))
         .where(
           and(
-            eq(comments.postId, postId),
+            eq(targetCol, targetId),
             or(eq(commentReactions.voterHash, voterHash), eq(commentReactions.ipHash, ipHash))
           )
         ),
@@ -347,7 +511,7 @@ export const commentsService = {
         .from(comments)
         .where(
           and(
-            eq(comments.postId, postId),
+            eq(targetCol, targetId),
             or(eq(comments.voterHash, voterHash), eq(comments.ipHash, ipHash))
           )
         ),
@@ -361,13 +525,16 @@ export const commentsService = {
   /* ---------- Dashboard ---------- */
 
   list: async (status: CommentStatus, page = 1, pageSize = 30) => {
-    const siteId = await adminSiteId();
+    const { userId } = await getCurrentUserAndTeamId();
+    const site = await siteContext.adminSite(userId);
+    const siteId = site.id;
+    const siteSlug = siteSlugPrefix(site);
     const where = and(
       eq(comments.siteId, siteId),
       eq(comments.status, status),
       isNull(comments.deletedAt)
     );
-    const [rows, [{ n }]] = await Promise.all([
+    const [rawRows, [{ n }]] = await Promise.all([
       db
         .select({
           id: comments.id,
@@ -383,15 +550,113 @@ export const commentsService = {
           postTitle: posts.title,
           postSlug: posts.slug,
           postLanguage: posts.language,
+          entryId: collectionEntries.id,
+          entrySlug: collectionEntries.slug,
+          entryLanguage: collectionEntries.language,
+          entryData: collectionEntries.data,
+          collectionId: collections.id,
+          collectionSlug: collections.slug,
+          collectionName: collections.name,
+          collectionSingularName: collections.singularName,
         })
         .from(comments)
-        .innerJoin(posts, eq(posts.id, comments.postId))
+        .leftJoin(posts, eq(posts.id, comments.postId))
+        .leftJoin(
+          collectionEntries,
+          eq(collectionEntries.id, comments.collectionEntryId)
+        )
+        .leftJoin(
+          collections,
+          eq(collections.id, collectionEntries.collectionId)
+        )
         .where(where)
         .orderBy(desc(comments.createdAt))
         .limit(pageSize)
         .offset((Math.max(page, 1) - 1) * pageSize),
       db.select({ n: count() }).from(comments).where(where),
     ]);
+
+    const collectionIds = Array.from(
+      new Set(
+        rawRows
+          .map(r => r.collectionId)
+          .filter((id): id is string => Boolean(id))
+      )
+    );
+    const fieldsByCollection = new Map<
+      string,
+      { key: string; type: string }[]
+    >();
+    if (collectionIds.length > 0) {
+      const fieldRows = await db
+        .select({
+          collectionId: collectionFields.collectionId,
+          key: collectionFields.key,
+          type: collectionFields.type,
+        })
+        .from(collectionFields)
+        .where(inArray(collectionFields.collectionId, collectionIds))
+        .orderBy(asc(collectionFields.position));
+      for (const f of fieldRows) {
+        const list = fieldsByCollection.get(f.collectionId) ?? [];
+        list.push({ key: f.key, type: f.type });
+        fieldsByCollection.set(f.collectionId, list);
+      }
+    }
+
+    const rows = rawRows.map(r => {
+      if (r.postId && r.postSlug) {
+        return {
+          id: r.id,
+          parentId: r.parentId,
+          authorName: r.authorName,
+          authorEmail: r.authorEmail,
+          authorUrl: r.authorUrl,
+          userId: r.userId,
+          body: r.body,
+          status: r.status,
+          createdAt: r.createdAt,
+          targetTitle: r.postTitle ?? r.postSlug,
+          targetUrl: PAGES.SITE.post(
+            r.postSlug,
+            r.postLanguage ?? site.defaultLocale,
+            site.defaultLocale,
+            siteSlug
+          ),
+          targetTypeLabel: 'Blog post',
+        };
+      }
+      const fields = r.collectionId
+        ? (fieldsByCollection.get(r.collectionId) ?? [])
+        : [];
+      const title =
+        entryTitle(r.entryData, fields) || r.entrySlug || 'Entry';
+      return {
+        id: r.id,
+        parentId: r.parentId,
+        authorName: r.authorName,
+        authorEmail: r.authorEmail,
+        authorUrl: r.authorUrl,
+        userId: r.userId,
+        body: r.body,
+        status: r.status,
+        createdAt: r.createdAt,
+        targetTitle: title,
+        targetUrl:
+          r.collectionSlug && r.entrySlug
+            ? PAGES.SITE.entry(
+                r.collectionSlug,
+                r.entrySlug,
+                r.entryLanguage ?? site.defaultLocale,
+                site.defaultLocale,
+                siteSlug
+              )
+            : '#',
+        targetTypeLabel:
+          r.collectionSingularName || r.collectionName || 'Entry',
+      };
+    });
+
     return { rows, total: Number(n), page, pageSize };
   },
 
@@ -466,6 +731,7 @@ export const commentsService = {
         id: comments.id,
         parentId: comments.parentId,
         postId: comments.postId,
+        collectionEntryId: comments.collectionEntryId,
       })
       .from(comments)
       .where(and(eq(comments.id, parentId), eq(comments.siteId, siteId)))
@@ -479,6 +745,7 @@ export const commentsService = {
     await db.insert(comments).values({
       siteId,
       postId: parent.postId,
+      collectionEntryId: parent.collectionEntryId,
       parentId: parent.parentId ?? parent.id,
       authorName: user?.name || 'Staff',
       authorEmail: user?.email ?? '',

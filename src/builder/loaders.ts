@@ -171,15 +171,18 @@ const loadRelatedPosts: BlockLoader = async (props, ctx) => {
   return { posts };
 };
 
-/** Previous / next published posts around the current one. */
+/** Approved comments for the Comments block (blog posts and collection entries). */
 const loadComments: BlockLoader = async (props, ctx) => {
   const post = ctx.post as PostView | undefined;
-  if (!post?.id || ctx.collectionEntry || post.id === 'sample-post') {
+  if (!post?.id || post.id === 'sample-post') {
     return ctx.editor ? {} : { comments: [], total: 0, open: false };
   }
   const { getPostComments } = await import('@/server/actions/blog.actions');
+  const targetKind =
+    post.targetKind ?? (ctx.collectionEntry ? 'entry' : 'post');
   const result = await getPostComments({
     postId: post.id,
+    targetKind,
     sort: props.sort === 'newest' ? 'newest' : 'oldest',
   });
   return {

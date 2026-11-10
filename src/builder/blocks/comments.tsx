@@ -167,6 +167,7 @@ function CommentItem({
             {p.showReactions !== false ? (
               <CommentReactions
                 postId={p.post.id}
+                targetKind={p.post.targetKind}
                 commentId={c.id}
                 likes={c.likes ?? 0}
                 dislikes={c.dislikes ?? 0}
@@ -177,6 +178,7 @@ function CommentItem({
             {!reply && p.open !== false && p.showForm !== false ? (
               <ReplyToggle
                 postId={p.post.id}
+                targetKind={p.post.targetKind}
                 parentId={c.id}
                 labels={{
                   submitLabel: 'Post reply',
@@ -269,6 +271,7 @@ export function Comments(p: CommentsProps) {
         {open && p.showForm !== false ? (
           <CommentForm
             postId={p.post.id}
+            targetKind={p.post.targetKind}
             labels={{
               formTitle: p.formTitle || 'Leave a comment',
               submitLabel: p.submitLabel,

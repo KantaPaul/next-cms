@@ -253,6 +253,13 @@
       "when": 1794311590289,
       "tag": "20261110115310_plugins",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1794314992581,
+      "tag": "20261110124952_collection_comments",
+      "breakpoints": true
     }
   ]
 }

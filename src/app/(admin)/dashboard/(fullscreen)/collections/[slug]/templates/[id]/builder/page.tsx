@@ -57,12 +57,18 @@ export default async function CollectionTemplateBuilderPage({
           id: collection.id,
           name: collection.name,
           slug: collection.slug,
+          supports: collection.supports,
           fields,
         },
       };
       previewPost = entryToPostView(
         detailed,
-        { name: collection.name, slug: collection.slug, fields },
+        {
+          name: collection.name,
+          slug: collection.slug,
+          supports: collection.supports,
+          fields,
+        },
         detailed.terms ?? []
       );
     } catch {

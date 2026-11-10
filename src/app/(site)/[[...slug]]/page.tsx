@@ -14,6 +14,7 @@ import {
 } from '@/components/analytics/entry-context';
 import { ViewBeacon } from '@/components/analytics/view-beacon';
 import { PAGES } from '@/config/pages';
+import { normalizePostTypeSupports } from '@/config/post-types';
 import { db } from '@/db';
 import { pageContents, pageExperiments, pages, users } from '@/db/schema';
 import { env } from '@/env.mjs';
@@ -30,6 +31,7 @@ import { templateResolverService } from '@/server/services/template-resolver.ser
 import { collectionsService } from '@/server/services/collections.service';
 import { collectionTemplatesService } from '@/server/services/collection-templates.service';
 import { collectionTaxonomiesService } from '@/server/services/collection-taxonomies.service';
+import { commentsService } from '@/server/services/comments.service';
 import { entryToPostView } from '@/builder/post-template';
 import {
   getPreviewPageId,
@@ -1631,15 +1633,22 @@ export default async function SitePage({ params, searchParams }: Params) {
           site.defaultLocale,
           siteSlug ?? undefined
         );
-        const terms = await collectionTaxonomiesService.getEntryTerms(entry.id);
-        const layout = await collectionTemplatesService.layoutForEntry({
-          ...entry,
-          siteId: site.id,
-        });
+        const [terms, layout, commentCount] = await Promise.all([
+          collectionTaxonomiesService.getEntryTerms(entry.id),
+          collectionTemplatesService.layoutForEntry({
+            ...entry,
+            siteId: site.id,
+          }),
+          commentsService.approvedCountForEntry(entry.id),
+        ]);
 
-        const postView = entryToPostView(entry, entry.collection, terms, {
-          siteSlug: siteSlug ?? undefined,
-        });
+        const supports = normalizePostTypeSupports(entry.collection?.supports);
+        const postView = entryToPostView(
+          { ...entry, commentCount },
+          entry.collection,
+          terms,
+          { siteSlug: siteSlug ?? undefined }
+        );
 
         const metadata = {
           themeTokens: settings.themeTokens,
@@ -1664,6 +1673,10 @@ export default async function SitePage({ params, searchParams }: Params) {
             postNavigation: settings.readingSettings?.postNavigation,
             share: settings.readingSettings?.share,
             bookmark: settings.readingSettings?.bookmark,
+            comments:
+              settings.readingSettings?.comments !== false &&
+              supports.comments &&
+              entry.allowComments !== false,
           }),
           metadata,
           kind: 'post',

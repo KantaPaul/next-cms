@@ -25,6 +25,7 @@ export type PostTypeSupports = {
   author: boolean;
   status: boolean;
   seo: boolean;
+  comments: boolean;
 };
 
 export const DEFAULT_POST_TYPE_SUPPORTS: PostTypeSupports = {
@@ -34,6 +35,7 @@ export const DEFAULT_POST_TYPE_SUPPORTS: PostTypeSupports = {
   author: true,
   status: true,
   seo: true,
+  comments: true,
 };
 
 export function normalizePostTypeSupports(raw: unknown): PostTypeSupports {
@@ -45,6 +47,7 @@ export function normalizePostTypeSupports(raw: unknown): PostTypeSupports {
     author: obj.author ?? true,
     status: obj.status ?? true,
     seo: obj.seo ?? true,
+    comments: obj.comments ?? true,
   };
 }
 
@@ -82,6 +85,11 @@ export const POST_TYPE_SUPPORT_FEATURES: {
     key: 'seo',
     label: 'SEO & social sharing',
     description: 'Custom SEO title, description, keywords, canonical URLs, and Open Graph previews.',
+  },
+  {
+    key: 'comments',
+    label: 'Comments',
+    description: 'Visitor comments on entries when site-wide comments are enabled, with per-entry control.',
   },
 ];
 

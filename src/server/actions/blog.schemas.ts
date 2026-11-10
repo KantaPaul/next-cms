@@ -36,5 +36,6 @@ export const authorPostsSchema = z.object({
 
 export const postCommentsSchema = z.object({
   postId: z.string().max(100),
+  targetKind: z.enum(['post', 'entry']).default('post'),
   sort: z.enum(['oldest', 'newest']).default('oldest'),
 });

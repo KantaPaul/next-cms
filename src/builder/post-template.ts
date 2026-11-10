@@ -1,6 +1,6 @@
 import { DEFAULT_SECTION } from './blocks/section';
 import { type BuilderData, isBuilderData } from './data';
-import { entryTitle } from '@/config/post-types';
+import { entryTitle, normalizePostTypeSupports } from '@/config/post-types';
 
 export type PostTerm = {
   id: string;
@@ -34,7 +34,9 @@ export type PostView = {
   authorSocial?: { x?: string; linkedin?: string; github?: string; instagram?: string } | null;
   /** Published posts by this author. */
   authorPostCount?: number;
-  /** Per-post comments switch (blog posts only). */
+  /** Target kind for blocks like Comments ('post' vs 'entry'). Defaults to 'post'. */
+  targetKind?: 'post' | 'entry';
+  /** Per-post or per-entry comments switch. */
   allowComments?: boolean;
   /** Approved comments. */
   commentCount?: number;
@@ -268,10 +270,13 @@ export function entryToPostView(
   entry: {
     id: string;
     slug: string;
+    language?: string | null;
     data?: unknown;
     excerpt?: string | null;
     featuredImage?: string | null;
     publishedAt?: Date | string | null;
+    allowComments?: boolean | null;
+    commentCount?: number;
     authorName?: string | null;
     authorId?: string | null;
     author?: { id?: string | null; name?: string | null } | null;
@@ -279,12 +284,14 @@ export function entryToPostView(
   collection: {
     name?: string;
     slug?: string;
+    supports?: unknown;
     fields?: { key: string; type: string }[];
   },
   terms: EntryTermView[] = [],
   opts?: { siteSlug?: string }
 ): PostView {
   const fields = collection.fields ?? [];
+  const supports = normalizePostTypeSupports(collection.supports);
   const data = (entry.data && typeof entry.data === 'object' ? entry.data : {}) as Record<string, unknown>;
   const title = entryTitle(data, fields) || entry.slug;
   const prefix = opts?.siteSlug ? `/${opts.siteSlug}` : '';
@@ -345,13 +352,18 @@ export function entryToPostView(
     id: entry.id,
     title,
     slug: entry.slug,
-    language: 'en',
+    language: entry.language || 'en',
     excerpt: entry.excerpt ?? null,
     featuredImage: entry.featuredImage ?? customImage,
     body,
     publishedAt: entry.publishedAt ? new Date(entry.publishedAt).toISOString() : null,
     authorName,
     authorUrl,
+    targetKind: 'entry',
+    allowComments: supports.comments && entry.allowComments !== false,
+    ...(entry.commentCount !== undefined
+      ? { commentCount: entry.commentCount }
+      : {}),
     categories,
     tags,
     blogUrl: colBase || null,

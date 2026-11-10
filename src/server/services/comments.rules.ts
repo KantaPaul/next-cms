@@ -9,6 +9,7 @@ export const COMMENT_MAX_LENGTH = 3000;
 
 export const commentInputSchema = z.object({
   postId: z.string().trim().min(1).max(100),
+  targetKind: z.enum(['post', 'entry']).optional().default('post'),
   parentId: z.string().trim().max(100).optional().transform(v => v || undefined),
   authorName: z.string().trim().min(1, 'Add your name.').max(80),
   authorEmail: z.string().trim().email('Add a valid email.').max(200),
@@ -31,7 +32,12 @@ export type CommentInput = z.infer<typeof commentInputSchema>;
 export type CommentTarget = {
   post: { id: string; published: boolean; allowComments: boolean } | null;
   commentsEnabled: boolean;
-  parent?: { postId: string; parentId: string | null; status: string } | null;
+  parent?: {
+    postId: string | null;
+    collectionEntryId?: string | null;
+    parentId: string | null;
+    status: string;
+  } | null;
   recentFromIp: number;
 };
 
@@ -41,7 +47,7 @@ export type CommentDecision =
 
 /** Decides whether a submission is accepted, and with which status. */
 export function decideComment(
-  input: { postId: string; parentId?: string | null },
+  input: { postId: string; targetKind?: 'post' | 'entry'; parentId?: string | null },
   target: CommentTarget,
   flags: { honeypot: boolean; turnstileOk: boolean }
 ): CommentDecision {
@@ -53,7 +59,8 @@ export function decideComment(
   }
   if (input.parentId) {
     const parent = target.parent;
-    if (!parent || parent.postId !== input.postId || parent.status !== 'approved') {
+    const parentTargetId = parent?.collectionEntryId ?? parent?.postId;
+    if (!parent || parentTargetId !== input.postId || parent.status !== 'approved') {
       return { ok: false, status: 400, error: 'That comment can’t be replied to.' };
     }
     if (parent.parentId) {

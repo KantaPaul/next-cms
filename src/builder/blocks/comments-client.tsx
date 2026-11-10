@@ -17,6 +17,7 @@ export type CommentFormLabels = {
 /** Visitor comment form. Posts to /api/comments; new comments wait for approval. */
 export function CommentForm({
   postId,
+  targetKind,
   parentId,
   labels,
   editing,
@@ -25,6 +26,7 @@ export function CommentForm({
   elements,
 }: {
   postId: string;
+  targetKind?: 'post' | 'entry';
   parentId?: string;
   labels: CommentFormLabels;
   editing?: boolean;
@@ -105,6 +107,9 @@ export function CommentForm({
         </h3>
       ) : null}
       <input type="hidden" name="postId" value={postId} />
+      {targetKind === 'entry' ? (
+        <input type="hidden" name="targetKind" value="entry" />
+      ) : null}
       {parentId ? (
         <input type="hidden" name="parentId" value={parentId} />
       ) : null}
@@ -220,12 +225,14 @@ export function CommentForm({
 /** "Reply" toggle under a top-level comment. */
 export function ReplyToggle({
   postId,
+  targetKind,
   parentId,
   labels,
   editing,
   elements,
 }: {
   postId: string;
+  targetKind?: 'post' | 'entry';
   parentId: string;
   labels: CommentFormLabels;
   editing?: boolean;
@@ -251,6 +258,7 @@ export function ReplyToggle({
     <div className="mt-1 w-full basis-full">
       <CommentForm
         postId={postId}
+        targetKind={targetKind}
         parentId={parentId}
         labels={labels}
         editing={editing}
@@ -267,16 +275,19 @@ export function ReplyToggle({
 type VisitorState = { reactions: Record<string, number>; own: string[] };
 const stateCache = new Map<string, Promise<VisitorState>>();
 
-function visitorState(postId: string) {
-  let p = stateCache.get(postId);
+function visitorState(postId: string, targetKind: 'post' | 'entry' = 'post') {
+  const key = `${targetKind}:${postId}`;
+  let p = stateCache.get(key);
   if (!p) {
-    p = fetch(`/api/comments/state?postId=${encodeURIComponent(postId)}`, {
+    const qs = new URLSearchParams({ postId });
+    if (targetKind === 'entry') qs.set('targetKind', 'entry');
+    p = fetch(`/api/comments/state?${qs.toString()}`, {
       headers: { Accept: 'application/json' },
       cache: 'no-store',
     })
       .then(r => (r.ok ? r.json() : { reactions: {}, own: [] }))
       .catch(() => ({ reactions: {}, own: [] }));
-    stateCache.set(postId, p);
+    stateCache.set(key, p);
   }
   return p;
 }
@@ -284,6 +295,7 @@ function visitorState(postId: string) {
 /** Like / dislike buttons. Your own comments show counts only. */
 export function CommentReactions({
   postId,
+  targetKind,
   commentId,
   likes: initialLikes,
   dislikes: initialDislikes,
@@ -291,6 +303,7 @@ export function CommentReactions({
   elements,
 }: {
   postId: string;
+  targetKind?: 'post' | 'entry';
   commentId: string;
   likes: number;
   dislikes: number;
@@ -307,7 +320,7 @@ export function CommentReactions({
   useEffect(() => {
     if (editing) return;
     let live = true;
-    visitorState(postId).then(s => {
+    visitorState(postId, targetKind).then(s => {
       if (!live) return;
       const v = s.reactions?.[commentId];
       setMine(v === 1 || v === -1 ? v : 0);
@@ -316,7 +329,7 @@ export function CommentReactions({
     return () => {
       live = false;
     };
-  }, [postId, commentId, editing]);
+  }, [postId, targetKind, commentId, editing]);
 
   const react = async (value: 1 | -1) => {
     if (editing || own || busy) return;

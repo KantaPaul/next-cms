@@ -92,6 +92,7 @@ export const updateSupportsSchema = z.object({
     author: z.boolean().optional(),
     status: z.boolean().optional(),
     seo: z.boolean().optional(),
+    comments: z.boolean().optional(),
   }),
 });
 
@@ -163,6 +164,7 @@ export const entryEditorSchema = z.object({
     .optional(),
   data: z.record(z.string(), z.unknown()).default({}),
   terms: z.record(z.string(), z.array(z.string())).default({}),
+  allowComments: z.boolean().optional(),
   seo: z
     .object({
       title: z.string().trim().max(100).optional().nullable(),

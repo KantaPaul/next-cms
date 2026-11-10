@@ -884,10 +884,10 @@ export function SettingsForm({
                     onChange={() => field.onChange(field.value === false)}
                     className="rounded border-steel-300 text-indigo-600 focus:ring-indigo-500 dark:border-dark-300"
                   />
-                  <span>Allow comments on blog posts</span>
+                  <span>Allow comments on blog posts and post types</span>
                 </label>
                 <p className="text-xs text-steel-500">
-                  Each post can still switch comments off. New comments wait for approval under Comments.
+                  Each post type and entry can still switch comments off. New comments wait for approval under Comments.
                 </p>
               </Field>
             )}

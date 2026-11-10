@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import {
+  Controller,
   useForm,
   FormProvider,
   useWatch,
@@ -34,6 +35,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { StatusBadge } from '@/components/atoms/status-badge';
+import { Switch } from '@/components/ui/switch';
 import { BackButton } from '@/components/atoms/buttons/back-button';
 import {
   FieldShell,
@@ -147,6 +149,7 @@ export function EntryEditor({
       scheduledAt: toDateTimeLocal(entry?.scheduledAt),
       layout: entry?.layout ?? 'template',
       templateId: entry?.templateId ?? null,
+      allowComments: entry?.allowComments ?? true,
       terms: initialTerms,
       seo: {
         title: entry?.seo?.title ?? '',
@@ -216,6 +219,7 @@ export function EntryEditor({
         ...(entry ? {} : { language: newLanguage }),
         data,
         terms: values.terms ?? {},
+        allowComments: values.allowComments,
         seo: values.seo,
       };
 
@@ -518,6 +522,28 @@ export function EntryEditor({
                         />
                       ))}
                     </div>
+                  )}
+
+                  {supports.comments && (
+                    <Controller
+                      control={control}
+                      name="allowComments"
+                      render={({ field }) => (
+                        <div className="flex items-center justify-between gap-3 pt-2">
+                          <label
+                            htmlFor="entry-allow-comments"
+                            className="cursor-pointer text-sm font-medium text-steel-700 dark:text-steel-200"
+                          >
+                            Allow comments
+                          </label>
+                          <Switch
+                            id="entry-allow-comments"
+                            checked={field.value !== false}
+                            onChange={checked => field.onChange(checked)}
+                          />
+                        </div>
+                      )}
+                    />
                   )}
                 </div>
               </TabsContent>

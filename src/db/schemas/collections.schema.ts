@@ -255,6 +255,8 @@ export const collectionEntries = pgTable(
     canvas: jsonb('canvas'),
     draftCanvas: jsonb('draft_canvas'),
     seo: jsonb('seo').$type<SeoInput>(),
+    /** Visitors may comment (Comments block); Settings → Single pages and post type settings can switch comments off. */
+    allowComments: boolean('allow_comments').default(true).notNull(),
     publishedAt: timestamp('published_at', { withTimezone: true }),
     /** Locale code of this entry; one row per language, like pages and posts. */
     language: text('language').default('en').notNull(),

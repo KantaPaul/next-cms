@@ -133,7 +133,8 @@ export type FormSubmittedPayload = {
 
 export type CommentCreatedPayload = {
   id: string;
-  postId: string;
+  postId: string | null;
+  collectionEntryId?: string | null;
   parentId: string | null;
   authorName: string;
   status: string;

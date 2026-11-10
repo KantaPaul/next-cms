@@ -61,7 +61,8 @@ export type PrivacyDataPlan = {
   }>;
   comments: Array<{
     id: string;
-    postId: string;
+    postId: string | null;
+    collectionEntryId: string | null;
     authorName: string;
     body: string;
     status: string;
@@ -278,6 +279,7 @@ export const privacyService = {
           .select({
             id: comments.id,
             postId: comments.postId,
+            collectionEntryId: comments.collectionEntryId,
             authorName: comments.authorName,
             body: comments.body,
             status: comments.status,
@@ -340,6 +342,7 @@ export const privacyService = {
       comments: commentRows.map(c => ({
         id: c.id,
         postId: c.postId,
+        collectionEntryId: c.collectionEntryId,
         authorName: c.authorName,
         body: c.body,
         status: c.status,

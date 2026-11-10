@@ -85,15 +85,17 @@ export const formSubmissions = pgTable(
 export const COMMENT_STATUSES = ['pending', 'approved', 'spam', 'trash'] as const;
 export type CommentStatus = (typeof COMMENT_STATUSES)[number];
 
-/** Visitor comments on blog posts. Plain text only; new ones wait for approval. */
+/** Visitor comments on blog posts and collection entries. Plain text only; new ones wait for approval. */
 export const comments = pgTable(
   'comments',
   {
     id,
     siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
-    postId: text('post_id')
-      .references(() => posts.id, cascade)
-      .notNull(),
+    postId: text('post_id').references(() => posts.id, cascade),
+    collectionEntryId: text('collection_entry_id').references(
+      () => collectionEntries.id,
+      cascade
+    ),
     /** One level of replies: a reply's parent is always a top-level comment. */
     parentId: text('parent_id').references((): any => comments.id, cascade),
     authorName: varchar('author_name', { length: 80 }).notNull(),
@@ -117,6 +119,11 @@ export const comments = pgTable(
       t.status,
       t.createdAt
     ),
+    index('comments_collection_entry_status_created_index').on(
+      t.collectionEntryId,
+      t.status,
+      t.createdAt
+    ),
     index('comments_site_status_created_index').on(
       t.siteId,
       t.status,
@@ -126,6 +133,10 @@ export const comments = pgTable(
     check(
       'comments_status_check',
       sql`${t.status} in ('pending', 'approved', 'spam', 'trash')`
+    ),
+    check(
+      'comments_target_check',
+      sql`num_nonnulls(${t.postId}, ${t.collectionEntryId}) = 1`
     ),
   ]
 );

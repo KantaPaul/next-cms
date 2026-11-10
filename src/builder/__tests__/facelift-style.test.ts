@@ -290,6 +290,28 @@ describe('comment rules', () => {
     assert.equal(decideComment({ postId: 'p1', parentId: 'c1' }, { ...base, parent: { ...top, postId: 'other' } }, ok).ok, false);
   });
 
+  it('supports collection entry targets and replies via collectionEntryId', async () => {
+    const { commentInputSchema, decideComment } = await import('@/server/services/comments.rules');
+    const parsed = commentInputSchema.parse({
+      postId: 'e1',
+      targetKind: 'entry',
+      authorName: 'Sam',
+      authorEmail: 'sam@example.com',
+      body: 'Great showcase item!',
+    });
+    assert.equal(parsed.targetKind, 'entry');
+
+    const top = { postId: null, collectionEntryId: 'e1', parentId: null, status: 'approved' };
+    assert.equal(
+      decideComment({ postId: 'e1', targetKind: 'entry', parentId: 'c1' }, { ...base, post: { id: 'e1', published: true, allowComments: true }, parent: top }, ok).ok,
+      true
+    );
+    assert.equal(
+      decideComment({ postId: 'e1', targetKind: 'entry', parentId: 'c1' }, { ...base, post: { id: 'e1', published: true, allowComments: true }, parent: { ...top, collectionEntryId: 'other' } }, ok).ok,
+      false
+    );
+  });
+
   it('marks honeypot spam and rate-limits the sixth comment', async () => {
     const { decideComment, COMMENT_RATE_LIMIT } = await import('@/server/services/comments.rules');
     assert.deepEqual(decideComment({ postId: 'p1' }, base, { honeypot: true, turnstileOk: false }), { ok: true, status: 'spam' });

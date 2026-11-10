@@ -22,6 +22,7 @@ describe('PostTypeSupports', () => {
       author: true,
       status: true,
       seo: true,
+      comments: true,
     });
   });
 
@@ -29,17 +30,19 @@ describe('PostTypeSupports', () => {
     const supports = normalizePostTypeSupports({
       taxonomies: false,
       seo: false,
+      comments: false,
     });
     assert.equal(supports.taxonomies, false);
     assert.equal(supports.seo, false);
+    assert.equal(supports.comments, false);
     assert.equal(supports.template, true);
     assert.equal(supports.excerpt, true);
     assert.equal(supports.author, true);
     assert.equal(supports.status, true);
   });
 
-  it('lists all 6 feature groups', () => {
-    assert.equal(POST_TYPE_SUPPORT_FEATURES.length, 6);
+  it('lists all 7 feature groups', () => {
+    assert.equal(POST_TYPE_SUPPORT_FEATURES.length, 7);
     const keys = POST_TYPE_SUPPORT_FEATURES.map(f => f.key);
     assert.ok(keys.includes('template'));
     assert.ok(keys.includes('taxonomies'));
@@ -47,6 +50,7 @@ describe('PostTypeSupports', () => {
     assert.ok(keys.includes('author'));
     assert.ok(keys.includes('status'));
     assert.ok(keys.includes('seo'));
+    assert.ok(keys.includes('comments'));
   });
 });
 
@@ -85,6 +89,8 @@ describe('entryToPostView', () => {
     assert.equal(postView.body, '<p>Senior Engineer</p>');
     assert.equal(postView.publishedAt, '2026-03-01T12:00:00.000Z');
     assert.equal(postView.blogUrl, '/collections/team');
+    assert.equal(postView.targetKind, 'entry');
+    assert.equal(postView.allowComments, true);
 
     // Categories come from the first hierarchical taxonomy
     assert.equal(postView.categories.length, 1);
@@ -127,6 +133,40 @@ describe('entryToPostView', () => {
     };
     const postView = entryToPostView(entry, collection, []);
     assert.equal(postView.featuredImage, 'https://example.com/jane.jpg');
+  });
+
+  it('respects collection supports.comments and entry.allowComments', () => {
+    const baseEntry = {
+      id: 'e4',
+      slug: 'showcase-one',
+      language: 'fr',
+      data: { title: 'Showcase One' },
+      allowComments: true,
+      commentCount: 3,
+    };
+
+    const enabled = entryToPostView(baseEntry, {
+      name: 'Showcase',
+      slug: 'showcase',
+      supports: { comments: true },
+    });
+    assert.equal(enabled.targetKind, 'entry');
+    assert.equal(enabled.language, 'fr');
+    assert.equal(enabled.allowComments, true);
+    assert.equal(enabled.commentCount, 3);
+
+    const disabledOnCollection = entryToPostView(baseEntry, {
+      name: 'Showcase',
+      slug: 'showcase',
+      supports: { comments: false },
+    });
+    assert.equal(disabledOnCollection.allowComments, false);
+
+    const disabledOnEntry = entryToPostView(
+      { ...baseEntry, allowComments: false },
+      { name: 'Showcase', slug: 'showcase', supports: { comments: true } }
+    );
+    assert.equal(disabledOnEntry.allowComments, false);
   });
 });
 

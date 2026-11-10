@@ -10,6 +10,7 @@ import type { BuilderData } from '@/builder/data';
 import type { PostTypeSupports } from '@/config/post-types';
 import { db } from '@/db';
 import * as schema from '@/db/schema';
+import { normalizePostTypeSupports } from '@/config/post-types';
 import { assertValid, block, page } from '../builder-nodes';
 import { POST_IMAGES } from './builder-posts';
 
@@ -434,7 +435,7 @@ export async function seedPostTypes(ctx: Ctx) {
         icon: def.icon,
         description: def.description,
         status: 'active',
-        supports: { template: true, taxonomies: true, excerpt: true, author: true, status: true, seo: true, ...def.supports },
+        supports: normalizePostTypeSupports(def.supports),
       })
       .returning();
     counts.types++;
