@@ -1,0 +1,267 @@
+{
+  "version": "0.4",
+  "title": "All Widgets Showcase",
+  "type": "page",
+  "content": [
+    {
+      "id": "sec-two-col",
+      "elType": "section",
+      "settings": {
+        "background_background": "classic",
+        "background_color": "#ffffff",
+        "padding": { "top": "40", "right": "24", "bottom": "40", "left": "24", "unit": "px" }
+      },
+      "elements": [
+        {
+          "id": "col-left",
+          "elType": "column",
+          "settings": { "_column_size": 60 },
+          "elements": [
+            {
+              "id": "w-heading",
+              "elType": "widget",
+              "widgetType": "heading",
+              "settings": {
+                "title": "Main Headline",
+                "header_size": "h1",
+                "align": "left",
+                "title_color": "#0f172a",
+                "typography_font_size": { "size": 42, "unit": "px" },
+                "typography_font_weight": 700
+              }
+            },
+            {
+              "id": "w-text",
+              "elType": "widget",
+              "widgetType": "text-editor",
+              "settings": { "editor": "<p>Hello <strong>Elementor</strong> world.</p>" }
+            },
+            {
+              "id": "w-button",
+              "elType": "widget",
+              "widgetType": "button",
+              "settings": {
+                "text": "Start Now",
+                "link": { "url": "https://example.com/start", "is_external": true },
+                "align": "left",
+                "size": "lg",
+                "background_color": "#4f46e5",
+                "button_text_color": "#ffffff",
+                "border_radius": { "top": "8", "right": "8", "bottom": "8", "left": "8", "unit": "px" }
+              }
+            }
+          ]
+        },
+        {
+          "id": "col-right",
+          "elType": "column",
+          "settings": { "_column_size": 40 },
+          "elements": [
+            {
+              "id": "w-image",
+              "elType": "widget",
+              "widgetType": "image",
+              "settings": {
+                "image": { "url": "https://example.com/hero.jpg", "alt": "Hero" },
+                "caption": "Hero caption"
+              }
+            },
+            {
+              "id": "w-image-box",
+              "elType": "widget",
+              "widgetType": "image-box",
+              "settings": {
+                "image": { "url": "https://example.com/box.jpg" },
+                "title_text": "Image Box",
+                "description_text": "Box desc",
+                "position": "left"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cont-flex",
+      "elType": "container",
+      "settings": {
+        "flex_direction": "column",
+        "flex_gap": { "size": 16, "unit": "px" },
+        "min_height": { "size": 200, "unit": "px" },
+        "background_background": "classic",
+        "background_color": "#f8fafc"
+      },
+      "elements": [
+        {
+          "id": "w-icon",
+          "elType": "widget",
+          "widgetType": "icon",
+          "settings": { "selected_icon": { "value": "fas fa-rocket" }, "view": "stacked", "shape": "circle" }
+        },
+        {
+          "id": "w-icon-box",
+          "elType": "widget",
+          "widgetType": "icon-box",
+          "settings": { "selected_icon": { "value": "fas fa-star" }, "title_text": "Fast", "description_text": "Blazing fast." }
+        },
+        {
+          "id": "w-spacer",
+          "elType": "widget",
+          "widgetType": "spacer",
+          "settings": { "space": { "size": 48, "unit": "px" } }
+        },
+        {
+          "id": "w-divider",
+          "elType": "widget",
+          "widgetType": "divider",
+          "settings": { "style": "dashed", "weight": { "size": 2, "unit": "px" }, "color": "#cbd5e1" }
+        },
+        {
+          "id": "w-counter",
+          "elType": "widget",
+          "widgetType": "counter",
+          "settings": { "starting_number": 0, "ending_number": 500, "suffix": "+", "title": "Customers" }
+        },
+        {
+          "id": "w-progress",
+          "elType": "widget",
+          "widgetType": "progress",
+          "settings": { "title": "TypeScript", "percent": { "size": 95, "unit": "%" }, "inner_text": "TS" }
+        },
+        {
+          "id": "w-star",
+          "elType": "widget",
+          "widgetType": "star-rating",
+          "settings": { "rating": 4.5, "rating_scale": 5, "title": "Score" }
+        },
+        {
+          "id": "w-countdown",
+          "elType": "widget",
+          "widgetType": "countdown",
+          "settings": { "countdown_type": "due_date", "due_date": "2027-01-01T00:00:00", "show_days": "yes" }
+        },
+        {
+          "id": "w-flip",
+          "elType": "widget",
+          "widgetType": "flip-box",
+          "settings": { "title_text_a": "Front", "description_text_a": "Hover me", "title_text_b": "Back", "button_text": "Go", "link": { "url": "/pricing" } }
+        },
+        {
+          "id": "w-anim",
+          "elType": "widget",
+          "widgetType": "animated-headline",
+          "settings": { "headline_style": "highlight", "before_text": "Build", "highlighted_text": "faster", "after_text": "today" }
+        },
+        {
+          "id": "w-price",
+          "elType": "widget",
+          "widgetType": "price-list",
+          "settings": {
+            "heading": "Plans",
+            "price_list": [{ "title": "Starter", "price": "$19", "item_description": "Great for solo" }]
+          }
+        },
+        {
+          "id": "w-toc",
+          "elType": "widget",
+          "widgetType": "table-of-contents",
+          "settings": { "title": "Contents", "headings_by_tags": ["h2", "h3"] }
+        },
+        {
+          "id": "w-testi",
+          "elType": "widget",
+          "widgetType": "testimonial-carousel",
+          "settings": {
+            "slides_per_view": 2,
+            "slides": [{ "content": "Awesome!", "name": "Sam", "title": "CEO" }]
+          }
+        },
+        {
+          "id": "w-hotspot",
+          "elType": "widget",
+          "widgetType": "hotspot",
+          "settings": {
+            "image": { "url": "https://example.com/product.png" },
+            "hotspot": [{ "_id": "s1", "hotspot_label": "Detail", "hotspot_offset_x": { "size": 25 }, "hotspot_offset_y": { "size": 60 } }]
+          }
+        },
+        {
+          "id": "w-lottie",
+          "elType": "widget",
+          "widgetType": "lottie",
+          "settings": { "source_external_url": { "url": "https://example.com/anim.json" }, "loop": "yes" }
+        },
+        {
+          "id": "w-accordion",
+          "elType": "widget",
+          "widgetType": "accordion",
+          "settings": { "tabs": [{ "tab_title": "FAQ 1", "tab_content": "<p>Answer 1</p>" }] }
+        },
+        {
+          "id": "w-toggle",
+          "elType": "widget",
+          "widgetType": "toggle",
+          "settings": { "tabs": [{ "tab_title": "Toggle 1", "tab_content": "<p>Details</p>" }] }
+        },
+        {
+          "id": "w-tabs",
+          "elType": "widget",
+          "widgetType": "tabs",
+          "settings": { "tabs": [{ "tab_title": "Overview", "tab_content": "<p>Tab body</p>" }] }
+        },
+        {
+          "id": "w-video",
+          "elType": "widget",
+          "widgetType": "video",
+          "settings": { "video_type": "youtube", "youtube_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ" }
+        },
+        {
+          "id": "w-map",
+          "elType": "widget",
+          "widgetType": "google_maps",
+          "settings": { "address": "1600 Amphitheatre Parkway, Mountain View, CA" }
+        },
+        {
+          "id": "w-gallery",
+          "elType": "widget",
+          "widgetType": "gallery",
+          "settings": {
+            "columns": 2,
+            "gallery": [
+              { "url": "https://example.com/g1.jpg", "alt": "G1" },
+              { "url": "https://example.com/g2.jpg", "alt": "G2" }
+            ]
+          }
+        },
+        {
+          "id": "w-form",
+          "elType": "widget",
+          "widgetType": "form",
+          "settings": {
+            "form_name": "Contact Us",
+            "button_text": "Submit",
+            "submit_actions": ["email"],
+            "email_to": "team@example.com",
+            "form_fields": [
+              { "custom_id": "step_1", "field_type": "step", "field_label": "Your Info" },
+              { "custom_id": "name", "field_type": "text", "field_label": "Name", "required": "true" },
+              { "custom_id": "email", "field_type": "email", "field_label": "Email", "required": "true" },
+              { "custom_id": "step_2", "field_type": "step", "field_label": "Details" },
+              { "custom_id": "plan", "field_type": "select", "field_label": "Plan", "field_options": "Starter\nPro" },
+              { "custom_id": "agree", "field_type": "acceptance", "acceptance_text": "I accept the terms", "required": "true" }
+            ]
+          }
+        },
+        {
+          "id": "w-unknown",
+          "elType": "widget",
+          "widgetType": "custom-third-party-widget",
+          "settings": {
+            "title": "Special Widget",
+            "description": "Legacy widget fallback content."
+          }
+        }
+      ]
+    }
+  ]
+}

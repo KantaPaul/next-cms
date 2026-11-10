@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   LayoutGrid,
   MessagesSquare,
+  Wrench,
 } from 'lucide-react';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS, type PermissionKey } from '@/config/permissions';
@@ -152,6 +153,15 @@ export function getMenuItems(): {
       href: PAGES.DASHBOARD.WEBHOOKS,
       icon: <Share2 className="w-[18px]" />,
       permission: PERMISSIONS.SETTINGS_MANAGE,
+    },
+    {
+      name: 'Tools',
+      href: PAGES.DASHBOARD.TOOLS_IMPORT,
+      icon: <Wrench className="w-[18px]" />,
+      permission: PERMISSIONS.SETTINGS_MANAGE,
+      children: [
+        { name: 'Import', href: PAGES.DASHBOARD.TOOLS_IMPORT },
+      ],
     },
   ];
 }

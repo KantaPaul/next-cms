@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0"
+  xmlns:excerpt="http://wordpress.org/export/1.2/excerpt/"
+  xmlns:content="http://purl.org/rss/1.0/modules/content/"
+  xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+  xmlns:dc="http://purl.org/dc/elements/1.1/"
+  xmlns:wp="http://wordpress.org/export/1.2/">
+  <channel>
+    <title>Acme Demo Site</title>
+    <link>https://old-wp.example.com</link>
+    <description>Old WordPress Site</description>
+    <wp:wxr_version>1.2</wp:wxr_version>
+    <wp:base_site_url>https://old-wp.example.com</wp:base_site_url>
+    <wp:base_blog_url>https://old-wp.example.com</wp:base_blog_url>
+
+    <wp:author>
+      <wp:author_id>1</wp:author_id>
+      <wp:author_login><![CDATA[alice]]></wp:author_login>
+      <wp:author_email><![CDATA[alice@example.com]]></wp:author_email>
+      <wp:author_display_name><![CDATA[Alice Writer]]></wp:author_display_name>
+      <wp:author_first_name><![CDATA[Alice]]></wp:author_first_name>
+      <wp:author_last_name><![CDATA[Writer]]></wp:author_last_name>
+    </wp:author>
+    <wp:author>
+      <wp:author_id>2</wp:author_id>
+      <wp:author_login><![CDATA[bob]]></wp:author_login>
+      <wp:author_email><![CDATA[bob@example.com]]></wp:author_email>
+      <wp:author_display_name><![CDATA[Bob Editor]]></wp:author_display_name>
+    </wp:author>
+
+    <wp:category>
+      <wp:term_id>10</wp:term_id>
+      <wp:category_nicename><![CDATA[engineering]]></wp:category_nicename>
+      <wp:category_parent><![CDATA[]]></wp:category_parent>
+      <wp:cat_name><![CDATA[Engineering]]></wp:cat_name>
+      <wp:category_description><![CDATA[Tech articles]]></wp:category_description>
+    </wp:category>
+    <wp:category>
+      <wp:term_id>11</wp:term_id>
+      <wp:category_nicename><![CDATA[frontend]]></wp:category_nicename>
+      <wp:category_parent><![CDATA[engineering]]></wp:category_parent>
+      <wp:cat_name><![CDATA[Frontend]]></wp:cat_name>
+    </wp:category>
+
+    <wp:tag>
+      <wp:term_id>20</wp:term_id>
+      <wp:tag_slug><![CDATA[nextjs]]></wp:tag_slug>
+      <wp:tag_name><![CDATA[Next.js]]></wp:tag_name>
+    </wp:tag>
+
+    <wp:term>
+      <wp:term_id>30</wp:term_id>
+      <wp:term_taxonomy>nav_menu</wp:term_taxonomy>
+      <wp:term_slug><![CDATA[primary-menu]]></wp:term_slug>
+      <wp:term_name><![CDATA[Primary Menu]]></wp:term_name>
+    </wp:term>
+
+    <!-- Attachment -->
+    <item>
+      <title>Hero Photo</title>
+      <link>https://old-wp.example.com/hero-photo/</link>
+      <guid isPermaLink="false">https://old-wp.example.com/wp-content/uploads/2024/05/hero.jpg</guid>
+      <wp:post_id>100</wp:post_id>
+      <wp:post_date>2024-05-01 09:00:00</wp:post_date>
+      <wp:post_date_gmt>2024-05-01 09:00:00</wp:post_date_gmt>
+      <wp:post_name><![CDATA[hero-photo]]></wp:post_name>
+      <wp:status>inherit</wp:status>
+      <wp:post_type>attachment</wp:post_type>
+      <wp:attachment_url><![CDATA[https://old-wp.example.com/wp-content/uploads/2024/05/hero.jpg]]></wp:attachment_url>
+      <wp:postmeta>
+        <wp:meta_key>_wp_attachment_image_alt</wp:meta_key>
+        <wp:meta_value><![CDATA[Mountain sunrise]]></wp:meta_value>
+      </wp:postmeta>
+    </item>
+
+    <!-- Post with Gutenberg, shortcodes, Yoast SEO, comments -->
+    <item>
+      <title>Hello World</title>
+      <link>https://old-wp.example.com/2024/05/hello-world/</link>
+      <pubDate>Wed, 15 May 2024 12:00:00 +0000</pubDate>
+      <dc:creator><![CDATA[alice]]></dc:creator>
+      <content:encoded><![CDATA[<!-- wp:paragraph -->
+<p>Welcome to our <a href="https://old-wp.example.com/about/">about page</a>!</p>
+<!-- /wp:paragraph -->
+[caption id="attachment_100" width="800"]<img src="https://old-wp.example.com/wp-content/uploads/2024/05/hero-800x600.jpg" alt="Hero" /> Sunrise view[/caption]
+[embed]https://www.youtube.com/watch?v=dQw4w9WgXcQ[/embed]
+[custom_banner id="42"]]]></content:encoded>
+      <excerpt:encoded><![CDATA[Short intro summary.]]></excerpt:encoded>
+      <wp:post_id>101</wp:post_id>
+      <wp:post_date>2024-05-15 12:00:00</wp:post_date>
+      <wp:post_date_gmt>2024-05-15 12:00:00</wp:post_date_gmt>
+      <wp:post_name><![CDATA[hello-world]]></wp:post_name>
+      <wp:status>publish</wp:status>
+      <wp:post_type>post</wp:post_type>
+      <category domain="category" nicename="frontend"><![CDATA[Frontend]]></category>
+      <category domain="post_tag" nicename="nextjs"><![CDATA[Next.js]]></category>
+      <wp:postmeta>
+        <wp:meta_key>_thumbnail_id</wp:meta_key>
+        <wp:meta_value>100</wp:meta_value>
+      </wp:postmeta>
+      <wp:postmeta>
+        <wp:meta_key>_yoast_wpseo_title</wp:meta_key>
+        <wp:meta_value><![CDATA[%%title%% %%sep%% %%sitename%%]]></wp:meta_value>
+      </wp:postmeta>
+      <wp:postmeta>
+        <wp:meta_key>_yoast_wpseo_metadesc</wp:meta_key>
+        <wp:meta_value><![CDATA[Yoast SEO description for hello world.]]></wp:meta_value>
+      </wp:postmeta>
+      <wp:postmeta>
+        <wp:meta_key>_yoast_wpseo_canonical</wp:meta_key>
+        <wp:meta_value><![CDATA[https://old-wp.example.com/2024/05/hello-world/]]></wp:meta_value>
+      </wp:postmeta>
+      <wp:postmeta>
+        <wp:meta_key>_yoast_wpseo_opengraph-title</wp:meta_key>
+        <wp:meta_value><![CDATA[OG Hello World]]></wp:meta_value>
+      </wp:postmeta>
+      <wp:postmeta>
+        <wp:meta_key>_yoast_wpseo_meta-robots-noindex</wp:meta_key>
+        <wp:meta_value>0</wp:meta_value>
+      </wp:postmeta>
+      <wp:comment>
+        <wp:comment_id>501</wp:comment_id>
+        <wp:comment_author><![CDATA[Jane Doe]]></wp:comment_author>
+        <wp:comment_author_email><![CDATA[jane@example.com]]></wp:comment_author_email>
+        <wp:comment_author_url><![CDATA[https://jane.example.com]]></wp:comment_author_url>
+        <wp:comment_date_gmt>2024-05-16 10:00:00</wp:comment_date_gmt>
+        <wp:comment_content><![CDATA[Great post!]]></wp:comment_content>
+        <wp:comment_approved>1</wp:comment_approved>
+        <wp:comment_type>comment</wp:comment_type>
+        <wp:comment_parent>0</wp:comment_parent>
+      </wp:comment>
+      <wp:comment>
+        <wp:comment_id>502</wp:comment_id>
+        <wp:comment_author><![CDATA[Alice Writer]]></wp:comment_author>
+        <wp:comment_author_email><![CDATA[alice@example.com]]></wp:comment_author_email>
+        <wp:comment_date_gmt>2024-05-16 11:00:00</wp:comment_date_gmt>
+        <wp:comment_content><![CDATA[Thanks Jane!]]></wp:comment_content>
+        <wp:comment_approved>1</wp:comment_approved>
+        <wp:comment_type>comment</wp:comment_type>
+        <wp:comment_parent>501</wp:comment_parent>
+      </wp:comment>
+      <wp:comment>
+        <wp:comment_id>503</wp:comment_id>
+        <wp:comment_author><![CDATA[Spammer]]></wp:comment_author>
+        <wp:comment_author_email><![CDATA[spam@example.com]]></wp:comment_author_email>
+        <wp:comment_date_gmt>2024-05-16 12:00:00</wp:comment_date_gmt>
+        <wp:comment_content><![CDATA[Buy cheap watches]]></wp:comment_content>
+        <wp:comment_approved>spam</wp:comment_approved>
+        <wp:comment_type>comment</wp:comment_type>
+        <wp:comment_parent>0</wp:comment_parent>
+      </wp:comment>
+    </item>
+
+    <!-- Plain richtext page -->
+    <item>
+      <title>About Us</title>
+      <link>https://old-wp.example.com/about/</link>
+      <dc:creator><![CDATA[bob]]></dc:creator>
+      <content:encoded><![CDATA[<p>We build fast web software.</p>]]></content:encoded>
+      <wp:post_id>102</wp:post_id>
+      <wp:post_name><![CDATA[about]]></wp:post_name>
+      <wp:status>publish</wp:status>
+      <wp:post_type>page</wp:post_type>
+    </item>
+
+    <!-- Elementor Page -->
+    <item>
+      <title>Landing Page</title>
+      <link>https://old-wp.example.com/landing/</link>
+      <dc:creator><![CDATA[alice]]></dc:creator>
+      <content:encoded><![CDATA[<p>Fallback text</p>]]></content:encoded>
+      <wp:post_id>103</wp:post_id>
+      <wp:post_name><![CDATA[landing]]></wp:post_name>
+      <wp:status>publish</wp:status>
+      <wp:post_type>page</wp:post_type>
+      <wp:postmeta>
+        <wp:meta_key>_elementor_data</wp:meta_key>
+        <wp:meta_value><![CDATA[[{"id":"sec1","elType":"section","settings":{"background_background":"classic","background_color":"#f8fafc"},"elements":[{"id":"col1","elType":"column","settings":{"_column_size":100},"elements":[{"id":"w1","elType":"widget","widgetType":"heading","settings":{"title":"Welcome to Acme","header_size":"h1","align":"center"}},{"id":"w2","elType":"widget","widgetType":"button","settings":{"text":"Get Started","link":{"url":"https://old-wp.example.com/about/"}}}]}]}]]]></wp:meta_value>
+      </wp:postmeta>
+    </item>
+
+    <!-- Menu items -->
+    <item>
+      <title>About</title>
+      <wp:post_id>201</wp:post_id>
+      <wp:menu_order>1</wp:menu_order>
+      <wp:status>publish</wp:status>
+      <wp:post_type>nav_menu_item</wp:post_type>
+      <category domain="nav_menu" nicename="primary-menu"><![CDATA[Primary Menu]]></category>
+      <wp:postmeta>
+        <wp:meta_key>_menu_item_type</wp:meta_key>
+        <wp:meta_value>post_type</wp:meta_value>
+      </wp:postmeta>
+      <wp:postmeta>
+        <wp:meta_key>_menu_item_object</wp:meta_key>
+        <wp:meta_value>page</wp:meta_value>
+      </wp:postmeta>
+      <wp:postmeta>
+        <wp:meta_key>_menu_item_object_id</wp:meta_key>
+        <wp:meta_value>102</wp:meta_value>
+      </wp:postmeta>
+      <wp:postmeta>
+        <wp:meta_key>_menu_item_menu_item_parent</wp:meta_key>
+        <wp:meta_value>0</wp:meta_value>
+      </wp:postmeta>
+    </item>
+    <item>
+      <title>Landing</title>
+      <wp:post_id>202</wp:post_id>
+      <wp:menu_order>2</wp:menu_order>
+      <wp:status>publish</wp:status>
+      <wp:post_type>nav_menu_item</wp:post_type>
+      <category domain="nav_menu" nicename="primary-menu"><![CDATA[Primary Menu]]></category>
+      <wp:postmeta>
+        <wp:meta_key>_menu_item_type</wp:meta_key>
+        <wp:meta_value>post_type</wp:meta_value>
+      </wp:postmeta>
+      <wp:postmeta>
+        <wp:meta_key>_menu_item_object</wp:meta_key>
+        <wp:meta_value>page</wp:meta_value>
+      </wp:postmeta>
+      <wp:postmeta>
+        <wp:meta_key>_menu_item_object_id</wp:meta_key>
+        <wp:meta_value>103</wp:meta_value>
+      </wp:postmeta>
+      <wp:postmeta>
+        <wp:meta_key>_menu_item_menu_item_parent</wp:meta_key>
+        <wp:meta_value>201</wp:meta_value>
+      </wp:postmeta>
+    </item>
+
+    <!-- Custom Post Type (skipped) -->
+    <item>
+      <title>Widget Pro</title>
+      <wp:post_id>301</wp:post_id>
+      <wp:post_name><![CDATA[widget-pro]]></wp:post_name>
+      <wp:status>publish</wp:status>
+      <wp:post_type>product</wp:post_type>
+    </item>
+  </channel>
+</rss>

@@ -78,8 +78,19 @@ export async function proxy(request: NextRequest) {
   const rewrite = rewriteTarget(pathname, siteSlug);
 
   try {
+    const pParam = request.nextUrl.searchParams.get('p');
+    const pageIdParam = request.nextUrl.searchParams.get('page_id');
+    const isRootOfSite =
+      pathname === '/' || (siteSlug ? pathname === `/${siteSlug}` : false);
+    const lookupPath =
+      isRootOfSite && pParam
+        ? `${siteSlug ? `/${siteSlug}` : ''}/?p=${pParam}`
+        : isRootOfSite && pageIdParam
+          ? `${siteSlug ? `/${siteSlug}` : ''}/?page_id=${pageIdParam}`
+          : pathname;
+
     const lookup = new URL('/api/internal/redirect', request.url);
-    lookup.searchParams.set('path', pathname);
+    lookup.searchParams.set('path', lookupPath);
     const cookie = request.headers.get('cookie');
     const response = await fetch(lookup, {
       cache: 'no-store',

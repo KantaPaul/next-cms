@@ -46,19 +46,19 @@ export const redirectsService = {
       .where(eq(redirects.siteId, await adminSiteId()))
       .orderBy(asc(redirects.fromPath)),
 
-  find: async (path: string) => {
+  findForSite: async (siteId: string, path: string) => {
     const fromPath = normalizeSitePath(path);
     const [row] = await db
       .select({ toPath: redirects.toPath, statusCode: redirects.statusCode })
       .from(redirects)
-      .where(
-        and(
-          eq(redirects.siteId, (await siteContext.publicSite()).id),
-          eq(redirects.fromPath, fromPath)
-        )
-      )
+      .where(and(eq(redirects.siteId, siteId), eq(redirects.fromPath, fromPath)))
       .limit(1);
     return row ?? null;
+  },
+
+  find: async (path: string) => {
+    const site = await siteContext.publicSite();
+    return redirectsService.findForSite(site.id, path);
   },
 
   create: async (input: { fromPath: string; toPath: string; statusCode?: number }) => {

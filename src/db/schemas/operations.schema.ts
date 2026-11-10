@@ -242,3 +242,181 @@ export const loginTokens = pgTable(
   },
   t => [index('login_tokens_email_index').on(t.email)]
 );
+
+export const IMPORT_JOB_STATUSES = [
+  'parsed',
+  'running',
+  'done',
+  'failed',
+  'cancelled',
+] as const;
+export type ImportJobStatus = (typeof IMPORT_JOB_STATUSES)[number];
+
+export const IMPORT_ITEM_STATUSES = [
+  'pending',
+  'done',
+  'skipped',
+  'failed',
+] as const;
+export type ImportItemStatus = (typeof IMPORT_ITEM_STATUSES)[number];
+
+export const IMPORT_ITEM_KINDS = [
+  'author',
+  'category',
+  'tag',
+  'attachment',
+  'post',
+  'page',
+  'menu',
+  'comment',
+  'template',
+  'skipped',
+] as const;
+export type ImportItemKind = (typeof IMPORT_ITEM_KINDS)[number];
+
+export type ImportJobOptions = {
+  downloadMedia: boolean;
+  importAsDrafts: boolean;
+  createRedirects: boolean;
+  importComments: boolean;
+  importAuthors: boolean;
+  templateTarget?: 'page_template' | 'global_block';
+};
+
+export type ImportJobCounts = {
+  authors: number;
+  categories: number;
+  tags: number;
+  attachments: number;
+  posts: number;
+  pages: number;
+  elementorPages: number;
+  menus: number;
+  comments: number;
+  templates: number;
+  skippedTypes: Record<string, number>;
+  fallbackWidgets: Array<{ widget: string; pageTitle: string; count: number }>;
+  totalProcessable: number;
+};
+
+export type ImportJobProgress = {
+  processed: number;
+  total: number;
+  imported: number;
+  skipped: number;
+  failed: number;
+  currentItem?: string;
+};
+
+export type ImportReportRename = {
+  kind: ImportItemKind;
+  wpId: string;
+  title: string;
+  fromSlug: string;
+  toSlug: string;
+  newId: string;
+  newUrl?: string;
+};
+
+export type ImportReportEntry = {
+  kind: ImportItemKind;
+  wpId: string;
+  title: string;
+  status: ImportItemStatus;
+  newId?: string | null;
+  newUrl?: string | null;
+  message?: string | null;
+};
+
+export type ImportJobReport = {
+  renames: ImportReportRename[];
+  warnings: string[];
+  redirectsCreated: number;
+};
+
+export const importJobs = pgTable(
+  'import_jobs',
+  {
+    id,
+    siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
+    createdBy: text('created_by').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    sourceKind: varchar('source_kind', { length: 24 }).notNull().default('wxr'),
+    sourceFilename: varchar('source_filename', { length: 255 }),
+    sourceKey: text('source_key').notNull(),
+    status: varchar('status', { length: 20 }).notNull().default('parsed'),
+    options: jsonb('options')
+      .$type<ImportJobOptions>()
+      .notNull()
+      .default({
+        downloadMedia: true,
+        importAsDrafts: false,
+        createRedirects: true,
+        importComments: true,
+        importAuthors: true,
+      }),
+    counts: jsonb('counts').$type<ImportJobCounts>().notNull(),
+    progress: jsonb('progress')
+      .$type<ImportJobProgress>()
+      .notNull()
+      .default({
+        processed: 0,
+        total: 0,
+        imported: 0,
+        skipped: 0,
+        failed: 0,
+      }),
+    report: jsonb('report')
+      .$type<ImportJobReport>()
+      .notNull()
+      .default({
+        renames: [],
+        warnings: [],
+        redirectsCreated: 0,
+      }),
+    ...timestampColumns,
+  },
+  t => [
+    index('import_jobs_site_created_index').on(t.siteId, t.createdAt),
+    check(
+      'import_jobs_status_check',
+      sql`${t.status} in ('parsed', 'running', 'done', 'failed', 'cancelled')`
+    ),
+  ]
+);
+
+export const importItems = pgTable(
+  'import_items',
+  {
+    id,
+    jobId: text('job_id')
+      .references(() => importJobs.id, cascade)
+      .notNull(),
+    siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
+    kind: varchar('kind', { length: 30 }).notNull(),
+    wpId: varchar('wp_id', { length: 200 }).notNull(),
+    wpSlug: varchar('wp_slug', { length: 300 }),
+    title: varchar('title', { length: 500 }),
+    status: varchar('status', { length: 20 }).notNull().default('pending'),
+    newId: text('new_id'),
+    newUrl: text('new_url'),
+    oldUrl: text('old_url'),
+    sortOrder: integer('sort_order').notNull().default(0),
+    message: text('message'),
+    payload: jsonb('payload').$type<Record<string, unknown>>(),
+    ...timestampColumns,
+  },
+  t => [
+    index('import_items_job_status_order_index').on(
+      t.jobId,
+      t.status,
+      t.sortOrder
+    ),
+    index('import_items_site_kind_wpid_index').on(t.siteId, t.kind, t.wpId),
+    check(
+      'import_items_status_check',
+      sql`${t.status} in ('pending', 'done', 'skipped', 'failed')`
+    ),
+  ]
+);

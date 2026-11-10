@@ -67,6 +67,7 @@ export const PAGES = {
       `/dashboard/collections/${slug}/settings`,
     WEBHOOKS: '/dashboard/webhooks',
     REDIRECTS: '/dashboard/redirects',
+    TOOLS_IMPORT: '/dashboard/tools/import',
     REVIEW: '/dashboard/review',
     COMMENTS: '/dashboard/comments',
     ACCOUNT: '/dashboard/account',

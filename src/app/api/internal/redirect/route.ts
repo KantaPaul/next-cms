@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { redirectsService } from '@/server/services/redirects.service';
+import { siteContext, siteSlugPrefix } from '@/server/services/site-context';
 
 /** Edge proxy cannot use the Node Postgres driver, so it asks this route for one indexed lookup. */
 export async function GET(request: Request) {
@@ -19,6 +20,23 @@ export async function GET(request: Request) {
     if (siteSlug) to = `/${siteSlug}${to}`;
     return NextResponse.json({ to, status: row.statusCode });
   } catch {
+    // If siteSlug was guessed from a non-site path segment (e.g. /2024/05/slug),
+    // fall back to checking the full path on the host's default site.
+    if (siteSlug && lookupPath !== path) {
+      try {
+        const site = await siteContext.siteForHost(
+          request.headers.get('x-cms-host')
+        );
+        const row = await redirectsService.findForSite(site.id, path);
+        if (row) {
+          const prefix = siteSlugPrefix(site);
+          const to = prefix ? `/${prefix}${row.toPath}` : row.toPath;
+          return NextResponse.json({ to, status: row.statusCode });
+        }
+      } catch {
+        // fall through
+      }
+    }
     return NextResponse.json({ to: null });
   }
 }
