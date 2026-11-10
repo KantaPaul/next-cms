@@ -1,7 +1,7 @@
 import 'server-only';
 import { randomBytes } from 'node:crypto';
 import type * as archiverModule from 'archiver';
-import { and, desc, eq, gt, isNull, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, isNull, sql } from 'drizzle-orm';
 import { createZipArchive } from '@/server/backup/zip';
 import { db } from '@/db';
 import {
@@ -597,7 +597,7 @@ export const privacyService = {
           .where(
             and(
               eq(formSubmissions.siteId, input.siteId),
-              sql`${formSubmissions.id} = ANY(${submissionIds})`
+              inArray(formSubmissions.id, submissionIds)
             )
           );
       }
@@ -609,7 +609,7 @@ export const privacyService = {
             .where(
               and(
                 eq(comments.siteId, input.siteId),
-                sql`${comments.id} = ANY(${commentIds})`
+                inArray(comments.id, commentIds)
               )
             );
         } else {
@@ -627,7 +627,7 @@ export const privacyService = {
             .where(
               and(
                 eq(comments.siteId, input.siteId),
-                sql`${comments.id} = ANY(${commentIds})`
+                inArray(comments.id, commentIds)
               )
             );
         }

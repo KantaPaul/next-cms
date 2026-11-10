@@ -10,7 +10,6 @@ import {
   CONSENT_COOKIE_NAME,
   normalizeConsentCategories,
   parseConsentCookie,
-  serializeConsentCookie,
 } from '@/lib/consent';
 import { siteContext } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
@@ -80,7 +79,7 @@ export async function POST(request: Request) {
     version,
   });
 
-  res.cookies.set(CONSENT_COOKIE_NAME, serializeConsentCookie(choice), {
+  res.cookies.set(CONSENT_COOKIE_NAME, JSON.stringify(choice), {
     path: '/',
     maxAge: CONSENT_COOKIE_MAX_AGE,
     sameSite: 'lax',
