@@ -75,17 +75,24 @@ export function Section({
     s.hideOnTablet && (editing ? 'md:max-lg:opacity-30' : 'md:max-lg:hidden'),
     s.hideOnDesktop && (editing ? 'lg:opacity-30' : 'lg:hidden')
   );
-  const styles = resolveSectionStyle(s);
-  const hasVideo = s.fill?.type === 'video' && Boolean(s.fill.videoUrl);
   const hasBgParallax = Boolean(
-    s.fill?.type === 'image' && (s.fill as { parallax?: boolean })?.parallax
+    s.fill?.type === 'image' && s.fill.parallax && s.fill.image
   );
+  // With parallax the image lives on its own moving layer, so the section must
+  // not paint it again as a static background on top of that layer.
+  const styles = resolveSectionStyle(
+    hasBgParallax ? { ...s, fill: { ...s.fill, image: undefined } } : s
+  );
+  const hasVideo = s.fill?.type === 'video' && Boolean(s.fill.videoUrl);
   const outer = cn(
     'w-full',
     PADDING[s.paddingY ?? 'md'],
-    !styles.hasFill && BACKGROUND[s.background ?? 'default'],
+    !styles.hasFill && !hasBgParallax && BACKGROUND[s.background ?? 'default'],
     styles.outerClasses,
     (hasVideo || hasBgParallax) && 'relative overflow-hidden',
+    // Own stacking context: the -z-10 layer paints above this section's
+    // background instead of behind the page's.
+    hasBgParallax && 'isolate',
     hidden,
     className
   );
@@ -117,9 +124,9 @@ export function Section({
     >
       <div
         data-bg-parallax
-        data-parallax-speed={(s.fill as { parallaxSpeed?: number })?.parallaxSpeed ?? 0.4}
+        data-parallax-speed={s.fill?.parallaxSpeed ?? 0.4}
         className="absolute -top-[20%] -bottom-[20%] inset-x-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${s.fill?.image})` }}
+        style={{ backgroundImage: `url(${JSON.stringify(s.fill?.image ?? '')})` }}
       />
     </div>
   ) : null;

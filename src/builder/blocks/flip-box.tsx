@@ -28,10 +28,10 @@ export function FlipBox(p: FlipBoxProps) {
   const direction = p.direction ?? 'flip-left';
   const height = p.height ?? 320;
 
-  const frontPart = el(p, 'front', 'rounded-2xl p-8 flex flex-col items-center justify-center text-center shadow-md bg-white border border-steel-200 dark:bg-dark-100 dark:border-dark-300');
+  const frontPart = el(p, 'front', 'rounded-2xl p-8 flex flex-col items-center justify-center text-center shadow-md s-surface border s-border');
   const backPart = el(p, 'back', 'rounded-2xl p-8 flex flex-col items-center justify-center text-center shadow-lg s-primary-bg text-white border border-primary');
-  const frontTitleEl = el(p, 'frontTitle', 'text-xl font-bold tracking-tight text-foreground');
-  const frontDescEl = el(p, 'frontDesc', 'mt-3 text-sm text-steel-500 leading-relaxed dark:text-steel-400');
+  const frontTitleEl = el(p, 'frontTitle', 'text-xl font-bold tracking-tight text-[var(--site-fg)]');
+  const frontDescEl = el(p, 'frontDesc', 'mt-3 text-sm s-muted leading-relaxed');
   const backTitleEl = el(p, 'backTitle', 'text-xl font-bold tracking-tight text-white');
   const backDescEl = el(p, 'backDesc', 'mt-3 text-sm leading-relaxed text-white/90');
   const backBtnEl = el(p, 'backButton');
@@ -82,7 +82,7 @@ export function FlipBox(p: FlipBoxProps) {
       >
         <div
           className={cn(
-            'relative h-full w-full transition-transform duration-700 [transform-style:preserve-3d]',
+            'relative h-full w-full transition-transform duration-700 motion-reduce:transition-none [transform-style:preserve-3d]',
             hoverTransformClass,
             flipped && flippedTransformClass
           )}

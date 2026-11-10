@@ -959,7 +959,7 @@ export function PriceList(p: PriceListProps) {
   const cols = p.columns ?? 1;
   const imgPos = p.imagePosition ?? 'left';
 
-  const itemTitleEl = el(p, 'itemTitle', 'font-semibold text-foreground');
+  const itemTitleEl = el(p, 'itemTitle', 'font-semibold text-[var(--site-fg)]');
   const itemPriceEl = el(p, 'itemPrice', 'font-bold s-primary-text shrink-0 font-mono');
   const itemDescEl = el(p, 'itemDescription', 'mt-1 text-sm s-muted');
   const itemImgEl = el(p, 'itemImage', 'size-14 rounded-lg object-cover shrink-0');

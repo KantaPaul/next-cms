@@ -80,7 +80,7 @@ export function Hotspot(p: HotspotProps) {
     <Section section={p.section} editing={p.editing} id={p.id ?? p.nodeId}>
       <div
         ref={containerRef}
-        className="relative mx-auto w-full max-w-4xl overflow-hidden rounded-2xl border border-steel-200 select-none dark:border-dark-300"
+        className="relative mx-auto w-full max-w-4xl overflow-hidden rounded-2xl border s-border select-none"
       >
         {p.image ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -91,7 +91,7 @@ export function Hotspot(p: HotspotProps) {
             style={imgEl.style}
           />
         ) : (
-          <div className="flex aspect-[16/9] w-full items-center justify-center bg-steel-100 text-steel-400 dark:bg-dark-200">
+          <div className="flex aspect-[16/9] w-full items-center justify-center s-surface-alt s-muted">
             <BlockIcon name="Image" className="size-16" />
           </div>
         )}
@@ -124,7 +124,7 @@ export function Hotspot(p: HotspotProps) {
               {/* Pulse Ring */}
               {pulse && (
                 <span
-                  className="absolute inset-0 size-8 -translate-x-1/4 -translate-y-1/4 rounded-full opacity-75 animate-ping pointer-events-none"
+                  className="absolute inset-0 size-8 -translate-x-1/4 -translate-y-1/4 rounded-full opacity-75 animate-ping motion-reduce:animate-none pointer-events-none"
                   style={{ backgroundColor: spotColor }}
                 />
               )}
@@ -146,13 +146,13 @@ export function Hotspot(p: HotspotProps) {
               {/* Tooltip Content */}
               {(isActive || (p.editing && draggingId === spot.id)) && (
                 <div
-                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-56 rounded-xl border border-steel-200 bg-white p-3.5 shadow-xl text-left dark:border-dark-300 dark:bg-dark-100 animate-in fade-in zoom-in-95 pointer-events-auto"
+                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-56 rounded-xl border s-border s-surface p-3.5 shadow-xl text-left animate-in fade-in zoom-in-95 pointer-events-auto"
                 >
-                  <h4 className="text-sm font-bold text-foreground">
+                  <h4 className="text-sm font-bold text-[var(--site-fg)]">
                     {spot.title}
                   </h4>
                   {spot.content && (
-                    <p className="mt-1 text-xs text-steel-500 leading-relaxed dark:text-steel-400">
+                    <p className="mt-1 text-xs s-muted leading-relaxed">
                       {spot.content}
                     </p>
                   )}

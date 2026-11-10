@@ -7465,7 +7465,7 @@ export const LottieBlock = defineBlock({
   },
   defaults: {
     source: 'url',
-    url: 'https://assets2.lottiefiles.com/packages/lf20_myejioos.json',
+    url: '/lottie/pulse.json',
     trigger: 'load',
     loop: true,
     speed: 1,

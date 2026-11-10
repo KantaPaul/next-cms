@@ -49,6 +49,15 @@ import {
   Type,
   Users,
   Video,
+  CirclePlay,
+  Clock,
+  DollarSign,
+  Hash,
+  Layers,
+  MessageSquare,
+  Navigation,
+  Star,
+  Target,
   type LucideIcon,
 } from 'lucide-react';
 import React from 'react';
@@ -110,6 +119,20 @@ const ICONS: Record<string, LucideIcon> = {
   bookmarks: Bookmark,
   audio: AudioLines,
   entryterms: Tags,
+  // Basic widgets
+  sparkles: Sparkles,
+  box: Box,
+  hash: Hash,
+  'bar-chart': BarChart3,
+  star: Star,
+  clock: Clock,
+  layers: Layers,
+  type: Type,
+  'dollar-sign': DollarSign,
+  navigation: Navigation,
+  'message-square': MessageSquare,
+  target: Target,
+  'play-circle': CirclePlay,
 };
 
 export interface BlockIconProps {

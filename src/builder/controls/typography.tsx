@@ -13,6 +13,7 @@ import {
   type Typography,
 } from '../style';
 import { useMemo } from 'react';
+import type { CustomFont } from '../fonts';
 import { resolveThemeTokens } from '../theme';
 import { useEditorBridge } from './editor-bridge';
 import {
@@ -30,6 +31,16 @@ const FAMILY_OPTIONS = [
   { value: '', label: 'Default' },
   ...opts(FONT_FAMILIES),
 ];
+
+/** Curated families plus the site's uploaded fonts, which come first. */
+const familyOptions = (customFonts: CustomFont[] | undefined) => {
+  const custom = (customFonts ?? [])
+    .map(f => f.family)
+    .filter(name => name && !FONT_FAMILIES.includes(name));
+  return custom.length
+    ? [FAMILY_OPTIONS[0], ...custom.map(value => ({ value, label: value })), ...FAMILY_OPTIONS.slice(1)]
+    : FAMILY_OPTIONS;
+};
 
 const WEIGHT_OPTIONS = [
   { value: '', label: 'Default' },
@@ -61,7 +72,8 @@ export function TypographyControl({
   defaultWeight,
 }: TypographyControlProps) {
   const t = value ?? {};
-  const { themeTokens } = useEditorBridge();
+  const { themeTokens, customFonts } = useEditorBridge();
+  const families = useMemo(() => familyOptions(customFonts), [customFonts]);
   const presetOptions = useMemo(
     () => [
       { value: '', label: 'None' },
@@ -135,7 +147,7 @@ export function TypographyControl({
           <SelectInput
             label="Family"
             value={t.family ?? defaultFamily ?? ''}
-            options={FAMILY_OPTIONS}
+            options={families}
             onChange={family =>
               set({ family: (family || undefined) as Typography['family'] })
             }

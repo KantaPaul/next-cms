@@ -51,6 +51,7 @@ export default async function LoopTemplateEditorPage({
       previewItems={preview.items}
       loopItemFields={preview.fields}
       themeTokens={settings.themeTokens}
+      customFonts={settings.customFonts}
     />
   );
 }

@@ -101,11 +101,20 @@ export function cmsTransformProps(
   metadata: RenderMetadata,
   kind: RenderKind
 ): NonNullable<RenderOptions['transformProps']> {
-  const post = (metadata.post as PostView | undefined) ?? SAMPLE_POST;
-  return (node, props) =>
-    kind === 'post' && node.type in POST_BLOCKS
+  const realPost = metadata.post as PostView | undefined;
+  const post = realPost ?? SAMPLE_POST;
+  const page = metadata.page as { title?: string } | undefined;
+  return (node, props) => {
+    if (node.type === 'Breadcrumbs') {
+      // Real context only: without it the block shows a sample trail in the editor.
+      return kind === 'post'
+        ? { ...props, post: realPost }
+        : { ...props, page: page?.title ? { title: page.title } : undefined };
+    }
+    return kind === 'post' && node.type in POST_BLOCKS
       ? { ...props, post }
       : resolvePanels(node, props);
+  };
 }
 
 function renderOptions(

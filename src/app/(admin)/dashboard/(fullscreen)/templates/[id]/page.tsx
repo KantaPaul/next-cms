@@ -47,6 +47,7 @@ export default async function PageTemplateEditorPage({
         content,
       }}
       themeTokens={settings.themeTokens}
+      customFonts={settings.customFonts}
     />
   );
 }

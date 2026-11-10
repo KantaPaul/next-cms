@@ -113,9 +113,8 @@ export function Countdown(p: CountdownProps) {
     return Date.now() + dur;
   });
 
-  const [remaining, setRemaining] = useState<TimeRemaining>(() =>
-    calculateTimeRemaining(targetTime, Date.now())
-  );
+  // Null until mounted: the server and the first client render must print the same text.
+  const [remaining, setRemaining] = useState<TimeRemaining | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -133,17 +132,20 @@ export function Countdown(p: CountdownProps) {
       setTargetTime(target);
     }
 
-    const interval = setInterval(() => {
+    let interval: ReturnType<typeof setInterval> | undefined;
+    const tick = () => {
       const rem = calculateTimeRemaining(target, Date.now());
       setRemaining(rem);
-
       if (rem.isExpired) {
-        clearInterval(interval);
+        if (interval) clearInterval(interval);
         if (expireAction === 'redirect' && p.redirectUrl && !p.editing) {
           window.location.href = p.redirectUrl;
         }
+        return false;
       }
-    }, 1000);
+      return true;
+    };
+    if (tick()) interval = setInterval(tick, 1000);
 
     return () => clearInterval(interval);
   }, [
@@ -157,16 +159,16 @@ export function Countdown(p: CountdownProps) {
     p.editing,
   ]);
 
-  const boxEl = el(p, 'box', 'flex flex-col items-center justify-center rounded-xl bg-steel-50 p-4 border border-steel-200 min-w-[4.5rem] dark:bg-dark-200 dark:border-dark-300');
-  const numEl = el(p, 'number', 'text-3xl md:text-4xl font-extrabold tracking-tight font-mono text-foreground');
-  const labelEl = el(p, 'label', 'mt-1 text-xs uppercase tracking-wider text-steel-500 font-semibold dark:text-steel-400');
+  const boxEl = el(p, 'box', 'flex flex-col items-center justify-center rounded-xl s-surface-alt p-4 border s-border min-w-[4.5rem]');
+  const numEl = el(p, 'number', 'text-3xl md:text-4xl font-extrabold tracking-tight font-mono text-[var(--site-fg)]');
+  const labelEl = el(p, 'label', 'mt-1 text-xs uppercase tracking-wider s-muted font-semibold');
 
-  if (remaining.isExpired) {
+  if (remaining?.isExpired) {
     if (expireAction === 'hide') {
       if (p.editing) {
         return (
           <Section section={p.section} editing={p.editing} id={p.id ?? p.nodeId}>
-            <div className="p-4 border border-dashed rounded text-center text-sm text-steel-400">
+            <div className="p-4 border border-dashed rounded text-center text-sm s-muted">
               [Countdown Expired - Hidden on public site]
             </div>
           </Section>
@@ -179,7 +181,7 @@ export function Countdown(p: CountdownProps) {
         <Section section={p.section} editing={p.editing} id={p.id ?? p.nodeId}>
           <div
             className={cn(
-              'w-full text-center py-4 font-medium text-steel-600 dark:text-steel-300',
+              'w-full text-center py-4 font-medium s-muted',
               el(p, 'expiredMessage').className
             )}
             style={el(p, 'expiredMessage').style}
@@ -208,7 +210,7 @@ export function Countdown(p: CountdownProps) {
         {showDays && (
           <div className={boxEl.className} style={boxEl.style}>
             <span className={numEl.className} style={numEl.style}>
-              {pad(remaining.days)}
+              {remaining ? pad(remaining.days) : '--'}
             </span>
             <span className={labelEl.className} style={labelEl.style}>
               {labels.days}
@@ -218,7 +220,7 @@ export function Countdown(p: CountdownProps) {
         {showHours && (
           <div className={boxEl.className} style={boxEl.style}>
             <span className={numEl.className} style={numEl.style}>
-              {pad(remaining.hours)}
+              {remaining ? pad(remaining.hours) : '--'}
             </span>
             <span className={labelEl.className} style={labelEl.style}>
               {labels.hours}
@@ -228,7 +230,7 @@ export function Countdown(p: CountdownProps) {
         {showMinutes && (
           <div className={boxEl.className} style={boxEl.style}>
             <span className={numEl.className} style={numEl.style}>
-              {pad(remaining.minutes)}
+              {remaining ? pad(remaining.minutes) : '--'}
             </span>
             <span className={labelEl.className} style={labelEl.style}>
               {labels.minutes}
@@ -238,7 +240,7 @@ export function Countdown(p: CountdownProps) {
         {showSeconds && (
           <div className={boxEl.className} style={boxEl.style}>
             <span className={numEl.className} style={numEl.style}>
-              {pad(remaining.seconds)}
+              {remaining ? pad(remaining.seconds) : '--'}
             </span>
             <span className={labelEl.className} style={labelEl.style}>
               {labels.seconds}

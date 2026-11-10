@@ -12,7 +12,13 @@ import { FormInput } from '@/components/ui/input';
 import { cn } from '@/lib/utils/cn';
 import type { Fill } from '../style';
 import { ColorPicker } from './color-picker';
-import { ControlLabel, SelectInput, ShowWhen, Slider } from './primitives';
+import {
+  ControlLabel,
+  SelectInput,
+  ShowWhen,
+  Slider,
+  Switcher,
+} from './primitives';
 
 export type BackgroundType = 'color' | 'gradient' | 'image' | 'video';
 
@@ -244,6 +250,23 @@ export function BackgroundControl({
                 { value: 'fixed', label: 'Fixed' },
               ]}
               onChange={attachment => set({ attachment })}
+            />
+          )}
+          {!isExcluded('attachment') && (
+            <Switcher
+              label="Parallax"
+              value={fill.parallax}
+              onChange={parallax => set({ parallax })}
+            />
+          )}
+          {!isExcluded('attachment') && fill.parallax && (
+            <Slider
+              label="Parallax speed"
+              value={fill.parallaxSpeed ?? 0.4}
+              min={0.1}
+              max={1}
+              step={0.1}
+              onChange={parallaxSpeed => set({ parallaxSpeed })}
             />
           )}
           {!isExcluded('repeat') && (

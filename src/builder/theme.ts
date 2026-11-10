@@ -1,9 +1,9 @@
 import type { CSSProperties } from 'react';
 import {
   buildGoogleFontsUrl,
+  isCuratedGoogleFont,
   FONT_FAMILIES,
   getFontStack,
-  isGoogleFont,
 } from './fonts';
 import {
   DEFAULT_GLOBAL_COLORS,
@@ -267,8 +267,10 @@ export function fontStylesheetUrl(
   ]) {
     if (f && f !== 'System') allFonts.push(f);
   }
+  // Families found in page content: only curated Google fonts. An uploaded font's
+  // name in the css2 URL would make Google reject the whole stylesheet.
   for (const f of additionalFamilies) {
-    if (f && f !== 'System' && isGoogleFont(f)) {
+    if (f && f !== 'System' && isCuratedGoogleFont(f)) {
       allFonts.push(f);
     }
   }

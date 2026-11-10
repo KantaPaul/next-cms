@@ -49,6 +49,7 @@ export default async function PostBuilderPage({
         content: post.canvas,
       }}
       themeTokens={settings.themeTokens}
+      customFonts={settings.customFonts}
     />
   );
 }

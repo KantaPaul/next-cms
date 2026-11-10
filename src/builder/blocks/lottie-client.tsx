@@ -167,7 +167,7 @@ export function Lottie(p: LottieProps) {
           }}
         >
           {!p.url && !p.jsonData && (
-            <div className="flex h-full w-full items-center justify-center rounded-xl border border-dashed border-steel-200 text-xs text-steel-400 dark:border-dark-300">
+            <div className="flex h-full w-full items-center justify-center rounded-xl border border-dashed s-border text-xs s-muted">
               {p.editing ? 'Configure Lottie JSON URL in sidebar' : null}
             </div>
           )}

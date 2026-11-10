@@ -68,6 +68,7 @@ export default async function BuilderPage({
         content: page.content,
       }}
       themeTokens={settings.themeTokens}
+      customFonts={settings.customFonts}
       draftVersion={page.draftVersion}
       collectionEntry={collectionEntry}
     />

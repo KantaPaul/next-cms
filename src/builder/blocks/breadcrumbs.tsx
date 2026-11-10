@@ -16,7 +16,13 @@ export type BreadcrumbsProps = WithSection & {
   alignment?: 'left' | 'center' | 'right';
   customItems?: BreadcrumbItem[];
   post?: PostView;
+  /** The page being rendered, set by the CMS renderer on public pages. */
+  page?: { title: string };
 };
+
+/** JSON for an inline script: `<` escaped so a title can't close the tag. */
+const scriptJson = (value: unknown) =>
+  JSON.stringify(value).replace(/</g, '\\u003c');
 
 export function Breadcrumbs(p: BreadcrumbsProps) {
   const homeLabel = p.homeLabel || 'Home';
@@ -46,13 +52,20 @@ export function Breadcrumbs(p: BreadcrumbsProps) {
     if (showCurrent) {
       items.push({ label: p.post.title });
     }
-  } else {
+  } else if (p.page) {
     items = [
       { label: homeLabel, href: '/' },
-      { label: 'Pages', href: '/pages' },
+      ...(showCurrent ? [{ label: p.page.title }] : []),
+    ];
+  } else {
+    // No page or post context (the editor canvas): a sample trail, never published as data.
+    items = [
+      { label: homeLabel, href: '/' },
+      { label: 'Parent Page', href: '#' },
       ...(showCurrent ? [{ label: 'Current Page' }] : []),
     ];
   }
+  const isSample = !p.customItems?.length && !p.post && !p.page;
 
   // Generate schema.org BreadcrumbList JSON-LD
   const jsonLd = {
@@ -67,18 +80,20 @@ export function Breadcrumbs(p: BreadcrumbsProps) {
   };
 
   const navEl = el(p, 'nav');
-  const linkEl = el(p, 'link', 'text-steel-600 hover:text-foreground transition-colors dark:text-steel-400 dark:hover:text-foreground');
-  const currentEl = el(p, 'current', 'font-semibold text-foreground');
-  const sepEl = el(p, 'separator', 'mx-2 text-steel-400 select-none');
+  const linkEl = el(p, 'link', 's-muted hover:text-[var(--site-fg)] transition-colors');
+  const currentEl = el(p, 'current', 'font-semibold text-[var(--site-fg)]');
+  const sepEl = el(p, 'separator', 'mx-2 s-muted select-none');
 
   return (
     <Section section={p.section} editing={p.editing} id={p.id ?? p.nodeId}>
       {/* Schema.org JSON-LD Structured Data */}
-      <script
-        type="application/ld+json"
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: static JSON-LD
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      {!isSample && items.length > 1 && (
+        <script
+          type="application/ld+json"
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD with < escaped
+          dangerouslySetInnerHTML={{ __html: scriptJson(jsonLd) }}
+        />
+      )}
       <nav
         aria-label="Breadcrumb"
         className={cn(

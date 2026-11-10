@@ -232,6 +232,13 @@ export function getFontStack(family: string | undefined): string {
   return `'${family}', sans-serif`;
 }
 
+/** True only for curated fonts served by Google; uploaded or unknown names never are. */
+export function isCuratedGoogleFont(family: string | undefined): boolean {
+  if (!family) return false;
+  const entry = CURATED_FONTS.find(f => f.name.toLowerCase() === family.toLowerCase());
+  return Boolean(entry?.isGoogleFont);
+}
+
 export function isGoogleFont(family: string | undefined, customFonts?: CustomFont[]): boolean {
   if (!family || family === 'System') return false;
   if (customFonts?.some(cf => cf.family.toLowerCase() === family.toLowerCase())) return false;

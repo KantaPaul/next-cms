@@ -62,6 +62,7 @@ export default async function CollectionEntryBuilderPage({
         collectionSlug: collection.slug,
       }}
       themeTokens={settings.themeTokens}
+      customFonts={settings.customFonts}
     />
   );
 }

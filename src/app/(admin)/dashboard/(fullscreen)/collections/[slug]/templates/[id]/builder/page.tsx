@@ -102,6 +102,7 @@ export default async function CollectionTemplateBuilderPage({
         collectionSlug: collection.slug,
       }}
       themeTokens={settings.themeTokens}
+      customFonts={settings.customFonts}
     />
   );
 }

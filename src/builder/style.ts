@@ -65,6 +65,9 @@ export type Fill = {
   gradientType?: 'linear' | 'radial';
   gradientPosition?: string;
   attachment?: 'scroll' | 'fixed';
+  /** Image only: the background drifts slower than the page while scrolling. */
+  parallax?: boolean;
+  parallaxSpeed?: number;
   posX?: number;
   posY?: number;
   image?: string;

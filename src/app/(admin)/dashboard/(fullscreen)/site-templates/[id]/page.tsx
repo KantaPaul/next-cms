@@ -69,6 +69,7 @@ export default async function HeaderFooterBuilderPage({
         content: normalizeGlobalContent(block.content),
       }}
       themeTokens={settings.themeTokens}
+      customFonts={settings.customFonts}
     />
   );
 }

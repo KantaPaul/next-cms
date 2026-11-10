@@ -6,6 +6,7 @@
 
 import { siteTemplatesHref } from '@/app/(admin)/dashboard/(shell)/site-templates/_modules/site-template-href';
 import { toast } from 'sonner';
+import type { CustomFont } from '@/builder/fonts';
 import {
   publishPage,
   saveDraft,
@@ -61,6 +62,8 @@ export type BuilderPageProps = {
     collectionSlug?: string;
   };
   themeTokens: ThemeTokens;
+  /** The site's uploaded fonts: offered in font pickers and loaded in the canvas. */
+  customFonts?: CustomFont[];
   /** Defaults to `page`. Post kinds use the post blocks and post actions. */
   kind?: BuilderKind;
   /** Post rendered by post-bound blocks; the template builder falls back to sample content. */

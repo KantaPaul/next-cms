@@ -55,6 +55,7 @@ export default async function GlobalBlockPage({
         content: normalizeGlobalContent(block.content),
       }}
       themeTokens={settings.themeTokens}
+      customFonts={settings.customFonts}
     />
   );
 }

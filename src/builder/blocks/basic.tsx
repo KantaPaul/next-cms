@@ -116,7 +116,7 @@ export type IconBoxProps = WithSection & {
 };
 
 export function IconBox(p: IconBoxProps) {
-  const titleEl = el(p, 'title', 'text-xl font-bold tracking-tight text-foreground');
+  const titleEl = el(p, 'title', 'text-xl font-bold tracking-tight text-[var(--site-fg)]');
   const descEl = el(p, 'description', 'mt-2 text-sm leading-relaxed s-muted');
   const iconPart = el(p, 'icon');
   const boxEl = el(p, 'box');
@@ -242,7 +242,7 @@ const IMG_SIZES = {
 };
 
 export function ImageBox(p: ImageBoxProps) {
-  const titleEl = el(p, 'title', 'text-xl font-bold tracking-tight text-foreground');
+  const titleEl = el(p, 'title', 'text-xl font-bold tracking-tight text-[var(--site-fg)]');
   const descEl = el(p, 'description', 'mt-2 text-sm leading-relaxed s-muted');
   const imgEl = el(p, 'image');
   const boxEl = el(p, 'box');
@@ -270,7 +270,7 @@ export function ImageBox(p: ImageBoxProps) {
   ) : (
     <div
       className={cn(
-        'flex items-center justify-center rounded-lg bg-steel-100 text-steel-400 shrink-0 dark:bg-dark-200',
+        'flex items-center justify-center rounded-lg s-surface-alt s-muted shrink-0',
         IMG_SIZES[size]
       )}
     >
@@ -351,7 +351,7 @@ export type ProgressBarProps = WithSection & {
 };
 
 export function ProgressBar(p: ProgressBarProps) {
-  const titleEl = el(p, 'title', 'text-sm font-semibold text-foreground');
+  const titleEl = el(p, 'title', 'text-sm font-semibold text-[var(--site-fg)]');
   const barEl = el(p, 'bar');
   const trackEl = el(p, 'track');
 
@@ -370,7 +370,7 @@ export function ProgressBar(p: ProgressBarProps) {
             </span>
           )}
           {showPercent && (
-            <span className="text-xs font-mono font-medium text-steel-500 dark:text-steel-400">
+            <span className="text-xs font-mono font-medium s-muted">
               {percent}%
             </span>
           )}
@@ -382,14 +382,14 @@ export function ProgressBar(p: ProgressBarProps) {
           aria-valuemax={100}
           aria-label={p.title || `Progress ${percent}%`}
           className={cn(
-            'w-full overflow-hidden rounded-full bg-steel-100 dark:bg-dark-200',
+            'w-full overflow-hidden rounded-full s-surface-alt',
             trackEl.className
           )}
           style={{ height: `${height}px`, ...trackEl.style }}
         >
           <div
             className={cn(
-              'h-full s-primary-bg transition-all duration-700 ease-out flex items-center justify-center text-[10px] font-bold text-white',
+              'h-full s-primary-bg transition-all duration-700 ease-out motion-reduce:transition-none flex items-center justify-center text-[10px] font-bold text-white',
               barEl.className
             )}
             style={{ width: `${percent}%`, ...barEl.style }}
@@ -424,8 +424,8 @@ const STAR_SIZES = {
 };
 
 export function StarRating(p: StarRatingProps) {
-  const titleEl = el(p, 'title', 'text-sm font-semibold text-foreground');
-  const scoreEl = el(p, 'score', 'text-sm font-medium text-steel-500 dark:text-steel-400');
+  const titleEl = el(p, 'title', 'text-sm font-semibold text-[var(--site-fg)]');
+  const scoreEl = el(p, 'score', 'text-sm font-medium s-muted');
   const starsEl = el(p, 'stars');
 
   const scale = p.scale ?? 5;
@@ -462,7 +462,7 @@ export function StarRating(p: StarRatingProps) {
       stars.push(
         <Star
           key={i}
-          className={cn(STAR_SIZES[size], 'text-steel-300 dark:text-dark-300')}
+          className={cn(STAR_SIZES[size], 's-muted')}
           aria-hidden="true"
         />
       );

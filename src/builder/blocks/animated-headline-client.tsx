@@ -87,7 +87,7 @@ export function AnimatedHeadline(p: AnimatedHeadlineProps) {
     return () => clearInterval(interval);
   }, [styleType, words, wordIndex, effect, duration]);
 
-  const headingEl = el(p, 'heading', 'text-3xl md:text-5xl font-extrabold tracking-tight text-foreground leading-tight');
+  const headingEl = el(p, 'heading', 'text-3xl md:text-5xl font-extrabold tracking-tight text-[var(--site-fg)] leading-tight');
   const animatedEl = el(p, 'animated', 's-primary-text relative inline-block');
 
   const renderSvgShape = () => {

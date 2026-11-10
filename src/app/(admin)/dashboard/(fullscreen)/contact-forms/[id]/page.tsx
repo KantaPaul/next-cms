@@ -44,6 +44,7 @@ export default async function ContactFormBuilderPage({
         content: normalizeGlobalContent(block.content),
       }}
       themeTokens={settings.themeTokens}
+      customFonts={settings.customFonts}
     />
   );
 }

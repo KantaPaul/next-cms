@@ -7,6 +7,7 @@
  */
 
 import { createContext, type ReactNode, useContext } from 'react';
+import type { CustomFont } from '../fonts';
 import type { Device } from '../style';
 
 export type EditorBridge = {
@@ -15,6 +16,8 @@ export type EditorBridge = {
   selectedType?: string;
   selectedProps?: Record<string, unknown>;
   themeTokens?: Record<string, string>;
+  /** The site's uploaded fonts, for font pickers. */
+  customFonts?: CustomFont[];
 };
 
 const OUTSIDE_EDITOR: EditorBridge = { device: 'desktop', setDevice: () => {} };

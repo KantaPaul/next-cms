@@ -92,8 +92,8 @@ export function TableOfContents(p: TableOfContentsProps) {
     return () => observer.disconnect();
   }, [levels, activeId]);
 
-  const boxEl = el(p, 'box', 'w-full max-w-md rounded-2xl border border-steel-200 bg-white p-5 shadow-sm dark:border-dark-300 dark:bg-dark-100');
-  const titleEl = el(p, 'title', 'text-base font-bold tracking-tight text-foreground flex items-center gap-2');
+  const boxEl = el(p, 'box', 'w-full max-w-md rounded-2xl border s-border s-surface p-5 shadow-sm');
+  const titleEl = el(p, 'title', 'text-base font-bold tracking-tight text-[var(--site-fg)] flex items-center gap-2');
   const linkEl = el(p, 'link');
 
   const scrollToSection = (e: React.MouseEvent, id: string) => {
@@ -118,7 +118,7 @@ export function TableOfContents(p: TableOfContentsProps) {
             <button
               type="button"
               onClick={() => setCollapsed(!collapsed)}
-              className="p-1 rounded text-steel-400 hover:text-foreground hover:bg-steel-50 dark:hover:bg-dark-200"
+              className="p-1 rounded s-muted hover:text-[var(--site-fg)] hover:bg-[var(--site-surface-alt)]"
               aria-expanded={!collapsed}
               aria-label="Toggle Table of Contents"
             >
@@ -132,9 +132,9 @@ export function TableOfContents(p: TableOfContentsProps) {
         </div>
 
         {!collapsed && (
-          <ul className="mt-4 space-y-1.5 text-sm border-t border-steel-100 pt-3 dark:border-dark-300">
+          <ul className="mt-4 space-y-1.5 text-sm border-t s-border pt-3">
             {headings.length === 0 ? (
-              <li className="text-xs text-steel-400 italic py-2">
+              <li className="text-xs s-muted italic py-2">
                 {p.editing
                   ? 'Headings (h2-h4) in page content will appear here.'
                   : 'No sections found.'}
@@ -157,8 +157,8 @@ export function TableOfContents(p: TableOfContentsProps) {
                       className={cn(
                         'flex items-center gap-2 py-1 transition-colors rounded px-2',
                         isActive
-                          ? 's-primary-text font-semibold bg-primary/5 dark:bg-primary/10'
-                          : 'text-steel-600 hover:text-foreground dark:text-steel-400 dark:hover:text-foreground',
+                          ? 's-primary-text font-semibold bg-primary/5'
+                          : 's-muted hover:text-[var(--site-fg)]',
                         linkEl.className
                       )}
                       style={linkEl.style}

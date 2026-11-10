@@ -133,6 +133,7 @@ import {
 } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.actions';
 import { POST_REVISION_ACTIONS } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-revision-actions';
 import { EditorBridgeProvider } from '@/builder/controls/editor-bridge';
+import { buildCustomFontsCss, type CustomFont } from '@/builder/fonts';
 import {
   convertBlogBlockToQueryLoop,
   toLoopItemContext,
@@ -369,9 +370,11 @@ function EditorSiteRoot({
 /** Gives the CMS inspector controls this editor's device, selection, and theme tokens. */
 function NewEditorBridge({
   themeTokens,
+  customFonts,
   children,
 }: {
   themeTokens: unknown;
+  customFonts?: CustomFont[];
   children: ReactNode;
 }) {
   const store = useEditorStore();
@@ -388,8 +391,9 @@ function NewEditorBridge({
       selectedType: node?.type,
       selectedProps: node?.props,
       themeTokens: themeTokens as Record<string, string> | undefined,
+      customFonts,
     }),
-    [device, store, node, themeTokens]
+    [device, store, node, themeTokens, customFonts]
   );
   return <EditorBridgeProvider value={value}>{children}</EditorBridgeProvider>;
 }
@@ -768,12 +772,15 @@ const DEFAULT_DYNAMIC_SOURCES: DynamicSourcesValue = {
   defaultPath: 'title',
 };
 
+const NO_CUSTOM_FONTS: CustomFont[] = [];
+
 const recordsById = (items: DynamicRefItem[]) =>
   Object.fromEntries(items.map(item => [item.id, item]));
 
 export function NewEditor({
   page,
   themeTokens,
+  customFonts = NO_CUSTOM_FONTS,
   kind = 'page',
   post,
   category,
@@ -1144,6 +1151,10 @@ export function NewEditor({
     () => ({ page: dynamicRefs.pages, post: dynamicRefs.posts }),
     [dynamicRefs]
   );
+  const customFontsCss = useMemo(
+    () => buildCustomFontsCss(customFonts),
+    [customFonts]
+  );
   const renderRoot = useCallback(
     (children: ReactNode) => (
       <EditorSiteRoot
@@ -1153,10 +1164,16 @@ export function NewEditor({
         megaMenu={kind === 'mega-menu'}
         overlayKind={kind === 'popup' || kind === 'drawer' ? kind : null}
       >
+        {customFontsCss ? (
+          <style
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: escaped by buildCustomFontsCss
+            dangerouslySetInnerHTML={{ __html: customFontsCss }}
+          />
+        ) : null}
         {children}
       </EditorSiteRoot>
     ),
-    [metadata, collectionEntry, loopPreviewItem, kind]
+    [metadata, collectionEntry, loopPreviewItem, kind, customFontsCss]
   );
   const onFrame = useCallback(
     (frame: HTMLIFrameElement) => setFrameWindow(frame.contentWindow),
@@ -1450,7 +1467,7 @@ export function NewEditor({
   );
   const rightPanelContent = (
     <section aria-label="Settings" className="p-4">
-      <NewEditorBridge themeTokens={themeTokens}>
+      <NewEditorBridge themeTokens={themeTokens} customFonts={customFonts}>
         {/* Nine tabs do not fit a side panel; they scroll sideways (B15 E4). */}
         <div
           style={{ overflowX: 'auto', marginBottom: 12 }}
@@ -1746,7 +1763,7 @@ export function NewEditor({
           <DynamicSourcesProvider value={dynamicSources}>
           <LoopPreviewProvider items={previewItems} fields={loopItemFields ?? []}>
             <EntryProvider entry={collectionEntry ?? null}>
-              <NewEditorBridge themeTokens={themeTokens}>
+              <NewEditorBridge themeTokens={themeTokens} customFonts={customFonts}>
                 <SharedChrome
           queue={queue}
           title={documentTitle}
@@ -1861,7 +1878,7 @@ export function NewEditor({
           <DynamicSourcesProvider value={dynamicSources}>
           <LoopPreviewProvider items={previewItems} fields={loopItemFields ?? []}>
           <EntryProvider entry={collectionEntry ?? null}>
-            <NewEditorBridge themeTokens={themeTokens}>
+            <NewEditorBridge themeTokens={themeTokens} customFonts={customFonts}>
       <div className="flex h-screen flex-col bg-steel-50 dark:bg-dark-50">
         <header className="flex h-12 shrink-0 items-center gap-2 border-b border-steel-200 bg-white px-3 dark:border-dark-300 dark:bg-dark-100">
           <Button

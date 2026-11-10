@@ -94,6 +94,9 @@ export const fillSchema = z.object({
   gradientType: z.enum(['linear', 'radial']).optional(),
   gradientPosition: z.string().optional(),
   attachment: z.enum(['scroll', 'fixed']).optional(),
+  /** Image only: the background drifts slower than the page while scrolling. */
+  parallax: z.boolean().optional(),
+  parallaxSpeed: z.number().min(0.1).max(1).optional(),
   posX: z.number().min(0).max(100).optional(),
   posY: z.number().min(0).max(100).optional(),
   image: safeUrlSchema.optional(),

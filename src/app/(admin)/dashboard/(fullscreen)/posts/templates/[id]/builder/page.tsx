@@ -50,6 +50,7 @@ export default async function PostTemplateBuilderPage({
         content: template.draft,
       }}
       themeTokens={settings.themeTokens}
+      customFonts={settings.customFonts}
     />
   );
 }
