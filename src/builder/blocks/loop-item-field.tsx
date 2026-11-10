@@ -6,6 +6,11 @@ import { formatLoopDate, SAMPLE_LOOP_ITEMS } from './loop-shared';
 import { BookmarkToggle } from './bookmarks-client';
 import type { ElementStyle } from '../style';
 import { el, linkEl } from './element';
+import {
+  GalleryBadge,
+  type GalleryBadgePosition,
+  listingItemHasGallery,
+} from './gallery-badge';
 
 // ---------------------------------------------------------------------------
 // LoopItemField Block (R575 / QRY-05)
@@ -24,6 +29,8 @@ export interface LoopItemFieldProps {
     | 'custom';
   customKey?: string;
   linkToItem?: boolean;
+  showGalleryBadge?: boolean;
+  galleryBadgePosition?: GalleryBadgePosition;
   readMoreLabel?: string;
   language?: string;
   editing?: boolean;
@@ -34,6 +41,8 @@ export function LoopItemField({
   field = 'title',
   customKey = '',
   linkToItem = true,
+  showGalleryBadge = true,
+  galleryBadgePosition = 'top-right',
   readMoreLabel = 'Read more',
   language = 'en',
   elements,
@@ -41,18 +50,35 @@ export function LoopItemField({
   const styled = { elements };
   const imageEl = el(styled, 'image', 'aspect-video size-full object-cover');
   const item = useLoopItem() ?? SAMPLE_LOOP_ITEMS[0];
+  const hasGallery = listingItemHasGallery(item);
 
   switch (field) {
     case 'image':
       if (!item.image) return null;
       return linkToItem ? (
-        <a href={item.url} className="block overflow-hidden">
+        <a href={item.url} className="relative block overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={item.image} alt={item.title} loading="lazy" {...imageEl} />
+          <GalleryBadge
+            show={showGalleryBadge}
+            hasGallery={hasGallery}
+            count={item.galleryCount}
+            position={galleryBadgePosition}
+            elements={elements}
+          />
         </a>
       ) : (
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img src={item.image} alt={item.title} loading="lazy" {...imageEl} />
+        <div className="relative overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={item.image} alt={item.title} loading="lazy" {...imageEl} />
+          <GalleryBadge
+            show={showGalleryBadge}
+            hasGallery={hasGallery}
+            count={item.galleryCount}
+            position={galleryBadgePosition}
+            elements={elements}
+          />
+        </div>
       );
 
     case 'title':

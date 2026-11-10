@@ -1656,6 +1656,7 @@ export default async function SitePage({ params, searchParams }: Params) {
           siteId: site.id,
           searchParams: await searchParams,
           language: entry.language || site.defaultLocale,
+          entry: entry?.data,
           custom: entry?.data,
           post: postView,
           collectionEntry: entry,

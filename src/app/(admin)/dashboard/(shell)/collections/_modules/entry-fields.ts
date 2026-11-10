@@ -1,4 +1,9 @@
 import 'server-only';
+import {
+  readMediaFieldConfig,
+  readTextFieldMode,
+  readUrlFieldMode,
+} from '@/config/post-types';
 import type { collectionFields } from '@/db/schema';
 import { collectionsService } from '@/server/services/collections.service';
 import type { EntryFieldConfig } from '../components/entry-data-fields';
@@ -19,6 +24,17 @@ export async function toEntryFieldConfigs(
         type: f.type,
         required: f.required,
       };
+      if (f.type === 'media') {
+        const mediaMeta = readMediaFieldConfig(f.config);
+        if (mediaMeta.multiple) base.multiple = true;
+        if (mediaMeta.isFeatured) base.isFeatured = true;
+      }
+      if (f.type === 'text') {
+        base.textMode = readTextFieldMode(f.config);
+      }
+      if (f.type === 'url') {
+        base.urlMode = readUrlFieldMode(f.config);
+      }
       if (f.type === 'select' && Array.isArray(config.choices)) {
         base.choices = config.choices.map(String);
       }

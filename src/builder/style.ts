@@ -390,6 +390,17 @@ export type MotionEffectsSettings = {
   devices?: Device[];
 };
 
+/** True when at least one scroll/mouse effect is enabled and at least one device is active. */
+export function hasActiveMotion(m?: MotionEffectsSettings): boolean {
+  if (!m) return false;
+  if (Array.isArray(m.devices) && m.devices.length === 0) return false;
+  return Boolean(
+    (m.parallax && typeof m.parallax.speed === 'number') ||
+      (m.mouseTrack && typeof m.mouseTrack.strength === 'number') ||
+      m.scrollTransform
+  );
+}
+
 export type SectionSettings = {
   paddingY?: 'none' | 'sm' | 'md' | 'lg';
   background?: 'default' | 'muted' | 'primary' | 'dark';

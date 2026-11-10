@@ -14,6 +14,7 @@ import {
 } from 'drizzle-orm';
 import { entryTitle, normalizePostTypeSupports } from '@/config/post-types';
 import { PAGES } from '@/config/pages';
+import { PERMISSIONS } from '@/config/permissions';
 import { db } from '@/db';
 import {
   collectionEntries,
@@ -29,6 +30,7 @@ import { env } from '@/env.mjs';
 import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { revalidatePublicSite } from '@/lib/utils/revalidate-site';
 import { doAction } from '@/server/plugins/hooks';
+import { accessService } from '@/server/services/access.service';
 import { hashIdentifier } from '@/server/services/auth-rate-limit.service';
 import { verifyTurnstile } from '@/server/services/forms.service';
 import { sendMail } from '@/server/services/mail';
@@ -119,13 +121,22 @@ async function loadCommentsTree(
     dislikes: totals.get(r.id)?.dislikes ?? 0,
     replies: [],
   });
-  const top = rows.filter(r => !r.parentId).map(toPublic);
-  const byId = new Map(top.map(c => [c.id, c]));
+  const nodes = rows.map(toPublic);
+  const byId = new Map(nodes.map(c => [c.id, c]));
+  const top: PublicComment[] = [];
   for (const r of rows) {
-    if (r.parentId) byId.get(r.parentId)?.replies.push(toPublic(r));
+    const node = byId.get(r.id)!;
+    if (!r.parentId) {
+      top.push(node);
+    } else {
+      const parent = byId.get(r.parentId);
+      if (parent) parent.replies.push(node);
+    }
   }
   if (sort === 'newest') top.reverse();
-  return { items: top, total: rows.length };
+  const countTree = (list: PublicComment[]): number =>
+    list.reduce((n, item) => n + 1 + countTree(item.replies), 0);
+  return { items: top, total: countTree(top) };
 }
 
 function isEntryCommentsOpen(row: {
@@ -153,22 +164,39 @@ function isEntryCommentsOpen(row: {
 }
 
 export const commentsService = {
-  /** Visitor submission from the Comments block (POST /api/comments). */
+  /** Visitor or signed-in submission from the Comments block (POST /api/comments). */
   submit: async (
     formData: FormData,
-    meta: { ip: string; userAgent: string; voterKey: string }
+    meta: {
+      ip: string;
+      userAgent: string;
+      voterKey: string;
+      user?: {
+        id: string;
+        name: string | null;
+        email: string;
+        website: string | null;
+      } | null;
+    }
   ) => {
     const read = (k: string) => {
       const v = formData.get(k);
       return typeof v === 'string' ? v : undefined;
     };
+    const rawUserWebsite = meta.user?.website?.trim();
+    const safeUserWebsite =
+      rawUserWebsite && /^https?:\/\/[^\s"'<>]+$/i.test(rawUserWebsite)
+        ? rawUserWebsite
+        : undefined;
     const parsed = commentInputSchema.safeParse({
       postId: read('postId'),
       targetKind: read('targetKind'),
       parentId: read('parentId'),
-      authorName: read('authorName'),
-      authorEmail: read('authorEmail'),
-      authorUrl: read('authorUrl'),
+      authorName: meta.user
+        ? meta.user.name?.trim() || meta.user.email.split('@')[0] || 'Staff'
+        : read('authorName'),
+      authorEmail: meta.user ? meta.user.email : read('authorEmail'),
+      authorUrl: meta.user ? safeUserWebsite : read('authorUrl'),
       body: read('body'),
     });
     if (!parsed.success) {
@@ -251,11 +279,20 @@ export const commentsService = {
     ]);
 
     const honeypot = String(formData.get('company') ?? '').trim().length > 0;
-    const turnstileOk = honeypot
-      ? true
-      : await verifyTurnstile(
-          String(formData.get('cf-turnstile-response') ?? '')
-        );
+    const [turnstileOk, autoApprove] = await Promise.all([
+      honeypot
+        ? Promise.resolve(true)
+        : verifyTurnstile(
+            String(formData.get('cf-turnstile-response') ?? '')
+          ),
+      meta.user
+        ? accessService
+            .getUserAccessForSite(meta.user.id, site.id)
+            .then(access =>
+              accessService.can(access, PERMISSIONS.COMMENTS_MODERATE)
+            )
+        : Promise.resolve(false),
+    ]);
 
     const targetPost = targetRow
       ? 'entryStatus' in targetRow
@@ -281,7 +318,7 @@ export const commentsService = {
         parent: parentRows[0] ?? null,
         recentFromIp: Number(recent?.n ?? 0),
       },
-      { honeypot, turnstileOk }
+      { honeypot, turnstileOk, autoApprove }
     );
     if (!decision.ok) return decision;
 
@@ -295,6 +332,7 @@ export const commentsService = {
         authorName: input.authorName,
         authorEmail: input.authorEmail.toLowerCase(),
         authorUrl: input.authorUrl ?? null,
+        userId: meta.user?.id ?? null,
         body: input.body,
         status: decision.status,
         ipHash,
@@ -336,7 +374,11 @@ export const commentsService = {
       }
     }
 
-    return { ok: true as const, status: 200 };
+    if (decision.status === 'approved') {
+      revalidatePublicSite(site.id);
+    }
+
+    return { ok: true as const, status: 200, commentStatus: decision.status };
   },
 
   /** Approved comments for one post, with their approved replies. */
@@ -374,7 +416,12 @@ export const commentsService = {
    */
   react: async (
     input: { commentId: string; value: ReactionValue },
-    meta: { ip: string; voterKey: string }
+    meta: {
+      ip: string;
+      voterKey: string;
+      userId?: string | null;
+      userEmail?: string | null;
+    }
   ) => {
     const voterHash = voterHashOf(meta.voterKey);
     const ipHash = ipHashOf(meta.ip);
@@ -384,6 +431,8 @@ export const commentsService = {
         status: comments.status,
         voterHash: comments.voterHash,
         ipHash: comments.ipHash,
+        userId: comments.userId,
+        authorEmail: comments.authorEmail,
         deletedAt: comments.deletedAt,
         postId: comments.postId,
         collectionEntryId: comments.collectionEntryId,
@@ -428,7 +477,12 @@ export const commentsService = {
     }
     const decision = decideReaction(
       row && !row.deletedAt ? row : null,
-      { voterHash, ipHash },
+      {
+        voterHash,
+        ipHash,
+        userId: meta.userId ?? null,
+        userEmail: meta.userEmail ?? null,
+      },
       targetOpen && settings.readingSettings?.comments !== false
     );
     if (!decision.ok) return decision;
@@ -487,14 +541,27 @@ export const commentsService = {
   /** The current visitor's reactions and own comments on one post or entry (for button states). */
   visitorState: async (
     targetId: string,
-    meta: { ip: string; voterKey: string | null },
+    meta: {
+      ip: string;
+      voterKey: string | null;
+      userId?: string | null;
+      userEmail?: string | null;
+    },
     targetKind: 'post' | 'entry' = 'post'
   ) => {
-    // Without a cookie yet, only the network match applies.
+    // Without a cookie yet, only the network and signed-in user matches apply.
     const voterHash = meta.voterKey ? voterHashOf(meta.voterKey) : 'none';
     const ipHash = ipHashOf(meta.ip);
     const targetCol =
       targetKind === 'entry' ? comments.collectionEntryId : comments.postId;
+    const ownMatchers = [
+      eq(comments.voterHash, voterHash),
+      eq(comments.ipHash, ipHash),
+    ];
+    if (meta.userId) ownMatchers.push(eq(comments.userId, meta.userId));
+    if (meta.userEmail) {
+      ownMatchers.push(eq(comments.authorEmail, meta.userEmail.toLowerCase()));
+    }
     const [reactions, own] = await Promise.all([
       db
         .select({ commentId: commentReactions.commentId, value: commentReactions.value })
@@ -509,12 +576,7 @@ export const commentsService = {
       db
         .select({ id: comments.id })
         .from(comments)
-        .where(
-          and(
-            eq(targetCol, targetId),
-            or(eq(comments.voterHash, voterHash), eq(comments.ipHash, ipHash))
-          )
-        ),
+        .where(and(eq(targetCol, targetId), or(...ownMatchers))),
     ]);
     return {
       reactions: Object.fromEntries(reactions.map(r => [r.commentId, r.value])),
@@ -755,7 +817,7 @@ export const commentsService = {
     return rows.length;
   },
 
-  /** A staff reply: approved immediately, attached to the top-level comment. */
+  /** A staff reply: approved immediately, attached to the parent comment. */
   reply: async (parentId: string, body: string, userId: string) => {
     const siteId = await adminSiteId();
     const [parent] = await db
@@ -778,7 +840,7 @@ export const commentsService = {
       siteId,
       postId: parent.postId,
       collectionEntryId: parent.collectionEntryId,
-      parentId: parent.parentId ?? parent.id,
+      parentId: parent.id,
       authorName: user?.name || 'Staff',
       authorEmail: user?.email ?? '',
       userId,

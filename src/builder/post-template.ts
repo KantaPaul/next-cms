@@ -1,6 +1,10 @@
 import { DEFAULT_SECTION } from './blocks/section';
 import { type BuilderData, isBuilderData } from './data';
-import { entryTitle, normalizePostTypeSupports } from '@/config/post-types';
+import {
+  entryFeaturedMedia,
+  entryTitle,
+  normalizePostTypeSupports,
+} from '@/config/post-types';
 
 export type PostTerm = {
   id: string;
@@ -47,6 +51,17 @@ export type PostView = {
   /** URL of the language's blog index page, when one is published. */
   blogUrl?: string | null;
 };
+
+/** Normalizes a PostView/post object for `{ $dynamic: 'post' }` bindings (`content` mirrors `body`). */
+export function toDynamicPostRecord(
+  post: Partial<PostView> | Record<string, unknown>
+): Record<string, unknown> {
+  const record = post as Record<string, unknown>;
+  return {
+    ...record,
+    content: record.content ?? record.filteredBody ?? record.body ?? '',
+  };
+}
 
 /** A post as listed in cards (BlogPosts and RelatedPosts). */
 export type PostCard = Omit<PostView, 'body' | 'blogUrl'> & { url: string };
@@ -285,7 +300,7 @@ export function entryToPostView(
     name?: string;
     slug?: string;
     supports?: unknown;
-    fields?: { key: string; type: string }[];
+    fields?: { key: string; type: string; config?: unknown }[];
   },
   terms: EntryTermView[] = [],
   opts?: { siteSlug?: string }
@@ -326,22 +341,7 @@ export function entryToPostView(
     }
   }
 
-  const firstMediaField = fields.find(f => f.type === 'media');
-  const customImage =
-    (firstMediaField && typeof data[firstMediaField.key] === 'string'
-      ? (data[firstMediaField.key] as string)
-      : null) ??
-    (typeof data.image === 'string'
-      ? data.image
-      : typeof data.photo === 'string'
-        ? data.photo
-        : typeof data.avatar === 'string'
-          ? data.avatar
-          : typeof data.thumbnail === 'string'
-            ? data.thumbnail
-            : typeof data.cover === 'string'
-              ? data.cover
-              : null);
+  const customImage = entryFeaturedMedia(data, fields);
 
   const authorId = entry.authorId ?? entry.author?.id ?? null;
   const authorName = entry.authorName ?? entry.author?.name ?? null;

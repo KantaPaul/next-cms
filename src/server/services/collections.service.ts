@@ -33,6 +33,18 @@ import { searchIndex } from '@/server/services/search.service';
 import { adminSiteId, siteContext } from '@/server/services/site-context';
 import { auditService } from './audit.service';
 import { collectionTaxonomiesService } from './collection-taxonomies.service';
+import {
+  EMBED_URL_ERROR,
+  entryMediaValues,
+  GENERAL_URL_ERROR,
+  isValidEmbedUrl,
+  isValidGeneralUrl,
+  parseVideoUrl,
+  readMediaFieldConfig,
+  readTextFieldMode,
+  readUrlFieldMode,
+  VIDEO_URL_ERROR,
+} from '@/config/post-types';
 import { PERMISSIONS } from '@/config/permissions';
 import { ApplicationException, NotFoundException } from '@/lib/utils/error';
 import { revalidatePublicSite } from '@/lib/utils/revalidate-site';
@@ -97,6 +109,17 @@ export function coerceEntryData(
     if (value === undefined || value === null) continue;
     if (field.type === 'boolean') {
       value = value === true || value === 'true' || value === 'on';
+    } else if (field.type === 'media') {
+      const { multiple } = readMediaFieldConfig(field.config);
+      if (multiple) {
+        const urls = entryMediaValues(value);
+        if (!urls.length) continue;
+        out[field.key] = urls;
+        continue;
+      }
+      const first = entryMediaValues(value)[0];
+      if (!first) continue;
+      value = first;
     } else if (typeof value === 'string') {
       const trimmed = field.type === 'richtext' ? value : value.trim();
       if (
@@ -123,7 +146,17 @@ export function buildEntrySchema(
     let base: z.ZodTypeAny;
 
     switch (field.type) {
-      case 'text':
+      case 'text': {
+        const textMode = readTextFieldMode(field.config);
+        if (textMode === 'video') {
+          base = z.string().refine(v => parseVideoUrl(v) !== null, VIDEO_URL_ERROR);
+        } else if (textMode === 'embed') {
+          base = z.string().refine(isValidEmbedUrl, EMBED_URL_ERROR);
+        } else {
+          base = z.string();
+        }
+        break;
+      }
       case 'richtext':
         base = z.string();
         break;
@@ -146,17 +179,25 @@ export function buildEntrySchema(
           : z.string();
         break;
       }
-      case 'media':
-        base = z.string();
+      case 'media': {
+        const { multiple } = readMediaFieldConfig(field.config);
+        base = multiple
+          ? isRequired
+            ? z
+                .array(z.string().min(1))
+                .min(1, `${field.label} requires at least one image.`)
+            : z.array(z.string().min(1))
+          : z.string();
         break;
-      case 'url':
-        base = z
-          .string()
-          .refine(
-            v => /^(https?:\/\/|mailto:|tel:|\/)/i.test(v),
-            'Must be a URL starting with http(s)://, mailto:, tel: or /.'
-          );
+      }
+      case 'url': {
+        const urlMode = readUrlFieldMode(field.config);
+        base =
+          urlMode === 'video'
+            ? z.string().refine(v => parseVideoUrl(v) !== null, VIDEO_URL_ERROR)
+            : z.string().refine(isValidGeneralUrl, GENERAL_URL_ERROR);
         break;
+      }
       case 'relation': {
         base = z.string();
         break;
@@ -169,6 +210,35 @@ export function buildEntrySchema(
   }
 
   return z.object(shape).strip();
+}
+
+/** Clears `isFeatured` on every media field in a collection except `excludeFieldId`, enforcing single featured field. */
+async function clearOtherFeaturedMediaFields(
+  tx: Pick<typeof db, 'select' | 'update'>,
+  collectionId: string,
+  excludeFieldId?: string
+) {
+  const mediaFields = await tx
+    .select({ id: collectionFields.id, config: collectionFields.config })
+    .from(collectionFields)
+    .where(
+      and(
+        eq(collectionFields.collectionId, collectionId),
+        eq(collectionFields.type, 'media'),
+        excludeFieldId ? ne(collectionFields.id, excludeFieldId) : undefined
+      )
+    );
+  for (const mf of mediaFields) {
+    if (!readMediaFieldConfig(mf.config).isFeatured) continue;
+    const prev =
+      mf.config && typeof mf.config === 'object'
+        ? (mf.config as Record<string, unknown>)
+        : {};
+    await tx
+      .update(collectionFields)
+      .set({ config: { ...prev, isFeatured: false }, updatedAt: new Date() })
+      .where(eq(collectionFields.id, mf.id));
+  }
 }
 
 /** Parses entry data against the field schema. Returns { data, error }. */
@@ -690,18 +760,31 @@ export const collectionsService = {
       .orderBy(desc(collectionFields.position))
       .limit(1);
 
-    const [row] = await db
-      .insert(collectionFields)
-      .values({
-        collectionId,
-        key: input.key,
-        label: input.label,
-        type: input.type,
-        required: input.required ?? false,
-        position: (maxPos?.position ?? -1) + 1,
-        config: input.config ?? {},
-      })
-      .returning();
+    const isFeaturedMedia =
+      input.type === 'media' && Boolean(input.config?.isFeatured);
+    const normalizedAddConfig =
+      input.type === 'media' && isFeaturedMedia && input.config
+        ? { ...input.config, multiple: false, isFeatured: true }
+        : (input.config ?? {});
+
+    const row = await db.transaction(async tx => {
+      if (isFeaturedMedia) {
+        await clearOtherFeaturedMediaFields(tx, collectionId);
+      }
+      const [inserted] = await tx
+        .insert(collectionFields)
+        .values({
+          collectionId,
+          key: input.key,
+          label: input.label,
+          type: input.type,
+          required: input.required ?? false,
+          position: (maxPos?.position ?? -1) + 1,
+          config: normalizedAddConfig,
+        })
+        .returning();
+      return inserted;
+    });
 
     await auditService.log({
       actorId,
@@ -738,25 +821,65 @@ export const collectionsService = {
       .limit(1);
     if (!field) throw new NotFoundException('Field not found');
 
-    const [row] = await db
-      .update(collectionFields)
-      .set({
-        ...(input.label !== undefined ? { label: input.label } : {}),
-        ...(input.type !== undefined ? { type: input.type } : {}),
-        ...(input.required !== undefined ? { required: input.required } : {}),
-        ...(input.config !== undefined ? { config: input.config } : {}),
-        ...(input.position !== undefined ? { position: input.position } : {}),
-        updatedAt: new Date(),
-      })
-      .where(eq(collectionFields.id, fieldId))
-      .returning();
+    const existingField = field.collection_fields;
+    const nextType = input.type ?? existingField.type;
+    const existingConfig =
+      existingField.config && typeof existingField.config === 'object'
+        ? (existingField.config as Record<string, unknown>)
+        : {};
+    let nextConfig =
+      input.config !== undefined
+        ? { ...existingConfig, ...input.config }
+        : existingConfig;
+    if (nextType !== 'media') {
+      const { multiple: _m, isFeatured: _f, ...rest } = nextConfig;
+      nextConfig = rest;
+    } else if (Boolean(nextConfig.isFeatured)) {
+      // Featured image fields cannot simultaneously allow multiple image upload.
+      nextConfig = { ...nextConfig, multiple: false, isFeatured: true };
+    }
+    if (nextType !== 'text') {
+      const { textMode: _tm, ...rest } = nextConfig;
+      nextConfig = rest;
+    }
+    if (nextType !== 'url') {
+      const { urlMode: _um, ...rest } = nextConfig;
+      nextConfig = rest;
+    }
+    const willBeFeatured =
+      nextType === 'media' && Boolean(nextConfig.isFeatured);
+
+    const row = await db.transaction(async tx => {
+      if (willBeFeatured) {
+        await clearOtherFeaturedMediaFields(
+          tx,
+          existingField.collectionId,
+          fieldId
+        );
+      }
+      const [updated] = await tx
+        .update(collectionFields)
+        .set({
+          ...(input.label !== undefined ? { label: input.label } : {}),
+          ...(input.type !== undefined ? { type: input.type } : {}),
+          ...(input.required !== undefined ? { required: input.required } : {}),
+          ...(input.config !== undefined || nextType !== existingField.type
+            ? { config: nextConfig }
+            : {}),
+          ...(input.position !== undefined ? { position: input.position } : {}),
+          updatedAt: new Date(),
+        })
+        .where(eq(collectionFields.id, fieldId))
+        .returning();
+      return updated;
+    });
 
     await auditService.log({
       actorId,
       action: 'update',
       targetType: 'collection_field',
       targetId: fieldId,
-      targetName: (field as any).label,
+      targetName: input.label ?? existingField.label,
     });
     return row;
   },

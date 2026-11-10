@@ -56,7 +56,10 @@ import {
 import { useSiteLocales } from '@/providers/site-locales';
 import { slugify } from '@/lib/utils/slugify';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
-import { normalizePostTypeSupports } from '@/config/post-types';
+import {
+  entryMediaValues,
+  normalizePostTypeSupports,
+} from '@/config/post-types';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import { useCan } from '@/providers/access.provider';
@@ -168,8 +171,15 @@ export function EntryEditor({
 
     const entryData = (entry?.data as Record<string, unknown>) ?? {};
     for (const field of fields) {
-      base[`data-${field.key}`] =
-        entryData[field.key] ?? (field.type === 'boolean' ? false : '');
+      const raw = entryData[field.key];
+      if (field.type === 'media') {
+        base[`data-${field.key}`] = field.multiple
+          ? entryMediaValues(raw)
+          : (entryMediaValues(raw)[0] ?? '');
+      } else {
+        base[`data-${field.key}`] =
+          raw ?? (field.type === 'boolean' ? false : '');
+      }
     }
 
     return base;

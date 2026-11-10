@@ -32,6 +32,11 @@ import {
 } from './section';
 import type { ElementStyle } from '../style';
 import { el, linkEl } from './element';
+import {
+  GalleryBadge,
+  type GalleryBadgePosition,
+  listingItemHasGallery,
+} from './gallery-badge';
 
 // ---------------------------------------------------------------------------
 // Sample Items for Editor Canvas (R575 / QRY-05)
@@ -58,6 +63,8 @@ export function toLoopItemContext(
     excerpt: item.excerpt ?? '',
     image: item.image ?? '',
     publishedAt: item.publishedAt ?? '',
+    hasGallery: listingItemHasGallery(item),
+    galleryCount: item.galleryCount ?? 0,
     authorName: item.author?.name ?? '',
     authorImage: item.author?.image ?? '',
     category: categories.map(c => c.name).join(' · '),
@@ -172,6 +179,8 @@ interface DefaultItemCardProps {
   featured?: boolean;
   cardStyle?: CardStyleProps;
   showImage?: boolean;
+  showGalleryBadge?: boolean;
+  galleryBadgePosition?: GalleryBadgePosition;
   showExcerpt?: boolean;
   showAuthor?: boolean;
   showDate?: boolean;
@@ -186,6 +195,8 @@ function DefaultItemCard({
   featured = false,
   cardStyle = {},
   showImage = true,
+  showGalleryBadge = true,
+  galleryBadgePosition = 'top-right',
   showExcerpt = true,
   showAuthor = true,
   showDate = true,
@@ -198,6 +209,7 @@ function DefaultItemCard({
   const author = showAuthor ? item.author?.name : null;
   const categories = (item.terms ?? []).filter(t => t.taxonomy === 'category');
   const hasImg = showImage && Boolean(item.image);
+  const hasGallery = listingItemHasGallery(item);
 
   return (
     <MotionItem>
@@ -222,7 +234,7 @@ function DefaultItemCard({
             tabIndex={-1}
             aria-hidden
             className={cn(
-              'block shrink-0 overflow-hidden',
+              'relative block shrink-0 overflow-hidden',
               featured ? 'lg:w-7/12' : layout === 'list' && 'sm:w-64'
             )}
           >
@@ -241,6 +253,13 @@ function DefaultItemCard({
                     : 'aspect-video'
                 )
               )}
+            />
+            <GalleryBadge
+              show={showGalleryBadge}
+              hasGallery={hasGallery}
+              count={item.galleryCount}
+              position={galleryBadgePosition}
+              elements={elements}
             />
           </a>
         )}
@@ -353,6 +372,8 @@ export interface QueryLoopProps extends CardStyleProps {
   pagination?: QueryLoopPaginationStyle;
   loadMoreLabel?: string;
   showImage?: boolean;
+  showGalleryBadge?: boolean;
+  galleryBadgePosition?: GalleryBadgePosition;
   showExcerpt?: boolean;
   showAuthor?: boolean;
   showDate?: boolean;
@@ -468,6 +489,8 @@ export function QueryLoop({
   pagination = 'numbered',
   loadMoreLabel = 'Load more',
   showImage = true,
+  showGalleryBadge = true,
+  galleryBadgePosition = 'top-right',
   showExcerpt = true,
   showAuthor = true,
   showDate = true,
@@ -549,6 +572,8 @@ export function QueryLoop({
           featured={layout === 'featured' && index === 0 && page === 1}
           cardStyle={{ cardVariant, cardHover }}
           showImage={showImage}
+          showGalleryBadge={showGalleryBadge}
+          galleryBadgePosition={galleryBadgePosition}
           showExcerpt={showExcerpt}
           showAuthor={showAuthor}
           showDate={showDate}

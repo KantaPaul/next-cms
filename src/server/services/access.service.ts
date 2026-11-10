@@ -81,57 +81,63 @@ export const accessService = {
     });
   },
 
-  getUserAccess: cache(async (userId: string): Promise<UserAccess> => {
-    const user = await db.query.users.findFirst({
-      where: (t, { eq }) => eq(t.id, userId),
-      columns: { id: true, roleId: true },
-    });
+  getUserAccessForSite: cache(
+    async (userId: string, siteId: string): Promise<UserAccess> => {
+      const user = await db.query.users.findFirst({
+        where: (t, { eq }) => eq(t.id, userId),
+        columns: { id: true, roleId: true },
+      });
 
-    if (!user) return { userId, role: null, permissions: [] };
+      if (!user) return { userId, role: null, permissions: [] };
 
-    const siteId = await siteContext.adminSiteId(userId);
-    const [membership] = await db
-      .select({ roleId: siteMemberships.roleId })
-      .from(siteMemberships)
-      .where(
-        and(
-          eq(siteMemberships.userId, userId),
-          eq(siteMemberships.siteId, siteId),
-          isNull(siteMemberships.deletedAt)
-        )
-      )
-      .limit(1);
-
-    const [anyMembership] = membership
-      ? [membership]
-      : await db
-          .select({ roleId: siteMemberships.roleId })
-          .from(siteMemberships)
-          .where(
-            and(eq(siteMemberships.userId, userId), isNull(siteMemberships.deletedAt))
+      const [membership] = await db
+        .select({ roleId: siteMemberships.roleId })
+        .from(siteMemberships)
+        .where(
+          and(
+            eq(siteMemberships.userId, userId),
+            eq(siteMemberships.siteId, siteId),
+            isNull(siteMemberships.deletedAt)
           )
-          .limit(1);
+        )
+        .limit(1);
 
-    const roleId = membership
-      ? membership.roleId
-      : anyMembership
-        ? null
-        : (user.roleId ?? (await accessService.assignDefaultRole(userId)));
+      const [anyMembership] = membership
+        ? [membership]
+        : await db
+            .select({ roleId: siteMemberships.roleId })
+            .from(siteMemberships)
+            .where(
+              and(eq(siteMemberships.userId, userId), isNull(siteMemberships.deletedAt))
+            )
+            .limit(1);
 
-    if (!roleId) return { userId, role: null, permissions: [] };
+      const roleId = membership
+        ? membership.roleId
+        : anyMembership
+          ? null
+          : (user.roleId ?? (await accessService.assignDefaultRole(userId)));
 
-    const role = await db.query.roles.findFirst({
-      where: (t, { eq }) => eq(t.id, roleId),
-      with: { permissions: true },
-    });
+      if (!roleId) return { userId, role: null, permissions: [] };
 
-    return {
-      userId,
-      role: (role?.name as RoleName) ?? null,
-      permissions: (role?.permissions ?? [])
-        .filter(p => p.allowed)
-        .map(p => toKey(p.resource, p.action)),
-    };
+      const role = await db.query.roles.findFirst({
+        where: (t, { eq }) => eq(t.id, roleId),
+        with: { permissions: true },
+      });
+
+      return {
+        userId,
+        role: (role?.name as RoleName) ?? null,
+        permissions: (role?.permissions ?? [])
+          .filter(p => p.allowed)
+          .map(p => toKey(p.resource, p.action)),
+      };
+    }
+  ),
+
+  getUserAccess: cache(async (userId: string): Promise<UserAccess> => {
+    const siteId = await siteContext.adminSiteId(userId);
+    return accessService.getUserAccessForSite(userId, siteId);
   }),
 
   can: (access: UserAccess, key: PermissionKey) =>

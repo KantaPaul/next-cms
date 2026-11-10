@@ -2,6 +2,10 @@ import { cn } from '@/lib/utils/cn';
 import type { PostCard, PostTerm, PostView } from '../post-template';
 import { sanitizeRichText } from '../sanitize';
 import type { ElementStyle } from '../style';
+import {
+  hasActiveMotion,
+  type MotionEffectsSettings,
+} from '../style';
 import { el, linkEl } from './element';
 import { BlogFilters } from './blog-filters-client';
 import {
@@ -395,11 +399,16 @@ export function PostFeaturedImage(
   p: PostBlock & {
     aspect?: keyof typeof ASPECT;
     width?: 'normal' | 'wide' | 'full';
+    motion?: MotionEffectsSettings;
   }
 ) {
+  // Motion is configured on Content tab (`p.motion`); ignore legacy section.motion so disabled effects cannot leak or overlap.
+  const sectionProps = p.section?.motion
+    ? { ...p.section, motion: undefined }
+    : p.section;
   if (!p.post.featuredImage) {
     return p.editing ? (
-      <Section section={p.section} editing innerClassName="max-w-5xl">
+      <Section section={sectionProps} editing innerClassName="max-w-5xl">
         <div className="s-surface s-border s-muted s-radius flex aspect-[21/9] items-center justify-center border border-dashed text-sm">
           The post’s featured image appears here
         </div>
@@ -410,18 +419,28 @@ export function PostFeaturedImage(
   const width = { normal: 'max-w-3xl', wide: 'max-w-5xl', full: 'max-w-none' }[
     p.width ?? 'wide'
   ];
+  const img = (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src={p.post.featuredImage}
+      alt=""
+      {...el(
+        p,
+        'image',
+        cn('s-radius w-full object-cover', ASPECT[p.aspect ?? 'wide'])
+      )}
+    />
+  );
+
   return (
-    <Section section={p.section} editing={p.editing} innerClassName={width}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={p.post.featuredImage}
-        alt=""
-        {...el(
-          p,
-          'image',
-          cn('s-radius w-full object-cover', ASPECT[p.aspect ?? 'wide'])
-        )}
-      />
+    <Section section={sectionProps} editing={p.editing} innerClassName={width}>
+      {hasActiveMotion(p.motion) ? (
+        <div className="s-radius overflow-hidden">
+          <div data-motion={JSON.stringify(p.motion)}>{img}</div>
+        </div>
+      ) : (
+        img
+      )}
     </Section>
   );
 }

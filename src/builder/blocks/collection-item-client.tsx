@@ -1,15 +1,39 @@
 'use client';
 
+import { ExternalLink } from 'lucide-react';
 import type { CSSProperties, ReactNode } from 'react';
 import { useEntry } from '@/components/analytics/entry-context';
+import {
+  entryFeaturedMedia,
+  entryGalleryMedia,
+  entryMediaValues,
+  isValidGeneralUrl,
+  mergeFeaturedWithFieldMedia,
+  readMediaFieldConfig,
+  readTextFieldMode,
+  readUrlFieldMode,
+} from '@/config/post-types';
 import { cn } from '@/lib/utils/cn';
 import { sanitizeRichText } from '../sanitize';
-import { type ElementStyle, resolveElementStyle } from '../style';
+import {
+  type ElementStyle,
+  hasActiveMotion,
+  type MotionEffectsSettings,
+  resolveElementStyle,
+} from '../style';
+import {
+  CollectionGallery,
+  type GalleryAspect,
+  type GalleryStyle,
+} from './collection-gallery-client';
 import { el, type WithSection } from './element';
+import { EmbedContentFrame, VideoContentFrame } from './embed-frames';
+import { OverlayTrigger } from './overlay-trigger';
 import { Section } from './section';
 
 type TextSize = 'auto' | 'h1' | 'h2' | 'h3' | 'lead' | 'body' | 'small';
 type Align = 'left' | 'center' | 'right';
+type UrlDisplayMode = 'link' | 'button' | 'text';
 
 /** One row of "Fields to display": a field and its own styling. */
 export type CollectionItemField = {
@@ -17,6 +41,15 @@ export type CollectionItemField = {
   textSize?: TextSize;
   showLabel?: boolean;
   labelText?: string;
+  popupTrigger?: boolean;
+  overlayId?: string;
+  posterUrl?: string;
+  galleryStyle?: GalleryStyle;
+  galleryAspect?: GalleryAspect;
+  urlDisplay?: UrlDisplayMode;
+  urlLinkText?: string;
+  urlNewTab?: boolean;
+  motion?: MotionEffectsSettings;
   style?: ElementStyle;
   labelStyle?: ElementStyle;
 };
@@ -35,7 +68,12 @@ export type CollectionItemProps = WithSection & {
   showLabel?: boolean;
 };
 
-type EntryField = { key: string; label: string; type: string };
+type EntryField = {
+  key: string;
+  label: string;
+  type: string;
+  config?: unknown;
+};
 
 const SIZE_CLASS: Record<Exclude<TextSize, 'auto'>, string> = {
   h1: 'text-4xl md:text-5xl font-extrabold tracking-tight text-[var(--site-fg)]',
@@ -85,6 +123,7 @@ function FieldValue({
   row,
   field,
   value,
+  featuredImage,
   isTitleField,
   align,
   editing,
@@ -92,6 +131,7 @@ function FieldValue({
   row: CollectionItemField;
   field: EntryField;
   value: unknown;
+  featuredImage: string | null;
   isTitleField: boolean;
   align: Align;
   editing?: boolean;
@@ -125,9 +165,33 @@ function FieldValue({
       />
     );
   } else if (field.type === 'media') {
-    content = value ? (
+    const fieldUrls = entryMediaValues(value);
+    const mediaMeta = readMediaFieldConfig(field.config);
+    const isMultiField = Boolean(mediaMeta.multiple);
+    const isFeaturedField = Boolean(mediaMeta.isFeatured);
+    const galleryImages =
+      isMultiField || fieldUrls.length > 1
+        ? mergeFeaturedWithFieldMedia(value, featuredImage)
+        : fieldUrls;
+    const useGallery = galleryImages.length > 1 || isMultiField;
+    const usePopupTrigger = Boolean(
+      galleryImages.length && row.popupTrigger && row.overlayId
+    );
+
+    const mediaInner = useGallery && galleryImages.length > 0 ? (
+      <CollectionGallery
+        images={galleryImages}
+        alt={label}
+        galleryStyle={row.galleryStyle ?? 'facebook'}
+        galleryAspect={row.galleryAspect ?? 'auto'}
+        enableLightbox={!usePopupTrigger}
+        overlayId={usePopupTrigger ? row.overlayId : undefined}
+        className={cn(...valueStyle.classes)}
+        style={valueStyle.style}
+      />
+    ) : galleryImages[0] ? (
       <img
-        src={String(value)}
+        src={galleryImages[0]}
         alt={label}
         className={cn(
           'max-h-96 max-w-full rounded-lg object-cover',
@@ -141,22 +205,154 @@ function FieldValue({
         [No image for {label}]
       </div>
     ) : null;
+
+    const mediaNode =
+      !useGallery && mediaInner && usePopupTrigger && row.overlayId ? (
+        <OverlayTrigger
+          overlayId={row.overlayId}
+          className={cn(
+            'block w-fit max-w-full',
+            align === 'center' ? 'mx-auto' : align === 'right' ? 'ml-auto' : ''
+          )}
+          lightbox={{
+            image: galleryImages[0],
+            alt: label,
+          }}
+        >
+          {mediaInner}
+        </OverlayTrigger>
+      ) : (
+        mediaInner
+      );
+
+    content =
+      mediaNode && isFeaturedField && hasActiveMotion(row.motion) ? (
+        <div
+          className={cn(
+            'overflow-hidden rounded-lg max-w-full',
+            useGallery ? 'w-full' : 'w-fit',
+            align === 'center' ? 'mx-auto' : align === 'right' ? 'ml-auto' : ''
+          )}
+        >
+          <div data-motion={JSON.stringify(row.motion)}>{mediaNode}</div>
+        </div>
+      ) : (
+        mediaNode
+      );
   } else {
-    const Tag = SIZE_TAG[size];
-    const text =
-      typeof value === 'boolean'
-        ? value
-          ? 'Yes'
-          : 'No'
-        : String(value ?? (editing ? `[${label}]` : ''));
-    content = text ? (
-      <Tag
-        className={cn(SIZE_CLASS[size], ...valueStyle.classes)}
-        style={valueStyle.style}
-      >
-        {text}
-      </Tag>
-    ) : null;
+    const textMode =
+      field.type === 'text' ? readTextFieldMode(field.config) : 'plain';
+    const urlMode =
+      field.type === 'url' ? readUrlFieldMode(field.config) : 'other';
+    const isVideoMode =
+      (field.type === 'text' && textMode === 'video') ||
+      (field.type === 'url' && urlMode === 'video');
+    const isEmbedMode = field.type === 'text' && textMode === 'embed';
+    const isUrlMode = field.type === 'url' && urlMode === 'other';
+    const rawStr = typeof value === 'string' ? value.trim() : '';
+
+    if (isVideoMode) {
+      content =
+        rawStr || editing || (row.popupTrigger && row.overlayId) ? (
+          <VideoContentFrame
+            url={rawStr}
+            posterUrl={row.posterUrl}
+            popupTrigger={row.popupTrigger}
+            overlayId={row.overlayId}
+            editing={editing}
+            emptyMessage={`[No video URL for ${label}]`}
+            frameClassName={cn(
+              's-radius aspect-video w-full rounded-lg',
+              ...valueStyle.classes
+            )}
+            frameStyle={valueStyle.style}
+          />
+        ) : null;
+    } else if (isEmbedMode) {
+      content =
+        rawStr || editing ? (
+          <EmbedContentFrame
+            url={rawStr}
+            editing={editing}
+            emptyMessage={`[No embed URL for ${label}]`}
+            frameClassName={cn(
+              's-radius aspect-video w-full rounded-lg',
+              ...valueStyle.classes
+            )}
+            frameStyle={valueStyle.style}
+          />
+        ) : null;
+    } else if (isUrlMode) {
+      const display = row.urlDisplay ?? 'link';
+      const newTab = row.urlNewTab !== false;
+      const linkText = row.urlLinkText?.trim() || rawStr || (editing ? `[${label}]` : '');
+      const validHref = rawStr && isValidGeneralUrl(rawStr) ? rawStr : undefined;
+
+      if (!rawStr) {
+        content = editing ? (
+          <p className="text-sm s-muted">[{label} URL]</p>
+        ) : null;
+      } else if (display === 'text' || !validHref) {
+        const Tag = SIZE_TAG[size];
+        content = (
+          <Tag
+            className={cn(SIZE_CLASS[size], ...valueStyle.classes)}
+            style={valueStyle.style}
+          >
+            {rawStr}
+          </Tag>
+        );
+      } else if (display === 'button') {
+        content = (
+          <a
+            href={validHref}
+            target={newTab ? '_blank' : undefined}
+            rel={newTab ? 'noopener noreferrer' : undefined}
+            className={cn(
+              's-primary-bg inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-white shadow-xs transition hover:opacity-90',
+              align === 'center' ? 'mx-auto' : align === 'right' ? 'ml-auto' : '',
+              ...valueStyle.classes
+            )}
+            style={valueStyle.style}
+          >
+            <span>{linkText}</span>
+            {newTab && <ExternalLink className="size-3.5" aria-hidden />}
+          </a>
+        );
+      } else {
+        content = (
+          <a
+            href={validHref}
+            target={newTab ? '_blank' : undefined}
+            rel={newTab ? 'noopener noreferrer' : undefined}
+            className={cn(
+              's-primary-text inline-flex items-center gap-1 text-base font-medium underline underline-offset-4 hover:opacity-80',
+              ...valueStyle.classes
+            )}
+            style={valueStyle.style}
+          >
+            <span>{linkText}</span>
+            {newTab && <ExternalLink className="size-3.5" aria-hidden />}
+          </a>
+        );
+      }
+    } else {
+      const Tag = SIZE_TAG[size];
+      const text =
+        typeof value === 'boolean'
+          ? value
+            ? 'Yes'
+            : 'No'
+          : String(value ?? (editing ? `[${label}]` : ''));
+      content = text ? (
+        <Tag
+          className={cn(SIZE_CLASS[size], ...valueStyle.classes)}
+          style={valueStyle.style}
+        >
+          {text}
+        </Tag>
+      ) : null;
+    }
   }
 
   if (!content && !editing) return null;
@@ -181,11 +377,15 @@ function FieldValue({
 
 export function CollectionItem(p: CollectionItemProps): ReactNode {
   const { entry } = useEntry();
+  // CollectionItem configures motion per image field under Content; ignore any legacy section.motion.
+  const sectionProps = p.section?.motion
+    ? { ...p.section, motion: undefined }
+    : p.section;
   // No entry context means we're inside a page that isn't connected to a collection template.
   // Render the editing placeholder so the block is visible on the canvas.
   if (!entry) {
     return (
-      <Section section={p.section} editing={p.editing}>
+      <Section section={sectionProps} editing={p.editing}>
         <div className="s-surface s-border s-muted s-radius flex min-h-40 flex-col items-center justify-center border border-dashed p-6 text-center text-sm">
           <p className="font-semibold text-[var(--site-fg)]">Collection Item</p>
           <p className="text-xs s-muted mt-1 max-w-sm">
@@ -200,24 +400,33 @@ export function CollectionItem(p: CollectionItemProps): ReactNode {
 
   const fields: EntryField[] = entry.collection?.fields ?? [];
   const entryData = (entry.data as Record<string, unknown>) ?? {};
+  const featuredImage = entryFeaturedMedia(entryData, fields);
+  const galleryMedia = entryGalleryMedia(entryData, fields);
   const rows = rowsOf(p);
 
   // No field chosen yet: a preview card of the entire entry.
   if (!rows.length) {
+    const titleText = String(entryData.title || entryData.name || entry.slug);
     return (
-      <Section section={p.section} editing={p.editing}>
+      <Section section={sectionProps} editing={p.editing}>
         <div className="s-surface s-border space-y-4 rounded-xl border p-6 shadow-sm">
           <div className="border-b pb-3">
             <span className="text-xs font-semibold uppercase tracking-wider s-muted">
               {entry.collection.name}
             </span>
-            <h3 className="text-2xl font-bold mt-1">
-              {String(entryData.title || entryData.name || entry.slug)}
-            </h3>
+            <h3 className="text-2xl font-bold mt-1">{titleText}</h3>
           </div>
+          {galleryMedia.hasGallery && (
+            <CollectionGallery
+              images={galleryMedia.images}
+              alt={titleText}
+              galleryStyle="facebook"
+            />
+          )}
           <div className="grid gap-4 sm:grid-cols-2">
             {fields.map(f => {
               const value = entryData[f.key];
+              const mediaUrls = f.type === 'media' ? entryMediaValues(value) : [];
               return (
                 <div key={f.key} className="space-y-1">
                   <span className="text-xs font-semibold s-muted uppercase tracking-wide">
@@ -230,9 +439,15 @@ export function CollectionItem(p: CollectionItemProps): ReactNode {
                         __html: sanitizeRichText(String(value ?? '')),
                       }}
                     />
-                  ) : f.type === 'media' && value ? (
+                  ) : f.type === 'media' && mediaUrls.length > 1 ? (
+                    <CollectionGallery
+                      images={mergeFeaturedWithFieldMedia(value, featuredImage)}
+                      alt={f.label}
+                      galleryStyle="facebook"
+                    />
+                  ) : f.type === 'media' && mediaUrls[0] ? (
                     <img
-                      src={String(value)}
+                      src={mediaUrls[0]}
                       alt={f.label}
                       className="max-h-48 rounded object-cover"
                     />
@@ -271,8 +486,12 @@ export function CollectionItem(p: CollectionItemProps): ReactNode {
   if (layout === 'table') {
     const tableEl = el(p, 'container', 's-card s-card-outline overflow-hidden');
     return (
-      <Section section={p.section} editing={p.editing}>
-        <dl className={tableEl.className} style={tableEl.style}>
+      <Section section={sectionProps} editing={p.editing}>
+        <dl
+          className={tableEl.className}
+          style={tableEl.style}
+          data-overlay-group=""
+        >
           {rows.map((row, index) => {
             const field = fields.find(f => f.key === row.field);
             if (!field) return null;
@@ -290,6 +509,7 @@ export function CollectionItem(p: CollectionItemProps): ReactNode {
                     row={{ ...row, showLabel: false, textSize: row.textSize ?? 'body' }}
                     field={field}
                     value={entryData[field.key]}
+                    featuredImage={featuredImage}
                     isTitleField={false}
                     align="left"
                     editing={p.editing}
@@ -304,8 +524,12 @@ export function CollectionItem(p: CollectionItemProps): ReactNode {
   }
 
   return (
-    <Section section={p.section} editing={p.editing}>
-      <div className={container.className} style={container.style}>
+    <Section section={sectionProps} editing={p.editing}>
+      <div
+        className={container.className}
+        style={container.style}
+        data-overlay-group=""
+      >
         {rows.map((row, index) => {
           const field = fields.find(f => f.key === row.field);
           if (!field) {
@@ -323,6 +547,7 @@ export function CollectionItem(p: CollectionItemProps): ReactNode {
               row={row}
               field={field}
               value={entryData[field.key]}
+              featuredImage={featuredImage}
               isTitleField={
                 field.key === 'title' ||
                 field.key === 'name' ||

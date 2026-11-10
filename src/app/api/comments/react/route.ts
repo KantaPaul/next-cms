@@ -1,3 +1,4 @@
+import { validateSession } from '@/lib/auth';
 import { commentVisitor, withVisitorCookie } from '@/lib/comment-visitor';
 import { hasCategoryConsent } from '@/lib/consent';
 import { commentsService } from '@/server/services/comments.service';
@@ -13,10 +14,15 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Invalid reaction.' }, { status: 400 });
   }
   const visitor = commentVisitor(request);
-  const [result, settings] = await Promise.all([
-    commentsService.react(parsed.data, visitor),
+  const [session, settings] = await Promise.all([
+    validateSession().catch(() => null),
     siteSettingsService.getPublic().catch(() => null),
   ]);
+  const result = await commentsService.react(parsed.data, {
+    ...visitor,
+    userId: session?.user.id ?? null,
+    userEmail: session?.user.email ?? null,
+  });
   const allowFunctional = hasCategoryConsent(
     visitor.consentCookie,
     settings?.consent,

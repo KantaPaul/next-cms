@@ -615,7 +615,7 @@ export function ShareButtons(
 export function BookmarkButton(
   p: PostBlock & {
     label?: string;
-    align?: 'left' | 'center';
+    align?: 'left' | 'center' | 'right';
     width?: keyof typeof WIDTH;
   }
 ) {
@@ -625,7 +625,13 @@ export function BookmarkButton(
       editing={p.editing}
       innerClassName={WIDTH[p.width ?? 'normal']}
     >
-      <div className={cn('flex', p.align === 'center' && 'justify-center')}>
+      <div
+        className={cn(
+          'flex',
+          p.align === 'center' && 'justify-center',
+          p.align === 'right' && 'justify-end'
+        )}
+      >
         <BookmarkToggle
           title={p.post.title}
           image={p.post.featuredImage}

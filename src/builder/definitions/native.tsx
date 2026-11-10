@@ -145,7 +145,6 @@ import { ContactFormOptionsField } from '../fields/contact-form-options-field';
 import { ContactFormActionsField } from '../fields/contact-form-actions-field';
 import {
   type ElementPart,
-  ElementStyleControl,
 } from '../controls/element-style';
 import {
   CONTENT,
@@ -164,9 +163,11 @@ import {
   columnsField,
   groupControl,
   MEDIA_PARTS,
+  motionEffectsControl,
   overlayTriggerFields,
   sectionControls,
   sliderFields,
+  styleControl,
   TEXT_PARTS,
   sectionSchema,
   urlField,
@@ -1090,12 +1091,19 @@ export const VideoBlock = defineBlock({
     .passthrough(),
   render: Video,
   fields: {
-    url: { label: 'Video URL', group: CONTENT, type: 'text' },
+    url: {
+      label: 'Video URL',
+      group: CONTENT,
+      type: 'text',
+      dynamic: true,
+      placeholder: 'https://youtube.com/... or /video.mp4',
+    },
     posterUrl: {
       label: 'Poster image',
       group: CONTENT,
       type: 'custom',
       render: MediaUrlField,
+      dynamic: true,
       when: (p: any) => Boolean(p.popupTrigger),
     },
     ...overlayTriggerFields(),
@@ -1241,7 +1249,7 @@ export const VideoLibraryNativeBlock = defineBlock({
 
 export const EmbedBlock = defineBlock({
   type: 'Embed',
-  label: 'Embed',
+  label: 'Embed / Iframe',
   category: 'content',
   icon: 'embed',
   schema: z
@@ -1252,7 +1260,13 @@ export const EmbedBlock = defineBlock({
     .passthrough(),
   render: Embed,
   fields: {
-    url: { label: 'Embed URL', group: CONTENT, type: 'text' },
+    url: {
+      label: 'Iframe / Embed URL',
+      group: CONTENT,
+      type: 'text',
+      dynamic: true,
+      placeholder: '<iframe src="https://..."></iframe> or https://',
+    },
     frame_style: elementStyle('frame', 'Frame Style', MEDIA_PARTS),
     ...contentSectionControls(),
   },
@@ -1489,6 +1503,7 @@ export const RichTextBlock = defineBlock({
       group: CONTENT,
       type: 'custom',
       render: RichTextField,
+      dynamic: true,
     },
     width: {
       label: 'Width',
@@ -1537,6 +1552,7 @@ export const ImageNativeBlock = defineBlock({
       group: CONTENT,
       type: 'custom',
       render: MediaUrlField,
+      dynamic: true,
     },
     image_size: groupControl('imageSize', {
       label: 'Image Resolution',
@@ -2643,14 +2659,6 @@ const fieldRowLabel = (item: Record<string, unknown>, index: number) => {
     .replace(/^./, c => c.toUpperCase());
 };
 
-const styleControl = (parts: readonly ElementPart[]) =>
-  ((props: any) =>
-    ElementStyleControl({
-      parts,
-      value: props.value,
-      onChange: props.onChange,
-    })) as any;
-
 export const CollectionItemBlock = defineBlock({
   type: 'CollectionItem',
   label: 'Collection item',
@@ -2703,6 +2711,86 @@ export const CollectionItemBlock = defineBlock({
           placeholder: 'Uses the field name',
           when: (item: any) => item.showLabel !== false,
         },
+        popupTrigger: {
+          label: 'Open popup/drawer on click',
+          group: CONTENT,
+          type: 'toggle',
+          when: () => false,
+        },
+        overlayId: {
+          label: 'Popup / Drawer',
+          group: CONTENT,
+          type: 'custom',
+          render: OverlayPickerField,
+          when: () => false,
+        },
+        posterUrl: {
+          label: 'Poster image',
+          group: CONTENT,
+          type: 'custom',
+          render: MediaUrlField,
+          when: () => false,
+        },
+        urlDisplay: {
+          label: 'URL display',
+          group: CONTENT,
+          type: 'select',
+          options: [
+            { label: 'Clickable link', value: 'link' },
+            { label: 'Button', value: 'button' },
+            { label: 'Plain URL text', value: 'text' },
+          ],
+          when: () => false,
+        },
+        urlLinkText: {
+          label: 'Link / button text (optional)',
+          group: CONTENT,
+          type: 'text',
+          placeholder: 'Uses the URL when empty',
+          when: () => false,
+        },
+        urlNewTab: {
+          label: 'Open in new tab',
+          group: CONTENT,
+          type: 'toggle',
+          when: () => false,
+        },
+        galleryStyle: {
+          label: 'Gallery style',
+          group: CONTENT,
+          type: 'select',
+          options: [
+            { label: 'Facebook Smart (Auto Collage)', value: 'facebook' },
+            { label: 'Facebook Top Hero (1 + Strip)', value: 'fb-top' },
+            { label: 'Facebook Left Hero (1 + Stack)', value: 'fb-left' },
+            { label: 'Facebook Mosaic (2 + 3)', value: 'fb-mosaic' },
+            { label: 'Facebook 2×2 Collage', value: 'fb-2x2' },
+            { label: '3-Column Grid', value: 'grid-3' },
+            { label: 'Masonry Feed', value: 'masonry' },
+            { label: 'Story Carousel + Thumbnails', value: 'carousel' },
+            { label: 'Stacked Stream', value: 'stacked' },
+          ],
+          when: () => false,
+        },
+        galleryAspect: {
+          label: 'Gallery view angle / aspect',
+          group: CONTENT,
+          type: 'select',
+          options: [
+            { label: 'Auto (Smart)', value: 'auto' },
+            { label: 'Square (1:1)', value: 'square' },
+            { label: 'Landscape (4:3)', value: 'landscape' },
+            { label: 'Wide (16:9)', value: 'wide' },
+            { label: 'Portrait (3:4)', value: 'portrait' },
+            { label: 'Tall (4:5)', value: 'tall' },
+          ],
+          when: () => false,
+        },
+        motion: motionEffectsControl({
+          label: 'Motion Effects',
+          group: CONTENT,
+          when: () => false,
+        }),
         style: {
           label: 'Value style',
           group: CONTENT,
@@ -2722,6 +2810,12 @@ export const CollectionItemBlock = defineBlock({
         textSize: 'auto',
         showLabel: true,
         labelText: '',
+        posterUrl: '',
+        urlDisplay: 'link',
+        urlLinkText: '',
+        urlNewTab: true,
+        galleryStyle: 'facebook',
+        galleryAspect: 'auto',
         style: {},
         labelStyle: {},
       },
@@ -2770,7 +2864,7 @@ export const CollectionItemBlock = defineBlock({
       ],
     },
     container_style: elementStyle('container', 'Container Style', BUTTON_PARTS),
-    ...contentSectionControls(),
+    ...contentSectionControls({ motionWhen: () => false }),
   },
   defaults: {
     items: [],
@@ -3470,8 +3564,12 @@ export const PostFeaturedImageBlock = defineBlock({
         { label: 'Original', value: 'auto' },
       ],
     },
+    motion: motionEffectsControl({
+      label: 'Motion Effects',
+      group: CONTENT,
+    }),
     image_style: elementStyle('image', 'Image Style', MEDIA_PARTS),
-    ...contentSectionControls(),
+    ...contentSectionControls({ motionWhen: () => false }),
   },
   defaults: {
     aspect: 'wide',
@@ -3715,6 +3813,7 @@ export const BookmarkButtonBlock = defineBlock({
       options: [
         { label: 'Left', value: 'left' },
         { label: 'Center', value: 'center' },
+        { label: 'Right', value: 'right' },
       ],
     },
     width: {
@@ -5480,6 +5579,39 @@ export const LanguageSwitcherNativeBlock = defineBlock({
   defaults: {},
 });
 
+const GALLERY_BADGE_POSITION_OPTIONS = [
+  { label: 'Top right', value: 'top-right' },
+  { label: 'Top left', value: 'top-left' },
+  { label: 'Bottom right', value: 'bottom-right' },
+  { label: 'Bottom left', value: 'bottom-left' },
+];
+
+function galleryBadgeControls(when: (props: any) => boolean) {
+  return {
+    showGalleryBadge: {
+      label: 'Show gallery icon badge',
+      group: CONTENT,
+      type: 'toggle' as const,
+      when,
+    },
+    galleryBadgePosition: {
+      label: 'Gallery icon position',
+      group: CONTENT,
+      type: 'select' as const,
+      options: GALLERY_BADGE_POSITION_OPTIONS,
+      when: (props: any) => when(props) && props.showGalleryBadge !== false,
+    },
+    gallery_badge_style: elementStyle(
+      'galleryBadge',
+      'Gallery Icon Badge Style',
+      BUTTON_PARTS,
+      {
+        when: (props: any) => when(props) && props.showGalleryBadge !== false,
+      }
+    ),
+  };
+}
+
 export const PostTypeEntriesBlock = defineBlock({
   type: 'PostTypeEntries',
   label: 'Post type entries',
@@ -5498,6 +5630,10 @@ export const PostTypeEntriesBlock = defineBlock({
       limit: z.number().int().min(1).max(100).default(12),
       sortOrder: z.enum(['oldest', 'newest']).default('oldest'),
       linkToEntry: z.boolean().default(false),
+      showGalleryBadge: z.boolean().default(true),
+      galleryBadgePosition: z
+        .enum(['top-right', 'top-left', 'bottom-right', 'bottom-left'])
+        .default('top-right'),
       emptyText: z.string().default('Nothing to show yet.'),
       section: sectionSettingsSchema.optional(),
       elements: z.record(z.string(), elementStyleSchema).optional(),
@@ -5566,6 +5702,9 @@ export const PostTypeEntriesBlock = defineBlock({
       type: 'toggle',
       when: (props: any) => (props.display ?? 'cards') === 'cards',
     },
+    ...galleryBadgeControls(
+      (props: any) => (props.display ?? 'cards') === 'cards'
+    ),
     emptyText: { label: 'Empty state text', group: CONTENT, type: 'text' },
     ...headingStyles({ subtitle: false }),
     card_style: elementStyle('card', 'Card Style', BUTTON_PARTS, {
@@ -5656,6 +5795,8 @@ export const PostTypeEntriesBlock = defineBlock({
     limit: 12,
     sortOrder: 'oldest',
     linkToEntry: false,
+    showGalleryBadge: true,
+    galleryBadgePosition: 'top-right',
     emptyText: 'Nothing to show yet.',
     section: DEFAULT_SECTION,
   },
@@ -5739,6 +5880,10 @@ export const QueryLoopBlock = defineBlock({
         .default('numbered'),
       loadMoreLabel: z.string().default('Load more'),
       showImage: z.boolean().default(true),
+      showGalleryBadge: z.boolean().default(true),
+      galleryBadgePosition: z
+        .enum(['top-right', 'top-left', 'bottom-right', 'bottom-left'])
+        .default('top-right'),
       showExcerpt: z.boolean().default(true),
       showAuthor: z.boolean().default(true),
       showDate: z.boolean().default(true),
@@ -5973,6 +6118,7 @@ export const QueryLoopBlock = defineBlock({
       when: (props: any) => props.pagination === 'load-more',
     },
     showImage: { label: 'Show featured image', group: CONTENT, type: 'toggle' },
+    ...galleryBadgeControls((props: any) => props.showImage !== false),
     showExcerpt: { label: 'Show excerpt', group: CONTENT, type: 'toggle' },
     showAuthor: { label: 'Show author', group: CONTENT, type: 'toggle' },
     showDate: { label: 'Show published date', group: CONTENT, type: 'toggle' },
@@ -6045,6 +6191,8 @@ export const QueryLoopBlock = defineBlock({
     pagination: 'numbered',
     loadMoreLabel: 'Load more',
     showImage: true,
+    showGalleryBadge: true,
+    galleryBadgePosition: 'top-right',
     showExcerpt: true,
     showAuthor: true,
     showDate: true,
@@ -6105,6 +6253,10 @@ export const LoopGridBlock = defineBlock({
       columnsMobile: z.number().int().min(1).max(2).default(1),
       gap: z.enum(['sm', 'md', 'lg', 'xl']).default('md'),
       equalHeight: z.boolean().default(true),
+      showGalleryBadge: z.boolean().default(true),
+      galleryBadgePosition: z
+        .enum(['top-right', 'top-left', 'bottom-right', 'bottom-left'])
+        .default('top-right'),
       pagination: z
         .enum(['numbered', 'load-more', 'infinite-scroll', 'none'])
         .default('numbered'),
@@ -6228,6 +6380,7 @@ export const LoopGridBlock = defineBlock({
     pagination: qlf.pagination,
     loadMoreLabel: qlf.loadMoreLabel,
     emptyText: qlf.emptyText,
+    ...galleryBadgeControls((props: any) => !props.templateId),
     ...cardFields(),
     ...headingStyles(),
     ...cardStyles({ when: (props: any) => !props.templateId }),
@@ -6260,6 +6413,8 @@ export const LoopGridBlock = defineBlock({
     columnsMobile: 1,
     gap: 'md',
     equalHeight: true,
+    showGalleryBadge: true,
+    galleryBadgePosition: 'top-right',
     pagination: 'numbered',
     loadMoreLabel: 'Load more',
     emptyText: 'No matching items found.',
@@ -6290,6 +6445,10 @@ export const LoopItemFieldBlock = defineBlock({
         .default('title'),
       customKey: z.string().default(''),
       linkToItem: z.boolean().default(true),
+      showGalleryBadge: z.boolean().default(true),
+      galleryBadgePosition: z
+        .enum(['top-right', 'top-left', 'bottom-right', 'bottom-left'])
+        .default('top-right'),
       readMoreLabel: z.string().default('Read more'),
       elements: z.record(z.string(), elementStyleSchema).optional(),
     })
@@ -6337,6 +6496,7 @@ export const LoopItemFieldBlock = defineBlock({
     image_style: elementStyle('image', 'Image Style', MEDIA_PARTS, {
       when: (props: any) => props.field === 'image',
     }),
+    ...galleryBadgeControls((props: any) => props.field === 'image'),
     link_style: elementStyle('link', 'Link Style', TEXT_PARTS, {
       when: (props: any) => props.field === 'readMore',
     }),
@@ -6345,6 +6505,8 @@ export const LoopItemFieldBlock = defineBlock({
     field: 'title',
     customKey: '',
     linkToItem: true,
+    showGalleryBadge: true,
+    galleryBadgePosition: 'top-right',
     readMoreLabel: 'Read more',
   },
 });

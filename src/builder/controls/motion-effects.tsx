@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import type { Device, MotionEffectsSettings } from '../style';
 import { DeviceToggles } from './device-row';
 import { Choose, ControlLabel, Slider } from './primitives';
@@ -12,22 +11,21 @@ export function MotionEffectsControl({
   value: MotionEffectsSettings | undefined;
   onChange: (value: MotionEffectsSettings | undefined) => void;
 }) {
-  const [parallaxOpen, setParallaxOpen] = useState(
-    Boolean(value?.parallax && typeof value.parallax.speed === 'number')
+  const parallaxOpen = Boolean(
+    value?.parallax && typeof value.parallax.speed === 'number'
   );
-  const [mouseTrackOpen, setMouseTrackOpen] = useState(
-    Boolean(value?.mouseTrack && typeof value.mouseTrack.strength === 'number')
+  const mouseTrackOpen = Boolean(
+    value?.mouseTrack && typeof value.mouseTrack.strength === 'number'
   );
-  const [scrollTransformOpen, setScrollTransformOpen] = useState(
-    Boolean(value?.scrollTransform)
-  );
+  const scrollTransformOpen = Boolean(value?.scrollTransform);
 
   const set = (patch: Partial<MotionEffectsSettings>) => {
     const next: MotionEffectsSettings = { ...value, ...patch };
-    const hasAny =
-      (parallaxOpen && next.parallax) ||
-      (mouseTrackOpen && next.mouseTrack) ||
-      (scrollTransformOpen && next.scrollTransform);
+    const hasAny = Boolean(
+      (next.parallax && typeof next.parallax.speed === 'number') ||
+        (next.mouseTrack && typeof next.mouseTrack.strength === 'number') ||
+        next.scrollTransform
+    );
     onChange(hasAny ? next : undefined);
   };
 
@@ -47,7 +45,6 @@ export function MotionEffectsControl({
             type="button"
             onClick={() => {
               const next = !parallaxOpen;
-              setParallaxOpen(next);
               set({
                 parallax: next
                   ? { speed: value?.parallax?.speed ?? 2, direction: value?.parallax?.direction ?? 'vertical' }
@@ -105,7 +102,6 @@ export function MotionEffectsControl({
             type="button"
             onClick={() => {
               const next = !mouseTrackOpen;
-              setMouseTrackOpen(next);
               set({
                 mouseTrack: next
                   ? { strength: value?.mouseTrack?.strength ?? 15, direction: value?.mouseTrack?.direction ?? 'opposite' }
@@ -163,7 +159,6 @@ export function MotionEffectsControl({
             type="button"
             onClick={() => {
               const next = !scrollTransformOpen;
-              setScrollTransformOpen(next);
               set({
                 scrollTransform: next
                   ? { translateY: 50, scale: 1.1, opacity: 0.5, start: 0, end: 100 }

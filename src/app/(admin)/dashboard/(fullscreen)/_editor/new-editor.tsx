@@ -142,6 +142,7 @@ import {
 import { LoopItemProvider } from '@/builder/blocks/query-loop-client';
 import { useLiveLoaded } from './use-live-loaded';
 import {
+  entryDynamicSources,
   LoopPreviewProvider,
   loopItemDynamicSources,
   pickPreviewItem,
@@ -149,8 +150,13 @@ import {
 import { APPROVED_DYNAMIC_SOURCES, type NormalizedListingItem } from '@nextcms/builder-core';
 import type { BuilderData } from '@/builder/data';
 import { editorSetup } from '@/builder/definitions';
+import {
+  ALL_PARTS,
+  styleControl,
+  VISUAL_MEDIA_PARTS,
+} from '@/builder/definitions/fields';
 import { cmsInlineProps, cmsResizeHandles } from '@/builder/editor-handles';
-import { SAMPLE_POST } from '@/builder/post-template';
+import { SAMPLE_POST, toDynamicPostRecord } from '@/builder/post-template';
 import type {
   DynamicRefItem,
   DynamicRefOptions,
@@ -175,6 +181,11 @@ import { useAiEnabled } from '@/components/ai/use-ai-status';
 import { maybeOfferRedirect } from '@/components/dashboard/redirect-offer';
 import { Button } from '@/components/ui/button';
 import { PERMISSIONS } from '@/config/permissions';
+import {
+  readMediaFieldConfig,
+  readTextFieldMode,
+  readUrlFieldMode,
+} from '@/config/post-types';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import { useCan } from '@/providers/access.provider';
 import {
@@ -944,6 +955,229 @@ export function NewEditor({
         };
       }
     }
+    if (next.inspectorBlocks.CollectionItem) {
+      const rawCollectionFields = (collectionEntry?.collection?.fields ??
+        []) as Array<{
+        key?: string;
+        type?: string;
+        config?: unknown;
+      }>;
+      const mediaFieldKeys = new Set(
+        rawCollectionFields
+          .filter(f => f.type === 'media' && typeof f.key === 'string')
+          .map(f => f.key as string)
+      );
+      const multiMediaFieldKeys = new Set(
+        rawCollectionFields
+          .filter(
+            f =>
+              f.type === 'media' &&
+              typeof f.key === 'string' &&
+              readMediaFieldConfig(f.config).multiple
+          )
+          .map(f => f.key as string)
+      );
+      const featuredMediaFieldKeys = new Set(
+        rawCollectionFields
+          .filter(
+            f =>
+              f.type === 'media' &&
+              typeof f.key === 'string' &&
+              readMediaFieldConfig(f.config).isFeatured
+          )
+          .map(f => f.key as string)
+      );
+      const videoFieldKeys = new Set(
+        rawCollectionFields
+          .filter(
+            f =>
+              typeof f.key === 'string' &&
+              ((f.type === 'text' &&
+                readTextFieldMode(f.config) === 'video') ||
+                (f.type === 'url' && readUrlFieldMode(f.config) === 'video'))
+          )
+          .map(f => f.key as string)
+      );
+      const embedFieldKeys = new Set(
+        rawCollectionFields
+          .filter(
+            f =>
+              f.type === 'text' &&
+              typeof f.key === 'string' &&
+              readTextFieldMode(f.config) === 'embed'
+          )
+          .map(f => f.key as string)
+      );
+      const urlFieldKeys = new Set(
+        rawCollectionFields
+          .filter(
+            f =>
+              f.type === 'url' &&
+              typeof f.key === 'string' &&
+              readUrlFieldMode(f.config) === 'other'
+          )
+          .map(f => f.key as string)
+      );
+      const ci = next.inspectorBlocks.CollectionItem;
+      const itemsField = ci.fields.items;
+      next = {
+        ...next,
+        inspectorBlocks: {
+          ...next.inspectorBlocks,
+          CollectionItem: {
+            ...ci,
+            fields: {
+              ...ci.fields,
+              ...(itemsField?.type === 'list' && itemsField.item
+                ? {
+                    items: {
+                      ...itemsField,
+                      item: {
+                        ...itemsField.item,
+                        ...(itemsField.item.textSize
+                          ? {
+                              textSize: {
+                                ...itemsField.item.textSize,
+                                when: (item: Record<string, unknown>) => {
+                                  if (typeof item?.field !== 'string') return true;
+                                  if (
+                                    mediaFieldKeys.has(item.field) ||
+                                    videoFieldKeys.has(item.field) ||
+                                    embedFieldKeys.has(item.field)
+                                  ) {
+                                    return false;
+                                  }
+                                  if (
+                                    urlFieldKeys.has(item.field) &&
+                                    item?.urlDisplay !== 'text'
+                                  ) {
+                                    return false;
+                                  }
+                                  return true;
+                                },
+                              },
+                            }
+                          : {}),
+                        ...(itemsField.item.popupTrigger
+                          ? {
+                              popupTrigger: {
+                                ...itemsField.item.popupTrigger,
+                                when: (item: Record<string, unknown>) =>
+                                  typeof item?.field === 'string' &&
+                                  (mediaFieldKeys.has(item.field) ||
+                                    videoFieldKeys.has(item.field)),
+                              },
+                            }
+                          : {}),
+                        ...(itemsField.item.overlayId
+                          ? {
+                              overlayId: {
+                                ...itemsField.item.overlayId,
+                                when: (item: Record<string, unknown>) =>
+                                  typeof item?.field === 'string' &&
+                                  (mediaFieldKeys.has(item.field) ||
+                                    videoFieldKeys.has(item.field)) &&
+                                  Boolean(item?.popupTrigger),
+                              },
+                            }
+                          : {}),
+                        ...(itemsField.item.posterUrl
+                          ? {
+                              posterUrl: {
+                                ...itemsField.item.posterUrl,
+                                when: (item: Record<string, unknown>) =>
+                                  typeof item?.field === 'string' &&
+                                  videoFieldKeys.has(item.field) &&
+                                  Boolean(item?.popupTrigger),
+                              },
+                            }
+                          : {}),
+                        ...(itemsField.item.urlDisplay
+                          ? {
+                              urlDisplay: {
+                                ...itemsField.item.urlDisplay,
+                                when: (item: Record<string, unknown>) =>
+                                  typeof item?.field === 'string' &&
+                                  urlFieldKeys.has(item.field),
+                              },
+                            }
+                          : {}),
+                        ...(itemsField.item.urlLinkText
+                          ? {
+                              urlLinkText: {
+                                ...itemsField.item.urlLinkText,
+                                when: (item: Record<string, unknown>) =>
+                                  typeof item?.field === 'string' &&
+                                  urlFieldKeys.has(item.field) &&
+                                  item?.urlDisplay !== 'text',
+                              },
+                            }
+                          : {}),
+                        ...(itemsField.item.urlNewTab
+                          ? {
+                              urlNewTab: {
+                                ...itemsField.item.urlNewTab,
+                                when: (item: Record<string, unknown>) =>
+                                  typeof item?.field === 'string' &&
+                                  urlFieldKeys.has(item.field) &&
+                                  item?.urlDisplay !== 'text',
+                              },
+                            }
+                          : {}),
+                        ...(itemsField.item.galleryStyle
+                          ? {
+                              galleryStyle: {
+                                ...itemsField.item.galleryStyle,
+                                when: (item: Record<string, unknown>) =>
+                                  typeof item?.field === 'string' &&
+                                  multiMediaFieldKeys.has(item.field),
+                              },
+                            }
+                          : {}),
+                        ...(itemsField.item.galleryAspect
+                          ? {
+                              galleryAspect: {
+                                ...itemsField.item.galleryAspect,
+                                when: (item: Record<string, unknown>) =>
+                                  typeof item?.field === 'string' &&
+                                  multiMediaFieldKeys.has(item.field),
+                              },
+                            }
+                          : {}),
+                        ...(itemsField.item.motion
+                          ? {
+                              motion: {
+                                ...itemsField.item.motion,
+                                when: (item: Record<string, unknown>) =>
+                                  typeof item?.field === 'string' &&
+                                  featuredMediaFieldKeys.has(item.field),
+                              },
+                            }
+                          : {}),
+                        ...(itemsField.item.style?.type === 'custom'
+                          ? {
+                              style: {
+                                ...itemsField.item.style,
+                                render: styleControl(ALL_PARTS, item =>
+                                  typeof item?.field === 'string' &&
+                                  (mediaFieldKeys.has(item.field) ||
+                                    videoFieldKeys.has(item.field) ||
+                                    embedFieldKeys.has(item.field))
+                                    ? VISUAL_MEDIA_PARTS
+                                    : ALL_PARTS
+                                ),
+                              },
+                            }
+                          : {}),
+                      },
+                    },
+                  }
+                : {}),
+            },
+          },
+        },
+      };
+    }
     return next;
   }, [
     baseSetup,
@@ -1232,17 +1466,41 @@ export function NewEditor({
     () => (isLoopItem ? pickPreviewItem(previewItems, previewItemId) : null),
     [isLoopItem, previewItems, previewItemId]
   );
-  const dynamicSources = useMemo<DynamicSourcesValue>(
-    () =>
-      isLoopItem
-        ? {
-            sources: loopItemDynamicSources(loopItemFields ?? []),
-            defaultSource: 'loopItem',
-            defaultPath: 'title',
-          }
-        : DEFAULT_DYNAMIC_SOURCES,
-    [isLoopItem, loopItemFields]
-  );
+  const dynamicSources = useMemo<DynamicSourcesValue>(() => {
+    if (isLoopItem) {
+      return {
+        sources: loopItemDynamicSources(loopItemFields ?? []),
+        defaultSource: 'loopItem',
+        defaultPath: 'title',
+      };
+    }
+    if (
+      (kind === 'entry' || kind === 'entry-template') &&
+      collectionEntry?.collection
+    ) {
+      const fields = (collectionEntry.collection.fields ?? []) as {
+        key: string;
+        label: string;
+        type: string;
+      }[];
+      return {
+        sources: entryDynamicSources(
+          collectionEntry.collection.name ?? '',
+          fields
+        ),
+        defaultSource: fields.length > 0 ? 'custom' : 'post',
+        defaultPath: fields[0]?.key ?? 'title',
+      };
+    }
+    if (kind === 'post' || kind === 'post-template') {
+      return {
+        sources: APPROVED_DYNAMIC_SOURCES,
+        defaultSource: 'post',
+        defaultPath: 'title',
+      };
+    }
+    return DEFAULT_DYNAMIC_SOURCES;
+  }, [isLoopItem, loopItemFields, kind, collectionEntry]);
   const dynamicContext = useMemo(
     () => ({
       ...(loopPreviewItem && {
@@ -1251,7 +1509,9 @@ export function NewEditor({
       }),
       language: page.language,
       page: { title: page.title, slug: page.slug, language: page.language },
-      ...(setup.renderKind === 'post' && { post: post ?? SAMPLE_POST }),
+      ...(setup.renderKind === 'post' && {
+        post: toDynamicPostRecord(post ?? SAMPLE_POST),
+      }),
       ...(collectionEntry && {
         entry: collectionEntry.data,
         custom: collectionEntry.data,

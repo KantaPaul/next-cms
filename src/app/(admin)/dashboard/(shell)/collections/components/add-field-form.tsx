@@ -1,11 +1,13 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FormInput as Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
@@ -29,6 +31,7 @@ import {
   FIELD_TYPES,
 } from '../_modules/collections.schemas';
 import { objectToFormData } from '../_modules/form-helpers';
+import { TextModeSwitches, UrlModeSwitches } from './field-mode-switches';
 import { useFormAction } from '@/hooks/use-form-action';
 
 type CollectionFieldInput = z.input<typeof collectionFieldSchema>;
@@ -46,27 +49,43 @@ const DEFAULTS: CollectionFieldInput = {
   required: false,
   choices: '',
   relationCollectionId: '',
+  multiple: false,
+  isFeatured: false,
+  textMode: 'plain',
+  urlMode: 'other',
 };
 
 export function AddFieldForm({ collectionId, postTypes }: AddFieldFormProps) {
+  const router = useRouter();
   const form = useForm<CollectionFieldInput>({
     resolver: zodResolver(collectionFieldSchema),
     defaultValues: DEFAULTS,
   });
   const type = form.watch('type');
+  const multiple = form.watch('multiple');
+  const isFeatured = form.watch('isFeatured');
+  const textMode = form.watch('textMode') ?? 'plain';
+  const urlMode = form.watch('urlMode') ?? 'other';
 
   const { submit, isPending, error } = useFormAction(addCollectionField, {
     onSuccess: () => {
       form.reset(DEFAULTS);
+      router.refresh();
     },
   });
 
   const onSubmit = (data: CollectionFieldInput) => {
+    const featured = data.type === 'media' && Boolean(data.isFeatured);
+    const multi = data.type === 'media' && !featured && Boolean(data.multiple);
     submit(
       objectToFormData({
         collectionId,
         ...data,
         required: data.required ? 'on' : 'off',
+        multiple: multi ? 'on' : 'off',
+        isFeatured: featured ? 'on' : 'off',
+        textMode: data.type === 'text' ? (data.textMode ?? 'plain') : 'plain',
+        urlMode: data.type === 'url' ? (data.urlMode ?? 'other') : 'other',
       })
     );
   };
@@ -168,6 +187,81 @@ export function AddFieldForm({ collectionId, postTypes }: AddFieldFormProps) {
             </FormItem>
           )}
         />
+        {type === 'media' && (
+          <div className="sm:col-span-2 flex flex-wrap items-center gap-6 rounded-md border border-dashed px-3 py-2.5 bg-muted/20">
+            <FormField
+              control={form.control}
+              name="multiple"
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-2.5 space-y-0">
+                  <FormControl>
+                    <Switch
+                      checked={!isFeatured && field.value === true}
+                      disabled={isFeatured === true}
+                      onChange={value => {
+                        const checked = value === true;
+                        field.onChange(checked);
+                        if (checked) form.setValue('isFeatured', false);
+                      }}
+                    />
+                  </FormControl>
+                  <FormLabel
+                    className={
+                      isFeatured
+                        ? 'font-normal text-muted-foreground cursor-not-allowed'
+                        : 'font-normal cursor-pointer'
+                    }
+                  >
+                    Multiple image upload
+                  </FormLabel>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="isFeatured"
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-2.5 space-y-0">
+                  <FormControl>
+                    <Switch
+                      checked={!multiple && field.value === true}
+                      disabled={multiple === true}
+                      onChange={value => {
+                        const checked = value === true;
+                        field.onChange(checked);
+                        if (checked) form.setValue('multiple', false);
+                      }}
+                    />
+                  </FormControl>
+                  <FormLabel
+                    className={
+                      multiple
+                        ? 'font-normal text-muted-foreground cursor-not-allowed'
+                        : 'font-normal cursor-pointer'
+                    }
+                  >
+                    Featured image
+                    <span className="ml-1.5 text-xs text-muted-foreground">
+                      (only one at a time)
+                    </span>
+                  </FormLabel>
+                </FormItem>
+              )}
+            />
+          </div>
+        )}
+        {type === 'text' && (
+          <TextModeSwitches
+            value={textMode}
+            onChange={next => form.setValue('textMode', next)}
+          />
+        )}
+        {type === 'url' && (
+          <UrlModeSwitches
+            value={urlMode}
+            onChange={next => form.setValue('urlMode', next)}
+          />
+        )}
         {type === 'select' && (
           <FormField
             control={form.control}

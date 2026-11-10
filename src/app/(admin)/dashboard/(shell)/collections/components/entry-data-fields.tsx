@@ -2,7 +2,13 @@
 
 import { useFormContext } from 'react-hook-form';
 import { TextEditor } from '@/components/atoms/text-editor';
-import { MediaField } from '@/components/media/media-picker';
+import { MediaField, MultiMediaField } from '@/components/media/media-picker';
+import {
+  entryMediaValues,
+  type TextFieldMode,
+  type UrlFieldMode,
+  validateEntryFieldValue,
+} from '@/config/post-types';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FormInput as Input } from '@/components/ui/input';
 import {
@@ -30,6 +36,14 @@ export type EntryFieldConfig = {
   choices?: string[];
   /** Entries of the related post type, for relation fields. */
   options?: { id: string; label: string }[];
+  /** Allow multiple images on media fields. */
+  multiple?: boolean;
+  /** Mark media field as featured image. */
+  isFeatured?: boolean;
+  /** Sub-mode for text fields (`plain` | `video` | `embed`). */
+  textMode?: TextFieldMode;
+  /** Sub-mode for url fields (`video` | `other`). */
+  urlMode?: UrlFieldMode;
 };
 
 // Slug plus one `data-{key}` value per field; data values are validated server-side.
@@ -52,6 +66,15 @@ export function EntryDataFields({
       key={config.key}
       control={control}
       name={`data-${config.key}`}
+      rules={{
+        validate: val =>
+          config.type === 'text' || config.type === 'url'
+            ? validateEntryFieldValue(config.type, String(val ?? ''), {
+                textMode: config.textMode,
+                urlMode: config.urlMode,
+              })
+            : true,
+      }}
       render={({ field }) => {
         const label = (
           <FormLabel>
@@ -114,8 +137,26 @@ export function EntryDataFields({
         if (config.type === 'media') {
           return (
             <FormItem>
-              {label}
-              <MediaField value={text} onChange={set} />
+              <div className="flex items-center gap-2">
+                {label}
+                {config.isFeatured && (
+                  <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-medium text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                    Featured
+                  </span>
+                )}
+              </div>
+              {config.multiple ? (
+                <MultiMediaField
+                  value={entryMediaValues(field.value)}
+                  onChange={set}
+                  isFeaturedField={config.isFeatured}
+                />
+              ) : (
+                <MediaField
+                  value={entryMediaValues(field.value)[0] ?? ''}
+                  onChange={set}
+                />
+              )}
               <FormMessage />
             </FormItem>
           );
@@ -133,9 +174,27 @@ export function EntryDataFields({
           );
         }
 
+        const isVideoMode =
+          (config.type === 'text' && config.textMode === 'video') ||
+          (config.type === 'url' && config.urlMode === 'video');
+        const isEmbedMode =
+          config.type === 'text' && config.textMode === 'embed';
+
         return (
           <FormItem>
-            {label}
+            <div className="flex items-center gap-2">
+              {label}
+              {isVideoMode && (
+                <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-medium text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                  Video URL
+                </span>
+              )}
+              {isEmbedMode && (
+                <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                  Embed URL
+                </span>
+              )}
+            </div>
             <FormControl>
               <Input
                 {...field}
@@ -145,12 +204,18 @@ export function EntryDataFields({
                     ? 'number'
                     : config.type === 'date'
                       ? 'date'
-                      : config.type === 'url'
-                        ? 'url'
-                        : 'text'
+                      : 'text'
                 }
                 step={config.type === 'number' ? 'any' : undefined}
-                placeholder={config.type === 'url' ? 'https://' : undefined}
+                placeholder={
+                  isVideoMode
+                    ? 'https://youtube.com/... or /video.mp4'
+                    : isEmbedMode
+                      ? '<iframe src="https://..."></iframe> or https://'
+                      : config.type === 'url'
+                        ? 'https://'
+                        : undefined
+                }
                 onChange={e => set(e.target.value)}
               />
             </FormControl>

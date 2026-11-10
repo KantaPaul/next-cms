@@ -2,6 +2,11 @@ import type { NormalizedListingItem } from '@nextcms/builder-core';
 import { Quote, Star } from 'lucide-react';
 import type { ElementStyle } from '../style';
 import { el } from './element';
+import {
+  GalleryBadge,
+  type GalleryBadgePosition,
+  listingItemHasGallery,
+} from './gallery-badge';
 import { Faq, Team, Testimonials } from './marketing';
 import { QueryLoopCarousel } from './query-loop-client';
 import {
@@ -27,6 +32,8 @@ export interface PostTypeEntriesProps {
   limit?: number;
   sortOrder?: 'oldest' | 'newest';
   linkToEntry?: boolean;
+  showGalleryBadge?: boolean;
+  galleryBadgePosition?: GalleryBadgePosition;
   emptyText?: string;
   /** Loaded by the PostTypeEntries loader. */
   items?: NormalizedListingItem[];
@@ -94,6 +101,8 @@ export function PostTypeEntries({
   eyebrow,
   title,
   linkToEntry = false,
+  showGalleryBadge = true,
+  galleryBadgePosition = 'top-right',
   emptyText = 'Nothing to show yet.',
   items: loaded,
   section,
@@ -277,16 +286,25 @@ export function PostTypeEntries({
           const body = (
             <>
               {item.image && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={item.image}
-                  alt=""
-                  {...el(
-                    styled,
-                    'image',
-                    's-radius mb-4 aspect-[4/3] w-full object-cover'
-                  )}
-                />
+                <div className="relative s-radius mb-4 overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={item.image}
+                    alt=""
+                    {...el(
+                      styled,
+                      'image',
+                      'aspect-[4/3] w-full object-cover'
+                    )}
+                  />
+                  <GalleryBadge
+                    show={showGalleryBadge}
+                    hasGallery={listingItemHasGallery(item)}
+                    count={item.galleryCount}
+                    position={galleryBadgePosition}
+                    elements={elements}
+                  />
+                </div>
               )}
               <p {...el(styled, 'title', 'font-semibold')}>{item.title}</p>
               {item.excerpt && (

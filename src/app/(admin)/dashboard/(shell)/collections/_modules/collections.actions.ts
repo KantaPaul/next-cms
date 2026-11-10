@@ -176,7 +176,15 @@ function isChecked(value: FormDataEntryValue | null) {
 export async function addCollectionField(formData: FormData) {
   const collectionId = String(formData.get('collectionId') ?? '');
   const raw = Object.fromEntries(
-    ['key', 'label', 'type', 'choices', 'relationCollectionId'].map(k => [
+    [
+      'key',
+      'label',
+      'type',
+      'choices',
+      'relationCollectionId',
+      'textMode',
+      'urlMode',
+    ].map(k => [
       k,
       formData.get(k) ? String(formData.get(k)) : undefined,
     ])
@@ -184,6 +192,8 @@ export async function addCollectionField(formData: FormData) {
   const parsed = collectionFieldSchema.safeParse({
     ...raw,
     required: isChecked(formData.get('required')),
+    multiple: isChecked(formData.get('multiple')),
+    isFeatured: isChecked(formData.get('isFeatured')),
   });
   if (!collectionId || !parsed.success) {
     return {
@@ -194,11 +204,34 @@ export async function addCollectionField(formData: FormData) {
     };
   }
 
-  const { label, type, required, choices, relationCollectionId } = parsed.data;
+  const {
+    label,
+    type,
+    required,
+    choices,
+    relationCollectionId,
+    multiple,
+    isFeatured,
+    textMode,
+    urlMode,
+  } = parsed.data;
   const key = parsed.data.key || fieldKeyFromLabel(label);
   if (!key) return { ok: false, error: 'Field key could not be derived.' };
 
   const config: Record<string, unknown> = {};
+  if (type === 'media') {
+    if (isFeatured) {
+      config.isFeatured = true;
+    } else if (multiple) {
+      config.multiple = true;
+    }
+  }
+  if (type === 'text' && textMode !== 'plain') {
+    config.textMode = textMode;
+  }
+  if (type === 'url' && urlMode !== 'other') {
+    config.urlMode = urlMode;
+  }
   if (type === 'select') {
     const list = (choices ?? '')
       .split(/[\n,]/)
@@ -240,10 +273,36 @@ export async function updateCollectionField(formData: FormData) {
   // A missing key leaves `required` unchanged; any sent value sets it.
   const rawRequired = formData.get('required');
   const required = rawRequired === null ? undefined : isChecked(rawRequired);
+  const rawMultiple = formData.get('multiple');
+  const multiple = rawMultiple === null ? undefined : isChecked(rawMultiple);
+  const rawIsFeatured = formData.get('isFeatured');
+  const isFeatured =
+    rawIsFeatured === null ? undefined : isChecked(rawIsFeatured);
+  const rawTextMode = formData.get('textMode');
+  const textMode =
+    rawTextMode === 'plain' || rawTextMode === 'video' || rawTextMode === 'embed'
+      ? rawTextMode
+      : undefined;
+  const rawUrlMode = formData.get('urlMode');
+  const urlMode =
+    rawUrlMode === 'video' || rawUrlMode === 'other' ? rawUrlMode : undefined;
 
   if (!fieldId || !collectionId) {
     return { ok: false, error: 'Missing field or collection id.' };
   }
+  if (multiple === true && isFeatured === true) {
+    return {
+      ok: false,
+      error:
+        'Multiple image upload and Featured image cannot both be active on the same field.',
+    };
+  }
+
+  const configPatch: Record<string, unknown> = {};
+  if (multiple !== undefined) configPatch.multiple = multiple;
+  if (isFeatured !== undefined) configPatch.isFeatured = isFeatured;
+  if (textMode !== undefined) configPatch.textMode = textMode;
+  if (urlMode !== undefined) configPatch.urlMode = urlMode;
 
   try {
     await collectionsService.updateField(
@@ -252,6 +311,7 @@ export async function updateCollectionField(formData: FormData) {
         ...(label !== undefined ? { label: String(label) } : {}),
         ...(type !== undefined ? { type: type as any } : {}),
         ...(required !== undefined ? { required } : {}),
+        ...(Object.keys(configPatch).length > 0 ? { config: configPatch } : {}),
       },
       await actorId()
     );

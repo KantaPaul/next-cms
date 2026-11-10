@@ -1,12 +1,87 @@
 'use client';
 
 import { ThumbsDown, ThumbsUp } from 'lucide-react';
-import { type FormEvent, useEffect, useId, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  type FormEvent,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
+import { ADMIN_BAR_HINT_COOKIE } from '@/lib/admin-bar';
 import { cn } from '@/lib/utils/cn';
 import type { ElementStyle } from '../style';
 import { el } from './element';
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
+const hasHintCookie = () =>
+  document.cookie
+    .split('; ')
+    .some(part => part.startsWith(`${ADMIN_BAR_HINT_COOKIE}=`));
+const noopSubscribe = () => () => {};
+
+/** Line breaks only; text is rendered as React text, with See more/less for long comments. */
+export function CommentBody({
+  text,
+  className,
+  style,
+  editing,
+}: {
+  text: string;
+  className?: string;
+  style?: React.CSSProperties;
+  editing?: boolean;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [overflowing, setOverflowing] = useState(false);
+  const clampRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    if (editing || expanded) return;
+    const node = clampRef.current;
+    if (!node) return;
+    const check = () => {
+      setOverflowing(node.scrollHeight > node.clientHeight + 2);
+    };
+    check();
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(check);
+      ro.observe(node);
+      return () => ro.disconnect();
+    }
+  }, [text, expanded, editing]);
+
+  const showFull = expanded || Boolean(editing);
+
+  return (
+    <div className={className} style={style}>
+      {showFull ? (
+        text.split(/\n{2,}/).map((para, i) => (
+          <p key={i} className="whitespace-pre-line">
+            {para}
+          </p>
+        ))
+      ) : (
+        <p ref={clampRef} className="line-clamp-5 whitespace-pre-line">
+          {text}
+        </p>
+      )}
+      {!editing && (overflowing || expanded) ? (
+        <button
+          type="button"
+          onClick={() => setExpanded(prev => !prev)}
+          aria-expanded={expanded}
+          className="s-primary-text self-start text-xs font-semibold hover:underline"
+        >
+          {expanded ? 'See less' : 'See more'}
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
 export type CommentFormLabels = {
   formTitle?: string;
@@ -35,10 +110,31 @@ export function CommentForm({
   elements?: Record<string, ElementStyle>;
 }) {
   const id = useId();
-  const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>(
+  const router = useRouter();
+  const signedInHint = useSyncExternalStore(
+    noopSubscribe,
+    hasHintCookie,
+    () => false
+  );
+  const [user, setUser] = useState<CommentUser | null>(null);
+  const [userLoaded, setUserLoaded] = useState(false);
+  const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'approved' | 'error'>(
     'idle'
   );
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (editing) return;
+    let live = true;
+    visitorState(postId, targetKind).then(s => {
+      if (!live) return;
+      setUser(s.user ?? null);
+      setUserLoaded(true);
+    });
+    return () => {
+      live = false;
+    };
+  }, [postId, targetKind, editing]);
 
   useEffect(() => {
     if (!TURNSTILE_SITE_KEY || editing) return;
@@ -62,6 +158,15 @@ export function CommentForm({
         headers: { Accept: 'application/json' },
       });
       if (response.ok) {
+        const okData = (await response.json().catch(() => ({}))) as {
+          status?: string;
+        };
+        if (okData.status === 'approved') {
+          invalidateVisitorState(postId, targetKind);
+          setState('approved');
+          router.refresh();
+          return;
+        }
         setState('sent');
         return;
       }
@@ -76,14 +181,18 @@ export function CommentForm({
     }
   };
 
-  if (state === 'sent') {
+  if (state === 'sent' || state === 'approved') {
     return (
       <div
         role="status"
         className="s-soft-primary s-radius p-4 text-sm font-medium"
       >
-        {labels.pendingMessage ||
-          'Thanks — your comment is awaiting moderation.'}
+        {state === 'approved'
+          ? parentId
+            ? 'Your reply has been published.'
+            : 'Your comment has been published.'
+          : labels.pendingMessage ||
+            'Thanks — your comment is awaiting moderation.'}
       </div>
     );
   }
@@ -126,57 +235,68 @@ export function CommentForm({
         placeholder={parentId ? 'Write a reply…' : 'Share your thoughts…'}
         {...el({ elements }, 'input', 's-input min-h-24 w-full py-2.5')}
       />
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div>
-          <label
-            htmlFor={`${id}-name`}
-            className="s-muted mb-1 block text-xs font-medium"
-          >
-            Name
-          </label>
-          <input
-            id={`${id}-name`}
-            name="authorName"
-            required
-            maxLength={80}
-            autoComplete="name"
-            {...el({ elements }, 'input', 's-input h-10 w-full')}
-          />
+      {!editing && (user || (signedInHint && !userLoaded)) ? (
+        user ? (
+          <p className="s-muted text-xs">
+            {parentId ? 'Replying' : 'Commenting'} as{' '}
+            <span className="font-medium text-[var(--site-fg)]">
+              {user.name}
+            </span>
+          </p>
+        ) : null
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div>
+            <label
+              htmlFor={`${id}-name`}
+              className="s-muted mb-1 block text-xs font-medium"
+            >
+              Name
+            </label>
+            <input
+              id={`${id}-name`}
+              name="authorName"
+              required
+              maxLength={80}
+              autoComplete="name"
+              {...el({ elements }, 'input', 's-input h-10 w-full')}
+            />
+          </div>
+          <div>
+            <label
+              htmlFor={`${id}-email`}
+              className="s-muted mb-1 block text-xs font-medium"
+            >
+              Email <span className="font-normal">(not published)</span>
+            </label>
+            <input
+              id={`${id}-email`}
+              name="authorEmail"
+              type="email"
+              required
+              maxLength={200}
+              autoComplete="email"
+              {...el({ elements }, 'input', 's-input h-10 w-full')}
+            />
+          </div>
+          <div>
+            <label
+              htmlFor={`${id}-url`}
+              className="s-muted mb-1 block text-xs font-medium"
+            >
+              Website <span className="font-normal">(optional)</span>
+            </label>
+            <input
+              id={`${id}-url`}
+              name="authorUrl"
+              type="url"
+              maxLength={300}
+              autoComplete="url"
+              {...el({ elements }, 'input', 's-input h-10 w-full')}
+            />
+          </div>
         </div>
-        <div>
-          <label
-            htmlFor={`${id}-email`}
-            className="s-muted mb-1 block text-xs font-medium"
-          >
-            Email <span className="font-normal">(not published)</span>
-          </label>
-          <input
-            id={`${id}-email`}
-            name="authorEmail"
-            type="email"
-            required
-            maxLength={200}
-            autoComplete="email"
-            {...el({ elements }, 'input', 's-input h-10 w-full')}
-          />
-        </div>
-        <div>
-          <label
-            htmlFor={`${id}-url`}
-            className="s-muted mb-1 block text-xs font-medium"
-          >
-            Website <span className="font-normal">(optional)</span>
-          </label>
-          <input
-            id={`${id}-url`}
-            name="authorUrl"
-            type="url"
-            maxLength={300}
-            autoComplete="url"
-            {...el({ elements }, 'input', 's-input h-10 w-full')}
-          />
-        </div>
-      </div>
+      )}
       {/* Honeypot: bots fill it in; real visitors never see it. */}
       <input
         type="text"
@@ -272,8 +392,20 @@ export function ReplyToggle({
 
 /* ---------- Like / dislike ---------- */
 
-type VisitorState = { reactions: Record<string, number>; own: string[] };
+type CommentUser = { name: string; email: string; website: string | null };
+type VisitorState = {
+  reactions: Record<string, number>;
+  own: string[];
+  user?: CommentUser | null;
+};
 const stateCache = new Map<string, Promise<VisitorState>>();
+
+function invalidateVisitorState(
+  postId: string,
+  targetKind: 'post' | 'entry' = 'post'
+) {
+  stateCache.delete(`${targetKind}:${postId}`);
+}
 
 function visitorState(postId: string, targetKind: 'post' | 'entry' = 'post') {
   const key = `${targetKind}:${postId}`;
@@ -314,6 +446,7 @@ export function CommentReactions({
   const [dislikes, setDislikes] = useState(initialDislikes);
   const [mine, setMine] = useState<0 | 1 | -1>(0);
   const [own, setOwn] = useState(false);
+  const [stateLoaded, setStateLoaded] = useState(Boolean(editing));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -325,6 +458,7 @@ export function CommentReactions({
       const v = s.reactions?.[commentId];
       setMine(v === 1 || v === -1 ? v : 0);
       setOwn(Boolean(s.own?.includes(commentId)));
+      setStateLoaded(true);
     });
     return () => {
       live = false;
@@ -332,7 +466,7 @@ export function CommentReactions({
   }, [postId, targetKind, commentId, editing]);
 
   const react = async (value: 1 | -1) => {
-    if (editing || own || busy) return;
+    if (editing || !stateLoaded || own || busy) return;
     const next = mine === value ? 0 : value;
     setBusy(true);
     setError(null);
@@ -382,7 +516,7 @@ export function CommentReactions({
       <button
         type="button"
         onClick={() => react(1)}
-        disabled={busy || own}
+        disabled={busy || own || !stateLoaded}
         aria-pressed={mine === 1}
         aria-label={`Like (${likes})`}
         title={own ? ownTitle : 'Like'}
@@ -394,7 +528,7 @@ export function CommentReactions({
       <button
         type="button"
         onClick={() => react(-1)}
-        disabled={busy || own}
+        disabled={busy || own || !stateLoaded}
         aria-pressed={mine === -1}
         aria-label={`Dislike (${dislikes})`}
         title={own ? ownTitle : 'Dislike'}

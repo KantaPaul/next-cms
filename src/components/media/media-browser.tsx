@@ -52,14 +52,18 @@ export function MediaThumb({
  */
 export function MediaBrowser({
   selectedId,
+  selectedIds,
   onSelect,
+  onUploadMany,
   accept = 'image/*,video/mp4,video/webm,application/pdf',
   initialType = '',
   refreshKey = 0,
   className,
 }: {
   selectedId?: string | null;
+  selectedIds?: string[];
   onSelect: (item: MediaItem) => void;
+  onUploadMany?: (items: MediaItem[]) => void;
   accept?: string;
   initialType?: MediaFilter['type'];
   refreshKey?: number;
@@ -115,15 +119,23 @@ export function MediaBrowser({
       );
 
     await load();
-    const first = results.find(r => r.status === 'fulfilled') as
-      | PromiseFulfilledResult<MediaItem>
-      | undefined;
-    if (first && list.length === 1)
-      onSelect({
-        ...first.value,
-        uploadedBy: null,
-        createdAt: new Date(),
-      } as MediaItem);
+    const fulfilled = results
+      .filter(
+        (r): r is PromiseFulfilledResult<MediaItem> => r.status === 'fulfilled'
+      )
+      .map(
+        r =>
+          ({
+            ...r.value,
+            uploadedBy: null,
+            createdAt: new Date(),
+          }) as MediaItem
+      );
+    if (fulfilled.length && onUploadMany) {
+      onUploadMany(fulfilled);
+    } else if (fulfilled[0] && list.length === 1) {
+      onSelect(fulfilled[0]);
+    }
   };
 
   return (
@@ -223,29 +235,34 @@ export function MediaBrowser({
           </div>
         ) : (
           <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-            {items.map(item => (
-              <li key={item.id}>
-                <button
-                  type="button"
-                  onClick={() => onSelect(item)}
-                  aria-pressed={selectedId === item.id}
-                  title={item.filename}
-                  className={cn(
-                    'group relative block aspect-square w-full overflow-hidden rounded-md border bg-steel-50 transition hover:border-steel-400 dark:bg-dark-100',
-                    selectedId === item.id
-                      ? 'border-indigo-500 ring-2 ring-indigo-300'
-                      : 'border-steel-200 dark:border-dark-300'
-                  )}
-                >
-                  <MediaThumb item={item} />
-                  {!item.alt && item.mime.startsWith('image/') && (
-                    <span className="absolute left-1 top-1 rounded bg-amber-500/90 px-1.5 py-0.5 text-[10px] font-medium text-white">
-                      No alt
-                    </span>
-                  )}
-                </button>
-              </li>
-            ))}
+            {items.map(item => {
+              const isSelected = selectedIds
+                ? selectedIds.includes(item.id)
+                : selectedId === item.id;
+              return (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    onClick={() => onSelect(item)}
+                    aria-pressed={isSelected}
+                    title={item.filename}
+                    className={cn(
+                      'group relative block aspect-square w-full overflow-hidden rounded-md border bg-steel-50 transition hover:border-steel-400 dark:bg-dark-100',
+                      isSelected
+                        ? 'border-indigo-500 ring-2 ring-indigo-300'
+                        : 'border-steel-200 dark:border-dark-300'
+                    )}
+                  >
+                    <MediaThumb item={item} />
+                    {!item.alt && item.mime.startsWith('image/') && (
+                      <span className="absolute left-1 top-1 rounded bg-amber-500/90 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                        No alt
+                      </span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
         {dragOver && (

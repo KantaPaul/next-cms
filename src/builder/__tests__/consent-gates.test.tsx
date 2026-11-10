@@ -72,4 +72,84 @@ describe('consent UI gates', () => {
     assert.ok(html.includes('<iframe'));
     assert.ok(!html.includes('data-consent-placeholder'));
   });
+
+  it('supports dynamic fields on Video and Embed/Iframe blocks and renders arbitrary https iframe URLs and shorts/relative videos', () => {
+    const { VideoBlock, EmbedBlock } = require('@/builder/definitions/native');
+
+    assert.equal((VideoBlock.fields?.url as any)?.dynamic, true);
+    assert.equal((VideoBlock.fields?.posterUrl as any)?.dynamic, true);
+    assert.equal((EmbedBlock.fields?.url as any)?.dynamic, true);
+
+    const html = renderToStaticMarkup(
+      <ConsentProvider settings={DEFAULT_CONSENT_SETTINGS} initialCookie={null}>
+        <Video url="https://www.youtube.com/shorts/dQw4w9WgXcQ" editing={true} />
+        <Video url="/uploads/demo-reel.mp4" editing={true} />
+        <Embed url="https://northwind.example.com/demo" editing={true} />
+        <Embed
+          url='<iframe src="https://iframe.example.com/widget" title="Widget"></iframe>'
+          editing={true}
+        />
+        <Embed url="javascript:alert(1)" editing={true} />
+        <Embed url="{custom.live_url}" editing={true} />
+      </ConsentProvider>
+    );
+
+    assert.ok(html.includes('https://www.youtube.com/embed/dQw4w9WgXcQ'));
+    assert.ok(html.includes('src="/uploads/demo-reel.mp4"'));
+    assert.ok(html.includes('src="https://northwind.example.com/demo"'));
+    assert.ok(html.includes('src="https://iframe.example.com/widget"'));
+    assert.ok(!html.includes('javascript:alert(1)'));
+    assert.ok(!html.includes('{custom.live_url}'));
+    assert.ok(html.includes('snippet or URL in the sidebar'));
+
+    // SettingsPanel (E12 inspector) must render the Dynamic trigger button for Video & Embed/Iframe fields
+    const {
+      SettingsPanel,
+      EditorProvider,
+      createEditorStore,
+      DynamicSourcesProvider,
+    } = require('@nextcms/builder-react');
+    const { inspectorOf } = (() => {
+      const { fieldsOf } = require('@nextcms/builder-core');
+      return {
+        inspectorOf: (def: any) => fieldsOf(def),
+      };
+    })();
+    const store = createEditorStore({
+      document: {
+        version: 1,
+        root: { id: 'root', type: 'root', props: {} },
+        nodes: {},
+        slots: {},
+      } as any,
+      schemas: {},
+    });
+    const videoPanelHtml = renderToStaticMarkup(
+      <EditorProvider store={store}>
+        <DynamicSourcesProvider
+          value={{
+            sources: {},
+            defaultSource: 'custom',
+            defaultPath: 'video_url',
+          }}
+        >
+          <SettingsPanel
+            panelKey="video-1"
+            label="Video"
+            fields={inspectorOf(VideoBlock)}
+            props={{ url: '' }}
+            onPatch={() => {}}
+          />
+          <SettingsPanel
+            panelKey="embed-1"
+            label="Embed / Iframe"
+            fields={inspectorOf(EmbedBlock)}
+            props={{ url: '' }}
+            onPatch={() => {}}
+          />
+        </DynamicSourcesProvider>
+      </EditorProvider>
+    );
+    assert.equal(videoPanelHtml.match(/data-dynamic-trigger=""/g)?.length, 2);
+  });
 });

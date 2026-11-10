@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import type { Device, MotionEffectsSettings } from './style';
+import { type Device, hasActiveMotion, type MotionEffectsSettings } from './style';
 
 /* ---------- Pure math functions for testing and animation calculation ---------- */
 
@@ -102,9 +102,10 @@ export function computeMouseTrackOffset(
   };
 }
 
-export function currentDevice(): Device {
-  if (typeof window === 'undefined') return 'desktop';
-  const w = window.innerWidth;
+export function currentDevice(win?: Window): Device {
+  const target = win ?? (typeof window !== 'undefined' ? window : undefined);
+  if (!target) return 'desktop';
+  const w = target.innerWidth;
   if (w < 768) return 'mobile';
   if (w < 1024) return 'tablet';
   return 'desktop';
@@ -112,13 +113,19 @@ export function currentDevice(): Device {
 
 /* ---------- Shared rAF Loop Runtime ---------- */
 
-export function initMotionEffectsLoop(): () => void {
-  if (typeof window === 'undefined') return () => {};
+export function initMotionEffectsLoop(doc?: Document): () => void {
+  const targetDoc =
+    doc ?? (typeof document !== 'undefined' ? document : undefined);
+  const win =
+    targetDoc?.defaultView ??
+    (typeof window !== 'undefined' ? window : undefined);
+  if (!targetDoc || !win) return () => {};
 
   let rafId = 0;
-  let mouseX = window.innerWidth / 2;
-  let mouseY = window.innerHeight / 2;
+  let mouseX = win.innerWidth / 2;
+  let mouseY = win.innerHeight / 2;
   let isPointerActive = false;
+  const touched = new Set<HTMLElement>();
 
   const onPointerMove = (e: MouseEvent) => {
     mouseX = e.clientX;
@@ -127,32 +134,38 @@ export function initMotionEffectsLoop(): () => void {
   };
 
   const isReducedMotion = () =>
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    win.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const tick = () => {
     if (!isReducedMotion()) {
-      const dev = currentDevice();
-      const vh = window.innerHeight;
-      const vw = window.innerWidth;
+      const dev = currentDevice(win);
+      const vh = win.innerHeight;
+      const vw = win.innerWidth;
 
       // 1. Process elements with data-motion
-      const motionEls = document.querySelectorAll<HTMLElement>('[data-motion]');
+      const motionEls = targetDoc.querySelectorAll<HTMLElement>('[data-motion]');
       for (const el of motionEls) {
         try {
           const raw = el.dataset.motion;
           if (!raw) continue;
           const motion: MotionEffectsSettings = JSON.parse(raw);
 
-          // Check device filter
-          if (motion.devices && motion.devices.length > 0) {
-            if (!motion.devices.includes(dev)) {
+          // Check active effects and device filter
+          if (
+            !hasActiveMotion(motion) ||
+            (Array.isArray(motion.devices) && !motion.devices.includes(dev))
+          ) {
+            if (touched.has(el)) {
               el.style.transform = '';
-              continue;
+              el.style.opacity = '';
+              el.style.willChange = '';
             }
+            continue;
           }
 
           const rect = el.getBoundingClientRect();
           const transforms: string[] = [];
+          let nextOpacity: number | undefined;
 
           // Parallax
           if (motion.parallax && typeof motion.parallax.speed === 'number') {
@@ -182,7 +195,7 @@ export function initMotionEffectsLoop(): () => void {
               progress
             );
             if (transform !== 'none') transforms.push(transform);
-            if (opacity !== undefined) el.style.opacity = opacity.toFixed(3);
+            nextOpacity = opacity;
           }
 
           // Mouse tracking
@@ -203,6 +216,17 @@ export function initMotionEffectsLoop(): () => void {
           if (transforms.length > 0) {
             el.style.transform = transforms.join(' ');
             el.style.willChange = 'transform';
+            touched.add(el);
+          } else if (touched.has(el)) {
+            el.style.transform = '';
+            el.style.willChange = '';
+          }
+
+          if (nextOpacity !== undefined) {
+            el.style.opacity = nextOpacity.toFixed(3);
+            touched.add(el);
+          } else if (touched.has(el)) {
+            el.style.opacity = '';
           }
         } catch {
           // Ignore invalid JSON
@@ -210,7 +234,8 @@ export function initMotionEffectsLoop(): () => void {
       }
 
       // 2. Process background parallax [data-bg-parallax]
-      const bgEls = document.querySelectorAll<HTMLElement>('[data-bg-parallax]');
+      const bgEls =
+        targetDoc.querySelectorAll<HTMLElement>('[data-bg-parallax]');
       for (const bg of bgEls) {
         const parent = bg.parentElement?.parentElement;
         if (!parent) continue;
@@ -219,18 +244,25 @@ export function initMotionEffectsLoop(): () => void {
         const offset = computeParallaxOffset(rect.top, vh, speed * 10);
         bg.style.transform = `translateY(${offset.toFixed(2)}px)`;
         bg.style.willChange = 'transform';
+        touched.add(bg);
       }
     }
 
-    rafId = requestAnimationFrame(tick);
+    rafId = win.requestAnimationFrame(tick);
   };
 
-  window.addEventListener('mousemove', onPointerMove, { passive: true });
-  rafId = requestAnimationFrame(tick);
+  win.addEventListener('mousemove', onPointerMove, { passive: true });
+  rafId = win.requestAnimationFrame(tick);
 
   return () => {
-    cancelAnimationFrame(rafId);
-    window.removeEventListener('mousemove', onPointerMove);
+    win.cancelAnimationFrame(rafId);
+    win.removeEventListener('mousemove', onPointerMove);
+    for (const el of touched) {
+      el.style.transform = '';
+      el.style.opacity = '';
+      el.style.willChange = '';
+    }
+    touched.clear();
   };
 }
 

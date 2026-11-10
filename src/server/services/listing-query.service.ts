@@ -31,6 +31,11 @@ import {
 } from 'drizzle-orm';
 import { revalidateTag } from 'next/cache';
 import { PAGES } from '@/config/pages';
+import {
+  entryFeaturedMedia,
+  entryGalleryMedia,
+  entryTitle,
+} from '@/config/post-types';
 import { db } from '@/db';
 import {
   categories,
@@ -51,7 +56,6 @@ import {
   videos,
 } from '@/db/schema';
 import { siteHref } from '@/lib/utils/site-href';
-import { entryTitle } from '@/config/post-types';
 import {
   type ResolvedSite,
   siteContext,
@@ -660,11 +664,14 @@ async function resolveCollectionEntries(
   }
 
   const fieldRows = await db
-    .select({ key: collectionFields.key, type: collectionFields.type })
+    .select({
+      key: collectionFields.key,
+      type: collectionFields.type,
+      config: collectionFields.config,
+    })
     .from(collectionFields)
     .where(eq(collectionFields.collectionId, collectionId))
     .orderBy(collectionFields.position);
-  const firstMediaKey = fieldRows.find(f => f.type === 'media')?.key;
 
   for (const filter of config.fieldFilters ?? []) {
     const cond = fieldFilterSql(collectionEntries.data, fieldRows, filter);
@@ -725,11 +732,14 @@ async function resolveCollectionEntries(
     const data = (r.data as Record<string, unknown>) ?? {};
     const title = entryTitle(data, fieldRows) || r.slug || 'Untitled';
     const excerpt = data.description || data.excerpt || data.summary;
+    const featuredFromFields = entryFeaturedMedia(data, fieldRows);
+    const gallery = entryGalleryMedia(data, fieldRows);
     const image =
-      data.image ||
-      data.thumbnail ||
-      data.cover ||
-      (firstMediaKey ? data[firstMediaKey] : undefined);
+      featuredFromFields || (typeof r.featuredImage === 'string' ? r.featuredImage : null);
+    const galleryImages = new Set<string>(gallery.images);
+    if (typeof r.featuredImage === 'string' && r.featuredImage.trim()) {
+      galleryImages.add(r.featuredImage.trim());
+    }
 
     const itemTerms = termsMap.get(r.id) ?? [];
 
@@ -745,8 +755,9 @@ async function resolveCollectionEntries(
       ),
       excerpt:
         (r.excerpt as string) || (typeof excerpt === 'string' ? excerpt : null),
-      image:
-        (r.featuredImage as string) || (typeof image === 'string' ? image : null),
+      image,
+      hasGallery: galleryImages.size > 1,
+      galleryCount: galleryImages.size,
       publishedAt: r.publishedAt?.toISOString() ?? null,
       author: r.authorId
         ? { id: r.authorId, name: r.authorName ?? 'Anonymous' }

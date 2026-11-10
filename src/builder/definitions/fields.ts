@@ -373,18 +373,12 @@ export function sectionControls(opts?: { omit?: string[] }): Fields {
       path: 'section.animation',
       render: MotionSectionControl,
     },
-    section_motion_effects: {
-      type: 'custom',
+    section_motion_effects: motionEffectsControl({
       label: 'Scroll & Mouse Motion',
       tab: 'advanced',
       section: 'Motion Effects',
       path: 'section.motion',
-      render: (props: any) =>
-        createElement(MotionEffectsControl, {
-          value: props.value,
-          onChange: props.onChange,
-        }),
-    },
+    }),
     section_custom_css: {
       type: 'custom',
       label: 'Custom CSS',
@@ -442,6 +436,36 @@ export const MEDIA_PARTS: readonly ElementPart[] = [
   'imageSize',
   'cssFilter',
 ] as const;
+
+/**
+ * Style parts for visual media items (Image, Gallery, Video, Embed) in
+ * CollectionItem rows: omits text color, typography, text stroke, text shadow,
+ * and background (both normal and hover), keeping box/frame controls only.
+ */
+export const VISUAL_MEDIA_PARTS: readonly ElementPart[] = [
+  'border',
+  'shadow',
+  'padding',
+  'margin',
+  'cssFilter',
+  'imageSize',
+] as const;
+
+/**
+ * Builds an ElementStyleControl custom field renderer, optionally resolving
+ * visible parts dynamically from the enclosing item/block props.
+ */
+export function styleControl(
+  defaultParts: readonly ElementPart[],
+  resolveParts?: (itemProps: Record<string, unknown> | undefined) => readonly ElementPart[]
+) {
+  return ((props: any) =>
+    ElementStyleControl({
+      parts: resolveParts ? resolveParts(props?.props) : defaultParts,
+      value: props.value,
+      onChange: props.onChange,
+    })) as any;
+}
 
 /** Parts for boxed form elements (input, status message): no text effects. */
 export const FIELD_PARTS: readonly ElementPart[] = [
@@ -564,20 +588,32 @@ export function elementStyle(
  */
 export function contentSectionControls(opts?: {
   keepDisplay?: boolean;
+  motionWhen?: (props: any) => boolean;
 }): Fields {
   const {
     section_typography: _typography,
     section_text_color: _textColor,
     section_display: _display,
+    section_motion_effects,
     ...rest
   } = sectionControls();
+  const base: Fields = {
+    ...rest,
+    ...(section_motion_effects
+      ? {
+          section_motion_effects: opts?.motionWhen
+            ? { ...section_motion_effects, when: opts.motionWhen }
+            : section_motion_effects,
+        }
+      : {}),
+  };
   if (opts?.keepDisplay && _display) {
     return {
-      ...rest,
+      ...base,
       section_display: _display,
     };
   }
-  return rest;
+  return base;
 }
 
 /**
@@ -794,6 +830,31 @@ export function sliderFields({
     dot_style: elementStyle('dot', 'Dot Indicator Style', BUTTON_PARTS, {
       when: (p: any) => Boolean(p.slider),
     }),
+  };
+}
+
+/** Reusable control for Scroll, Parallax, and Mouse Track motion effects. */
+export function motionEffectsControl(opts?: {
+  label?: string;
+  tab?: string;
+  section?: string;
+  group?: string;
+  path?: string;
+  when?: (props: any, parentProps?: any) => boolean;
+}): FieldDef {
+  return {
+    type: 'custom',
+    label: opts?.label ?? 'Scroll & Mouse Motion',
+    ...(opts?.tab ? { tab: opts.tab } : {}),
+    ...(opts?.section ? { section: opts.section } : {}),
+    ...(opts?.group ? { group: opts.group } : {}),
+    ...(opts?.path ? { path: opts.path } : {}),
+    ...(opts?.when ? { when: opts.when } : {}),
+    render: (props: any) =>
+      createElement(MotionEffectsControl, {
+        value: props.value,
+        onChange: props.onChange,
+      }),
   };
 }
 

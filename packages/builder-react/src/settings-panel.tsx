@@ -8,15 +8,19 @@
  */
 
 import {
+  createDynamicBinding,
   type Device,
   type FieldDef,
   inheritedFrom,
+  isDynamicBinding,
   resetDeviceValue,
   layoutFields,
   fieldChanged,
   type InspectorTabDef,
   type LayoutFieldsResult,
   type LayoutSection,
+  valueForDevice,
+  withDeviceValue,
 } from '@nextcms/builder-core';
 import {
   ChangedFilter,
@@ -31,11 +35,14 @@ import { useEditor } from './context';
 import { DeviceSwitch } from './device-switch';
 import {
   DeviceProvider,
+  DynamicTriggerButton,
+  fieldAllowsDynamic,
   type FieldComponent,
   FieldControl,
   FieldTypesProvider,
   fieldControlId,
   fieldValueAccess,
+  useDynamicSources,
 } from './fields';
 import { SETTINGS_TAB_EVENT, type SettingsTabId } from './keyboard';
 
@@ -91,6 +98,7 @@ export function SettingsPanel({
   hideChangedFilter = false,
 }: SettingsPanelProps) {
   const device = useEditor(state => state.device);
+  const dynamicDefaults = useDynamicSources();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [uncontrolledChangedOnly, setUncontrolledChangedOnly] =
@@ -371,6 +379,13 @@ export function SettingsPanel({
                             const isContainer =
                               field.type === 'list' || field.type === 'object';
                             const targetPath = access.path;
+                            const resolvedVal = isResp
+                              ? valueForDevice(val, device)
+                              : val;
+                            const canDynamic =
+                              fieldAllowsDynamic(field) &&
+                              !isDynamicBinding(resolvedVal) &&
+                              !(readOnly || field.readOnly);
 
                             return (
                               <FieldRowFrame
@@ -383,6 +398,27 @@ export function SettingsPanel({
                                 }
                                 description={field.description}
                                 changed={isChanged}
+                                adornment={
+                                  canDynamic ? (
+                                    <DynamicTriggerButton
+                                      onClick={() => {
+                                        const binding = createDynamicBinding(
+                                          dynamicDefaults.defaultSource,
+                                          dynamicDefaults.defaultPath,
+                                          ''
+                                        );
+                                        const nextVal = isResp
+                                          ? withDeviceValue(val, device, binding)
+                                          : binding;
+                                        const patch = access.write(
+                                          props,
+                                          nextVal
+                                        );
+                                        onPatch(patch, targetPath);
+                                      }}
+                                    />
+                                  ) : undefined
+                                }
                                 onReset={
                                   readOnly || field.readOnly
                                     ? undefined

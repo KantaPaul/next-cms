@@ -159,8 +159,8 @@ export const BLOCK_INFO: Record<string, BlockInfo> = {
     defaultSize: FULL,
   },
   Embed: {
-    description: 'Third-party embed code',
-    capabilities: ['Embed by URL from allowed hosts', 'Responsive frame'],
+    description: 'Third-party iframe or embed URL',
+    capabilities: ['Any HTTPS iframe or embed URL', 'Dynamic binding & responsive frame'],
     semanticTag: 'div',
     defaultSize: FULL,
   },

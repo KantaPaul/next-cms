@@ -281,12 +281,13 @@ describe('comment rules', () => {
     assert.equal(decideComment({ postId: 'p1' }, { ...base, post: null }, ok).ok, false);
   });
 
-  it('allows one level of replies only', async () => {
+  it('supports multi-nested replies on approved comments of the same post', async () => {
     const { decideComment } = await import('@/server/services/comments.rules');
     const top = { postId: 'p1', parentId: null, status: 'approved' };
     assert.equal(decideComment({ postId: 'p1', parentId: 'c1' }, { ...base, parent: top }, ok).ok, true);
     const reply = { ...top, parentId: 'c0' };
-    assert.equal(decideComment({ postId: 'p1', parentId: 'c2' }, { ...base, parent: reply }, ok).ok, false);
+    assert.equal(decideComment({ postId: 'p1', parentId: 'c2' }, { ...base, parent: reply }, ok).ok, true);
+    assert.equal(decideComment({ postId: 'p1', parentId: 'c2' }, { ...base, parent: { ...reply, status: 'pending' } }, ok).ok, false);
     assert.equal(decideComment({ postId: 'p1', parentId: 'c1' }, { ...base, parent: { ...top, postId: 'other' } }, ok).ok, false);
   });
 
@@ -319,6 +320,18 @@ describe('comment rules', () => {
     assert.equal(limited.ok, false);
     assert.equal(!limited.ok && limited.status, 429);
   });
+
+  it('auto-approves comments from site admins/moderators unless flagged as honeypot spam', async () => {
+    const { decideComment, COMMENT_RATE_LIMIT } = await import('@/server/services/comments.rules');
+    assert.deepEqual(
+      decideComment({ postId: 'p1' }, { ...base, recentFromIp: COMMENT_RATE_LIMIT }, { ...ok, autoApprove: true }),
+      { ok: true, status: 'approved' }
+    );
+    assert.deepEqual(
+      decideComment({ postId: 'p1' }, base, { honeypot: true, turnstileOk: false, autoApprove: true }),
+      { ok: true, status: 'spam' }
+    );
+  });
 });
 
 describe('comment reactions', () => {
@@ -336,6 +349,28 @@ describe('comment reactions', () => {
     assert.equal(!sameCookie.ok && sameCookie.status, 403);
     // Clearing cookies doesn't help: same network as the comment.
     assert.equal(decideReaction(comment, { voterHash: 'v-new', ipHash: 'ip-author' }, true).ok, false);
+    // Logged-in user cannot react to their own comment/reply even with a different cookie/IP.
+    const userComment = {
+      status: 'approved',
+      voterHash: null,
+      ipHash: null,
+      userId: 'user-1',
+      authorEmail: 'admin@example.com',
+    };
+    const byUserId = decideReaction(
+      userComment,
+      { voterHash: 'v-other', ipHash: 'ip-other', userId: 'user-1', userEmail: 'other@example.com' },
+      true
+    );
+    assert.equal(byUserId.ok, false);
+    assert.equal(!byUserId.ok && byUserId.status, 403);
+    const byEmail = decideReaction(
+      userComment,
+      { voterHash: 'v-other', ipHash: 'ip-other', userId: 'user-2', userEmail: 'ADMIN@EXAMPLE.COM' },
+      true
+    );
+    assert.equal(byEmail.ok, false);
+    assert.equal(!byEmail.ok && byEmail.status, 403);
   });
 
   it('rejects unapproved comments and closed posts', async () => {
@@ -344,5 +379,105 @@ describe('comment reactions', () => {
     assert.equal(decideReaction({ ...comment, status: 'pending' }, r, true).ok, false);
     assert.equal(decideReaction(null, r, true).ok, false);
     assert.equal(decideReaction(comment, r, false).ok, false);
+  });
+});
+
+describe('bookmark alignment and long comment body', () => {
+  it('supports right alignment on BookmarkButtonBlock and BookmarkButton', async () => {
+    const { createElement } = await import('react');
+    const { renderToStaticMarkup } = await import('react-dom/server');
+    const { BookmarkButtonBlock } = await import('../definitions/native');
+    const { BookmarkButton } = await import('../blocks/post-extras');
+    const { ConsentProvider } = await import('@/components/site/consent-provider');
+    const { SAMPLE_POST } = await import('../post-template');
+
+    const alignField = BookmarkButtonBlock.fields?.align;
+    assert.equal(alignField?.type, 'radio');
+    assert.ok(
+      alignField?.type === 'radio' &&
+        alignField.options.some(o => o.value === 'right' && o.label === 'Right')
+    );
+
+    const html = renderToStaticMarkup(
+      createElement(ConsentProvider, {
+        settings: null,
+        initialCookie: null,
+        children: createElement(BookmarkButton, {
+          post: SAMPLE_POST,
+          align: 'right',
+        }),
+      })
+    );
+    assert.ok(html.includes('justify-end'));
+  });
+
+  it('clamps CommentBody for visitors and shows full paragraphs in editing mode', async () => {
+    const { createElement } = await import('react');
+    const { renderToStaticMarkup } = await import('react-dom/server');
+    const { CommentBody } = await import('../blocks/comments-client');
+
+    const longText = 'First paragraph.\n\nSecond paragraph.\n\nThird paragraph.';
+    const liveHtml = renderToStaticMarkup(
+      createElement(CommentBody, { text: longText })
+    );
+    assert.ok(liveHtml.includes('line-clamp-5'));
+
+    const editHtml = renderToStaticMarkup(
+      createElement(CommentBody, { text: longText, editing: true })
+    );
+    assert.ok(!editHtml.includes('line-clamp-5'));
+    assert.ok(editHtml.includes('First paragraph.'));
+    assert.ok(editHtml.includes('Second paragraph.'));
+  });
+
+  it('renders multi-nested comment threads and counts all nested replies', async () => {
+    const { createElement } = await import('react');
+    const { renderToStaticMarkup } = await import('react-dom/server');
+    const { Comments } = await import('../blocks/comments');
+    const { SAMPLE_POST } = await import('../post-template');
+
+    const now = new Date('2026-01-16T10:00:00Z').toISOString();
+    const html = renderToStaticMarkup(
+      createElement(Comments, {
+        post: SAMPLE_POST,
+        showForm: false,
+        comments: [
+          {
+            id: 'c1',
+            authorName: 'Level 0',
+            authorUrl: null,
+            isStaff: false,
+            body: 'Root comment',
+            createdAt: now,
+            replies: [
+              {
+                id: 'c2',
+                authorName: 'Level 1',
+                authorUrl: null,
+                isStaff: false,
+                body: 'First reply',
+                createdAt: now,
+                replies: [
+                  {
+                    id: 'c3',
+                    authorName: 'Level 2',
+                    authorUrl: null,
+                    isStaff: true,
+                    body: 'Nested reply',
+                    createdAt: now,
+                    replies: [],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      })
+    );
+
+    assert.ok(html.includes('(3)'));
+    assert.ok(html.includes('Root comment'));
+    assert.ok(html.includes('First reply'));
+    assert.ok(html.includes('Nested reply'));
   });
 });

@@ -18,7 +18,12 @@ export type CollectionEntryWithFields = {
     name: string;
     slug: string;
     templatePageId: string | null;
-    fields: { key: string; label: string; type: string }[];
+    fields: {
+      key: string;
+      label: string;
+      type: string;
+      config?: unknown;
+    }[];
   };
 };
 

@@ -60,6 +60,18 @@ export const collectionFieldSchema = z.object({
   choices: z.string().optional(),
   /** Related post type id for relation fields. */
   relationCollectionId: z.string().optional(),
+  /** Allow uploading/selecting multiple images for media fields. */
+  multiple: z.boolean().default(false),
+  /** Mark this media field as the entry's featured image (only one per collection). */
+  isFeatured: z.boolean().default(false),
+  /** Sub-mode for text fields (`plain` | `video` | `embed`). */
+  textMode: z.enum(['plain', 'video', 'embed']).default('plain'),
+  /** Sub-mode for url fields (`video` | `other`). */
+  urlMode: z.enum(['video', 'other']).default('other'),
+}).refine(v => !(v.type === 'media' && v.multiple && v.isFeatured), {
+  message:
+    'Multiple image upload and Featured image cannot both be active on the same field.',
+  path: ['multiple'],
 });
 
 export type CollectionFieldInput = z.infer<typeof collectionFieldSchema>;
@@ -212,12 +224,22 @@ export const entryTranslationSchema = z.object({
   language: z.string().regex(/^[a-z]{2,12}$/),
 });
 
-/** Inline field editor (label / type / required) on the field list. */
-export const updateFieldSchema = z.object({
-  label: z.string().min(1, 'Label is required').max(150),
-  type: z.enum(FIELD_TYPES.map(t => t.value) as [string, ...string[]]),
-  required: z.boolean(),
-});
+/** Inline field editor (label / type / required / media flags) on the field list. */
+export const updateFieldSchema = z
+  .object({
+    label: z.string().min(1, 'Label is required').max(150),
+    type: z.enum(FIELD_TYPES.map(t => t.value) as [string, ...string[]]),
+    required: z.boolean(),
+    multiple: z.boolean().optional(),
+    isFeatured: z.boolean().optional(),
+    textMode: z.enum(['plain', 'video', 'embed']).optional(),
+    urlMode: z.enum(['video', 'other']).optional(),
+  })
+  .refine(v => !(v.type === 'media' && v.multiple && v.isFeatured), {
+    message:
+      'Multiple image upload and Featured image cannot both be active on the same field.',
+    path: ['multiple'],
+  });
 
 export type UpdateFieldInput = z.infer<typeof updateFieldSchema>;
 

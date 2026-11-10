@@ -1,6 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { Play } from 'lucide-react';
-import { EmbedConsentGate } from '@/components/site/embed-consent-gate';
+import { parseEmbedInput, parseVideoUrl } from '@/config/post-types';
 import { cn } from '@/lib/utils/cn';
 import type { BuilderItem } from '../data';
 import { sanitizeRichText } from '../sanitize';
@@ -19,6 +18,7 @@ import { BlockList } from './block-list';
 import { ContactFormClient } from './contact-form-client';
 import { CopyButtonClient } from './copy-button-client';
 import { el, type WithSection } from './element';
+import { EmbedContentFrame, VideoContentFrame } from './embed-frames';
 import { OverlayTrigger } from './overlay-trigger';
 import {
   columnsGridStyle,
@@ -396,147 +396,24 @@ export type VideoProps = WithSection & {
   overlayId?: string;
 };
 
-type VideoSource = { kind: 'youtube' | 'vimeo' | 'file'; src: string };
-
-/** Recognizes one YouTube watch/embed or youtu.be URL, a Vimeo URL, or a direct mp4/webm URL. */
-function videoSource(url: string): VideoSource | null {
-  let u: URL;
-  try {
-    u = new URL(url);
-  } catch {
-    return null;
-  }
-  const host = u.hostname.replace(/^www\.|^m\./, '');
-
-  if (host === 'youtube.com' || host.endsWith('.youtube.com')) {
-    const id = u.searchParams.get('v');
-    if (id)
-      return { kind: 'youtube', src: `https://www.youtube.com/embed/${id}` };
-    if (u.pathname.startsWith('/embed/')) {
-      return {
-        kind: 'youtube',
-        src: `https://www.youtube.com${u.pathname}${u.search}`,
-      };
-    }
-    return null;
-  }
-
-  if (host === 'youtu.be') {
-    const id = u.pathname.replace(/^\//, '');
-    if (id)
-      return { kind: 'youtube', src: `https://www.youtube.com/embed/${id}` };
-    return null;
-  }
-
-  if (host === 'vimeo.com' || host === 'player.vimeo.com') {
-    const match = u.pathname.match(/(\d+)/);
-    if (match)
-      return {
-        kind: 'vimeo',
-        src: `https://player.vimeo.com/video/${match[1]}`,
-      };
-    return null;
-  }
-
-  if (
-    (u.protocol === 'https:' || u.protocol === 'http:') &&
-    /\.(mp4|webm)(\?|#|$)/.test(u.pathname)
-  ) {
-    return { kind: 'file', src: url };
-  }
-
-  return null;
-}
-
 export function Video(p: VideoProps) {
-  const source = p.url ? videoSource(p.url) : null;
+  const cleanUrl = typeof p.url === 'string' ? p.url.trim() : '';
+  const hasLightbox = Boolean(p.popupTrigger && p.overlayId);
+  const source = cleanUrl ? parseVideoUrl(cleanUrl) : null;
+  if (!hasLightbox && !source && !p.editing) return null;
+
   const frameEl = el(p, 'frame', 's-radius aspect-video h-full w-full rounded');
-
-  if (p.popupTrigger && p.overlayId) {
-    return (
-      <Section section={p.section} editing={p.editing}>
-        <OverlayTrigger
-          overlayId={p.overlayId}
-          aria-label="Play video"
-          lightbox={{
-            video: p.url,
-            poster: p.posterUrl,
-          }}
-          className="group/video relative block aspect-video w-full overflow-hidden rounded"
-        >
-          <div
-            className={cn(
-              frameEl.className,
-              'relative flex aspect-video w-full items-center justify-center overflow-hidden bg-black/10 dark:bg-white/10'
-            )}
-            style={frameEl.style}
-          >
-            {p.posterUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={p.posterUrl}
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover/video:scale-105"
-              />
-            ) : null}
-            <div className="relative z-10 flex size-14 items-center justify-center rounded-full bg-black/60 text-white shadow-lg backdrop-blur-xs transition duration-200 group-hover/video:scale-110 group-hover/video:bg-black/80">
-              <Play className="size-6 translate-x-0.5 fill-current" />
-            </div>
-          </div>
-        </OverlayTrigger>
-      </Section>
-    );
-  }
-
-  if (!source) {
-    return p.editing ? (
-      <Section section={p.section} editing>
-        <div className="s-surface s-border s-muted s-radius flex aspect-video items-center justify-center border border-dashed text-sm">
-          {p.popupTrigger
-            ? 'Choose a popup or drawer in the sidebar'
-            : 'Add a video URL in the sidebar'}
-        </div>
-      </Section>
-    ) : null;
-  }
-
   return (
     <Section section={p.section} editing={p.editing}>
-      {source.kind === 'youtube' ? (
-        <EmbedConsentGate provider="YouTube video" editing={p.editing}>
-          <div className="aspect-video w-full">
-            <iframe
-              className={frameEl.className}
-              style={frameEl.style}
-              src={source.src}
-              title="Video player"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-              allowFullScreen
-            />
-          </div>
-        </EmbedConsentGate>
-      ) : null}
-      {source.kind === 'vimeo' ? (
-        <EmbedConsentGate provider="Vimeo video" editing={p.editing}>
-          <iframe
-            className={frameEl.className}
-            style={frameEl.style}
-            src={source.src}
-            title="Video player"
-            allow="autoplay"
-            allowFullScreen
-          />
-        </EmbedConsentGate>
-      ) : null}
-      {source.kind === 'file' ? (
-        <video
-          controls
-          preload="metadata"
-          src={source.src}
-          className={frameEl.className}
-          style={frameEl.style}
-        />
-      ) : null}
+      <VideoContentFrame
+        url={cleanUrl}
+        posterUrl={p.posterUrl}
+        popupTrigger={p.popupTrigger}
+        overlayId={p.overlayId}
+        editing={p.editing}
+        frameClassName={frameEl.className}
+        frameStyle={frameEl.style}
+      />
     </Section>
   );
 }
@@ -547,68 +424,20 @@ export type EmbedProps = WithSection & {
   url?: string;
 };
 
-const EMBED_HOSTS = new Set([
-  'youtube.com',
-  'youtube-nocookie.com',
-  'youtu.be',
-  'vimeo.com',
-  'player.vimeo.com',
-  'google.com',
-  'maps.google.com',
-  'openstreetmap.org',
-]);
-
-function embedHost(url: string): string | null {
-  try {
-    const u = new URL(url);
-    return u.hostname.replace(/^www\.|^m\./, '');
-  } catch {
-    return null;
-  }
-}
-
-function embedProviderLabel(host: string | null): string {
-  if (!host) return 'Third-party embed';
-  if (host.includes('youtube') || host === 'youtu.be') return 'YouTube video';
-  if (host.includes('vimeo')) return 'Vimeo video';
-  if (host.includes('google')) return 'Google Maps embed';
-  if (host.includes('openstreetmap')) return 'OpenStreetMap embed';
-  return `${host} embed`;
-}
-
 export function Embed(p: EmbedProps) {
-  const url = p.url?.trim() || '';
-  const host = url ? embedHost(url) : null;
-  const allowed = !!host && EMBED_HOSTS.has(host);
+  const url = typeof p.url === 'string' ? p.url.trim() : '';
+  const parsed = url ? parseEmbedInput(url) : null;
+  if (!parsed && !p.editing) return null;
+
   const frameEl = el(p, 'frame', 's-radius aspect-video h-full w-full rounded');
-
-  if (!allowed) {
-    return p.editing ? (
-      <Section section={p.section} editing>
-        <div className="s-surface s-border s-muted s-radius flex aspect-video items-center justify-center border border-dashed text-sm">
-          Add an embeddable URL in the sidebar
-        </div>
-      </Section>
-    ) : null;
-  }
-
   return (
     <Section section={p.section} editing={p.editing}>
-      <EmbedConsentGate
-        provider={embedProviderLabel(host)}
-        title={url}
+      <EmbedContentFrame
+        url={url}
         editing={p.editing}
-      >
-        <iframe
-          className={frameEl.className}
-          style={frameEl.style}
-          src={url}
-          title="Embedded content"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-          allowFullScreen
-        />
-      </EmbedConsentGate>
+        frameClassName={frameEl.className}
+        frameStyle={frameEl.style}
+      />
     </Section>
   );
 }

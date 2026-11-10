@@ -13,6 +13,7 @@ import {
   useState,
 } from 'react';
 import { cn } from '@/lib/utils/cn';
+import { initMotionEffectsLoop } from './motion-effects-client';
 import {
   ATTENTION_SEEKERS,
   type Device,
@@ -58,12 +59,21 @@ export function MotionScope({
   children: ReactNode;
 }) {
   const { reduced, mounted } = useReducedMotionAfterMount();
+  const scopeRef = useRef<HTMLDivElement>(null);
   const t = pick(transition, PAGE_TRANSITIONS) ?? 'none';
   const play = mounted && !reduced && !editing && t !== 'none';
+
+  useEffect(() => {
+    if (!editing || !preview || !mounted || reduced) return;
+    const doc = scopeRef.current?.ownerDocument;
+    if (!doc) return;
+    return initMotionEffectsLoop(doc);
+  }, [editing, preview, mounted, reduced]);
 
   return (
     <ScopeContext.Provider value={{ editing, preview: !!preview }}>
       <motion.div
+        ref={scopeRef}
         className="contents"
         initial={
           play ? (t === 'fade' ? { opacity: 0 } : { opacity: 0, y: 16 }) : false
@@ -84,6 +94,7 @@ type MotionSectionProps = HTMLAttributes<HTMLElement> & {
   animation?: ResolvedAnimation | null;
   children?: ReactNode;
   innerClassName?: string;
+  motionData?: string;
   hasItems?: boolean;
 };
 
@@ -119,6 +130,7 @@ export function MotionSection(props: MotionSectionProps) {
     style,
     children,
     innerClassName,
+    motionData,
     hasItems,
     ...rest
   } = props;
@@ -127,7 +139,7 @@ export function MotionSection(props: MotionSectionProps) {
   const { reduced, mounted } = useReducedMotionAfterMount();
   const a = animation;
   const body = (
-    <div className={innerClassName}>
+    <div className={innerClassName} data-motion={motionData}>
       {hasItems ? <MotionBoundary>{children}</MotionBoundary> : children}
     </div>
   );
@@ -182,9 +194,9 @@ export function MotionSection(props: MotionSectionProps) {
     <Tag
       className={classes}
       style={cssVars}
-      data-motion={entranceName || exitName || hoverName ? '' : undefined}
       data-exit={exitName || undefined}
       {...rest}
+      data-motion={entranceName || exitName || hoverName ? '' : undefined}
     >
       {body}
     </Tag>

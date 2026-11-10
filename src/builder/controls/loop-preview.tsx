@@ -76,6 +76,39 @@ export function loopItemDynamicSources(
   return { loopItem, ...rest };
 }
 
+/**
+ * Dynamic sources for a collection entry or single-entry template editor:
+ * surfaces the post type's real fields under `custom` alongside `post`.
+ */
+export function entryDynamicSources(
+  collectionName: string,
+  fields: { key: string; label: string; type: string }[]
+): Record<string, DynamicSourceDef> {
+  const { custom: baseCustom, post: basePost, ...rest } = APPROVED_DYNAMIC_SOURCES;
+  const mappedFields: DynamicSourceField[] = fields.map(f => {
+    const mappedType =
+      f.type === 'media'
+        ? 'image'
+        : DYNAMIC_TYPES.has(f.type)
+          ? f.type
+          : 'text';
+    return {
+      key: f.key,
+      label: f.label,
+      type: mappedType as DynamicSourceField['type'],
+    };
+  });
+  const custom: DynamicSourceDef = {
+    ...baseCustom,
+    label: collectionName ? `${collectionName} Fields` : baseCustom.label,
+    description: collectionName
+      ? `Custom fields of the current ${collectionName} entry`
+      : baseCustom.description,
+    fields: mappedFields.length ? mappedFields : baseCustom.fields,
+  };
+  return { custom, post: basePost, ...rest };
+}
+
 /** Root setting: which real post or entry the canvas previews. */
 export function LoopPreviewItemField({
   value,

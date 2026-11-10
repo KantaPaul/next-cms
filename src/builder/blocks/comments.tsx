@@ -2,7 +2,12 @@ import type React from 'react';
 import { cn } from '@/lib/utils/cn';
 import type { PostView } from '../post-template';
 import type { ElementStyle } from '../style';
-import { CommentForm, CommentReactions, ReplyToggle } from './comments-client';
+import {
+  CommentBody,
+  CommentForm,
+  CommentReactions,
+  ReplyToggle,
+} from './comments-client';
 import { el, linkEl } from './element';
 import {
   type CardStyleProps,
@@ -89,36 +94,21 @@ function formatDate(iso: string, language: string) {
   });
 }
 
-/** Line breaks only; text is rendered as React text, so it's escaped. */
-function Body({
-  text,
-  className,
-  style,
-}: {
-  text: string;
-  className?: string;
-  style?: React.CSSProperties;
-}) {
-  return (
-    <div className={className} style={style}>
-      {text.split(/\n{2,}/).map((para, i) => (
-        <p key={i} className="whitespace-pre-line">
-          {para}
-        </p>
-      ))}
-    </div>
-  );
+function countComments(list: CommentView[]): number {
+  return list.reduce((n, item) => n + 1 + countComments(item.replies), 0);
 }
 
 function CommentItem({
   c,
   p,
-  reply,
+  depth = 0,
 }: {
   c: CommentView;
   p: CommentsProps;
-  reply?: boolean;
+  depth?: number;
 }) {
+  const isReply = depth > 0;
+  const canReply = p.open !== false && p.showForm !== false;
   const name =
     c.authorUrl && /^https?:\/\//i.test(c.authorUrl) ? (
       <a
@@ -133,7 +123,7 @@ function CommentItem({
       c.authorName
     );
   return (
-    <li className={cn('flex gap-3', reply && 'mt-4')}>
+    <li className={cn('flex gap-3', isReply && 'mt-4')}>
       <span
         aria-hidden
         {...el(
@@ -141,7 +131,7 @@ function CommentItem({
           'avatar',
           cn(
             's-soft-primary flex shrink-0 items-center justify-center rounded-full font-semibold',
-            reply ? 'size-8 text-xs' : 'size-10 text-sm'
+            isReply ? 'size-8 text-xs' : 'size-10 text-sm'
           )
         )}
       >
@@ -157,12 +147,12 @@ function CommentItem({
             {formatDate(c.createdAt, p.post.language)}
           </time>
         </p>
-        <Body
+        <CommentBody
           text={c.body}
+          editing={p.editing}
           {...el(p, 'body', 'mt-1.5 flex flex-col gap-2 leading-relaxed')}
         />
-        {(p.showReactions !== false ||
-          (!reply && p.open !== false && p.showForm !== false)) && (
+        {(p.showReactions !== false || canReply) && (
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
             {p.showReactions !== false ? (
               <CommentReactions
@@ -175,7 +165,7 @@ function CommentItem({
                 elements={p.elements}
               />
             ) : null}
-            {!reply && p.open !== false && p.showForm !== false ? (
+            {canReply ? (
               <ReplyToggle
                 postId={p.post.id}
                 targetKind={p.post.targetKind}
@@ -191,9 +181,14 @@ function CommentItem({
           </div>
         )}
         {c.replies.length > 0 ? (
-          <ol className="mt-2 border-l border-[var(--site-border)] pl-4">
+          <ol
+            className={cn(
+              'mt-2',
+              depth < 4 && 'border-l border-[var(--site-border)] pl-3 sm:pl-4'
+            )}
+          >
             {c.replies.map(r => (
-              <CommentItem key={r.id} c={r} p={p} reply />
+              <CommentItem key={r.id} c={r} p={p} depth={depth + 1} />
             ))}
           </ol>
         ) : null}
@@ -204,7 +199,7 @@ function CommentItem({
 
 export function Comments(p: CommentsProps) {
   const items = p.comments ?? (p.editing ? SAMPLE_COMMENTS : []);
-  const total = p.total ?? items.reduce((n, c) => n + 1 + c.replies.length, 0);
+  const total = p.total ?? countComments(items);
   const open = p.open !== false;
 
   if (!open && !items.length) {

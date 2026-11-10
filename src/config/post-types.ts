@@ -216,3 +216,305 @@ export function entryTitle(
   );
   return firstText ? String(d[firstText.key]) : '';
 }
+
+export interface CollectionFieldConfigMeta {
+  multiple?: boolean;
+  isFeatured?: boolean;
+}
+
+export interface MediaFieldDescriptor {
+  key: string;
+  type: string;
+  config?: unknown;
+}
+
+/** Reads media-specific flags (`multiple`, `isFeatured`) from a field's config JSON. */
+export function readMediaFieldConfig(config: unknown): CollectionFieldConfigMeta {
+  if (!config || typeof config !== 'object') return {};
+  const c = config as Record<string, unknown>;
+  return {
+    multiple: Boolean(c.multiple),
+    isFeatured: Boolean(c.isFeatured),
+  };
+}
+
+/** Normalizes a media field value (`string | string[]`) into a deduplicated list of non-empty URLs. */
+export function entryMediaValues(value: unknown): string[] {
+  const raw = Array.isArray(value)
+    ? value
+    : typeof value === 'string'
+      ? [value]
+      : [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of raw) {
+    if (typeof item !== 'string') continue;
+    const trimmed = item.trim();
+    if (!trimmed || seen.has(trimmed)) continue;
+    seen.add(trimmed);
+    out.push(trimmed);
+  }
+  return out;
+}
+
+/** Conventional keys checked when picking an entry's featured image if no field is flagged `isFeatured`. */
+export const ENTRY_MEDIA_KEYS = [
+  'image',
+  'photo',
+  'avatar',
+  'thumbnail',
+  'cover',
+] as const;
+
+/** Picks an entry's featured image URL: explicit `isFeatured` media field first, then conventional keys, then first media field. */
+export function entryFeaturedMedia(
+  data: unknown,
+  fields: MediaFieldDescriptor[]
+): string | null {
+  const d = (data && typeof data === 'object' ? data : {}) as Record<
+    string,
+    unknown
+  >;
+  const featuredField = fields.find(
+    f => f.type === 'media' && readMediaFieldConfig(f.config).isFeatured
+  );
+  if (featuredField) {
+    const urls = entryMediaValues(d[featuredField.key]);
+    if (urls.length > 0) return urls[0];
+  }
+  for (const key of ENTRY_MEDIA_KEYS) {
+    const urls = entryMediaValues(d[key]);
+    if (urls.length > 0) return urls[0];
+  }
+  for (const f of fields) {
+    if (f.type !== 'media') continue;
+    const urls = entryMediaValues(d[f.key]);
+    if (urls.length > 0) return urls[0];
+  }
+  return null;
+}
+
+/**
+ * Collects gallery image URLs for an entry with the featured image always placed first.
+ * `hasGallery` is true when there are multiple images or a populated `multiple` media field with >1 image.
+ */
+export function entryGalleryMedia(
+  data: unknown,
+  fields: MediaFieldDescriptor[]
+): { images: string[]; featuredImage: string | null; hasGallery: boolean } {
+  const d = (data && typeof data === 'object' ? data : {}) as Record<
+    string,
+    unknown
+  >;
+  const featuredImage = entryFeaturedMedia(d, fields);
+  const seen = new Set<string>();
+  const images: string[] = [];
+  const push = (url: string | null) => {
+    if (!url || seen.has(url)) return;
+    seen.add(url);
+    images.push(url);
+  };
+  push(featuredImage);
+  for (const f of fields) {
+    if (f.type !== 'media') continue;
+    for (const url of entryMediaValues(d[f.key])) {
+      push(url);
+    }
+  }
+  return {
+    images,
+    featuredImage,
+    hasGallery: images.length > 1,
+  };
+}
+
+/**
+ * Merges a single media field's values with an optional entry featured image so
+ * the featured image is always first in a single-view gallery.
+ */
+export function mergeFeaturedWithFieldMedia(
+  value: unknown,
+  featuredImage: string | null
+): string[] {
+  const fieldImages = entryMediaValues(value);
+  if (!featuredImage) return fieldImages;
+  if (!fieldImages.length) return [featuredImage];
+  return [featuredImage, ...fieldImages.filter(u => u !== featuredImage)];
+}
+
+export type TextFieldMode = 'plain' | 'video' | 'embed';
+export type UrlFieldMode = 'video' | 'other';
+
+/** Reads `textMode` (`plain` | `video` | `embed`) from a `text` field config JSON. */
+export function readTextFieldMode(config: unknown): TextFieldMode {
+  if (!config || typeof config !== 'object') return 'plain';
+  const mode = (config as Record<string, unknown>).textMode;
+  return mode === 'video' || mode === 'embed' ? mode : 'plain';
+}
+
+/** Reads `urlMode` (`video` | `other`) from a `url` field config JSON. */
+export function readUrlFieldMode(config: unknown): UrlFieldMode {
+  if (!config || typeof config !== 'object') return 'other';
+  return (config as Record<string, unknown>).urlMode === 'video'
+    ? 'video'
+    : 'other';
+}
+
+export type ParsedVideoSource = {
+  kind: 'youtube' | 'vimeo' | 'file';
+  src: string;
+};
+
+/** Parses YouTube (watch, shorts, embed, youtu.be), Vimeo, or direct mp4/webm/ogg/mov video URLs. */
+export function parseVideoUrl(rawUrl: string): ParsedVideoSource | null {
+  const url = rawUrl.trim();
+  if (!url) return null;
+  if (url.startsWith('/') && /\.(mp4|webm|ogg|mov)(\?|#|$)/i.test(url)) {
+    return { kind: 'file', src: url };
+  }
+
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return null;
+  }
+  const host = u.hostname.replace(/^www\.|^m\./, '');
+
+  if (host === 'youtube.com' || host.endsWith('.youtube.com')) {
+    const id = u.searchParams.get('v');
+    if (id)
+      return { kind: 'youtube', src: `https://www.youtube.com/embed/${id}` };
+    const shortsMatch = u.pathname.match(/^\/shorts\/([a-zA-Z0-9_-]+)/);
+    if (shortsMatch?.[1]) {
+      return {
+        kind: 'youtube',
+        src: `https://www.youtube.com/embed/${shortsMatch[1]}`,
+      };
+    }
+    if (u.pathname.startsWith('/embed/')) {
+      return {
+        kind: 'youtube',
+        src: `https://www.youtube.com${u.pathname}${u.search}`,
+      };
+    }
+    return null;
+  }
+
+  if (host === 'youtu.be') {
+    const id = u.pathname.replace(/^\//, '');
+    if (id)
+      return { kind: 'youtube', src: `https://www.youtube.com/embed/${id}` };
+    return null;
+  }
+
+  if (host === 'vimeo.com' || host === 'player.vimeo.com') {
+    const match = u.pathname.match(/(\d+)/);
+    if (match)
+      return {
+        kind: 'vimeo',
+        src: `https://player.vimeo.com/video/${match[1]}`,
+      };
+    return null;
+  }
+
+  if (
+    (u.protocol === 'https:' || u.protocol === 'http:') &&
+    /\.(mp4|webm|ogg|mov)(\?|#|$)/i.test(u.pathname)
+  ) {
+    return { kind: 'file', src: url };
+  }
+
+  return null;
+}
+
+/** Validates an `http(s)://` URL for iframe / third-party embedding and returns its clean hostname. */
+export function safeEmbedHost(rawUrl: string): string | null {
+  const url = rawUrl.trim();
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
+    const host = u.hostname.replace(/^www\.|^m\./, '');
+    return host || null;
+  } catch {
+    return null;
+  }
+}
+
+export type ParsedEmbedInput = {
+  src: string;
+  host: string;
+  title?: string;
+};
+
+/**
+ * Parses either a direct `http(s)://` URL or a single `<iframe ... src="http(s)://...">...</iframe>`
+ * snippet (blocking `<script>` or unsafe protocols like `javascript:`).
+ */
+export function parseEmbedInput(raw: string): ParsedEmbedInput | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  if (/^<iframe\b/i.test(trimmed)) {
+    if (
+      !/^<iframe\b[\s\S]*(?:\/>|<\/iframe>)$/i.test(trimmed) ||
+      /<script\b/i.test(trimmed)
+    ) {
+      return null;
+    }
+    const srcMatch = trimmed.match(
+      /\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/i
+    );
+    const extracted = (srcMatch?.[1] ?? srcMatch?.[2] ?? srcMatch?.[3] ?? '').trim();
+    const host = safeEmbedHost(extracted);
+    if (!host) return null;
+    const titleMatch = trimmed.match(/\btitle\s*=\s*(?:"([^"]*)"|'([^']*)')/i);
+    const title = (titleMatch?.[1] ?? titleMatch?.[2])?.trim() || undefined;
+    return { src: extracted, host, title };
+  }
+
+  const host = safeEmbedHost(trimmed);
+  return host ? { src: trimmed, host } : null;
+}
+
+export function isValidEmbedUrl(rawUrl: string): boolean {
+  return parseEmbedInput(rawUrl) !== null;
+}
+
+export function isValidGeneralUrl(rawUrl: string): boolean {
+  return /^(https?:\/\/|mailto:|tel:|\/)/i.test(rawUrl.trim());
+}
+
+export const VIDEO_URL_ERROR =
+  'Must be a valid YouTube, Vimeo, or direct video (.mp4/.webm/.ogg/.mov) URL.';
+export const EMBED_URL_ERROR =
+  'Must be a valid <iframe src="https://..."></iframe> snippet or http(s):// URL.';
+export const GENERAL_URL_ERROR =
+  'Must be a URL starting with http(s)://, mailto:, tel: or /.';
+
+/** Shared client & server validator for `text` and `url` fields based on their configured mode switches. */
+export function validateEntryFieldValue(
+  type: string,
+  value: string,
+  config?: { textMode?: TextFieldMode; urlMode?: UrlFieldMode }
+): string | true {
+  const trimmed = value.trim();
+  if (!trimmed) return true;
+  if (type === 'text') {
+    if (config?.textMode === 'video') {
+      return parseVideoUrl(trimmed) !== null || VIDEO_URL_ERROR;
+    }
+    if (config?.textMode === 'embed') {
+      return isValidEmbedUrl(trimmed) || EMBED_URL_ERROR;
+    }
+    return true;
+  }
+  if (type === 'url') {
+    if (config?.urlMode === 'video') {
+      return parseVideoUrl(trimmed) !== null || VIDEO_URL_ERROR;
+    }
+    return isValidGeneralUrl(trimmed) || GENERAL_URL_ERROR;
+  }
+  return true;
+}

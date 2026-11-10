@@ -7,6 +7,7 @@ import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { NotFoundException } from '@/lib/utils/error';
 import { metaObject } from '@/lib/utils/metadata';
 import { accessService } from '@/server/services/access.service';
+import { blogService } from '@/server/services/blog.service';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 
 export const metadata = metaObject('Post template');
@@ -24,18 +25,27 @@ export default async function PostTemplateBuilderPage({
   if (!accessService.can(access, PERMISSIONS.PAGES_PUBLISH))
     redirect(PAGES.DASHBOARD.POSTS.INDEX);
 
-  const [template, settings] = await Promise.all([
+  const [template, settings, latestList] = await Promise.all([
     postTemplatesService.getForEditor(id).catch(error => {
       if (error instanceof NotFoundException) notFound();
       throw error;
     }),
     siteSettingsService.get(),
+    blogService.list({ size: 1, sort: 'newest' }).catch(() => null),
   ]);
+
+  const previewPost = latestList?.posts[0]?.id
+    ? await blogService
+        .getDraftById(latestList.posts[0].id)
+        .then(res => res?.view)
+        .catch(() => undefined)
+    : undefined;
 
   return (
     <BuilderOrNewEditor
       searchParams={searchParams}
       kind="post-template"
+      post={previewPost}
       page={{
         id: template.id,
         title: template.name,

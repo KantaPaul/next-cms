@@ -213,6 +213,8 @@ export interface NormalizedListingItem {
   url: string;
   excerpt?: string | null;
   image?: string | null;
+  hasGallery?: boolean;
+  galleryCount?: number;
   publishedAt?: string | null;
   author?: {
     id: string;

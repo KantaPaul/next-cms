@@ -32,7 +32,7 @@ import {
 import type { VideoLibraryVideoItem } from '@/components/video/video-library';
 import type { BlogActiveFilters, BlogPostsProps } from './blocks/blog';
 import type { BuilderItem } from './data';
-import type { PostView } from './post-template';
+import { toDynamicPostRecord, type PostView } from './post-template';
 
 // Server actions are imported inside each loader, so importing this module
 // (registry, tests) never loads the app's
@@ -1105,6 +1105,9 @@ export async function resolveDocumentData(
   ]);
   return resolveDynamicDocument(resolved, {
     ...ctx,
+    ...(ctx.post && typeof ctx.post === 'object'
+      ? { post: toDynamicPostRecord(ctx.post as Record<string, unknown>) }
+      : {}),
     ...picked,
     preserveLoopBindings: true,
   });

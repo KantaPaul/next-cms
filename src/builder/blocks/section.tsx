@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { cn } from '@/lib/utils/cn';
 import { MotionBoundary, MotionSection } from '../motion';
 import {
+  hasActiveMotion,
   resolveAnimation,
   resolveLinkProps,
   resolveSectionStyle,
@@ -84,12 +85,16 @@ export function Section({
     hasBgParallax ? { ...s, fill: { ...s.fill, image: undefined } } : s
   );
   const hasVideo = s.fill?.type === 'video' && Boolean(s.fill.videoUrl);
+  const motionData = hasActiveMotion(s.motion)
+    ? JSON.stringify(s.motion)
+    : undefined;
   const outer = cn(
     'w-full',
     PADDING[s.paddingY ?? 'md'],
     !styles.hasFill && !hasBgParallax && BACKGROUND[s.background ?? 'default'],
     styles.outerClasses,
     (hasVideo || hasBgParallax) && 'relative overflow-hidden',
+    Boolean(motionData) && 'overflow-hidden',
     // Own stacking context: the -z-10 layer paints above this section's
     // background instead of behind the page's.
     hasBgParallax && 'isolate',
@@ -146,9 +151,9 @@ export function Section({
         id={s.anchor || undefined}
         className={outer}
         innerClassName={inner}
+        motionData={motionData}
         style={styles.style}
         data-el={elId || undefined}
-        data-motion={s.motion ? JSON.stringify(s.motion) : undefined}
       >
         {customStyleEl}
         {videoLayer}
@@ -164,12 +169,11 @@ export function Section({
       className={outer}
       style={styles.style}
       data-el={elId || undefined}
-      data-motion={s.motion ? JSON.stringify(s.motion) : undefined}
     >
       {customStyleEl}
       {videoLayer}
       {bgParallaxLayer}
-      <div className={inner}>
+      <div className={inner} data-motion={motionData}>
         {hasItems ? <MotionBoundary>{children}</MotionBoundary> : children}
       </div>
     </section>

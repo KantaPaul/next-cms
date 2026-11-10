@@ -2,15 +2,29 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import {
   DEFAULT_POST_TYPE_SUPPORTS,
+  entryFeaturedMedia,
+  entryGalleryMedia,
+  entryMediaValues,
+  mergeFeaturedWithFieldMedia,
   normalizePostTypeSupports,
   POST_TYPE_SUPPORT_FEATURES,
 } from '@/config/post-types';
-import { entryToPostView, type EntryTermView } from '@/builder/post-template';
+import {
+  entryToPostView,
+  toDynamicPostRecord,
+  type EntryTermView,
+} from '@/builder/post-template';
+import {
+  buildEntrySchema,
+  coerceEntryData,
+} from '@/server/services/collections.service';
 import { collectionTemplatesService } from '@/server/services/collection-templates.service';
 import {
+  collectionFieldSchema,
   generateTermSuffix,
   collectionTermSchema,
   updateCollectionBlockSettingsSchema,
+  updateFieldSchema,
 } from '@/app/(admin)/dashboard/(shell)/collections/_modules/collections.schemas';
 import {
   BLOCK_EDITOR_TYPES,
@@ -770,6 +784,378 @@ describe('CollectionBlockSettings', () => {
     );
     assert.equal(colEditors.length, 3);
     assert.ok(colEditors.every(e => e.groups.some(g => g.title === 'Other')));
+  });
+});
+
+describe('Collection media gallery & featured image fields', () => {
+  it('picks isFeatured field over conventional keys and puts featured image first in gallery', () => {
+    const fields = [
+      { key: 'image', type: 'media', config: {} },
+      { key: 'gallery', type: 'media', config: { multiple: true } },
+      { key: 'hero_cover', type: 'media', config: { isFeatured: true } },
+    ];
+    const data = {
+      image: 'https://cdn.example/regular.jpg',
+      gallery: [
+        'https://cdn.example/shot-1.jpg',
+        'https://cdn.example/hero.jpg',
+        'https://cdn.example/shot-2.jpg',
+      ],
+      hero_cover: 'https://cdn.example/hero.jpg',
+    };
+
+    assert.equal(entryFeaturedMedia(data, fields), 'https://cdn.example/hero.jpg');
+
+    const gallery = entryGalleryMedia(data, fields);
+    assert.equal(gallery.featuredImage, 'https://cdn.example/hero.jpg');
+    assert.equal(gallery.hasGallery, true);
+    assert.equal(gallery.images[0], 'https://cdn.example/hero.jpg');
+    assert.deepEqual(gallery.images, [
+      'https://cdn.example/hero.jpg',
+      'https://cdn.example/regular.jpg',
+      'https://cdn.example/shot-1.jpg',
+      'https://cdn.example/shot-2.jpg',
+    ]);
+
+    assert.deepEqual(
+      mergeFeaturedWithFieldMedia(data.gallery, gallery.featuredImage),
+      [
+        'https://cdn.example/hero.jpg',
+        'https://cdn.example/shot-1.jpg',
+        'https://cdn.example/shot-2.jpg',
+      ]
+    );
+  });
+
+  it('normalizes entry media values and reports hasGallery accurately', () => {
+    assert.deepEqual(
+      entryMediaValues([' /a.jpg ', '/a.jpg', '', '/b.jpg']),
+      ['/a.jpg', '/b.jpg']
+    );
+    const single = entryGalleryMedia(
+      { cover: '/only.jpg' },
+      [{ key: 'cover', type: 'media', config: { isFeatured: true } }]
+    );
+    assert.equal(single.hasGallery, false);
+    assert.deepEqual(single.images, ['/only.jpg']);
+  });
+
+  it('validates and coerces single and multi-image media fields', () => {
+    const fields = [
+      {
+        id: 'f1',
+        collectionId: 'c1',
+        key: 'cover',
+        label: 'Cover',
+        type: 'media' as const,
+        required: true,
+        position: 0,
+        config: { isFeatured: true, multiple: false },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 'f2',
+        collectionId: 'c1',
+        key: 'photos',
+        label: 'Photos',
+        type: 'media' as const,
+        required: true,
+        position: 1,
+        config: { multiple: true },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
+    const coerced = coerceEntryData(fields as any, {
+      cover: ['/cover.jpg'],
+      photos: [' /1.jpg ', '/2.jpg', '/1.jpg'],
+    });
+    assert.equal(coerced.cover, '/cover.jpg');
+    assert.deepEqual(coerced.photos, ['/1.jpg', '/2.jpg']);
+
+    const schema = buildEntrySchema(fields as any);
+    assert.equal(schema.safeParse(coerced).success, true);
+
+    const emptyMulti = coerceEntryData(fields as any, {
+      cover: '/cover.jpg',
+      photos: [],
+    });
+    assert.equal(schema.safeParse(emptyMulti).success, false);
+
+    assert.equal(
+      collectionFieldSchema.safeParse({
+        label: 'Gallery',
+        type: 'media',
+        multiple: true,
+        isFeatured: false,
+      }).success,
+      true
+    );
+    assert.equal(
+      collectionFieldSchema.safeParse({
+        label: 'Featured',
+        type: 'media',
+        multiple: false,
+        isFeatured: true,
+      }).success,
+      true
+    );
+    assert.equal(
+      collectionFieldSchema.safeParse({
+        label: 'Invalid Both',
+        type: 'media',
+        multiple: true,
+        isFeatured: true,
+      }).success,
+      false
+    );
+    assert.equal(
+      updateFieldSchema.safeParse({
+        label: 'Gallery',
+        type: 'media',
+        required: false,
+        multiple: true,
+        isFeatured: false,
+      }).success,
+      true
+    );
+    assert.equal(
+      updateFieldSchema.safeParse({
+        label: 'Invalid Both',
+        type: 'media',
+        required: false,
+        multiple: true,
+        isFeatured: true,
+      }).success,
+      false
+    );
+  });
+
+  it('uses the isFeatured media field as PostView featuredImage in entryToPostView', () => {
+    const view = entryToPostView(
+      {
+        id: 'e1',
+        slug: 'my-showcase',
+        data: {
+          title: 'My Showcase',
+          thumbnail: '/thumb.jpg',
+          featured_shot: '/featured.jpg',
+        },
+      },
+      {
+        name: 'Showcase',
+        slug: 'showcase',
+        fields: [
+          { key: 'title', type: 'text' },
+          { key: 'thumbnail', type: 'media', config: {} },
+          { key: 'featured_shot', type: 'media', config: { isFeatured: true } },
+        ],
+      }
+    );
+    assert.equal(view.featuredImage, '/featured.jpg');
+  });
+
+  it('exposes current post content and collection dynamic fields for builder dynamic sources', () => {
+    const { entryDynamicSources } = require('@/builder/controls/loop-preview');
+    const { resolveDynamicValue } = require('@nextcms/builder-core');
+
+    const sources = entryDynamicSources('Showcase', [
+      { key: 'title', label: 'Title', type: 'text' },
+      { key: 'demo_video', label: 'Demo Video', type: 'url' },
+      { key: 'live_url', label: 'Live URL', type: 'url' },
+      { key: 'hero', label: 'Featured Shot', type: 'media' },
+    ]);
+
+    assert.equal(sources.custom.label, 'Showcase Fields');
+    assert.deepEqual(
+      sources.custom.fields.map((f: { key: string; type: string }) => [f.key, f.type]),
+      [
+        ['title', 'text'],
+        ['demo_video', 'url'],
+        ['live_url', 'url'],
+        ['hero', 'image'],
+      ]
+    );
+
+    const postRecord = toDynamicPostRecord({
+      title: 'Northwind Studio',
+      body: '<p>Full studio article body</p>',
+    });
+    assert.equal(
+      resolveDynamicValue(
+        { $dynamic: 'post', path: 'content' },
+        { post: postRecord }
+      ),
+      '<p>Full studio article body</p>'
+    );
+  });
+
+  it('validates textMode and urlMode switches on text and url fields', () => {
+    const { validateEntryFieldValue } = require('@/config/post-types');
+
+    assert.equal(
+      collectionFieldSchema.safeParse({
+        label: 'Promo Video',
+        type: 'text',
+        textMode: 'video',
+      }).success,
+      true
+    );
+    assert.equal(
+      collectionFieldSchema.safeParse({
+        label: 'Demo Frame',
+        type: 'text',
+        textMode: 'embed',
+      }).success,
+      true
+    );
+    assert.equal(
+      updateFieldSchema.safeParse({
+        label: 'Video Link',
+        type: 'url',
+        required: false,
+        urlMode: 'video',
+      }).success,
+      true
+    );
+
+    const fields = [
+      {
+        id: 't1',
+        collectionId: 'c1',
+        key: 'plain_note',
+        label: 'Note',
+        type: 'text' as const,
+        required: true,
+        position: 0,
+        config: { textMode: 'plain' },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 't2',
+        collectionId: 'c1',
+        key: 'video_text',
+        label: 'Video URL',
+        type: 'text' as const,
+        required: true,
+        position: 1,
+        config: { textMode: 'video' },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 't3',
+        collectionId: 'c1',
+        key: 'embed_text',
+        label: 'Embed URL',
+        type: 'text' as const,
+        required: true,
+        position: 2,
+        config: { textMode: 'embed' },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 'u1',
+        collectionId: 'c1',
+        key: 'video_link',
+        label: 'Video Link',
+        type: 'url' as const,
+        required: true,
+        position: 3,
+        config: { urlMode: 'video' },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 'u2',
+        collectionId: 'c1',
+        key: 'site_link',
+        label: 'Website',
+        type: 'url' as const,
+        required: true,
+        position: 4,
+        config: { urlMode: 'other' },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
+    const schema = buildEntrySchema(fields as any);
+    assert.equal(
+      schema.safeParse({
+        plain_note: 'Plain showcase summary',
+        video_text: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        embed_text: 'https://northwind.example.com/preview',
+        video_link: '/uploads/clip.mp4',
+        site_link: 'https://northwind.example.com',
+      }).success,
+      true
+    );
+
+    // Non-video text fails video mode validation; javascript: fails embed mode; non-video URL fails url video mode
+    assert.equal(
+      schema.safeParse({
+        plain_note: 'Plain',
+        video_text: 'not a video url',
+        embed_text: 'https://ok.example.com',
+        video_link: '/uploads/clip.mp4',
+        site_link: 'https://ok.example.com',
+      }).success,
+      false
+    );
+    assert.equal(
+      schema.safeParse({
+        plain_note: 'Plain',
+        video_text: 'https://youtu.be/dQw4w9WgXcQ',
+        embed_text: 'javascript:alert(1)',
+        video_link: '/uploads/clip.mp4',
+        site_link: 'https://ok.example.com',
+      }).success,
+      false
+    );
+    assert.equal(
+      schema.safeParse({
+        plain_note: 'Plain',
+        video_text: 'https://youtu.be/dQw4w9WgXcQ',
+        embed_text: 'https://ok.example.com',
+        video_link: 'https://example.com/not-a-video',
+        site_link: 'https://ok.example.com',
+      }).success,
+      false
+    );
+
+    assert.equal(validateEntryFieldValue('text', 'Hello', { textMode: 'plain' }), true);
+    assert.notEqual(validateEntryFieldValue('text', 'Hello', { textMode: 'video' }), true);
+    assert.equal(
+      validateEntryFieldValue(
+        'text',
+        '<iframe width="560" height="315" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Demo" allowfullscreen></iframe>',
+        { textMode: 'embed' }
+      ),
+      true
+    );
+    assert.notEqual(
+      validateEntryFieldValue(
+        'text',
+        '<iframe src="javascript:alert(1)"></iframe>',
+        { textMode: 'embed' }
+      ),
+      true
+    );
+    assert.notEqual(
+      validateEntryFieldValue(
+        'text',
+        '<iframe src="https://ok.example.com"><script>evil()</script></iframe>',
+        { textMode: 'embed' }
+      ),
+      true
+    );
+    assert.notEqual(validateEntryFieldValue('url', 'https://example.com', { urlMode: 'video' }), true);
+    assert.equal(validateEntryFieldValue('url', 'https://example.com', { urlMode: 'other' }), true);
   });
 });
 

@@ -42,14 +42,14 @@ export type CommentTarget = {
 };
 
 export type CommentDecision =
-  | { ok: true; status: 'pending' | 'spam' }
+  | { ok: true; status: 'pending' | 'approved' | 'spam' }
   | { ok: false; status: number; error: string };
 
 /** Decides whether a submission is accepted, and with which status. */
 export function decideComment(
   input: { postId: string; targetKind?: 'post' | 'entry'; parentId?: string | null },
   target: CommentTarget,
-  flags: { honeypot: boolean; turnstileOk: boolean }
+  flags: { honeypot: boolean; turnstileOk: boolean; autoApprove?: boolean }
 ): CommentDecision {
   if (!target.post || !target.post.published) {
     return { ok: false, status: 404, error: 'This post is not available.' };
@@ -63,13 +63,13 @@ export function decideComment(
     if (!parent || parentTargetId !== input.postId || parent.status !== 'approved') {
       return { ok: false, status: 400, error: 'That comment can’t be replied to.' };
     }
-    if (parent.parentId) {
-      return { ok: false, status: 400, error: 'Replies can only go one level deep.' };
-    }
   }
   if (flags.honeypot) return { ok: true, status: 'spam' };
   if (!flags.turnstileOk) {
     return { ok: false, status: 400, error: 'Please complete the verification.' };
+  }
+  if (flags.autoApprove) {
+    return { ok: true, status: 'approved' };
   }
   if (target.recentFromIp >= COMMENT_RATE_LIMIT) {
     return {
@@ -95,8 +95,19 @@ export type ReactionDecision =
  * own comment (same commenter cookie, or same network as the comment).
  */
 export function decideReaction(
-  comment: { status: string; voterHash: string | null; ipHash: string | null } | null,
-  reactor: { voterHash: string; ipHash: string },
+  comment: {
+    status: string;
+    voterHash: string | null;
+    ipHash: string | null;
+    userId?: string | null;
+    authorEmail?: string | null;
+  } | null,
+  reactor: {
+    voterHash: string;
+    ipHash: string;
+    userId?: string | null;
+    userEmail?: string | null;
+  },
   open: boolean
 ): ReactionDecision {
   if (!comment || comment.status !== 'approved') {
@@ -107,7 +118,11 @@ export function decideReaction(
   }
   if (
     (comment.voterHash && comment.voterHash === reactor.voterHash) ||
-    (comment.ipHash && comment.ipHash === reactor.ipHash)
+    (comment.ipHash && comment.ipHash === reactor.ipHash) ||
+    (comment.userId && reactor.userId && comment.userId === reactor.userId) ||
+    (comment.authorEmail &&
+      reactor.userEmail &&
+      comment.authorEmail.toLowerCase() === reactor.userEmail.toLowerCase())
   ) {
     return {
       ok: false,

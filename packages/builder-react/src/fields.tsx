@@ -1202,6 +1202,48 @@ const DynamicSourcesContext = createContext<DynamicSourcesValue>({
  */
 export const DynamicSourcesProvider = DynamicSourcesContext.Provider;
 
+export function useDynamicSources(): DynamicSourcesValue {
+  return useContext(DynamicSourcesContext);
+}
+
+/** Whether an inspector field accepts `{ $dynamic: ... }` data bindings. */
+export function fieldAllowsDynamic(field: FieldDef): boolean {
+  return Boolean(
+    field.dynamic ||
+      field.type === 'text' ||
+      field.type === 'textarea' ||
+      field.type === 'url' ||
+      field.type === 'image'
+  );
+}
+
+/** Compact "Dynamic" tag trigger button rendered next to a field label. */
+export function DynamicTriggerButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      title="Bind to dynamic content"
+      data-dynamic-trigger=""
+      onClick={onClick}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 3,
+        background: 'none',
+        border: 'none',
+        padding: '2px 4px',
+        cursor: 'pointer',
+        color: 'var(--ne-text-muted, #64748b)',
+        fontSize: '11px',
+        borderRadius: 4,
+      }}
+    >
+      <Database style={{ width: 11, height: 11 }} />
+      Dynamic
+    </button>
+  );
+}
+
 /** Dynamic content source and field picker (R415 / BLD-23). */
 export function DynamicBindingField({
   value,
@@ -1465,12 +1507,7 @@ export function FieldControl({
   const own = responsive && source === device;
   const isContainer = field.type === 'list' || field.type === 'object';
   const isDynamic = isDynamicBinding(shown);
-  const allowsDynamic =
-    field.dynamic ||
-    field.type === 'text' ||
-    field.type === 'textarea' ||
-    field.type === 'url' ||
-    field.type === 'image';
+  const allowsDynamic = fieldAllowsDynamic(field);
 
   return (
     <div style={stack(4)}>
@@ -1486,9 +1523,7 @@ export function FieldControl({
             {field.label}
           </label>
           {allowsDynamic && !isDynamic && !readOnly && (
-            <button
-              type="button"
-              title="Bind to dynamic content"
+            <DynamicTriggerButton
               onClick={() =>
                 onChange(
                   responsive
@@ -1508,22 +1543,7 @@ export function FieldControl({
                       )
                 )
               }
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 3,
-                background: 'none',
-                border: 'none',
-                padding: '2px 4px',
-                cursor: 'pointer',
-                color: 'var(--ne-text-muted, inherit)',
-                fontSize: '11px',
-                borderRadius: 4,
-              }}
-            >
-              <Database style={{ width: 11, height: 11 }} />
-              Dynamic
-            </button>
+            />
           )}
           {responsive && (
             <span
