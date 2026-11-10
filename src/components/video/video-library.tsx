@@ -214,6 +214,8 @@ export function VideoLibrary({
     return ['youtube', 'vimeo', 'direct'];
   }, [sources, settings?.sources, source, settings?.source]);
 
+  // Grid layout without a popup: the player above the grid that a card scrolls to.
+  const gridPlayerRef = useRef<HTMLDivElement>(null);
   const isDemo = editing && (!videos || videos.length === 0);
   const items = useMemo(() => {
     if (videos && videos.length > 0) return videos;
@@ -676,7 +678,6 @@ export function VideoLibrary({
 
   const isSidebar = resolvedSettings.layout === 'sidebar';
   const isGrid = resolvedSettings.layout === 'grid';
-  const gridPlayerRef = useRef<HTMLDivElement>(null);
   const gridColumns = columns ?? settings?.columns ?? 3;
   const popupId = overlayId ?? settings?.overlayId ?? null;
 
