@@ -45,6 +45,20 @@ function containsScriptTag(html: string): boolean {
   return /<\s*script\b/i.test(html);
 }
 
+/**
+ * Raw HTML that can't run code or load third-party content: only meta, link,
+ * style and title tags, with no event handlers or javascript: URLs. Anything
+ * else (iframes, tracking pixels, <img onerror>, ...) needs a consent
+ * category, like scripts; checking for <script> alone let those through.
+ */
+function isPassiveHeadHtml(html: string): boolean {
+  if (/\son[a-z]+\s*=/i.test(html) || /javascript\s*:/i.test(html)) return false;
+  const tags = html.match(/<\s*([a-z][a-z0-9-]*)/gi) ?? [];
+  return tags.every(tag =>
+    /^<\s*(?:meta|link|style|title)$/i.test(tag.replace(/\s+/g, ''))
+  );
+}
+
 export type PartitionedSiteHead = {
   /** Safe non-script tags (`<meta>`, `<link>`, etc.) rendered directly in `<head>`. */
   nonScriptItems: SiteHeadItem[];
@@ -94,11 +108,11 @@ export function partitionSiteHeadItems(
     }
 
     if (item.type === 'html') {
-      if (containsScriptTag(item.html)) {
+      if (containsScriptTag(item.html) || !isPassiveHeadHtml(item.html)) {
         const cat = normalizeConsentCategory(item.consentCategory);
         if (!cat) {
           warn(
-            '[plugins/site.head] Rejected raw HTML containing <script> without a valid consentCategory.'
+            '[plugins/site.head] Rejected active raw HTML (script, iframe, handlers, ...) without a valid consentCategory.'
           );
           continue;
         }

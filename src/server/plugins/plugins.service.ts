@@ -10,7 +10,7 @@ import { PERMISSIONS } from '@/config/permissions';
 import { db } from '@/db';
 import { plugins } from '@/db/schema';
 import { DEFAULT_SITE_ID } from '@/db/schemas/sites.schema';
-import { APP_VERSION } from '@/lib/utils/app-version';
+import packageJson from '../../../package.json';
 import { ApplicationException, NotFoundException } from '@/lib/utils/error';
 import { revalidatePublicSite } from '@/lib/utils/revalidate-site';
 import { CLIENT_PLUGINS_BY_ID } from '@/plugins/generated/client-registry';
@@ -64,9 +64,14 @@ export type AdminPluginDetail = {
   adminPages: Array<{ slug: string; title: string; navLabel?: string; permission?: string }>;
 };
 
+/**
+ * The CMS product version from package.json, which plugin `requires` ranges
+ * are written against. NEXT_PUBLIC_APP_VERSION is a per-deployment tag
+ * (e.g. "v0.0.1-local") and made every `>=0.1.0` plugin impossible to enable.
+ */
 function currentCmsVersion(): string {
-  const raw = APP_VERSION.replace(/^v/i, '').split('-')[0];
-  return /^\d+\.\d+\.\d+$/.test(raw) ? raw : '0.1.0';
+  const raw = String(packageJson.version ?? '').trim();
+  return /^\d+\.\d+\.\d+$/.test(raw) ? raw : '0.0.0';
 }
 
 export const pluginsService = {

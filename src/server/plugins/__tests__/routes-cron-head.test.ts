@@ -205,3 +205,33 @@ describe('plugin routes, cron, and site.head consent gates', () => {
     assert.equal(warnings.length, 2);
   });
 });
+
+describe('site.head raw HTML that can run code', () => {
+  it('needs a consent category for iframes, pixels and event handlers', () => {
+    const warnings: string[] = [];
+    const active = [
+      '<iframe src="https://tracker.example/frame"></iframe>',
+      '<img src="https://tracker.example/p.gif" onerror="alert(1)">',
+      '<link rel="preload" href="javascript:alert(1)">',
+    ];
+    const out = partitionSiteHeadItems(
+      active.map(html => ({ type: 'html' as const, html })),
+      msg => warnings.push(msg)
+    );
+    assert.equal(out.nonScriptItems.length, 0);
+    assert.equal(out.scriptSnippets.length, 0);
+    assert.equal(warnings.length, 3);
+  });
+
+  it('gates active HTML that declares a category, and keeps passive tags', () => {
+    const out = partitionSiteHeadItems(
+      [
+        { type: 'html' as const, html: '<iframe src="https://x.example"></iframe>', consentCategory: 'marketing' },
+        { type: 'html' as const, html: '<meta name="theme-color" content="#000"><style>a{}</style>' },
+      ],
+      () => {}
+    );
+    assert.equal(out.scriptSnippets[0]?.category, 'marketing');
+    assert.equal(out.nonScriptItems.length, 1);
+  });
+});
