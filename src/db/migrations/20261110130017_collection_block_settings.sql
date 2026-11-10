@@ -1,0 +1,1 @@
+ALTER TABLE "collections" ADD COLUMN "block_settings" jsonb DEFAULT '{"hidden":{}}'::jsonb NOT NULL;

@@ -817,6 +817,16 @@ export function NewEditor({
   shell = 'legacy',
   layout,
 }: NewEditorProps) {
+  const hiddenFromInsert = useMemo(() => {
+    const omitted = [...hiddenBlocks, ...Object.keys(disabledPluginBlocks)];
+    if (
+      (kind === 'entry' || kind === 'entry-template') &&
+      collectionBlocks.length === 0
+    ) {
+      omitted.push('CollectionBlock');
+    }
+    return omitted;
+  }, [hiddenBlocks, disabledPluginBlocks, kind, collectionBlocks]);
   const baseSetup = useMemo(() => editorSetup(kind), [kind]);
   // Block manager: hidden blocks leave the insert panel only, so content that
   // already uses them still renders and edits normally.
@@ -1852,6 +1862,7 @@ export function NewEditor({
         rootDefaultProps={kind === 'page' ? { title: page.title } : undefined}
         settingsHref={kind === 'page' ? `/dashboard/pages/${page.id}/edit` : undefined}
         categories={setup.groups}
+        hiddenTypes={hiddenFromInsert}
         templates={customTemplates}
         onSaveTemplate={handleSaveTemplate}
         onDeleteTemplate={handleDeleteTemplate}
@@ -2177,6 +2188,7 @@ export function NewEditor({
                   rootDefaultProps={kind === 'page' ? { title: page.title } : undefined}
                   settingsHref={kind === 'page' ? `/dashboard/pages/${page.id}/edit` : undefined}
                   categories={setup.groups}
+                  hiddenTypes={hiddenFromInsert}
                   templates={customTemplates}
                   onSaveTemplate={handleSaveTemplate}
                   onDeleteTemplate={handleDeleteTemplate}
@@ -2200,6 +2212,7 @@ export function NewEditor({
                   rootDefaultProps={kind === 'page' ? { title: page.title } : undefined}
                   settingsHref={kind === 'page' ? `/dashboard/pages/${page.id}/edit` : undefined}
                   categories={setup.groups}
+                  hiddenTypes={hiddenFromInsert}
                   templates={customTemplates}
                   onSaveTemplate={handleSaveTemplate}
                   onDeleteTemplate={handleDeleteTemplate}

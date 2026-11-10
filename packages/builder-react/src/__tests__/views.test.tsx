@@ -84,6 +84,25 @@ describe('Single Panel Layout Views (Phase 6)', () => {
       assert.match(html, /Section presets/);
       assert.match(html, /Heading: Hero/);
     });
+
+    it('excludes hiddenTypes from both categories and the Other fallback', () => {
+      const store = createEditorStore({
+        document: INITIAL_DOC,
+        schemas: SCHEMAS,
+      });
+
+      const html = renderToStaticMarkup(
+        <EditorProvider store={store}>
+          <ElementsView
+            categories={[{ title: 'Typography', types: ['Heading'] }]}
+            hiddenTypes={['Container']}
+          />
+        </EditorProvider>
+      );
+
+      assert.match(html, /Heading/);
+      assert.doesNotMatch(html, /Container/);
+    });
   });
 
   describe('LayersView', () => {

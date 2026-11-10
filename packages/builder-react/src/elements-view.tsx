@@ -31,6 +31,8 @@ export interface BlockCategory {
 
 export interface ElementsViewProps {
   categories?: BlockCategory[];
+  /** Block types omitted from the insert panel (still kept in `store.schemas` for existing canvas nodes). */
+  hiddenTypes?: readonly string[];
   drag?: DragController;
   onSelectBlock?: (type: string) => void;
   /** Saved templates listed under Patterns, ahead of the built-in ones. */
@@ -127,6 +129,7 @@ function insertTemplate(store: EditorStore, content: BuilderDocument) {
 
 export function ElementsView({
   categories = DEFAULT_CATEGORIES,
+  hiddenTypes,
   drag,
   onSelectBlock,
   templates,
@@ -141,13 +144,14 @@ export function ElementsView({
   const { schemas } = store;
   const { favorites, recents, toggleFavorite, addRecent } =
     useLibraryPreferences(storageKey);
+  const hidden = useMemo(() => new Set(hiddenTypes ?? []), [hiddenTypes]);
 
   const blocks = useMemo<BlockLibraryBlock[]>(() => {
     const list: BlockLibraryBlock[] = [];
     const seen = new Set<string>();
     for (const cat of categories) {
       for (const type of cat.types) {
-        if (seen.has(type) || !schemas[type]) continue;
+        if (seen.has(type) || !schemas[type] || hidden.has(type)) continue;
         seen.add(type);
         if (cat.listPresets) {
           for (const name of Object.keys(schemas[type].presets ?? {})) {
@@ -164,12 +168,12 @@ export function ElementsView({
     }
     // Schemas the categories leave out are listed under "Other".
     for (const type of Object.keys(schemas)) {
-      if (seen.has(type)) continue;
+      if (seen.has(type) || hidden.has(type)) continue;
       seen.add(type);
       list.push(libraryBlock(schemas, type, 'Other'));
     }
     return list;
-  }, [categories, schemas]);
+  }, [categories, schemas, hidden]);
 
   // Templates whose blocks this editor knows, then each block's presets.
   const allTemplates = useMemo(
@@ -201,7 +205,7 @@ export function ElementsView({
   }, [allTemplates, blocks, schemas]);
 
   const globalEntries = useMemo<BlockLibraryEntry[]>(() => {
-    if (!schemas[GLOBAL_REF]) return [];
+    if (!schemas[GLOBAL_REF] || hidden.has(GLOBAL_REF)) return [];
     return [
       ...(globals ?? []),
       {
@@ -210,7 +214,7 @@ export function ElementsView({
         description: 'Insert a link and pick the global block in its settings.',
       },
     ];
-  }, [globals, schemas]);
+  }, [globals, schemas, hidden]);
 
   const handleInsert = (id: string, props?: Record<string, unknown>) => {
     const { type, preset } = splitPresetCard(id);

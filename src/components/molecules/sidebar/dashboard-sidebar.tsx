@@ -8,6 +8,7 @@ import {
   SidebarInset,
 } from '@/components/ui/sidebar';
 import { PAGES } from '@/config/pages';
+import { normalizePostTypeSupports } from '@/config/post-types';
 import { getSession } from '@/server/actions/auth.actions';
 import { collectionsService } from '@/server/services/collections.service';
 import { collectionTaxonomiesService } from '@/server/services/collection-taxonomies.service';
@@ -28,6 +29,7 @@ async function sidebarPostTypes() {
           slug: c.slug,
           name: c.name,
           icon: c.icon,
+          supports: normalizePostTypeSupports(c.supports),
           taxonomies: taxonomies.map(t => ({
             id: t.id,
             key: t.key,

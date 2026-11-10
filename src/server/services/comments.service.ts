@@ -524,7 +524,12 @@ export const commentsService = {
 
   /* ---------- Dashboard ---------- */
 
-  list: async (status: CommentStatus, page = 1, pageSize = 30) => {
+  list: async (
+    status: CommentStatus,
+    page = 1,
+    pageSize = 30,
+    collectionId?: string
+  ) => {
     const { userId } = await getCurrentUserAndTeamId();
     const site = await siteContext.adminSite(userId);
     const siteId = site.id;
@@ -532,7 +537,8 @@ export const commentsService = {
     const where = and(
       eq(comments.siteId, siteId),
       eq(comments.status, status),
-      isNull(comments.deletedAt)
+      isNull(comments.deletedAt),
+      collectionId ? eq(collectionEntries.collectionId, collectionId) : undefined
     );
     const [rawRows, [{ n }]] = await Promise.all([
       db
@@ -573,7 +579,16 @@ export const commentsService = {
         .orderBy(desc(comments.createdAt))
         .limit(pageSize)
         .offset((Math.max(page, 1) - 1) * pageSize),
-      db.select({ n: count() }).from(comments).where(where),
+      collectionId
+        ? db
+            .select({ n: count() })
+            .from(comments)
+            .innerJoin(
+              collectionEntries,
+              eq(collectionEntries.id, comments.collectionEntryId)
+            )
+            .where(where)
+        : db.select({ n: count() }).from(comments).where(where),
     ]);
 
     const collectionIds = Array.from(
@@ -660,13 +675,30 @@ export const commentsService = {
     return { rows, total: Number(n), page, pageSize };
   },
 
-  counts: async (): Promise<Record<CommentStatus, number>> => {
+  counts: async (
+    collectionId?: string
+  ): Promise<Record<CommentStatus, number>> => {
     const siteId = await adminSiteId();
-    const rows = await db
-      .select({ status: comments.status, n: count() })
-      .from(comments)
-      .where(and(eq(comments.siteId, siteId), isNull(comments.deletedAt)))
-      .groupBy(comments.status);
+    const baseWhere = and(
+      eq(comments.siteId, siteId),
+      isNull(comments.deletedAt),
+      collectionId ? eq(collectionEntries.collectionId, collectionId) : undefined
+    );
+    const rows = collectionId
+      ? await db
+          .select({ status: comments.status, n: count() })
+          .from(comments)
+          .innerJoin(
+            collectionEntries,
+            eq(collectionEntries.id, comments.collectionEntryId)
+          )
+          .where(baseWhere)
+          .groupBy(comments.status)
+      : await db
+          .select({ status: comments.status, n: count() })
+          .from(comments)
+          .where(baseWhere)
+          .groupBy(comments.status);
     const out = { pending: 0, approved: 0, spam: 0, trash: 0 };
     for (const r of rows) {
       if (r.status in out) out[r.status as CommentStatus] = Number(r.n);

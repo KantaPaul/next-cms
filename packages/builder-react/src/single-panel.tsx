@@ -70,6 +70,8 @@ export interface SinglePanelProps {
   settingsHref?: string;
   fieldTypes?: Record<string, FieldComponent>;
   categories?: BlockCategory[];
+  /** Block types omitted from the Elements library (e.g. Block manager hidden blocks). */
+  hiddenTypes?: readonly string[];
   templates?: TemplateItem[];
   onApplyTemplate?: (template: TemplateItem) => void;
   onSaveTemplate?: (template: Omit<TemplateItem, 'id'>) => Promise<void> | void;
@@ -120,6 +122,7 @@ export function SinglePanel({
   settingsHref,
   fieldTypes,
   categories,
+  hiddenTypes,
   templates,
   onApplyTemplate,
   onSaveTemplate,
@@ -413,7 +416,11 @@ export function SinglePanel({
         storageKey="ne-builder-single-panel"
       >
         {activeMode === 'elements' && (
-          <ElementsView categories={categories} drag={drag} />
+          <ElementsView
+            categories={categories}
+            hiddenTypes={hiddenTypes}
+            drag={drag}
+          />
         )}
         {activeMode === 'layers' &&
           (floatingLayers ? (

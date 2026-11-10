@@ -43,6 +43,10 @@ import {
   type PostTypeSupports,
   POST_TYPE_PRESETS,
 } from '@/config/post-types';
+import {
+  type CollectionBlockSettings,
+  normalizeCollectionBlockSettings,
+} from '@/config/block-manager';
 import type { SeoInput } from '@/db/validations/pages.validation';
 import {
   COLLECTION_SLUG_REGEX,
@@ -545,6 +549,7 @@ export const collectionsService = {
       description?: string | null;
       templatePageId?: string | null;
       supports?: Partial<PostTypeSupports>;
+      blockSettings?: CollectionBlockSettings;
     },
     actorId: string
   ) {
@@ -595,6 +600,13 @@ export const collectionsService = {
                 ...collection.supports,
                 ...input.supports,
               }),
+            }
+          : {}),
+        ...(input.blockSettings !== undefined
+          ? {
+              blockSettings: normalizeCollectionBlockSettings(
+                input.blockSettings
+              ),
             }
           : {}),
         updatedAt: new Date(),

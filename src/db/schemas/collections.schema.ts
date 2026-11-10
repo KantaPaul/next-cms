@@ -26,6 +26,10 @@ import {
   type PostTypeSupports,
   DEFAULT_POST_TYPE_SUPPORTS,
 } from '@/config/post-types';
+import {
+  type CollectionBlockSettings,
+  DEFAULT_COLLECTION_BLOCK_SETTINGS,
+} from '@/config/block-manager';
 import type { SeoInput } from '@/db/validations/pages.validation';
 
 const { id, ...timestampColumns } = baseColumns;
@@ -81,6 +85,11 @@ export const collections = pgTable(
     supports: jsonb('supports')
       .$type<PostTypeSupports>()
       .default(DEFAULT_POST_TYPE_SUPPORTS)
+      .notNull(),
+    /** Per-post-type block manager: hidden blocks per editor kind (overrides site-wide settings). */
+    blockSettings: jsonb('block_settings')
+      .$type<CollectionBlockSettings>()
+      .default(DEFAULT_COLLECTION_BLOCK_SETTINGS)
       .notNull(),
     ...timestampColumns,
   },

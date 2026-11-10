@@ -8,6 +8,7 @@ import { PAGES } from '@/config/pages';
 import {
   collectionTaxonomySchema,
   collectionTermSchema,
+  updateCollectionBlockSettingsSchema,
   updateSupportsSchema,
 } from './collections.schemas';
 import type { PostTypeSupports } from '@/config/post-types';
@@ -124,11 +125,37 @@ export async function updateSupportsAction({
       await actorId()
     );
     revalidateCollection(collectionSlug);
+    revalidatePath(PAGES.DASHBOARD.ROOT, 'layout');
     return { ok: true };
   } catch (err: any) {
     return {
       ok: false,
       error: err.message ?? 'Failed to update features.',
+    };
+  }
+}
+
+export async function updateCollectionBlockSettingsAction(input: unknown) {
+  const parsed = updateCollectionBlockSettingsSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? 'Invalid block settings.',
+    };
+  }
+
+  try {
+    await collectionsService.update(
+      parsed.data.id,
+      { blockSettings: parsed.data.blockSettings },
+      await actorId()
+    );
+    revalidateCollection(parsed.data.collectionSlug);
+    return { ok: true };
+  } catch (err: any) {
+    return {
+      ok: false,
+      error: err.message ?? 'Failed to update block settings.',
     };
   }
 }

@@ -954,7 +954,7 @@ function baseEditorSetup(kind: string): EditorSetup {
       schemas: schemasOf(collectionDesignDefinitions),
       inspectorBlocks: inspectorOf(collectionDesignDefinitions),
       rootFields: COLLECTION_BLOCK_ROOT_FIELDS,
-      groups: groupsOf([]),
+      groups: groupsOf(['global']),
       renderKind: 'post',
     };
   }

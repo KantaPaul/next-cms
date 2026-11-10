@@ -17,6 +17,7 @@ import { SERVER_PLUGINS_BY_ID } from '@/plugins/generated/server-registry';
 import { applyFilters } from '@/server/plugins/hooks';
 import { pluginsService } from '@/server/plugins/plugins.service';
 import { collectionBlocksService } from '@/server/services/collection-blocks.service';
+import { collectionsService } from '@/server/services/collections.service';
 import {
   type DynamicRefItem,
   type DynamicRefOptions,
@@ -87,6 +88,7 @@ export async function loadEditorData({
     picked,
     settings,
     collectionBlocks,
+    collectionRow,
     enabledPluginSet,
     rawFormActions,
   ] = await Promise.all([
@@ -103,6 +105,12 @@ export async function loadEditorData({
     resolvedCollectionId && (kind === 'entry' || kind === 'entry-template')
       ? collectionBlocksService.options(resolvedCollectionId).catch(() => [])
       : Promise.resolve([]),
+    resolvedCollectionId &&
+    (kind === 'entry' ||
+      kind === 'entry-template' ||
+      kind === 'collection-block')
+      ? collectionsService.get(resolvedCollectionId).catch(() => null)
+      : Promise.resolve(null),
     pluginsService.getEnabledIds(siteId),
     applyFilters('form.actions', [], { siteId }),
   ]);
@@ -131,7 +139,13 @@ export async function loadEditorData({
     hiddenBlocks: hiddenBlocksFor(
       settings.blockSettings,
       kind,
-      setup.groups.flatMap(group => group.types)
+      Array.from(
+        new Set([
+          ...setup.groups.flatMap(group => group.types),
+          ...Object.keys(setup.schemas),
+        ])
+      ),
+      collectionRow?.blockSettings
     ),
     enabledPluginIds: Array.from(enabledPluginSet),
     disabledPluginBlocks,

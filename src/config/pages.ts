@@ -62,9 +62,14 @@ export const PAGES = {
       `/dashboard/collections/${slug}/blocks`,
     COLLECTION_BLOCK_BUILDER: (slug: string, id: string) =>
       `/dashboard/collections/${slug}/blocks/${id}/builder`,
+    COLLECTION_COMMENTS: (slug: string) =>
+      `/dashboard/collections/${slug}/comments`,
     /** The post type's fields and settings. */
     COLLECTION_SETTINGS: (slug: string) =>
       `/dashboard/collections/${slug}/settings`,
+    /** Per-post-type block manager (entries, templates, collection blocks). */
+    COLLECTION_SETTINGS_BLOCKS: (slug: string) =>
+      `/dashboard/collections/${slug}/settings/blocks`,
     WEBHOOKS: '/dashboard/webhooks',
     REDIRECTS: '/dashboard/redirects',
     TOOLS_IMPORT: '/dashboard/tools/import',

@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/sidebar';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
+import type { PostTypeSupports } from '@/config/post-types';
 import { withAdminLanguage } from '@/lib/locale/admin-locale';
 import { getMenuItems } from '@/menus';
 import { useAccess } from '@/providers/access.provider';
@@ -32,6 +33,7 @@ export type SidebarPostType = {
   slug: string;
   name: string;
   icon: string | null;
+  supports?: PostTypeSupports;
   taxonomies?: { id: string; key: string; name: string }[];
 };
 
@@ -128,6 +130,15 @@ export function NavMain({
                 name: 'Templates',
                 href: PAGES.DASHBOARD.COLLECTION_TEMPLATES(postType.slug),
               },
+              ...(postType.supports?.comments !== false &&
+              permissions.includes(PERMISSIONS.COMMENTS_MODERATE)
+                ? [
+                    {
+                      name: 'Comments',
+                      href: PAGES.DASHBOARD.COLLECTION_COMMENTS(postType.slug),
+                    },
+                  ]
+                : []),
               {
                 name: 'Settings',
                 href: PAGES.DASHBOARD.COLLECTION_SETTINGS(postType.slug),

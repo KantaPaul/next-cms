@@ -11,13 +11,18 @@ import {
   replyToCommentSchema,
 } from './comments.schemas';
 
+function revalidateCommentViews() {
+  revalidatePath(PAGES.DASHBOARD.COMMENTS);
+  revalidatePath(PAGES.DASHBOARD.COLLECTIONS, 'layout');
+}
+
 export const setCommentStatus = permissionProcedure(
   PERMISSIONS.COMMENTS_MODERATE
 )
   .input(setCommentStatusSchema)
   .action(async ({ input }) => {
     const updated = await commentsService.setStatus(input.ids, input.status);
-    revalidatePath(PAGES.DASHBOARD.COMMENTS);
+    revalidateCommentViews();
     return { updated };
   });
 
@@ -27,7 +32,7 @@ export const deleteCommentsForever = permissionProcedure(
   .input(deleteCommentsForeverSchema)
   .action(async ({ input }) => {
     const deleted = await commentsService.deleteForever(input.ids);
-    revalidatePath(PAGES.DASHBOARD.COMMENTS);
+    revalidateCommentViews();
     return { deleted };
   });
 
@@ -35,6 +40,6 @@ export const replyToComment = permissionProcedure(PERMISSIONS.COMMENTS_MODERATE)
   .input(replyToCommentSchema)
   .action(async ({ input, ctx }) => {
     await commentsService.reply(input.parentId, input.body, ctx.user.userId);
-    revalidatePath(PAGES.DASHBOARD.COMMENTS);
+    revalidateCommentViews();
     return { ok: true };
   });

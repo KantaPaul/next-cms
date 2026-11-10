@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { COLLECTION_BLOCK_EDITOR_KINDS } from '@/config/block-manager';
 import {
   POST_TYPE_FIELD_TYPES,
   POST_TYPE_FIELD_TYPE_VALUES,
@@ -97,6 +98,17 @@ export const updateSupportsSchema = z.object({
 });
 
 export type UpdateSupportsInput = z.infer<typeof updateSupportsSchema>;
+
+export const updateCollectionBlockSettingsSchema = z.object({
+  id: z.string().min(1),
+  collectionSlug: z.string().min(1),
+  blockSettings: z.object({
+    hidden: z.partialRecord(
+      z.enum(COLLECTION_BLOCK_EDITOR_KINDS),
+      z.array(z.string().max(100)).max(300)
+    ),
+  }),
+});
 
 export const collectionTaxonomySchema = z.object({
   id: z.string().optional(),

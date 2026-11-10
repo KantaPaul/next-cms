@@ -277,7 +277,7 @@ export type LicensePolicyFormInput = z.infer<typeof licensePolicyFormSchema>;
 export const installQuietEditorialSchema = z.object({}).optional();
 
 export const updateBlockSettingsSchema = z.object({
-  hidden: z.record(
+  hidden: z.partialRecord(
     z.enum(BLOCK_EDITOR_KINDS),
     z.array(z.string().max(100)).max(300)
   ),

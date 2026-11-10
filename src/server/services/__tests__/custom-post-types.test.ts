@@ -10,7 +10,16 @@ import { collectionTemplatesService } from '@/server/services/collection-templat
 import {
   generateTermSuffix,
   collectionTermSchema,
+  updateCollectionBlockSettingsSchema,
 } from '@/app/(admin)/dashboard/(shell)/collections/_modules/collections.schemas';
+import {
+  BLOCK_EDITOR_TYPES,
+  COLLECTION_BLOCK_EDITOR_TYPES,
+  hiddenBlocksFor,
+  normalizeCollectionBlockSettings,
+} from '@/config/block-manager';
+import { buildBlockManagerEditors } from '@/app/(admin)/dashboard/(shell)/settings/blocks/editors';
+import { editorSetup } from '@/builder/definitions';
 import { slugify } from '@/lib/utils/slugify';
 
 describe('PostTypeSupports', () => {
@@ -635,6 +644,132 @@ describe('Taxonomy and term duplicate name prevention', () => {
     assert.ok(!collectionTermSchema.safeParse({ taxonomyId: 'tax_1', name: 'Cat', slug: '-leading-dash' }).success);
     assert.ok(!collectionTermSchema.safeParse({ taxonomyId: 'tax_1', name: 'Cat', slug: 'trailing-dash-' }).success);
     assert.ok(!collectionTermSchema.safeParse({ taxonomyId: 'tax_1', name: 'Cat', slug: 'has@special#chars' }).success);
+  });
+});
+
+describe('CollectionBlockSettings', () => {
+  it('normalizes valid collection editor kinds and strips unknown keys', () => {
+    const normalized = normalizeCollectionBlockSettings({
+      hidden: {
+        entry: ['Hero', 123],
+        'entry-template': ['Spacer'],
+        'collection-block': [],
+        page: ['RichText'],
+      },
+    });
+    assert.deepEqual(normalized, {
+      hidden: {
+        entry: ['Hero'],
+        'entry-template': ['Spacer'],
+        'collection-block': [],
+      },
+    });
+  });
+
+  it('inherits site-wide block settings when uncustomized and overrides when set', () => {
+    const site = {
+      hidden: {
+        'entry-template': ['Hero', 'Accordion'],
+      },
+    };
+    const available = ['Heading', 'Hero', 'Accordion', 'Spacer'];
+
+    assert.deepEqual(
+      hiddenBlocksFor(site, 'entry-template', available, { hidden: {} }),
+      ['Hero', 'Accordion']
+    );
+    assert.deepEqual(
+      hiddenBlocksFor(site, 'entry-template', available, {
+        hidden: { 'entry-template': [] },
+      }),
+      []
+    );
+    assert.deepEqual(
+      hiddenBlocksFor(site, 'collection-block', available, {
+        hidden: { 'collection-block': ['Spacer'] },
+      }),
+      ['Spacer']
+    );
+  });
+
+  it('validates collection block settings input with updateCollectionBlockSettingsSchema', () => {
+    assert.ok(
+      updateCollectionBlockSettingsSchema.safeParse({
+        id: 'col_1',
+        collectionSlug: 'showcase',
+        blockSettings: {
+          hidden: {
+            entry: ['Hero'],
+          },
+        },
+      }).success
+    );
+
+    assert.ok(
+      updateCollectionBlockSettingsSchema.safeParse({
+        id: 'col_1',
+        collectionSlug: 'showcase',
+        blockSettings: {
+          hidden: {},
+        },
+      }).success
+    );
+
+    assert.ok(
+      updateCollectionBlockSettingsSchema.safeParse({
+        id: 'col_1',
+        collectionSlug: 'showcase',
+        blockSettings: {
+          hidden: {
+            entry: ['Hero'],
+            'entry-template': [],
+            'collection-block': ['Accordion'],
+          },
+        },
+      }).success
+    );
+
+    assert.ok(
+      !updateCollectionBlockSettingsSchema.safeParse({
+        id: 'col_1',
+        collectionSlug: 'showcase',
+        blockSettings: {
+          hidden: {
+            page: ['Hero'],
+          },
+        },
+      }).success
+    );
+  });
+
+  it('includes Other schema blocks in buildBlockManagerEditors for all editor kinds', () => {
+    const siteEditors = buildBlockManagerEditors(BLOCK_EDITOR_TYPES, {
+      hidden: {},
+    });
+    for (const editor of siteEditors) {
+      const setup = editorSetup(editor.kind);
+      const listed = editor.groups.flatMap(g => g.blocks.map(b => b.type));
+      const schemaTypes = Object.keys(setup.schemas);
+      assert.equal(listed.length, new Set(listed).size);
+      for (const type of schemaTypes) {
+        assert.ok(
+          listed.includes(type),
+          `Expected ${type} to be listed for ${editor.kind}`
+        );
+      }
+      assert.ok(
+        editor.groups.some(g => g.title === 'Other'),
+        `Expected Other group for ${editor.kind}`
+      );
+    }
+
+    const colEditors = buildBlockManagerEditors(
+      COLLECTION_BLOCK_EDITOR_TYPES,
+      { hidden: {} },
+      { hidden: {} }
+    );
+    assert.equal(colEditors.length, 3);
+    assert.ok(colEditors.every(e => e.groups.some(g => g.title === 'Other')));
   });
 });
 

@@ -1,8 +1,8 @@
 'use client';
 
 import { Loader2, RotateCcw } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -23,9 +23,42 @@ export type BlockManagerEditor = {
 const sameSet = (a: string[], b: string[]) =>
   a.length === b.length && a.every(x => b.includes(x));
 
-export function BlockManager({ editors }: { editors: BlockManagerEditor[] }) {
+export function BlockManager({
+  editors,
+  initialEditor,
+  onSave,
+  resetLabel = 'Reset to default',
+  defaultHint = 'Using the default list.',
+  successMessage = 'Block settings saved. Editors pick them up on next load.',
+}: {
+  editors: BlockManagerEditor[];
+  initialEditor?: string;
+  onSave?: (hidden: BlockSettings['hidden']) => Promise<unknown>;
+  resetLabel?: string;
+  defaultHint?: string;
+  successMessage?: string;
+}) {
   const router = useRouter();
-  const [active, setActive] = useState<BlockEditorKind>(editors[0]?.kind ?? 'page');
+  const pathname = usePathname();
+  const resolvedInitial =
+    editors.find(e => e.kind === initialEditor)?.kind ??
+    editors[0]?.kind ??
+    'page';
+  const [active, setActive] = useState<BlockEditorKind>(resolvedInitial);
+
+  useEffect(() => {
+    const match = editors.find(e => e.kind === initialEditor);
+    if (match) setActive(match.kind);
+  }, [initialEditor, editors]);
+
+  const selectEditor = (kind: BlockEditorKind) => {
+    setActive(kind);
+    const params = new URLSearchParams(
+      typeof window !== 'undefined' ? window.location.search : ''
+    );
+    params.set('editor', kind);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
   // Hidden blocks per editor type, as currently edited (not yet saved).
   const [hidden, setHidden] = useState<Record<string, string[]>>(() =>
     Object.fromEntries(editors.map(e => [e.kind, e.hidden]))
@@ -86,10 +119,32 @@ export function BlockManager({ editors }: { editors: BlockManagerEditor[] }) {
     for (const e of editors) {
       if (touched.has(e.kind)) payload[e.kind] = hidden[e.kind] ?? [];
     }
-    await handleActionResponse(updateBlockSettings({ hidden: payload }), () => {
-      toast.success('Block settings saved. Editors pick them up on next load.');
-      router.refresh();
-    });
+    const action = onSave
+      ? onSave(payload)
+      : updateBlockSettings({ hidden: payload });
+    await handleActionResponse(
+      Promise.resolve(action).then(res => {
+        if (
+          res &&
+          typeof res === 'object' &&
+          'ok' in res &&
+          (res as { ok?: boolean; error?: string }).ok === false
+        ) {
+          return {
+            hasError: true,
+            message:
+              (res as { error?: string }).error ??
+              'Failed to save block settings.',
+            errorType: 'Error' as const,
+          };
+        }
+        return res;
+      }) as never,
+      () => {
+        toast.success(successMessage);
+        router.refresh();
+      }
+    );
     setSaving(false);
   };
 
@@ -105,7 +160,7 @@ export function BlockManager({ editors }: { editors: BlockManagerEditor[] }) {
             <button
               key={e.kind}
               type="button"
-              onClick={() => setActive(e.kind)}
+              onClick={() => selectEditor(e.kind)}
               className={cn(
                 'flex shrink-0 items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors',
                 e.kind === active
@@ -129,7 +184,7 @@ export function BlockManager({ editors }: { editors: BlockManagerEditor[] }) {
             <p className="text-sm text-steel-500">
               {total - current.length} of {total} blocks shown in this editor’s
               insert panel. Hidden blocks already on a page keep working.
-              {!touched.has(editor.kind) && ' Using the default list.'}
+              {!touched.has(editor.kind) && ` ${defaultHint}`}
             </p>
           </div>
           <div className="flex gap-2">
@@ -140,7 +195,7 @@ export function BlockManager({ editors }: { editors: BlockManagerEditor[] }) {
               onClick={resetKind}
               disabled={!touched.has(editor.kind)}
             >
-              <RotateCcw /> Reset to default
+              <RotateCcw /> {resetLabel}
             </Button>
             <Button type="button" size="sm" onClick={save} disabled={!dirty || saving}>
               {saving && <Loader2 className="animate-spin" />} Save changes

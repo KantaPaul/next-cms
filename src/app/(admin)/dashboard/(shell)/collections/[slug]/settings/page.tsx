@@ -1,3 +1,4 @@
+import { Blocks } from 'lucide-react';
 import Link from 'next/link';
 import { pagesServices } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
 import { AccessDenied } from '@/components/organisms/access-denied';
@@ -69,11 +70,20 @@ export default async function CollectionPage({
   return (
     <>
       <PageHeader title={collection.name} breadcrumbs={breadcrumbs}>
-        <Button asChild>
-          <Link href={PAGES.DASHBOARD.COLLECTION(collection.slug)}>
-            Manage {collection.name.toLowerCase()}
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" asChild>
+            <Link
+              href={PAGES.DASHBOARD.COLLECTION_SETTINGS_BLOCKS(collection.slug)}
+            >
+              <Blocks className="size-4" /> Block template settings
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href={PAGES.DASHBOARD.COLLECTION(collection.slug)}>
+              Manage {collection.name.toLowerCase()}
+            </Link>
+          </Button>
+        </div>
       </PageHeader>
       {/* <PostTypeTabs
         slug={collection.slug}

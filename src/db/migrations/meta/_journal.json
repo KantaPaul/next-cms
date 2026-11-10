@@ -260,6 +260,13 @@
       "when": 1794314992581,
       "tag": "20261110124952_collection_comments",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1794315617399,
+      "tag": "20261110130017_collection_block_settings",
+      "breakpoints": true
     }
   ]
 }
