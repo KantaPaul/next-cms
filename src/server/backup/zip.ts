@@ -94,6 +94,9 @@ export function readZipIndex(zipBuffer: Buffer): Map<string, ZipEntry> {
   return entries;
 }
 
+/** Hard ceiling per entry, whatever the zip claims. */
+const MAX_ENTRY_BYTES = 2 * 1024 * 1024 * 1024 - 1;
+
 export function readZipEntry(zipBuffer: Buffer, entry: ZipEntry): Buffer {
   const offset = entry.localHeaderOffset;
   if (offset + 30 > zipBuffer.length || zipBuffer.readUInt32LE(offset) !== LOC_SIG) {
@@ -111,7 +114,14 @@ export function readZipEntry(zipBuffer: Buffer, entry: ZipEntry): Buffer {
     return Buffer.from(slice);
   }
   if (entry.compressionMethod === 8) {
-    return inflateRawSync(slice);
+    // Never inflate past the declared size: a crafted entry can't expand
+    // without limit and exhaust memory.
+    const limit = Math.min(entry.uncompressedSize, MAX_ENTRY_BYTES);
+    const out = inflateRawSync(slice, { maxOutputLength: Math.max(1, limit) });
+    if (out.length !== entry.uncompressedSize) {
+      throw new Error(`Zip entry size mismatch for ${entry.name}`);
+    }
+    return out;
   }
   throw new Error(
     `Unsupported zip compression method ${entry.compressionMethod} for ${entry.name}`

@@ -1,4 +1,4 @@
-import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { createId } from '@paralleldrive/cuid2';
 
 export type PrivacyTokenPayload = {
@@ -12,15 +12,27 @@ export type PrivacyTokenPayload = {
 
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
+/** Per-process fallback for development only; tokens stop working on restart. */
+let devSecret: string | null = null;
+
+/**
+ * Only real secrets sign confirmations. Falling back to DATABASE_URL or a
+ * fixed string made tokens forgeable wherever those are known (the README's
+ * sample database URL is public), so anyone could mark a request "verified".
+ */
 function getSigningSecret(): string {
-  return (
+  const secret =
     process.env.PRIVACY_SIGNING_SECRET ||
     process.env.AUTH_SECRET ||
-    process.env.NEXTAUTH_SECRET ||
-    process.env.CRON_SECRET ||
-    process.env.DATABASE_URL ||
-    'next-cms-privacy-dev-secret'
-  );
+    process.env.NEXTAUTH_SECRET;
+  if (secret) return secret;
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'Privacy requests need PRIVACY_SIGNING_SECRET (or AUTH_SECRET) to be set.'
+    );
+  }
+  devSecret ??= randomBytes(32).toString('hex');
+  return devSecret;
 }
 
 export function hashPrivacyToken(token: string): string {

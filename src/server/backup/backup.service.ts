@@ -238,6 +238,20 @@ function createZipFromDirectory(
   });
 }
 
+
+const CONTENT_TYPES: Record<string, string> = {
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
+  webp: 'image/webp', avif: 'image/avif', svg: 'image/svg+xml', ico: 'image/x-icon',
+  mp4: 'video/mp4', webm: 'video/webm', mp3: 'audio/mpeg', pdf: 'application/pdf',
+  woff2: 'font/woff2', woff: 'font/woff', ttf: 'font/ttf', otf: 'font/otf',
+  json: 'application/json', txt: 'text/plain', csv: 'text/csv',
+};
+
+function contentTypeForKey(key: string): string {
+  const ext = key.split('.').pop()?.toLowerCase() ?? '';
+  return CONTENT_TYPES[ext] ?? 'application/octet-stream';
+}
+
 export const backupService = {
   listBackups: async (siteId: string) => {
     return db
@@ -656,19 +670,20 @@ export const backupService = {
       createdBy: input.access.userId,
     });
 
-    // 2. Delete existing site-scoped rows in reverse dependency order inside a single transaction
+    // 2 + 3. Replace the site's rows in ONE transaction: if any insert fails,
+    // everything rolls back and the site is exactly as it was. (Separate
+    // transactions could leave a half-deleted site behind.)
     await db.transaction(async tx => {
-      for (let i = BACKUP_TABLES.length - 1; i >= 0; i--) {
-        const spec = BACKUP_TABLES[i]!;
-        if (!spec.replaceOnRestore) continue;
-        const cond = scopeConditionForBackupTable(spec, tx, input.siteId);
-        if (cond) {
-          await tx.delete(spec.table).where(cond);
-        }
+    for (let i = BACKUP_TABLES.length - 1; i >= 0; i--) {
+      const spec = BACKUP_TABLES[i]!;
+      if (!spec.replaceOnRestore) continue;
+      const cond = scopeConditionForBackupTable(spec, tx, input.siteId);
+      if (cond) {
+        await tx.delete(spec.table).where(cond);
       }
-    });
+    }
 
-    // 3. Restore tables in FK-safe order, running one DB transaction per batch
+    // Restore tables in FK-safe order, batched inside the same transaction.
     for (const spec of BACKUP_TABLES) {
       const rel = `tables/${spec.name}.json`;
       const entry = entries.get(rel);
@@ -710,11 +725,10 @@ export const backupService = {
           .slice(i, i + RESTORE_BATCH_SIZE)
           .map(r => hydrateDatesAndOmissions(r, spec));
 
-        await db.transaction(async tx => {
-          await tx.insert(spec.table).values(batch).onConflictDoNothing();
-        });
+        await tx.insert(spec.table).values(batch).onConflictDoNothing();
       }
     }
+    });
 
     // 4. Restore media & form-upload files ONLY if present in the zip
     const driver = storage();
@@ -728,7 +742,9 @@ export const backupService = {
       if (expectedChecksum && sha256(buf) !== expectedChecksum) {
         throw new Error(`Checksum mismatch for ${name}`);
       }
-      await driver.put(key, buf, 'application/octet-stream');
+      // A real content type matters on S3, where files are served straight from
+      // the bucket; octet-stream would make browsers download every image.
+      await driver.put(key, buf, contentTypeForKey(key));
       restoredFiles++;
     }
 

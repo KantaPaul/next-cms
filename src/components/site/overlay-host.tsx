@@ -12,6 +12,7 @@ import {
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { useConsent } from '@/components/site/consent-provider';
 import {
   Dialog,
   DialogContent,
@@ -103,6 +104,7 @@ const POPUP_POSITION: Record<string, string> = {
 };
 
 export function OverlayHost({ overlays }: { overlays: OverlayHostItem[] }) {
+  const { isOpen: consentPromptOpen } = useConsent();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [lightboxData, setLightboxData] = useState<
     Record<string, LightboxContextValue>
@@ -367,7 +369,12 @@ export function OverlayHost({ overlays }: { overlays: OverlayHostItem[] }) {
     }
   }, [overlays]);
 
-  const current = overlays.find(o => o.id === activeId);
+  // A modal popup blocks every click outside it, including the cookie banner,
+  // so the visitor's first "Accept" only closed the promo. Wait for the
+  // consent choice; the popup then shows as soon as the banner closes.
+  const current = consentPromptOpen
+    ? undefined
+    : overlays.find(o => o.id === activeId);
   if (!current) return null;
 
   const { settings, category, renderedContent, name } = current;

@@ -16,8 +16,19 @@ export function isAlwaysAllowedSiteModePath(pathname: string): boolean {
     pathname === '/robots.txt' ||
     pathname === '/sitemap.xml' ||
     pathname === SITE_MODE_PATH ||
-    pathname.includes('.')
+    isStaticFilePath(pathname)
   );
+}
+
+/**
+ * Real static files only. Any dot used to count, so slugs like
+ * `/blog/release-1.2` stayed public during maintenance.
+ */
+const STATIC_FILE =
+  /\.(?:ico|png|jpe?g|gif|webp|avif|svg|css|js|mjs|map|json|txt|xml|webmanifest|woff2?|ttf|otf|eot|mp4|webm|mp3|pdf)$/i;
+
+export function isStaticFilePath(pathname: string): boolean {
+  return STATIC_FILE.test(pathname);
 }
 
 /** Matches `pathname` (with optional site prefix stripped) against `excludePaths`. */

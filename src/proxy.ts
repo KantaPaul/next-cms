@@ -4,6 +4,7 @@ import {
   SITE_MODE_BYPASS_COOKIE,
   SITE_MODE_BYPASS_QUERY,
   SITE_MODE_PATH,
+  isStaticFilePath,
   type SiteModeEvaluation,
 } from '@/lib/site-mode-gate';
 import { RESERVED_SITE_SLUGS } from '@/lib/utils/site-slug';
@@ -18,7 +19,7 @@ function skip(pathname: string) {
     pathname === '/robots.txt' ||
     pathname === '/sitemap.xml' ||
     pathname === SITE_MODE_PATH ||
-    pathname.includes('.')
+    isStaticFilePath(pathname)
   );
 }
 
@@ -190,5 +191,10 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next|api|dashboard|login|.*\\..*).*)'],
+  // Skip real static files only (keep in sync with isStaticFilePath). Skipping
+  // every dotted path let slugs like /blog/release-1.2 bypass maintenance mode
+  // and redirects. Must stay a literal: Next reads it at build time.
+  matcher: [
+    '/((?!_next|api|dashboard|login|.*\\.(?:ico|png|jpe?g|gif|webp|avif|svg|css|js|mjs|map|json|txt|xml|webmanifest|woff2?|ttf|otf|eot|mp4|webm|mp3|pdf)$).*)',
+  ],
 };

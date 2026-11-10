@@ -35,21 +35,35 @@ export async function POST(request: Request) {
   ]);
 
   const visitorId = jar.get('cms_vid')?.value ?? null;
-  const reqUrl = new URL(request.url);
-  const baseUrl =
-    settings.siteUrl?.trim() ||
-    `${reqUrl.protocol}//${request.headers.get('host') || reqUrl.host}` ||
-    env.SITE_URL;
+  // Configured URLs only. The Host header is client-controlled: building the
+  // emailed link from it would let an attacker send a victim a real
+  // confirmation email whose link (and token) points at the attacker's site.
+  const baseUrl = settings.siteUrl?.trim() || env.SITE_URL;
+  if (!baseUrl) {
+    return NextResponse.json(
+      { error: 'Privacy requests are not available yet.' },
+      { status: 503 }
+    );
+  }
 
-  const res = await privacyService.requestConfirmation({
-    siteId: site.id,
-    siteName: settings.siteName || site.name,
-    email: parsed.data.email,
-    type: parsed.data.type,
-    visitorId,
-    ip: clientIp(request.headers),
-    baseUrl,
-  });
+  let res: Awaited<ReturnType<typeof privacyService.requestConfirmation>>;
+  try {
+    res = await privacyService.requestConfirmation({
+      siteId: site.id,
+      siteName: settings.siteName || site.name,
+      email: parsed.data.email,
+      type: parsed.data.type,
+      visitorId,
+      ip: clientIp(request.headers),
+      baseUrl,
+    });
+  } catch {
+    // e.g. no signing secret configured in production
+    return NextResponse.json(
+      { error: 'Privacy requests are not available yet.' },
+      { status: 503 }
+    );
+  }
 
   if (!res.ok) {
     return NextResponse.json({ error: res.error }, { status: res.status });
