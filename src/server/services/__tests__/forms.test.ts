@@ -293,7 +293,9 @@ describe('server forms service & integrations', () => {
       );
       assert.equal(putReq.method, 'PUT');
       assert.equal(putReq.body.email_address, 'Test@Domain.com');
-      assert.equal(putReq.body.status, 'subscribed');
+      assert.equal(putReq.body.status_if_new, 'subscribed');
+      // Existing contacts keep their status: an unsubscribed person stays unsubscribed.
+      assert.equal(putReq.body.status, undefined);
       assert.equal(putReq.body.merge_fields.FNAME, 'Alice');
       assert.equal(putReq.body.merge_fields.LNAME, 'Smith');
 

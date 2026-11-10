@@ -533,9 +533,9 @@ export function ContactFormClient({
               Step {currentStepIndex + 1} of {totalSteps}
             </span>
           </div>
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+          <div className="h-1.5 w-full overflow-hidden rounded-full s-surface-alt">
             <div
-              className="h-full bg-primary transition-all duration-300"
+              className="h-full s-primary-bg transition-all duration-300 motion-reduce:transition-none"
               style={{
                 width: `${((currentStepIndex + 1) / totalSteps) * 100}%`,
               }}
@@ -570,14 +570,19 @@ export function ContactFormClient({
           ))}
         </div>
       ) : (
-        /* Public view: single active step */
-        <div
-          data-step-container
-          data-step-index={currentStepIndex}
-          className="grid gap-4"
-        >
-          {steps[currentStepIndex]?.fields.map((f, i) => renderField(f, i))}
-        </div>
+        /* Public view: every step stays mounted and only the active one shows,
+           so earlier answers and chosen files are still in the form on submit. */
+        steps.map((step, stepIdx) => (
+          <div
+            key={stepIdx}
+            data-step-container
+            data-step-index={stepIdx}
+            hidden={stepIdx !== currentStepIndex}
+            className={cn('grid gap-4', stepIdx !== currentStepIndex && 'hidden')}
+          >
+            {step.fields.map((f, i) => renderField(f, i))}
+          </div>
+        ))
       )}
 
       {firstParty && (

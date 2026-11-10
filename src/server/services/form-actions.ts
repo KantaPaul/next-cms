@@ -23,6 +23,8 @@ export type FormActionsConfig = {
   emailReplyToField?: string;
   redirectUrl?: string;
   webhookUrl?: string;
+  /** Optional per-form secret; when set, deliveries carry an HMAC-SHA256 signature. */
+  webhookSecret?: string;
   mailchimpListId?: string;
   mailchimpEmailField?: string;
   mailchimpFirstNameField?: string;
@@ -73,23 +75,38 @@ export const formActionsService = {
             }
           }
 
-          const replyTo = config.emailReplyToField
+          // The visitor typed this, so only a plain address is used as Reply-To.
+          const replyToRaw = config.emailReplyToField
             ? payload[config.emailReplyToField]?.trim()
             : undefined;
+          const replyTo =
+            replyToRaw && /^[^\s@<>,;"]+@[^\s@<>,;"]+\.[^\s@<>,;"]+$/.test(replyToRaw)
+              ? replyToRaw
+              : undefined;
 
-          await sendMail({
+          const result = await sendMail({
             to: toRecipients,
             subject: config.emailSubject?.trim() || 'New form submission',
             text: lines.join('\n') || 'A form was submitted with no fields.',
             replyTo: replyTo || undefined,
           });
 
-          actionLog.push({
-            action: 'email',
-            status: 'success',
-            message: `Notification sent to ${toRecipients}.`,
-            at,
-          });
+          // sendMail reports instead of throwing when mail isn't set up.
+          actionLog.push(
+            result.sent
+              ? {
+                  action: 'email',
+                  status: 'success',
+                  message: `Notification sent to ${toRecipients}.`,
+                  at,
+                }
+              : {
+                  action: 'email',
+                  status: 'skipped',
+                  message: result.reason || 'Email was not sent.',
+                  at,
+                }
+          );
         }
       } catch (err: unknown) {
         actionLog.push({
@@ -127,18 +144,18 @@ export const formActionsService = {
             submittedAt: at,
           };
           const body = JSON.stringify(webhookPayload);
-          const signature = createHmac(
-            'sha256',
-            process.env.APP_SECRET || 'form-webhook'
-          )
-            .update(body)
-            .digest('hex');
+          // Signed only with this form's own secret: a shared fallback would let
+          // anyone forge signatures, and the app's secret must never be handed out.
+          const secret = config.webhookSecret?.trim();
+          const signature = secret
+            ? createHmac('sha256', secret).update(body).digest('hex')
+            : null;
 
           const response = await safeFetch(webhookUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-Webhook-Signature': signature,
+              ...(signature && { 'X-Webhook-Signature': `sha256=${signature}` }),
             },
             body,
           });

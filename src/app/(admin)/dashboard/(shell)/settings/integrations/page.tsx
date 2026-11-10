@@ -10,6 +10,12 @@ import { IntegrationsForm } from './_components/integrations-form';
 
 const TITLE = 'Integrations';
 
+/** Bullets plus the datacenter suffix (-us21), so the key never leaves the server. */
+function maskSecret(key: string): string {
+  const dc = key.split('-').pop();
+  return `••••••••••••••••${dc && dc !== key ? `-${dc}` : ''}`;
+}
+
 export const metadata = {
   ...metaObject(TITLE),
 };
@@ -37,7 +43,15 @@ export default async function IntegrationsPage() {
     <>
       <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
       <SettingsNav />
-      <IntegrationsForm initialValues={settings.integrations} />
+      {/* Only a mask reaches the browser; saving a mask keeps the stored key. */}
+      <IntegrationsForm
+        initialValues={{
+          ...settings.integrations,
+          mailchimp: settings.integrations?.mailchimp?.apiKey
+            ? { apiKey: maskSecret(settings.integrations.mailchimp.apiKey) }
+            : undefined,
+        }}
+      />
     </>
   );
 }

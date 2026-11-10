@@ -351,6 +351,7 @@ export type ContactFormProps = WithSection & {
   emailReplyToField?: string;
   redirectUrl?: string;
   webhookUrl?: string;
+  webhookSecret?: string;
   mailchimpListId?: string;
   mailchimpEmailField?: string;
   mailchimpFirstNameField?: string;

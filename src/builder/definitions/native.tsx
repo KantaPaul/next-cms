@@ -1919,6 +1919,14 @@ export const ContactFormBlock = defineBlock({
       type: 'text',
       when: p => Array.isArray(p.actions) && p.actions.includes('webhook'),
     },
+    webhookSecret: {
+      label: 'Webhook signing secret (optional)',
+      group: ACTIONS,
+      tab: 'content',
+      section: ACTIONS,
+      type: 'text',
+      when: p => Array.isArray(p.actions) && p.actions.includes('webhook'),
+    },
     mailchimpListId: {
       label: 'Mailchimp audience',
       group: ACTIONS,

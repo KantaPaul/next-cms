@@ -16,7 +16,12 @@ export function getMailchimpDc(apiKey: string): string {
       'Invalid Mailchimp API key: missing datacenter suffix (e.g. -us21)'
     );
   }
-  return parts[1].toLowerCase();
+  const dc = parts[parts.length - 1].toLowerCase();
+  // The datacenter becomes the API host, so only `us21`-style values pass.
+  if (!/^[a-z]{2,4}\d{1,3}$/.test(dc)) {
+    throw new Error('Invalid Mailchimp API key: unexpected datacenter suffix');
+  }
+  return dc;
 }
 
 export function mailchimpMemberHash(email: string): string {
@@ -34,7 +39,7 @@ export async function upsertMailchimpMember(
   const status = input.doubleOptIn ? 'pending' : 'subscribed';
 
   const memberRes = await fetchFn(
-    `https://${dc}.api.mailchimp.com/3.0/lists/${listId}/members/${hash}`,
+    `https://${dc}.api.mailchimp.com/3.0/lists/${encodeURIComponent(listId)}/members/${hash}`,
     {
       method: 'PUT',
       headers: {
@@ -43,8 +48,9 @@ export async function upsertMailchimpMember(
       },
       body: JSON.stringify({
         email_address: input.email.trim(),
+        // New contacts only. Never set `status` here: it would re-subscribe
+        // people who unsubscribed whenever they fill in any form.
         status_if_new: status,
-        status: status,
         merge_fields: {
           FNAME: input.firstName || '',
           LNAME: input.lastName || '',
@@ -62,7 +68,7 @@ export async function upsertMailchimpMember(
 
   if (input.tags && input.tags.length > 0) {
     const tagsRes = await fetchFn(
-      `https://${dc}.api.mailchimp.com/3.0/lists/${listId}/members/${hash}/tags`,
+      `https://${dc}.api.mailchimp.com/3.0/lists/${encodeURIComponent(listId)}/members/${hash}/tags`,
       {
         method: 'POST',
         headers: {

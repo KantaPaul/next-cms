@@ -594,6 +594,9 @@ export const formsService = {
     const payload: Record<string, string> = {};
     const submissionId = randomUUID();
     const uploadedFiles: FormSubmissionFile[] = [];
+    // Checked files wait here until every field has passed, so a rejected
+    // submission never leaves files behind in storage.
+    const pendingUploads: { key: string; buffer: Buffer; mime: string }[] = [];
 
     if (rawFields) {
       // 4. Filter visible fields and validate required
@@ -651,7 +654,11 @@ export const formsService = {
 
             const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
             const key = `form-uploads/${submissionId}/${randomUUID()}-${safeName}`;
-            await storage().put(key, buffer, sniff.mime || 'application/octet-stream');
+            pendingUploads.push({
+              key,
+              buffer,
+              mime: sniff.mime || 'application/octet-stream',
+            });
 
             uploadedFiles.push({
               field: field.name,
@@ -690,21 +697,46 @@ export const formsService = {
       }
     }
 
+    // 5b. Store files only now that every field passed. Honeypot spam keeps
+    // its text for review but never gets files written to storage.
+    const storedKeys: string[] = [];
+    const removeStored = () =>
+      Promise.allSettled(storedKeys.map(key => storage().remove(key)));
+    if (spam) {
+      uploadedFiles.length = 0;
+    } else {
+      try {
+        for (const upload of pendingUploads) {
+          await storage().put(upload.key, upload.buffer, upload.mime);
+          storedKeys.push(upload.key);
+        }
+      } catch (error) {
+        await removeStored();
+        throw error;
+      }
+    }
+
     // 6. Insert submission row
-    const [row] = await db
-      .insert(formSubmissions)
-      .values({
-        id: submissionId,
-        siteId: site.id,
-        formGlobalId: formId,
-        payload,
-        status: 'new',
-        spam,
-        source: sourceRecord,
-        files: uploadedFiles,
-        actionLog: [],
-      })
-      .returning({ id: formSubmissions.id });
+    let row: { id: string } | undefined;
+    try {
+      [row] = await db
+        .insert(formSubmissions)
+        .values({
+          id: submissionId,
+          siteId: site.id,
+          formGlobalId: formId,
+          payload,
+          status: 'new',
+          spam,
+          source: sourceRecord,
+          files: uploadedFiles,
+          actionLog: [],
+        })
+        .returning({ id: formSubmissions.id });
+    } catch (error) {
+      await removeStored();
+      throw error;
+    }
 
     // 7. Determine actions to run and redirect
     const actions = (formProps?.actions as FormActionType[]) ?? ['email'];
@@ -732,6 +764,10 @@ export const formsService = {
       webhookUrl:
         typeof formProps?.webhookUrl === 'string'
           ? formProps.webhookUrl
+          : undefined,
+      webhookSecret:
+        typeof formProps?.webhookSecret === 'string'
+          ? formProps.webhookSecret
           : undefined,
       mailchimpListId:
         typeof formProps?.mailchimpListId === 'string'
