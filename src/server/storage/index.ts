@@ -3,6 +3,7 @@ import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import {
   DeleteObjectCommand,
+  GetObjectCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -15,8 +16,7 @@ export type StorageDriver = {
     contentType: string
   ) => Promise<{ url: string }>;
   remove: (key: string) => Promise<void>;
-  /** Only the local driver serves files itself; S3 objects are served by the bucket/CDN. */
-  read?: (key: string) => Promise<Buffer | null>;
+  read: (key: string) => Promise<Buffer | null>;
 };
 
 export const LOCAL_MEDIA_ROUTE = '/media';
@@ -88,6 +88,18 @@ function s3Driver(): StorageDriver {
       await client.send(
         new DeleteObjectCommand({ Bucket: env.S3_BUCKET, Key: key })
       );
+    },
+    read: async key => {
+      try {
+        const res = await client.send(
+          new GetObjectCommand({ Bucket: env.S3_BUCKET, Key: key })
+        );
+        if (!res.Body) return null;
+        const bytes = await res.Body.transformToByteArray();
+        return Buffer.from(bytes);
+      } catch {
+        return null;
+      }
     },
   };
 }

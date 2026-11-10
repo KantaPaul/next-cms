@@ -536,6 +536,14 @@ export type CustomFont = {
   weights: CustomFontWeight[];
 };
 
+export type SiteIntegrations = {
+  mailchimp?: {
+    apiKey?: string;
+  };
+};
+
+export const DEFAULT_INTEGRATIONS: SiteIntegrations = {};
+
 export const siteSettings = pgTable('site_settings', {
   id: text('id').primaryKey().default(SITE_SETTINGS_ID),
   siteId: text('site_id').notNull().default(DEFAULT_SITE_ID).unique(),
@@ -590,6 +598,10 @@ export const siteSettings = pgTable('site_settings', {
   customFonts: jsonb('custom_fonts')
     .$type<CustomFont[]>()
     .default([])
+    .notNull(),
+  integrations: jsonb('integrations')
+    .$type<SiteIntegrations>()
+    .default(DEFAULT_INTEGRATIONS)
     .notNull(),
   robotsTxt: text('robots_txt'),
   googleAnalyticsId: varchar('google_analytics_id', { length: 50 }),
@@ -733,13 +745,11 @@ export const pageViews = pgTable(
   ]
 );
 
-/** Shared fixed-window rate counter for API keys, lives in Postgres. */
+/** Shared fixed-window rate counter for API keys and IP endpoints, lives in Postgres. */
 export const apiRateWindows = pgTable(
   'api_rate_windows',
   {
-    apiKeyId: text('api_key_id')
-      .references(() => apiKeys.id, { onDelete: 'cascade' })
-      .notNull(),
+    apiKeyId: text('api_key_id').notNull(),
     windowStart: timestamp('window_start', { withTimezone: true })
       .notNull()
       .defaultNow(),

@@ -141,6 +141,8 @@ import {
   VideoSourcesField,
 } from '../fields/client-fields';
 import { ContactFormOptionsField } from '../fields/contact-form-options-field';
+import { ContactFormActionsField } from '../fields/contact-form-actions-field';
+import { MailchimpAudienceField } from '../fields/mailchimp-audience-field';
 import {
   type ElementPart,
   ElementStyleControl,
@@ -1713,6 +1715,8 @@ export const GalleryBlock = defineBlock({
   },
 });
 
+const ACTIONS = 'Actions after submit';
+
 export const ContactFormBlock = defineBlock({
   type: 'ContactForm',
   label: 'Contact form',
@@ -1757,6 +1761,10 @@ export const ContactFormBlock = defineBlock({
             { label: 'Dropdown', value: 'select' },
             { label: 'Radio', value: 'radio' },
             { label: 'Checkbox', value: 'checkbox' },
+            { label: 'Step (page break)', value: 'step' },
+            { label: 'File upload', value: 'file' },
+            { label: 'Hidden', value: 'hidden' },
+            { label: 'Acceptance (consent)', value: 'acceptance' },
           ],
         },
         placeholder: { label: 'Placeholder', group: CONTENT, type: 'text' },
@@ -1775,6 +1783,84 @@ export const ContactFormBlock = defineBlock({
             { label: 'No', value: false },
           ],
         },
+        accept: {
+          label: 'Accepted file types',
+          group: CONTENT,
+          type: 'select',
+          when: item => item?.type === 'file',
+          options: [
+            { label: 'Both images and documents', value: 'both' },
+            { label: 'Images only', value: 'images' },
+            { label: 'Documents only', value: 'documents' },
+          ],
+        },
+        maxSizeMb: {
+          label: 'Max file size (MB)',
+          group: CONTENT,
+          type: 'number',
+          when: item => item?.type === 'file',
+        },
+        multiple: {
+          label: 'Allow multiple files (up to 5)',
+          group: CONTENT,
+          type: 'radio',
+          when: item => item?.type === 'file',
+          options: [
+            { label: 'Yes', value: true },
+            { label: 'No', value: false },
+          ],
+        },
+        hiddenSource: {
+          label: 'Value source',
+          group: CONTENT,
+          type: 'select',
+          when: item => item?.type === 'hidden',
+          options: [
+            { label: 'Static value', value: 'static' },
+            { label: 'URL parameter', value: 'url_param' },
+          ],
+        },
+        hiddenValue: {
+          label: 'Static value or URL param name',
+          group: CONTENT,
+          type: 'text',
+          when: item => item?.type === 'hidden',
+        },
+        conditionMatch: {
+          label: 'Condition match logic',
+          group: CONTENT,
+          type: 'select',
+          options: [
+            { label: 'All conditions must match (AND)', value: 'all' },
+            { label: 'Any condition may match (OR)', value: 'any' },
+          ],
+        },
+        conditions: {
+          label: 'Conditions (show when)',
+          group: CONTENT,
+          type: 'list',
+          item: {
+            field: { label: 'Target field name', group: CONTENT, type: 'text' },
+            operator: {
+              label: 'Operator',
+              group: CONTENT,
+              type: 'select',
+              options: [
+                { label: 'Equals', value: 'equals' },
+                { label: 'Does not equal', value: 'not_equals' },
+                { label: 'Contains', value: 'contains' },
+                { label: 'Is empty', value: 'empty' },
+                { label: 'Is not empty', value: 'not_empty' },
+              ],
+            },
+            value: { label: 'Value to compare', group: CONTENT, type: 'text' },
+          },
+          defaultItem: {
+            field: '',
+            operator: 'equals',
+            value: '',
+          },
+        },
       },
       defaultItem: {
         label: 'Field',
@@ -1784,6 +1870,107 @@ export const ContactFormBlock = defineBlock({
         placeholder: '',
         options: '',
       },
+    },
+    actions: {
+      label: 'Actions after submit',
+      group: ACTIONS,
+      tab: 'content',
+      section: ACTIONS,
+      type: 'custom',
+      render: ContactFormActionsField,
+    },
+    emailTo: {
+      label: 'Email recipients (comma separated)',
+      group: ACTIONS,
+      tab: 'content',
+      section: ACTIONS,
+      type: 'text',
+      when: p => Array.isArray(p.actions) && p.actions.includes('email'),
+    },
+    emailSubject: {
+      label: 'Email subject',
+      group: ACTIONS,
+      tab: 'content',
+      section: ACTIONS,
+      type: 'text',
+      when: p => Array.isArray(p.actions) && p.actions.includes('email'),
+    },
+    emailReplyToField: {
+      label: 'Reply-to field name',
+      group: ACTIONS,
+      tab: 'content',
+      section: ACTIONS,
+      type: 'text',
+      when: p => Array.isArray(p.actions) && p.actions.includes('email'),
+    },
+    redirectUrl: {
+      label: 'Redirect URL after submit',
+      group: ACTIONS,
+      tab: 'content',
+      section: ACTIONS,
+      type: 'text',
+      when: p => Array.isArray(p.actions) && p.actions.includes('redirect'),
+    },
+    webhookUrl: {
+      label: 'Webhook URL',
+      group: ACTIONS,
+      tab: 'content',
+      section: ACTIONS,
+      type: 'text',
+      when: p => Array.isArray(p.actions) && p.actions.includes('webhook'),
+    },
+    mailchimpListId: {
+      label: 'Mailchimp audience',
+      group: ACTIONS,
+      tab: 'content',
+      section: ACTIONS,
+      type: 'custom',
+      render: MailchimpAudienceField,
+      when: p => Array.isArray(p.actions) && p.actions.includes('mailchimp'),
+    },
+    mailchimpEmailField: {
+      label: 'Subscriber email field name',
+      group: ACTIONS,
+      tab: 'content',
+      section: ACTIONS,
+      type: 'text',
+      when: p => Array.isArray(p.actions) && p.actions.includes('mailchimp'),
+    },
+    mailchimpFirstNameField: {
+      label: 'First name field name (optional)',
+      group: ACTIONS,
+      tab: 'content',
+      section: ACTIONS,
+      type: 'text',
+      when: p => Array.isArray(p.actions) && p.actions.includes('mailchimp'),
+    },
+    mailchimpLastNameField: {
+      label: 'Last name field name (optional)',
+      group: ACTIONS,
+      tab: 'content',
+      section: ACTIONS,
+      type: 'text',
+      when: p => Array.isArray(p.actions) && p.actions.includes('mailchimp'),
+    },
+    mailchimpTags: {
+      label: 'Tags (comma separated)',
+      group: ACTIONS,
+      tab: 'content',
+      section: ACTIONS,
+      type: 'text',
+      when: p => Array.isArray(p.actions) && p.actions.includes('mailchimp'),
+    },
+    mailchimpDoubleOptIn: {
+      label: 'Require double opt-in',
+      group: ACTIONS,
+      tab: 'content',
+      section: ACTIONS,
+      type: 'radio',
+      when: p => Array.isArray(p.actions) && p.actions.includes('mailchimp'),
+      options: [
+        { label: 'Yes', value: true },
+        { label: 'No', value: false },
+      ],
     },
     label_style: elementStyle('label', 'Field Label Style', TEXT_PARTS),
     required_style: elementStyle(
@@ -1795,6 +1982,13 @@ export const ContactFormBlock = defineBlock({
     choice_style: elementStyle('choice', 'Choice Style', TEXT_PARTS),
     help_style: elementStyle('help', 'Help Text Style', TEXT_PARTS),
     button_style: elementStyle('button', 'Submit Button Style', BUTTON_PARTS),
+    prevButton_style: elementStyle(
+      'prevButton',
+      'Previous Button Style',
+      BUTTON_PARTS
+    ),
+    step_style: elementStyle('step', 'Step Header Style', TEXT_PARTS),
+    progress_style: elementStyle('progress', 'Progress Indicator Style', TEXT_PARTS),
     success_style: elementStyle(
       'success',
       'Success Message Style (after submit)',
@@ -1814,6 +2008,8 @@ export const ContactFormBlock = defineBlock({
     submitText: 'Send message',
     successMessage: 'Thanks! We will be in touch soon.',
     actionUrl: '',
+    actions: ['email'],
+    emailSubject: 'New form submission',
     fields: [
       { label: 'Name', name: 'name', type: 'text', required: true },
       { label: 'Email', name: 'email', type: 'email', required: true },

@@ -103,13 +103,38 @@ export function cmsTransformProps(
 ): NonNullable<RenderOptions['transformProps']> {
   const realPost = metadata.post as PostView | undefined;
   const post = realPost ?? SAMPLE_POST;
-  const page = metadata.page as { title?: string } | undefined;
+  const page = metadata.page as { id?: string; title?: string } | undefined;
   return (node, props) => {
     if (node.type === 'Breadcrumbs') {
       // Real context only: without it the block shows a sample trail in the editor.
       return kind === 'post'
         ? { ...props, post: realPost }
         : { ...props, page: page?.title ? { title: page.title } : undefined };
+    }
+    if (node.type === 'ContactForm') {
+      const nodeId = node.id || (props.id as string | undefined);
+      const globalId = (props.formId as string | undefined) || undefined;
+      const formSource = globalId
+        ? { kind: 'global' as const, id: globalId, nodeId }
+        : kind === 'post' && (realPost?.id || (metadata.post as any)?.id)
+          ? {
+              kind: 'post' as const,
+              id: (realPost?.id ?? (metadata.post as any)?.id) as string,
+              nodeId,
+            }
+          : page?.id || (metadata.page as any)?.id
+            ? {
+                kind: 'page' as const,
+                id: (page?.id ?? (metadata.page as any)?.id) as string,
+                nodeId,
+              }
+            : undefined;
+
+      return {
+        ...props,
+        nodeId,
+        formSource: formSource ?? props.formSource,
+      };
     }
     return kind === 'post' && node.type in POST_BLOCKS
       ? { ...props, post }

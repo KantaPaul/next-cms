@@ -31,6 +31,30 @@ const tsvector = customType<{ data: string }>({
   },
 });
 
+export type FormSubmissionSource = {
+  kind: 'global' | 'page' | 'post';
+  id: string;
+  name?: string;
+  formName?: string;
+  nodeId?: string;
+};
+
+export type FormSubmissionFile = {
+  field: string;
+  name: string;
+  key: string;
+  size: number;
+  mime: string;
+};
+
+export type FormActionLogEntry = {
+  action: string;
+  status: 'success' | 'error' | 'skipped';
+  message?: string;
+  error?: string;
+  at: string;
+};
+
 export const formSubmissions = pgTable(
   'form_submissions',
   {
@@ -40,6 +64,9 @@ export const formSubmissions = pgTable(
     payload: jsonb('payload').$type<Record<string, string>>().notNull(),
     status: varchar('status', { length: 20 }).notNull().default('new'),
     spam: boolean('spam').notNull().default(false),
+    source: jsonb('source').$type<FormSubmissionSource>(),
+    files: jsonb('files').$type<FormSubmissionFile[]>().default([]).notNull(),
+    actionLog: jsonb('action_log').$type<FormActionLogEntry[]>().default([]).notNull(),
     ...timestampColumns,
   },
   t => [

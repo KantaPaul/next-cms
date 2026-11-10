@@ -295,6 +295,12 @@ export function Gallery(p: GalleryProps) {
   );
 }
 
+export type ContactFormFieldCondition = {
+  field: string;
+  operator: 'equals' | 'not_equals' | 'contains' | 'empty' | 'not_empty';
+  value?: string;
+};
+
 export type ContactFormField = {
   label: string;
   name: string;
@@ -308,10 +314,21 @@ export type ContactFormField = {
     | 'url'
     | 'select'
     | 'radio'
-    | 'checkbox';
+    | 'checkbox'
+    | 'step'
+    | 'file'
+    | 'hidden'
+    | 'acceptance';
   required?: boolean;
   placeholder?: string;
   options?: string;
+  accept?: 'images' | 'documents' | 'both';
+  maxSizeMb?: number;
+  multiple?: boolean;
+  hiddenValue?: string;
+  hiddenSource?: 'static' | 'url_param';
+  conditions?: ContactFormFieldCondition[];
+  conditionMatch?: 'all' | 'any';
 };
 
 export type ContactFormProps = WithSection & {
@@ -322,6 +339,24 @@ export type ContactFormProps = WithSection & {
   successMessage?: string;
   actionUrl?: string;
   formId?: string;
+  nodeId?: string;
+  formSource?: {
+    kind: 'global' | 'page' | 'post';
+    id: string;
+    nodeId?: string;
+  };
+  actions?: ('email' | 'redirect' | 'webhook' | 'mailchimp')[];
+  emailTo?: string;
+  emailSubject?: string;
+  emailReplyToField?: string;
+  redirectUrl?: string;
+  webhookUrl?: string;
+  mailchimpListId?: string;
+  mailchimpEmailField?: string;
+  mailchimpFirstNameField?: string;
+  mailchimpLastNameField?: string;
+  mailchimpTags?: string;
+  mailchimpDoubleOptIn?: boolean;
 };
 
 export function ContactForm(p: ContactFormProps) {
@@ -338,6 +373,8 @@ export function ContactForm(p: ContactFormProps) {
         successMessage={p.successMessage || 'Thanks! We will be in touch soon.'}
         actionUrl={p.actionUrl}
         formId={p.formId}
+        nodeId={p.nodeId}
+        formSource={p.formSource}
         editing={p.editing}
         elements={p.elements}
       />

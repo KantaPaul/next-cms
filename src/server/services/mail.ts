@@ -10,6 +10,7 @@ export async function sendMail(input: {
   to: string;
   subject: string;
   text: string;
+  replyTo?: string;
 }): Promise<{ sent: boolean; reason?: string }> {
   if (!input.to || !env.MAIL_FROM || !isMailConfigured()) {
     return { sent: false, reason: 'Email is not configured.' };
@@ -28,6 +29,7 @@ export async function sendMail(input: {
           to: input.to,
           subject: input.subject,
           text: input.text,
+          reply_to: input.replyTo,
         }),
       });
       if (!response.ok) {
@@ -49,6 +51,7 @@ export async function sendMail(input: {
       to: input.to,
       subject: input.subject,
       text: input.text,
+      replyTo: input.replyTo,
     });
     return { sent: true };
   } catch (error) {

@@ -19,8 +19,10 @@ import {
   DEFAULT_LICENSE_SETTINGS,
   DEFAULT_AUTH_SETTINGS,
   DEFAULT_CUSTOM_CODE,
+  DEFAULT_INTEGRATIONS,
   type CustomCodeSettings,
   type CustomFont,
+  type SiteIntegrations,
   licenseSettingsSchema,
   authSettingsSchema,
   type ThemeTokens,
@@ -144,6 +146,8 @@ async function loadSettings(siteId: string) {
       blockSettings: normalizeBlockSettings(settings?.blockSettings),
       customCode: (settings?.customCode as CustomCodeSettings) ?? DEFAULT_CUSTOM_CODE,
       customFonts: (settings?.customFonts as CustomFont[]) ?? [],
+      integrations:
+        (settings?.integrations as SiteIntegrations) ?? DEFAULT_INTEGRATIONS,
     };
   } catch {
     return {
@@ -173,6 +177,7 @@ async function loadSettings(siteId: string) {
       blockSettings: DEFAULT_BLOCK_SETTINGS,
       customCode: DEFAULT_CUSTOM_CODE,
       customFonts: [],
+      integrations: DEFAULT_INTEGRATIONS,
       robotsTxt: null,
       googleAnalyticsId: null,
       updatedAt: new Date(),
@@ -187,7 +192,10 @@ async function authSettingsSiteId() {
 export const siteSettingsService = {
   get: cache(async () => loadSettings(await adminSiteId())),
 
-  getPublic: cache(async () => loadSettings((await siteContext.publicSite()).id)),
+  getPublic: cache(async () => {
+    const settings = await loadSettings((await siteContext.publicSite()).id);
+    return { ...settings, integrations: DEFAULT_INTEGRATIONS };
+  }),
 
   getAuthSettings: cache(async (): Promise<AuthSettings> => {
     try {
@@ -379,6 +387,32 @@ export const siteSettingsService = {
       targetName: 'Site settings (licensing policy)',
     });
     return { ok: true, data: parsed.data };
+  },
+
+  updateIntegrations: async (
+    integrations: SiteIntegrations,
+    access: UserAccess
+  ) => {
+    await accessService.assertPermission(
+      access.userId,
+      PERMISSIONS.SETTINGS_MANAGE
+    );
+    const siteId = await adminSiteId();
+    const [row] = await db
+      .update(siteSettings)
+      .set({ integrations, updatedAt: new Date() })
+      .where(eq(siteSettings.siteId, siteId))
+      .returning();
+
+    await auditService.log({
+      actorId: access.userId,
+      action: 'update',
+      targetType: 'settings',
+      targetId: siteId,
+      targetName: 'Site settings (integrations)',
+    });
+
+    return row;
   },
 };
 
