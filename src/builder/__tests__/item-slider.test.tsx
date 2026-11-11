@@ -245,7 +245,7 @@ describe('ItemSlider paging', () => {
     assert.doesNotMatch(html, /style="[^"]*--slides-per-view/);
     assert.match(html, /\[--slides-per-view:2\]/);
     assert.match(html, /sm:\[--slides-per-view:3\]/);
-    assert.match(html, /lg:\[--slides-per-view:5\]/);
+    assert.match(html, /s-desk-spv-5/);
   });
 });
 

@@ -11,6 +11,7 @@ let copiedBlockStyles: Record<string, unknown> | null = null;
 /** Section keys that belong to identity/visibility/motion and must not be overwritten by style paste. */
 const PRESERVED_SECTION_KEYS = new Set([
   'anchor',
+  'hideOn',
   'hideOnMobile',
   'hideOnTablet',
   'hideOnDesktop',

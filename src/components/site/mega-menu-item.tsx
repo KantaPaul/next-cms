@@ -139,7 +139,7 @@ export function MegaMenuItem({
         role="region"
         aria-label="Menu panel"
         hidden={!open}
-        className="fixed inset-x-0 z-50 hidden px-4 lg:block"
+        className="fixed inset-x-0 z-50 hidden px-4 s-desk-block"
         style={{
           top,
           paddingTop: HEADER_GAP,

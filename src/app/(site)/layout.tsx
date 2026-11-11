@@ -1,5 +1,7 @@
 import { cookies } from 'next/headers';
 import { fontStylesheetUrl, themeStyle } from '@/builder/theme';
+import { BreakpointsProvider } from '@/builder/breakpoints';
+import { getResponsiveCss } from '@/builder/responsive-css';
 import { buildCustomFontsCss } from '@/builder/fonts';
 import { sanitizeCss } from '@/builder/sanitize';
 import { MotionEffectsClient } from '@/builder/motion-effects-client';
@@ -61,7 +63,8 @@ export default async function SiteLayout({
     <div
       className="site-root flex min-h-screen flex-col"
       data-site-theme={mode}
-      style={themeStyle(settings.themeTokens)}
+      data-breakpoints={JSON.stringify(settings.breakpoints)}
+      style={themeStyle(settings.themeTokens, settings.breakpoints)}
     >
       {/* Before paint: apply the visitor's saved mode, or the OS mode for "system". */}
       <script
@@ -143,7 +146,14 @@ export default async function SiteLayout({
           />
         ) : null}
         <AdminBar />
-        <MotionEffectsClient />
+        <style
+          data-responsive-css
+          dangerouslySetInnerHTML={{
+            __html: getResponsiveCss(settings.breakpoints),
+          }}
+        />
+        <BreakpointsProvider value={settings.breakpoints}>
+          <MotionEffectsClient />
         {exitPreviewHref && (
           <div
             role="status"
@@ -165,6 +175,7 @@ export default async function SiteLayout({
         ) : null}
         <ConsentBanner siteSlug={siteSlug} />
         <GoogleAnalytics measurementId={settings.googleAnalyticsId} />
+        </BreakpointsProvider>
       </ConsentProvider>
     </div>
   );

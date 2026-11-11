@@ -23,6 +23,7 @@ import {
   customCodeSchema,
   consentSettingsSchema,
   backupSettingsSchema,
+  breakpointsSchema,
 } from './settings.schemas';
 import { z } from 'zod';
 
@@ -342,4 +343,22 @@ export const updateCustomFonts = permissionProcedure(
     revalidatePath(PAGES.DASHBOARD.THEME);
     revalidatePath('/', 'layout');
     return row;
+  });
+
+export const updateBreakpoints = permissionProcedure(
+  PERMISSIONS.SETTINGS_MANAGE
+)
+  .input(z.object({ breakpoints: breakpointsSchema }))
+  .action(async ({ input, ctx }) => {
+    const res = await siteSettingsService.updateBreakpoints(
+      input.breakpoints,
+      ctx.access
+    );
+    if (!res.ok) {
+      return { ok: false, error: res.error };
+    }
+    revalidatePath(PAGES.DASHBOARD.SETTINGS_BREAKPOINTS);
+    revalidatePath(PAGES.DASHBOARD.SETTINGS);
+    revalidatePath('/', 'layout');
+    return { ok: true, data: res.data };
   });

@@ -8,6 +8,7 @@ import {
 import {
   type AnimationSettings,
   type Device,
+  DEVICES,
   type Entrance,
   type Exit,
   type HoverEffect,
@@ -76,11 +77,9 @@ export function AnimationControl({
   const entrance = effect(value?.entrance);
   const exit = effect(value?.exit);
   const hover = effect(value?.hover);
-  const devices: Record<Device, boolean> = {
-    desktop: value?.devices?.desktop !== false,
-    tablet: value?.devices?.tablet !== false,
-    mobile: value?.devices?.mobile !== false,
-  };
+  const devices: Partial<Record<Device, boolean>> = Object.fromEntries(
+    DEVICES.map(d => [d, value?.devices?.[d] !== false])
+  );
 
   const set = (patch: Partial<AnimationSettings>) => {
     const next = { ...value, ...patch };

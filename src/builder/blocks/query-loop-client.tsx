@@ -74,8 +74,8 @@ export function QueryLoopCarousel({
       : columnsDesktop === 2
         ? 'w-[85%] sm:w-[calc(50%-12px)]'
         : columnsDesktop === 4
-          ? 'w-[85%] sm:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]'
-          : 'w-[85%] sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)]';
+          ? 'w-[85%] sm:w-[calc(50%-12px)] s-desk-w-q4'
+          : 'w-[85%] sm:w-[calc(50%-12px)] s-desk-w-q3';
 
   return (
     <div className="relative">

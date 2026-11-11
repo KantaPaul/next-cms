@@ -12,9 +12,11 @@ import {
 import { useId } from 'react';
 import {
   type Device,
+  DEVICES,
   LENGTH_LIMITS,
   type LengthUnit,
   PROP_UNITS,
+  resolveHideOn,
   type SectionSettings,
   SPACING_LIMITS,
   type SpacingUnit,
@@ -418,25 +420,26 @@ export function ResponsiveSectionControl({
   onChange: (value: Partial<SectionSettings>) => void;
 }) {
   const s = value ?? {};
-  const shown: Record<Device, boolean> = {
-    desktop: !s.hideOnDesktop,
-    tablet: !s.hideOnTablet,
-    mobile: !s.hideOnMobile,
-  };
+  const hidden = new Set(resolveHideOn(s));
+  const shown: Partial<Record<Device, boolean>> = Object.fromEntries(
+    DEVICES.map(d => [d, !hidden.has(d)])
+  );
 
   return (
     <div>
       <ControlLabel label="Show on" />
       <DeviceToggles
         value={shown}
-        onChange={next =>
+        onChange={next => {
+          const nextHideOn = DEVICES.filter(d => next[d] === false);
           onChange({
             ...s,
-            hideOnDesktop: !next.desktop,
-            hideOnTablet: !next.tablet,
-            hideOnMobile: !next.mobile,
-          })
-        }
+            hideOn: nextHideOn,
+            hideOnDesktop: nextHideOn.includes('desktop'),
+            hideOnTablet: nextHideOn.includes('tablet'),
+            hideOnMobile: nextHideOn.includes('mobile'),
+          });
+        }}
       />
     </div>
   );

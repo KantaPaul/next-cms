@@ -4,7 +4,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { PAGES } from '@/config/pages';
 import { cn } from '@/lib/utils/cn';
-import { Blocks, Code, Cookie, Settings, ShieldCheck } from 'lucide-react';
+import {
+  Blocks,
+  Code,
+  Cookie,
+  MonitorSmartphone,
+  Settings,
+  ShieldCheck,
+} from 'lucide-react';
 
 export function SettingsNav() {
   const pathname = usePathname();
@@ -13,6 +20,7 @@ export function SettingsNav() {
     pathname === PAGES.DASHBOARD.SETTINGS_LICENSE ||
     pathname?.startsWith(`${PAGES.DASHBOARD.SETTINGS_LICENSE}/`);
   const isGeneralActive = pathname === PAGES.DASHBOARD.SETTINGS;
+  const isBreakpointsActive = pathname === PAGES.DASHBOARD.SETTINGS_BREAKPOINTS;
   const isConsentActive = pathname === PAGES.DASHBOARD.SETTINGS_CONSENT;
   const isBlocksActive = pathname === PAGES.DASHBOARD.SETTINGS_BLOCKS;
   const isCustomCodeActive = pathname === PAGES.DASHBOARD.SETTINGS_CUSTOM_CODE;
@@ -23,6 +31,12 @@ export function SettingsNav() {
       href: PAGES.DASHBOARD.SETTINGS,
       icon: Settings,
       active: isGeneralActive,
+    },
+    {
+      title: 'Breakpoints',
+      href: PAGES.DASHBOARD.SETTINGS_BREAKPOINTS,
+      icon: MonitorSmartphone,
+      active: isBreakpointsActive,
     },
     {
       title: 'Cookie consent',

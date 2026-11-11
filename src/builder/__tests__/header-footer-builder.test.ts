@@ -11,6 +11,7 @@ import { isActiveHref } from '../../components/site/active-nav-link';
 import * as starters from '../../db/seed/header-footer-starters';
 import type { StarterTemplate } from '../../db/seed/header-footer-starters';
 import { normalizeGlobalContent } from '../normalize-global-content';
+import { buildResponsiveCss } from '../responsive-css';
 import { resolveChromeStyle } from '../style';
 import { menuHref } from '@/components/site/menu-links';
 import {
@@ -600,7 +601,7 @@ describe('mobile menu swap', () => {
   });
 
   it('hides it at the mobile menu breakpoint', () => {
-    const css = readFileSync(new URL('../site.css', import.meta.url), 'utf8');
+    const css = buildResponsiveCss();
     assert.match(
       css,
       /max-width: 767\.98px[^}]*\[data-mobile-menu\][^}]*\[data-nav-menu='horizontal'\]/

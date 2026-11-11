@@ -267,6 +267,13 @@
       "when": 1794315617399,
       "tag": "20261110130017_collection_block_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1794366837890,
+      "tag": "20261111031357_custom_breakpoints",
+      "breakpoints": true
     }
   ]
 }

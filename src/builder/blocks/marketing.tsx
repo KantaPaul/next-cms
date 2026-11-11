@@ -42,7 +42,7 @@ export function Hero(p: HeroProps) {
   const subtitleEl = el(
     p,
     'subtitle',
-    's-muted mt-6 text-lg leading-relaxed md:text-xl'
+    's-muted mt-6 text-lg leading-relaxed s-tab-text-xl'
   );
   const primaryBtnEl = el(p, 'primaryButton');
   const secondaryBtnEl = el(p, 'secondaryButton');
@@ -58,7 +58,7 @@ export function Hero(p: HeroProps) {
   return (
     <Section section={p.section} editing={p.editing}>
       <div
-        className={cn('grid items-center gap-12', split && 'lg:grid-cols-2')}
+        className={cn('grid items-center gap-12', split && 's-desk-cols-2')}
       >
         <div className={cn(centered && 'mx-auto max-w-3xl text-center')}>
           {orderedParts(p, {
@@ -137,9 +137,9 @@ export type FeaturesProps = WithSection &
   };
 
 const GRID_COLS = {
-  2: 'md:grid-cols-2',
-  3: 'md:grid-cols-2 lg:grid-cols-3',
-  4: 'md:grid-cols-2 lg:grid-cols-4',
+  2: 's-tab-cols-2',
+  3: 's-tab-cols-2 s-desk-cols-3',
+  4: 's-tab-cols-2 s-desk-cols-4',
 };
 
 export function Features(p: FeaturesProps) {
@@ -210,7 +210,7 @@ export function Stats(p: StatsProps) {
   const valueEl = el(
     p,
     'value',
-    's-primary-text s-stat-value text-3xl md:text-4xl'
+    's-primary-text s-stat-value text-3xl s-tab-text-4xl'
   );
   const labelEl = el(p, 'label', 'mt-1 text-sm font-medium');
   const headlineEl = el(
@@ -230,7 +230,7 @@ export function Stats(p: StatsProps) {
       <dl
         className={cn(
           'grid grid-cols-2 gap-6',
-          { 2: '', 3: 'lg:grid-cols-3', 4: 'lg:grid-cols-4' }[p.columns ?? 4]
+          { 2: '', 3: 's-desk-cols-3', 4: 's-desk-cols-4' }[p.columns ?? 4]
         )}
       >
         {(p.items ?? []).map((item, i) => (
@@ -307,7 +307,7 @@ export function Pricing(p: PricingProps) {
     <div
       className={cn(
         'grid gap-6',
-        plans.length >= 3 ? 'lg:grid-cols-3' : 'md:grid-cols-2',
+        plans.length >= 3 ? 's-desk-cols-3' : 's-tab-cols-2',
         'items-stretch'
       )}
     >
@@ -645,7 +645,7 @@ export function Cta(p: CtaProps) {
     <Section section={p.section} editing={p.editing}>
       <div
         className={cn(
-          's-radius px-6 py-14 text-center md:px-16',
+          's-radius px-6 py-14 text-center s-tab-px-16',
           variant === 'gradient' && 's-gradient',
           variant === 'primary' && 's-primary-bg',
           variant === 'subtle' && 's-surface s-border border'
@@ -916,7 +916,7 @@ export function Team(p: TeamProps) {
           <div
             className={cn(
               'grid gap-6 sm:grid-cols-2',
-              { 2: '', 3: 'lg:grid-cols-3', 4: 'lg:grid-cols-4' }[p.columns ?? 3]
+              { 2: '', 3: 's-desk-cols-3', 4: 's-desk-cols-4' }[p.columns ?? 3]
             )}
           >
             {renderedItems}
@@ -983,8 +983,8 @@ export function PriceList(p: PriceListProps) {
       />
       <div
         className={cn(
-          'grid gap-6 md:gap-8 w-full',
-          cols === 2 ? 'md:grid-cols-2' : 'grid-cols-1 max-w-3xl mx-auto'
+          'grid gap-6 s-tab-gap-8 w-full',
+          cols === 2 ? 's-tab-cols-2' : 'grid-cols-1 max-w-3xl mx-auto'
         )}
       >
         {items.map((item, i) => {

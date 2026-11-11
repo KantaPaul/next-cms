@@ -1,5 +1,6 @@
 import 'server-only';
 import {
+  type BreakpointConfig,
   type BuilderDocument,
   collectDynamicRefs,
   type NodeId,
@@ -28,6 +29,8 @@ import { siteSettingsService } from '@/server/services/site-settings.service';
 
 export type EditorData = {
   document: BuilderDocument;
+  /** Breakpoint settings from site_settings. */
+  breakpoints: BreakpointConfig;
   /** Block data (blog posts, videos, global blocks) shown on the canvas, never stored. */
   loaded: Record<NodeId, Record<string, unknown>>;
   /** Problems found in the stored document (R797). */
@@ -134,6 +137,7 @@ export async function loadEditorData({
 
   return {
     document,
+    breakpoints: settings.breakpoints,
     loaded,
     issues: documentIssues(document, setup.definitions),
     hiddenBlocks: hiddenBlocksFor(

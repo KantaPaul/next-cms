@@ -2,6 +2,7 @@
 
 import { useId, useState } from 'react';
 import { useCanvasDevice } from './device-row';
+import { useEditorBridge } from './editor-bridge';
 import type { ContainerTag, Device, LengthUnit, Responsive } from '../style';
 import {
   ALIGN_ITEMS_VALUES,
@@ -125,6 +126,7 @@ function ResponsiveTrackInput({
   onChange: (value: Responsive<string> | undefined) => void;
 }) {
   const [device] = useCanvasDevice();
+  const { breakpoints } = useEditorBridge();
   const [draft, setDraft] = useState('');
 
   const isObject =
@@ -132,7 +134,8 @@ function ResponsiveTrackInput({
   const currentDeviceVal = isObject
     ? (value as Record<Device, string>)[device]
     : undefined;
-  const resolvedVal = resolveResponsive(value, device, safeTrackList) ?? '';
+  const resolvedVal =
+    resolveResponsive(value, device, safeTrackList, breakpoints) ?? '';
   const hasOverride = currentDeviceVal !== undefined;
   const isInherited =
     !hasOverride && resolvedVal !== '' && device !== 'desktop';
@@ -237,14 +240,20 @@ export function ContainerLayoutControl({
 }) {
   const c = value ?? {};
   const [device] = useCanvasDevice();
+  const { breakpoints } = useEditorBridge();
   const id = useId();
   const mode =
-    resolveResponsive(c.mode, device, v => {
-      if (typeof v !== 'string') return undefined;
-      return LAYOUT_MODES.includes(v as LayoutMode)
-        ? (v as LayoutMode)
-        : undefined;
-    }) ?? 'flex';
+    resolveResponsive(
+      c.mode,
+      device,
+      v => {
+        if (typeof v !== 'string') return undefined;
+        return LAYOUT_MODES.includes(v as LayoutMode)
+          ? (v as LayoutMode)
+          : undefined;
+      },
+      breakpoints
+    ) ?? 'flex';
   const set = (patch: Partial<ContainerSettings>) =>
     onChange({ ...(c ?? {}), ...patch });
 

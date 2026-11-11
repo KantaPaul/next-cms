@@ -110,4 +110,82 @@ describe('Elementor converter', () => {
     const btn = Object.values(result.document.nodes).find(n => n.type === 'Button');
     assert.equal(btn?.props.link, '#');
   });
+
+  it('maps _widescreen, _laptop, _tablet_extra, _tablet, _mobile_extra, and _mobile suffixes', () => {
+    const payload = [
+      {
+        id: 'c1',
+        elType: 'container',
+        settings: {
+          flex_direction: 'row',
+          flex_direction_laptop: 'row',
+          flex_direction_tablet_extra: 'column',
+          flex_direction_mobile_extra: 'column-reverse',
+          flex_gap: { size: 32, unit: 'px' },
+          flex_gap_widescreen: { size: 48, unit: 'px' },
+          flex_gap_tablet: { size: 20, unit: 'px' },
+          hide_laptop: 'yes',
+          hide_mobile_extra: 'yes',
+          _padding_widescreen: { top: 80, right: 0, bottom: 80, left: 0, unit: 'px' },
+          _padding_laptop: { top: 48, right: 0, bottom: 48, left: 0, unit: 'px' },
+        },
+        elements: [
+          {
+            id: 'h1',
+            elType: 'widget',
+            widgetType: 'heading',
+            settings: {
+              title: 'Multi-device Title',
+              typography_font_size: { size: 48, unit: 'px' },
+              typography_font_size_widescreen: { size: 64, unit: 'px' },
+              typography_font_size_laptop: { size: 40, unit: 'px' },
+              typography_font_size_tablet_extra: { size: 36, unit: 'px' },
+              typography_font_size_tablet: { size: 32, unit: 'px' },
+              typography_font_size_mobile_extra: { size: 28, unit: 'px' },
+              typography_font_size_mobile: { size: 24, unit: 'px' },
+            },
+          },
+        ],
+      },
+    ];
+    const result = convertElementorToDocument(payload, { validate: documentIssues });
+    assert.equal(result.valid, true, `Validation issues: ${result.issues.join('; ')}`);
+
+    const nodes = Object.values(result.document.nodes);
+    const container = nodes.find(n => n.type === 'Container');
+    assert.ok(container);
+    const contProps = container.props as {
+      container: Record<string, any>;
+      section: Record<string, any>;
+    };
+    assert.deepEqual(contProps.container.direction, {
+      desktop: 'row',
+      laptop: 'row',
+      tablet_extra: 'column',
+      mobile_extra: 'column-reverse',
+    });
+    assert.deepEqual(contProps.container.gap, {
+      widescreen: 48,
+      desktop: 32,
+      tablet: 20,
+    });
+    assert.deepEqual(contProps.section.hideOn, ['laptop', 'mobile_extra']);
+    assert.deepEqual(contProps.section.spacing, {
+      widescreen: { top: 80, right: 0, bottom: 80, left: 0 },
+      laptop: { top: 48, right: 0, bottom: 48, left: 0 },
+    });
+
+    const heading = nodes.find(n => n.type === 'Heading');
+    assert.ok(heading);
+    const fontSize = (heading.props as any).elements?.heading?.typography?.fontSize;
+    assert.deepEqual(fontSize, {
+      widescreen: 64,
+      desktop: 48,
+      laptop: 40,
+      tablet_extra: 36,
+      tablet: 32,
+      mobile_extra: 28,
+      mobile: 24,
+    });
+  });
 });

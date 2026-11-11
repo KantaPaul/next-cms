@@ -24,6 +24,7 @@ import { useMemo, useState } from 'react';
 import { useEditor, useEditorStore } from './context';
 import { DeviceSwitch } from './device-switch';
 import {
+  BreakpointsProvider,
   DeviceProvider,
   type FieldComponent,
   FieldControl,
@@ -68,8 +69,9 @@ function FieldRow({
   const value = access.read(props);
   const defaultValue = access.read(defaultProps);
   const changed = fieldChanged(field, value, defaultValue, device);
+  const breakpoints = useEditor(state => state.breakpoints);
   const responsive = !!field.responsive;
-  const source = responsive ? inheritedFrom(value, device) : null;
+  const source = responsive ? inheritedFrom(value, device, breakpoints) : null;
   const isContainer = field.type === 'list' || field.type === 'object';
 
   return (
@@ -126,6 +128,7 @@ export function Inspector({
   settingsHref?: string;
 }) {
   const device = useEditor(state => state.device);
+  const breakpoints = useEditor(state => state.breakpoints);
   const selectedId = useEditor(state =>
     state.selection.length === 1 ? state.selection[0] : null
   );
@@ -182,7 +185,8 @@ export function Inspector({
   if (!node && count === 0) {
     return (
       <FieldTypesProvider types={fieldTypes}>
-        <DeviceProvider value={device}>
+        <BreakpointsProvider value={breakpoints}>
+          <DeviceProvider value={device}>
           <div
             style={{
               display: 'grid',
@@ -201,7 +205,8 @@ export function Inspector({
               fieldTypes={fieldTypes}
             />
           </div>
-        </DeviceProvider>
+          </DeviceProvider>
+        </BreakpointsProvider>
       </FieldTypesProvider>
     );
   }

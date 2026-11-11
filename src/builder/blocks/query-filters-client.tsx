@@ -96,7 +96,7 @@ export function QueryFilterClient({
   const vertical = orientation === 'vertical';
   const fieldGrid = vertical
     ? 'grid grid-cols-1 gap-3'
-    : 'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4';
+    : 'grid grid-cols-1 gap-3 sm:grid-cols-2 s-desk-cols-4';
 
   // Merge URL searchParams with server-provided activeParams
   const currentParams = useMemo(() => {
@@ -685,7 +685,7 @@ export function QueryFilterClient({
         <div
           className={cn(
             'flex items-center justify-between',
-            vertical ? 'lg:hidden' : 'sm:hidden'
+            vertical ? 's-desk-hidden' : 'sm:hidden'
           )}
         >
           <button
@@ -733,7 +733,7 @@ export function QueryFilterClient({
             's-surface s-border s-radius border p-4',
             mobileDrawer &&
               !drawerOpen &&
-              (vertical ? 'hidden lg:block' : 'hidden sm:block')
+              (vertical ? 'hidden s-desk-block' : 'hidden sm:block')
           )
         )}
       >

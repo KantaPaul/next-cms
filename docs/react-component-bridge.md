@@ -130,7 +130,7 @@ The bridge supports schema wrappers to unlock visual editor features:
 | `z.boolean()` | Toggle switch |
 | `z.enum(['a', 'b', 'c'])` | Select dropdown with auto-labeled options |
 | `z.union([z.literal('sm'), z.literal('lg')])` | Select dropdown from literal union |
-| `responsive(z.number())` | Multi-device override (desktop, tablet, mobile) |
+| `responsive(z.number())` | Multi-device override (`widescreen`, `desktop`, `laptop`, `tablet_extra`, `tablet`, `mobile_extra`, `mobile`) |
 | `token('color')` | Visual theme color picker linked to design tokens |
 | `dynamic(z.string())` | Dynamic content binding picker (post title, author, etc.) |
 | `translatable(z.string())` | Per-locale multi-language text field |

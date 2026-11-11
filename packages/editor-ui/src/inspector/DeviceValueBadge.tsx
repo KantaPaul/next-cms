@@ -1,7 +1,25 @@
 import React from 'react';
-import { Smartphone, Tablet, Monitor } from 'lucide-react';
+import { type Device, DEVICE_LABELS } from '@nextcms/builder-core';
+import {
+  Laptop,
+  Monitor,
+  Smartphone,
+  Tablet,
+  TabletSmartphone,
+  Tv,
+} from 'lucide-react';
 
-export type DeviceType = 'desktop' | 'tablet' | 'mobile';
+export type DeviceType = Device;
+
+export const DEVICE_ICON_MAP: Record<DeviceType, typeof Monitor> = {
+  widescreen: Tv,
+  desktop: Monitor,
+  laptop: Laptop,
+  tablet_extra: TabletSmartphone,
+  tablet: Tablet,
+  mobile_extra: TabletSmartphone,
+  mobile: Smartphone,
+};
 
 export interface DeviceValueBadgeProps {
   device: DeviceType;
@@ -18,11 +36,9 @@ export const DeviceValueBadge: React.FC<DeviceValueBadgeProps> = ({
   onClick,
   className = '',
 }) => {
-  const icon = {
-    desktop: <Monitor className="w-2.5 h-2.5" />,
-    tablet: <Tablet className="w-2.5 h-2.5" />,
-    mobile: <Smartphone className="w-2.5 h-2.5" />,
-  }[device];
+  const Icon = DEVICE_ICON_MAP[device] ?? Monitor;
+  const deviceLabel = DEVICE_LABELS[device] ?? device;
+  const inheritedLabel = DEVICE_LABELS[inheritedFrom] ?? inheritedFrom;
 
   // A button only when it does something; otherwise a plain label.
   const Tag = onClick ? 'button' : 'span';
@@ -31,8 +47,8 @@ export const DeviceValueBadge: React.FC<DeviceValueBadgeProps> = ({
       {...(onClick ? { type: 'button' as const, onClick } : {})}
       title={
         isInherited
-          ? `Inherited from ${inheritedFrom} breakpoint`
-          : `Custom override for ${device}`
+          ? `Inherited from ${inheritedLabel} breakpoint`
+          : `Custom override for ${deviceLabel}`
       }
       className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[var(--ne-radius-sm)] text-[10px] font-mono leading-none transition-colors ${
         isInherited
@@ -40,8 +56,12 @@ export const DeviceValueBadge: React.FC<DeviceValueBadgeProps> = ({
           : 'bg-[var(--ne-primary-soft)] text-[var(--ne-primary)] font-medium border border-[var(--ne-primary)]/30'
       } ${className}`}
     >
-      {icon}
-      <span>{isInherited ? `from ${inheritedFrom}` : device}</span>
+      <Icon className="w-2.5 h-2.5" />
+      <span>
+        {isInherited
+          ? `from ${inheritedLabel.toLowerCase()}`
+          : deviceLabel.toLowerCase()}
+      </span>
     </Tag>
   );
 };

@@ -46,6 +46,7 @@ export type CollectionItemField = {
   posterUrl?: string;
   galleryStyle?: GalleryStyle;
   galleryAspect?: GalleryAspect;
+  excludeFeaturedImage?: boolean;
   urlDisplay?: UrlDisplayMode;
   urlLinkText?: string;
   urlNewTab?: boolean;
@@ -76,10 +77,10 @@ type EntryField = {
 };
 
 const SIZE_CLASS: Record<Exclude<TextSize, 'auto'>, string> = {
-  h1: 'text-4xl md:text-5xl font-extrabold tracking-tight text-[var(--site-fg)]',
-  h2: 'text-2xl md:text-3xl font-bold tracking-tight',
-  h3: 'text-xl md:text-2xl font-bold tracking-tight text-[var(--site-fg)]',
-  lead: 'text-lg md:text-xl s-muted leading-relaxed',
+  h1: 'text-4xl s-tab-text-5xl font-extrabold tracking-tight text-[var(--site-fg)]',
+  h2: 'text-2xl s-tab-text-3xl font-bold tracking-tight',
+  h3: 'text-xl s-tab-text-2xl font-bold tracking-tight text-[var(--site-fg)]',
+  lead: 'text-lg s-tab-text-xl s-muted leading-relaxed',
   body: 'text-base text-[var(--site-fg)] font-medium',
   small: 'text-sm s-muted',
 };
@@ -169,8 +170,14 @@ function FieldValue({
     const mediaMeta = readMediaFieldConfig(field.config);
     const isMultiField = Boolean(mediaMeta.multiple);
     const isFeaturedField = Boolean(mediaMeta.isFeatured);
-    const galleryImages =
-      isMultiField || fieldUrls.length > 1
+    const shouldExcludeFeatured = Boolean(
+      row.excludeFeaturedImage && isMultiField && !isFeaturedField
+    );
+    const galleryImages = shouldExcludeFeatured
+      ? featuredImage
+        ? fieldUrls.filter(url => url !== featuredImage)
+        : fieldUrls
+      : isMultiField || fieldUrls.length > 1
         ? mergeFeaturedWithFieldMedia(value, featuredImage)
         : fieldUrls;
     const useGallery = galleryImages.length > 1 || isMultiField;
@@ -185,6 +192,7 @@ function FieldValue({
         galleryStyle={row.galleryStyle ?? 'facebook'}
         galleryAspect={row.galleryAspect ?? 'auto'}
         enableLightbox={!usePopupTrigger}
+        showFeaturedBadge={!shouldExcludeFeatured}
         overlayId={usePopupTrigger ? row.overlayId : undefined}
         className={cn(...valueStyle.classes)}
         style={valueStyle.style}

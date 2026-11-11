@@ -230,7 +230,7 @@ export function Comments(p: CommentsProps) {
       >
         <h2
           id={`comments-${p.post.id}`}
-          {...el(p, 'heading', 's-section-title text-2xl md:text-3xl')}
+          {...el(p, 'heading', 's-section-title text-2xl s-tab-text-3xl')}
         >
           {p.heading || 'Comments'}
           {total > 0 ? (
@@ -249,7 +249,7 @@ export function Comments(p: CommentsProps) {
                 p.cardVariant &&
                   p.cardVariant !== 'default' &&
                   p.cardVariant !== 'none' &&
-                  'p-5 md:p-6'
+                  'p-5 s-tab-p-6'
               )
             )}
           >

@@ -7,10 +7,12 @@
 
 import {
   type BlockSchemas,
+  type BreakpointConfig,
   type BuilderDocument,
   type BuilderNode,
   buildColumnSpecsForParent,
   COLUMN_PARENT_TYPES,
+  DEFAULT_BREAKPOINTS,
   type Device,
   canPlace,
   canRedo,
@@ -60,6 +62,8 @@ export type EditorState = {
   savedDoc: BuilderDocument;
   /** Device the canvas shows and per-device fields edit (R694). */
   device: Device;
+  /** Active site breakpoint configuration. */
+  breakpoints: BreakpointConfig;
   /** True while dragging a resize handle on the canvas. */
   resizing: boolean;
 };
@@ -68,6 +72,7 @@ export type EditorStoreOptions = {
   document: BuilderDocument;
   schemas: BlockSchemas;
   rules?: EditorRules;
+  breakpoints?: BreakpointConfig;
   createId?: (type: string) => NodeId;
 };
 
@@ -79,6 +84,7 @@ export function createEditorStore({
   document,
   schemas,
   rules,
+  breakpoints = DEFAULT_BREAKPOINTS,
   createId = createNodeId,
 }: EditorStoreOptions) {
   const prepareDoc = (raw: BuilderDocument) =>
@@ -95,6 +101,7 @@ export function createEditorStore({
     clipboard: null,
     savedDoc: initial,
     device: 'desktop',
+    breakpoints,
     resizing: false,
   };
   const listeners = new Set<Listener>();
@@ -632,6 +639,10 @@ export function createEditorStore({
 
     setDevice(device: Device) {
       if (state.device !== device) set({ device });
+    },
+
+    setBreakpoints(nextBreakpoints: BreakpointConfig) {
+      set({ breakpoints: nextBreakpoints });
     },
 
     canUndo: () => canUndo(state.history),

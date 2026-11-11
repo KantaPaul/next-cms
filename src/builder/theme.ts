@@ -1,3 +1,8 @@
+import {
+  type BreakpointConfig,
+  DEFAULT_BREAKPOINTS,
+  enabledDevices,
+} from '@nextcms/builder-core';
 import type { CSSProperties } from 'react';
 import {
   buildGoogleFontsUrl,
@@ -5,6 +10,7 @@ import {
   FONT_FAMILIES,
   getFontStack,
 } from './fonts';
+import { DEVICE_SUFFIX } from './responsive-css';
 import {
   DEFAULT_GLOBAL_COLORS,
   DEFAULT_THEME_TOKENS,
@@ -170,7 +176,8 @@ export function themeColorTokens(
 
 /** CSS custom properties consumed by `site.css` and every builder block (R419, R420, R423). */
 export function themeStyle(
-  tokens?: Partial<ThemeTokens> | null
+  tokens?: Partial<ThemeTokens> | null,
+  breakpoints: BreakpointConfig = DEFAULT_BREAKPOINTS
 ): CSSProperties {
   const t = resolveThemeTokens(tokens);
   const colors = t.colors ?? DEFAULT_GLOBAL_COLORS;
@@ -210,8 +217,9 @@ export function themeStyle(
     }
   }
 
-  // Typography presets → `--site-type-<id>-*`. Sizes are emitted per device
-  // (`-size` desktop, `-size-t` tablet, `-size-m` mobile) for `.s-type-<id>`.
+  // Typography presets → `--site-type-<id>-*`. Sizes are emitted per enabled
+  // device (`-size` desktop, `-size-<suffix>` others) for `.s-type-<id>`.
+  const enabled = enabledDevices(breakpoints);
   const presets = t.typography ?? DEFAULT_TYPOGRAPHY_PRESETS;
   for (const preset of presets) {
     const key = sanitizeTokenKey(preset.id);
@@ -224,11 +232,12 @@ export function themeStyle(
         v === undefined || v === '' ? undefined : typeof v === 'number' ? `${v}px` : v;
       if (typeof fs === 'object' && fs !== null) {
         const d = size(fs.desktop) ?? size(fs.tablet) ?? size(fs.mobile);
-        const tb = size(fs.tablet) ?? d;
-        const m = size(fs.mobile) ?? tb;
         if (d) styles[`--site-type-${key}-size`] = d;
-        if (tb) styles[`--site-type-${key}-size-t`] = tb;
-        if (m) styles[`--site-type-${key}-size-m`] = m;
+        for (const dev of enabled) {
+          if (dev === 'desktop') continue;
+          const v = size(fs[dev]);
+          if (v) styles[`--site-type-${key}-size-${DEVICE_SUFFIX[dev]}`] = v;
+        }
       } else {
         const v = size(fs);
         if (v) {

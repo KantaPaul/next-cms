@@ -9,6 +9,8 @@ import {
   ancestorIds,
   type BlockComponents,
   type BuilderNode,
+  canvasWidthsFromConfig,
+  DEFAULT_BREAKPOINTS,
   type Device,
   type DynamicContext,
   isDynamicBinding,
@@ -118,11 +120,8 @@ export type BlockAction = {
 export type BlockActionsFor = (node: BuilderNode) => BlockAction[];
 
 /** Canvas width per device; desktop fills the available space. */
-export const DEVICE_WIDTHS: Record<Device, number | null> = {
-  desktop: 1400,
-  tablet: 768,
-  mobile: 375,
-};
+export const DEVICE_WIDTHS: Record<Device, number | null> =
+  canvasWidthsFromConfig(DEFAULT_BREAKPOINTS);
 
 /**
  * Desktop never renders narrower than the desktop breakpoint, so the page's
@@ -143,6 +142,8 @@ export type EditorCanvasProps = {
   onFrame?: (frame: HTMLIFrameElement) => void;
   /** Overrides canvas widths per device. */
   deviceWidths?: Partial<Record<Device, number | null>>;
+  /** Generated responsive CSS injected into the canvas iframe head. */
+  responsiveCss?: string;
   /** Resize handles for a block (R695). */
   resizeHandles?: ResizeHandlesFor;
   /** Props of a block type that can be edited as text on the canvas (R696). */
@@ -1104,6 +1105,7 @@ export function EditorCanvas({
   renderRoot,
   onFrame,
   deviceWidths,
+  responsiveCss,
   resizeHandles,
   inlineProps,
   blockActions,
@@ -1120,7 +1122,12 @@ export function EditorCanvas({
   const [remount, setRemount] = useState<Record<NodeId, number>>({});
   const dragState = useDragState(drag);
   const device = useEditor(state => state.device);
-  const width = { ...DEVICE_WIDTHS, ...deviceWidths }[device];
+  const breakpoints = useEditor(state => state.breakpoints) ?? DEFAULT_BREAKPOINTS;
+  const width = {
+    ...DEVICE_WIDTHS,
+    ...canvasWidthsFromConfig(breakpoints),
+    ...deviceWidths,
+  }[device];
   const [frame, setFrame] = useState<HTMLIFrameElement | null>(null);
   const [frameDoc, setFrameDoc] = useState<Document | null>(null);
   const [marquee, setMarquee] = useState<Rect | null>(null);
@@ -1824,7 +1831,7 @@ export function EditorCanvas({
             backgroundColor: '#ffffff',
           }}
         >
-          <CanvasFrame onReady={onReady}>
+          <CanvasFrame onReady={onReady} responsiveCss={responsiveCss}>
             <CanvasDocument
               components={components}
               transformProps={transformProps}

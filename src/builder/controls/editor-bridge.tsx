@@ -8,11 +8,12 @@
 
 import { createContext, type ReactNode, useContext } from 'react';
 import type { CustomFont } from '../fonts';
-import type { Device } from '../style';
+import type { BreakpointConfig, Device } from '../style';
 
 export type EditorBridge = {
   device: Device;
   setDevice: (device: Device) => void;
+  breakpoints?: BreakpointConfig;
   selectedType?: string;
   selectedProps?: Record<string, unknown>;
   themeTokens?: Record<string, string>;

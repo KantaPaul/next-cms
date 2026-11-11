@@ -1042,4 +1042,90 @@ describe('Lightbox block for the popup builder', () => {
     assert.ok(plainTextHtml.includes('Text Shadow'));
     assert.ok(plainTextHtml.includes('Background'));
   });
+
+  it('excludes featured image and Featured badge from CollectionItem multi-upload gallery when excludeFeaturedImage is enabled', () => {
+    const { EntryProvider } = require('@/components/analytics/entry-context');
+    const { CollectionItem } = require('../blocks/collection-item-client');
+    const { CollectionItemBlock } = require('../definitions/native');
+
+    const itemsField = CollectionItemBlock.fields?.items;
+    assert.ok(itemsField?.type === 'list' && itemsField.item?.excludeFeaturedImage);
+    assert.equal(itemsField.item.excludeFeaturedImage.when?.({}), false);
+
+    const entry = {
+      id: 'entry-exclude-featured-1',
+      collectionId: 'col-1',
+      slug: 'northwind-studio',
+      status: 'published',
+      data: {
+        hero: 'https://example.com/featured.jpg',
+        screenshots: [
+          'https://example.com/featured.jpg',
+          'https://example.com/shot-1.jpg',
+          'https://example.com/shot-2.jpg',
+        ],
+      },
+      publishedAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: null,
+      deletedAt: null,
+      collection: {
+        id: 'col-1',
+        siteId: 'site-1',
+        name: 'Showcase',
+        slug: 'showcase',
+        templatePageId: null,
+        fields: [
+          {
+            key: 'hero',
+            label: 'Featured Shot',
+            type: 'media',
+            config: { isFeatured: true },
+          },
+          {
+            key: 'screenshots',
+            label: 'Gallery',
+            type: 'media',
+            config: { multiple: true },
+          },
+        ],
+      },
+    };
+
+    const withFeaturedHtml = renderToStaticMarkup(
+      createElement(EntryProvider, {
+        entry,
+        children: createElement(CollectionItem, {
+          items: [
+            {
+              field: 'screenshots',
+              galleryStyle: 'fb-mosaic',
+              excludeFeaturedImage: false,
+            },
+          ],
+        }),
+      })
+    );
+    assert.ok(withFeaturedHtml.includes('https://example.com/featured.jpg'));
+    assert.ok(withFeaturedHtml.includes('Featured'));
+
+    const excludedHtml = renderToStaticMarkup(
+      createElement(EntryProvider, {
+        entry,
+        children: createElement(CollectionItem, {
+          items: [
+            {
+              field: 'screenshots',
+              galleryStyle: 'fb-mosaic',
+              excludeFeaturedImage: true,
+            },
+          ],
+        }),
+      })
+    );
+    assert.equal(excludedHtml.includes('https://example.com/featured.jpg'), false);
+    assert.equal(excludedHtml.includes('>Featured<'), false);
+    assert.ok(excludedHtml.includes('https://example.com/shot-1.jpg'));
+    assert.ok(excludedHtml.includes('https://example.com/shot-2.jpg'));
+  });
 });

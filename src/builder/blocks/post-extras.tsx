@@ -68,7 +68,7 @@ export function AuthorBio(
         {...el(
           p,
           'card',
-          's-card s-card-outline flex flex-col gap-5 p-6 sm:flex-row sm:items-start md:p-8'
+          's-card s-card-outline flex flex-col gap-5 p-6 sm:flex-row sm:items-start s-tab-p-8'
         )}
       >
         {p.showAvatar !== false &&
@@ -196,7 +196,7 @@ export function AuthorCard(
           'card',
           cn(
             cardClass(p, 's-card s-card-outline'),
-            'flex flex-col gap-6 p-6 md:p-8',
+            'flex flex-col gap-6 p-6 s-tab-p-8',
             stacked ? 'items-center text-center' : 'sm:flex-row sm:items-start'
           )
         )}

@@ -79,6 +79,7 @@ export const PAGES = {
     COMMENTS: '/dashboard/comments',
     ACCOUNT: '/dashboard/account',
     SETTINGS: '/dashboard/settings',
+    SETTINGS_BREAKPOINTS: '/dashboard/settings/breakpoints',
     SETTINGS_CONSENT: '/dashboard/settings/consent',
     SETTINGS_CUSTOM_CODE: '/dashboard/settings/custom-code',
     SETTINGS_INTEGRATIONS: '/dashboard/settings/integrations',

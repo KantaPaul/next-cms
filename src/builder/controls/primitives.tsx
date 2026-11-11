@@ -42,6 +42,7 @@ import {
   resolveResponsive,
 } from '../style';
 import { DeviceRow, useCanvasDevice } from './device-row';
+import { useEditorBridge } from './editor-bridge';
 
 export function ControlLabel({
   label,
@@ -366,6 +367,7 @@ export function ResponsiveChoose<T extends string>({
   valid?: (x: unknown) => T | undefined;
 }) {
   const [device] = useCanvasDevice();
+  const { breakpoints } = useEditorBridge();
   const validator =
     valid ??
     ((x: unknown) => (options.some(o => o.value === x) ? (x as T) : undefined));
@@ -377,7 +379,7 @@ export function ResponsiveChoose<T extends string>({
     : device === 'desktop'
       ? (value as T | undefined)
       : undefined;
-  const resolvedVal = resolveResponsive(value, device, validator);
+  const resolvedVal = resolveResponsive(value, device, validator, breakpoints);
   const hasOverride = currentDeviceVal !== undefined;
   const isInherited =
     !hasOverride && resolvedVal !== undefined && device !== 'desktop';
@@ -447,6 +449,7 @@ export function ResponsiveSelect<T extends string>({
   valid?: (x: unknown) => T | undefined;
 }) {
   const [device] = useCanvasDevice();
+  const { breakpoints } = useEditorBridge();
   const validator =
     valid ??
     ((x: unknown) => (options.some(o => o.value === x) ? (x as T) : undefined));
@@ -459,7 +462,8 @@ export function ResponsiveSelect<T extends string>({
       ? (value as T | undefined)
       : undefined;
   const resolvedVal =
-    resolveResponsive(value, device, validator) ?? options[0]?.value;
+    resolveResponsive(value, device, validator, breakpoints) ??
+    options[0]?.value;
   const hasOverride = currentDeviceVal !== undefined;
   const isInherited =
     !hasOverride && resolvedVal !== undefined && device !== 'desktop';
@@ -540,6 +544,7 @@ export function ResponsiveSlider({
   onChange: (value: MaybeResponsive<number> | undefined) => void;
 }) {
   const [device] = useCanvasDevice();
+  const { breakpoints } = useEditorBridge();
   const validator = (x: unknown) =>
     typeof x === 'number' && Number.isFinite(x) ? x : undefined;
 
@@ -550,7 +555,7 @@ export function ResponsiveSlider({
     : device === 'desktop'
       ? (value as number | undefined)
       : undefined;
-  const resolvedVal = resolveResponsive(value, device, validator);
+  const resolvedVal = resolveResponsive(value, device, validator, breakpoints);
   const hasOverride = currentDeviceVal !== undefined;
   const isInherited =
     !hasOverride && resolvedVal !== undefined && device !== 'desktop';

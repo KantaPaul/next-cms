@@ -34,11 +34,11 @@ describe('resolveElementStyle', () => {
     assert.ok(res.classes.includes('s-lh'));
     const style = res.style as Record<string, string>;
     assert.equal(style['--s-fs-d'], '32px');
-    assert.equal(style['--s-fs-t'], '32px'); // fallback from desktop
+    assert.equal(style['--s-fs-t'], undefined);
     assert.equal(style['--s-fs-m'], '18px');
     assert.equal(style['--s-lh-d'], '1.5em');
-    assert.equal(style['--s-lh-t'], '1.5em');
-    assert.equal(style['--s-lh-m'], '1.5em');
+    assert.equal(style['--s-lh-t'], undefined);
+    assert.equal(style['--s-lh-m'], undefined);
   });
 
   it('sets hover classes and hover CSS variables', () => {
@@ -69,8 +69,8 @@ describe('resolveElementStyle', () => {
     assert.ok(res.classes.includes('s-pr'));
     const style = res.style as Record<string, string>;
     assert.equal(style['--s-pt-d'], '12px');
-    assert.equal(style['--s-pt-t'], '12px');
-    assert.equal(style['--s-pt-m'], '12px');
+    assert.equal(style['--s-pt-t'], undefined);
+    assert.equal(style['--s-pt-m'], undefined);
   });
 
   it('sets text stroke with responsive width and fallback', () => {
@@ -85,7 +85,7 @@ describe('resolveElementStyle', () => {
     const style = res.style as Record<string, string>;
     assert.equal(style['--s-tst'], '2px #ff0000');
     assert.equal(style['--s-tst-d'], '2px #ff0000');
-    assert.equal(style['--s-tst-t'], '2px #ff0000'); // desktop fallback
+    assert.equal(style['--s-tst-t'], undefined);
     assert.equal(style['--s-tst-m'], '1px #ff0000');
   });
 
@@ -151,10 +151,10 @@ describe('resolveElementStyle', () => {
     const style = res.style as Record<string, string>;
     assert.ok(style['--s-ff'].includes("'Inter'"));
     assert.equal(style['--s-fw-d'], '600');
-    assert.equal(style['--s-fw-t'], '600');
-    assert.equal(style['--s-fw-m'], '600');
+    assert.equal(style['--s-fw-t'], undefined);
+    assert.equal(style['--s-fw-m'], undefined);
     assert.equal(style['--s-ws-d'], '3px');
-    assert.equal(style['--s-ws-t'], '3px');
+    assert.equal(style['--s-ws-t'], undefined);
     assert.equal(style['--s-ws-m'], '1px');
   });
 
@@ -227,11 +227,11 @@ describe('resolveSectionStyle', () => {
 
     const style = res.style as Record<string, string>;
     assert.equal(style['--s-bg-pos-d'], 'center top');
-    assert.equal(style['--s-bg-pos-t'], 'center top');
+    assert.equal(style['--s-bg-pos-t'], undefined);
     assert.equal(style['--s-bg-pos-m'], 'center center');
 
     assert.equal(style['--s-bg-size-d'], 'cover');
-    assert.equal(style['--s-bg-size-t'], 'cover');
+    assert.equal(style['--s-bg-size-t'], undefined);
     assert.equal(style['--s-bg-size-m'], 'contain');
 
     assert.equal(style['--s-bg-attach'], 'fixed');
@@ -251,8 +251,8 @@ describe('resolveSectionStyle', () => {
     const style = res.style as Record<string, string>;
     assert.ok(style['--s-ff'].includes("'Roboto'"));
     assert.equal(style['--s-fw-d'], '500');
-    assert.equal(style['--s-fw-t'], '500');
-    assert.equal(style['--s-fw-m'], '500');
+    assert.equal(style['--s-fw-t'], undefined);
+    assert.equal(style['--s-fw-m'], undefined);
   });
 });
 

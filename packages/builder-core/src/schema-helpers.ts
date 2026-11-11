@@ -14,7 +14,7 @@
  */
 
 import { z } from 'zod';
-import { DEVICES } from './fields';
+import { DEVICES, type Responsive } from './fields';
 import {
   type DynamicBinding,
   dynamicBindingSchema,
@@ -32,11 +32,15 @@ const responsiveRegistry = new WeakMap<z.ZodType, z.ZodType>();
  * fallback as the R694 inspector fields: `responsive(z.number())` validates
  * either a plain number or `{ desktop?, tablet?, mobile? }`.
  */
-export function responsive<T extends z.ZodType>(inner: T): z.ZodType {
+export function responsive<T extends z.ZodType>(
+  inner: T
+): z.ZodType<z.infer<T> | Responsive<z.infer<T>>> {
   const perDevice = z.object(
     Object.fromEntries(DEVICES.map(device => [device, inner.optional()]))
   );
-  const schema = z.union([inner, perDevice]);
+  const schema = z.union([inner, perDevice]) as z.ZodType<
+    z.infer<T> | Responsive<z.infer<T>>
+  >;
   responsiveRegistry.set(schema, inner);
   return schema;
 }

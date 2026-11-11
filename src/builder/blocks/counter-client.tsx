@@ -57,7 +57,7 @@ export function Counter(p: CounterProps) {
   const separator = p.separator ?? '';
   const align = p.alignment ?? 'center';
 
-  const numberEl = el(p, 'number', 'text-4xl md:text-5xl font-extrabold tracking-tight s-primary-text font-mono');
+  const numberEl = el(p, 'number', 'text-4xl s-tab-text-5xl font-extrabold tracking-tight s-primary-text font-mono');
   const titleEl = el(p, 'title', 'mt-2 text-sm font-medium s-muted');
 
   const [current, setCurrent] = useState(end);

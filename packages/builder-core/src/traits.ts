@@ -9,7 +9,7 @@
 import type { ComponentType } from 'react';
 import { z } from 'zod';
 import type { BlockDefinition, DefaultsContext } from './define';
-import type { FieldDef } from './fields';
+import { DEVICES, type FieldDef } from './fields';
 
 export type BlockRender<
   P extends Record<string, unknown> = Record<string, unknown>,
@@ -162,6 +162,9 @@ export const withVisibility = (): PropTrait =>
       visibility: z
         .object({
           hidden: z.boolean().optional(),
+          hideOn: z
+            .array(z.enum(DEVICES as [string, ...string[]]))
+            .optional(),
           hideOnMobile: z.boolean().optional(),
         })
         .optional(),

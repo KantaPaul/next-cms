@@ -24,6 +24,7 @@ import {
   RollingNumber,
   resolveMotionLevel,
   type EditorTheme,
+  type DeviceSwitchOption,
   FloatingDeviceBar,
   Kbd,
   type MenuItem,
@@ -165,6 +166,7 @@ export type SharedChromeProps = {
   layout?: 'single' | 'split';
   onLayoutChange?: (layout: 'single' | 'split') => void;
   onDockSideChange?: (side: 'left' | 'right') => void;
+  devices?: DeviceSwitchOption[];
 };
 
 export function SharedChrome({
@@ -198,6 +200,7 @@ export function SharedChrome({
   layout,
   onLayoutChange,
   onDockSideChange,
+  devices,
 }: SharedChromeProps) {
   const store = useEditorStore();
   const save = useSaveState(queue);
@@ -342,6 +345,7 @@ export function SharedChrome({
             <FloatingDeviceBar
               device={device}
               onDeviceChange={next => store.setDevice(next)}
+              devices={devices}
               zoom={zoom}
               onZoomChange={onZoomChange}
             />

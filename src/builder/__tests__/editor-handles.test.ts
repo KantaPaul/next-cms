@@ -22,7 +22,9 @@ describe('CMS resize handles', () => {
     const patch = width.write({ section: { paddingY: 'lg' } }, 'mobile', 80, { start: 100 });
     assert.deepEqual(patch, { section: { paddingY: 'lg', widthUnit: '%', width: { mobile: 80 } } });
     assert.equal(width.read(patch, 'mobile'), 80);
-    assert.equal(width.read(patch, 'desktop'), 80, 'inherits until desktop is set');
+    assert.equal(width.read(patch, 'desktop'), undefined);
+    const deskPatch = width.write({ section: { paddingY: 'lg' } }, 'desktop', 80, { start: 100 });
+    assert.equal(width.read(deskPatch, 'mobile'), 80, 'smaller devices inherit from desktop');
   });
 
   it('pin desktop spacing before changing another device', () => {

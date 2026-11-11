@@ -14,7 +14,12 @@ import {
 } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
-import type { ElementStyle } from '../style';
+import { useBreakpoints } from '../breakpoints';
+import {
+  type BreakpointConfig,
+  deviceForWidth,
+  type ElementStyle,
+} from '../style';
 import { el } from './element';
 
 export type ItemSliderEffect = 'slide' | 'fade' | 'zoom';
@@ -58,12 +63,12 @@ const SPV_TABLET_CLASSES: Record<number, string> = {
 };
 
 const SPV_DESKTOP_CLASSES: Record<number, string> = {
-  1: 'lg:[--slides-per-view:1]',
-  2: 'lg:[--slides-per-view:2]',
-  3: 'lg:[--slides-per-view:3]',
-  4: 'lg:[--slides-per-view:4]',
-  5: 'lg:[--slides-per-view:5]',
-  6: 'lg:[--slides-per-view:6]',
+  1: 's-desk-spv-1',
+  2: 's-desk-spv-2',
+  3: 's-desk-spv-3',
+  4: 's-desk-spv-4',
+  5: 's-desk-spv-5',
+  6: 's-desk-spv-6',
 };
 
 const GAP_CONFIG: Record<string, { px: string; className: string }> = {
@@ -146,14 +151,23 @@ function trackMetrics(track: HTMLElement): TrackMetrics {
   };
 }
 
-function getActiveSpv(desktop = 3, tablet = 2, mobile = 1): number {
+function getActiveSpv(
+  desktop = 3,
+  tablet = 2,
+  mobile = 1,
+  breakpoints?: BreakpointConfig
+): number {
   if (typeof window === 'undefined') return desktop;
-  if (window.innerWidth >= 1024) return desktop;
-  if (window.innerWidth >= 640) return tablet;
-  return mobile;
+  const dev = deviceForWidth(window.innerWidth, breakpoints);
+  if (dev === 'mobile') return mobile;
+  if (dev === 'mobile_extra' || dev === 'tablet' || dev === 'tablet_extra') {
+    return tablet;
+  }
+  return desktop;
 }
 
 export function ItemSlider(p: ItemSliderProps) {
+  const breakpoints = useBreakpoints();
   const slides = Children.toArray(p.children).filter(Boolean);
   const itemCount = slides.length;
 
@@ -185,14 +199,16 @@ export function ItemSlider(p: ItemSliderProps) {
 
   useEffect(() => {
     const updateSpv = () => {
-      setCurrentSpv(getActiveSpv(desktopSpv, tabletSpv, mobileSpv));
+      setCurrentSpv(
+        getActiveSpv(desktopSpv, tabletSpv, mobileSpv, breakpoints)
+      );
     };
 
     updateSpv();
     window.addEventListener('resize', updateSpv);
 
     return () => window.removeEventListener('resize', updateSpv);
-  }, [desktopSpv, tabletSpv, mobileSpv]);
+  }, [desktopSpv, tabletSpv, mobileSpv, breakpoints]);
 
   const pages = useMemo(
     () => (isFadeOrZoom ? chunkItemsIntoPages(slides, currentSpv) : []),
@@ -396,7 +412,7 @@ export function ItemSlider(p: ItemSliderProps) {
             gapConfig.className,
             SPV_MOBILE_CLASSES[mobileSpv] ?? '[--slides-per-view:1]',
             SPV_TABLET_CLASSES[tabletSpv] ?? 'sm:[--slides-per-view:2]',
-            SPV_DESKTOP_CLASSES[desktopSpv] ?? 'lg:[--slides-per-view:3]'
+            SPV_DESKTOP_CLASSES[desktopSpv] ?? 's-desk-spv-3'
           )}
           style={
             {

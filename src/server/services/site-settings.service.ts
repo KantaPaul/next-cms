@@ -1,6 +1,12 @@
 import 'server-only';
 import { randomBytes } from 'node:crypto';
 import {
+  type BreakpointConfig,
+  DEFAULT_BREAKPOINTS,
+  normalizeBreakpointConfig,
+  validateBreakpoints,
+} from '@nextcms/builder-core';
+import {
   type BlockSettings,
   DEFAULT_BLOCK_SETTINGS,
   normalizeBlockSettings,
@@ -83,6 +89,7 @@ export type SiteSettingsInput = {
   siteMode?: SiteModeSettings;
   consent?: ConsentSettings;
   backupSettings?: BackupSettings;
+  breakpoints?: BreakpointConfig;
 };
 
 export function localizedSettings(
@@ -138,6 +145,7 @@ async function loadSettings(siteId: string) {
         consent: (row.consent as ConsentSettings) ?? DEFAULT_CONSENT_SETTINGS,
         backupSettings:
           (row.backupSettings as BackupSettings) ?? DEFAULT_BACKUP_SETTINGS,
+        breakpoints: normalizeBreakpointConfig(row.breakpoints),
       };
 
     const [created] = await db
@@ -171,6 +179,7 @@ async function loadSettings(siteId: string) {
       consent: (settings?.consent as ConsentSettings) ?? DEFAULT_CONSENT_SETTINGS,
       backupSettings:
         (settings?.backupSettings as BackupSettings) ?? DEFAULT_BACKUP_SETTINGS,
+      breakpoints: normalizeBreakpointConfig(settings?.breakpoints),
     };
   } catch {
     return {
@@ -204,6 +213,7 @@ async function loadSettings(siteId: string) {
       siteMode: DEFAULT_SITE_MODE,
       consent: DEFAULT_CONSENT_SETTINGS,
       backupSettings: DEFAULT_BACKUP_SETTINGS,
+      breakpoints: DEFAULT_BREAKPOINTS,
       robotsTxt: null,
       googleAnalyticsId: null,
       updatedAt: new Date(),
@@ -548,6 +558,36 @@ export const siteSettingsService = {
       targetName: 'Backup schedule settings',
     });
     return row;
+  },
+
+  updateBreakpoints: async (
+    input: unknown,
+    access: UserAccess
+  ): Promise<{ ok: true; data: BreakpointConfig } | { ok: false; error: string }> => {
+    await accessService.assertPermission(
+      access.userId,
+      PERMISSIONS.SETTINGS_MANAGE
+    );
+    const normalized = normalizeBreakpointConfig(input);
+    const check = validateBreakpoints(normalized);
+    if (!check.ok) {
+      return check;
+    }
+    const siteId = await adminSiteId();
+    await loadSettings(siteId);
+    await db
+      .update(siteSettings)
+      .set({ breakpoints: normalized, updatedAt: new Date() })
+      .where(eq(siteSettings.siteId, siteId));
+    await auditService.log({
+      actorId: access.userId,
+      action: 'settings_change',
+      targetType: 'settings',
+      targetId: siteId,
+      targetName: 'Responsive breakpoints',
+    });
+    revalidatePublicSite();
+    return { ok: true, data: normalized };
   },
 };
 

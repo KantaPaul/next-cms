@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import {
+  DEVICES,
+  type Device,
+  responsive,
+  validateBreakpoints,
+} from '@nextcms/builder-core';
 import { FONT_FAMILIES } from '@/builder/fonts';
 import { parseVideoSettings } from '@/lib/video/settings';
 import { licenseSettingsSchema } from '@/db/schemas/licenses.schema';
@@ -71,17 +77,7 @@ export const themeTokensSchema = z.object({
         id: z.string().max(50),
         name: z.string().max(50),
         fontFamily: z.string().max(100).optional(),
-        fontSize: z
-          .union([
-            z.string().max(50),
-            z.number(),
-            z.object({
-              desktop: z.union([z.string().max(50), z.number()]).optional(),
-              tablet: z.union([z.string().max(50), z.number()]).optional(),
-              mobile: z.union([z.string().max(50), z.number()]).optional(),
-            }),
-          ])
-          .optional(),
+        fontSize: responsive(z.union([z.string().max(50), z.number()])).optional(),
         fontWeight: z.union([z.string().max(20), z.number()]).optional(),
         lineHeight: z.union([z.string().max(20), z.number()]).optional(),
         letterSpacing: z.string().max(20).optional(),
@@ -296,3 +292,24 @@ export const customCodeSchema = z.object({
 export type CustomCodeInput = z.infer<typeof customCodeSchema>;
 
 export const deactivateManagedLicenseSchema = z.object({}).optional();
+
+const deviceEnumSchema = z.enum(DEVICES as [Device, ...Device[]]);
+
+export const breakpointsSchema = z
+  .array(
+    z.object({
+      device: deviceEnumSchema,
+      label: z.string().trim().min(1).max(40),
+      width: z.coerce.number().int().min(200).max(5000),
+      enabled: z.boolean(),
+    })
+  )
+  .superRefine((items, ctx) => {
+    const res = validateBreakpoints(items);
+    if (!res.ok) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: res.error,
+      });
+    }
+  });

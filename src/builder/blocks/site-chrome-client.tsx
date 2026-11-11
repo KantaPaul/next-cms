@@ -82,7 +82,8 @@ export function MobileMenuClient({
     setExpandedItems(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const visibilityClass = breakpoint === 'tablet' ? 'lg:hidden' : 'md:hidden';
+  const visibilityClass =
+    breakpoint === 'tablet' ? 's-desk-hidden' : 's-tab-hidden';
 
   const drawerPositionClass =
     drawerSide === 'full'
@@ -431,7 +432,7 @@ export function SearchBoxClient({
             'overflow-hidden rounded-xl border border-[var(--site-border)] bg-[var(--site-bg)] p-1.5 shadow-2xl',
             mode === 'inline'
               ? cn(
-                  'absolute top-full mt-2 w-72 sm:w-80 md:w-96 max-w-[calc(100vw-2rem)] z-50',
+                  'absolute top-full mt-2 w-72 sm:w-80 s-tab-w-96 max-w-[calc(100vw-2rem)] z-50',
                   align === 'right' ? 'right-0' : 'left-0'
                 )
               : 'mt-3 w-full border-t border-[var(--site-border)] pt-3'

@@ -1,16 +1,31 @@
 'use client';
 
-import { Monitor, Smartphone, Tablet } from 'lucide-react';
+import {
+  DEFAULT_BREAKPOINTS,
+  DEVICE_LABELS,
+  enabledDevices,
+} from '@nextcms/builder-core';
+import {
+  Laptop,
+  Monitor,
+  Smartphone,
+  Tablet,
+  TabletSmartphone,
+  Tv,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils/cn';
 import type { Device } from '../style';
 import { useEditorBridge } from './editor-bridge';
 
-const ICONS = { desktop: Monitor, tablet: Tablet, mobile: Smartphone };
-const LABELS: Record<Device, string> = {
-  desktop: 'Desktop',
-  tablet: 'Tablet',
-  mobile: 'Mobile',
+const ICONS: Record<Device, typeof Monitor> = {
+  widescreen: Tv,
+  desktop: Monitor,
+  laptop: Laptop,
+  tablet_extra: TabletSmartphone,
+  tablet: Tablet,
+  mobile_extra: TabletSmartphone,
+  mobile: Smartphone,
 };
 
 /** The device the canvas is showing. Changing it resizes the canvas in whichever editor hosts the control. */
@@ -19,27 +34,31 @@ export function useCanvasDevice() {
   return [device, setDevice] as const;
 }
 
-/** Monitor, tablet, and phone buttons that switch the canvas viewport. */
+/** Enabled device buttons that switch the canvas viewport. */
 export function DeviceRow({ className }: { className?: string }) {
-  const [device, setDevice] = useCanvasDevice();
+  const { device, setDevice, breakpoints } = useEditorBridge();
+  const bp = breakpoints ?? DEFAULT_BREAKPOINTS;
+  const active = enabledDevices(bp);
+  const byDevice = new Map(bp.map(entry => [entry.device, entry]));
   return (
     <fieldset
       className={cn(
-        'flex min-w-0 items-center gap-0.5 border-0 p-0',
+        'flex min-w-0 flex-wrap items-center gap-0.5 border-0 p-0',
         className
       )}
       aria-label="Edit for device"
     >
-      {(Object.keys(ICONS) as Device[]).map(d => {
-        const Icon = ICONS[d];
+      {active.map(d => {
+        const Icon = ICONS[d] ?? Monitor;
+        const label = byDevice.get(d)?.label ?? DEVICE_LABELS[d];
         return (
           <Button
             key={d}
             type="button"
             variant="ghost"
             size="icon-sm"
-            title={LABELS[d]}
-            aria-label={LABELS[d]}
+            title={label}
+            aria-label={label}
             aria-pressed={device === d}
             onClick={() => setDevice(d)}
             className={cn(
@@ -61,30 +80,40 @@ export function DeviceToggles({
   value,
   onChange,
 }: {
-  value: Record<Device, boolean>;
-  onChange: (value: Record<Device, boolean>) => void;
+  value: Partial<Record<Device, boolean>>;
+  onChange: (value: Partial<Record<Device, boolean>>) => void;
 }) {
+  const { breakpoints } = useEditorBridge();
+  const bp = breakpoints ?? DEFAULT_BREAKPOINTS;
+  const active = enabledDevices(bp);
+  const byDevice = new Map(bp.map(entry => [entry.device, entry]));
   return (
-    <fieldset className="flex min-w-0 gap-1 border-0 p-0" aria-label="Devices">
-      {(Object.keys(ICONS) as Device[]).map(d => {
-        const Icon = ICONS[d];
+    <fieldset
+      className="flex min-w-0 flex-wrap gap-1 border-0 p-0"
+      aria-label="Devices"
+    >
+      {active.map(d => {
+        const Icon = ICONS[d] ?? Monitor;
+        const label = byDevice.get(d)?.label ?? DEVICE_LABELS[d];
+        const on = value[d] !== false;
         return (
           <Button
             key={d}
             type="button"
             variant="outline"
             size="sm"
-            aria-pressed={value[d]}
-            title={`${value[d] ? 'Plays' : 'Static'} on ${LABELS[d].toLowerCase()}`}
-            onClick={() => onChange({ ...value, [d]: !value[d] })}
+            aria-pressed={on}
+            title={`${on ? 'Active' : 'Hidden'} on ${label.toLowerCase()}`}
+            onClick={() => onChange({ ...value, [d]: !on })}
             className={cn(
-              'h-8 flex-1 gap-1.5 px-2 text-xs',
-              value[d]
+              'h-8 min-w-[4.5rem] flex-1 gap-1.5 px-2 text-xs',
+              on
                 ? 'border-primary/30 bg-primary/5 text-primary hover:bg-primary/10'
                 : 'text-muted-foreground line-through'
             )}
           >
-            <Icon className="size-3.5" /> {LABELS[d]}
+            <Icon className="size-3.5 shrink-0" />
+            <span className="truncate">{label}</span>
           </Button>
         );
       })}

@@ -1,24 +1,47 @@
+import {
+  type BreakpointConfig,
+  DEFAULT_BREAKPOINTS,
+  DEVICES,
+  type Device,
+  deviceForWidth as coreDeviceForWidth,
+  fallbackFor,
+} from '@nextcms/builder-core';
 import type { CSSProperties } from 'react';
 import {
   FONT_FAMILIES as CURATED_FONT_FAMILIES,
   FONT_STACK as CURATED_FONT_STACK,
   getFontStack,
 } from './fonts';
+import { DEVICE_SUFFIX } from './responsive-css';
 
 /*
  * Section style and motion settings stored in page JSON.
  * Every value is read through an allowlist or a validator.
  */
 
-export type Device = 'desktop' | 'tablet' | 'mobile';
-export const DEVICES: Device[] = ['desktop', 'tablet', 'mobile'];
+export {
+  type BreakpointConfig,
+  DEFAULT_BREAKPOINTS,
+  DEVICES,
+  type Device,
+  DEVICE_SUFFIX,
+  fallbackFor,
+};
+
 export const DEVICE_WIDTH: Record<Device, number> = {
+  widescreen: 2400,
   desktop: 1280,
+  laptop: 1366,
+  tablet_extra: 1200,
   tablet: 768,
+  mobile_extra: 880,
   mobile: 375,
 };
-export const deviceForWidth = (width: number): Device =>
-  width >= 1024 ? 'desktop' : width >= 768 ? 'tablet' : 'mobile';
+
+export const deviceForWidth = (
+  width: number,
+  config: BreakpointConfig = DEFAULT_BREAKPOINTS
+): Device => coreDeviceForWidth(width, config);
 
 export type Side = 'top' | 'right' | 'bottom' | 'left';
 export const SIDES: Side[] = ['top', 'right', 'bottom', 'left'];
@@ -404,6 +427,7 @@ export function hasActiveMotion(m?: MotionEffectsSettings): boolean {
 export type SectionSettings = {
   paddingY?: 'none' | 'sm' | 'md' | 'lg';
   background?: 'default' | 'muted' | 'primary' | 'dark';
+  hideOn?: Device[];
   hideOnMobile?: boolean;
   hideOnTablet?: boolean;
   hideOnDesktop?: boolean;
@@ -740,16 +764,41 @@ function formatTextShadow(t: TextShadowSettings | undefined): string | null {
   return `${x}px ${y}px ${blur}px ${color}`;
 }
 
-const DEVICE_ORDER: Record<Device, Device[]> = {
-  desktop: ['desktop', 'tablet', 'mobile'],
-  tablet: ['tablet', 'desktop', 'mobile'],
-  mobile: ['mobile', 'tablet', 'desktop'],
-};
-const DEVICE_SUFFIX: Record<Device, string> = {
-  desktop: 'd',
-  tablet: 't',
-  mobile: 'm',
-};
+/** Resolves hidden devices from `hideOn` or legacy `hideOn*` booleans. */
+export function resolveHideOn(
+  s:
+    | Pick<
+        SectionSettings,
+        'hideOn' | 'hideOnMobile' | 'hideOnTablet' | 'hideOnDesktop'
+      >
+    | undefined
+): Device[] {
+  if (!s) return [];
+  if (Array.isArray(s.hideOn)) {
+    return s.hideOn.filter((d): d is Device => DEVICES.includes(d));
+  }
+  const out: Device[] = [];
+  if (s.hideOnDesktop) out.push('desktop');
+  if (s.hideOnTablet) out.push('tablet');
+  if (s.hideOnMobile) out.push('mobile');
+  return out;
+}
+
+/** Semantic visibility classes for a section or column (`s-hide-*` or `s-dim-*` in editor). */
+export function hideOnClasses(
+  s:
+    | Pick<
+        SectionSettings,
+        'hideOn' | 'hideOnMobile' | 'hideOnTablet' | 'hideOnDesktop'
+      >
+    | undefined,
+  editing?: boolean
+): string[] {
+  return resolveHideOn(s).map(
+    d => `${editing ? 's-dim' : 's-hide'}-${DEVICE_SUFFIX[d]}`
+  );
+}
+
 const SIDE_SUFFIX: Record<Side, string> = {
   top: 't',
   right: 'r',
@@ -760,14 +809,15 @@ const SIDE_SUFFIX: Record<Side, string> = {
 export function resolveResponsive<T>(
   v: MaybeResponsive<T> | undefined,
   device: Device,
-  valid: (x: unknown) => T | undefined
+  valid: (x: unknown) => T | undefined,
+  config: BreakpointConfig = DEFAULT_BREAKPOINTS
 ): T | undefined {
   if (v === undefined || v === null) return undefined;
 
   if (typeof v === 'object' && !Array.isArray(v)) {
     const resp = v as Partial<Record<Device, unknown>>;
 
-    for (const d of DEVICE_ORDER[device]) {
+    for (const d of fallbackFor(device, config)) {
       const parsed = valid(resp[d]);
       if (parsed !== undefined) return parsed;
     }
@@ -778,19 +828,18 @@ export function resolveResponsive<T>(
   return valid(v);
 }
 
-const resolveSide = (
-  value: Responsive<Sides> | undefined,
+/** Reads only the explicit value set for `device` (plain values belong to `desktop`). */
+function ownResponsive<T>(
+  v: MaybeResponsive<T> | undefined,
   device: Device,
-  side: Side,
-  max: number
-) => {
-  for (const d of DEVICE_ORDER[device]) {
-    const n = clamp(value?.[d]?.[side], 0, max);
-    if (n !== undefined) return n;
+  valid: (x: unknown) => T | undefined
+): T | undefined {
+  if (v === undefined || v === null) return undefined;
+  if (typeof v === 'object' && !Array.isArray(v)) {
+    return valid((v as Partial<Record<Device, unknown>>)[device]);
   }
-
-  return undefined;
-};
+  return device === 'desktop' ? valid(v) : undefined;
+}
 
 function responsiveSides(
   value: Responsive<Sides> | undefined,
@@ -802,12 +851,18 @@ function responsiveSides(
   const vars: Record<string, string> = {};
 
   for (const side of SIDES) {
-    if (resolveSide(value, 'desktop', side, max) === undefined) continue;
+    const hasSide = DEVICES.some(
+      d => clamp(value?.[d]?.[side], 0, max) !== undefined
+    );
+    if (!hasSide) continue;
     classes.push(`s-${prefix}${SIDE_SUFFIX[side]}`);
 
     for (const device of DEVICES) {
-      vars[`--s-${prefix}${SIDE_SUFFIX[side]}-${DEVICE_SUFFIX[device]}`] =
-        `${resolveSide(value, device, side, max)}${unit}`;
+      const n = clamp(value?.[device]?.[side], 0, max);
+      if (n !== undefined) {
+        vars[`--s-${prefix}${SIDE_SUFFIX[side]}-${DEVICE_SUFFIX[device]}`] =
+          `${n}${unit}`;
+      }
     }
   }
 
@@ -815,16 +870,23 @@ function responsiveSides(
 }
 
 function responsiveLength(
-  value: Responsive<number> | undefined,
+  value: MaybeResponsive<number> | undefined,
   unit: unknown,
   allowed: readonly LengthUnit[],
   signed: boolean,
   name: string,
   style: Record<string, string>
 ): boolean {
-  if (!value || typeof value !== 'object') return false;
+  if (value === undefined || value === null) return false;
   const u = pick(unit, allowed) ?? allowed[0];
   const lim = signed ? SIGNED_LENGTH_LIMITS[u] : LENGTH_LIMITS[u];
+  if (typeof value === 'number') {
+    const n = clamp(value, lim.min, lim.max);
+    if (n === undefined) return false;
+    style[`--s-${name}-d`] = `${n}${u}`;
+    return true;
+  }
+  if (typeof value !== 'object') return false;
   let any = false;
 
   for (const d of DEVICES) {
@@ -840,27 +902,15 @@ function responsiveLength(
 }
 
 /**
- * Border radius → `--s-rad-{d,t,m}`. Every device gets a value (inheriting
- * desktop → tablet → mobile) so a radius set on one device doesn't collapse
- * to 0 on the others. Uses `rad`, not `br`: `s-br` is the right border width.
+ * Border radius → `--s-rad-*`. Emits only devices that have a value;
+ * `responsive-css.ts` chains `var()` fallbacks across enabled breakpoints.
  */
 function applyRadius(
   radius: Responsive<number> | undefined,
   unit: unknown,
   style: Record<string, string>
 ): boolean {
-  if (!responsiveLength(radius, unit, PROP_UNITS.radius, false, 'rad', style))
-    return false;
-  const u = pick(unit, PROP_UNITS.radius) ?? PROP_UNITS.radius[0];
-  for (const d of DEVICES) {
-    const key = `--s-rad-${DEVICE_SUFFIX[d]}`;
-    if (style[key]) continue;
-    const resolved = resolveResponsive(radius, d, v =>
-      typeof v === 'number' && Number.isFinite(v) ? v : undefined
-    );
-    if (resolved !== undefined) style[key] = `${resolved}${u}`;
-  }
-  return true;
+  return responsiveLength(radius, unit, PROP_UNITS.radius, false, 'rad', style);
 }
 
 export function fillValue(fill: Fill | undefined) {
@@ -1016,8 +1066,24 @@ function applyTypographyPreset(
   ] as const) {
     style[`--s-tp-${k}`] = `var(--site-type-${id}-${suffix})`;
   }
-  style['--s-tp-size-t'] = `var(--site-type-${id}-size-t, var(--site-type-${id}-size))`;
-  style['--s-tp-size-m'] = `var(--site-type-${id}-size-m, var(--site-type-${id}-size))`;
+  style['--s-tp-size-w'] =
+    `var(--site-type-${id}-size-w, var(--site-type-${id}-size))`;
+  const smallerChain = [
+    'laptop',
+    'tablet_extra',
+    'tablet',
+    'mobile_extra',
+    'mobile',
+  ] as const;
+  for (let i = 0; i < smallerChain.length; i++) {
+    const d = smallerChain[i];
+    let expr = `var(--site-type-${id}-size)`;
+    for (let j = 0; j <= i; j++) {
+      const sfx = DEVICE_SUFFIX[smallerChain[j]];
+      expr = `var(--site-type-${id}-size-${sfx}, ${expr})`;
+    }
+    style[`--s-tp-size-${DEVICE_SUFFIX[d]}`] = expr;
+  }
 }
 
 export function resolveSectionStyle(
@@ -1068,7 +1134,7 @@ export function resolveSectionStyle(
     !unitSize &&
     DEVICES.some(
       d =>
-        resolveResponsive(s.typography?.size, d, x =>
+        ownResponsive(s.typography?.size, d, x =>
           pick(x, ['sm', 'md', 'lg', 'xl'] as const)
         ) !== undefined
     );
@@ -1077,7 +1143,7 @@ export function resolveSectionStyle(
     outerClasses.push('s-fs');
 
     for (const d of DEVICES) {
-      const resolved = resolveResponsive(s.typography?.size, d, x =>
+      const resolved = ownResponsive(s.typography?.size, d, x =>
         pick(x, ['sm', 'md', 'lg', 'xl'] as const)
       );
       if (resolved)
@@ -1147,7 +1213,7 @@ export function resolveSectionStyle(
       ty.fontWeight >= 100 &&
       ty.fontWeight <= 900) ||
     DEVICES.some(
-      d => resolveResponsive(ty?.weight, d, resolveFontWeight) !== undefined
+      d => ownResponsive(ty?.weight, d, resolveFontWeight) !== undefined
     );
 
   if (hasWeight) {
@@ -1155,8 +1221,8 @@ export function resolveSectionStyle(
 
     for (const d of DEVICES) {
       const resolved =
-        resolveResponsive(ty?.weight, d, resolveFontWeight) ??
-        (ty?.fontWeight ? String(ty.fontWeight) : undefined);
+        ownResponsive(ty?.weight, d, resolveFontWeight) ??
+        (d === 'desktop' && ty?.fontWeight ? String(ty.fontWeight) : undefined);
       if (resolved) style[`--s-fw-${DEVICE_SUFFIX[d]}`] = String(resolved);
     }
   }
@@ -1165,7 +1231,7 @@ export function resolveSectionStyle(
     if (typeof s.fill.position === 'object' && s.fill.position !== null) {
       outerClasses.push('s-bg-pos');
       for (const d of DEVICES) {
-        const pos = resolveResponsive(s.fill.position, d, v =>
+        const pos = ownResponsive(s.fill.position, d, v =>
           typeof v === 'string' && v.trim() ? v.trim() : undefined
         );
         if (pos) style[`--s-bg-pos-${DEVICE_SUFFIX[d]}`] = pos;
@@ -1174,7 +1240,7 @@ export function resolveSectionStyle(
     if (typeof s.fill.size === 'object' && s.fill.size !== null) {
       outerClasses.push('s-bg-size');
       for (const d of DEVICES) {
-        const sz = resolveResponsive(s.fill.size, d, v =>
+        const sz = ownResponsive(s.fill.size, d, v =>
           typeof v === 'string' && v.trim() ? v.trim() : undefined
         );
         if (sz) style[`--s-bg-size-${DEVICE_SUFFIX[d]}`] = sz;
@@ -1260,7 +1326,7 @@ export function resolveSectionStyle(
   // Text alignment (responsive)
   const hasAlign = DEVICES.some(
     d =>
-      resolveResponsive(s.align, d, x =>
+      ownResponsive(s.align, d, x =>
         pick(x, ['left', 'center', 'right'] as const)
       ) !== undefined
   );
@@ -1269,7 +1335,7 @@ export function resolveSectionStyle(
     outerClasses.push('s-ta');
 
     for (const d of DEVICES) {
-      const resolved = resolveResponsive(s.align, d, x =>
+      const resolved = ownResponsive(s.align, d, x =>
         pick(x, ['left', 'center', 'right'] as const)
       );
       if (resolved)
@@ -1279,7 +1345,7 @@ export function resolveSectionStyle(
 
   // Min height (responsive)
   const hasMinHeight = DEVICES.some(d => {
-    const r = resolveResponsive(s.display?.minHeight, d, x =>
+    const r = ownResponsive(s.display?.minHeight, d, x =>
       pick(x, ['auto', 'half', 'screen'] as const)
     );
     return r && r !== 'auto';
@@ -1289,19 +1355,21 @@ export function resolveSectionStyle(
     outerClasses.push('s-mh', 'flex', 'flex-col');
 
     for (const d of DEVICES) {
-      const resolved = resolveResponsive(s.display?.minHeight, d, x =>
+      const resolved = ownResponsive(s.display?.minHeight, d, x =>
         pick(x, ['auto', 'half', 'screen'] as const)
       );
-      style[`--s-mh-${DEVICE_SUFFIX[d]}`] = resolved
-        ? MIN_HEIGHT_MAP[resolved]
-        : 'auto';
+      if (resolved) {
+        style[`--s-mh-${DEVICE_SUFFIX[d]}`] = MIN_HEIGHT_MAP[resolved];
+      } else if (d === 'desktop') {
+        style['--s-mh-d'] = 'auto';
+      }
     }
   }
 
   // Content alignment (responsive)
   const hasContentAlign = DEVICES.some(
     d =>
-      resolveResponsive(s.display?.contentAlign, d, x =>
+      ownResponsive(s.display?.contentAlign, d, x =>
         pick(x, ['start', 'center', 'end'] as const)
       ) !== undefined
   );
@@ -1310,11 +1378,14 @@ export function resolveSectionStyle(
     outerClasses.push('s-jc');
 
     for (const d of DEVICES) {
-      const resolved =
-        resolveResponsive(s.display?.contentAlign, d, x =>
-          pick(x, ['start', 'center', 'end'] as const)
-        ) ?? 'center';
-      style[`--s-jc-${DEVICE_SUFFIX[d]}`] = JUSTIFY_MAP[resolved];
+      const resolved = ownResponsive(s.display?.contentAlign, d, x =>
+        pick(x, ['start', 'center', 'end'] as const)
+      );
+      if (resolved) {
+        style[`--s-jc-${DEVICE_SUFFIX[d]}`] = JUSTIFY_MAP[resolved];
+      } else if (d === 'desktop') {
+        style['--s-jc-d'] = JUSTIFY_MAP.center;
+      }
     }
   }
 
@@ -1435,30 +1506,17 @@ export function resolveElementStyle(
     );
     if (unitSize) {
       classes.push('s-fs');
-      // Ensure all 3 devices have explicit fallback values so section variables don't bleed in
-      for (const d of DEVICES) {
-        const key = `--s-fs-${DEVICE_SUFFIX[d]}`;
-        if (!style[key]) {
-          const resolved = resolveResponsive(ty.fontSize, d, v =>
-            typeof v === 'number' && Number.isFinite(v) ? v : undefined
-          );
-          if (resolved !== undefined) {
-            const u = pick(ty.fontSizeUnit, PROP_UNITS.fontSize) ?? 'px';
-            style[key] = `${resolved}${u}`;
-          }
-        }
-      }
     } else {
       const hasSize = DEVICES.some(
         d =>
-          resolveResponsive(ty.size, d, x =>
+          ownResponsive(ty.size, d, x =>
             pick(x, ['sm', 'md', 'lg', 'xl'] as const)
           ) !== undefined
       );
       if (hasSize) {
         classes.push('s-fs');
         for (const d of DEVICES) {
-          const resolved = resolveResponsive(ty.size, d, x =>
+          const resolved = ownResponsive(ty.size, d, x =>
             pick(x, ['sm', 'md', 'lg', 'xl'] as const)
           );
           if (resolved) {
@@ -1479,18 +1537,6 @@ export function resolveElementStyle(
       )
     ) {
       classes.push('s-lh');
-      for (const d of DEVICES) {
-        const key = `--s-lh-${DEVICE_SUFFIX[d]}`;
-        if (!style[key]) {
-          const resolved = resolveResponsive(ty.lineHeight, d, v =>
-            typeof v === 'number' && Number.isFinite(v) ? v : undefined
-          );
-          if (resolved !== undefined) {
-            const u = pick(ty.lineHeightUnit, PROP_UNITS.lineHeight) ?? 'em';
-            style[key] = `${resolved}${u}`;
-          }
-        }
-      }
     }
 
     if (
@@ -1504,19 +1550,6 @@ export function resolveElementStyle(
       )
     ) {
       classes.push('s-ls');
-      for (const d of DEVICES) {
-        const key = `--s-ls-${DEVICE_SUFFIX[d]}`;
-        if (!style[key]) {
-          const resolved = resolveResponsive(ty.letterSpacing, d, v =>
-            typeof v === 'number' && Number.isFinite(v) ? v : undefined
-          );
-          if (resolved !== undefined) {
-            const u =
-              pick(ty.letterSpacingUnit, PROP_UNITS.letterSpacing) ?? 'px';
-            style[key] = `${resolved}${u}`;
-          }
-        }
-      }
     }
 
     if (
@@ -1530,18 +1563,6 @@ export function resolveElementStyle(
       )
     ) {
       classes.push('s-ws');
-      for (const d of DEVICES) {
-        const key = `--s-ws-${DEVICE_SUFFIX[d]}`;
-        if (!style[key]) {
-          const resolved = resolveResponsive(ty.wordSpacing, d, v =>
-            typeof v === 'number' && Number.isFinite(v) ? v : undefined
-          );
-          if (resolved !== undefined) {
-            const u = pick(ty.wordSpacingUnit, PROP_UNITS.wordSpacing) ?? 'px';
-            style[key] = `${resolved}${u}`;
-          }
-        }
-      }
     }
 
     const family = ty.family;
@@ -1562,14 +1583,14 @@ export function resolveElementStyle(
         ty.fontWeight >= 100 &&
         ty.fontWeight <= 900) ||
       DEVICES.some(
-        d => resolveResponsive(ty.weight, d, resolveFontWeight) !== undefined
+        d => ownResponsive(ty.weight, d, resolveFontWeight) !== undefined
       );
     if (hasWeight) {
       classes.push('s-fw');
       for (const d of DEVICES) {
         const resolved =
-          resolveResponsive(ty.weight, d, resolveFontWeight) ??
-          (ty.fontWeight ? String(ty.fontWeight) : undefined);
+          ownResponsive(ty.weight, d, resolveFontWeight) ??
+          (d === 'desktop' && ty.fontWeight ? String(ty.fontWeight) : undefined);
         if (resolved) {
           style[`--s-fw-${DEVICE_SUFFIX[d]}`] = String(resolved);
         }
@@ -1588,13 +1609,14 @@ export function resolveElementStyle(
       classes.push('s-tst');
       if (typeof textStroke.width === 'object' && textStroke.width !== null) {
         for (const d of DEVICES) {
-          const w =
-            resolveResponsive(textStroke.width, d, v =>
-              typeof v === 'number' && Number.isFinite(v)
-                ? clamp(v, 0, 50)
-                : undefined
-            ) ?? 0;
-          style[`--s-tst-${DEVICE_SUFFIX[d]}`] = `${w}px ${color}`;
+          const w = ownResponsive(textStroke.width, d, v =>
+            typeof v === 'number' && Number.isFinite(v)
+              ? clamp(v, 0, 50)
+              : undefined
+          );
+          if (w !== undefined) {
+            style[`--s-tst-${DEVICE_SUFFIX[d]}`] = `${w}px ${color}`;
+          }
         }
         const desktopW =
           resolveResponsive(textStroke.width, 'desktop', v =>
@@ -1609,9 +1631,6 @@ export function resolveElementStyle(
             ? clamp(textStroke.width, 0, 50)
             : 1;
         style['--s-tst'] = `${w}px ${color}`;
-        for (const d of DEVICES) {
-          style[`--s-tst-${DEVICE_SUFFIX[d]}`] = `${w}px ${color}`;
-        }
       }
     }
   }
@@ -1873,7 +1892,7 @@ export function resolveChromeStyle(
       'px';
     let anyMh = false;
     for (const d of DEVICES) {
-      const val = resolveResponsive(effective.minHeight, d, v =>
+      const val = ownResponsive(effective.minHeight, d, v =>
         typeof v === 'number' && Number.isFinite(v) ? v : undefined
       );
       if (val !== undefined && val >= 0) {
@@ -1895,7 +1914,7 @@ export function resolveChromeStyle(
       const mwUnit =
         pick(effective.maxWidthUnit, ['px', 'rem', '%', 'vw'] as const) ?? 'px';
       for (const d of DEVICES) {
-        const val = resolveResponsive(effective.maxWidth, d, v =>
+        const val = ownResponsive(effective.maxWidth, d, v =>
           typeof v === 'number' && Number.isFinite(v) ? v : undefined
         );
         if (val !== undefined && val > 0) {
@@ -2284,12 +2303,15 @@ export function resolveContainerStyle(
   const basisLim = LENGTH_LIMITS[basisUnit];
 
   const mode = pick(s.mode, LAYOUT_MODES) ?? 'flex';
-  const resolvedMode = (d: Device) =>
-    resolveResponsive(s.mode, d, v => pick(v, LAYOUT_MODES)) ?? mode;
 
   classes.push('s-c-d');
-  for (const d of DEVICES)
-    style[`--s-c-d-${DEVICE_SUFFIX[d]}`] = resolvedMode(d);
+  style['--s-c-d-d'] =
+    ownResponsive(s.mode, 'desktop', v => pick(v, LAYOUT_MODES)) ?? mode;
+  for (const d of DEVICES) {
+    if (d === 'desktop') continue;
+    const m = ownResponsive(s.mode, d, v => pick(v, LAYOUT_MODES));
+    if (m) style[`--s-c-d-${DEVICE_SUFFIX[d]}`] = m;
+  }
 
   const emitGap = (
     prop: 'gap' | 'columnGap' | 'rowGap',
@@ -2297,44 +2319,40 @@ export function resolveContainerStyle(
     varName: string
   ) => {
     const has = DEVICES.some(
-      d => resolveResponsive(s[prop], d, validFinite) !== undefined
+      d => ownResponsive(s[prop], d, validFinite) !== undefined
     );
     if (!has) return;
     classes.push(cls);
 
     for (const d of DEVICES) {
-      const n = resolveResponsive(s[prop], d, validFinite);
-      const v = n !== undefined ? clampNumber(n, gapLim.min, gapLim.max) : 0;
-      style[`${varName}-${DEVICE_SUFFIX[d]}`] = `${v ?? 0}${gapUnit}`;
+      const n = ownResponsive(s[prop], d, validFinite);
+      if (n !== undefined) {
+        const v = clampNumber(n, gapLim.min, gapLim.max);
+        style[`${varName}-${DEVICE_SUFFIX[d]}`] = `${v ?? 0}${gapUnit}`;
+      }
     }
   };
 
   if (mode === 'flex') {
-    const resolvedFlex = (
-      d: Device,
-      key: 'direction' | 'wrap' | 'justify' | 'alignItems' | 'alignContent'
-    ) => {
-      const allowed =
-        key === 'direction'
-          ? FLEX_DIRECTIONS
-          : key === 'wrap'
-            ? FLEX_WRAPS
-            : key === 'justify'
-              ? JUSTIFY_CONTENTS
-              : key === 'alignItems'
-                ? ALIGN_ITEMS_VALUES
-                : ALIGN_CONTENTS;
-      const defaults: Record<string, string> = {
-        direction: 'row',
-        wrap: 'nowrap',
-        justify: 'start',
-        alignItems: 'stretch',
-        alignContent: 'start',
-      };
-      return (
-        resolveResponsive(s[key], d, v => pick(v, allowed)) ?? defaults[key]
-      );
+    const defaults: Record<string, string> = {
+      direction: 'row',
+      wrap: 'nowrap',
+      justify: 'start',
+      alignItems: 'stretch',
+      alignContent: 'start',
     };
+    const allowedFor = (
+      key: 'direction' | 'wrap' | 'justify' | 'alignItems' | 'alignContent'
+    ) =>
+      key === 'direction'
+        ? FLEX_DIRECTIONS
+        : key === 'wrap'
+          ? FLEX_WRAPS
+          : key === 'justify'
+            ? JUSTIFY_CONTENTS
+            : key === 'alignItems'
+              ? ALIGN_ITEMS_VALUES
+              : ALIGN_CONTENTS;
 
     for (const [key, cls] of [
       ['direction', 's-c-fd'],
@@ -2344,12 +2362,15 @@ export function resolveContainerStyle(
       ['alignContent', 's-c-ac'],
     ] as const) {
       classes.push(cls);
-
+      const allowed = allowedFor(key);
+      style[`--s-c-${cls.slice(4)}-d`] =
+        ownResponsive(s[key], 'desktop', v => pick(v, allowed)) ?? defaults[key];
       for (const d of DEVICES) {
-        style[`--s-c-${cls.slice(4)}-${DEVICE_SUFFIX[d]}`] = resolvedFlex(
-          d,
-          key
-        );
+        if (d === 'desktop') continue;
+        const val = ownResponsive(s[key], d, v => pick(v, allowed));
+        if (val !== undefined) {
+          style[`--s-c-${cls.slice(4)}-${DEVICE_SUFFIX[d]}`] = val;
+        }
       }
     }
   } else {
@@ -2360,7 +2381,7 @@ export function resolveContainerStyle(
       const has = DEVICES.some(
         d =>
           safeTrackList(
-            resolveResponsive(s[prop], d, x =>
+            ownResponsive(s[prop], d, x =>
               typeof x === 'string' ? x : undefined
             )
           ) !== undefined
@@ -2370,7 +2391,7 @@ export function resolveContainerStyle(
 
       for (const d of DEVICES) {
         const resolved = safeTrackList(
-          resolveResponsive(s[prop], d, x =>
+          ownResponsive(s[prop], d, x =>
             typeof x === 'string' ? x : undefined
           )
         );
@@ -2379,11 +2400,17 @@ export function resolveContainerStyle(
       }
     }
 
-    const flow = (d: Device) =>
-      resolveResponsive(s.gridAutoFlow, d, v => pick(v, GRID_AUTO_FLOWS)) ??
-      'row';
     classes.push('s-c-gaf');
-    for (const d of DEVICES) style[`--s-c-gaf-${DEVICE_SUFFIX[d]}`] = flow(d);
+    style['--s-c-gaf-d'] =
+      ownResponsive(s.gridAutoFlow, 'desktop', v => pick(v, GRID_AUTO_FLOWS)) ??
+      'row';
+    for (const d of DEVICES) {
+      if (d === 'desktop') continue;
+      const val = ownResponsive(s.gridAutoFlow, d, v =>
+        pick(v, GRID_AUTO_FLOWS)
+      );
+      if (val !== undefined) style[`--s-c-gaf-${DEVICE_SUFFIX[d]}`] = val;
+    }
   }
 
   emitGap('gap', 's-c-ga', '--s-c-ga');
@@ -2399,13 +2426,13 @@ export function resolveContainerStyle(
     ['maxHeight', 's-c-xh', '--s-c-xh'],
   ] as const) {
     const has = DEVICES.some(
-      d => resolveResponsive(s[prop], d, validFinite) !== undefined
+      d => ownResponsive(s[prop], d, validFinite) !== undefined
     );
     if (!has) continue;
     classes.push(cls);
 
     for (const d of DEVICES) {
-      const n = resolveResponsive(s[prop], d, validFinite);
+      const n = ownResponsive(s[prop], d, validFinite);
 
       if (n !== undefined) {
         style[`${varName}-${DEVICE_SUFFIX[d]}`] =
@@ -2415,12 +2442,12 @@ export function resolveContainerStyle(
   }
 
   const hasGrow = DEVICES.some(
-    d => resolveResponsive(s.grow, d, validFinite) !== undefined
+    d => ownResponsive(s.grow, d, validFinite) !== undefined
   );
   if (hasGrow) {
     classes.push('s-c-grw');
     for (const d of DEVICES) {
-      const n = resolveResponsive(s.grow, d, validFinite);
+      const n = ownResponsive(s.grow, d, validFinite);
       if (n !== undefined) {
         style[`--s-c-grw-${DEVICE_SUFFIX[d]}`] =
           `${clampNumber(n, FLEX_NUMBER_LIMITS.min, FLEX_NUMBER_LIMITS.max) ?? 0}`;
@@ -2429,12 +2456,12 @@ export function resolveContainerStyle(
   }
 
   const hasShrink = DEVICES.some(
-    d => resolveResponsive(s.shrink, d, validFinite) !== undefined
+    d => ownResponsive(s.shrink, d, validFinite) !== undefined
   );
   if (hasShrink) {
     classes.push('s-c-grs');
     for (const d of DEVICES) {
-      const n = resolveResponsive(s.shrink, d, validFinite);
+      const n = ownResponsive(s.shrink, d, validFinite);
       if (n !== undefined) {
         style[`--s-c-grs-${DEVICE_SUFFIX[d]}`] =
           `${clampNumber(n, FLEX_NUMBER_LIMITS.min, FLEX_NUMBER_LIMITS.max) ?? 0}`;
@@ -2443,12 +2470,12 @@ export function resolveContainerStyle(
   }
 
   const hasBasis = DEVICES.some(
-    d => resolveResponsive(s.basis, d, validFinite) !== undefined
+    d => ownResponsive(s.basis, d, validFinite) !== undefined
   );
   if (hasBasis) {
     classes.push('s-c-grb');
     for (const d of DEVICES) {
-      const n = resolveResponsive(s.basis, d, validFinite);
+      const n = ownResponsive(s.basis, d, validFinite);
       if (n !== undefined) {
         style[`--s-c-grb-${DEVICE_SUFFIX[d]}`] =
           `${clampNumber(n, basisLim.min, basisLim.max) ?? 0}${basisUnit}`;
@@ -2457,21 +2484,30 @@ export function resolveContainerStyle(
   }
 
   classes.push('s-c-box');
+  style['--s-c-box-d'] =
+    ownResponsive(s.boxSizing, 'desktop', v =>
+      pick(v, ['border-box', 'content-box'])
+    ) ?? 'border-box';
   for (const d of DEVICES) {
-    const bs =
-      resolveResponsive(s.boxSizing, d, v =>
-        pick(v, ['border-box', 'content-box'])
-      ) ?? 'border-box';
-    style[`--s-c-box-${DEVICE_SUFFIX[d]}`] = bs;
+    if (d === 'desktop') continue;
+    const bs = ownResponsive(s.boxSizing, d, v =>
+      pick(v, ['border-box', 'content-box'])
+    );
+    if (bs !== undefined) style[`--s-c-box-${DEVICE_SUFFIX[d]}`] = bs;
   }
 
   if (s.contentWidth === 'boxed') {
     classes.push('s-c-boxed');
-
+    const desktopBw = ownResponsive(s.boxedWidth, 'desktop', validFinite);
+    style['--s-c-bw-d'] =
+      `${clampNumber(desktopBw ?? 1152, BOXED_WIDTH_LIMITS.min, BOXED_WIDTH_LIMITS.max) ?? 1152}px`;
     for (const d of DEVICES) {
-      const n = resolveResponsive(s.boxedWidth, d, validFinite);
-      style[`--s-c-bw-${DEVICE_SUFFIX[d]}`] =
-        `${clampNumber(n ?? 1152, BOXED_WIDTH_LIMITS.min, BOXED_WIDTH_LIMITS.max) ?? 1152}px`;
+      if (d === 'desktop') continue;
+      const n = ownResponsive(s.boxedWidth, d, validFinite);
+      if (n !== undefined) {
+        style[`--s-c-bw-${DEVICE_SUFFIX[d]}`] =
+          `${clampNumber(n, BOXED_WIDTH_LIMITS.min, BOXED_WIDTH_LIMITS.max) ?? 1152}px`;
+      }
     }
   }
 

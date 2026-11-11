@@ -34,6 +34,7 @@ import React, { type ReactNode, useEffect, useMemo, useRef, useState } from 'rea
 import { useEditor } from './context';
 import { DeviceSwitch } from './device-switch';
 import {
+  BreakpointsProvider,
   DeviceProvider,
   DynamicTriggerButton,
   fieldAllowsDynamic,
@@ -98,6 +99,7 @@ export function SettingsPanel({
   hideChangedFilter = false,
 }: SettingsPanelProps) {
   const device = useEditor(state => state.device);
+  const breakpoints = useEditor(state => state.breakpoints);
   const dynamicDefaults = useDynamicSources();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -204,7 +206,8 @@ export function SettingsPanel({
 
   return (
     <FieldTypesProvider types={fieldTypes}>
-      <DeviceProvider value={device}>
+      <BreakpointsProvider value={breakpoints}>
+        <DeviceProvider value={device}>
         <div
           className={className}
           style={{
@@ -374,13 +377,13 @@ export function SettingsPanel({
                             );
                             const isResp = !!field.responsive;
                             const source = isResp
-                              ? inheritedFrom(val, device)
+                              ? inheritedFrom(val, device, breakpoints)
                               : null;
                             const isContainer =
                               field.type === 'list' || field.type === 'object';
                             const targetPath = access.path;
                             const resolvedVal = isResp
-                              ? valueForDevice(val, device)
+                              ? valueForDevice(val, device, breakpoints)
                               : val;
                             const canDynamic =
                               fieldAllowsDynamic(field) &&
@@ -462,6 +465,7 @@ export function SettingsPanel({
           </div>
         </div>
       </DeviceProvider>
+      </BreakpointsProvider>
     </FieldTypesProvider>
   );
 }

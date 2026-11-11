@@ -6,6 +6,7 @@
 
 import {
   type Device,
+  DEVICE_SUFFIX,
   type MaybeResponsive,
   resolveResponsive,
 } from '../style';
@@ -93,6 +94,11 @@ export function columnsGridStyle(
   const style: Record<string, string> = {
     '--hc-cols': headerGridFromColumns(columns, 'desktop'),
   };
+  for (const d of ['widescreen', 'laptop', 'tablet_extra', 'mobile_extra'] as const) {
+    if (hasDeviceOverride(columns, d)) {
+      style[`--hc-cols-${DEVICE_SUFFIX[d]}`] = headerGridFromColumns(columns, d);
+    }
+  }
   if (hasDeviceOverride(columns, 'tablet')) {
     style['--hc-cols-md'] = headerGridFromColumns(columns, 'tablet');
   } else if (options?.tabletFallback) {

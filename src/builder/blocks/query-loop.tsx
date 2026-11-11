@@ -137,10 +137,10 @@ export function QueryLoopSkeleton({
     layout === 'list'
       ? 'grid-cols-1'
       : columnsDesktop === 2
-        ? 'grid-cols-1 md:grid-cols-2'
+        ? 'grid-cols-1 s-tab-cols-2'
         : columnsDesktop === 4
-          ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
-          : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
+          ? 'grid-cols-1 s-tab-cols-2 s-desk-cols-4'
+          : 'grid-cols-1 s-tab-cols-2 s-desk-cols-3';
 
   return (
     <div
@@ -221,7 +221,7 @@ function DefaultItemCard({
             cardClass(cardStyle),
             'group flex h-full overflow-hidden',
             featured
-              ? 'flex-col lg:flex-row'
+              ? 'flex-col s-desk-flex-row'
               : layout === 'list'
                 ? 'flex-col sm:flex-row'
                 : 'flex-col'
@@ -235,7 +235,7 @@ function DefaultItemCard({
             aria-hidden
             className={cn(
               'relative block shrink-0 overflow-hidden',
-              featured ? 'lg:w-7/12' : layout === 'list' && 'sm:w-64'
+              featured ? 's-desk-w-7-12' : layout === 'list' && 'sm:w-64'
             )}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -249,7 +249,7 @@ function DefaultItemCard({
                 cn(
                   'size-full object-cover transition-transform duration-300 group-hover:scale-[1.03]',
                   featured
-                    ? 'aspect-[16/10] lg:aspect-auto lg:min-h-[22rem]'
+                    ? 'aspect-[16/10] s-desk-aspect-auto s-desk-min-h-22'
                     : 'aspect-video'
                 )
               )}
@@ -266,7 +266,7 @@ function DefaultItemCard({
         <div
           className={cn(
             'flex flex-1 flex-col gap-3',
-            featured ? 'justify-center p-6 md:p-10' : 'p-5'
+            featured ? 'justify-center p-6 s-tab-p-10' : 'p-5'
           )}
         >
           {showTerms && categories.length > 0 && (
@@ -304,7 +304,7 @@ function DefaultItemCard({
                 cn(
                   's-muted leading-relaxed',
                   featured
-                    ? 'line-clamp-4 text-base md:text-lg'
+                    ? 'line-clamp-4 text-base s-tab-text-lg'
                     : 'line-clamp-3 text-sm'
                 )
               )}
@@ -438,18 +438,18 @@ function resolveGridColumnsClass(desktop = 3, tablet = 2, mobile = 1): string {
   const m = mobile === 2 ? 'grid-cols-2' : 'grid-cols-1';
   const t =
     tablet === 1
-      ? 'md:grid-cols-1'
+      ? 's-tab-cols-1'
       : tablet === 3
-        ? 'md:grid-cols-3'
-        : 'md:grid-cols-2';
+        ? 's-tab-cols-3'
+        : 's-tab-cols-2';
   const d =
     desktop === 1
-      ? 'lg:grid-cols-1'
+      ? 's-desk-cols-1'
       : desktop === 2
-        ? 'lg:grid-cols-2'
+        ? 's-desk-cols-2'
         : desktop === 4
-          ? 'lg:grid-cols-4'
-          : 'lg:grid-cols-3';
+          ? 's-desk-cols-4'
+          : 's-desk-cols-3';
   return `${m} ${t} ${d}`;
 }
 
@@ -461,18 +461,18 @@ function resolveMasonryColumnsClass(
   const m = mobile === 2 ? 'columns-2' : 'columns-1';
   const t =
     tablet === 1
-      ? 'md:columns-1'
+      ? 's-tab-ccols-1'
       : tablet === 3
-        ? 'md:columns-3'
-        : 'md:columns-2';
+        ? 's-tab-ccols-3'
+        : 's-tab-ccols-2';
   const d =
     desktop === 1
-      ? 'lg:columns-1'
+      ? 's-desk-ccols-1'
       : desktop === 2
-        ? 'lg:columns-2'
+        ? 's-desk-ccols-2'
         : desktop === 4
-          ? 'lg:columns-4'
-          : 'lg:columns-3';
+          ? 's-desk-ccols-4'
+          : 's-desk-ccols-3';
   return `${m} ${t} ${d}`;
 }
 
@@ -828,18 +828,18 @@ export function QueryLoop({
           className={cn(
             filterPosition !== 'top' &&
               (filterPosition === 'left'
-                ? 'grid grid-cols-1 gap-8 lg:grid-cols-[18rem_minmax(0,1fr)]'
-                : 'grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]')
+                ? 'grid grid-cols-1 gap-8 s-desk-cols-sidebar-l'
+                : 'grid grid-cols-1 gap-8 s-desk-cols-sidebar-r')
           )}
         >
           <aside
             aria-label="Filters"
             className={cn(
               'min-w-0',
-              filterPosition === 'right' && 'lg:order-2',
+              filterPosition === 'right' && 's-desk-order-2',
               filterSticky &&
                 filterPosition !== 'top' &&
-                'lg:sticky lg:top-24 lg:self-start'
+                's-desk-sticky s-desk-top-24 s-desk-self-start'
             )}
           >
             <QueryFilterClient

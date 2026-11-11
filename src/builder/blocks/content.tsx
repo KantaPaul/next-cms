@@ -5,6 +5,7 @@ import type { BuilderItem } from '../data';
 import { sanitizeRichText } from '../sanitize';
 import {
   type Device,
+  hideOnClasses,
   type ImageSize,
   type MaybeResponsive,
   normalizeUrlValue,
@@ -211,8 +212,8 @@ export type GalleryProps = WithSection & {
 
 const GALLERY_COLS = {
   2: 'grid-cols-1 sm:grid-cols-2',
-  3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
-  4: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
+  3: 'grid-cols-1 sm:grid-cols-2 s-desk-cols-3',
+  4: 'grid-cols-1 sm:grid-cols-2 s-desk-cols-4',
 };
 const GALLERY_GAP = { sm: 'gap-2', md: 'gap-4', lg: 'gap-6' };
 
@@ -529,11 +530,11 @@ export type ColumnsProps = WithSection & {
 };
 
 const LAYOUTS = {
-  '1-1': { count: 2, grid: 'md:grid-cols-2' },
-  '1-1-1': { count: 3, grid: 'md:grid-cols-3' },
-  '1-1-1-1': { count: 4, grid: 'md:grid-cols-2 lg:grid-cols-4' },
-  '2-1': { count: 2, grid: 'md:grid-cols-[2fr_1fr]' },
-  '1-2': { count: 2, grid: 'md:grid-cols-[1fr_2fr]' },
+  '1-1': { count: 2, grid: 's-tab-cols-2' },
+  '1-1-1': { count: 3, grid: 's-tab-cols-3' },
+  '1-1-1-1': { count: 4, grid: 's-tab-cols-2 s-desk-cols-4' },
+  '2-1': { count: 2, grid: 's-tab-cols-2-1' },
+  '1-2': { count: 2, grid: 's-tab-cols-1-2' },
 };
 const GAP = { sm: 'gap-4', md: 'gap-8', lg: 'gap-12' };
 const ALIGN = {
@@ -544,9 +545,9 @@ const ALIGN = {
 
 const COLUMN_PADDING = {
   none: '',
-  sm: 'py-8 md:py-10',
-  md: 'py-14 md:py-20',
-  lg: 'py-20 md:py-28',
+  sm: 'py-8 s-tab-py-10',
+  md: 'py-14 s-tab-py-20',
+  lg: 'py-20 s-tab-py-28',
 };
 
 const COLUMN_BG = {
@@ -557,19 +558,19 @@ const COLUMN_BG = {
 };
 
 const COL_ALIGN_MOBILE: Record<HeaderColAlign, string> = {
-  start: 'max-md:justify-start max-md:text-left',
-  center: 'max-md:justify-center max-md:text-center',
-  end: 'max-md:justify-end max-md:text-right',
+  start: 's-mob-justify-start s-mob-text-left',
+  center: 's-mob-justify-center s-mob-text-center',
+  end: 's-mob-justify-end s-mob-text-right',
 };
 const COL_ALIGN_TABLET: Record<HeaderColAlign, string> = {
-  start: 'md:max-lg:justify-start md:max-lg:text-left',
-  center: 'md:max-lg:justify-center md:max-lg:text-center',
-  end: 'md:max-lg:justify-end md:max-lg:text-right',
+  start: 's-tabonly-justify-start s-tabonly-text-left',
+  center: 's-tabonly-justify-center s-tabonly-text-center',
+  end: 's-tabonly-justify-end s-tabonly-text-right',
 };
 const COL_ALIGN_DESKTOP: Record<HeaderColAlign, string> = {
-  start: 'lg:justify-start lg:text-left',
-  center: 'lg:justify-center lg:text-center',
-  end: 'lg:justify-end lg:text-right',
+  start: 's-desk-justify-start s-desk-text-left',
+  center: 's-desk-justify-center s-desk-text-center',
+  end: 's-desk-justify-end s-desk-text-right',
 };
 
 const COL_VALIGN: Record<HeaderColAlign, string> = {
@@ -578,19 +579,19 @@ const COL_VALIGN: Record<HeaderColAlign, string> = {
   end: 'self-end',
 };
 const COL_VALIGN_MOBILE: Record<HeaderColAlign, string> = {
-  start: 'max-md:self-start',
-  center: 'max-md:self-center',
-  end: 'max-md:self-end',
+  start: 's-mob-self-start',
+  center: 's-mob-self-center',
+  end: 's-mob-self-end',
 };
 const COL_VALIGN_TABLET: Record<HeaderColAlign, string> = {
-  start: 'md:max-lg:self-start',
-  center: 'md:max-lg:self-center',
-  end: 'md:max-lg:self-end',
+  start: 's-tabonly-self-start',
+  center: 's-tabonly-self-center',
+  end: 's-tabonly-self-end',
 };
 const COL_VALIGN_DESKTOP: Record<HeaderColAlign, string> = {
-  start: 'lg:self-start',
-  center: 'lg:self-center',
-  end: 'lg:self-end',
+  start: 's-desk-self-start',
+  center: 's-desk-self-center',
+  end: 's-desk-self-end',
 };
 
 const validAlign = (v: unknown): HeaderColAlign | undefined =>
@@ -664,11 +665,7 @@ export function Column(p: ColumnProps) {
     paddingY: 'none',
     ...p.section,
   };
-  const hidden = cn(
-    s.hideOnMobile && (p.editing ? 'max-md:opacity-30' : 'max-md:hidden'),
-    s.hideOnTablet && (p.editing ? 'md:max-lg:opacity-30' : 'md:max-lg:hidden'),
-    s.hideOnDesktop && (p.editing ? 'lg:opacity-30' : 'lg:hidden')
-  );
+  const hidden = cn(hideOnClasses(s, p.editing));
   const styles = resolveSectionStyle(s);
   const alignClass = resolveColumnAlignClasses(p.align);
   const vAlignClass = resolveColumnVAlignClasses(p.verticalAlign);

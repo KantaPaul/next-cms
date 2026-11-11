@@ -205,7 +205,7 @@ export function CommentForm({
         'form',
         cn(
           'relative flex flex-col gap-3',
-          !compact && 's-card s-card-outline p-5 md:p-6'
+          !compact && 's-card s-card-outline p-5 s-tab-p-6'
         )
       )}
       aria-label={parentId ? 'Reply to comment' : 'Leave a comment'}

@@ -7,9 +7,11 @@ import { sanitizeRichText } from '@/builder/sanitize';
 import {
   type BorderSettings,
   type ContainerSettings,
+  type Device,
   type ElementStyle,
   type Fill,
   type LengthUnit,
+  type Responsive,
   type SectionSettings,
   type Sides,
   type SpacingUnit,
@@ -279,6 +281,81 @@ function parseSizeObj(
   return {};
 }
 
+const ELEMENTOR_DEVICE_MAP: ReadonlyArray<{ device: Device; suffix: string }> = [
+  { device: 'widescreen', suffix: '_widescreen' },
+  { device: 'desktop', suffix: '' },
+  { device: 'laptop', suffix: '_laptop' },
+  { device: 'tablet_extra', suffix: '_tablet_extra' },
+  { device: 'tablet', suffix: '_tablet' },
+  { device: 'mobile_extra', suffix: '_mobile_extra' },
+  { device: 'mobile', suffix: '_mobile' },
+];
+
+function collectResponsiveSizes(
+  settings: Record<string, unknown>,
+  keys: string[],
+  min: number,
+  max: number
+): { values?: Responsive<number>; unit?: LengthUnit } {
+  const values: Responsive<number> = {};
+  let unit: LengthUnit | undefined;
+  for (const { device, suffix } of ELEMENTOR_DEVICE_MAP) {
+    let raw: unknown;
+    for (const k of keys) {
+      if (settings[`${k}${suffix}`] !== undefined) {
+        raw = settings[`${k}${suffix}`];
+        break;
+      }
+    }
+    const parsed = parseSizeObj(raw, min, max);
+    if (parsed.size !== undefined) {
+      values[device] = parsed.size;
+      if (device === 'desktop' && parsed.unit) unit = parsed.unit;
+      else if (!unit && parsed.unit) unit = parsed.unit;
+    }
+  }
+  return Object.keys(values).length > 0 ? { values, unit } : {};
+}
+
+function collectResponsiveSides(
+  settings: Record<string, unknown>,
+  keys: string[]
+): { values?: Responsive<Sides>; unit?: SpacingUnit } {
+  const values: Responsive<Sides> = {};
+  let unit: SpacingUnit | undefined;
+  for (const { device, suffix } of ELEMENTOR_DEVICE_MAP) {
+    let raw: unknown;
+    for (const k of keys) {
+      if (settings[`${k}${suffix}`] !== undefined) {
+        raw = settings[`${k}${suffix}`];
+        break;
+      }
+    }
+    const parsed = parseSides(raw);
+    if (parsed.sides) {
+      values[device] = parsed.sides;
+      if (device === 'desktop' && parsed.unit) unit = parsed.unit;
+      else if (!unit && parsed.unit) unit = parsed.unit;
+    }
+  }
+  return Object.keys(values).length > 0 ? { values, unit } : {};
+}
+
+function collectResponsiveEnum<T>(
+  settings: Record<string, unknown>,
+  key: string,
+  mapFn: (v: unknown) => T | undefined
+): Responsive<T> | undefined {
+  const out: Responsive<T> = {};
+  for (const { device, suffix } of ELEMENTOR_DEVICE_MAP) {
+    const raw = settings[`${key}${suffix}`];
+    if (raw === undefined) continue;
+    const mapped = mapFn(raw);
+    if (mapped !== undefined) out[device] = mapped;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 function extractTypography(
   settings: Record<string, unknown>,
   prefix = 'typography_'
@@ -288,9 +365,9 @@ function extractTypography(
   const family = str(settings[`${prefix}font_family`]).trim();
   if (family) typo.family = family;
 
-  const fs = parseSizeObj(settings[`${prefix}font_size`], 0, 200);
-  if (fs.size !== undefined) {
-    typo.fontSize = { desktop: fs.size };
+  const fs = collectResponsiveSizes(settings, [`${prefix}font_size`], 0, 200);
+  if (fs.values) {
+    typo.fontSize = fs.values;
     if (fs.unit && fs.unit !== '%') typo.fontSizeUnit = fs.unit;
   }
 
@@ -312,15 +389,15 @@ function extractTypography(
     typo.decoration = decoration as Typography['decoration'];
   }
 
-  const lh = parseSizeObj(settings[`${prefix}line_height`], 0, 200);
-  if (lh.size !== undefined) {
-    typo.lineHeight = { desktop: lh.size };
+  const lh = collectResponsiveSizes(settings, [`${prefix}line_height`], 0, 200);
+  if (lh.values) {
+    typo.lineHeight = lh.values;
     if (lh.unit) typo.lineHeightUnit = lh.unit;
   }
 
-  const ls = parseSizeObj(settings[`${prefix}letter_spacing`], -50, 50);
-  if (ls.size !== undefined) {
-    typo.letterSpacing = { desktop: ls.size };
+  const ls = collectResponsiveSizes(settings, [`${prefix}letter_spacing`], -50, 50);
+  if (ls.values) {
+    typo.letterSpacing = ls.values;
     if (ls.unit) typo.letterSpacingUnit = ls.unit;
   }
 
@@ -385,25 +462,30 @@ function extractSectionSettings(
   maps?: RewriteUrlMaps,
   defaultPaddingY: SectionSettings['paddingY'] = 'none'
 ): SectionSettings {
+  const hideOn: Device[] = [];
+  for (const { device } of ELEMENTOR_DEVICE_MAP) {
+    if (bool(settings[`hide_${device}`])) hideOn.push(device);
+  }
   const section: SectionSettings = {
     paddingY: defaultPaddingY,
     background: 'default',
-    hideOnMobile: bool(settings.hide_mobile),
-    hideOnTablet: bool(settings.hide_tablet),
-    hideOnDesktop: bool(settings.hide_desktop),
+    ...(hideOn.length > 0 ? { hideOn } : {}),
+    hideOnMobile: hideOn.includes('mobile'),
+    hideOnTablet: hideOn.includes('tablet'),
+    hideOnDesktop: hideOn.includes('desktop'),
     anchor: str(settings._element_id || settings.css_id).slice(0, 100),
   };
 
-  const pad = parseSides(settings._padding ?? settings.padding);
-  if (pad.sides) {
-    section.spacing = { desktop: pad.sides };
-    section.spacingUnit = pad.unit;
+  const pad = collectResponsiveSides(settings, ['_padding', 'padding']);
+  if (pad.values) {
+    section.spacing = pad.values;
+    if (pad.unit) section.spacingUnit = pad.unit;
   }
 
-  const mar = parseSides(settings._margin ?? settings.margin);
-  if (mar.sides) {
-    section.margin = { desktop: mar.sides };
-    section.marginUnit = mar.unit;
+  const mar = collectResponsiveSides(settings, ['_margin', 'margin']);
+  if (mar.values) {
+    section.margin = mar.values;
+    if (mar.unit) section.marginUnit = mar.unit;
   }
 
   const fill = extractFill(settings, maps);
@@ -412,9 +494,12 @@ function extractSectionSettings(
   const br = parseBorderRadius(settings._border_radius ?? settings.border_radius);
   const borderColor = safeColor(settings._border_color ?? settings.border_color);
   const borderStyleRaw = str(settings._border_border ?? settings.border_border);
-  const borderWidth = parseSides(settings._border_width ?? settings.border_width);
+  const borderWidth = collectResponsiveSides(settings, [
+    '_border_width',
+    'border_width',
+  ]);
 
-  if (br.radius || borderColor || borderWidth.sides || (borderStyleRaw && borderStyleRaw !== 'none')) {
+  if (br.radius || borderColor || borderWidth.values || (borderStyleRaw && borderStyleRaw !== 'none')) {
     const border: BorderSettings = {};
     if (
       borderStyleRaw === 'solid' ||
@@ -424,11 +509,11 @@ function extractSectionSettings(
       borderStyleRaw === 'groove'
     ) {
       border.style = borderStyleRaw;
-    } else if (borderWidth.sides) {
+    } else if (borderWidth.values) {
       border.style = 'solid';
     }
     if (borderColor) border.color = borderColor;
-    if (borderWidth.sides) border.width = { desktop: borderWidth.sides };
+    if (borderWidth.values) border.width = borderWidth.values;
     if (br.radius) {
       border.radius = br.radius;
       border.radiusUnit = br.radiusUnit;
@@ -1473,30 +1558,47 @@ export function convertElementorToDocument(
   const convertContainer = (cont: ElementorElement): string => {
     const s = (cont.settings ?? {}) as Record<string, unknown>;
     const sectionSettings = extractSectionSettings(s, options.urlMaps, 'md');
-    const gapObj = parseSizeObj(s.flex_gap, 0, 200);
-    const minHObj = parseSizeObj(s.min_height, 0, 5000);
+    const gapObj = collectResponsiveSizes(s, ['flex_gap'], 0, 200);
+    const minHObj = collectResponsiveSizes(s, ['min_height'], 0, 5000);
+    const mapFlexWrapValue = (
+      v: unknown
+    ): 'wrap' | 'wrap-reverse' | 'nowrap' =>
+      str(v) === 'wrap'
+        ? 'wrap'
+        : str(v) === 'wrap-reverse'
+          ? 'wrap-reverse'
+          : 'nowrap';
 
     const containerSettings: ContainerSettings = {
       mode: 'flex',
       tag: cont.isInner ? 'div' : 'section',
-      direction: { desktop: mapFlexDirection(s.flex_direction) },
-      wrap: {
-        desktop:
-          str(s.flex_wrap) === 'wrap'
-            ? 'wrap'
-            : str(s.flex_wrap) === 'wrap-reverse'
-              ? 'wrap-reverse'
-              : 'nowrap',
+      direction: {
+        desktop: mapFlexDirection(s.flex_direction),
+        ...collectResponsiveEnum(s, 'flex_direction', v =>
+          mapFlexDirection(v)
+        ),
       },
-      justify: { desktop: mapJustify(s.flex_justify_content) },
-      alignItems: { desktop: mapAlignItems(s.flex_align_items) },
+      wrap: {
+        desktop: mapFlexWrapValue(s.flex_wrap),
+        ...collectResponsiveEnum(s, 'flex_wrap', mapFlexWrapValue),
+      },
+      justify: {
+        desktop: mapJustify(s.flex_justify_content),
+        ...collectResponsiveEnum(s, 'flex_justify_content', v => mapJustify(v)),
+      },
+      alignItems: {
+        desktop: mapAlignItems(s.flex_align_items),
+        ...collectResponsiveEnum(s, 'flex_align_items', v =>
+          mapAlignItems(v)
+        ),
+      },
       alignContent: { desktop: 'start' },
       boxSizing: 'border-box',
-      ...(gapObj.size !== undefined
-        ? { gap: { desktop: gapObj.size }, gapUnit: gapObj.unit }
+      ...(gapObj.values
+        ? { gap: gapObj.values, gapUnit: gapObj.unit }
         : {}),
-      ...(minHObj.size !== undefined
-        ? { minHeight: { desktop: minHObj.size }, sizeUnit: minHObj.unit }
+      ...(minHObj.values
+        ? { minHeight: minHObj.values, sizeUnit: minHObj.unit }
         : {}),
       ...(str(s.content_width) === 'full' ? { contentWidth: 'full' } : {}),
     };

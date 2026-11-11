@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils/cn';
 import { MotionBoundary, MotionSection } from '../motion';
 import {
   hasActiveMotion,
+  hideOnClasses,
   resolveAnimation,
   resolveLinkProps,
   resolveSectionStyle,
@@ -26,9 +27,9 @@ export const DEFAULT_SECTION: SectionSettings = {
 
 const PADDING = {
   none: 'py-0',
-  sm: 'py-8 md:py-10',
-  md: 'py-14 md:py-20',
-  lg: 'py-20 md:py-28',
+  sm: 'py-8 s-tab-py-10',
+  md: 'py-14 s-tab-py-20',
+  lg: 'py-20 s-tab-py-28',
 };
 
 const BACKGROUND = {
@@ -71,11 +72,7 @@ export function Section({
           `$1[data-el="${elId}"]`
         )
       : sanitizedCss;
-  const hidden = cn(
-    s.hideOnMobile && (editing ? 'max-md:opacity-30' : 'max-md:hidden'),
-    s.hideOnTablet && (editing ? 'md:max-lg:opacity-30' : 'md:max-lg:hidden'),
-    s.hideOnDesktop && (editing ? 'lg:opacity-30' : 'lg:hidden')
-  );
+  const hidden = cn(hideOnClasses(s, editing));
   const hasBgParallax = Boolean(
     s.fill?.type === 'image' && s.fill.parallax && s.fill.image
   );
@@ -210,7 +207,7 @@ export function SectionHeading({
   return (
     <div
       className={cn(
-        'mb-10 max-w-3xl md:mb-14',
+        'mb-10 max-w-3xl s-tab-mb-14',
         align === 'center' && 'mx-auto text-center'
       )}
     >
@@ -307,10 +304,10 @@ export function cardClass(
   return cn(base, p.cardHover && 's-card s-hover-lift');
 }
 
-/** `md:`/`lg:` grid columns for 1–4 column item grids. */
+/** Responsive grid columns for 1–4 column item grids. */
 export const ITEM_GRID_COLS: Record<number, string> = {
   1: 'grid-cols-1',
-  2: 'md:grid-cols-2',
-  3: 'md:grid-cols-2 lg:grid-cols-3',
-  4: 'md:grid-cols-2 lg:grid-cols-4',
+  2: 's-tab-cols-2',
+  3: 's-tab-cols-2 s-desk-cols-3',
+  4: 's-tab-cols-2 s-desk-cols-4',
 };

@@ -137,9 +137,9 @@ function PostCardItem({
 }
 
 const GRID_COLUMNS = {
-  2: 'md:grid-cols-2',
-  3: 'md:grid-cols-2 lg:grid-cols-3',
-  4: 'md:grid-cols-2 lg:grid-cols-4',
+  2: 's-tab-cols-2',
+  3: 's-tab-cols-2 s-desk-cols-3',
+  4: 's-tab-cols-2 s-desk-cols-4',
 };
 
 function PostGrid({
@@ -377,7 +377,7 @@ export function PostTitle(
             {...el(
               p,
               'excerpt',
-              's-muted mt-5 text-lg leading-relaxed md:text-xl'
+              's-muted mt-5 text-lg leading-relaxed s-tab-text-xl'
             )}
           >
             {p.post.excerpt}

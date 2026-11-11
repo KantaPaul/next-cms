@@ -13,6 +13,7 @@ import {
   useState,
 } from 'react';
 import { cn } from '@/lib/utils/cn';
+import { useBreakpoints } from './breakpoints';
 import { initMotionEffectsLoop } from './motion-effects-client';
 import {
   ATTENTION_SEEKERS,
@@ -99,13 +100,15 @@ type MotionSectionProps = HTMLAttributes<HTMLElement> & {
 };
 
 function useDevice(): Device {
+  const breakpoints = useBreakpoints();
   const [device, setDevice] = useState<Device>('desktop');
   useEffect(() => {
-    const update = () => setDevice(deviceForWidth(window.innerWidth));
+    const update = () =>
+      setDevice(deviceForWidth(window.innerWidth, breakpoints));
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
-  }, []);
+  }, [breakpoints]);
   return device;
 }
 

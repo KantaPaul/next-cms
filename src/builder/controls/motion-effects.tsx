@@ -1,6 +1,6 @@
 'use client';
 
-import type { Device, MotionEffectsSettings } from '../style';
+import { type Device, DEVICES, type MotionEffectsSettings } from '../style';
 import { DeviceToggles } from './device-row';
 import { Choose, ControlLabel, Slider } from './primitives';
 
@@ -29,11 +29,9 @@ export function MotionEffectsControl({
     onChange(hasAny ? next : undefined);
   };
 
-  const devices: Record<Device, boolean> = {
-    desktop: !value?.devices || value.devices.includes('desktop'),
-    tablet: !value?.devices || value.devices.includes('tablet'),
-    mobile: !value?.devices || value.devices.includes('mobile'),
-  };
+  const devices: Partial<Record<Device, boolean>> = Object.fromEntries(
+    DEVICES.map(d => [d, !value?.devices || value.devices.includes(d)])
+  );
 
   return (
     <div className="space-y-4 text-sm">
@@ -279,7 +277,7 @@ export function MotionEffectsControl({
           value={devices}
           onChange={next =>
             set({
-              devices: (Object.keys(next) as Device[]).filter(d => next[d]),
+              devices: DEVICES.filter(d => next[d] !== false),
             })
           }
         />

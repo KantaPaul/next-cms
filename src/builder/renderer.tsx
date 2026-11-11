@@ -18,9 +18,12 @@ import {
 import { Comments } from './blocks/comments';
 import {
   type BlockComponents,
+  type BreakpointConfig,
   type BuilderDocument,
   type BuilderNode,
+  DEFAULT_BREAKPOINTS,
   type NodeId,
+  normalizeBreakpointConfig,
   type RenderOptions,
   renderDocument,
   renderNodes,
@@ -42,6 +45,7 @@ import type { LocaleLinkMap } from '@/lib/utils/locale-links';
 import { prefixDocumentLinks, prefixHtmlLinks } from './site-links';
 import { MotionItem, MotionScope } from './motion';
 import { type PostView, SAMPLE_POST } from './post-template';
+import { BreakpointsProvider } from './breakpoints';
 import { fontStylesheetUrl, resolveThemeTokens, themeStyle } from './theme';
 import { type ChromeStyle, resolveAnimation, resolveChromeStyle } from './style';
 
@@ -50,6 +54,7 @@ export type RenderKind = 'page' | 'post';
 
 export type RenderMetadata = {
   themeTokens?: unknown;
+  breakpoints?: BreakpointConfig;
   language?: string;
   /** When true, blocks receive editing={true} (canvas / preview). */
   editing?: boolean;
@@ -238,6 +243,9 @@ export function SiteRoot({
   children: ReactNode;
 }): ReactNode {
   const tokens = resolveThemeTokens(metadata.themeTokens as never);
+  const breakpoints = metadata.breakpoints
+    ? normalizeBreakpointConfig(metadata.breakpoints)
+    : DEFAULT_BREAKPOINTS;
   const mode =
     rootProps.theme === 'light' || rootProps.theme === 'dark'
       ? rootProps.theme
@@ -263,36 +271,39 @@ export function SiteRoot({
   );
 
   return (
-    <div
-      className={cn(
-        'site-root min-h-full',
-        ROOT_PADDING[isChrome ? 'none' : (rootProps.paddingY ?? 'none')] ?? ''
-      )}
-      data-site-theme={mode}
-      style={{
-        ...themeStyle(tokens),
-        ['--site-max-width' as string]:
-          MAX_WIDTH[rootProps.maxWidth ?? 'xl'] ?? MAX_WIDTH.xl,
-      }}
-    >
-      {fontUrl ? <link rel="stylesheet" href={fontUrl} /> : null}
-      {!editing && (
-        <noscript>
-          <style>
-            {
-              '[data-motion]{opacity:1!important;transform:none!important;filter:none!important}'
-            }
-          </style>
-        </noscript>
-      )}
-      <MotionScope
-        editing={editing}
-        preview={!!metadata.motionPreview}
-        transition={rootProps.pageTransition}
+    <BreakpointsProvider value={breakpoints}>
+      <div
+        className={cn(
+          'site-root min-h-full',
+          ROOT_PADDING[isChrome ? 'none' : (rootProps.paddingY ?? 'none')] ?? ''
+        )}
+        data-site-theme={mode}
+        data-breakpoints={JSON.stringify(breakpoints)}
+        style={{
+          ...themeStyle(tokens, breakpoints),
+          ['--site-max-width' as string]:
+            MAX_WIDTH[rootProps.maxWidth ?? 'xl'] ?? MAX_WIDTH.xl,
+        }}
       >
-        {content}
-      </MotionScope>
-    </div>
+        {fontUrl ? <link rel="stylesheet" href={fontUrl} /> : null}
+        {!editing && (
+          <noscript>
+            <style>
+              {
+                '[data-motion]{opacity:1!important;transform:none!important;filter:none!important}'
+              }
+            </style>
+          </noscript>
+        )}
+        <MotionScope
+          editing={editing}
+          preview={!!metadata.motionPreview}
+          transition={rootProps.pageTransition}
+        >
+          {content}
+        </MotionScope>
+      </div>
+    </BreakpointsProvider>
   );
 }
 

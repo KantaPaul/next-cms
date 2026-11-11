@@ -15,6 +15,11 @@ import {
   uniqueIndex,
   varchar,
 } from 'drizzle-orm/pg-core';
+import {
+  type BreakpointConfig,
+  DEFAULT_BREAKPOINTS,
+  type Responsive,
+} from '@nextcms/builder-core';
 import { baseColumns, relationConfig } from '@/db/helpers/base.columns';
 import {
   type BlockSettings,
@@ -344,14 +349,7 @@ export type TypographyPreset = {
   id: string;
   name: string;
   fontFamily?: string;
-  fontSize?:
-    | string
-    | number
-    | {
-        desktop?: string | number;
-        tablet?: string | number;
-        mobile?: string | number;
-      };
+  fontSize?: string | number | Responsive<string | number>;
   fontWeight?: string | number;
   lineHeight?: string | number;
   letterSpacing?: string;
@@ -622,6 +620,10 @@ export const siteSettings = pgTable('site_settings', {
   backupSettings: jsonb('backup_settings')
     .$type<BackupSettings>()
     .default(DEFAULT_BACKUP_SETTINGS)
+    .notNull(),
+  breakpoints: jsonb('breakpoints')
+    .$type<BreakpointConfig>()
+    .default(DEFAULT_BREAKPOINTS)
     .notNull(),
   robotsTxt: text('robots_txt'),
   googleAnalyticsId: varchar('google_analytics_id', { length: 50 }),

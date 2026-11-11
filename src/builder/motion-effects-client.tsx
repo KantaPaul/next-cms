@@ -1,7 +1,14 @@
 'use client';
 
 import { useEffect } from 'react';
-import { type Device, hasActiveMotion, type MotionEffectsSettings } from './style';
+import { readBreakpointsFromDocument } from './breakpoints';
+import {
+  type BreakpointConfig,
+  type Device,
+  deviceForWidth,
+  hasActiveMotion,
+  type MotionEffectsSettings,
+} from './style';
 
 /* ---------- Pure math functions for testing and animation calculation ---------- */
 
@@ -102,13 +109,14 @@ export function computeMouseTrackOffset(
   };
 }
 
-export function currentDevice(win?: Window): Device {
+export function currentDevice(
+  win?: Window,
+  config?: BreakpointConfig
+): Device {
   const target = win ?? (typeof window !== 'undefined' ? window : undefined);
   if (!target) return 'desktop';
-  const w = target.innerWidth;
-  if (w < 768) return 'mobile';
-  if (w < 1024) return 'tablet';
-  return 'desktop';
+  const bp = config ?? readBreakpointsFromDocument(target.document);
+  return deviceForWidth(target.innerWidth, bp);
 }
 
 /* ---------- Shared rAF Loop Runtime ---------- */
@@ -138,7 +146,7 @@ export function initMotionEffectsLoop(doc?: Document): () => void {
 
   const tick = () => {
     if (!isReducedMotion()) {
-      const dev = currentDevice(win);
+      const dev = currentDevice(win, readBreakpointsFromDocument(targetDoc));
       const vh = win.innerHeight;
       const vw = win.innerWidth;
 

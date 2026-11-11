@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
+import { useBreakpoints } from '../breakpoints';
 import { useEditorBridge } from '../controls/editor-bridge';
 import {
   deviceForWidth,
@@ -16,13 +17,15 @@ import { hasNestedInteractive, renderContainerBody } from './container';
  * available) and inside `Puck.Preview`'s iframe (where store context may not
  * flow through the portal boundary). */
 function useContainerDevice(): Device {
+  const breakpoints = useBreakpoints();
   const [device, setDevice] = useState<Device>('desktop');
   useEffect(() => {
-    const update = () => setDevice(deviceForWidth(window.innerWidth));
+    const update = () =>
+      setDevice(deviceForWidth(window.innerWidth, breakpoints));
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
-  }, []);
+  }, [breakpoints]);
   return device;
 }
 

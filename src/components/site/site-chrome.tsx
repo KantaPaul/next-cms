@@ -263,7 +263,7 @@ export async function SiteChrome({
           <header className="s-border border-b">
             <nav
               aria-label="Main"
-              className="mx-auto flex max-w-[var(--site-max-width,72rem)] flex-wrap items-center justify-between gap-4 px-5 py-4 md:px-8"
+              className="mx-auto flex max-w-[var(--site-max-width,72rem)] flex-wrap items-center justify-between gap-4 px-5 py-4 s-tab-px-8"
             >
               <Link
                 href={siteHref('/', siteSlug)}
@@ -297,7 +297,7 @@ export async function SiteChrome({
           <footer className="site-footer">{customFooter}</footer>
         ) : (
           <footer className="s-border s-surface border-t">
-            <div className="mx-auto flex max-w-[var(--site-max-width,72rem)] flex-col gap-6 px-5 py-10 md:flex-row md:items-start md:justify-between md:px-8">
+            <div className="mx-auto flex max-w-[var(--site-max-width,72rem)] flex-col gap-6 px-5 py-10 s-tab-flex-row s-tab-items-start s-tab-justify-between s-tab-px-8">
               <div>
                 <p className="font-semibold">{copy.siteName}</p>
                 {copy.siteDescription && (

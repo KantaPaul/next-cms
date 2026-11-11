@@ -88,23 +88,12 @@ html[data-site-mode='dark'] .site-root .s-logo-light {
   font-family: var(--site-font-heading);
 }
 
-/* Hero / display headline (display preset; falls back to the original 2.25rem → 3.75rem, 800). */
+/* Hero / display headline (display preset; font-size comes from responsive-css.ts). */
 .site-root .s-display-title {
   font-family: var(--site-type-display-font, var(--site-font-heading));
-  font-size: var(--site-type-display-size-m, 2.25rem);
   font-weight: var(--site-type-display-weight, 800);
   line-height: var(--site-type-display-line-height, 1.1);
   letter-spacing: var(--site-type-display-letter-spacing, -0.025em);
-}
-@media (min-width: 768px) {
-  .site-root .s-display-title {
-    font-size: var(--site-type-display-size-t, 3.75rem);
-  }
-}
-@media (min-width: 1024px) {
-  .site-root .s-display-title {
-    font-size: var(--site-type-display-size, 3.75rem);
-  }
 }
 /* Big numbers (stats, prices) and card titles use the heading font. */
 .site-root .s-stat-value {
@@ -117,209 +106,98 @@ html[data-site-mode='dark'] .site-root .s-logo-light {
   font-weight: var(--site-type-h3-weight, 700);
 }
 
-/* Shared block headings: sizes, weight and tracking come from the h2 / h1 presets. */
+/* Shared block headings: sizes come from responsive-css.ts; weight and tracking from h2 / h1 presets. */
 .site-root .s-section-title {
   font-family: var(--site-type-h2-font, var(--site-font-heading));
-  font-size: var(--site-type-h2-size-m, 1.875rem);
   font-weight: var(--site-type-h2-weight, 700);
   line-height: var(--site-type-h2-line-height, 1.2);
   letter-spacing: var(--site-type-h2-letter-spacing, -0.025em);
 }
 .site-root .s-post-title {
   font-family: var(--site-type-h1-font, var(--site-font-heading));
-  font-size: var(--site-type-h1-size-m, 2.25rem);
   font-weight: var(--site-type-h1-weight, 800);
   line-height: var(--site-type-h1-line-height, 1.1);
   letter-spacing: var(--site-type-h1-letter-spacing, -0.025em);
 }
-@media (min-width: 768px) {
-  .site-root .s-section-title {
-    font-size: var(--site-type-h2-size-t, 2.25rem);
-  }
-  .site-root .s-post-title {
-    font-size: var(--site-type-h1-size-t, 3rem);
-  }
-}
-@media (min-width: 1024px) {
-  .site-root .s-section-title {
-    font-size: var(--site-type-h2-size, 2.25rem);
-  }
-  .site-root .s-post-title {
-    font-size: var(--site-type-h1-size, 3rem);
-  }
-}
 
-/* Typography preset picked in a Typography control (`typography.preset`). Comes before
-   the per-property rules (s-fs, s-fw, …) so manual values still override it. */
+/* Typography preset picked in a Typography control (`typography.preset`). Responsive font-size comes from responsive-css.ts. */
 .site-root .s-tp {
   font-family: var(--s-tp-font);
-  font-size: var(--s-tp-size-m);
   font-weight: var(--s-tp-weight);
   line-height: var(--s-tp-lh);
   letter-spacing: var(--s-tp-ls);
-}
-@media (min-width: 768px) {
-  .site-root .s-tp {
-    font-size: var(--s-tp-size-t);
-  }
-}
-@media (min-width: 1024px) {
-  .site-root .s-tp {
-    font-size: var(--s-tp-size-d);
-  }
 }
 .site-root .s-backdrop {
   -webkit-backdrop-filter: blur(var(--s-blur)) saturate(1.2);
   backdrop-filter: blur(var(--s-blur)) saturate(1.2);
 }
 
-/* Theme typography presets (Settings → Theme). Mobile-first sizes. */
+/* Theme typography presets (Settings → Theme). Responsive sizes come from responsive-css.ts. */
 .site-root .s-type-display {
   font-family: var(--site-type-display-font, var(--site-font-heading));
-  font-size: var(--site-type-display-size-m, var(--site-type-display-size));
   font-weight: var(--site-type-display-weight);
   line-height: var(--site-type-display-line-height);
   letter-spacing: var(--site-type-display-letter-spacing);
 }
 .site-root .s-type-h1 {
   font-family: var(--site-type-h1-font, var(--site-font-heading));
-  font-size: var(--site-type-h1-size-m, var(--site-type-h1-size));
   font-weight: var(--site-type-h1-weight);
   line-height: var(--site-type-h1-line-height);
   letter-spacing: var(--site-type-h1-letter-spacing);
 }
 .site-root .s-type-h2 {
   font-family: var(--site-type-h2-font, var(--site-font-heading));
-  font-size: var(--site-type-h2-size-m, var(--site-type-h2-size));
   font-weight: var(--site-type-h2-weight);
   line-height: var(--site-type-h2-line-height);
   letter-spacing: var(--site-type-h2-letter-spacing);
 }
 .site-root .s-type-h3 {
   font-family: var(--site-type-h3-font, var(--site-font-heading));
-  font-size: var(--site-type-h3-size-m, var(--site-type-h3-size));
   font-weight: var(--site-type-h3-weight);
   line-height: var(--site-type-h3-line-height);
   letter-spacing: var(--site-type-h3-letter-spacing);
 }
 .site-root .s-type-h4 {
   font-family: var(--site-type-h4-font, var(--site-font-heading));
-  font-size: var(--site-type-h4-size-m, var(--site-type-h4-size));
   font-weight: var(--site-type-h4-weight);
   line-height: var(--site-type-h4-line-height);
   letter-spacing: var(--site-type-h4-letter-spacing);
 }
 .site-root .s-type-lead {
   font-family: var(--site-type-lead-font, var(--site-font));
-  font-size: var(--site-type-lead-size-m, var(--site-type-lead-size));
   font-weight: var(--site-type-lead-weight);
   line-height: var(--site-type-lead-line-height);
   letter-spacing: var(--site-type-lead-letter-spacing);
 }
 .site-root .s-type-body {
   font-family: var(--site-type-body-font, var(--site-font));
-  font-size: var(--site-type-body-size-m, var(--site-type-body-size));
   font-weight: var(--site-type-body-weight);
   line-height: var(--site-type-body-line-height);
   letter-spacing: var(--site-type-body-letter-spacing);
 }
 .site-root .s-type-eyebrow {
   font-family: var(--site-type-eyebrow-font, var(--site-font));
-  font-size: var(--site-type-eyebrow-size-m, var(--site-type-eyebrow-size));
   font-weight: var(--site-type-eyebrow-weight);
   line-height: var(--site-type-eyebrow-line-height);
   letter-spacing: var(--site-type-eyebrow-letter-spacing);
 }
 .site-root .s-type-caption {
   font-family: var(--site-type-caption-font, var(--site-font));
-  font-size: var(--site-type-caption-size-m, var(--site-type-caption-size));
   font-weight: var(--site-type-caption-weight);
   line-height: var(--site-type-caption-line-height);
   letter-spacing: var(--site-type-caption-letter-spacing);
 }
 .site-root .s-type-meta {
   font-family: var(--site-type-meta-font, var(--site-font));
-  font-size: var(--site-type-meta-size-m, var(--site-type-meta-size));
   font-weight: var(--site-type-meta-weight);
   line-height: var(--site-type-meta-line-height);
   letter-spacing: var(--site-type-meta-letter-spacing);
 }
 .site-root .s-type-button {
   font-family: var(--site-type-button-font, var(--site-font));
-  font-size: var(--site-type-button-size-m, var(--site-type-button-size));
   font-weight: var(--site-type-button-weight);
   line-height: var(--site-type-button-line-height);
   letter-spacing: var(--site-type-button-letter-spacing);
-}
-@media (min-width: 768px) {
-  .site-root .s-type-display {
-    font-size: var(--site-type-display-size-t, var(--site-type-display-size));
-  }
-  .site-root .s-type-h1 {
-    font-size: var(--site-type-h1-size-t, var(--site-type-h1-size));
-  }
-  .site-root .s-type-h2 {
-    font-size: var(--site-type-h2-size-t, var(--site-type-h2-size));
-  }
-  .site-root .s-type-h3 {
-    font-size: var(--site-type-h3-size-t, var(--site-type-h3-size));
-  }
-  .site-root .s-type-h4 {
-    font-size: var(--site-type-h4-size-t, var(--site-type-h4-size));
-  }
-  .site-root .s-type-lead {
-    font-size: var(--site-type-lead-size-t, var(--site-type-lead-size));
-  }
-  .site-root .s-type-body {
-    font-size: var(--site-type-body-size-t, var(--site-type-body-size));
-  }
-  .site-root .s-type-eyebrow {
-    font-size: var(--site-type-eyebrow-size-t, var(--site-type-eyebrow-size));
-  }
-  .site-root .s-type-caption {
-    font-size: var(--site-type-caption-size-t, var(--site-type-caption-size));
-  }
-  .site-root .s-type-meta {
-    font-size: var(--site-type-meta-size-t, var(--site-type-meta-size));
-  }
-  .site-root .s-type-button {
-    font-size: var(--site-type-button-size-t, var(--site-type-button-size));
-  }
-}
-@media (min-width: 1024px) {
-  .site-root .s-type-display {
-    font-size: var(--site-type-display-size);
-  }
-  .site-root .s-type-h1 {
-    font-size: var(--site-type-h1-size);
-  }
-  .site-root .s-type-h2 {
-    font-size: var(--site-type-h2-size);
-  }
-  .site-root .s-type-h3 {
-    font-size: var(--site-type-h3-size);
-  }
-  .site-root .s-type-h4 {
-    font-size: var(--site-type-h4-size);
-  }
-  .site-root .s-type-lead {
-    font-size: var(--site-type-lead-size);
-  }
-  .site-root .s-type-body {
-    font-size: var(--site-type-body-size);
-  }
-  .site-root .s-type-eyebrow {
-    font-size: var(--site-type-eyebrow-size);
-  }
-  .site-root .s-type-caption {
-    font-size: var(--site-type-caption-size);
-  }
-  .site-root .s-type-meta {
-    font-size: var(--site-type-meta-size);
-  }
-  .site-root .s-type-button {
-    font-size: var(--site-type-button-size);
-  }
 }
 
 .site-root .s-surface {
@@ -609,7 +487,7 @@ html[data-site-mode='dark'] .site-root .s-logo-light {
   color: var(--site-color-text-muted-dark, #94a3b8);
 }
 
-/* Section style controls. Values arrive as validated CSS variables set by `resolveSectionStyle`. */
+/* Section style controls. Responsive variables are emitted by `responsive-css.ts`. */
 .site-root .s-fill {
   background: var(--s-fill);
 }
@@ -618,79 +496,12 @@ html[data-site-mode='dark'] .site-root .s-fill {
   background: var(--s-fill-dark, var(--s-fill));
 }
 
-.site-root .s-pt {
-  padding-top: var(--s-pt-m);
-}
-.site-root .s-pr {
-  padding-right: var(--s-pr-m);
-}
-.site-root .s-pb {
-  padding-bottom: var(--s-pb-m);
-}
-.site-root .s-pl {
-  padding-left: var(--s-pl-m);
-}
-.site-root .s-bt {
-  border-top-width: var(--s-bt-m);
-}
-.site-root .s-br {
-  border-right-width: var(--s-br-m);
-}
-.site-root .s-bb {
-  border-bottom-width: var(--s-bb-m);
-}
-.site-root .s-bl {
-  border-left-width: var(--s-bl-m);
-}
 .site-footer .site-chrome.s-pb {
   padding-bottom: 0;
-}
-.site-root .s-fs {
-  font-size: var(--s-fs-m);
-}
-.site-root .s-fw {
-  font-weight: var(--s-fw-m);
-}
-.site-root .s-ta {
-  text-align: var(--s-ta-m);
-}
-.site-root .s-mh {
-  min-height: var(--s-mh-m);
-}
-.site-root .s-jc {
-  justify-content: var(--s-jc-m);
 }
 .site-root .s-shadow {
   box-shadow: var(--s-shadow);
 }
-.site-root .s-mt {
-  margin-top: var(--s-mt-m);
-}
-.site-root .s-mr {
-  margin-right: var(--s-mr-m);
-}
-.site-root .s-mb {
-  margin-bottom: var(--s-mb-m);
-}
-.site-root .s-ml {
-  margin-left: var(--s-ml-m);
-}
-.site-root .s-lh {
-  line-height: var(--s-lh-m);
-}
-.site-root .s-ls {
-  letter-spacing: var(--s-ls-m);
-}
-.site-root .s-ws {
-  word-spacing: var(--s-ws-m);
-}
-.site-root .s-w {
-  width: var(--s-w-m);
-}
-.site-root .s-rad {
-  border-radius: var(--s-rad-m);
-}
-
 .site-root .s-ff {
   font-family: var(--s-ff);
 }
@@ -721,15 +532,6 @@ html[data-site-mode='dark'] .site-root .s-fill {
 .site-root .s-tsh {
   text-shadow: var(--s-tsh);
 }
-.site-root .s-tst {
-  -webkit-text-stroke: var(--s-tst-m, var(--s-tst));
-}
-.site-root .s-bg-pos {
-  background-position: var(--s-bg-pos-m, var(--s-bg-pos));
-}
-.site-root .s-bg-size {
-  background-size: var(--s-bg-size-m, var(--s-bg-size));
-}
 .site-root .s-bg-attach {
   background-attachment: var(--s-bg-attach);
 }
@@ -747,375 +549,9 @@ html[data-site-mode='dark'] .site-root .s-fill {
   position: relative;
   z-index: var(--s-z);
 }
-
-/* Container layout (flex / grid). Values arrive as validated CSS variables
- * set by `resolveContainerStyle`. Mobile values are the base; tablet/desktop
- * override them in the media queries below. */
-.site-root .s-c-d {
-  display: var(--s-c-d-m, flex);
-}
-.site-root .s-c-fd {
-  flex-direction: var(--s-c-fd-m, row);
-}
-.site-root .s-c-fw {
-  flex-wrap: var(--s-c-fw-m, nowrap);
-}
-.site-root .s-c-jc {
-  justify-content: var(--s-c-jc-m, flex-start);
-}
-.site-root .s-c-ai {
-  align-items: var(--s-c-ai-m, stretch);
-}
-.site-root .s-c-ac {
-  align-content: var(--s-c-ac-m, flex-start);
-}
-.site-root .s-c-ga {
-  gap: var(--s-c-ga-m);
-}
-.site-root .s-c-cga {
-  column-gap: var(--s-c-cga-m);
-}
-.site-root .s-c-rga {
-  row-gap: var(--s-c-rga-m);
-}
-.site-root .s-c-gtc {
-  grid-template-columns: var(--s-c-gtc-m);
-}
-.site-root .s-c-gtr {
-  grid-template-rows: var(--s-c-gtr-m);
-}
-.site-root .s-c-gaf {
-  grid-auto-flow: var(--s-c-gaf-m, row);
-}
-.site-root .s-c-w {
-  width: var(--s-c-w-m);
-}
-.site-root .s-c-nw {
-  min-width: var(--s-c-nw-m);
-}
-.site-root .s-c-xw {
-  max-width: var(--s-c-xw-m);
-}
-.site-root .s-c-h {
-  height: var(--s-c-h-m);
-}
-.site-root .s-c-nh {
-  min-height: var(--s-c-nh-m);
-}
-.site-root .s-c-xh {
-  max-height: var(--s-c-xh-m);
-}
-.site-root .s-c-grw {
-  flex-grow: var(--s-c-grw-m);
-}
-.site-root .s-c-grs {
-  flex-shrink: var(--s-c-grs-m);
-}
-.site-root .s-c-grb {
-  flex-basis: var(--s-c-grb-m);
-}
-.site-root .s-c-box {
-  box-sizing: var(--s-c-box-m, border-box);
-}
 .site-root .s-c-boxed {
-  max-width: var(--s-c-bw-m);
   margin-left: auto;
   margin-right: auto;
-}
-
-@media (min-width: 768px) {
-  .site-root .s-pt {
-    padding-top: var(--s-pt-t);
-  }
-  .site-root .s-pr {
-    padding-right: var(--s-pr-t);
-  }
-  .site-root .s-pb {
-    padding-bottom: var(--s-pb-t);
-  }
-  .site-root .s-pl {
-    padding-left: var(--s-pl-t);
-  }
-  .site-root .s-bt {
-    border-top-width: var(--s-bt-t);
-  }
-  .site-root .s-br {
-    border-right-width: var(--s-br-t);
-  }
-  .site-root .s-bb {
-    border-bottom-width: var(--s-bb-t);
-  }
-  .site-root .s-bl {
-    border-left-width: var(--s-bl-t);
-  }
-
-  .site-root .s-fs {
-    font-size: var(--s-fs-t);
-  }
-  .site-root .s-fw {
-    font-weight: var(--s-fw-t);
-  }
-  .site-root .s-ta {
-    text-align: var(--s-ta-t);
-  }
-  .site-root .s-mh {
-    min-height: var(--s-mh-t);
-  }
-  .site-root .s-jc {
-    justify-content: var(--s-jc-t);
-  }
-  .site-root .s-mt {
-    margin-top: var(--s-mt-t);
-  }
-  .site-root .s-mr {
-    margin-right: var(--s-mr-t);
-  }
-  .site-root .s-mb {
-    margin-bottom: var(--s-mb-t);
-  }
-  .site-root .s-ml {
-    margin-left: var(--s-ml-t);
-  }
-  .site-root .s-lh {
-    line-height: var(--s-lh-t);
-  }
-  .site-root .s-ls {
-    letter-spacing: var(--s-ls-t);
-  }
-  .site-root .s-ws {
-    word-spacing: var(--s-ws-t);
-  }
-  .site-root .s-w {
-    width: var(--s-w-t);
-  }
-  .site-root .s-rad {
-    border-radius: var(--s-rad-t);
-  }
-  .site-root .s-tst {
-    -webkit-text-stroke: var(--s-tst-t, var(--s-tst));
-  }
-  .site-root .s-bg-pos {
-    background-position: var(--s-bg-pos-t, var(--s-bg-pos));
-  }
-  .site-root .s-bg-size {
-    background-size: var(--s-bg-size-t, var(--s-bg-size));
-  }
-  .site-root .s-c-d {
-    display: var(--s-c-d-t, flex);
-  }
-  .site-root .s-c-fd {
-    flex-direction: var(--s-c-fd-t, row);
-  }
-  .site-root .s-c-fw {
-    flex-wrap: var(--s-c-fw-t, nowrap);
-  }
-  .site-root .s-c-jc {
-    justify-content: var(--s-c-jc-t, flex-start);
-  }
-  .site-root .s-c-ai {
-    align-items: var(--s-c-ai-t, stretch);
-  }
-  .site-root .s-c-ac {
-    align-content: var(--s-c-ac-t, flex-start);
-  }
-  .site-root .s-c-ga {
-    gap: var(--s-c-ga-t);
-  }
-  .site-root .s-c-cga {
-    column-gap: var(--s-c-cga-t);
-  }
-  .site-root .s-c-rga {
-    row-gap: var(--s-c-rga-t);
-  }
-  .site-root .s-c-gtc {
-    grid-template-columns: var(--s-c-gtc-t);
-  }
-  .site-root .s-c-gtr {
-    grid-template-rows: var(--s-c-gtr-t);
-  }
-  .site-root .s-c-gaf {
-    grid-auto-flow: var(--s-c-gaf-t, row);
-  }
-  .site-root .s-c-w {
-    width: var(--s-c-w-t);
-  }
-  .site-root .s-c-nw {
-    min-width: var(--s-c-nw-t);
-  }
-  .site-root .s-c-xw {
-    max-width: var(--s-c-xw-t);
-  }
-  .site-root .s-c-h {
-    height: var(--s-c-h-t);
-  }
-  .site-root .s-c-nh {
-    min-height: var(--s-c-nh-t);
-  }
-  .site-root .s-c-xh {
-    max-height: var(--s-c-xh-t);
-  }
-  .site-root .s-c-grw {
-    flex-grow: var(--s-c-grw-t);
-  }
-  .site-root .s-c-grs {
-    flex-shrink: var(--s-c-grs-t);
-  }
-  .site-root .s-c-grb {
-    flex-basis: var(--s-c-grb-t);
-  }
-  .site-root .s-c-box {
-    box-sizing: var(--s-c-box-t, border-box);
-  }
-  .site-root .s-c-boxed {
-    max-width: var(--s-c-bw-t);
-  }
-}
-@media (min-width: 1024px) {
-  .site-root .s-pt {
-    padding-top: var(--s-pt-d);
-  }
-  .site-root .s-pr {
-    padding-right: var(--s-pr-d);
-  }
-  .site-root .s-pb {
-    padding-bottom: var(--s-pb-d);
-  }
-  .site-root .s-pl {
-    padding-left: var(--s-pl-d);
-  }
-  .site-root .s-bt {
-    border-top-width: var(--s-bt-d);
-  }
-  .site-root .s-br {
-    border-right-width: var(--s-bl-d);
-  }
-  .site-root .s-bb {
-    border-bottom-width: var(--s-bb-d);
-  }
-  .site-root .s-bl {
-    border-left-width: var(--s-bl-d);
-  }
-
-  .site-root .s-fs {
-    font-size: var(--s-fs-d);
-  }
-  .site-root .s-fw {
-    font-weight: var(--s-fw-d);
-  }
-  .site-root .s-ta {
-    text-align: var(--s-ta-d);
-  }
-  .site-root .s-mh {
-    min-height: var(--s-mh-d);
-  }
-  .site-root .s-jc {
-    justify-content: var(--s-jc-d);
-  }
-  .site-root .s-mt {
-    margin-top: var(--s-mt-d);
-  }
-  .site-root .s-mr {
-    margin-right: var(--s-mr-d);
-  }
-  .site-root .s-mb {
-    margin-bottom: var(--s-mb-d);
-  }
-  .site-root .s-ml {
-    margin-left: var(--s-ml-d);
-  }
-  .site-root .s-lh {
-    line-height: var(--s-lh-d);
-  }
-  .site-root .s-ls {
-    letter-spacing: var(--s-ls-d);
-  }
-  .site-root .s-ws {
-    word-spacing: var(--s-ws-d);
-  }
-  .site-root .s-w {
-    width: var(--s-w-d);
-  }
-  .site-root .s-rad {
-    border-radius: var(--s-rad-d);
-  }
-  .site-root .s-tst {
-    -webkit-text-stroke: var(--s-tst-d, var(--s-tst));
-  }
-  .site-root .s-bg-pos {
-    background-position: var(--s-bg-pos-d, var(--s-bg-pos));
-  }
-  .site-root .s-bg-size {
-    background-size: var(--s-bg-size-d, var(--s-bg-size));
-  }
-  .site-root .s-c-d {
-    display: var(--s-c-d-d, flex);
-  }
-  .site-root .s-c-fd {
-    flex-direction: var(--s-c-fd-d, row);
-  }
-  .site-root .s-c-fw {
-    flex-wrap: var(--s-c-fw-d, nowrap);
-  }
-  .site-root .s-c-jc {
-    justify-content: var(--s-c-jc-d, flex-start);
-  }
-  .site-root .s-c-ai {
-    align-items: var(--s-c-ai-d, stretch);
-  }
-  .site-root .s-c-ac {
-    align-content: var(--s-c-ac-d, flex-start);
-  }
-  .site-root .s-c-ga {
-    gap: var(--s-c-ga-d);
-  }
-  .site-root .s-c-cga {
-    column-gap: var(--s-c-cga-d);
-  }
-  .site-root .s-c-rga {
-    row-gap: var(--s-c-rga-d);
-  }
-  .site-root .s-c-gtc {
-    grid-template-columns: var(--s-c-gtc-d);
-  }
-  .site-root .s-c-gtr {
-    grid-template-rows: var(--s-c-gtr-d);
-  }
-  .site-root .s-c-gaf {
-    grid-auto-flow: var(--s-c-gaf-d, row);
-  }
-  .site-root .s-c-w {
-    width: var(--s-c-w-d);
-  }
-  .site-root .s-c-nw {
-    min-width: var(--s-c-nw-d);
-  }
-  .site-root .s-c-xw {
-    max-width: var(--s-c-xw-d);
-  }
-  .site-root .s-c-h {
-    height: var(--s-c-h-d);
-  }
-  .site-root .s-c-nh {
-    min-height: var(--s-c-nh-d);
-  }
-  .site-root .s-c-xh {
-    max-height: var(--s-c-xh-d);
-  }
-  .site-root .s-c-grw {
-    flex-grow: var(--s-c-grw-d);
-  }
-  .site-root .s-c-grs {
-    flex-shrink: var(--s-c-grs-d);
-  }
-  .site-root .s-c-grb {
-    flex-basis: var(--s-c-grb-d);
-  }
-  .site-root .s-c-box {
-    box-sizing: var(--s-c-box-d, border-box);
-  }
-  .site-root .s-c-boxed {
-    max-width: var(--s-c-bw-d);
-  }
 }
 .site-root
   :where(.s-bd-solid, .s-bd-dashed, .s-bd-double, .s-bd-dotted, .s-bd-groove) {
@@ -1336,22 +772,6 @@ html[data-site-mode='dark']
   width: 100%;
   margin-left: auto;
   margin-right: auto;
-  max-width: var(--chrome-max-width-m, 1280px);
-}
-
-@media (min-width: 768px) {
-  .site-root .site-chrome.is-boxed {
-    max-width: var(--chrome-max-width-t, var(--chrome-max-width-m, 1280px));
-  }
-}
-
-@media (min-width: 1024px) {
-  .site-root .site-chrome.is-boxed {
-    max-width: var(
-      --chrome-max-width-d,
-      var(--chrome-max-width-t, var(--chrome-max-width-m, 1280px))
-    );
-  }
 }
 
 .site-header-shell[data-shadow='always'] {
@@ -1371,33 +791,6 @@ html[data-site-mode='dark']
   transition: transform 0.2s ease;
 }
 
-/* ---------- Header column widths (HeaderBar custom / HeaderColumns) ---------- */
-.site-root .s-hcols,
-.site-root .s-hcols-lg {
-  grid-template-columns: var(--hc-cols-sm, minmax(0, 1fr));
-}
-.site-root .s-hcols-always {
-  grid-template-columns: var(--hc-cols-sm, var(--hc-cols, minmax(0, 1fr)));
-}
-@media (min-width: 768px) {
-  .site-root .s-hcols {
-    grid-template-columns: var(--hc-cols-md, var(--hc-cols, minmax(0, 1fr)));
-  }
-  .site-root .s-hcols-lg {
-    grid-template-columns: var(--hc-cols-md, minmax(0, 1fr));
-  }
-  .site-root .s-hcols-always {
-    grid-template-columns: var(--hc-cols-md, var(--hc-cols, minmax(0, 1fr)));
-  }
-}
-@media (min-width: 1024px) {
-  .site-root .s-hcols,
-  .site-root .s-hcols-lg,
-  .site-root .s-hcols-always {
-    grid-template-columns: var(--hc-cols, minmax(0, 1fr));
-  }
-}
-
 /*
  * Several blocks in one header column sit in a row. Scoped to the bar's own
  * columns (the editor canvas adds one wrapper) so mega menu panels rendered
@@ -1414,49 +807,6 @@ html[data-site-mode='dark']
 .site-root [data-header-bar] > div > [data-column] > div section,
 .site-root [data-header-bar] > div > * > [data-column] > div section {
   width: auto;
-}
-
-/* A header with a mobile menu swaps its horizontal menu for it at the same breakpoint. */
-@media (max-width: 767.98px) {
-  .site-root
-    [data-header-bar]:has([data-mobile-menu])
-    [data-nav-menu='horizontal'] {
-    display: none;
-  }
-}
-@media (max-width: 1023.98px) {
-  .site-root
-    [data-header-bar]:has([data-mobile-menu='tablet'])
-    [data-nav-menu='horizontal'] {
-    display: none;
-  }
-}
-
-/*
- * Popup and Drawer panel size (see resolveOverlayPanelStyle). Not scoped to
- * .site-root: on the site these panels are portaled to <body>.
- */
-.s-ov-panel {
-  width: var(--ov-w-m);
-  max-height: var(--ov-mh-m);
-  padding: var(--ov-p-m);
-  border-radius: var(--ov-rad-m);
-}
-@media (min-width: 768px) {
-  .s-ov-panel {
-    width: var(--ov-w-t);
-    max-height: var(--ov-mh-t);
-    padding: var(--ov-p-t);
-    border-radius: var(--ov-rad-t);
-  }
-}
-@media (min-width: 1024px) {
-  .s-ov-panel {
-    width: var(--ov-w-d);
-    max-height: var(--ov-mh-d);
-    padding: var(--ov-p-d);
-    border-radius: var(--ov-rad-d);
-  }
 }
 
 /* Header overlays: mobile menu, bookmarks drawer, search popup (SiteOverlay). */

@@ -7,7 +7,10 @@
 
 import {
   APPROVED_DYNAMIC_SOURCES,
+  type BreakpointConfig,
   createDynamicBinding,
+  DEFAULT_BREAKPOINTS,
+  DEVICE_LABELS,
   isDynamicBinding,
   type Device,
   type DynamicBinding,
@@ -1157,11 +1160,11 @@ export function FieldTypesProvider({
 const DeviceContext = createContext<Device>('desktop');
 export const DeviceProvider = DeviceContext.Provider;
 
-const DEVICE_LABEL: Record<Device, string> = {
-  desktop: 'Desktop',
-  tablet: 'Tablet',
-  mobile: 'Mobile',
-};
+const BreakpointsContext =
+  createContext<BreakpointConfig>(DEFAULT_BREAKPOINTS);
+export const BreakpointsProvider = BreakpointsContext.Provider;
+
+const DEVICE_LABEL = DEVICE_LABELS;
 
 /** The id a field's control gets, so an outside label can point at it. */
 export function fieldControlId(name: string): string {
@@ -1493,9 +1496,10 @@ export function FieldControl({
     : { ...BUILT_IN_FIELDS, ...E12_FIELD_COMPONENTS, ...types };
   const Component = (activeTypes[field.type] ??
     activeTypes.text) as unknown as ComponentType<FieldProps<unknown>>;
+  const breakpoints = useContext(BreakpointsContext);
   const id = fieldControlId(name);
   const responsive = !!field.responsive;
-  const stored = responsive ? valueForDevice(value, device) : value;
+  const stored = responsive ? valueForDevice(value, device, breakpoints) : value;
   const shown =
     stored === undefined &&
     (field.type === 'toggle' ||
@@ -1503,7 +1507,7 @@ export function FieldControl({
       field.type === 'radio')
       ? field.defaultValue
       : stored;
-  const source = responsive ? inheritedFrom(value, device) : null;
+  const source = responsive ? inheritedFrom(value, device, breakpoints) : null;
   const own = responsive && source === device;
   const isContainer = field.type === 'list' || field.type === 'object';
   const isDynamic = isDynamicBinding(shown);

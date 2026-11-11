@@ -15,18 +15,22 @@ import {
 } from '@/builder/blocks/mega-menu';
 import {
   applyPatch,
+  type BreakpointConfig,
   type BuilderDocument,
   type BuilderNode,
   cloneSubtree,
   createNodeId,
+  DEFAULT_BREAKPOINTS,
   DOCUMENT_VERSION,
   diffDocuments,
   documentProblems,
   documentToPuck,
+  enabledDevices,
   extractSubtree,
   findPosition,
   insertSubtree,
   type NodeId,
+  normalizeBreakpointConfig,
   puckToDocument,
   removeNode,
   repairDocument,
@@ -134,6 +138,7 @@ import {
 } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.actions';
 import { POST_REVISION_ACTIONS } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-revision-actions';
 import { EditorBridgeProvider } from '@/builder/controls/editor-bridge';
+import { getResponsiveCss } from '@/builder/responsive-css';
 import { buildCustomFontsCss, type CustomFont } from '@/builder/fonts';
 import {
   convertBlogBlockToQueryLoop,
@@ -212,6 +217,7 @@ import {
 export type NewEditorProps = BuilderPageProps & {
   document: BuilderDocument;
   loaded: Record<NodeId, Record<string, unknown>>;
+  breakpoints?: BreakpointConfig;
   /** Pages: version of the stored draft, for conflict checks (R738). */
   draftVersion?: number;
   /** Problems found in the stored document (R797). */
@@ -397,10 +403,12 @@ function EditorSiteRoot({
 function NewEditorBridge({
   themeTokens,
   customFonts,
+  breakpoints,
   children,
 }: {
   themeTokens: unknown;
   customFonts?: CustomFont[];
+  breakpoints: BreakpointConfig;
   children: ReactNode;
 }) {
   const store = useEditorStore();
@@ -414,12 +422,13 @@ function NewEditorBridge({
     () => ({
       device,
       setDevice: store.setDevice,
+      breakpoints,
       selectedType: node?.type,
       selectedProps: node?.props,
       themeTokens: themeTokens as Record<string, string> | undefined,
       customFonts,
     }),
-    [device, store, node, themeTokens, customFonts]
+    [device, store, breakpoints, node, themeTokens, customFonts]
   );
   return <EditorBridgeProvider value={value}>{children}</EditorBridgeProvider>;
 }
@@ -808,6 +817,7 @@ const recordsById = (items: DynamicRefItem[]) =>
 export function NewEditor({
   page,
   themeTokens,
+  breakpoints: rawBreakpoints,
   customFonts = NO_CUSTOM_FONTS,
   kind = 'page',
   post,
@@ -1144,6 +1154,17 @@ export function NewEditor({
                               },
                             }
                           : {}),
+                        ...(itemsField.item.excludeFeaturedImage
+                          ? {
+                              excludeFeaturedImage: {
+                                ...itemsField.item.excludeFeaturedImage,
+                                when: (item: Record<string, unknown>) =>
+                                  typeof item?.field === 'string' &&
+                                  multiMediaFieldKeys.has(item.field) &&
+                                  !featuredMediaFieldKeys.has(item.field),
+                              },
+                            }
+                          : {}),
                         ...(itemsField.item.motion
                           ? {
                               motion: {
@@ -1209,16 +1230,37 @@ export function NewEditor({
   );
   const [globalTarget, setGlobalTarget] = useState<BuilderTarget | null>(null);
 
+  const breakpoints = useMemo(
+    () => normalizeBreakpointConfig(rawBreakpoints ?? DEFAULT_BREAKPOINTS),
+    [rawBreakpoints]
+  );
+  const deviceSwitchOptions = useMemo(() => {
+    const byDevice = new Map(breakpoints.map(b => [b.device, b]));
+    return enabledDevices(breakpoints).map(d => {
+      const entry = byDevice.get(d);
+      const label = entry?.label ?? d;
+      const tooltip =
+        d === 'desktop'
+          ? 'Desktop view'
+          : d === 'widescreen'
+            ? `${label} (≥ ${entry?.width ?? 2400}px)`
+            : `${label} (≤ ${entry?.width ?? 1023}px)`;
+      return { id: d, label, tooltip };
+    });
+  }, [breakpoints]);
   // One store per open document. A save revalidates the route and delivers a
   // fresh `document` prop; rebuilding from it would wipe undo and the selection.
   // Deliberate content changes (restore, templates, AI) use `replaceDocument`.
   const storeKey = `${kind}:${page.id}:${page.language}`;
   // biome-ignore lint/correctness/useExhaustiveDependencies: see the comment above.
   const store = useMemo(
-    () => createEditorStore({ document, schemas: setup.schemas }),
+    () => createEditorStore({ document, schemas: setup.schemas, breakpoints }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [storeKey]
   );
+  useEffect(() => {
+    store.setBreakpoints(breakpoints);
+  }, [store, breakpoints]);
   // Initialize B9 stores: style classes (R724) and preferences (R733).
   useMemo(() => initStyleClassStore(), []);
   useMemo(() => {
@@ -1422,11 +1464,12 @@ export function NewEditor({
   const metadata = useMemo(
     () => ({
       themeTokens,
+      breakpoints,
       motionPreview,
       language: page.language,
       ...(setup.renderKind === 'post' && { post: post ?? SAMPLE_POST }),
     }),
-    [themeTokens, motionPreview, page.language, setup.renderKind, post]
+    [themeTokens, breakpoints, motionPreview, page.language, setup.renderKind, post]
   );
   const components = useMemo(
     () => rendererComponents(setup.renderKind, enabledPluginIds),
@@ -1824,6 +1867,7 @@ export function NewEditor({
       drag={drag}
       transformProps={transformProps}
       loaded={liveLoaded}
+      responsiveCss={getResponsiveCss(breakpoints)}
       renderRoot={renderRoot}
       onFrame={onFrame}
       resizeHandles={cmsResizeHandles}
@@ -1843,7 +1887,11 @@ export function NewEditor({
   );
   const rightPanelContent = (
     <section aria-label="Settings" className="p-4">
-      <NewEditorBridge themeTokens={themeTokens} customFonts={customFonts}>
+      <NewEditorBridge
+        themeTokens={themeTokens}
+        customFonts={customFonts}
+        breakpoints={breakpoints}
+      >
         {/* Nine tabs do not fit a side panel; they scroll sideways (B15 E4). */}
         <div
           style={{ overflowX: 'auto', marginBottom: 12 }}
@@ -2141,7 +2189,11 @@ export function NewEditor({
           <DynamicSourcesProvider value={dynamicSources}>
           <LoopPreviewProvider items={previewItems} fields={loopItemFields ?? []}>
             <EntryProvider entry={collectionEntry ?? null}>
-              <NewEditorBridge themeTokens={themeTokens} customFonts={customFonts}>
+              <NewEditorBridge
+        themeTokens={themeTokens}
+        customFonts={customFonts}
+        breakpoints={breakpoints}
+      >
                 <SharedChrome
           queue={queue}
           title={documentTitle}
@@ -2163,6 +2215,7 @@ export function NewEditor({
           layout={currentLayout}
           onLayoutChange={changeLayout}
           onDockSideChange={changeDockSide}
+          devices={deviceSwitchOptions}
           actions={
             <>
               <ChromeIconButton
@@ -2258,7 +2311,11 @@ export function NewEditor({
           <DynamicSourcesProvider value={dynamicSources}>
           <LoopPreviewProvider items={previewItems} fields={loopItemFields ?? []}>
           <EntryProvider entry={collectionEntry ?? null}>
-            <NewEditorBridge themeTokens={themeTokens} customFonts={customFonts}>
+            <NewEditorBridge
+        themeTokens={themeTokens}
+        customFonts={customFonts}
+        breakpoints={breakpoints}
+      >
       <div className="flex h-screen flex-col bg-steel-50 dark:bg-dark-50">
         <header className="flex h-12 shrink-0 items-center gap-2 border-b border-steel-200 bg-white px-3 dark:border-dark-300 dark:bg-dark-100">
           <Button

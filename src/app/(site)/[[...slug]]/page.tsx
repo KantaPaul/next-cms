@@ -858,6 +858,7 @@ async function PostRoute({
   const layout = await blogService.layoutFor(post);
   const metadata = {
     themeTokens: settings.themeTokens,
+    breakpoints: settings.breakpoints,
     siteSlug,
     post: view,
     language: view.language,
@@ -1037,6 +1038,7 @@ async function ArchiveRouteView({
     content: templateContent ?? defaultArchiveContent,
     metadata: {
       themeTokens: settings.themeTokens,
+      breakpoints: settings.breakpoints,
       language: archive.language,
       searchParams,
       archive: archiveLoaderContext,
@@ -1192,6 +1194,7 @@ async function CollectionAuthorArchiveRouteView({
       : defaultArchiveContent,
     metadata: {
       themeTokens: settings.themeTokens,
+      breakpoints: settings.breakpoints,
       language,
       searchParams,
       siteId,
@@ -1303,6 +1306,7 @@ async function CollectionArchiveRouteView({
       : defaultArchiveContent,
     metadata: {
       themeTokens: settings.themeTokens,
+      breakpoints: settings.breakpoints,
       language,
       searchParams,
       siteId,
@@ -1426,6 +1430,7 @@ async function TermArchiveRouteView({
       : defaultArchiveContent,
     metadata: {
       themeTokens: settings.themeTokens,
+      breakpoints: settings.breakpoints,
       language,
       searchParams,
       archive: archiveLoaderContext,
@@ -1652,6 +1657,7 @@ export default async function SitePage({ params, searchParams }: Params) {
 
         const metadata = {
           themeTokens: settings.themeTokens,
+          breakpoints: settings.breakpoints,
           siteSlug,
           siteId: site.id,
           searchParams: await searchParams,
@@ -1771,6 +1777,7 @@ export default async function SitePage({ params, searchParams }: Params) {
 
     const metadata = {
       themeTokens: settings.themeTokens,
+      breakpoints: settings.breakpoints,
       siteSlug,
       searchParams: await searchParams,
       language: page.language,

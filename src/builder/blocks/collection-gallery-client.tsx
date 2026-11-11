@@ -185,6 +185,7 @@ export function CollectionGallery({
   galleryStyle = 'facebook',
   galleryAspect = 'auto',
   enableLightbox = true,
+  showFeaturedBadge = true,
   overlayId,
   className,
   style,
@@ -194,6 +195,7 @@ export function CollectionGallery({
   galleryStyle?: GalleryStyle;
   galleryAspect?: GalleryAspect;
   enableLightbox?: boolean;
+  showFeaturedBadge?: boolean;
   overlayId?: string;
   className?: string;
   style?: CSSProperties;
@@ -254,7 +256,7 @@ export function CollectionGallery({
             src={src}
             alt={alt}
             index={idx}
-            featuredBadge={count > 1}
+            featuredBadge={showFeaturedBadge && count > 1}
             overlayId={overlayId}
             className="rounded-lg"
             aspectClass={chosenAspect || 'max-h-[32rem] aspect-[16/10]'}
@@ -278,7 +280,7 @@ export function CollectionGallery({
             src={images[active]}
             alt={alt}
             index={active}
-            featuredBadge={active === 0}
+            featuredBadge={showFeaturedBadge && active === 0}
             overlayId={overlayId}
             aspectClass={chosenAspect || 'aspect-[16/10]'}
             onOpen={openLightbox}
@@ -340,7 +342,7 @@ export function CollectionGallery({
               src={src}
               alt={alt}
               index={idx}
-              featuredBadge={idx === 0}
+              featuredBadge={showFeaturedBadge && idx === 0}
               overlayId={overlayId}
               className="rounded-lg"
               aspectClass={chosenAspect || undefined}
@@ -359,7 +361,7 @@ export function CollectionGallery({
             src={src}
             alt={alt}
             index={idx}
-            featuredBadge={idx === 0}
+            featuredBadge={showFeaturedBadge && idx === 0}
             overlayId={overlayId}
             className="rounded-lg"
             aspectClass={chosenAspect || 'aspect-square'}
@@ -377,7 +379,7 @@ export function CollectionGallery({
           src={images[0]}
           alt={alt}
           index={0}
-          featuredBadge
+          featuredBadge={showFeaturedBadge}
           overlayId={overlayId}
           aspectClass={chosenAspect || 'aspect-[16/9]'}
           onOpen={openLightbox}
@@ -429,7 +431,7 @@ export function CollectionGallery({
             src={images[0]}
             alt={alt}
             index={0}
-            featuredBadge
+            featuredBadge={showFeaturedBadge}
             overlayId={overlayId}
             className="h-full"
             aspectClass={chosenAspect || 'aspect-[4/3] sm:aspect-auto'}
@@ -475,7 +477,7 @@ export function CollectionGallery({
             src={src}
             alt={alt}
             index={idx}
-            featuredBadge={idx === 0}
+            featuredBadge={showFeaturedBadge && idx === 0}
             extraCount={idx === visible.length - 1 ? extra : 0}
             overlayId={overlayId}
             aspectClass={chosenAspect || 'aspect-square'}
@@ -509,7 +511,7 @@ export function CollectionGallery({
               src={src}
               alt={alt}
               index={idx}
-              featuredBadge={idx === 0}
+              featuredBadge={showFeaturedBadge && idx === 0}
               overlayId={overlayId}
               aspectClass={chosenAspect || 'aspect-[4/3]'}
               onOpen={openLightbox}

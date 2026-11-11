@@ -30,7 +30,8 @@ import {
   SlidingIndicator,
   useSlidingIndicator,
 } from '../lib/motion/useSlidingIndicator';
-import type { DeviceType } from '../inspector/DeviceValueBadge';
+import { DEVICE_ICON_MAP, type DeviceType } from '../inspector/DeviceValueBadge';
+import type { DeviceSwitchOption } from './FloatingDeviceBar';
 import { Button } from '../primitives/Button';
 import { IconButton } from '../primitives/IconButton';
 
@@ -53,6 +54,7 @@ export interface TopBarProps {
   onRedo?: () => void;
   device?: DeviceType;
   onDeviceChange?: (device: DeviceType) => void;
+  devices?: DeviceSwitchOption[];
   zoom?: number;
   onZoomChange?: (zoom: number) => void;
   isPreview?: boolean;
@@ -127,10 +129,10 @@ const pill =
 const pillButton =
   'p-1.5 rounded-[var(--ne-radius-md)] transition-[color,background-color,opacity] duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--ne-focus-ring)] text-[var(--ne-text)] hover:text-[var(--ne-primary)] hover:bg-[var(--ne-surface)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[var(--ne-text)]';
 
-const DEVICES: { id: DeviceType; label: string; Icon: typeof Monitor }[] = [
-  { id: 'desktop', label: 'Desktop view', Icon: Monitor },
-  { id: 'tablet', label: 'Tablet view', Icon: Tablet },
-  { id: 'mobile', label: 'Mobile view', Icon: Smartphone },
+const DEFAULT_DEVICES: DeviceSwitchOption[] = [
+  { id: 'desktop', label: 'Desktop view' },
+  { id: 'tablet', label: 'Tablet view' },
+  { id: 'mobile', label: 'Mobile view' },
 ];
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -147,6 +149,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onRedo,
   device = 'desktop',
   onDeviceChange,
+  devices = DEFAULT_DEVICES,
   zoom,
   onZoomChange,
   isPreview = false,
@@ -354,15 +357,18 @@ export const TopBar: React.FC<TopBarProps> = ({
               className="relative flex items-center p-0.5 bg-[var(--ne-surface-subtle)] border border-[var(--ne-border)] rounded-[var(--ne-radius-md)]"
             >
               <SlidingIndicator />
-              {DEVICES.map(({ id, label, Icon }) => (
+              {devices.map(({ id, label, tooltip }) => {
+                const Icon = DEVICE_ICON_MAP[id] ?? Monitor;
+                const tip = tooltip ?? label;
+                return (
                 <button
                   key={id}
                   type="button"
                   onClick={() => onDeviceChange(id)}
-                  aria-label={label}
+                  aria-label={tip}
                   aria-pressed={device === id}
                   data-ne-active={device === id ? 'true' : undefined}
-                  title={label}
+                  title={tip}
                   className={`ne-press p-1 rounded-[var(--ne-radius-sm)] transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--ne-focus-ring)] ${
                     device === id
                       ? 'text-[var(--ne-primary)] font-medium'
@@ -374,7 +380,8 @@ export const TopBar: React.FC<TopBarProps> = ({
                     className={`w-3.5 h-3.5 ${device === id ? 'ne-motion-pop-in' : ''}`}
                   />
                 </button>
-              ))}
+                );
+              })}
             </div>
           </>
         )}

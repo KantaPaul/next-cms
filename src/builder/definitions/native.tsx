@@ -2786,6 +2786,12 @@ export const CollectionItemBlock = defineBlock({
           ],
           when: () => false,
         },
+        excludeFeaturedImage: {
+          label: 'Exclude featured image',
+          group: CONTENT,
+          type: 'toggle',
+          when: () => false,
+        },
         motion: motionEffectsControl({
           label: 'Motion Effects',
           group: CONTENT,
@@ -2816,6 +2822,7 @@ export const CollectionItemBlock = defineBlock({
         urlNewTab: true,
         galleryStyle: 'facebook',
         galleryAspect: 'auto',
+        excludeFeaturedImage: false,
         style: {},
         labelStyle: {},
       },

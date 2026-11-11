@@ -127,8 +127,8 @@ export function HeaderBar({
 }: HeaderBarProps) {
   const containerClass =
     width === 'full'
-      ? 'w-full px-4 sm:px-6 lg:px-8'
-      : 'max-w-[var(--site-max-width,72rem)] mx-auto px-4 sm:px-6 lg:px-8';
+      ? 'w-full px-4 sm:px-6 s-desk-px-8'
+      : 'max-w-[var(--site-max-width,72rem)] mx-auto px-4 sm:px-6 s-desk-px-8';
 
   const style: React.CSSProperties = minHeight ? { minHeight } : {};
 
@@ -368,8 +368,8 @@ export function HeaderColumns({
 }: HeaderColumnsProps) {
   const containerClass =
     width === 'full'
-      ? 'w-full px-4 sm:px-6 lg:px-8'
-      : 'max-w-[var(--site-max-width,72rem)] mx-auto px-4 sm:px-6 lg:px-8';
+      ? 'w-full px-4 sm:px-6 s-desk-px-8'
+      : 'max-w-[var(--site-max-width,72rem)] mx-auto px-4 sm:px-6 s-desk-px-8';
 
   if (typeof columns === 'function' || Array.isArray(columns)) {
     const colItems = resolveVisibleColumns(columnItems, columns);
@@ -512,8 +512,8 @@ export function FooterColumns({
 }: FooterColumnsProps) {
   const containerClass =
     width === 'full'
-      ? 'w-full px-4 sm:px-6 lg:px-8'
-      : 'max-w-[var(--site-max-width,72rem)] mx-auto px-4 sm:px-6 lg:px-8';
+      ? 'w-full px-4 sm:px-6 s-desk-px-8'
+      : 'max-w-[var(--site-max-width,72rem)] mx-auto px-4 sm:px-6 s-desk-px-8';
 
   if (typeof columns === 'function' || Array.isArray(columns)) {
     const colItems = resolveVisibleColumns(columnItems, columns);
@@ -579,25 +579,25 @@ export function FooterColumns({
       ? cols === 1
         ? 'grid-cols-1'
         : cols === 2
-          ? 'grid-cols-1 lg:grid-cols-2'
+          ? 'grid-cols-1 s-desk-cols-2'
           : cols === 3
-            ? 'grid-cols-1 lg:grid-cols-3'
+            ? 'grid-cols-1 s-desk-cols-3'
             : cols === 4
-              ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
+              ? 'grid-cols-1 sm:grid-cols-2 s-desk-cols-4'
               : cols === 5
-                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-5'
-                : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-6'
+                ? 'grid-cols-1 sm:grid-cols-2 s-desk-cols-5'
+                : 'grid-cols-1 sm:grid-cols-2 s-desk-cols-6'
       : cols === 1
         ? 'grid-cols-1'
         : cols === 2
-          ? 'grid-cols-1 md:grid-cols-2'
+          ? 'grid-cols-1 s-tab-cols-2'
           : cols === 3
-            ? 'grid-cols-1 md:grid-cols-3'
+            ? 'grid-cols-1 s-tab-cols-3'
             : cols === 4
-              ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4'
+              ? 'grid-cols-1 sm:grid-cols-2 s-tab-cols-4'
               : cols === 5
-                ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-5'
-                : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-6';
+                ? 'grid-cols-1 sm:grid-cols-2 s-tab-cols-5'
+                : 'grid-cols-1 sm:grid-cols-2 s-tab-cols-6';
 
   return (
     <div
@@ -927,7 +927,7 @@ export function FooterLinks({
     // Phones: a disclosure per column. Tablet and up: always open.
     return (
       <div>
-        <details className="s-border group border-b py-2 md:hidden">
+        <details className="s-border group border-b py-2 s-tab-hidden">
           <summary
             {...el(
               styled,
@@ -943,7 +943,7 @@ export function FooterLinks({
           </summary>
           <div className="pt-2">{list}</div>
         </details>
-        <div className="hidden flex-col space-y-2 md:flex">
+        <div className="hidden flex-col space-y-2 s-tab-flex">
           {headingEl}
           {list}
         </div>

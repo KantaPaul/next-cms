@@ -198,14 +198,30 @@ describe('resolveContainerStyle', () => {
 
 describe('breakpoint inheritance', () => {
   for (const device of DEVICES) {
-    it(`inherits unset breakpoints from desktop on ${device}`, () => {
+    it(`resolves desktop value as fallback for ${device} via resolveResponsive`, () => {
+      const valid = (x: unknown) =>
+        x === 'column' || x === 'row' ? x : undefined;
+      assert.equal(resolveResponsive({ desktop: 'column' }, device, valid), 'column');
       const s = resolveContainerStyle(
         { direction: { desktop: 'column' } } as ContainerSettings,
         device
       ).style as Record<string, string>;
-      const suffix =
-        device === 'desktop' ? 'd' : device === 'tablet' ? 't' : 'm';
-      assert.equal(s[`--s-c-fd-${suffix}`], 'column');
+      assert.equal(s['--s-c-fd-d'], 'column');
+      if (device !== 'desktop') {
+        const sfx =
+          device === 'widescreen'
+            ? 'w'
+            : device === 'laptop'
+              ? 'l'
+              : device === 'tablet_extra'
+                ? 'te'
+                : device === 'tablet'
+                  ? 't'
+                  : device === 'mobile_extra'
+                    ? 'me'
+                    : 'm';
+        assert.equal(s[`--s-c-fd-${sfx}`], undefined);
+      }
     });
   }
 
@@ -340,7 +356,7 @@ describe('Container sizing controls (R397 / BLD-05)', () => {
     );
     const rs = responsiveRes.style as Record<string, string>;
     assert.equal(rs['--s-c-box-d'], 'border-box');
-    assert.equal(rs['--s-c-box-t'], 'border-box');
+    assert.equal(rs['--s-c-box-t'], undefined);
     assert.equal(rs['--s-c-box-m'], 'content-box');
   });
 });
@@ -366,14 +382,14 @@ describe('Responsive breakpoint inheritance and preview (R401 / BLD-09)', () => 
     );
     const s = style as Record<string, string>;
     assert.equal(s['--s-c-w-d'], '100%');
-    assert.equal(s['--s-c-w-t'], '100%');
-    assert.equal(s['--s-c-w-m'], '100%');
+    assert.equal(s['--s-c-w-t'], undefined);
+    assert.equal(s['--s-c-w-m'], undefined);
     assert.equal(s['--s-c-grw-d'], '1');
-    assert.equal(s['--s-c-grw-t'], '1');
-    assert.equal(s['--s-c-grw-m'], '1');
+    assert.equal(s['--s-c-grw-t'], undefined);
+    assert.equal(s['--s-c-grw-m'], undefined);
   });
 
-  it('tablet overrides desktop, and mobile inherits tablet override when mobile is unset', () => {
+  it('tablet overrides desktop, and mobile omits unset inline var so CSS cascades from tablet', () => {
     const { style } = resolveContainerStyle(
       {
         width: { desktop: 100, tablet: 75 },
@@ -385,10 +401,10 @@ describe('Responsive breakpoint inheritance and preview (R401 / BLD-09)', () => 
     const s = style as Record<string, string>;
     assert.equal(s['--s-c-w-d'], '100%');
     assert.equal(s['--s-c-w-t'], '75%');
-    assert.equal(s['--s-c-w-m'], '75%');
+    assert.equal(s['--s-c-w-m'], undefined);
     assert.equal(s['--s-c-grw-d'], '0');
     assert.equal(s['--s-c-grw-t'], '2');
-    assert.equal(s['--s-c-grw-m'], '2');
+    assert.equal(s['--s-c-grw-m'], undefined);
   });
 
   it('reset-to-inherited logic removes device override reverting to ancestor value', () => {

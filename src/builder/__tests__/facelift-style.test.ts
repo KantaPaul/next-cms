@@ -35,9 +35,9 @@ describe('border style and radius', () => {
     assert.ok(r.outerClasses.includes('s-rad'));
     assert.ok(!r.outerClasses.includes('s-br'));
     assert.equal((r.style as Record<string, string>)['--s-rad-d'], '12px');
-    // Inherited by tablet and mobile instead of collapsing to 0.
-    assert.equal((r.style as Record<string, string>)['--s-rad-t'], '12px');
-    assert.equal((r.style as Record<string, string>)['--s-rad-m'], '12px');
+    // Unset devices leave inline vars omitted so generated CSS var() chain falls back to desktop.
+    assert.equal((r.style as Record<string, string>)['--s-rad-t'], undefined);
+    assert.equal((r.style as Record<string, string>)['--s-rad-m'], undefined);
     assert.equal((r.style as Record<string, string>)['--s-br-d'], undefined);
   });
 

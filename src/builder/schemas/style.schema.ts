@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import {
   BORDER_STYLES,
+  DEVICES,
+  type Device,
   EASINGS,
   ENTRANCES,
   EXITS,
@@ -14,15 +16,17 @@ import {
   TRIGGERS,
 } from '../style';
 
+const deviceSchema = z.enum(DEVICES as [Device, ...Device[]]);
+
 /** Enforce non-empty responsive record or literal */
 export function responsive<T extends z.ZodTypeAny>(schema: T) {
   return z.union([
     schema,
-    z.object({
-      desktop: schema.optional(),
-      tablet: schema.optional(),
-      mobile: schema.optional(),
-    }),
+    z.object(
+      Object.fromEntries(
+        DEVICES.map(d => [d, schema.optional()])
+      ) as Record<Device, z.ZodOptional<T>>
+    ),
   ]);
 }
 
@@ -176,11 +180,11 @@ export const animationSchema = z.object({
   stagger: z.number().min(0).max(2000).optional(),
   hover: z.enum(['none', '', ...HOVERS] as any).optional(),
   devices: z
-    .object({
-      desktop: z.boolean().optional(),
-      tablet: z.boolean().optional(),
-      mobile: z.boolean().optional(),
-    })
+    .object(
+      Object.fromEntries(
+        DEVICES.map(d => [d, z.boolean().optional()])
+      ) as Record<Device, z.ZodOptional<z.ZodBoolean>>
+    )
     .optional(),
 });
 
@@ -239,12 +243,13 @@ export const motionEffectsSchema = z.object({
       end: z.number().min(0).max(100).optional(),
     })
     .optional(),
-  devices: z.array(z.enum(['desktop', 'tablet', 'mobile'])).optional(),
+  devices: z.array(deviceSchema).optional(),
 });
 
 export const sectionSettingsSchema = z.object({
   paddingY: z.enum(['none', 'sm', 'md', 'lg']).optional(),
   background: z.enum(['default', 'muted', 'primary', 'dark']).optional(),
+  hideOn: z.array(deviceSchema).optional(),
   hideOnMobile: z.boolean().optional(),
   hideOnTablet: z.boolean().optional(),
   hideOnDesktop: z.boolean().optional(),

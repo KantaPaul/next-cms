@@ -54,19 +54,21 @@ export function CanvasFrame({
   title = 'Page canvas',
   style,
   customFontsCss,
+  responsiveCss,
   onReady,
 }: {
   children: ReactNode;
   title?: string;
   style?: CSSProperties;
   customFontsCss?: string;
+  responsiveCss?: string;
   /** Called with the iframe once its document is ready. */
   onReady?: (frame: HTMLIFrameElement, doc: Document) => void;
 }) {
   const ref = useRef<HTMLIFrameElement>(null);
   const [body, setBody] = useState<HTMLElement | null>(null);
 
-  const applyCustomFonts = (doc: Document) => {
+  const applyFrameStyles = (doc: Document) => {
     let fontEl = doc.head.querySelector('style[data-custom-fonts]');
     if (!fontEl && customFontsCss) {
       fontEl = doc.createElement('style');
@@ -76,6 +78,16 @@ export function CanvasFrame({
     if (fontEl && fontEl.textContent !== (customFontsCss || '')) {
       fontEl.textContent = customFontsCss || '';
     }
+
+    let respEl = doc.head.querySelector('style[data-responsive-css]');
+    if (!respEl && responsiveCss) {
+      respEl = doc.createElement('style');
+      respEl.setAttribute('data-responsive-css', '');
+      doc.head.appendChild(respEl);
+    }
+    if (respEl && respEl.textContent !== (responsiveCss || '')) {
+      respEl.textContent = responsiveCss || '';
+    }
   };
 
   const setup = () => {
@@ -83,7 +95,7 @@ export function CanvasFrame({
     const doc = frame?.contentDocument;
     if (!frame || !doc?.body) return;
     syncStyles(document, doc);
-    applyCustomFonts(doc);
+    applyFrameStyles(doc);
     setBody(doc.body);
     onReady?.(frame, doc);
   };
@@ -96,7 +108,7 @@ export function CanvasFrame({
       const doc = frame.contentDocument;
       if (!doc?.body) return;
       syncStyles(document, doc);
-      applyCustomFonts(doc);
+      applyFrameStyles(doc);
       setBody(doc.body);
       onReady?.(frame, doc);
     };
@@ -110,6 +122,12 @@ export function CanvasFrame({
       frame.removeEventListener('load', onFrameLoad);
     };
   }, [onReady]);
+
+  useEffect(() => {
+    const doc = ref.current?.contentDocument;
+    if (!body || !doc) return;
+    applyFrameStyles(doc);
+  }, [body, customFontsCss, responsiveCss]);
 
   useEffect(() => {
     const doc = ref.current?.contentDocument;

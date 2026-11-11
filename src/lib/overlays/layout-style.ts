@@ -234,8 +234,12 @@ export function readOverlayLayout(
 }
 
 const SUFFIX: Record<Device, string> = {
+  widescreen: 'w',
   desktop: 'd',
+  laptop: 'l',
+  tablet_extra: 'te',
   tablet: 't',
+  mobile_extra: 'me',
   mobile: 'm',
 };
 

@@ -160,7 +160,7 @@ export function Countdown(p: CountdownProps) {
   ]);
 
   const boxEl = el(p, 'box', 'flex flex-col items-center justify-center rounded-xl s-surface-alt p-4 border s-border min-w-[4.5rem]');
-  const numEl = el(p, 'number', 'text-3xl md:text-4xl font-extrabold tracking-tight font-mono text-[var(--site-fg)]');
+  const numEl = el(p, 'number', 'text-3xl s-tab-text-4xl font-extrabold tracking-tight font-mono text-[var(--site-fg)]');
   const labelEl = el(p, 'label', 'mt-1 text-xs uppercase tracking-wider s-muted font-semibold');
 
   if (remaining?.isExpired) {
@@ -199,7 +199,7 @@ export function Countdown(p: CountdownProps) {
     <Section section={p.section} editing={p.editing} id={p.id ?? p.nodeId}>
       <div
         className={cn(
-          'flex flex-wrap gap-3 md:gap-4 w-full',
+          'flex flex-wrap gap-3 s-tab-gap-4 w-full',
           align === 'center'
             ? 'justify-center'
             : align === 'right'

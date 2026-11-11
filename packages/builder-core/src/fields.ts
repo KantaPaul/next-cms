@@ -4,18 +4,273 @@
  * in builder-react, and any type name not built in is looked up there.
  */
 
-/** Devices a value can differ on; desktop is the base. */
-export type Device = 'desktop' | 'tablet' | 'mobile';
-export const DEVICES: Device[] = ['desktop', 'tablet', 'mobile'];
+/** Devices a value can differ on, largest to smallest; desktop is the base. */
+export type Device =
+  | 'widescreen'
+  | 'desktop'
+  | 'laptop'
+  | 'tablet_extra'
+  | 'tablet'
+  | 'mobile_extra'
+  | 'mobile';
+
+export const DEVICES: Device[] = [
+  'widescreen',
+  'desktop',
+  'laptop',
+  'tablet_extra',
+  'tablet',
+  'mobile_extra',
+  'mobile',
+];
+
+export type BreakpointEntry = {
+  device: Device;
+  label: string;
+  width: number;
+  enabled: boolean;
+};
+
+export type BreakpointConfig = BreakpointEntry[];
+
+export const DEFAULT_BREAKPOINTS: BreakpointConfig = [
+  { device: 'widescreen', label: 'Widescreen', width: 2400, enabled: false },
+  { device: 'desktop', label: 'Desktop', width: 1400, enabled: true },
+  { device: 'laptop', label: 'Laptop', width: 1366, enabled: false },
+  { device: 'tablet_extra', label: 'Tablet Extra', width: 1200, enabled: false },
+  { device: 'tablet', label: 'Tablet', width: 1023, enabled: true },
+  { device: 'mobile_extra', label: 'Mobile Extra', width: 880, enabled: false },
+  { device: 'mobile', label: 'Mobile', width: 767, enabled: true },
+];
+
+const DEFAULT_BY_DEVICE = new Map<Device, BreakpointEntry>(
+  DEFAULT_BREAKPOINTS.map(entry => [entry.device, entry])
+);
+
+export const DEVICE_LABELS: Record<Device, string> = {
+  widescreen: 'Widescreen',
+  desktop: 'Desktop',
+  laptop: 'Laptop',
+  tablet_extra: 'Tablet Extra',
+  tablet: 'Tablet',
+  mobile_extra: 'Mobile Extra',
+  mobile: 'Mobile',
+};
+
+/** Normalizes partial or stored breakpoint config to all 7 devices in canonical order. */
+export function normalizeBreakpointConfig(raw: unknown): BreakpointConfig {
+  const byDevice = new Map<Device, Partial<BreakpointEntry>>();
+  if (Array.isArray(raw)) {
+    for (const item of raw) {
+      if (!item || typeof item !== 'object') continue;
+      const d = (item as Record<string, unknown>).device;
+      if (typeof d === 'string' && (DEVICES as string[]).includes(d)) {
+        byDevice.set(d as Device, item as Partial<BreakpointEntry>);
+      }
+    }
+  }
+  return DEVICES.map(device => {
+    const def = DEFAULT_BY_DEVICE.get(device)!;
+    const saved = byDevice.get(device);
+    const rawWidth = saved?.width;
+    const width =
+      typeof rawWidth === 'number' &&
+      Number.isFinite(rawWidth) &&
+      rawWidth >= 200 &&
+      rawWidth <= 5000
+        ? Math.round(rawWidth)
+        : def.width;
+    const label =
+      typeof saved?.label === 'string' && saved.label.trim()
+        ? saved.label.trim()
+        : def.label;
+    const enabled =
+      device === 'desktop'
+        ? true
+        : typeof saved?.enabled === 'boolean'
+          ? saved.enabled
+          : def.enabled;
+    return { device, label, width, enabled };
+  });
+}
+
+/** Enabled devices in canonical largest-to-smallest order (desktop is always enabled). */
+export function enabledDevices(
+  config: BreakpointConfig = DEFAULT_BREAKPOINTS
+): Device[] {
+  const byDevice = new Map(config.map(entry => [entry.device, entry]));
+  return DEVICES.filter(
+    device => device === 'desktop' || Boolean(byDevice.get(device)?.enabled)
+  );
+}
+
+/** Validates that media-query widths are integer, within range, unique, and strictly descending. */
+export function validateBreakpoints(
+  config: BreakpointConfig
+): { ok: true } | { ok: false; error: string } {
+  const byDevice = new Map(config.map(entry => [entry.device, entry]));
+  const orderedMediaDevices: Device[] = [
+    'widescreen',
+    'laptop',
+    'tablet_extra',
+    'tablet',
+    'mobile_extra',
+    'mobile',
+  ];
+  const seenWidths = new Set<number>();
+  let prevWidth = Infinity;
+  let prevLabel = '';
+
+  for (const device of orderedMediaDevices) {
+    const entry = byDevice.get(device);
+    const label = entry?.label || DEVICE_LABELS[device];
+    if (!entry || typeof entry.width !== 'number' || !Number.isFinite(entry.width)) {
+      return { ok: false, error: `${label} width must be a valid number.` };
+    }
+    if (!Number.isInteger(entry.width) || entry.width < 200 || entry.width > 5000) {
+      return {
+        ok: false,
+        error: `${label} width must be a whole number between 200 and 5000 px.`,
+      };
+    }
+    if (seenWidths.has(entry.width)) {
+      return {
+        ok: false,
+        error: `Duplicate breakpoint width (${entry.width}px) on ${label}.`,
+      };
+    }
+    if (entry.width >= prevWidth) {
+      return {
+        ok: false,
+        error: `${label} (${entry.width}px) must be narrower than ${prevLabel} (${prevWidth}px).`,
+      };
+    }
+    seenWidths.add(entry.width);
+    prevWidth = entry.width;
+    prevLabel = label;
+  }
+
+  return { ok: true };
+}
+
+/**
+ * Fallback chain for a device given the site's breakpoint config:
+ * - desktop is the base: ['desktop']
+ * - widescreen inherits from desktop: ['widescreen', 'desktop'] (or ['desktop'] if disabled)
+ * - smaller devices walk up through enabled devices to desktop
+ */
+export function fallbackFor(
+  device: Device,
+  config: BreakpointConfig = DEFAULT_BREAKPOINTS
+): Device[] {
+  const enabled = new Set(enabledDevices(config));
+  if (device === 'desktop') return ['desktop'];
+  if (device === 'widescreen') {
+    return enabled.has('widescreen') ? ['widescreen', 'desktop'] : ['desktop'];
+  }
+  const idx = DEVICES.indexOf(device);
+  const chain: Device[] = [];
+  for (let i = idx; i >= 1; i--) {
+    const candidate = DEVICES[i];
+    if (candidate === 'desktop' || enabled.has(candidate)) {
+      chain.push(candidate);
+    }
+  }
+  return chain;
+}
+
+/** Maps a viewport width (px) to the active enabled device. */
+export function deviceForWidth(
+  width: number,
+  config: BreakpointConfig = DEFAULT_BREAKPOINTS
+): Device {
+  const normalized = normalizeBreakpointConfig(config);
+  const byDevice = new Map(normalized.map(entry => [entry.device, entry]));
+
+  const widescreen = byDevice.get('widescreen');
+  if (widescreen?.enabled && width >= widescreen.width) {
+    return 'widescreen';
+  }
+
+  // Check max-width devices from smallest to largest so the narrowest match wins.
+  for (const device of [
+    'mobile',
+    'mobile_extra',
+    'tablet',
+    'tablet_extra',
+    'laptop',
+  ] as const) {
+    const entry = byDevice.get(device);
+    if (entry?.enabled && width <= entry.width) {
+      return device;
+    }
+  }
+
+  return 'desktop';
+}
+
+/** Computes canvas preview widths (px) for each device from a breakpoint config. */
+export function canvasWidthsFromConfig(
+  config: BreakpointConfig = DEFAULT_BREAKPOINTS
+): Record<Device, number> {
+  const normalized = normalizeBreakpointConfig(config);
+  const byDevice = new Map(normalized.map(entry => [entry.device, entry]));
+  const enabled = enabledDevices(normalized);
+
+  const smallerEnabledWidth = (device: Device): number => {
+    const idx = DEVICES.indexOf(device);
+    for (let i = idx + 1; i < DEVICES.length; i++) {
+      const d = DEVICES[i];
+      if (enabled.includes(d)) {
+        return byDevice.get(d)!.width;
+      }
+    }
+    return 0;
+  };
+
+  const widescreenEntry = byDevice.get('widescreen')!;
+  const laptopEntry = byDevice.get('laptop')!;
+  const tabletExtraEntry = byDevice.get('tablet_extra')!;
+  const tabletEntry = byDevice.get('tablet')!;
+  const mobileExtraEntry = byDevice.get('mobile_extra')!;
+  const mobileEntry = byDevice.get('mobile')!;
+
+  const desktopBase = laptopEntry.enabled
+    ? Math.max(1400, laptopEntry.width + 1)
+    : 1400;
+  const desktopWidth = widescreenEntry.enabled
+    ? Math.min(desktopBase, widescreenEntry.width - 1)
+    : desktopBase;
+
+  const tabletPreview = Math.min(
+    tabletEntry.width,
+    Math.max(768, smallerEnabledWidth('tablet') + 1)
+  );
+  const mobilePreview = Math.min(mobileEntry.width, 375);
+
+  return {
+    widescreen: widescreenEntry.width,
+    desktop: desktopWidth,
+    laptop: laptopEntry.width,
+    tablet_extra: tabletExtraEntry.width,
+    tablet: tabletPreview,
+    mobile_extra: mobileExtraEntry.width,
+    mobile: mobilePreview,
+  };
+}
 
 /** A value set per device; unset devices inherit. */
 export type Responsive<T> = Partial<Record<Device, T>>;
 
-/** Where each device looks for a value, nearest first (matches the CMS style system). */
+/** Default fallback order (when using DEFAULT_BREAKPOINTS). */
 export const DEVICE_FALLBACK: Record<Device, Device[]> = {
-  desktop: ['desktop', 'tablet', 'mobile'],
-  tablet: ['tablet', 'desktop', 'mobile'],
-  mobile: ['mobile', 'tablet', 'desktop'],
+  widescreen: fallbackFor('widescreen', DEFAULT_BREAKPOINTS),
+  desktop: fallbackFor('desktop', DEFAULT_BREAKPOINTS),
+  laptop: fallbackFor('laptop', DEFAULT_BREAKPOINTS),
+  tablet_extra: fallbackFor('tablet_extra', DEFAULT_BREAKPOINTS),
+  tablet: fallbackFor('tablet', DEFAULT_BREAKPOINTS),
+  mobile_extra: fallbackFor('mobile_extra', DEFAULT_BREAKPOINTS),
+  mobile: fallbackFor('mobile', DEFAULT_BREAKPOINTS),
 };
 
 export function isResponsive<T>(value: unknown): value is Responsive<T> {
@@ -31,10 +286,11 @@ export function isResponsive<T>(value: unknown): value is Responsive<T> {
 /** The value a device shows, following the fallback order. Plain values apply to every device. */
 export function valueForDevice<T>(
   value: T | Responsive<T> | undefined,
-  device: Device
+  device: Device,
+  config: BreakpointConfig = DEFAULT_BREAKPOINTS
 ): T | undefined {
   if (!isResponsive<T>(value)) return value as T | undefined;
-  for (const candidate of DEVICE_FALLBACK[device]) {
+  for (const candidate of fallbackFor(device, config)) {
     if (value[candidate] !== undefined) return value[candidate];
   }
   return undefined;
@@ -43,13 +299,15 @@ export function valueForDevice<T>(
 /** Which device the shown value comes from, or null when nothing is set. */
 export function inheritedFrom<T>(
   value: T | Responsive<T> | undefined,
-  device: Device
+  device: Device,
+  config: BreakpointConfig = DEFAULT_BREAKPOINTS
 ): Device | null {
   if (value === undefined) return null;
   if (!isResponsive<T>(value)) return 'desktop';
   return (
-    DEVICE_FALLBACK[device].find(candidate => value[candidate] !== undefined) ??
-    null
+    fallbackFor(device, config).find(
+      candidate => value[candidate] !== undefined
+    ) ?? null
   );
 }
 

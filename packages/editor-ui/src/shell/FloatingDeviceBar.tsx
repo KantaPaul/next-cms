@@ -1,4 +1,4 @@
-import { Monitor, Smartphone, Tablet, ZoomIn, ZoomOut } from 'lucide-react';
+import { Monitor, ZoomIn, ZoomOut } from 'lucide-react';
 import React, { useRef } from 'react';
 import { cn } from '../lib/cn';
 import {
@@ -8,11 +8,18 @@ import {
   useHoldRepeat,
   useSlidingIndicator,
 } from '../lib/motion';
-import type { DeviceType } from '../inspector/DeviceValueBadge';
+import { DEVICE_ICON_MAP, type DeviceType } from '../inspector/DeviceValueBadge';
+
+export interface DeviceSwitchOption {
+  id: DeviceType;
+  label: string;
+  tooltip?: string;
+}
 
 export interface FloatingDeviceBarProps {
   device: DeviceType;
   onDeviceChange: (device: DeviceType) => void;
+  devices?: DeviceSwitchOption[];
   zoom?: number;
   onZoomChange?: (zoom: number) => void;
   className?: string;
@@ -27,15 +34,16 @@ export function stepZoom(zoom: number, direction: 1 | -1): number {
   return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoom + direction * ZOOM_STEP));
 }
 
-const DEVICES: { id: DeviceType; label: string; Icon: typeof Monitor }[] = [
-  { id: 'desktop', label: 'Desktop view', Icon: Monitor },
-  { id: 'tablet', label: 'Tablet view', Icon: Tablet },
-  { id: 'mobile', label: 'Mobile view', Icon: Smartphone },
+const DEFAULT_DEVICES: DeviceSwitchOption[] = [
+  { id: 'desktop', label: 'Desktop', tooltip: 'Desktop view' },
+  { id: 'tablet', label: 'Tablet', tooltip: 'Tablet view' },
+  { id: 'mobile', label: 'Mobile', tooltip: 'Mobile view' },
 ];
 
 export const FloatingDeviceBar: React.FC<FloatingDeviceBarProps> = ({
   device,
   onDeviceChange,
+  devices = DEFAULT_DEVICES,
   zoom = 100,
   onZoomChange,
   className,
@@ -72,16 +80,18 @@ export const FloatingDeviceBar: React.FC<FloatingDeviceBarProps> = ({
         style={{ '--ne-ind-radius': '9999px' } as React.CSSProperties}
       >
         <SlidingIndicator />
-        {DEVICES.map(({ id, label, Icon }) => {
+        {devices.map(({ id, label, tooltip }) => {
           const active = device === id;
+          const Icon = DEVICE_ICON_MAP[id] ?? Monitor;
+          const tip = tooltip ?? label;
           return (
             <button
               key={id}
               type="button"
               onClick={() => onDeviceChange(id)}
-              aria-label={label}
+              aria-label={tip}
               aria-pressed={active}
-              title={label}
+              title={tip}
               data-ne-active={active ? 'true' : undefined}
               className={cn(
                 'ne-press flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-[var(--ne-focus-ring)]',
@@ -95,7 +105,7 @@ export const FloatingDeviceBar: React.FC<FloatingDeviceBarProps> = ({
                 aria-hidden
                 className={cn('h-3.5 w-3.5', active && 'ne-motion-pop-in')}
               />
-              <span className="hidden sm:inline capitalize">{id}</span>
+              <span className="hidden sm:inline">{label}</span>
             </button>
           );
         })}
