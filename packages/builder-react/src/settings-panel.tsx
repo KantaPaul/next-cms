@@ -29,7 +29,7 @@ import {
   PanelTabs,
   SettingsSearch,
 } from '@nextcms/editor-ui';
-import { FileText, Paintbrush, Sliders } from 'lucide-react';
+import { FileText, LayoutGrid, Paintbrush, Sliders } from 'lucide-react';
 import React, { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { useEditor } from './context';
 import { DeviceSwitch } from './device-switch';
@@ -194,7 +194,9 @@ export function SettingsPanel({
     label: t.def.label,
     shortcut: t.def.shortcut ?? '',
     icon:
-      t.def.id === 'content' ? (
+      t.def.id === 'layout' ? (
+        <LayoutGrid size={13} />
+      ) : t.def.id === 'content' ? (
         <FileText size={13} />
       ) : t.def.id === 'style' ? (
         <Paintbrush size={13} />

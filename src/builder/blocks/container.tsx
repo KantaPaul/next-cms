@@ -87,11 +87,33 @@ const LAYOUT_CLASSES = new Set([
   's-c-gaf',
 ]);
 
-/** The editor's slot wrapper fills the container and takes over its layout. */
+/** CSS variable prefixes behind LAYOUT_CLASSES, e.g. `--s-c-fd-` for `s-c-fd`. */
+const LAYOUT_VAR_PREFIXES = [...LAYOUT_CLASSES].map(cls => `--${cls}-`);
+
+/**
+ * Picks the layout CSS variables (every breakpoint suffix) out of a resolved
+ * container style. The `--s-c-*` variables are registered with
+ * `inherits:false`, so the slot wrapper must carry its own copy.
+ */
+export function pickLayoutVars(
+  style: CSSProperties | undefined
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(style ?? {})) {
+    if (value === undefined || value === null) continue;
+    if (LAYOUT_VAR_PREFIXES.some(prefix => key.startsWith(prefix))) {
+      out[key] = String(value);
+    }
+  }
+  return out;
+}
+
+/** The slot wrapper fills the container and takes over its layout. */
 const SLOT_FILL: CSSProperties = {
   flex: '1 1 auto',
   alignSelf: 'stretch',
   gridColumn: '1 / -1',
+  gridRow: '1 / -1',
   width: '100%',
   minWidth: 0,
 };
@@ -100,14 +122,17 @@ function renderContainerChildren(
   content: SlotValue | undefined,
   zones: Record<string, BuilderItem[]> | undefined,
   device: Device,
-  classes: string[]
+  resolved: { classes: string[]; style?: CSSProperties }
 ): ReactNode {
   if (typeof content === 'function') {
-    // The editor wraps children in one slot element, so give it the
-    // container's flex/grid classes; their CSS variables inherit from the tag.
+    // Children render inside one slot wrapper, so it gets the container's
+    // flex/grid classes plus their CSS variables. The variables don't
+    // inherit (see buildResponsiveCss), so they must be set here too.
     return content({
-      className: classes.filter(cls => LAYOUT_CLASSES.has(cls)).join(' '),
-      style: SLOT_FILL,
+      className: resolved.classes
+        .filter(cls => LAYOUT_CLASSES.has(cls))
+        .join(' '),
+      style: { ...pickLayoutVars(resolved.style), ...SLOT_FILL },
       minEmptyHeight: 80,
     });
   }
@@ -130,6 +155,48 @@ function renderContainerChildren(
   });
 }
 
+/** Flex-item classes that belong on the outer `<section>` sitting in the parent's flex row. */
+const ITEM_CLASSES = new Set(['s-c-grw', 's-c-grs', 's-c-grb']);
+
+/** CSS variable prefixes behind ITEM_CLASSES. */
+const ITEM_VAR_PREFIXES = [...ITEM_CLASSES].map(cls => `--${cls}-`);
+
+function splitItemStyles(resolved: {
+  classes: string[];
+  style: CSSProperties;
+}): {
+  bodyClasses: string[];
+  bodyStyle: CSSProperties;
+  itemClassName?: string;
+  itemStyle?: CSSProperties;
+} {
+  const bodyClasses: string[] = [];
+  const itemClasses: string[] = [];
+  for (const cls of resolved.classes) {
+    if (ITEM_CLASSES.has(cls)) itemClasses.push(cls);
+    else bodyClasses.push(cls);
+  }
+
+  const bodyStyle: Record<string, unknown> = {};
+  const itemStyle: Record<string, unknown> = {};
+  for (const [key, val] of Object.entries(resolved.style ?? {})) {
+    if (ITEM_VAR_PREFIXES.some(prefix => key.startsWith(prefix))) {
+      itemStyle[key] = val;
+    } else {
+      bodyStyle[key] = val;
+    }
+  }
+
+  return {
+    bodyClasses,
+    bodyStyle: bodyStyle as CSSProperties,
+    itemClassName: itemClasses.length ? itemClasses.join(' ') : undefined,
+    itemStyle: Object.keys(itemStyle).length
+      ? (itemStyle as CSSProperties)
+      : undefined,
+  };
+}
+
 export function renderContainerBody({
   p,
   c,
@@ -142,6 +209,8 @@ export function renderContainerBody({
   editorNotes: ReactNode[];
 }): ReactNode {
   const resolved = resolveContainerStyle(c, device);
+  const { bodyClasses, bodyStyle, itemClassName, itemStyle } =
+    splitItemStyles(resolved);
   const tag = pick(c.tag, CONTAINER_TAGS);
   const Tag: ContainerTag | 'div' = tag ?? 'div';
   const linkProps = c.link ? resolveLinkProps(c.link) : null;
@@ -149,12 +218,12 @@ export function renderContainerBody({
     p.content,
     p.zones,
     device,
-    resolved.classes
+    resolved
   );
   const empty = p.editing && !children;
 
   const body = (
-    <Tag className={cn('s-cntr', resolved.classes)} style={resolved.style}>
+    <Tag className={cn('s-cntr', bodyClasses)} style={bodyStyle}>
       {empty ? (
         <div className="flex h-32 w-full items-center justify-center rounded-md border border-dashed border-steel-200 bg-steel-50 text-[11px] text-steel-400">
           Drop blocks here
@@ -166,7 +235,12 @@ export function renderContainerBody({
   );
 
   return (
-    <Section section={p.section} editing={p.editing}>
+    <Section
+      section={p.section}
+      editing={p.editing}
+      itemClassName={itemClassName}
+      itemStyle={itemStyle}
+    >
       {editorNotes}
       {linkProps ? <a {...linkProps}>{body}</a> : body}
     </Section>

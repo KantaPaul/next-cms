@@ -11,6 +11,7 @@ import {
   fieldSectionTitle,
   fieldsOf,
   fieldTabId,
+  layoutFields,
   validateProps,
 } from '@nextcms/builder-core';
 import { NATIVE_BLOCKS } from '../definitions/native';
@@ -383,5 +384,86 @@ describe('QueryLoop filter panel styles', () => {
       }),
       false
     );
+  });
+});
+
+describe('Container redesigned inspector panel', () => {
+  it('opens on Layout tab with Structure first and drops typography, display, and text alignment', () => {
+    const block = pageInspectorBlocks.Container;
+    assert.deepEqual(
+      block.tabs?.map(t => t.id),
+      ['layout', 'advanced']
+    );
+
+    assert.equal(block.fields.section_typography, undefined);
+    assert.equal(block.fields.section_text_color, undefined);
+    assert.equal(block.fields.section_display, undefined);
+    assert.equal(block.fields.section_layout, undefined);
+
+    const flexLayout = layoutFields({
+      fields: block.fields,
+      props: { container: { mode: 'flex' }, section: {} },
+      defaultProps: block.defaultProps,
+      device: 'desktop',
+      tabs: block.tabs,
+    });
+    assert.deepEqual(
+      flexLayout.tabs.map(t => t.def.id),
+      ['layout', 'advanced']
+    );
+    assert.deepEqual(
+      flexLayout.tabs[0].sections.map(s => s.title),
+      [
+        'Structure',
+        'Flex',
+        'Size',
+        'Spacing',
+        'Background',
+        'Border & shadow',
+        'Effects',
+        'Element',
+      ]
+    );
+
+    const gridLayout = layoutFields({
+      fields: block.fields,
+      props: { container: { mode: 'grid' }, section: {} },
+      defaultProps: block.defaultProps,
+      device: 'desktop',
+      tabs: block.tabs,
+    });
+    assert.deepEqual(
+      gridLayout.tabs[0].sections.map(s => s.title),
+      [
+        'Structure',
+        'Grid',
+        'Size',
+        'Spacing',
+        'Background',
+        'Border & shadow',
+        'Effects',
+        'Element',
+      ]
+    );
+  });
+
+  it('keeps popup, drawer, and mega-menu Container omissions and tabs intact', () => {
+    for (const kind of ['popup', 'drawer', 'mega-menu']) {
+      const setup = editorSetup(kind);
+      const container = setup.inspectorBlocks.Container;
+      assert.ok(container, kind);
+      assert.deepEqual(
+        container.tabs?.map(t => t.id),
+        ['layout', 'advanced'],
+        kind
+      );
+      assert.ok(container.fields.container_structure, kind);
+      assert.ok(container.fields.container_size, kind);
+      assert.ok(container.fields.container_element, kind);
+      assert.equal(container.fields.section_animation, undefined, kind);
+      assert.equal(container.fields.section_filter, undefined, kind);
+      assert.equal(container.fields.section_responsive, undefined, kind);
+      assert.equal(container.fields.section_attributes, undefined, kind);
+    }
   });
 });

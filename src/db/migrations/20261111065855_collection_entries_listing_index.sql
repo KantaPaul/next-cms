@@ -1,0 +1,1 @@
+CREATE INDEX "collection_entries_collection_status_published_index" ON "collection_entries" USING btree ("collection_id","status","published_at") WHERE "collection_entries"."deleted_at" is null;

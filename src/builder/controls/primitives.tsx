@@ -528,6 +528,7 @@ export function ResponsiveSlider({
   units,
   placeholder,
   onChange,
+  action,
 }: {
   label: string;
   value: MaybeResponsive<number> | undefined;
@@ -542,6 +543,7 @@ export function ResponsiveSlider({
   };
   placeholder?: string;
   onChange: (value: MaybeResponsive<number> | undefined) => void;
+  action?: ReactNode;
 }) {
   const [device] = useCanvasDevice();
   const { breakpoints } = useEditorBridge();
@@ -603,6 +605,14 @@ export function ResponsiveSlider({
     <span className="text-[10px] text-muted-foreground italic">Inherited</span>
   ) : null;
 
+  const asideContent =
+    aside || action ? (
+      <div className="flex items-center gap-1">
+        {aside}
+        {action}
+      </div>
+    ) : null;
+
   return (
     <Slider
       label={label}
@@ -615,7 +625,7 @@ export function ResponsiveSlider({
       placeholder={placeholder}
       onChange={handleChange}
       responsive
-      aside={aside}
+      aside={asideContent}
       isInherited={isInherited}
     />
   );
@@ -803,16 +813,21 @@ export function VisualChoose<T extends string>({
   value,
   options,
   onChange,
+  columns = 3,
 }: {
   label?: string;
   value: T;
   options: VisualOption<T>[];
   onChange: (value: T) => void;
+  columns?: number;
 }) {
   return (
     <div>
       {label && <ControlLabel label={label} />}
-      <div className="grid grid-cols-3 gap-1.5">
+      <div
+        className="grid gap-1.5"
+        style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+      >
         {options.map(o => (
           <Button
             key={o.value}
@@ -877,6 +892,7 @@ export function UnitSlider<U extends string>({
   units,
   limits,
   onChange,
+  action,
 }: {
   label: string;
   value: Responsive<number> | undefined;
@@ -884,6 +900,7 @@ export function UnitSlider<U extends string>({
   units: readonly U[];
   limits: Record<U, { min: number; max: number; step: number }>;
   onChange: (value: Responsive<number> | undefined, unit: U) => void;
+  action?: ReactNode;
 }) {
   const current = unit && units.includes(unit) ? unit : units[0];
   const lim = limits[current];
@@ -901,6 +918,7 @@ export function UnitSlider<U extends string>({
         options: units,
         onChange: u => onChange(clampAll(value, limits[u as U]), u as U),
       }}
+      action={action}
       onChange={v => onChange(v as Responsive<number> | undefined, current)}
     />
   );

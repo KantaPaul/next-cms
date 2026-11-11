@@ -123,15 +123,11 @@ export async function listCollectionBlockPreviewEntriesAction(
 ) {
   if (typeof collectionId !== 'string' || !collectionId) return [];
   await getAccess();
-  const [rows, labels] = await Promise.all([
-    collectionsService.listEntries(collectionId),
-    collectionsService.listEntryOptions(collectionId),
-  ]);
-  const labelById = new Map(labels.map(option => [option.id, option.label]));
-  return rows.map(row => ({
-    id: row.id,
-    label: labelById.get(row.id) || row.slug,
-    language: row.language || 'en',
-    status: row.status,
+  const options = await collectionsService.listEntryOptions(collectionId);
+  return options.map(option => ({
+    id: option.id,
+    label: option.label,
+    language: option.language,
+    status: option.status,
   }));
 }

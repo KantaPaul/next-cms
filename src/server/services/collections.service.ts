@@ -921,7 +921,13 @@ export const collectionsService = {
   async listEntries(collectionId: string) {
     const siteId = await adminSiteId();
     return db
-      .select()
+      .select({
+        id: collectionEntries.id,
+        slug: collectionEntries.slug,
+        status: collectionEntries.status,
+        language: collectionEntries.language,
+        data: collectionEntries.data,
+      })
       .from(collectionEntries)
       .where(
         and(
@@ -2017,7 +2023,10 @@ export const collectionsService = {
     ]);
     return rows.map(r => ({
       id: r.id,
+      slug: r.slug,
       label: entryTitle(r.data, fields) || r.slug,
+      language: r.language || 'en',
+      status: r.status,
     }));
   },
 };

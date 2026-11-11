@@ -115,7 +115,6 @@ import {
   ThemeToggle,
 } from '../blocks/site-chrome';
 import { FooterStyleField, HeaderStyleField } from '../controls/chrome-style';
-import { ContainerLayoutControl } from '../controls/container-layout';
 import { LoopCustomKeyField } from '../controls/loop-preview';
 import {
   CptFieldFiltersField,
@@ -161,6 +160,7 @@ import {
   headingStyles,
   cardFields,
   columnsField,
+  containerControls,
   groupControl,
   MEDIA_PARTS,
   motionEffectsControl,
@@ -1043,17 +1043,11 @@ export const ContainerBlock = defineBlock({
     })
     .passthrough(),
   render: Container,
-  fields: {
-    container: {
-      label: 'Container',
-      group: CONTENT,
-      tab: 'layout',
-      section: 'Container Layout',
-      type: 'custom',
-      render: ContainerLayoutControl,
-    },
-    ...sectionControls({ omit: ['width'] }),
-  },
+  tabs: [
+    { id: 'layout', label: 'Layout' },
+    { id: 'advanced', label: 'Advanced', shortcut: '⌥A' },
+  ],
+  fields: containerControls(),
   defaults: {
     container: {
       mode: 'flex',

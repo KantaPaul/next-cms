@@ -35,6 +35,17 @@ import {
 } from '../fields/client-fields';
 import { CustomCssControl } from '../controls/custom-css';
 import { MotionEffectsControl } from '../controls/motion-effects';
+import { Slider } from '../controls/primitives';
+import {
+  ContainerElementControl,
+  ContainerFlexControl,
+  ContainerGridControl,
+  ContainerLegacyNotice,
+  ContainerSizeControl,
+  ContainerSpacingControl,
+  ContainerStructureControl,
+  hasLegacySectionStyles,
+} from '../controls/container';
 import type { UrlValue } from '../style';
 
 export const CONTENT = 'Content';
@@ -406,6 +417,148 @@ export function sectionControls(opts?: { omit?: string[] }): Fields {
       section: 'Attributes',
       path: 'section.anchor',
       render: AttributesSectionControl,
+    },
+  };
+}
+
+function containerMode(props: Record<string, unknown>): 'flex' | 'grid' {
+  const m = (props?.container as { mode?: unknown } | undefined)?.mode;
+  if (m === 'grid') return 'grid';
+  if (
+    m &&
+    typeof m === 'object' &&
+    (m as Record<string, unknown>).desktop === 'grid'
+  ) {
+    return 'grid';
+  }
+  return 'flex';
+}
+
+/**
+ * Inspector fields for the Container block: one layout-first panel (Structure,
+ * Flex/Grid, Size, Spacing, Background, Border & shadow, Effects, Element)
+ * plus Advanced (Motion, Custom CSS, Responsive, Anchor, Legacy notice).
+ */
+export function containerControls(): Fields {
+  const {
+    section_background,
+    section_border,
+    section_shadow,
+    section_filter,
+    section_effects,
+    section_animation,
+    section_motion_effects,
+    section_custom_css,
+    section_responsive,
+    section_attributes,
+  } = sectionControls();
+
+  return {
+    container_structure: {
+      type: 'custom',
+      label: 'Structure',
+      tab: 'layout',
+      section: 'Structure',
+      path: 'container',
+      render: ContainerStructureControl,
+    },
+    container_flex: {
+      type: 'custom',
+      label: 'Flex',
+      tab: 'layout',
+      section: 'Flex',
+      path: 'container',
+      when: p => containerMode(p) === 'flex',
+      render: ContainerFlexControl,
+    },
+    container_grid: {
+      type: 'custom',
+      label: 'Grid',
+      tab: 'layout',
+      section: 'Grid',
+      path: 'container',
+      when: p => containerMode(p) === 'grid',
+      render: ContainerGridControl,
+    },
+    container_size: {
+      type: 'custom',
+      label: 'Size',
+      tab: 'layout',
+      section: 'Size',
+      path: 'container',
+      render: ContainerSizeControl,
+    },
+    container_spacing: {
+      type: 'custom',
+      label: 'Spacing',
+      tab: 'layout',
+      section: 'Spacing',
+      path: 'section',
+      render: ContainerSpacingControl,
+    },
+    section_background: {
+      ...(section_background as FieldDef),
+      tab: 'layout',
+      section: 'Background',
+    },
+    section_border: {
+      ...(section_border as FieldDef),
+      tab: 'layout',
+      section: 'Border & shadow',
+    },
+    section_shadow: {
+      ...(section_shadow as FieldDef),
+      tab: 'layout',
+      section: 'Border & shadow',
+    },
+    section_filter: {
+      ...(section_filter as FieldDef),
+      tab: 'layout',
+      section: 'Effects',
+    },
+    section_effects: {
+      ...(section_effects as FieldDef),
+      tab: 'layout',
+      section: 'Effects',
+    },
+    container_element: {
+      type: 'custom',
+      label: 'Element',
+      tab: 'layout',
+      section: 'Element',
+      path: 'container',
+      render: ContainerElementControl,
+    },
+    container_z_index: {
+      type: 'custom',
+      label: 'Z-index',
+      tab: 'layout',
+      section: 'Element',
+      path: 'section.zIndex',
+      render: (props: any) =>
+        createElement(Slider, {
+          label: 'Z-index',
+          value: props.value,
+          min: 0,
+          max: 50,
+          step: 1,
+          placeholder: '0',
+          onChange: props.onChange,
+        }),
+    },
+    section_animation: section_animation as FieldDef,
+    section_motion_effects: section_motion_effects as FieldDef,
+    section_custom_css: section_custom_css as FieldDef,
+    section_responsive: section_responsive as FieldDef,
+    section_attributes: section_attributes as FieldDef,
+    container_legacy_styles: {
+      type: 'custom',
+      label: 'Hidden legacy styles',
+      tab: 'advanced',
+      section: 'Hidden legacy styles',
+      path: 'section',
+      when: p => hasLegacySectionStyles(p?.section as SectionSettings | undefined),
+      render: ContainerLegacyNotice,
     },
   };
 }

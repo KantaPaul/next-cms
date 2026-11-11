@@ -49,6 +49,10 @@ import {
 } from '@/server/services/access.service';
 import { auditService } from '@/server/services/audit.service';
 import { adminSiteId } from '@/server/services/site-context';
+import {
+  isTrimmableAutosave,
+  trimOldAutosaveRevisions,
+} from '@/server/services/revision-retention';
 import { assertSiteLocale } from '@/server/services/sites.service';
 
 const PUBLISHING_STATUSES = ['published', 'scheduled'] as const;
@@ -252,6 +256,14 @@ async function writeRevision(
       authorId,
     })
     .returning();
+  if (isTrimmableAutosave(kind, label)) {
+    await trimOldAutosaveRevisions({
+      table: postRevisions,
+      targetColumn: postRevisions.postId,
+      targetId: post.id,
+      orm,
+    });
+  }
   return revision;
 }
 

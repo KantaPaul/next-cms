@@ -284,6 +284,9 @@ export const collectionEntries = pgTable(
     index('collection_entries_site_id_index').on(t.siteId),
     index('collection_entries_collection_id_index').on(t.collectionId),
     index('collection_entries_status_index').on(t.status),
+    index('collection_entries_collection_status_published_index')
+      .on(t.collectionId, t.status, t.publishedAt)
+      .where(sql`${t.deletedAt} is null`),
     index('collection_entries_template_id_index').on(t.templateId),
     index('collection_entries_author_id_index').on(t.authorId),
     index('collection_entries_scheduled_at_index').on(t.scheduledAt),

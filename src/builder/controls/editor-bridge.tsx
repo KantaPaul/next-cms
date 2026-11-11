@@ -16,6 +16,8 @@ export type EditorBridge = {
   breakpoints?: BreakpointConfig;
   selectedType?: string;
   selectedProps?: Record<string, unknown>;
+  parentType?: string;
+  parentProps?: Record<string, unknown>;
   themeTokens?: Record<string, string>;
   /** The site's uploaded fonts, for font pickers. */
   customFonts?: CustomFont[];

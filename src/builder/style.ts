@@ -569,11 +569,17 @@ export type ContainerSettings = {
   columnGap?: Responsive<number>;
   rowGap?: Responsive<number>;
   width?: Responsive<number>;
+  widthUnit?: LengthUnit;
   minWidth?: Responsive<number>;
+  minWidthUnit?: LengthUnit;
   maxWidth?: Responsive<number>;
+  maxWidthUnit?: LengthUnit;
   height?: Responsive<number>;
+  heightUnit?: LengthUnit;
   minHeight?: Responsive<number>;
+  minHeightUnit?: LengthUnit;
   maxHeight?: Responsive<number>;
+  maxHeightUnit?: LengthUnit;
   sizeUnit?: LengthUnit;
   grow?: Responsive<number>;
   shrink?: Responsive<number>;
@@ -2139,7 +2145,12 @@ export function normalizeContainerSettings(value: unknown): ContainerSettings {
   const unit = pick(c.sizeUnit, LENGTH_UNITS) ?? 'px';
   const gapUnit = pick(c.gapUnit, LENGTH_UNITS) ?? 'px';
   const basisUnit = pick(c.basisUnit, LENGTH_UNITS) ?? 'px';
-  const lim = LENGTH_LIMITS[unit];
+  const widthUnit = pick(c.widthUnit, LENGTH_UNITS);
+  const minWidthUnit = pick(c.minWidthUnit, LENGTH_UNITS);
+  const maxWidthUnit = pick(c.maxWidthUnit, LENGTH_UNITS);
+  const heightUnit = pick(c.heightUnit, LENGTH_UNITS);
+  const minHeightUnit = pick(c.minHeightUnit, LENGTH_UNITS);
+  const maxHeightUnit = pick(c.maxHeightUnit, LENGTH_UNITS);
   const basisLim = LENGTH_LIMITS[basisUnit];
 
   let link: UrlValue | undefined;
@@ -2174,12 +2185,33 @@ export function normalizeContainerSettings(value: unknown): ContainerSettings {
     gapUnit,
     columnGap: normalizeResponsiveNumber(c.columnGap, LENGTH_LIMITS[gapUnit]),
     rowGap: normalizeResponsiveNumber(c.rowGap, LENGTH_LIMITS[gapUnit]),
-    width: normalizeResponsiveNumber(c.width, lim),
-    minWidth: normalizeResponsiveNumber(c.minWidth, lim),
-    maxWidth: normalizeResponsiveNumber(c.maxWidth, lim),
-    height: normalizeResponsiveNumber(c.height, lim),
-    minHeight: normalizeResponsiveNumber(c.minHeight, lim),
-    maxHeight: normalizeResponsiveNumber(c.maxHeight, lim),
+    width: normalizeResponsiveNumber(c.width, LENGTH_LIMITS[widthUnit ?? unit]),
+    widthUnit,
+    minWidth: normalizeResponsiveNumber(
+      c.minWidth,
+      LENGTH_LIMITS[minWidthUnit ?? unit]
+    ),
+    minWidthUnit,
+    maxWidth: normalizeResponsiveNumber(
+      c.maxWidth,
+      LENGTH_LIMITS[maxWidthUnit ?? unit]
+    ),
+    maxWidthUnit,
+    height: normalizeResponsiveNumber(
+      c.height,
+      LENGTH_LIMITS[heightUnit ?? unit]
+    ),
+    heightUnit,
+    minHeight: normalizeResponsiveNumber(
+      c.minHeight,
+      LENGTH_LIMITS[minHeightUnit ?? unit]
+    ),
+    minHeightUnit,
+    maxHeight: normalizeResponsiveNumber(
+      c.maxHeight,
+      LENGTH_LIMITS[maxHeightUnit ?? unit]
+    ),
+    maxHeightUnit,
     sizeUnit: unit,
     grow: normalizeResponsiveNumber(c.grow, FLEX_NUMBER_LIMITS),
     shrink: normalizeResponsiveNumber(c.shrink, FLEX_NUMBER_LIMITS),
@@ -2298,7 +2330,6 @@ export function resolveContainerStyle(
   const unit = pick(s.sizeUnit, LENGTH_UNITS) ?? 'px';
   const gapUnit = pick(s.gapUnit, LENGTH_UNITS) ?? 'px';
   const basisUnit = pick(s.basisUnit, LENGTH_UNITS) ?? 'px';
-  const lim = LENGTH_LIMITS[unit];
   const gapLim = LENGTH_LIMITS[gapUnit];
   const basisLim = LENGTH_LIMITS[basisUnit];
 
@@ -2417,26 +2448,28 @@ export function resolveContainerStyle(
   emitGap('columnGap', 's-c-cga', '--s-c-cga');
   emitGap('rowGap', 's-c-rga', '--s-c-rga');
 
-  for (const [prop, cls, varName] of [
-    ['width', 's-c-w', '--s-c-w'],
-    ['minWidth', 's-c-nw', '--s-c-nw'],
-    ['maxWidth', 's-c-xw', '--s-c-xw'],
-    ['height', 's-c-h', '--s-c-h'],
-    ['minHeight', 's-c-nh', '--s-c-nh'],
-    ['maxHeight', 's-c-xh', '--s-c-xh'],
+  for (const [prop, unitProp, cls, varName] of [
+    ['width', 'widthUnit', 's-c-w', '--s-c-w'],
+    ['minWidth', 'minWidthUnit', 's-c-nw', '--s-c-nw'],
+    ['maxWidth', 'maxWidthUnit', 's-c-xw', '--s-c-xw'],
+    ['height', 'heightUnit', 's-c-h', '--s-c-h'],
+    ['minHeight', 'minHeightUnit', 's-c-nh', '--s-c-nh'],
+    ['maxHeight', 'maxHeightUnit', 's-c-xh', '--s-c-xh'],
   ] as const) {
     const has = DEVICES.some(
       d => ownResponsive(s[prop], d, validFinite) !== undefined
     );
     if (!has) continue;
     classes.push(cls);
+    const fieldUnit = pick(s[unitProp], LENGTH_UNITS) ?? unit;
+    const fieldLim = LENGTH_LIMITS[fieldUnit];
 
     for (const d of DEVICES) {
       const n = ownResponsive(s[prop], d, validFinite);
 
       if (n !== undefined) {
         style[`${varName}-${DEVICE_SUFFIX[d]}`] =
-          `${clampNumber(n, lim.min, lim.max) ?? 0}${unit}`;
+          `${clampNumber(n, fieldLim.min, fieldLim.max) ?? 0}${fieldUnit}`;
       }
     }
   }

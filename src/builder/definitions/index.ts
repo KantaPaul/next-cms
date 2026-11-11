@@ -194,6 +194,7 @@ const inspectorOf = (definitions: Record<string, BlockDefinition>): Record<strin
       {
         label: definition.label,
         fields: fieldsOf(definition),
+        tabs: definition.tabs,
         defaultProps: definition.defaults
           ? typeof definition.defaults === 'function'
             ? definition.defaults({})

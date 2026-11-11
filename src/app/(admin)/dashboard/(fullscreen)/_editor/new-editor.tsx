@@ -418,6 +418,11 @@ function NewEditorBridge({
       ? state.doc.nodes[state.selection[0]]
       : undefined
   );
+  const parentNode = useEditor(state => {
+    if (state.selection.length !== 1) return undefined;
+    const pos = findPosition(state.doc, state.selection[0]);
+    return pos?.parentId ? state.doc.nodes[pos.parentId] : undefined;
+  });
   const value = useMemo(
     () => ({
       device,
@@ -425,10 +430,12 @@ function NewEditorBridge({
       breakpoints,
       selectedType: node?.type,
       selectedProps: node?.props,
+      parentType: parentNode?.type,
+      parentProps: parentNode?.props,
       themeTokens: themeTokens as Record<string, string> | undefined,
       customFonts,
     }),
-    [device, store, breakpoints, node, themeTokens, customFonts]
+    [device, store, breakpoints, node, parentNode, themeTokens, customFonts]
   );
   return <EditorBridgeProvider value={value}>{children}</EditorBridgeProvider>;
 }

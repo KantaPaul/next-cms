@@ -48,6 +48,8 @@ export function Section({
   children,
   className,
   innerClassName,
+  itemClassName,
+  itemStyle,
   editing,
   hasItems,
   id,
@@ -57,6 +59,8 @@ export function Section({
   children: ReactNode;
   className?: string;
   innerClassName?: string;
+  itemClassName?: string;
+  itemStyle?: CSSProperties;
   editing?: boolean;
   hasItems?: boolean;
   id?: string;
@@ -96,8 +100,10 @@ export function Section({
     // background instead of behind the page's.
     hasBgParallax && 'isolate',
     hidden,
-    className
+    className,
+    itemClassName
   );
+  const outerStyle = itemStyle ? { ...styles.style, ...itemStyle } : styles.style;
   const inner = cn(
     'mx-auto w-full max-w-[var(--site-max-width,72rem)]',
     styles.innerClasses,
@@ -149,7 +155,7 @@ export function Section({
         className={outer}
         innerClassName={inner}
         motionData={motionData}
-        style={styles.style}
+        style={outerStyle}
         data-el={elId || undefined}
       >
         {customStyleEl}
@@ -164,7 +170,7 @@ export function Section({
     <section
       id={s.anchor || undefined}
       className={outer}
-      style={styles.style}
+      style={outerStyle}
       data-el={elId || undefined}
     >
       {customStyleEl}

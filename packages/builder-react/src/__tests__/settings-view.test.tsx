@@ -161,3 +161,39 @@ describe('icon and media field types', () => {
     assert.ok(BUILT_IN_FIELDS.media);
   });
 });
+
+describe('SettingsView custom block tabs', () => {
+  it('opens on the first custom tab (e.g. Layout before Advanced)', () => {
+    const schemas = {
+      Container: {
+        type: 'Container',
+        label: 'Container',
+        tabs: [
+          { id: 'layout', label: 'Layout' },
+          { id: 'advanced', label: 'Advanced' },
+        ],
+        fields: {
+          structure: { type: 'text', label: 'Structure', tab: 'layout', section: 'Structure' },
+          anchor: { type: 'text', label: 'Anchor', tab: 'advanced', section: 'Attributes' },
+        },
+        defaultProps: {},
+      },
+    };
+    const doc = {
+      version: 1 as const,
+      root: { id: 'root', type: 'root', props: {} },
+      nodes: { c1: { id: 'c1', type: 'Container', props: {}, parent: 'root', slot: 'content' } },
+      slots: { root: { content: ['c1'] } },
+    };
+    const store = createEditorStore({ document: doc as any, schemas: schemas as any });
+    store.select('c1');
+    const html = renderToStaticMarkup(
+      <EditorProvider store={store}>
+        <SettingsView blocks={schemas as any} />
+      </EditorProvider>
+    );
+    assert.ok(html.indexOf('Layout') < html.indexOf('Advanced'));
+    assert.match(html, /Structure/);
+    assert.match(html, /Edit for device: Desktop/);
+  });
+});

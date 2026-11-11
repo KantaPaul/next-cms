@@ -288,4 +288,28 @@ describe('layoutFields engine', () => {
     );
     assert.deepEqual(allChangedKeys, ['title', 'titleColor']);
   });
+
+  it('respects custom block tabs order with Layout first', () => {
+    const customFields: Record<string, FieldDef> = {
+      motion: { type: 'text', label: 'Motion', tab: 'advanced', section: 'Motion' },
+      structure: { type: 'text', label: 'Structure', tab: 'layout', section: 'Structure' },
+    };
+    const layout = layoutFields({
+      fields: customFields,
+      props: {},
+      device: 'desktop',
+      tabs: [
+        { id: 'layout', label: 'Layout' },
+        { id: 'advanced', label: 'Advanced' },
+      ],
+    });
+    assert.deepEqual(
+      layout.tabs.map(t => t.def.id),
+      ['layout', 'advanced']
+    );
+    assert.deepEqual(
+      layout.tabs[0].sections.map(s => s.title),
+      ['Structure']
+    );
+  });
 });
