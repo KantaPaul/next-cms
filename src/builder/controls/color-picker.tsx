@@ -42,7 +42,6 @@ export type ColorPickerProps = {
   placeholder?: string;
   defaultCssVar?: string;
   aside?: ReactNode;
-  responsive?: boolean;
 };
 
 function sameHex(a: string, b: string) {
@@ -65,7 +64,6 @@ export function ColorPicker({
   placeholder = 'Inherit',
   defaultCssVar,
   aside,
-  responsive,
 }: ColorPickerProps) {
   const { themeTokens } = useEditorBridge();
   const tokens = useMemo(() => themeColorTokens(themeTokens), [themeTokens]);
@@ -166,9 +164,7 @@ export function ColorPicker({
   return (
     <div>
       {label && (
-        <ControlLabel label={label} responsive={responsive}>
-          {aside}
-        </ControlLabel>
+        <ControlLabel label={label}>{aside}</ControlLabel>
       )}
 
       <Popover open={open} onOpenChange={setOpen}>

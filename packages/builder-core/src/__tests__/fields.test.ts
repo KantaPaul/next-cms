@@ -2,6 +2,7 @@ import assert from 'node:assert';
 import { describe, it } from 'node:test';
 import {
   type BreakpointConfig,
+  type FieldDef,
   canvasWidthsFromConfig,
   DEFAULT_BREAKPOINTS,
   deviceForWidth,
@@ -207,5 +208,21 @@ describe('custom breakpoints model', () => {
     assert.equal(widths.desktop, 1400);
     assert.equal(widths.tablet, 768);
     assert.equal(widths.mobile, 375);
+  });
+});
+
+
+describe('animated inspector field variants (type surface)', () => {
+  it('accepts opt-in variant on text/number/slider/toggle fields', () => {
+    const fields: Record<string, FieldDef> = {
+      title: { type: 'text', label: 'Title', variant: 'floating' },
+      count: { type: 'number', label: 'Count', variant: 'stepper', min: 0 },
+      amount: { type: 'slider', label: 'Amount', variant: 'wake', min: 0, max: 10 },
+      on: { type: 'toggle', label: 'On', variant: 'liquid' },
+    };
+    assert.equal((fields.title as any).variant, 'floating');
+    assert.equal((fields.count as any).variant, 'stepper');
+    assert.equal((fields.amount as any).variant, 'wake');
+    assert.equal((fields.on as any).variant, 'liquid');
   });
 });

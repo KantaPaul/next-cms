@@ -42,6 +42,7 @@ import {
   EasingField,
   FlexContainerGroup,
   type FlexContainerValue,
+  FloatingLabelInput,
   IconButton,
   IconField as E12IconField,
   type MediaBrowseHandler,
@@ -50,6 +51,7 @@ import {
   normalizeMedia,
   Input,
   NumberField as E12NumberField,
+  RollingStepper,
   Select,
   SelectField as E12SelectField,
   ShadowEditor,
@@ -61,6 +63,7 @@ import {
   type TransitionValue,
   TypographyGroup,
   type TypographyValue,
+  WakeSlider,
 } from '@nextcms/editor-ui';
 import { ArrowDown, ArrowUp, ChevronDown, Database, Plus, X } from 'lucide-react';
 import React, {
@@ -118,6 +121,14 @@ const stack = (gap: number): CSSProperties => ({
   gridTemplateColumns: 'minmax(0, 1fr)',
 });
 
+/** True when the field control draws its own label and the row should hide it. */
+export function fieldDrawsOwnLabel(field: FieldDef): boolean {
+  return (
+    (field.type === 'text' || field.type === 'url') &&
+    (field as { variant?: string }).variant === 'floating'
+  );
+}
+
 function TextField({
   field,
   id,
@@ -141,6 +152,22 @@ function TextField({
       />
     );
   }
+  if (
+    (field.type === 'text' || field.type === 'url') &&
+    (field as { variant?: string }).variant === 'floating'
+  ) {
+    return (
+      <FloatingLabelInput
+        id={id}
+        label={field.label ?? ''}
+        type={field.type === 'url' ? 'url' : 'text'}
+        value={str(value)}
+        placeholder={placeholder}
+        readOnly={readOnly}
+        onChange={onChange}
+      />
+    );
+  }
   return (
     <Input
       id={id}
@@ -161,6 +188,21 @@ function NumberField({
   readOnly,
 }: FieldProps<number | undefined>) {
   const range = field.type === 'number' ? field : undefined;
+  if ((field as { variant?: string }).variant === 'stepper') {
+    return (
+      <RollingStepper
+        id={id}
+        value={typeof value === 'number' ? value : undefined}
+        onChange={onChange}
+        min={range?.min}
+        max={range?.max}
+        step={range?.step}
+        unit={(range as { unit?: string } | undefined)?.unit}
+        disabled={readOnly}
+        readOnly={readOnly}
+      />
+    );
+  }
   return (
     <Input
       id={id}
@@ -192,6 +234,7 @@ function ToggleField({
       aria-label={field.label}
       checked={!!value}
       disabled={readOnly}
+      variant={(field as { variant?: string }).variant === 'liquid' ? 'liquid' : 'default'}
       onChange={checked => onChange(checked)}
     />
   );
@@ -673,15 +716,33 @@ export function normalizeBackground(val: unknown): BackgroundValue {
 
 function SliderFieldControl({
   field,
+  id,
   value,
   onChange,
   readOnly,
 }: FieldProps<number | undefined>) {
   const f = field as Extract<FieldDef, { type: 'slider' }>;
+  const resolved = typeof value === 'number' ? value : (f.defaultValue ?? f.min ?? 0);
+  if ((f as { variant?: string }).variant === 'wake') {
+    return (
+      <WakeSlider
+        id={id}
+        value={resolved}
+        onChange={onChange}
+        min={f.min}
+        max={f.max}
+        step={f.step}
+        unit={f.unit}
+        ticks={f.ticks}
+        defaultValue={f.defaultValue}
+        disabled={readOnly}
+      />
+    );
+  }
   return (
     <E12SliderField
       label={field.label}
-      value={typeof value === 'number' ? value : (f.defaultValue ?? f.min ?? 0)}
+      value={resolved}
       onChange={onChange}
       min={f.min}
       max={f.max}
@@ -869,6 +930,7 @@ function TransitionFieldControl({
 
 function E12NumberFieldControl({
   field,
+  id,
   value,
   onChange,
   readOnly,
@@ -880,10 +942,26 @@ function E12NumberFieldControl({
       : typeof value === 'string' && value.trim() !== ''
         ? Number.parseFloat(value)
         : undefined;
+  const resolved = numValue !== undefined && !Number.isNaN(numValue) ? numValue : undefined;
+  if ((f as { variant?: string }).variant === 'stepper') {
+    return (
+      <RollingStepper
+        id={id}
+        value={resolved}
+        onChange={next => onChange(next)}
+        min={f.min}
+        max={f.max}
+        step={f.step}
+        unit={f.unit}
+        disabled={readOnly}
+        readOnly={readOnly}
+      />
+    );
+  }
   return (
     <E12NumberField
       label={field.label}
-      value={numValue !== undefined && !Number.isNaN(numValue) ? numValue : undefined}
+      value={resolved}
       onChange={next => onChange(next)}
       min={f.min}
       max={f.max}

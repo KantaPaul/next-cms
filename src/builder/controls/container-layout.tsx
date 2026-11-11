@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { useCanvasDevice } from './device-row';
 import { useEditorBridge } from './editor-bridge';
 import type { ContainerTag, Device, LengthUnit, Responsive } from '../style';
@@ -128,20 +128,31 @@ function ResponsiveTrackInput({
   const [device] = useCanvasDevice();
   const { breakpoints } = useEditorBridge();
   const [draft, setDraft] = useState('');
+  const [focused, setFocused] = useState(false);
 
   const isObject =
     typeof value === 'object' && value !== null && !Array.isArray(value);
   const currentDeviceVal = isObject
     ? (value as Record<Device, string>)[device]
-    : undefined;
+    : device === 'desktop' && typeof value === 'string'
+      ? value
+      : undefined;
   const resolvedVal =
     resolveResponsive(value, device, safeTrackList, breakpoints) ?? '';
   const hasOverride = currentDeviceVal !== undefined;
   const isInherited =
     !hasOverride && resolvedVal !== '' && device !== 'desktop';
+  const displayVal = hasOverride ? currentDeviceVal ?? '' : resolvedVal;
+
+  useEffect(() => {
+    if (!focused) setDraft(displayVal);
+  }, [displayVal, device, focused]);
 
   const resetOverride = () => {
-    if (!isObject) return;
+    if (!isObject) {
+      if (device === 'desktop') onChange(undefined);
+      return;
+    }
     const next = { ...(value as Record<Device, string>) };
     delete next[device];
     const remaining = Object.values(next).some(
@@ -156,23 +167,34 @@ function ResponsiveTrackInput({
     if (trimmed === '') {
       const base: Partial<Record<Device, string>> = isObject
         ? { ...(value as Record<Device, string>) }
-        : {};
+        : typeof value === 'string' && device === 'desktop'
+          ? { desktop: value }
+          : {};
       delete base[device];
       const remaining = Object.values(base).some(
         v => v !== undefined && v !== ''
       );
       onChange(remaining ? base : undefined);
+      if (!focused) setDraft('');
       return;
     }
 
     const safe = safeTrackList(trimmed);
-    if (safe === undefined) return;
+    if (safe === undefined) {
+      // Revert invalid draft to the current effective value.
+      setDraft(displayVal);
+      return;
+    }
     const base: Partial<Record<Device, string>> = isObject
       ? { ...(value as Record<Device, string>) }
-      : resolvedVal !== '' && device === 'desktop'
-        ? { desktop: resolvedVal }
-        : {};
-    onChange({ ...base, [device]: safe });
+      : typeof value === 'string'
+        ? { desktop: value }
+        : resolvedVal !== '' && device === 'desktop'
+          ? { desktop: resolvedVal }
+          : {};
+    const next = { ...base, [device]: safe };
+    onChange(next);
+    setDraft(safe);
   };
 
   const aside = hasOverride ? (
@@ -199,7 +221,11 @@ function ResponsiveTrackInput({
           value={draft}
           placeholder="e.g. repeat(3, 1fr)"
           onChange={e => setDraft(e.target.value)}
-          onBlur={e => commit(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={e => {
+            setFocused(false);
+            commit(e.target.value);
+          }}
           onKeyDown={e => e.key === 'Enter' && commit(e.currentTarget.value)}
           className="h-full flex-1 border-0 bg-transparent px-2 text-xs shadow-none focus-visible:ring-0"
         />
@@ -213,8 +239,11 @@ function ResponsiveTrackInput({
             onClick={() => {
               const base: Partial<Record<Device, string>> = isObject
                 ? { ...(value as Record<Device, string>) }
-                : {};
+                : typeof value === 'string'
+                  ? { desktop: value }
+                  : {};
               onChange({ ...base, [device]: preset });
+              setDraft(preset);
             }}
             className="h-7 min-w-[80px] rounded-none border border-border bg-background px-1.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
           >
@@ -397,6 +426,7 @@ export function ContainerLayoutControl({
             label="Auto flow"
             value={c.gridAutoFlow}
             options={optionLabels(FLOW_LABELS)}
+            columns={2}
             onChange={next =>
               set({
                 gridAutoFlow: normalizeResponsiveEnum(next, GRID_AUTO_FLOWS),

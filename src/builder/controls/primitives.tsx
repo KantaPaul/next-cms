@@ -41,43 +41,43 @@ import {
   type Responsive,
   resolveResponsive,
 } from '../style';
-import { DeviceRow, useCanvasDevice } from './device-row';
+import { useCanvasDevice } from './device-row';
 import { useEditorBridge } from './editor-bridge';
 
 export function ControlLabel({
   label,
   htmlFor,
   children,
-  responsive,
   aside,
 }: {
   label: string;
   htmlFor?: string;
   children?: ReactNode;
-  responsive?: boolean;
   aside?: ReactNode;
 }) {
   // The inspector row already shows this label; keep only the extras.
   const duplicate = useIsFieldRowLabel(label);
   const extras = aside ?? children;
-  if (duplicate && !responsive && !extras) return null;
+  if (duplicate && !extras) return null;
 
   return (
     <div
       className={cn(
-        'mb-1.5 flex min-h-5 items-center gap-2',
+        'mb-1.5 flex min-h-5 min-w-0 items-center gap-2',
         duplicate ? 'justify-end' : 'justify-between'
       )}
     >
       {!duplicate && (
-        <Label htmlFor={htmlFor} className="text-xs font-medium text-steel-600">
+        <Label
+          htmlFor={htmlFor}
+          className="min-w-0 truncate text-xs font-medium text-steel-600"
+        >
           {label}
         </Label>
       )}
-      <div className="flex items-center gap-1.5">
-        {responsive && <DeviceRow />}
-        {extras}
-      </div>
+      {extras && (
+        <div className="flex shrink-0 items-center gap-1.5">{extras}</div>
+      )}
     </div>
   );
 }
@@ -94,6 +94,12 @@ export function Group({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const id = useId();
+  // Inside a field row whose label matches, the row header already says it.
+  const duplicate = useIsFieldRowLabel(title);
+
+  if (duplicate) {
+    return <div className="space-y-4">{children}</div>;
+  }
 
   return (
     <Collapsible
@@ -138,7 +144,6 @@ export function Choose<T extends string>({
   onChange,
   columns,
   aside,
-  responsive,
   isInherited,
 }: {
   label?: string;
@@ -147,16 +152,11 @@ export function Choose<T extends string>({
   onChange: (value: T) => void;
   columns?: number;
   aside?: ReactNode;
-  responsive?: boolean;
   isInherited?: boolean;
 }) {
   return (
     <div>
-      {label && (
-        <ControlLabel label={label} responsive={responsive}>
-          {aside}
-        </ControlLabel>
-      )}
+      {label && <ControlLabel label={label}>{aside}</ControlLabel>}
 
       <div
         role="radiogroup"
@@ -213,7 +213,6 @@ export function Slider({
   placeholder,
   onChange,
   aside,
-  responsive,
   isInherited,
 }: {
   label: string;
@@ -230,7 +229,6 @@ export function Slider({
   placeholder?: string;
   onChange: (value: number | undefined) => void;
   aside?: ReactNode;
-  responsive?: boolean;
   isInherited?: boolean;
 }) {
   const id = useId();
@@ -246,7 +244,7 @@ export function Slider({
 
   return (
     <div>
-      <ControlLabel label={label} htmlFor={id} responsive={responsive}>
+      <ControlLabel label={label} htmlFor={id}>
         <div className="flex items-center gap-1.5">
           {units && (
             <Select value={units.value} onValueChange={units.onChange}>
@@ -281,12 +279,12 @@ export function Slider({
           value={value ?? min}
           onChange={e => onChange(Number(e.target.value))}
           className={cn(
-            'h-1.5 w-3/4 cursor-pointer accent-primary',
+            'h-1.5 min-w-0 flex-1 cursor-pointer accent-primary',
             value === undefined && 'opacity-40'
           )}
         />
 
-        <div className="flex h-8 w-1/4 min-w-16 items-center rounded-md border border-input bg-background pr-2 focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
+        <div className="flex h-8 w-20 shrink-0 items-center rounded-md border border-input bg-background pr-2 focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
           <FormInput
             id={id}
             inputMode="decimal"
@@ -313,7 +311,6 @@ export function SelectInput<T extends string>({
   options,
   onChange,
   aside,
-  responsive,
   isInherited,
 }: {
   label?: string;
@@ -321,7 +318,6 @@ export function SelectInput<T extends string>({
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
   aside?: ReactNode;
-  responsive?: boolean;
   isInherited?: boolean;
 }) {
   const id = useId();
@@ -329,7 +325,7 @@ export function SelectInput<T extends string>({
   return (
     <div className="space-y-1.5">
       {label && (
-        <ControlLabel label={label} htmlFor={id} responsive={responsive}>
+        <ControlLabel label={label} htmlFor={id}>
           {aside}
         </ControlLabel>
       )}
@@ -427,7 +423,6 @@ export function ResponsiveChoose<T extends string>({
       options={options}
       onChange={handleChange}
       columns={columns}
-      responsive
       aside={aside}
       isInherited={isInherited}
     />
@@ -510,7 +505,6 @@ export function ResponsiveSelect<T extends string>({
       value={resolvedVal}
       options={options}
       onChange={handleChange}
-      responsive
       aside={aside}
       isInherited={isInherited}
     />
@@ -614,7 +608,6 @@ export function ResponsiveSlider({
       units={units}
       placeholder={placeholder}
       onChange={handleChange}
-      responsive
       aside={aside}
       isInherited={isInherited}
     />

@@ -433,3 +433,9 @@
 [data-ne-motion="subtle"] .ne-press:active {
   transform: none;
 }
+
+/* Animated inspector inputs: liquid switch, floating label handled in component */
+[data-ne-switch-stretch='true'] [data-slot='switch-thumb'],
+[data-ne-switch-stretch='true'].peer > span {
+  transition-duration: 120ms;
+}

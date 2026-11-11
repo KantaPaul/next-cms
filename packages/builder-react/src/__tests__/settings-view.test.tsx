@@ -4,7 +4,12 @@ import type { FieldDef } from '@nextcms/builder-core';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { EditorProvider } from '../context';
-import { BUILT_IN_FIELDS } from '../fields';
+import {
+  BUILT_IN_FIELDS,
+  FieldControl,
+  fieldControlId,
+  fieldDrawsOwnLabel,
+} from '../fields';
 import { keyAction, runKeyAction } from '../keyboard';
 import { filterSettingsFields, SettingsView } from '../settings-view';
 import { createEditorStore } from '../store';
@@ -51,6 +56,85 @@ describe('filterSettingsFields', () => {
       names(filterSettingsFields({ ...base, query: 'title', changedOnly: true })),
       ['title']
     );
+  });
+});
+
+describe('animated input variants', () => {
+  const bare = (field: FieldDef, value: unknown = undefined) =>
+    renderToStaticMarkup(
+      <FieldControl
+        bare
+        name="demo"
+        field={field}
+        value={value}
+        props={{}}
+        onChange={() => {}}
+      />
+    );
+
+  it('fieldDrawsOwnLabel is true only for floating text/url fields', () => {
+    assert.strictEqual(
+      fieldDrawsOwnLabel({ type: 'text', variant: 'floating' } as FieldDef),
+      true
+    );
+    assert.strictEqual(
+      fieldDrawsOwnLabel({ type: 'url', variant: 'floating' } as FieldDef),
+      true
+    );
+    assert.strictEqual(fieldDrawsOwnLabel({ type: 'text' } as FieldDef), false);
+    assert.strictEqual(
+      fieldDrawsOwnLabel({
+        type: 'number',
+        variant: 'stepper',
+      } as unknown as FieldDef),
+      false
+    );
+  });
+
+  it('dispatches floating text to a control that draws its own label', () => {
+    const floating = bare({ type: 'text', label: 'Title', variant: 'floating' });
+    assert.match(
+      floating,
+      new RegExp(`<label[^>]*for="${fieldControlId('demo')}"`)
+    );
+    const plain = bare({ type: 'text', label: 'Title' });
+    assert.doesNotMatch(plain, /<label/);
+  });
+
+  it('dispatches the liquid toggle variant', () => {
+    const liquid = bare({ type: 'toggle', label: 'On', variant: 'liquid' });
+    assert.match(liquid, /data-ne-switch-variant="liquid"/);
+    const plain = bare({ type: 'toggle', label: 'On' });
+    assert.doesNotMatch(plain, /data-ne-switch-variant="liquid"/);
+  });
+
+  it('dispatches the stepper number variant', () => {
+    const stepper = bare({
+      type: 'number',
+      label: 'Thickness',
+      min: 0,
+      variant: 'stepper',
+    });
+    assert.match(stepper, /—/);
+    assert.match(stepper, /aria-label="Decrease"/);
+    const plain = bare({ type: 'number', label: 'Thickness' });
+    assert.match(plain, /type="number"/);
+    assert.doesNotMatch(plain, /aria-label="Decrease"/);
+  });
+
+  it('dispatches the wake slider variant', () => {
+    const wake = bare({
+      type: 'slider',
+      label: 'Per page',
+      min: 1,
+      max: 48,
+      variant: 'wake',
+    }, 12);
+    assert.match(wake, /type="range"/);
+    assert.match(wake, /items-end/); // bar track
+    const plain = bare({ type: 'slider', label: 'Per page', min: 1, max: 48 }, 12);
+    assert.match(plain, /type="range"/);
+    assert.doesNotMatch(plain, /ne-roll/);
   });
 });
 

@@ -4,18 +4,25 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import {
   ChooseField,
   ControlRow,
+  FloatingLabelInput,
   NumberField,
+  RollingStepper,
   SelectField,
   SliderField,
   TokenChip,
   UnitSelect,
+  WakeSlider,
   clamp,
   controlMessageId,
+  decayWake,
+  filledBarCount,
   roundTo,
   scrubMultiplier,
   scrubValue,
   tickPercent,
+  wakeAmount,
 } from '../controls';
+import { FieldRow } from '../inspector/FieldRow';
 
 describe('Controls math helpers (E12b–c)', () => {
   it('clamp restricts values to the [min, max] range', () => {
@@ -290,5 +297,101 @@ describe('SelectField (E12b–c)', () => {
     assert.match(html, /Font Family/);
     assert.match(html, /role="combobox"/);
     assert.match(html, /Inter/);
+  });
+});
+
+
+describe('Wake slider math (variant helpers)', () => {
+  it('computes wake amount from movement velocity and clamps', () => {
+    assert.strictEqual(wakeAmount(0, 100, 100), 0);
+    assert.ok(wakeAmount(50, 50, 100) > 0);
+    assert.ok(wakeAmount(5000, 10, 100) <= 1);
+  });
+
+  it('decays wake toward zero over time', () => {
+    const a = decayWake(1, 180);
+    assert.ok(a > 0 && a < 1);
+    assert.strictEqual(decayWake(0.005, 500), 0);
+  });
+
+  it('fills bars by value percent', () => {
+    assert.strictEqual(filledBarCount(0, 0, 100, 10), 0);
+    assert.strictEqual(filledBarCount(100, 0, 100, 10), 10);
+    assert.strictEqual(filledBarCount(50, 0, 100, 10), 5);
+  });
+});
+
+describe('FloatingLabelInput (variant)', () => {
+  it('keeps label resting when empty and lifts when filled', () => {
+    const empty = renderToStaticMarkup(
+      <FloatingLabelInput id="f1" label="Title" value="" onChange={() => {}} />
+    );
+    assert.match(empty, /for="f1"/);
+    assert.match(empty, />Title</);
+    assert.match(empty, /translate-y/);
+
+    const filled = renderToStaticMarkup(
+      <FloatingLabelInput id="f2" label="Title" value="Hello" onChange={() => {}} />
+    );
+    assert.match(filled, /value="Hello"/);
+    assert.match(filled, /-top-2/);
+  });
+});
+
+describe('RollingStepper (variant)', () => {
+  it('shows dash for unset value and disables min/max buttons at limits', () => {
+    const unset = renderToStaticMarkup(
+      <RollingStepper label="Thickness" value={undefined} min={0} onChange={() => {}} />
+    );
+    assert.match(unset, /—/);
+
+    const atMin = renderToStaticMarkup(
+      <RollingStepper label="Thickness" value={0} min={0} onChange={() => {}} />
+    );
+    assert.match(atMin, /Decrease Thickness"[^>]*disabled/);
+
+    const atMax = renderToStaticMarkup(
+      <RollingStepper label="Thickness" value={10} max={10} onChange={() => {}} />
+    );
+    assert.match(atMax, /Increase Thickness"[^>]*disabled/);
+  });
+
+  it('draws no inner label when placed in a labeled row', () => {
+    // In a FieldRow the row owns the label; the stepper renders bare.
+    const bare = renderToStaticMarkup(
+      <RollingStepper value={4} onChange={() => {}} />
+    );
+    assert.doesNotMatch(bare, /<label/);
+    assert.doesNotMatch(bare, /ControlRow/);
+  });
+});
+
+describe('FieldRow hideLabel', () => {
+  it('omits the standard label when hideLabel is set', () => {
+    const html = renderToStaticMarkup(
+      <FieldRow label="Title" hideLabel>
+        <input id="x" />
+      </FieldRow>
+    );
+    assert.doesNotMatch(html, /<label/);
+    assert.match(html, /<input/);
+  });
+});
+
+describe('WakeSlider (variant)', () => {
+  it('renders bar track and range input with value', () => {
+    const html = renderToStaticMarkup(
+      <WakeSlider label="Videos per page" value={12} min={1} max={48} onChange={() => {}} />
+    );
+    assert.match(html, /type="range"/);
+    assert.match(html, /value="12"/);
+  });
+
+  it('draws no inner label when placed in a labeled row', () => {
+    const bare = renderToStaticMarkup(
+      <WakeSlider value={12} min={1} max={48} onChange={() => {}} />
+    );
+    assert.doesNotMatch(bare, /<label/);
+    assert.match(bare, /type="range"/);
   });
 });

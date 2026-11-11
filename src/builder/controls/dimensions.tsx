@@ -20,7 +20,7 @@ import {
   SPACING_UNITS,
   type SpacingUnit,
 } from '../style';
-import { DeviceRow, useCanvasDevice } from './device-row';
+import { useCanvasDevice } from './device-row';
 import { ControlLabel, Slider } from './primitives';
 
 const SIDE_LABEL: Record<Side, string> = {
@@ -76,8 +76,6 @@ export function Dimensions({
     <div>
       <ControlLabel label={label}>
         <div className="flex items-center gap-1.5">
-          <DeviceRow />
-
           <Button
             type="button"
             variant="ghost"

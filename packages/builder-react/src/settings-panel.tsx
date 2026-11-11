@@ -42,6 +42,7 @@ import {
   FieldControl,
   FieldTypesProvider,
   fieldControlId,
+  fieldDrawsOwnLabel,
   fieldValueAccess,
   useDynamicSources,
 } from './fields';
@@ -390,6 +391,8 @@ export function SettingsPanel({
                               !isDynamicBinding(resolvedVal) &&
                               !(readOnly || field.readOnly);
 
+                            const hideLabel = fieldDrawsOwnLabel(field);
+                            const controlName = `${panelKey}.${name}`;
                             return (
                               <FieldRowFrame
                                 key={name}
@@ -397,7 +400,7 @@ export function SettingsPanel({
                                 htmlFor={
                                   isContainer
                                     ? undefined
-                                    : fieldControlId(name)
+                                    : fieldControlId(controlName)
                                 }
                                 description={field.description}
                                 changed={isChanged}
@@ -439,10 +442,11 @@ export function SettingsPanel({
                                 device={isResp ? device : undefined}
                                 isInherited={!!source && source !== device}
                                 inheritedFrom={source ?? undefined}
+                                hideLabel={hideLabel}
                               >
                                 <FieldControl
                                   bare
-                                  name={`${panelKey}.${name}`}
+                                  name={controlName}
                                   field={field}
                                   value={val}
                                   props={props}

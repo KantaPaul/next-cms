@@ -30,6 +30,7 @@ import {
   FieldControl,
   FieldTypesProvider,
   fieldControlId,
+  fieldDrawsOwnLabel,
   fieldValueAccess,
 } from './fields';
 import { PageSettingsView } from './page-settings-view';
@@ -74,6 +75,7 @@ function FieldRow({
   const source = responsive ? inheritedFrom(value, device, breakpoints) : null;
   const isContainer = field.type === 'list' || field.type === 'object';
 
+  const hideLabel = fieldDrawsOwnLabel(field);
   return (
     <FieldRowFrame
       layout="vertical"
@@ -92,6 +94,7 @@ function FieldRow({
       device={responsive ? device : undefined}
       isInherited={!!source && source !== device}
       inheritedFrom={source ?? undefined}
+      hideLabel={hideLabel}
     >
       <FieldControl
         bare

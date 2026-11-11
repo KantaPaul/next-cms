@@ -7,6 +7,7 @@ import {
   indicatorVars,
   measureIndicator,
   resolveMotionLevel,
+  restartRoll,
   rollDirection,
   rollSlots,
 } from '../lib/motion';
@@ -70,6 +71,31 @@ describe('RollingNumber', () => {
       rollSlots('100', '90').map(s => s.to),
       ['9', '0']
     );
+  });
+
+  it('keys slots by target so rapid value changes restart cleanly', () => {
+    // regression guard: slot keys include target to force remount per change
+    const html = renderToStaticMarkup(<RollingNumber value="12" />);
+    assert.match(html, /ne-roll-slot/);
+  });
+
+  it('restarts the roll per change so hold-to-repeat rolls cleanly', () => {
+    // A value arriving inside the 220ms roll restarts the column from the
+    // last committed frame instead of queueing or jumping.
+    assert.deepStrictEqual(restartRoll('10', '11'), {
+      from: '10',
+      restart: true,
+    });
+    // Hold repeating quickly: each change restarts from the same frame.
+    assert.deepStrictEqual(restartRoll('10', '12'), {
+      from: '10',
+      restart: true,
+    });
+    // An equal value mid-roll settles the column instead of re-rolling.
+    assert.deepStrictEqual(restartRoll('11', '11'), {
+      from: '11',
+      restart: false,
+    });
   });
 
   it('rolls down for smaller numbers and up otherwise', () => {

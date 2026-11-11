@@ -1151,12 +1151,13 @@ export const VideoLibraryNativeBlock = defineBlock({
       type: 'custom',
       render: VideoSourcesField,
     },
-    title: { label: 'Title', group: CONTENT, type: 'text' },
+    title: { label: 'Title', group: CONTENT, type: 'text', variant: 'floating' },
     description: { label: 'Description', group: CONTENT, type: 'textarea' },
     showSearch: {
       label: 'Show search bar',
       group: CONTENT,
       type: 'toggle',
+      variant: 'liquid',
     },
     searchPlaceholder: {
       label: 'Search placeholder',
@@ -1201,9 +1202,11 @@ export const VideoLibraryNativeBlock = defineBlock({
     pageSize: {
       label: 'Videos per page',
       group: CONTENT,
-      type: 'number',
+      type: 'slider',
       min: 1,
       max: 48,
+      step: 1,
+      variant: 'wake',
     },
     title_style: elementStyle('title', 'Title Style', TEXT_PARTS),
     description_style: elementStyle(
@@ -2587,7 +2590,7 @@ export const DividerBlock = defineBlock({
         { label: 'Dotted', value: 'dotted' },
       ],
     },
-    thickness: { label: 'Thickness (px)', group: CONTENT, type: 'number' },
+    thickness: { label: 'Thickness (px)', group: CONTENT, type: 'number', min: 0, variant: 'stepper' },
     spacing: {
       label: 'Spacing',
       group: CONTENT,

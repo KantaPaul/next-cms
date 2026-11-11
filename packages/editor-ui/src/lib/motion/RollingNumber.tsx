@@ -40,6 +40,21 @@ export function rollDirection(prev: string, next: string): RollDirection {
 
 const ROLL_MS = 220;
 
+/**
+ * What a value change does while a roll may be in flight: a new value
+ * arriving inside the 220ms roll cancels the pending commit and restarts
+ * the column from the last committed frame, so hold-to-repeat rolls cleanly
+ * from one frame to the next instead of queueing or jumping. Equal values
+ * are a no-op.
+ */
+export function restartRoll(
+  committed: string,
+  next: string
+): { from: string; restart: boolean } {
+  if (committed === next) return { from: committed, restart: false };
+  return { from: committed, restart: true };
+}
+
 function Slot({
   from,
   to,
@@ -85,16 +100,35 @@ export function RollingNumber({
   const [shown, setShown] = useState(next);
   const prevRef = useRef(next);
   const [rolling, setRolling] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (prevRef.current === next) return;
+    if (prevRef.current === next && !rolling) return;
+    // A new value arrived inside the roll: cancel the pending commit and
+    // restart the column from the last committed frame.
+    if (timerRef.current) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    const { from, restart } = restartRoll(prevRef.current, next);
+    if (!restart) {
+      setRolling(false);
+      return;
+    }
+    prevRef.current = from;
     setRolling(true);
-    const t = setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       prevRef.current = next;
       setShown(next);
       setRolling(false);
+      timerRef.current = null;
     }, ROLL_MS);
-    return () => clearTimeout(t);
+    return () => {
+      if (timerRef.current) {
+        window.clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
   }, [next]);
 
   const from = rolling ? prevRef.current : shown;
@@ -107,7 +141,7 @@ export function RollingNumber({
       <span aria-hidden>
         {rollSlots(from, to).map(slot => (
           <Slot
-            key={slot.key}
+            key={`${slot.key}:${to}`}
             from={slot.from}
             to={slot.to}
             direction={direction}

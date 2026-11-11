@@ -40,6 +40,8 @@ export interface FieldRowProps {
   error?: React.ReactNode;
   /** Device badge click handler, e.g. to cycle devices. */
   onDeviceClick?: () => void;
+  /** Hides the row label because the control draws it (e.g. floating inputs). */
+  hideLabel?: boolean;
 }
 
 export const FieldRow: React.FC<FieldRowProps> = ({
@@ -59,6 +61,7 @@ export const FieldRow: React.FC<FieldRowProps> = ({
   footer,
   error,
   onDeviceClick,
+  hideLabel = false,
 }) => {
   const rowRef = useRef<HTMLDivElement>(null);
   // The reset button disappears with the change, so the row itself flashes.
@@ -68,39 +71,50 @@ export const FieldRow: React.FC<FieldRowProps> = ({
         onReset();
       }
     : undefined;
+  const indicators = (
+    <>
+      <ChangedDot changed={changed} />
+      {adornment}
+      {device && (
+        <DeviceValueBadge
+          device={device}
+          isInherited={isInherited}
+          inheritedFrom={inheritedFrom}
+          onClick={onDeviceClick}
+        />
+      )}
+      {changed && handleReset && (
+        <ResetButton onReset={handleReset} label={`Reset ${label}`} />
+      )}
+    </>
+  );
   const row = (
     <div
       ref={rowRef}
-      className={`rounded-[var(--ne-radius-sm)] py-1.5 ${layout === 'horizontal' ? 'flex items-center justify-between gap-2 min-h-[32px]' : 'space-y-1'} ${footer ? '' : className}`}
+      className={`relative rounded-[var(--ne-radius-sm)] py-1.5 ${layout === 'horizontal' ? 'flex items-center justify-between gap-2 min-h-[32px]' : 'space-y-1'} ${footer ? '' : className}`}
     >
-      <div
-        className={`flex items-center gap-1.5 min-w-0 ${layout === 'horizontal' ? 'w-2/5 shrink-0' : 'w-full'}`}
-      >
-        <label
-          htmlFor={htmlFor}
-          title={description || label}
-          {...labelProps}
-          className={`text-xs font-medium text-[var(--ne-text)] truncate select-none font-sans ${labelProps?.className ?? ''}`}
+      {hideLabel ? (
+        <div className="pointer-events-auto absolute end-0 top-1 z-10 flex items-center gap-1.5">
+          {indicators}
+        </div>
+      ) : (
+        <div
+          className={`flex items-center gap-1.5 min-w-0 ${layout === 'horizontal' ? 'w-2/5 shrink-0' : 'w-full'}`}
         >
-          {label}
-        </label>
-        <ChangedDot changed={changed} />
-        {adornment}
-        {device && (
-          <DeviceValueBadge
-            device={device}
-            isInherited={isInherited}
-            inheritedFrom={inheritedFrom}
-            onClick={onDeviceClick}
-          />
-        )}
-        {changed && handleReset && (
-          <ResetButton onReset={handleReset} label={`Reset ${label}`} />
-        )}
-      </div>
+          <label
+            htmlFor={htmlFor}
+            title={description || label}
+            {...labelProps}
+            className={`text-xs font-medium text-[var(--ne-text)] truncate select-none font-sans ${labelProps?.className ?? ''}`}
+          >
+            {label}
+          </label>
+          {indicators}
+        </div>
+      )}
 
       <div
-        className={`${layout === 'horizontal' ? 'w-3/5 min-w-0' : 'w-full'}`}
+        className={`${!hideLabel && layout === 'horizontal' ? 'w-3/5 min-w-0' : 'w-full'}`}
       >
         <FieldRowLabelContext.Provider value={label}>
           {children}

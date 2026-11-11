@@ -20,3 +20,6 @@ export * from './EasingField';
 export * from './TransitionPicker';
 export * from './AnimationTimelineView';
 export * from './groups';
+export * from './FloatingLabelInput';
+export * from './RollingStepper';
+export * from './WakeSlider';

@@ -54,6 +54,7 @@ import {
   type ThemeFormInput,
   themeFormSchema,
 } from '../../settings/_modules/settings.schemas';
+import { FloatingStyleSwitcher } from './floating-style-switcher';
 
 const FONTS: ThemeTokens['fontFamily'][] = [
   'Inter',
@@ -337,6 +338,7 @@ export function ThemeForm({
 
   return (
     <FormProvider {...form}>
+      <FloatingStyleSwitcher form={form} />
       <form
         onSubmit={form.handleSubmit(data => submit(data))}
         className="flex flex-col"

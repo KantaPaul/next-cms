@@ -380,7 +380,12 @@ type BaseField<P> = {
 
 export type FieldDef<P = Record<string, unknown>> =
   | (BaseField<P> & {
-      type: 'text' | 'textarea' | 'url' | 'color' | 'image';
+      type: 'text' | 'url';
+      placeholder?: string;
+      variant?: 'floating';
+    })
+  | (BaseField<P> & {
+      type: 'textarea' | 'color' | 'image';
       placeholder?: string;
     })
   | (BaseField<P> & {
@@ -389,9 +394,14 @@ export type FieldDef<P = Record<string, unknown>> =
       max?: number;
       step?: number;
       unit?: string;
+      variant?: 'stepper';
     })
   /** `defaultValue` is what an unset value shows as; it should match the block's render fallback. */
-  | (BaseField<P> & { type: 'toggle'; defaultValue?: boolean })
+  | (BaseField<P> & {
+      type: 'toggle';
+      defaultValue?: boolean;
+      variant?: 'liquid';
+    })
   | (BaseField<P> & {
       type: 'select' | 'radio';
       options: FieldOption[];
@@ -407,6 +417,7 @@ export type FieldDef<P = Record<string, unknown>> =
       unit?: string;
       ticks?: number[];
       defaultValue?: number;
+      variant?: 'wake';
     })
   | (BaseField<P> & {
       type: 'choose';
