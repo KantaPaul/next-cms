@@ -4,6 +4,7 @@ import { PERMISSIONS } from '@/config/permissions';
 import { db } from '@/db';
 import {
   collections,
+  externalApis,
   loopTemplates,
   type LoopTemplateSource,
 } from '@/db/schema';
@@ -55,6 +56,7 @@ export const loopTemplatesService = {
   async list(filter?: {
     sourceType?: LoopTemplateSource;
     collectionId?: string | null;
+    externalApiId?: string | null;
   }) {
     const conds = [
       eq(loopTemplates.siteId, await adminSiteId()),
@@ -66,6 +68,9 @@ export const loopTemplatesService = {
     if (filter?.sourceType === 'collection' && filter.collectionId) {
       conds.push(eq(loopTemplates.collectionId, filter.collectionId));
     }
+    if (filter?.sourceType === 'external-api' && filter.externalApiId) {
+      conds.push(eq(loopTemplates.externalApiId, filter.externalApiId));
+    }
     return db
       .select({
         id: loopTemplates.id,
@@ -73,12 +78,15 @@ export const loopTemplatesService = {
         sourceType: loopTemplates.sourceType,
         collectionId: loopTemplates.collectionId,
         collectionName: collections.name,
+        externalApiId: loopTemplates.externalApiId,
+        externalApiName: externalApis.name,
         publishedAt: loopTemplates.publishedAt,
         updatedAt: loopTemplates.updatedAt,
         createdAt: loopTemplates.createdAt,
       })
       .from(loopTemplates)
       .leftJoin(collections, eq(collections.id, loopTemplates.collectionId))
+      .leftJoin(externalApis, eq(externalApis.id, loopTemplates.externalApiId))
       .where(and(...conds))
       .orderBy(desc(loopTemplates.updatedAt), asc(loopTemplates.name));
   },
@@ -103,6 +111,8 @@ export const loopTemplatesService = {
       .select({
         id: loopTemplates.id,
         name: loopTemplates.name,
+        sourceType: loopTemplates.sourceType,
+        externalApiId: loopTemplates.externalApiId,
         content: loopTemplates.content,
         publishedContent: loopTemplates.publishedContent,
       })
@@ -113,7 +123,13 @@ export const loopTemplatesService = {
     const active = options.draft
       ? row.content
       : (row.publishedContent ?? row.content);
-    return { id: row.id, name: row.name, content: normalize(active) };
+    return {
+      id: row.id,
+      name: row.name,
+      sourceType: row.sourceType,
+      externalApiId: row.externalApiId,
+      content: normalize(active),
+    };
   },
 
   async create(
@@ -121,6 +137,7 @@ export const loopTemplatesService = {
       name: string;
       sourceType: LoopTemplateSource;
       collectionId?: string | null;
+      externalApiId?: string | null;
       content?: unknown;
     },
     access: UserAccess
@@ -128,6 +145,9 @@ export const loopTemplatesService = {
     await accessService.assertPermission(access.userId, PERMISSIONS.PAGES_EDIT);
     if (input.sourceType === 'collection' && !input.collectionId) {
       throw new ApplicationException('Choose a post type for this template.');
+    }
+    if (input.sourceType === 'external-api' && !input.externalApiId) {
+      throw new ApplicationException('Choose an External API for this template.');
     }
     const [row] = await db
       .insert(loopTemplates)
@@ -137,6 +157,10 @@ export const loopTemplatesService = {
         sourceType: input.sourceType,
         collectionId:
           input.sourceType === 'collection' ? (input.collectionId ?? null) : null,
+        externalApiId:
+          input.sourceType === 'external-api'
+            ? (input.externalApiId ?? null)
+            : null,
         content: normalize(input.content ?? EMPTY_LOOP_TEMPLATE_CONTENT),
       })
       .returning();
@@ -204,6 +228,7 @@ export const loopTemplatesService = {
         name: `${existing.name} (copy)`,
         sourceType: existing.sourceType,
         collectionId: existing.collectionId,
+        externalApiId: existing.externalApiId,
         content: existing.content,
       },
       access

@@ -11,6 +11,7 @@ import type { BlockInfo, BlockReorder, BlockSchema, SlotRules } from './blocks';
 import type { FieldDef, Fields } from './fields';
 import type { InspectorTabDef } from './inspector-layout';
 import type { BlockLoader, LoaderContext } from './loaders';
+import { isDynamicBinding } from './dynamic';
 import {
   allowedClassList,
   dynamicInner,
@@ -411,6 +412,20 @@ const INFO_KEYS = [
   'reorder',
 ] as const satisfies readonly (keyof BlockInfo)[];
 
+function valueAtIssuePath(
+  root: Record<string, unknown>,
+  path: readonly PropertyKey[]
+): unknown {
+  let cur: unknown = root;
+  for (const key of path) {
+    if (typeof key === 'symbol' || cur == null || typeof cur !== 'object') {
+      return undefined;
+    }
+    cur = (cur as Record<PropertyKey, unknown>)[key];
+  }
+  return cur;
+}
+
 /** Checks props against the block's schema, including opted-in traits (R777); blocks without a schema always pass. */
 export function validateProps(
   definition: BlockDefinition,
@@ -420,9 +435,19 @@ export function validateProps(
   if (!schema) return { ok: true };
   const result = schema.safeParse(props);
   if (result.success) return { ok: true };
+  const remaining = result.error.issues.filter(issue => {
+    if (issue.path.length === 0) return true;
+    const val = valueAtIssuePath(props, issue.path);
+    return !(
+      isDynamicBinding(val) &&
+      typeof val.$dynamic === 'string' &&
+      val.$dynamic.length > 0
+    );
+  });
+  if (remaining.length === 0) return { ok: true };
   return {
     ok: false,
-    issues: result.error.issues.map(
+    issues: remaining.map(
       issue => `${issue.path.join('.') || 'props'}: ${issue.message}`
     ),
   };

@@ -30,6 +30,11 @@ import {
   normalizeSearchQueryLog,
   stripAccents,
 } from '@/lib/search-text';
+import {
+  extractJsonPath,
+  interpolateEnvHeaders,
+  normalizeExternalApiItems,
+} from '@/server/services/listing-query.service';
 
 describe('Query foundation & boundaries (R571, R572, R573 / QRY-01–03)', () => {
   it('enforces hard maximum limit of 100 items', () => {
@@ -440,3 +445,175 @@ describe('Archive Routes & Listing SEO (R595–R597 / QRY-25–27)', () => {
     assert.equal(filteredSeo.isFiltered, true);
   });
 });
+
+describe('External API Schema Discovery, Nested Keys, Post Selection & View Validation', () => {
+  it('flattens nested object keys and discovers repeatable array sub-keys', async () => {
+    const {
+      discoverExternalApiSchema,
+      extractExternalApiPostsList,
+      flattenNestedObjectKeys,
+      validateExternalApiFieldMapping,
+    } = await import('@/lib/external-api-schema');
+
+    const sampleItems = [
+      {
+        id: 1,
+        name: 'Leanne Graham',
+        website: 'https://hildegard.org',
+        promoVideo: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        mapEmbed: 'https://www.google.com/maps/embed?pb=!1m18',
+        address: {
+          street: 'Kulas Light',
+          suite: 'Apt. 556',
+          city: 'Gwenborough',
+          geo: {
+            lat: '-37.3159',
+            lng: '81.1496',
+          },
+        },
+        tags: ['featured', 'enterprise'],
+        projects: [
+          {
+            title: 'Apollo',
+            url: 'https://apollo.example.com',
+            videoUrl: 'https://vimeo.com/123456789',
+          },
+        ],
+      },
+      {
+        id: 2,
+        name: 'Ervin Howell',
+        website: 'https://anastasia.net',
+        address: {
+          street: 'Victor Plains',
+          city: 'Wisokyburgh',
+        },
+        tags: ['cloud'],
+        projects: [
+          {
+            title: 'Zeus',
+            url: 'https://zeus.example.com',
+          },
+        ],
+      },
+    ];
+
+    const flattened = flattenNestedObjectKeys(sampleItems[0]);
+    assert.equal(flattened['address.street'], 'Kulas Light');
+    assert.equal(flattened['address.geo.lat'], '-37.3159');
+
+    const normalized = normalizeExternalApiItems(sampleItems, {
+      id: 'id',
+      title: 'name',
+      url: 'website',
+      excerpt: 'address.street',
+    });
+    assert.equal(normalized.length, 2);
+    assert.equal(normalized[0]?.title, 'Leanne Graham');
+    assert.equal(normalized[0]?.excerpt, 'Kulas Light');
+    assert.equal(normalized[0]?.raw?.['address.street'], 'Kulas Light');
+    assert.equal(normalized[0]?.raw?.['address.geo.lat'], '-37.3159');
+
+    const discovered = discoverExternalApiSchema(sampleItems);
+    const keyMap = new Map(discovered.map(k => [k.key, k]));
+
+    // Nested object keys are mapped with dot notation
+    assert.ok(keyMap.has('address.street'));
+    assert.ok(keyMap.has('address.city'));
+    assert.ok(keyMap.has('address.geo.lat'));
+    assert.ok(keyMap.has('address.geo.lng'));
+
+    // Array keys are discovered as 'array' with subKeys for nested repeaters
+    const projectsKey = keyMap.get('projects');
+    assert.ok(projectsKey);
+    assert.equal(projectsKey.inferredType, 'array');
+    assert.equal(projectsKey.isArrayOfObjects, true);
+    const subKeyNames = (projectsKey.subKeys ?? []).map(sk => sk.key);
+    assert.ok(subKeyNames.includes('title'));
+    assert.ok(subKeyNames.includes('url'));
+    assert.ok(subKeyNames.includes('videoUrl'));
+
+    // Primitive array has '.' item subKey
+    const tagsKey = keyMap.get('tags');
+    assert.ok(tagsKey);
+    assert.equal(tagsKey.inferredType, 'array');
+    assert.equal(tagsKey.subKeys?.[0]?.key, '.');
+
+    // Post options list extraction
+    const { postOptions } = extractExternalApiPostsList(sampleItems, {
+      idKey: 'id',
+      titleKey: 'name',
+    });
+    assert.equal(postOptions.length, 2);
+    assert.equal(postOptions[0]?.id, '1');
+    assert.ok(postOptions[0]?.label.includes('Leanne Graham'));
+
+    // Dynamic view type validation (video, embed, url)
+    const validVideoCheck = validateExternalApiFieldMapping(
+      {
+        id: 'f1',
+        key: 'promoVideo',
+        fieldType: 'text',
+        textMode: 'video',
+      },
+      sampleItems[0]
+    );
+    assert.equal(validVideoCheck.valid, true);
+
+    const invalidVideoCheck = validateExternalApiFieldMapping(
+      {
+        id: 'f2',
+        key: 'address.street',
+        fieldType: 'text',
+        textMode: 'video',
+      },
+      sampleItems[0]
+    );
+    assert.equal(invalidVideoCheck.valid, false);
+    assert.ok(invalidVideoCheck.error?.includes('YouTube, Vimeo'));
+
+    const validEmbedCheck = validateExternalApiFieldMapping(
+      {
+        id: 'f3',
+        key: 'mapEmbed',
+        fieldType: 'text',
+        textMode: 'embed',
+      },
+      sampleItems[0]
+    );
+    assert.equal(validEmbedCheck.valid, true);
+
+    const invalidEmbedCheck = validateExternalApiFieldMapping(
+      {
+        id: 'f4',
+        key: 'address.street',
+        fieldType: 'text',
+        textMode: 'embed',
+      },
+      sampleItems[0]
+    );
+    assert.equal(invalidEmbedCheck.valid, false);
+    assert.ok(invalidEmbedCheck.error?.includes('iframe'));
+
+    // Nested array validation validates nested video / embed fields
+    const invalidNestedVideo = validateExternalApiFieldMapping(
+      {
+        id: 'f5',
+        key: 'projects',
+        fieldType: 'array',
+        nestedFields: [
+          {
+            id: 'nf1',
+            key: 'title',
+            fieldType: 'url',
+            urlMode: 'video',
+          },
+        ],
+      },
+      sampleItems[0]
+    );
+    assert.equal(invalidNestedVideo.valid, false);
+    assert.ok(invalidNestedVideo.error?.includes('Nested field "title"'));
+  });
+});
+

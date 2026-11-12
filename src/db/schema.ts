@@ -12,3 +12,4 @@ export * from '@/db/schemas/licenses.schema';
 export * from '@/db/schemas/overlays.schema';
 export * from '@/db/schemas/essentials.schema';
 export * from '@/db/schemas/plugins.schema';
+export * from '@/db/schemas/external-apis.schema';

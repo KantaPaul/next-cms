@@ -16,6 +16,7 @@ import { baseColumns, relationConfig } from '@/db/helpers/base.columns';
 import { DEFAULT_SITE_ID } from '@/db/schemas/sites.schema';
 import { pages } from '@/db/schemas/pages.schema';
 import { users } from '@/db/schemas/auth.schema';
+import { externalApis } from '@/db/schemas/external-apis.schema';
 import {
   postLayoutEnum,
   PostLayout,
@@ -425,13 +426,14 @@ export const collectionEntriesRelations = relations(
 export const loopTemplateSourceEnum = pgEnum('loop_template_source', [
   'posts',
   'collection',
+  'external-api',
 ]);
 export type LoopTemplateSource =
   (typeof loopTemplateSourceEnum.enumValues)[number];
 
 /**
  * A reusable Loop Item design: the builder layout repeated once per item by
- * the Loop Grid block. Bound to blog posts or to one collection (post type).
+ * the Loop Grid block. Bound to blog posts, one collection, or an External API.
  */
 export const loopTemplates = pgTable(
   'loop_templates',
@@ -444,6 +446,10 @@ export const loopTemplates = pgTable(
       onDelete: 'set null',
       onUpdate: 'cascade',
     }),
+    externalApiId: text('external_api_id').references(() => externalApis.id, {
+      onDelete: 'set null',
+      onUpdate: 'cascade',
+    }),
     /** Draft builder JSON (Puck-shaped, like global blocks). */
     content: jsonb('content').notNull().default({}),
     publishedContent: jsonb('published_content'),
@@ -453,6 +459,7 @@ export const loopTemplates = pgTable(
   t => [
     index('loop_templates_site_id_index').on(t.siteId),
     index('loop_templates_collection_id_index').on(t.collectionId),
+    index('loop_templates_external_api_id_index').on(t.externalApiId),
   ]
 );
 
@@ -460,5 +467,9 @@ export const loopTemplatesRelations = relations(loopTemplates, ({ one }) => ({
   collection: one(collections, {
     fields: [loopTemplates.collectionId],
     references: [collections.id],
+  }),
+  externalApi: one(externalApis, {
+    fields: [loopTemplates.externalApiId],
+    references: [externalApis.id],
   }),
 }));

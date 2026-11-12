@@ -150,6 +150,12 @@ export function getMenuItems(): {
       permission: PERMISSIONS.API_MANAGE,
     },
     {
+      name: 'External API',
+      href: PAGES.DASHBOARD.EXTERNAL_API,
+      icon: <Globe className="w-[18px]" />,
+      permission: PERMISSIONS.PAGES_EDIT,
+    },
+    {
       name: 'Post types',
       href: PAGES.DASHBOARD.COLLECTIONS,
       icon: <Database className="w-[18px]" />,

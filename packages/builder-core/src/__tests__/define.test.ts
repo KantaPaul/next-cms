@@ -217,4 +217,31 @@ describe('reorderParts and block reorder opt-in', () => {
       assert.deepEqual(parsed.data.partOrder, ['title', 'badge']);
     }
   });
+
+  it('allows valid dynamic bindings on schema-typed props while rejecting invalid ones', () => {
+    const Card = defineBlock({
+      type: 'Card',
+      label: 'Card',
+      category: 'content',
+      schema: z.object({
+        title: z.string().optional(),
+        count: z.number().int().min(0).default(1),
+      }),
+      render: () => null as never,
+    });
+
+    assert.deepEqual(
+      validateProps(Card, {
+        title: { $dynamic: 'post', path: 'title' },
+        count: 3,
+      }),
+      { ok: true }
+    );
+
+    const invalid = validateProps(Card, {
+      title: { $dynamic: '' },
+      count: 3,
+    });
+    assert.equal(invalid.ok, false);
+  });
 });

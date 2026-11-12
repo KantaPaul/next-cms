@@ -302,7 +302,16 @@ export function Gallery(p: GalleryProps) {
 
 export type ContactFormFieldCondition = {
   field: string;
-  operator: 'equals' | 'not_equals' | 'contains' | 'empty' | 'not_empty';
+  operator:
+    | 'equals'
+    | 'not_equals'
+    | 'contains'
+    | 'empty'
+    | 'not_empty'
+    | 'gt'
+    | 'gte'
+    | 'lt'
+    | 'lte';
   value?: string;
 };
 
@@ -323,7 +332,8 @@ export type ContactFormField = {
     | 'step'
     | 'file'
     | 'hidden'
-    | 'acceptance';
+    | 'acceptance'
+    | 'calculated';
   required?: boolean;
   placeholder?: string;
   options?: string;
@@ -334,6 +344,11 @@ export type ContactFormField = {
   hiddenSource?: 'static' | 'url_param';
   conditions?: ContactFormFieldCondition[];
   conditionMatch?: 'all' | 'any';
+  conditionAction?: 'show' | 'hide' | 'require';
+  formula?: string;
+  decimals?: number;
+  prefix?: string;
+  suffix?: string;
 };
 
 export type ContactFormProps = WithSection & {

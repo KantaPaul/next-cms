@@ -29,7 +29,8 @@ export default async function LoopTemplateEditorPage({
 
   const preview = await loopTemplatePreviewData(
     template.sourceType,
-    template.collectionId
+    template.collectionId,
+    template.externalApiId
   );
 
   return (

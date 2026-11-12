@@ -24,7 +24,7 @@ import {
   duplicateLoopTemplate,
 } from '../_modules/loop-templates.actions';
 
-type Source = 'posts' | 'collection';
+type Source = 'posts' | 'collection' | 'external-api';
 
 const inputClass =
   'h-9 w-full rounded-md border border-steel-200 bg-white px-3 text-sm dark:border-dark-300 dark:bg-dark-100';
@@ -32,12 +32,18 @@ const inputClass =
 export function LoopTemplatesList({
   templates,
   collections,
+  externalApis,
   initialCreate,
   can,
 }: {
   templates: LoopTemplateListItem[];
   collections: { id: string; name: string }[];
-  initialCreate: { sourceType: Source; collectionId: string } | null;
+  externalApis: { id: string; name: string }[];
+  initialCreate: {
+    sourceType: Source;
+    collectionId: string;
+    externalApiId: string;
+  } | null;
   can: { delete: boolean };
 }) {
   const router = useRouter();
@@ -118,7 +124,9 @@ export function LoopTemplatesList({
                   <td className="px-4 py-3 text-steel-600 dark:text-steel-300">
                     {row.sourceType === 'posts'
                       ? 'Blog posts'
-                      : (row.collectionName ?? 'Deleted post type')}
+                      : row.sourceType === 'external-api'
+                        ? `External API${row.externalApiName ? `: ${row.externalApiName}` : ''}`
+                        : (row.collectionName ?? 'Deleted post type')}
                   </td>
                   <td className="px-4 py-3">
                     <span
@@ -180,6 +188,7 @@ export function LoopTemplatesList({
         open={createOpen}
         onOpenChange={setCreateOpen}
         collections={collections}
+        externalApis={externalApis}
         initial={initialCreate}
       />
     </div>
@@ -190,12 +199,18 @@ function CreateDialog({
   open,
   onOpenChange,
   collections,
+  externalApis,
   initial,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   collections: { id: string; name: string }[];
-  initial: { sourceType: Source; collectionId: string } | null;
+  externalApis: { id: string; name: string }[];
+  initial: {
+    sourceType: Source;
+    collectionId: string;
+    externalApiId: string;
+  } | null;
 }) {
   const router = useRouter();
   const [name, setName] = useState('');
@@ -205,6 +220,9 @@ function CreateDialog({
   const [collectionId, setCollectionId] = useState(
     initial?.collectionId || collections[0]?.id || ''
   );
+  const [externalApiId, setExternalApiId] = useState(
+    initial?.externalApiId || externalApis[0]?.id || ''
+  );
   const [busy, setBusy] = useState(false);
 
   const submit = async (event: FormEvent) => {
@@ -213,12 +231,17 @@ function CreateDialog({
       toast.error('Choose a post type.');
       return;
     }
+    if (sourceType === 'external-api' && !externalApiId) {
+      toast.error('Choose a saved External API.');
+      return;
+    }
     setBusy(true);
     await handleActionResponse(
       createLoopTemplate({
         name: name.trim() || 'Loop item',
         sourceType,
         collectionId: sourceType === 'collection' ? collectionId : null,
+        externalApiId: sourceType === 'external-api' ? externalApiId : null,
       }),
       data => {
         onOpenChange(false);
@@ -263,6 +286,10 @@ function CreateDialog({
                   Custom post type
                   {collections.length ? '' : ' (none yet)'}
                 </option>
+                <option value="external-api" disabled={!externalApis.length}>
+                  External API
+                  {externalApis.length ? '' : ' (create one first)'}
+                </option>
               </select>
             </label>
             {sourceType === 'collection' && (
@@ -280,6 +307,30 @@ function CreateDialog({
                   ))}
                 </select>
               </label>
+            )}
+            {sourceType === 'external-api' && (
+              <div className="grid gap-1.5 text-sm font-medium">
+                <div className="flex items-center justify-between">
+                  <span>Saved External API</span>
+                  <Link
+                    href={PAGES.DASHBOARD.EXTERNAL_API}
+                    className="text-xs font-medium text-indigo-600 hover:underline"
+                  >
+                    Manage External APIs ↗
+                  </Link>
+                </div>
+                <select
+                  className={inputClass}
+                  value={externalApiId}
+                  onChange={e => setExternalApiId(e.target.value)}
+                >
+                  {externalApis.map(api => (
+                    <option key={api.id} value={api.id}>
+                      {api.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             )}
           </div>
           <DialogFooter>

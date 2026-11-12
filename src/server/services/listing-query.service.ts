@@ -1,5 +1,8 @@
 import 'server-only';
 import {
+  externalApiFilterKey,
+  type ExternalApiFieldMap,
+  type FacetOption,
   type ListingFacets,
   type ListingQueryConfig,
   type ListingQueryResult,
@@ -11,6 +14,13 @@ import {
   type QueryFilter,
   fieldSortKey,
 } from '@nextcms/builder-core';
+import { safeFetch } from '@/server/lib/safe-fetch';
+import {
+  applyExternalApiQueryParams,
+  type ExternalApiDataFilter,
+  extractNestedValue,
+  filterExternalApiRawItems,
+} from '@/lib/external-api-schema';
 import { fieldFilterSql, fieldSortSql } from '@/server/services/listing-field-filters';
 import {
   and,
@@ -56,6 +66,11 @@ import {
   videos,
 } from '@/db/schema';
 import { siteHref } from '@/lib/utils/site-href';
+import {
+  buildFieldMetaFromApiFields,
+  discoverExternalApiSchema,
+  flattenNestedObjectKeys,
+} from '@/lib/external-api-schema';
 import {
   type ResolvedSite,
   siteContext,
@@ -214,12 +229,26 @@ export const listingQueryService = {
           includeFacets
         );
         break;
+      case 'external-api':
+        result = await resolveExternalApi(
+          config,
+          pageSize,
+          offset,
+          page,
+          includeFacets
+        );
+        break;
     }
 
-    if (!options?.skipCache) {
+    const cacheTtlMs =
+      config.source === 'external-api' && config.apiConfig
+        ? config.apiConfig.cacheTtlSeconds * 1000
+        : LISTING_CACHE_TTL_MS;
+
+    if (!options?.skipCache && cacheTtlMs > 0 && !result.error) {
       listingCache.set(cacheKey, {
         result,
-        expiresAt: Date.now() + LISTING_CACHE_TTL_MS,
+        expiresAt: Date.now() + cacheTtlMs,
         siteId: site.id,
         language,
         source: config.source,
@@ -666,6 +695,7 @@ async function resolveCollectionEntries(
   const fieldRows = await db
     .select({
       key: collectionFields.key,
+      label: collectionFields.label,
       type: collectionFields.type,
       config: collectionFields.config,
     })
@@ -708,6 +738,7 @@ async function resolveCollectionEntries(
         featuredImage: collectionEntries.featuredImage,
         authorId: collectionEntries.authorId,
         authorName: users.name,
+        authorImage: users.image,
         publishedAt: collectionEntries.publishedAt,
         createdAt: collectionEntries.createdAt,
         updatedAt: collectionEntries.updatedAt,
@@ -727,6 +758,20 @@ async function resolveCollectionEntries(
   const entryIds = rows.map(r => r.id);
   const termsMap = await loadCollectionEntryTerms(entryIds);
 
+  const fieldMeta: Record<
+    string,
+    { label: string; type: string; config?: Record<string, unknown> }
+  > = {};
+  for (const f of fieldRows) {
+    fieldMeta[f.key] = {
+      label: f.label,
+      type: f.type,
+      config: (
+        f.config && typeof f.config === 'object' ? f.config : {}
+      ) as Record<string, unknown>,
+    };
+  }
+
   const prefix = siteSlugPrefix(site);
   const items: NormalizedListingItem[] = rows.map(r => {
     const data = (r.data as Record<string, unknown>) ?? {};
@@ -742,6 +787,9 @@ async function resolveCollectionEntries(
     }
 
     const itemTerms = termsMap.get(r.id) ?? [];
+    const resolvedAuthorName =
+      r.authorName ||
+      (typeof data.author === 'string' && data.author ? data.author : null);
 
     return {
       id: r.id,
@@ -759,13 +807,21 @@ async function resolveCollectionEntries(
       hasGallery: galleryImages.size > 1,
       galleryCount: galleryImages.size,
       publishedAt: r.publishedAt?.toISOString() ?? null,
-      author: r.authorId
-        ? { id: r.authorId, name: r.authorName ?? 'Anonymous' }
-        : null,
+      author:
+        r.authorId || resolvedAuthorName
+          ? {
+              id: r.authorId ?? 'author',
+              name: resolvedAuthorName ?? 'Anonymous',
+              image: r.authorImage ?? null,
+            }
+          : null,
       terms: itemTerms,
       source: 'collection-entries',
       raw: {
         ...data,
+        __fieldMeta: fieldMeta,
+        authorName: resolvedAuthorName ?? '',
+        authorImage: r.authorImage ?? '',
         createdAt: r.createdAt?.toISOString(),
         updatedAt: r.updatedAt?.toISOString(),
       },
@@ -1217,4 +1273,397 @@ async function loadCollectionEntryTerms(entryIds: string[]) {
   }
 
   return termsMap;
+}
+
+// ---------------------------------------------------------------------------
+// External REST / GraphQL API Resolver (CMS-103)
+// ---------------------------------------------------------------------------
+
+const ENV_PLACEHOLDER_RE = /\{\{env\.([A-Za-z0-9_]+)\}\}/g;
+
+/**
+ * Interpolates `{{env.VAR_NAME}}` placeholders in header values server-side.
+ */
+export function interpolateEnvHeaders(
+  headers: Record<string, string>
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(headers)) {
+    out[key] = value.replace(ENV_PLACEHOLDER_RE, (_, name: string) => {
+      return process.env[name] ?? '';
+    });
+  }
+  return out;
+}
+
+/**
+ * Safely traverses a dot-notation path (e.g. `data.items` or `results.0.list`)
+ * without `eval`.
+ */
+export function extractJsonPath(data: unknown, path: string): unknown {
+  const trimmed = path.trim();
+  if (!trimmed) return data;
+  let cur: unknown = data;
+  for (const segment of trimmed.split('.')) {
+    if (cur === null || cur === undefined) return undefined;
+    if (Array.isArray(cur)) {
+      const idx = Number(segment);
+      cur = Number.isInteger(idx) && idx >= 0 ? cur[idx] : undefined;
+    } else if (typeof cur === 'object') {
+      cur = (cur as Record<string, unknown>)[segment];
+    } else {
+      return undefined;
+    }
+  }
+  return cur;
+}
+
+function readStringField(obj: unknown, path?: string): string | null {
+  if (!path) return null;
+  const val = extractJsonPath(obj, path);
+  if (val === null || val === undefined) return null;
+  return typeof val === 'string' ? val : String(val);
+}
+
+/**
+ * Maps arbitrary JSON records from an external API into `NormalizedListingItem[]`.
+ */
+export function normalizeExternalApiItems(
+  rawItems: unknown[],
+  fieldMap: ExternalApiFieldMap
+): NormalizedListingItem[] {
+  const validItems = rawItems.filter(
+    (item): item is Record<string, unknown> =>
+      Boolean(item && typeof item === 'object' && !Array.isArray(item))
+  );
+  const discoveredKeys = discoverExternalApiSchema(validItems, 4);
+  const inferredMeta = buildFieldMetaFromApiFields(undefined, discoveredKeys);
+
+  return validItems.map((item, idx) => {
+    const id =
+      readStringField(item, fieldMap.id) ??
+      readStringField(item, 'id') ??
+      readStringField(item, '_id') ??
+      String(idx + 1);
+    const title =
+      readStringField(item, fieldMap.title) ??
+      readStringField(item, 'title') ??
+      readStringField(item, 'name') ??
+      readStringField(item, 'label') ??
+      readStringField(item, 'headline') ??
+      readStringField(item, 'username') ??
+      'Untitled';
+    const slug = readStringField(item, fieldMap.slug) ?? id;
+    const url =
+      readStringField(item, fieldMap.url) ??
+      readStringField(item, 'url') ??
+      readStringField(item, 'website') ??
+      '#';
+    const excerpt =
+      readStringField(item, fieldMap.excerpt) ??
+      readStringField(item, 'excerpt') ??
+      readStringField(item, 'body') ??
+      readStringField(item, 'description');
+    const image =
+      readStringField(item, fieldMap.image) ??
+      readStringField(item, 'image') ??
+      readStringField(item, 'thumbnail') ??
+      readStringField(item, 'avatar');
+    const publishedAt =
+      readStringField(item, fieldMap.publishedAt) ??
+      readStringField(item, 'publishedAt') ??
+      readStringField(item, 'createdAt') ??
+      readStringField(item, 'date');
+
+    const flattened = flattenNestedObjectKeys(item, 4);
+
+    return {
+      id,
+      title,
+      slug,
+      url,
+      excerpt,
+      image,
+      publishedAt,
+      terms: [],
+      source: 'external-api',
+      raw: {
+        ...flattened,
+        __fieldMeta: {
+          ...inferredMeta,
+          ...(item.__fieldMeta && typeof item.__fieldMeta === 'object'
+            ? (item.__fieldMeta as Record<string, unknown>)
+            : {}),
+        },
+      },
+    };
+  });
+}
+
+async function resolveExternalApi(
+  config: ListingQueryConfig,
+  pageSize: number,
+  offset: number,
+  page: number,
+  includeFacets = false
+): Promise<ListingQueryResult> {
+  const apiConfig = config.apiConfig;
+  if (!apiConfig?.endpointUrl) {
+    return {
+      items: [],
+      total: 0,
+      page,
+      pageSize,
+      totalPages: 1,
+      hasMore: false,
+      error: 'External API endpoint URL is required.',
+    };
+  }
+
+  try {
+    const headers = interpolateEnvHeaders(apiConfig.headers ?? {});
+    if (
+      apiConfig.method === 'POST' &&
+      apiConfig.body &&
+      !Object.keys(headers).some(k => k.toLowerCase() === 'content-type')
+    ) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    const targetUrl = applyExternalApiQueryParams(
+      apiConfig.endpointUrl,
+      apiConfig.queryParams
+    );
+    const response = await safeFetch(targetUrl, {
+      method: apiConfig.method,
+      headers,
+      ...(apiConfig.method === 'POST' && apiConfig.body
+        ? { body: apiConfig.body }
+        : {}),
+      signal: AbortSignal.timeout(apiConfig.timeoutMs ?? 4000),
+    });
+
+    if (!response.ok) {
+      return {
+        items: [],
+        total: 0,
+        page,
+        pageSize,
+        totalPages: 1,
+        hasMore: false,
+        error: `External API responded with status ${response.status}`,
+      };
+    }
+
+    const payload: unknown = await response.json();
+    const rawItemsPath = (apiConfig.itemsPath ?? '').trim();
+    let extracted = extractJsonPath(payload, rawItemsPath);
+    if (
+      !rawItemsPath &&
+      !Array.isArray(extracted) &&
+      extracted &&
+      typeof extracted === 'object'
+    ) {
+      const obj = extracted as Record<string, unknown>;
+      for (const candidate of [
+        'items',
+        'data',
+        'posts',
+        'results',
+        'products',
+        'users',
+        'entries',
+        'records',
+      ]) {
+        if (Array.isArray(obj[candidate])) {
+          extracted = obj[candidate];
+          break;
+        }
+      }
+      if (!Array.isArray(extracted) && Object.keys(obj).length > 0) {
+        extracted = [obj];
+      }
+    }
+    if (!Array.isArray(extracted)) {
+      return {
+        items: [],
+        total: 0,
+        page,
+        pageSize,
+        totalPages: 1,
+        hasMore: false,
+        error: 'External API response did not contain an array at itemsPath.',
+      };
+    }
+
+    const baseFilteredExtracted = filterExternalApiRawItems(
+      extracted,
+      apiConfig.dataFilters
+    );
+
+    let facets: ListingFacets | undefined;
+    if (
+      includeFacets &&
+      Array.isArray(apiConfig.facetKeys) &&
+      apiConfig.facetKeys.length > 0
+    ) {
+      const extFacets: Record<string, FacetOption[]> = {};
+      for (const rawKey of apiConfig.facetKeys) {
+        const key = rawKey.trim();
+        if (!key) continue;
+        const counts = new Map<string, { label: string; count: number }>();
+        for (const row of baseFilteredExtracted) {
+          if (!row || typeof row !== 'object' || Array.isArray(row)) continue;
+          const val = extractNestedValue(row as Record<string, unknown>, key);
+          const list = Array.isArray(val) ? val : [val];
+          for (const entry of list) {
+            if (entry === null || entry === undefined) continue;
+            if (typeof entry === 'object') continue;
+            const str = String(entry).trim();
+            if (!str) continue;
+            const existing = counts.get(str);
+            if (existing) {
+              existing.count += 1;
+            } else {
+              counts.set(str, { label: str, count: 1 });
+            }
+          }
+        }
+        extFacets[key] = Array.from(counts.entries())
+          .map(([value, info]) => ({
+            value,
+            label: info.label,
+            count: info.count,
+          }))
+          .sort(
+            (a, b) => b.count - a.count || a.label.localeCompare(b.label)
+          );
+      }
+      facets = { ext: extFacets };
+    }
+
+    const extDataFilters: ExternalApiDataFilter[] = [];
+    for (const f of config.filters) {
+      const extKey = externalApiFilterKey(f.field);
+      if (!extKey) continue;
+      const rawVals = Array.isArray(f.value)
+        ? f.value.map(v => String(v))
+        : [String(f.value)];
+      const cleaned = rawVals.map(v => v.trim()).filter(Boolean);
+      if (cleaned.length > 0) {
+        extDataFilters.push({
+          key: extKey,
+          operator: 'in',
+          value: cleaned.join(','),
+        });
+      }
+    }
+
+    const filteredExtracted = filterExternalApiRawItems(
+      baseFilteredExtracted,
+      extDataFilters
+    );
+    let items = normalizeExternalApiItems(filteredExtracted, apiConfig.fieldMap);
+
+    let hasInteractiveFilter = extDataFilters.length > 0;
+
+    // Apply allowlisted search filter if present
+    const searchFilter = config.filters.find(f => f.field === 'search');
+    if (searchFilter && typeof searchFilter.value === 'string') {
+      const q = searchFilter.value.trim().toLowerCase();
+      if (q) {
+        hasInteractiveFilter = true;
+        items = items.filter(item => {
+          if (
+            item.title.toLowerCase().includes(q) ||
+            (item.excerpt ?? '').toLowerCase().includes(q)
+          ) {
+            return true;
+          }
+          if (item.raw && typeof item.raw === 'object') {
+            for (const [k, v] of Object.entries(item.raw)) {
+              if (k === '__fieldMeta' || v === null || v === undefined) continue;
+              if (typeof v !== 'object' && String(v).toLowerCase().includes(q)) {
+                return true;
+              }
+            }
+          }
+          return false;
+        });
+      }
+    }
+
+    // Apply hasImage toggle filter if present
+    const hasImageFilter = config.filters.find(f => f.field === 'hasImage');
+    if (hasImageFilter && typeof hasImageFilter.value === 'boolean') {
+      hasInteractiveFilter = true;
+      const wantImage = hasImageFilter.value;
+      items = items.filter(item => Boolean(item.image) === wantImage);
+    }
+
+    // Apply publishedAfter / publishedBefore date filters if present
+    const afterFilter = config.filters.find(f => f.field === 'publishedAfter');
+    if (afterFilter && typeof afterFilter.value === 'string') {
+      const afterMs = Date.parse(afterFilter.value);
+      if (Number.isFinite(afterMs)) {
+        hasInteractiveFilter = true;
+        items = items.filter(item => {
+          const itemMs = item.publishedAt ? Date.parse(item.publishedAt) : NaN;
+          return Number.isFinite(itemMs) && itemMs >= afterMs;
+        });
+      }
+    }
+    const beforeFilter = config.filters.find(f => f.field === 'publishedBefore');
+    if (beforeFilter && typeof beforeFilter.value === 'string') {
+      const beforeMs = Date.parse(beforeFilter.value);
+      if (Number.isFinite(beforeMs)) {
+        hasInteractiveFilter = true;
+        items = items.filter(item => {
+          const itemMs = item.publishedAt ? Date.parse(item.publishedAt) : NaN;
+          return Number.isFinite(itemMs) && itemMs <= beforeMs;
+        });
+      }
+    }
+
+    // Apply sorting
+    const dir = config.sortOrder === 'asc' ? 1 : -1;
+    items.sort((a, b) => {
+      if (config.sortField === 'title') {
+        return a.title.localeCompare(b.title) * dir;
+      }
+      const aDate = a.publishedAt ?? '';
+      const bDate = b.publishedAt ?? '';
+      return aDate.localeCompare(bDate) * dir;
+    });
+
+    const rawTotal = apiConfig.totalPath
+      ? Number(extractJsonPath(payload, apiConfig.totalPath))
+      : NaN;
+    const total =
+      !hasInteractiveFilter && Number.isFinite(rawTotal) && rawTotal >= 0
+        ? rawTotal
+        : items.length;
+    const pagedItems = items.slice(offset, offset + pageSize);
+    const totalPages = Math.max(Math.ceil(total / pageSize), 1);
+
+    return {
+      items: pagedItems,
+      total,
+      page,
+      pageSize,
+      totalPages,
+      hasMore: offset + pagedItems.length < total,
+      ...(facets ? { facets } : {}),
+    };
+  } catch (err) {
+    return {
+      items: [],
+      total: 0,
+      page,
+      pageSize,
+      totalPages: 1,
+      hasMore: false,
+      error: err instanceof Error ? err.message : 'External API request failed.',
+    };
+  }
 }

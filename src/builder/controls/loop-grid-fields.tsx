@@ -34,9 +34,12 @@ const compactStyle = { ...inputStyle, minWidth: 0, fontSize: 12, padding: '5px 6
 
 function gridSource(props?: Record<string, unknown>) {
   const collection = props?.source === 'collection-entries';
+  const externalApi = props?.source === 'external-api';
   const collectionId =
     typeof props?.collectionId === 'string' ? props.collectionId : '';
-  return { collection, collectionId };
+  const externalApiId =
+    typeof props?.apiPresetId === 'string' ? props.apiPresetId : '';
+  return { collection, externalApi, collectionId, externalApiId };
 }
 
 /** Fields of one post type, cached for the session so every control shares one request. */
@@ -78,7 +81,8 @@ export function LoopTemplatePickerField({
   field,
   props,
 }: LoopFieldProps<string | undefined>) {
-  const { collection, collectionId } = gridSource(props);
+  const { collection, externalApi, collectionId, externalApiId } =
+    gridSource(props);
   const [options, setOptions] = useState<TemplateOption[] | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -90,8 +94,13 @@ export function LoopTemplatePickerField({
     let active = true;
     setOptions(null);
     listLoopTemplateOptions({
-      sourceType: collection ? 'collection' : 'posts',
+      sourceType: collection
+        ? 'collection'
+        : externalApi
+          ? 'external-api'
+          : 'posts',
       collectionId: collection ? collectionId : null,
+      externalApiId: externalApi && externalApiId ? externalApiId : null,
     })
       .then(rows => {
         if (active) setOptions(Array.isArray(rows) ? rows : []);
@@ -100,7 +109,7 @@ export function LoopTemplatePickerField({
     return () => {
       active = false;
     };
-  }, [collection, collectionId, reloadKey]);
+  }, [collection, externalApi, collectionId, externalApiId, reloadKey]);
 
   // Pick up templates created in another tab when the editor regains focus.
   useEffect(() => {
@@ -110,8 +119,10 @@ export function LoopTemplatePickerField({
   }, []);
 
   const createHref = `${PAGES.DASHBOARD.LOOP_TEMPLATES}?new=1&source=${
-    collection ? 'collection' : 'posts'
-  }${collection && collectionId ? `&collectionId=${collectionId}` : ''}`;
+    collection ? 'collection' : externalApi ? 'external-api' : 'posts'
+  }${collection && collectionId ? `&collectionId=${collectionId}` : ''}${
+    externalApi && externalApiId ? `&externalApiId=${externalApiId}` : ''
+  }`;
   const missing =
     !!value && options !== null && !options.some(o => o.id === value);
 

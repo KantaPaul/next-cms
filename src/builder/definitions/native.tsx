@@ -92,7 +92,13 @@ import {
   prefixedFilterSchema,
 } from './query-filter-fields';
 import { LoopGrid } from '../blocks/loop-grid';
-import { LoopItemField, QueryLoop } from '../blocks/query-loop';
+import {
+  LOOP_GALLERY_VIEW_OPTIONS,
+  LoopItemField,
+  resolveEffectiveFieldKind,
+} from '../blocks/loop-item-field';
+import { LOOP_DATE_FORMAT_OPTIONS } from '../blocks/loop-shared';
+import { QueryLoop } from '../blocks/query-loop';
 import { PostTypeEntries } from '../blocks/post-type-entries';
 import { SearchResults } from '../blocks/search-results';
 import { DEFAULT_SECTION as _DS, DEFAULT_SECTION } from '../blocks/section';
@@ -115,7 +121,18 @@ import {
   ThemeToggle,
 } from '../blocks/site-chrome';
 import { FooterStyleField, HeaderStyleField } from '../controls/chrome-style';
-import { LoopCustomKeyField } from '../controls/loop-preview';
+import {
+  ExternalApiFieldsMapperControl,
+  ExternalApiFilterFieldsControl,
+  ExternalApiKeySelectField,
+  ExternalApiPostSelectField,
+  ExternalApiPresetSelectField,
+} from '../controls/external-api-fields';
+import {
+  LoopCustomKeyField,
+  LoopItemFieldSelect,
+} from '../controls/loop-preview';
+import { EXTERNAL_API_FIELD_TYPE_OPTIONS } from '@/lib/external-api-schema';
 import {
   CptFieldFiltersField,
   CptTermLockField,
@@ -169,6 +186,7 @@ import {
   sliderFields,
   styleControl,
   TEXT_PARTS,
+  VISUAL_MEDIA_PARTS,
   sectionSchema,
   urlField,
   urlSchema,
@@ -1775,6 +1793,7 @@ export const ContactFormBlock = defineBlock({
             { label: 'File upload', value: 'file' },
             { label: 'Hidden', value: 'hidden' },
             { label: 'Acceptance (consent)', value: 'acceptance' },
+            { label: 'Calculated', value: 'calculated' },
           ],
         },
         placeholder: { label: 'Placeholder', group: CONTENT, type: 'text' },
@@ -1792,6 +1811,32 @@ export const ContactFormBlock = defineBlock({
             { label: 'Yes', value: true },
             { label: 'No', value: false },
           ],
+        },
+        formula: {
+          label: 'Formula (e.g. {quantity} * {price})',
+          group: CONTENT,
+          type: 'text',
+          when: item => item?.type === 'calculated',
+        },
+        decimals: {
+          label: 'Decimal places',
+          group: CONTENT,
+          type: 'number',
+          min: 0,
+          max: 6,
+          when: item => item?.type === 'calculated',
+        },
+        prefix: {
+          label: 'Display prefix (e.g. $)',
+          group: CONTENT,
+          type: 'text',
+          when: item => item?.type === 'calculated',
+        },
+        suffix: {
+          label: 'Display suffix (e.g. USD)',
+          group: CONTENT,
+          type: 'text',
+          when: item => item?.type === 'calculated',
         },
         accept: {
           label: 'Accepted file types',
@@ -1836,6 +1881,16 @@ export const ContactFormBlock = defineBlock({
           type: 'text',
           when: item => item?.type === 'hidden',
         },
+        conditionAction: {
+          label: 'Condition action',
+          group: CONTENT,
+          type: 'select',
+          options: [
+            { label: 'Show when matched', value: 'show' },
+            { label: 'Hide when matched', value: 'hide' },
+            { label: 'Require when matched', value: 'require' },
+          ],
+        },
         conditionMatch: {
           label: 'Condition match logic',
           group: CONTENT,
@@ -1846,7 +1901,7 @@ export const ContactFormBlock = defineBlock({
           ],
         },
         conditions: {
-          label: 'Conditions (show when)',
+          label: 'Conditions',
           group: CONTENT,
           type: 'list',
           item: {
@@ -1861,6 +1916,10 @@ export const ContactFormBlock = defineBlock({
                 { label: 'Contains', value: 'contains' },
                 { label: 'Is empty', value: 'empty' },
                 { label: 'Is not empty', value: 'not_empty' },
+                { label: 'Greater than (>)', value: 'gt' },
+                { label: 'Greater than or equal (>=)', value: 'gte' },
+                { label: 'Less than (<)', value: 'lt' },
+                { label: 'Less than or equal (<=)', value: 'lte' },
               ],
             },
             value: { label: 'Value to compare', group: CONTENT, type: 'text' },
@@ -5853,10 +5912,33 @@ export const QueryLoopBlock = defineBlock({
     .object({
       loopId: z.string().default(''),
       source: z
-        .enum(['posts', 'pages', 'collection-entries', 'videos'])
+        .enum([
+          'posts',
+          'pages',
+          'collection-entries',
+          'videos',
+          'external-api',
+        ])
         .default('posts'),
       collectionId: z.string().optional(),
       playlistId: z.string().optional(),
+      apiPresetId: z.string().optional(),
+      apiEndpointUrl: z.string().optional(),
+      apiMethod: z.enum(['GET', 'POST']).default('GET'),
+      apiBody: z.string().optional(),
+      apiItemsPath: z.string().default(''),
+      apiTotalPath: z.string().optional(),
+      apiSelectedItemId: z.string().optional(),
+      apiFilterToSelectedItem: z.boolean().default(true),
+      apiFields: z.array(z.any()).optional(),
+      apiFieldId: z.string().default('id'),
+      apiFieldTitle: z.string().default('title'),
+      apiFieldUrl: z.string().optional(),
+      apiFieldExcerpt: z.string().optional(),
+      apiFieldImage: z.string().optional(),
+      apiFieldPublishedAt: z.string().optional(),
+      apiCacheTtlSeconds: z.number().int().min(0).max(3600).default(60),
+      apiTimeoutMs: z.number().int().min(500).max(10000).default(4000),
       lockedCategory: z.string().optional(),
       lockedTag: z.string().optional(),
       lockedTerm: z.string().optional(),
@@ -5890,6 +5972,7 @@ export const QueryLoopBlock = defineBlock({
       showDate: z.boolean().default(true),
       showTerms: z.boolean().default(true),
       emptyText: z.string().default('No matching items found.'),
+      errorText: z.string().default('Unable to load external items right now.'),
       filterPosition: z.enum(['none', 'top', 'left', 'right']).default('none'),
       filterSticky: z.boolean().optional(),
       ...prefixedFilterSchema(),
@@ -5966,6 +6049,7 @@ export const QueryLoopBlock = defineBlock({
         { label: 'Pages', value: 'pages' },
         { label: 'Collection entries', value: 'collection-entries' },
         { label: 'Videos', value: 'videos' },
+        { label: 'External API (REST / GraphQL)', value: 'external-api' },
       ],
     },
     collectionId: {
@@ -5980,6 +6064,123 @@ export const QueryLoopBlock = defineBlock({
       group: CONTENT,
       type: 'text',
       when: (props: any) => props.source === 'videos',
+    },
+    apiPresetId: {
+      label: 'Saved External API',
+      group: 'External API',
+      type: 'custom',
+      render: ExternalApiPresetSelectField,
+      when: (props: any) => props.source === 'external-api',
+    },
+    apiEndpointUrl: {
+      label: 'API Endpoint URL (HTTPS)',
+      group: 'External API',
+      type: 'text',
+      placeholder: 'https://api.example.com/posts',
+      when: (props: any) => props.source === 'external-api',
+    },
+    apiMethod: {
+      label: 'HTTP Method',
+      group: 'External API',
+      type: 'radio',
+      options: [
+        { label: 'GET', value: 'GET' },
+        { label: 'POST', value: 'POST' },
+      ],
+      when: (props: any) => props.source === 'external-api',
+    },
+    apiBody: {
+      label: 'POST / GraphQL Body (JSON)',
+      group: 'External API',
+      type: 'textarea',
+      when: (props: any) =>
+        props.source === 'external-api' && props.apiMethod === 'POST',
+    },
+    apiItemsPath: {
+      label: 'Items JSON Path (e.g. data.items)',
+      group: 'External API',
+      type: 'text',
+      placeholder: 'Leave blank if response root is an array',
+      when: (props: any) => props.source === 'external-api',
+    },
+    apiTotalPath: {
+      label: 'Total Count Path (optional)',
+      group: 'External API',
+      type: 'text',
+      placeholder: 'e.g. meta.total',
+      when: (props: any) => props.source === 'external-api',
+    },
+    apiSelectedItemId: {
+      label: 'Select Post / Item from API',
+      group: 'External API',
+      type: 'custom',
+      render: ExternalApiPostSelectField,
+      when: (props: any) => props.source === 'external-api',
+    },
+    apiFields: {
+      label: 'Repeatable Content Fields, Nested Objects & View Types',
+      group: 'External API',
+      type: 'custom',
+      render: ExternalApiFieldsMapperControl,
+      when: (props: any) => props.source === 'external-api',
+    },
+    apiFieldId: {
+      label: 'ID Field Key',
+      group: 'External API',
+      type: 'custom',
+      render: ExternalApiKeySelectField,
+      when: (props: any) => props.source === 'external-api',
+    },
+    apiFieldTitle: {
+      label: 'Title Field Key',
+      group: 'External API',
+      type: 'custom',
+      render: ExternalApiKeySelectField,
+      when: (props: any) => props.source === 'external-api',
+    },
+    apiFieldUrl: {
+      label: 'URL Field Key (optional)',
+      group: 'External API',
+      type: 'custom',
+      render: ExternalApiKeySelectField,
+      when: (props: any) => props.source === 'external-api',
+    },
+    apiFieldExcerpt: {
+      label: 'Excerpt Field Key (optional)',
+      group: 'External API',
+      type: 'custom',
+      render: ExternalApiKeySelectField,
+      when: (props: any) => props.source === 'external-api',
+    },
+    apiFieldImage: {
+      label: 'Image Field Key (optional)',
+      group: 'External API',
+      type: 'custom',
+      render: ExternalApiKeySelectField,
+      when: (props: any) => props.source === 'external-api',
+    },
+    apiFieldPublishedAt: {
+      label: 'Published Date Field Key (optional)',
+      group: 'External API',
+      type: 'custom',
+      render: ExternalApiKeySelectField,
+      when: (props: any) => props.source === 'external-api',
+    },
+    apiCacheTtlSeconds: {
+      label: 'Cache TTL (seconds, 0–3600)',
+      group: 'External API',
+      type: 'number',
+      min: 0,
+      max: 3600,
+      when: (props: any) => props.source === 'external-api',
+    },
+    apiTimeoutMs: {
+      label: 'Timeout (ms, 500–10000)',
+      group: 'External API',
+      type: 'number',
+      min: 500,
+      max: 10000,
+      when: (props: any) => props.source === 'external-api',
     },
     eyebrow: { label: 'Eyebrow', group: CONTENT, type: 'text' },
     title: { label: 'Heading', group: CONTENT, type: 'text' },
@@ -6081,18 +6282,21 @@ export const QueryLoopBlock = defineBlock({
       label: 'Exclude current page/post',
       group: CONTENT,
       type: 'toggle',
+      when: (props: any) => props.source !== 'external-api',
     },
     lockedCategory: {
       label: 'Lock to category (slug or ID)',
       group: CONTENT,
       type: 'custom',
       render: CategoryLockField,
+      when: (props: any) => props.source === 'posts' || !props.source,
     },
     lockedTag: {
       label: 'Lock to tag (slug or ID)',
       group: CONTENT,
       type: 'custom',
       render: TagLockField,
+      when: (props: any) => props.source === 'posts' || !props.source,
     },
     lockedTerm: {
       label: 'Lock to term (post types)',
@@ -6129,6 +6333,12 @@ export const QueryLoopBlock = defineBlock({
       type: 'toggle',
     },
     emptyText: { label: 'Empty state text', group: CONTENT, type: 'text' },
+    errorText: {
+      label: 'Error fallback text',
+      group: CONTENT,
+      type: 'text',
+      when: (props: any) => props.source === 'external-api',
+    },
     filterPosition: {
       tab: 'content',
       section: 'Filters',
@@ -6155,6 +6365,18 @@ export const QueryLoopBlock = defineBlock({
       (props: any) =>
         Boolean(props.filterPosition) && props.filterPosition !== 'none'
     ),
+    apiFilterFields: {
+      tab: 'content',
+      section: 'Filters',
+      label: 'External API Filter Fields',
+      group: 'Filters',
+      type: 'custom',
+      render: ExternalApiFilterFieldsControl,
+      when: (props: any) =>
+        props.source === 'external-api' &&
+        Boolean(props.filterPosition) &&
+        props.filterPosition !== 'none',
+    },
     ...cardFields(),
     ...headingStyles(),
     ...cardStyles({ when: (props: any) => props.layout !== 'table' }),
@@ -6199,6 +6421,16 @@ export const QueryLoopBlock = defineBlock({
     showDate: true,
     showTerms: true,
     emptyText: 'No matching items found.',
+    errorText: 'Unable to load external items right now.',
+    apiMethod: 'GET',
+    apiItemsPath: '',
+    apiSelectedItemId: '',
+    apiFilterToSelectedItem: true,
+    apiFields: [],
+    apiFieldId: 'id',
+    apiFieldTitle: 'title',
+    apiCacheTtlSeconds: 60,
+    apiTimeoutMs: 4000,
     filterPosition: 'none',
     card: [],
     emptyState: [],
@@ -6207,6 +6439,8 @@ export const QueryLoopBlock = defineBlock({
 });
 
 const qlf = QueryLoopBlock.fields as Record<string, any>;
+const isLegacyLoopGridApi = (props: any) =>
+  props?.source === 'external-api' && !props?.apiPresetId && Boolean(props?.apiEndpointUrl);
 const isCollectionGrid = (props: any) => props.source === 'collection-entries';
 
 /**
@@ -6222,8 +6456,27 @@ export const LoopGridBlock = defineBlock({
   schema: z
     .object({
       loopId: z.string().default(''),
-      source: z.enum(['posts', 'collection-entries']).default('posts'),
+      source: z
+        .enum(['posts', 'collection-entries', 'external-api'])
+        .default('posts'),
       collectionId: z.string().optional(),
+      apiPresetId: z.string().optional(),
+      apiEndpointUrl: z.string().optional(),
+      apiMethod: z.enum(['GET', 'POST']).default('GET'),
+      apiBody: z.string().optional(),
+      apiItemsPath: z.string().default(''),
+      apiTotalPath: z.string().optional(),
+      apiSelectedItemId: z.string().optional(),
+      apiFilterToSelectedItem: z.boolean().default(true),
+      apiFields: z.array(z.any()).optional(),
+      apiFieldId: z.string().default('id'),
+      apiFieldTitle: z.string().default('title'),
+      apiFieldUrl: z.string().optional(),
+      apiFieldExcerpt: z.string().optional(),
+      apiFieldImage: z.string().optional(),
+      apiFieldPublishedAt: z.string().optional(),
+      apiCacheTtlSeconds: z.number().int().min(0).max(3600).default(60),
+      apiTimeoutMs: z.number().int().min(500).max(10000).default(4000),
       templateId: z.string().optional(),
       lockedCategory: z.string().optional(),
       lockedTag: z.string().optional(),
@@ -6300,6 +6553,7 @@ export const LoopGridBlock = defineBlock({
       options: [
         { label: 'Blog posts', value: 'posts' },
         { label: 'Custom post type', value: 'collection-entries' },
+        { label: 'External API (REST / GraphQL)', value: 'external-api' },
       ],
     },
     collectionId: {
@@ -6309,6 +6563,22 @@ export const LoopGridBlock = defineBlock({
       render: CollectionSelectField,
       when: isCollectionGrid,
     },
+    apiPresetId: qlf.apiPresetId,
+    apiEndpointUrl: { ...qlf.apiEndpointUrl, when: isLegacyLoopGridApi },
+    apiMethod: { ...qlf.apiMethod, when: isLegacyLoopGridApi },
+    apiBody: { ...qlf.apiBody, when: isLegacyLoopGridApi },
+    apiItemsPath: { ...qlf.apiItemsPath, when: isLegacyLoopGridApi },
+    apiTotalPath: { ...qlf.apiTotalPath, when: isLegacyLoopGridApi },
+    apiSelectedItemId: qlf.apiSelectedItemId,
+    apiFields: { ...qlf.apiFields, when: isLegacyLoopGridApi },
+    apiFieldId: { ...qlf.apiFieldId, when: isLegacyLoopGridApi },
+    apiFieldTitle: { ...qlf.apiFieldTitle, when: isLegacyLoopGridApi },
+    apiFieldUrl: { ...qlf.apiFieldUrl, when: isLegacyLoopGridApi },
+    apiFieldExcerpt: { ...qlf.apiFieldExcerpt, when: isLegacyLoopGridApi },
+    apiFieldImage: { ...qlf.apiFieldImage, when: isLegacyLoopGridApi },
+    apiFieldPublishedAt: { ...qlf.apiFieldPublishedAt, when: isLegacyLoopGridApi },
+    apiCacheTtlSeconds: { ...qlf.apiCacheTtlSeconds, when: isLegacyLoopGridApi },
+    apiTimeoutMs: { ...qlf.apiTimeoutMs, when: isLegacyLoopGridApi },
     templateId: {
       label: 'Loop Item template',
       group: CONTENT,
@@ -6356,11 +6626,11 @@ export const LoopGridBlock = defineBlock({
     sortOrder: qlf.sortOrder,
     lockedCategory: {
       ...qlf.lockedCategory,
-      when: (props: any) => !isCollectionGrid(props),
+      when: (props: any) => props.source === 'posts' || !props.source,
     },
     lockedTag: {
       ...qlf.lockedTag,
-      when: (props: any) => !isCollectionGrid(props),
+      when: (props: any) => props.source === 'posts' || !props.source,
     },
     fieldFilters: {
       label: 'Field filters',
@@ -6376,7 +6646,10 @@ export const LoopGridBlock = defineBlock({
       render: CptTermLockField,
       when: isCollectionGrid,
     },
-    excludeCurrent: qlf.excludeCurrent,
+    excludeCurrent: {
+      ...qlf.excludeCurrent,
+      when: (props: any) => props.source !== 'external-api',
+    },
     loopId: qlf.loopId,
     pagination: qlf.pagination,
     loadMoreLabel: qlf.loadMoreLabel,
@@ -6424,6 +6697,32 @@ export const LoopGridBlock = defineBlock({
   },
 });
 
+const loopItemRowLabel = (item: Record<string, unknown>, index: number) => {
+  const field = typeof item.field === 'string' ? item.field : 'title';
+  if (field === 'custom') {
+    const key = typeof item.customKey === 'string' ? item.customKey.trim() : '';
+    if (!key) return `Custom field ${index + 1}`;
+    return `Custom: ${key
+      .replace(/[_-]+/g, ' ')
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .replace(/^./, c => c.toUpperCase())}`;
+  }
+  const labels: Record<string, string> = {
+    title: 'Title',
+    excerpt: 'Excerpt / Summary',
+    image: 'Featured Image',
+    publishedAt: 'Published Date',
+    author: 'Author Name',
+    terms: 'Categories & Tags / Terms',
+    readMore: 'Read More / Permalink',
+    bookmark: 'Bookmark Button',
+  };
+  return labels[field] ?? `Field ${index + 1}`;
+};
+
+const loopRowKind = (item: Record<string, unknown> | undefined) =>
+  resolveEffectiveFieldKind((item ?? {}) as any);
+
 export const LoopItemFieldBlock = defineBlock({
   type: 'LoopItemField',
   label: 'Loop Item Field',
@@ -6451,56 +6750,478 @@ export const LoopItemFieldBlock = defineBlock({
         .enum(['top-right', 'top-left', 'bottom-right', 'bottom-left'])
         .default('top-right'),
       readMoreLabel: z.string().default('Read more'),
+      layout: z.enum(['clean', 'card', 'table']).optional(),
+      direction: z.enum(['stack', 'row', 'grid']).optional(),
+      gap: z.enum(['sm', 'md', 'lg']).optional(),
+      align: z.enum(['left', 'center', 'right']).optional(),
+      section: sectionSettingsSchema.optional(),
       elements: z.record(z.string(), elementStyleSchema).optional(),
     })
     .passthrough(),
   render: LoopItemField,
   fields: {
-    field: {
-      label: 'Item field',
+    items: {
+      label: 'Fields to display',
+      group: CONTENT,
+      type: 'list',
+      itemLabel: loopItemRowLabel,
+      item: {
+        field: {
+          label: 'Item field',
+          group: CONTENT,
+          type: 'custom',
+          render: LoopItemFieldSelect,
+        },
+        customKey: {
+          label: 'Custom / Collection field',
+          group: CONTENT,
+          type: 'custom',
+          render: LoopCustomKeyField,
+          when: (item: any) => item?.field === 'custom',
+        },
+        multiLayout: {
+          label: 'Multi-field View Layout',
+          group: CONTENT,
+          type: 'select',
+          options: [
+            { label: 'Vertical stack', value: 'stack' },
+            { label: 'Horizontal row', value: 'row' },
+            { label: 'Inline (comma-separated)', value: 'inline' },
+            { label: 'Two-column grid', value: 'grid' },
+            { label: 'Cards grid', value: 'cards' },
+            { label: 'Pill badges', value: 'badges' },
+            { label: 'Bulleted list', value: 'list' },
+            { label: 'Key–value table', value: 'table' },
+          ],
+          when: (item: any) =>
+            item?.field === 'custom' &&
+            typeof item?.customKey === 'string' &&
+            item.customKey.includes(','),
+        },
+        fieldType: {
+          label: 'Field Type (View Type)',
+          group: CONTENT,
+          type: 'select',
+          options: [
+            { label: 'Auto (from source / schema)', value: '' },
+            ...EXTERNAL_API_FIELD_TYPE_OPTIONS.map(o => ({
+              label: o.label,
+              value: o.value,
+            })),
+          ],
+          when: (item: any) => item?.field === 'custom',
+        },
+        textMode: {
+          label: 'Text View Mode',
+          group: CONTENT,
+          type: 'select',
+          options: [
+            { label: 'Plain text', value: 'plain' },
+            { label: 'Video URL (YouTube, Vimeo, MP4)', value: 'video' },
+            { label: 'Embed URL (iframe / map / widget)', value: 'embed' },
+          ],
+          when: (item: any) =>
+            item?.field === 'custom' && item?.fieldType === 'text',
+        },
+        urlMode: {
+          label: 'URL View Mode',
+          group: CONTENT,
+          type: 'select',
+          options: [
+            { label: 'Other URL (link / button / text)', value: 'other' },
+            { label: 'Video URL (YouTube, Vimeo, MP4)', value: 'video' },
+          ],
+          when: (item: any) =>
+            item?.field === 'custom' && item?.fieldType === 'url',
+        },
+        multiple: {
+          label: 'Multiple image gallery',
+          group: CONTENT,
+          type: 'toggle',
+          when: (item: any) =>
+            item?.field === 'custom' && item?.fieldType === 'media',
+        },
+        arrayLayout: {
+          label: 'Nested Array Display',
+          group: CONTENT,
+          type: 'select',
+          options: [
+            { label: 'Cards', value: 'cards' },
+            { label: 'Vertical stack', value: 'stack' },
+            { label: 'Horizontal row', value: 'row' },
+            { label: 'Two-column grid', value: 'grid' },
+            { label: 'Pill badges', value: 'badges' },
+            { label: 'Bulleted list', value: 'list' },
+          ],
+          when: (item: any) => loopRowKind(item) === 'array',
+        },
+        linkToItem: {
+          label: 'Link to item / single page',
+          group: CONTENT,
+          type: 'toggle',
+          when: (item: any) =>
+            ['title', 'image', 'gallery', 'text', 'number', 'select'].includes(
+              loopRowKind(item)
+            ) && !item?.popupTrigger,
+        },
+        singlePageUrl: {
+          label: 'Single page view URL (optional)',
+          group: CONTENT,
+          type: 'text',
+          placeholder: 'e.g. /user-details (appends ?itemId=...)',
+          when: (item: any) =>
+            ['title', 'image', 'gallery', 'text', 'number', 'select'].includes(
+              loopRowKind(item)
+            ) &&
+            Boolean(item?.linkToItem) &&
+            !item?.popupTrigger,
+        },
+        urlDisplay: {
+          label: 'URL display',
+          group: CONTENT,
+          type: 'select',
+          options: [
+            { label: 'Clickable link', value: 'link' },
+            { label: 'Button', value: 'button' },
+            { label: 'Plain URL text', value: 'text' },
+          ],
+          when: (item: any) =>
+            ['permalink', 'url'].includes(loopRowKind(item)),
+        },
+        readMoreLabel: {
+          label: 'Link / Read more title',
+          group: CONTENT,
+          type: 'text',
+          placeholder: 'Read more (or custom title)',
+          when: (item: any) =>
+            ['permalink', 'url'].includes(loopRowKind(item)) &&
+            item?.urlDisplay !== 'text',
+        },
+        showArrow: {
+          label: 'Show arrow icon',
+          group: CONTENT,
+          type: 'toggle',
+          when: (item: any) =>
+            ['permalink', 'url'].includes(loopRowKind(item)) &&
+            item?.urlDisplay !== 'text',
+        },
+        urlConfig: {
+          label: 'URL settings (override, popup, new tab, nofollow)',
+          group: CONTENT,
+          type: 'custom',
+          render: UrlField,
+          when: (item: any) =>
+            ['permalink', 'url'].includes(loopRowKind(item)) &&
+            item?.urlDisplay !== 'text',
+        },
+        dateFormat: {
+          label: 'Date format',
+          group: CONTENT,
+          type: 'select',
+          options: LOOP_DATE_FORMAT_OPTIONS,
+          when: (item: any) => loopRowKind(item) === 'date',
+        },
+        datePrefix: {
+          label: 'Date prefix (optional)',
+          group: CONTENT,
+          type: 'text',
+          placeholder: 'e.g. Published on ',
+          when: (item: any) => loopRowKind(item) === 'date',
+        },
+        authorDisplay: {
+          label: 'Author display',
+          group: CONTENT,
+          type: 'select',
+          options: [
+            { label: 'Name only', value: 'name' },
+            { label: 'Avatar + Name', value: 'avatar-name' },
+            { label: 'Avatar only', value: 'avatar' },
+          ],
+          when: (item: any) => loopRowKind(item) === 'author',
+        },
+        authorPrefix: {
+          label: 'Author prefix (optional)',
+          group: CONTENT,
+          type: 'text',
+          placeholder: 'e.g. By ',
+          when: (item: any) =>
+            loopRowKind(item) === 'author' && item?.authorDisplay !== 'avatar',
+        },
+        termsDisplay: {
+          label: 'Terms display style',
+          group: CONTENT,
+          type: 'select',
+          options: [
+            { label: 'Badges (Soft pill)', value: 'badges' },
+            { label: 'Outline pills', value: 'pills' },
+            { label: 'Uppercase labels (· separated)', value: 'dot' },
+            { label: 'Comma separated', value: 'comma' },
+            { label: 'Plain list', value: 'plain' },
+          ],
+          when: (item: any) => loopRowKind(item) === 'terms',
+        },
+        termsTaxonomy: {
+          label: 'Filter taxonomy',
+          group: CONTENT,
+          type: 'select',
+          options: [
+            { label: 'All terms', value: 'all' },
+            { label: 'Primary / Categories', value: 'category' },
+            { label: 'Secondary / Tags', value: 'tag' },
+          ],
+          when: (item: any) =>
+            loopRowKind(item) === 'terms' &&
+            item?.customKey !== 'category' &&
+            item?.customKey !== 'tags',
+        },
+        maxLines: {
+          label: 'Line clamp / Max lines',
+          group: CONTENT,
+          type: 'select',
+          options: [
+            { label: 'Full content (no limit)', value: 'none' },
+            { label: '2 lines', value: '2' },
+            { label: '3 lines', value: '3' },
+            { label: '4 lines', value: '4' },
+            { label: '6 lines', value: '6' },
+          ],
+          when: (item: any) =>
+            ['richtext', 'excerpt'].includes(loopRowKind(item)),
+        },
+        stripHtml: {
+          label: 'Plain text only (strip formatting)',
+          group: CONTENT,
+          type: 'toggle',
+          when: (item: any) =>
+            ['richtext', 'excerpt'].includes(loopRowKind(item)),
+        },
+        imageAspect: {
+          label: 'Image aspect ratio',
+          group: CONTENT,
+          type: 'select',
+          options: [
+            { label: 'Video (16:9)', value: 'video' },
+            { label: 'Landscape (4:3)', value: 'landscape' },
+            { label: 'Square (1:1)', value: 'square' },
+            { label: 'Portrait (3:4)', value: 'portrait' },
+            { label: 'Wide (21:9)', value: 'wide' },
+            { label: 'Original (Auto)', value: 'auto' },
+          ],
+          when: (item: any) => loopRowKind(item) === 'image',
+        },
+        galleryViewMode: {
+          label: 'Gallery view option',
+          group: CONTENT,
+          type: 'select',
+          options: LOOP_GALLERY_VIEW_OPTIONS,
+          when: (item: any) => loopRowKind(item) === 'gallery',
+        },
+        galleryAspect: {
+          label: 'Gallery aspect ratio',
+          group: CONTENT,
+          type: 'select',
+          options: [
+            { label: 'Wide (16:9)', value: 'wide' },
+            { label: 'Landscape (4:3)', value: 'landscape' },
+            { label: 'Square (1:1)', value: 'square' },
+            { label: 'Portrait (3:4)', value: 'portrait' },
+            { label: 'Tall (4:5)', value: 'tall' },
+            { label: 'Auto (Smart)', value: 'auto' },
+          ],
+          when: (item: any) => loopRowKind(item) === 'gallery',
+        },
+        excludeFeaturedImage: {
+          label: 'Exclude featured image',
+          group: CONTENT,
+          type: 'toggle',
+          when: (item: any) => loopRowKind(item) === 'gallery',
+        },
+        showGalleryBadge: {
+          label: 'Show gallery icon badge',
+          group: CONTENT,
+          type: 'toggle',
+          when: (item: any) =>
+            ['image', 'gallery'].includes(loopRowKind(item)),
+        },
+        galleryBadgePosition: {
+          label: 'Gallery icon position',
+          group: CONTENT,
+          type: 'select',
+          options: GALLERY_BADGE_POSITION_OPTIONS,
+          when: (item: any) =>
+            ['image', 'gallery'].includes(loopRowKind(item)) &&
+            item?.showGalleryBadge !== false,
+        },
+        popupTrigger: {
+          label: 'Open popup/drawer view on click',
+          group: CONTENT,
+          type: 'toggle',
+          when: (item: any) =>
+            [
+              'title',
+              'text',
+              'number',
+              'select',
+              'image',
+              'gallery',
+              'video',
+              'permalink',
+              'url',
+            ].includes(loopRowKind(item)),
+        },
+        overlayId: {
+          label: 'Popup / Drawer',
+          group: CONTENT,
+          type: 'custom',
+          render: OverlayPickerField,
+          when: (item: any) =>
+            [
+              'title',
+              'text',
+              'number',
+              'select',
+              'image',
+              'gallery',
+              'video',
+              'permalink',
+              'url',
+            ].includes(loopRowKind(item)) && Boolean(item?.popupTrigger),
+        },
+        posterUrl: {
+          label: 'Poster image',
+          group: CONTENT,
+          type: 'custom',
+          render: MediaUrlField,
+          when: (item: any) =>
+            loopRowKind(item) === 'video' && Boolean(item?.popupTrigger),
+        },
+        motion: motionEffectsControl({
+          label: 'Motion Effects',
+          group: CONTENT,
+          when: (item: any) => loopRowKind(item) === 'image',
+        }),
+        showLabel: {
+          label: 'Show field label',
+          group: CONTENT,
+          type: 'toggle',
+          when: (item: any) => loopRowKind(item) !== 'bookmark',
+        },
+        labelText: {
+          label: 'Custom label (optional)',
+          group: CONTENT,
+          type: 'text',
+          placeholder: 'Uses the field name',
+          when: (item: any) =>
+            Boolean(item?.showLabel) && loopRowKind(item) !== 'bookmark',
+        },
+        style: {
+          label: 'Item field style',
+          group: CONTENT,
+          type: 'custom',
+          when: (item: any) => loopRowKind(item) !== 'bookmark',
+          render: styleControl(ALL_PARTS, item => {
+            const k = loopRowKind(item);
+            if (['image', 'gallery', 'video', 'embed'].includes(k)) {
+              return VISUAL_MEDIA_PARTS;
+            }
+            if (['permalink', 'url', 'terms'].includes(k)) {
+              return BUTTON_PARTS;
+            }
+            return ALL_PARTS;
+          }),
+        },
+        badgeStyle: {
+          label: 'Gallery icon badge style',
+          group: CONTENT,
+          type: 'custom',
+          render: styleControl(BUTTON_PARTS),
+          when: (item: any) =>
+            ['image', 'gallery'].includes(loopRowKind(item)) &&
+            item?.showGalleryBadge !== false,
+        },
+        labelStyle: {
+          label: 'Label style',
+          group: CONTENT,
+          type: 'custom',
+          render: styleControl(TEXT_PARTS),
+          when: (item: any) =>
+            Boolean(item?.showLabel) && loopRowKind(item) !== 'bookmark',
+        },
+      },
+      defaultItem: {
+        field: 'title',
+        customKey: '',
+        textSize: 'auto',
+        linkToItem: true,
+        urlDisplay: 'link',
+        readMoreLabel: 'Read more',
+        showArrow: true,
+        dateFormat: 'medium',
+        datePrefix: '',
+        authorDisplay: 'name',
+        authorPrefix: '',
+        termsDisplay: 'badges',
+        termsTaxonomy: 'all',
+        maxLines: 'none',
+        stripHtml: false,
+        imageAspect: 'video',
+        galleryViewMode: 'featured-slider',
+        galleryAspect: 'wide',
+        excludeFeaturedImage: false,
+        showGalleryBadge: true,
+        galleryBadgePosition: 'top-right',
+        showLabel: false,
+        labelText: '',
+        style: {},
+        badgeStyle: {},
+        labelStyle: {},
+      },
+    },
+    layout: {
+      label: 'Container style',
       group: CONTENT,
       type: 'select',
       options: [
-        { label: 'Title', value: 'title' },
-        { label: 'Excerpt / Summary', value: 'excerpt' },
-        { label: 'Featured Image', value: 'image' },
-        { label: 'Published Date', value: 'publishedAt' },
-        { label: 'Author Name', value: 'author' },
-        { label: 'Categories & Tags', value: 'terms' },
-        { label: 'Read More Link', value: 'readMore' },
-        { label: 'Bookmark Button', value: 'bookmark' },
-        { label: 'Custom / Collection Field', value: 'custom' },
+        { label: 'Clean (Inline, no box)', value: 'clean' },
+        { label: 'Card (Box with border & shadow)', value: 'card' },
+        { label: 'Table (label / value rows)', value: 'table' },
       ],
     },
-    customKey: {
-      label: 'Custom field',
+    direction: {
+      label: 'Arrange fields',
       group: CONTENT,
-      type: 'custom',
-      render: LoopCustomKeyField,
-      when: (props: any) => props.field === 'custom',
+      type: 'select',
+      options: [
+        { label: 'Stacked', value: 'stack' },
+        { label: 'In a row', value: 'row' },
+        { label: 'Two-column grid', value: 'grid' },
+      ],
+      when: (props: any) => (props.items?.length ?? 0) > 1,
     },
-    linkToItem: {
-      label: 'Link to item URL',
+    gap: {
+      label: 'Space between fields',
       group: CONTENT,
-      type: 'toggle',
+      type: 'select',
+      options: [
+        { label: 'Small', value: 'sm' },
+        { label: 'Medium', value: 'md' },
+        { label: 'Large', value: 'lg' },
+      ],
+      when: (props: any) => (props.items?.length ?? 0) > 1,
     },
-    readMoreLabel: {
-      label: 'Read more label',
+    align: {
+      label: 'Alignment',
+      tab: 'style',
       group: CONTENT,
-      type: 'text',
-      when: (props: any) => props.field === 'readMore',
+      type: 'radio',
+      options: [
+        { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+        { label: 'Right', value: 'right' },
+      ],
     },
-    value_style: elementStyle('value', 'Text Style', TEXT_PARTS, {
-      when: (props: any) =>
-        !['image', 'readMore', 'bookmark'].includes(props.field ?? 'title'),
-    }),
-    image_style: elementStyle('image', 'Image Style', MEDIA_PARTS, {
-      when: (props: any) => props.field === 'image',
-    }),
-    ...galleryBadgeControls((props: any) => props.field === 'image'),
-    link_style: elementStyle('link', 'Link Style', TEXT_PARTS, {
-      when: (props: any) => props.field === 'readMore',
-    }),
+    container_style: elementStyle('container', 'Container Style', BUTTON_PARTS),
+    ...contentSectionControls(),
   },
   defaults: {
     field: 'title',
@@ -6509,6 +7230,40 @@ export const LoopItemFieldBlock = defineBlock({
     showGalleryBadge: true,
     galleryBadgePosition: 'top-right',
     readMoreLabel: 'Read more',
+    layout: 'clean',
+    direction: 'stack',
+    gap: 'sm',
+    align: 'left',
+    items: [
+      {
+        field: 'title',
+        customKey: '',
+        textSize: 'auto',
+        linkToItem: true,
+        urlDisplay: 'link',
+        readMoreLabel: 'Read more',
+        showArrow: true,
+        dateFormat: 'medium',
+        datePrefix: '',
+        authorDisplay: 'name',
+        authorPrefix: '',
+        termsDisplay: 'badges',
+        termsTaxonomy: 'all',
+        maxLines: 'none',
+        stripHtml: false,
+        imageAspect: 'video',
+        galleryViewMode: 'featured-slider',
+        galleryAspect: 'wide',
+        excludeFeaturedImage: false,
+        showGalleryBadge: true,
+        galleryBadgePosition: 'top-right',
+        showLabel: false,
+        labelText: '',
+        style: {},
+        badgeStyle: {},
+        labelStyle: {},
+      },
+    ],
   },
 });
 
@@ -6521,9 +7276,29 @@ export const QueryFilterBlock = defineBlock({
     .object({
       targetLoopId: z.string().default(''),
       source: z
-        .enum(['posts', 'pages', 'collection-entries', 'videos'])
+        .enum(['posts', 'pages', 'collection-entries', 'videos', 'external-api'])
         .default('posts'),
       collectionId: z.string().optional(),
+      apiPresetId: z.string().optional(),
+      apiEndpointUrl: z.string().optional(),
+      apiMethod: z.enum(['GET', 'POST']).optional(),
+      apiHeaders: z.record(z.string(), z.string()).optional(),
+      apiQueryParams: z.record(z.string(), z.string()).optional(),
+      apiDataFilters: z.array(z.any()).optional(),
+      apiBody: z.string().optional(),
+      apiItemsPath: z.string().optional(),
+      apiTotalPath: z.string().optional(),
+      apiCacheTtlSeconds: z.number().int().min(0).max(3600).optional(),
+      apiTimeoutMs: z.number().int().min(500).max(10000).optional(),
+      apiFilterFields: z
+        .array(
+          z.object({
+            key: z.string(),
+            label: z.string().optional(),
+            style: z.enum(['select', 'checkboxes', 'chips']).optional(),
+          })
+        )
+        .optional(),
       ...FILTER_OPTION_SCHEMA,
       section: sectionSettingsSchema.optional(),
       elements: z.record(z.string(), elementStyleSchema).optional(),
@@ -6545,6 +7320,7 @@ export const QueryFilterBlock = defineBlock({
         { label: 'Pages', value: 'pages' },
         { label: 'Collection entries', value: 'collection-entries' },
         { label: 'Videos', value: 'videos' },
+        { label: 'External API (REST / GraphQL)', value: 'external-api' },
       ],
     },
     collectionId: {
@@ -6554,7 +7330,93 @@ export const QueryFilterBlock = defineBlock({
       render: CollectionSelectField,
       when: (props: any) => props.source === 'collection-entries',
     },
+    apiPresetId: {
+      label: 'Saved External API',
+      group: 'External API',
+      type: 'custom',
+      render: ExternalApiPresetSelectField,
+      when: (props: any) => props.source === 'external-api',
+    },
+    apiEndpointUrl: {
+      label: 'API Endpoint URL (HTTPS)',
+      group: 'External API',
+      type: 'text',
+      placeholder: 'https://api.example.com/posts',
+      when: (props: any) => props.source === 'external-api',
+    },
+    apiMethod: {
+      label: 'HTTP Method',
+      group: 'External API',
+      type: 'radio',
+      options: [
+        { label: 'GET', value: 'GET' },
+        { label: 'POST', value: 'POST' },
+      ],
+      when: (props: any) => props.source === 'external-api',
+    },
+    apiBody: {
+      label: 'POST / GraphQL Body (JSON)',
+      group: 'External API',
+      type: 'textarea',
+      when: (props: any) =>
+        props.source === 'external-api' && props.apiMethod === 'POST',
+    },
+    apiItemsPath: {
+      label: 'Items JSON Path (e.g. data.items)',
+      group: 'External API',
+      type: 'text',
+      placeholder: 'Leave blank if response root is an array',
+      when: (props: any) => props.source === 'external-api',
+    },
+    apiTotalPath: {
+      label: 'Total Count Path (optional)',
+      group: 'External API',
+      type: 'text',
+      placeholder: 'e.g. meta.total',
+      when: (props: any) => props.source === 'external-api',
+    },
+    apiCacheTtlSeconds: {
+      label: 'Cache TTL (seconds, 0–3600)',
+      group: 'External API',
+      type: 'number',
+      min: 0,
+      max: 3600,
+      when: (props: any) => props.source === 'external-api',
+    },
+    apiTimeoutMs: {
+      label: 'Timeout (ms, 500–10000)',
+      group: 'External API',
+      type: 'number',
+      min: 500,
+      max: 10000,
+      when: (props: any) => props.source === 'external-api',
+    },
+    apiFilterFields: {
+      label: 'External API Filter Fields',
+      group: 'External API',
+      type: 'custom',
+      render: ExternalApiFilterFieldsControl,
+      when: (props: any) => props.source === 'external-api',
+    },
     ...FILTER_OPTION_FIELDS,
+    showCategories: {
+      ...FILTER_OPTION_FIELDS.showCategories,
+      when: (props: any) => props.source !== 'external-api',
+    },
+    categoryStyle: {
+      ...FILTER_OPTION_FIELDS.categoryStyle,
+      when: (props: any) =>
+        props.source !== 'external-api' && props.showCategories !== false,
+    },
+    showTags: {
+      ...FILTER_OPTION_FIELDS.showTags,
+      when: (props: any) => props.source !== 'external-api',
+    },
+    tagStyle: {
+      ...FILTER_OPTION_FIELDS.tagStyle,
+      when: (props: any) =>
+        props.source !== 'external-api' && props.showTags !== false,
+    },
     panel_style: elementStyle('panel', 'Panel Style', BUTTON_PARTS),
     label_style: elementStyle('label', 'Label Style', TEXT_PARTS),
     input_style: elementStyle('input', 'Input Style', FIELD_PARTS),

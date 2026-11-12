@@ -17,6 +17,9 @@ import {
   createLoaderRegistry,
   documentToPuck,
   encodeNamespacedParams,
+  EXT_FILTER_PREFIX,
+  EXT_PARAM_PREFIX,
+  externalApiFilterKey,
   type FieldFilter,
   fieldFilterSchema,
   fieldSortKey,
@@ -725,6 +728,21 @@ function buildFiltersFromPropsAndParams(
     });
   }
 
+  if (source === 'external-api' && activeParams.ext) {
+    for (const [fieldKey, values] of Object.entries(activeParams.ext)) {
+      if (
+        values.length > 0 &&
+        externalApiFilterKey(`${EXT_FILTER_PREFIX}${fieldKey}`)
+      ) {
+        filters.push({
+          field: `${EXT_FILTER_PREFIX}${fieldKey}`,
+          operator: 'in',
+          value: values,
+        });
+      }
+    }
+  }
+
   const allowedSorts = ALLOWED_SORT_FIELDS[source] ?? ['publishedAt'];
   const requestedSort =
     activeParams.sort ??
@@ -779,12 +797,151 @@ function buildPreservedParams(
       'order',
     ].map(k => formatNamespacedParam(k, loopId))
   );
+  const extPrefix = formatNamespacedParam(EXT_PARAM_PREFIX, loopId);
   const preserved: Record<string, string> = {};
   for (const [k, v] of Object.entries(rawParams)) {
-    if (ownKeys.has(k) || v === undefined) continue;
+    if (ownKeys.has(k) || k.startsWith(extPrefix) || v === undefined) continue;
     preserved[k] = Array.isArray(v) ? (v[0] ?? '') : v;
   }
   return preserved;
+}
+
+function extractExternalApiFacetKeys(props: Record<string, unknown>): string[] {
+  if (!Array.isArray(props.apiFilterFields)) return [];
+  const keys: string[] = [];
+  for (const entry of props.apiFilterFields) {
+    if (
+      entry &&
+      typeof entry === 'object' &&
+      typeof (entry as { key?: unknown }).key === 'string'
+    ) {
+      const k = (entry as { key: string }).key.trim();
+      if (k && !keys.includes(k)) keys.push(k);
+    }
+  }
+  return keys;
+}
+
+async function resolveExternalApiConfigFromProps(
+  props: Record<string, unknown>,
+  ctx: LoaderContext,
+  facetKeys: string[] = []
+) {
+  let presetRecord: Awaited<
+    ReturnType<
+      typeof import('@/server/actions/external-api.actions').getExternalApiPresetForRender
+    >
+  > = null;
+  if (
+    typeof props.apiPresetId === 'string' &&
+    props.apiPresetId.trim() &&
+    !(typeof props.apiEndpointUrl === 'string' && props.apiEndpointUrl.trim())
+  ) {
+    try {
+      const { getExternalApiPresetForRender } = await import(
+        '@/server/actions/external-api.actions'
+      );
+      presetRecord = await getExternalApiPresetForRender(
+        props.apiPresetId.trim(),
+        Boolean(ctx.editor || ctx.preview)
+      );
+    } catch {
+      presetRecord = null;
+    }
+  }
+
+  const effectiveEndpointUrl =
+    typeof props.apiEndpointUrl === 'string' && props.apiEndpointUrl.trim()
+      ? props.apiEndpointUrl.trim()
+      : presetRecord?.endpointUrl?.trim() ?? '';
+
+  if (props.apiConfig && typeof props.apiConfig === 'object') {
+    return {
+      apiConfig: {
+        ...(props.apiConfig as Record<string, unknown>),
+        ...(facetKeys.length > 0 ? { facetKeys } : {}),
+      },
+      presetRecord,
+    };
+  }
+  if (!effectiveEndpointUrl) return { apiConfig: undefined, presetRecord };
+
+  return {
+    presetRecord,
+    apiConfig: {
+      endpointUrl: effectiveEndpointUrl,
+      method:
+        (props.apiMethod ?? presetRecord?.method) === 'POST' ? 'POST' : 'GET',
+      headers:
+        props.apiHeaders && typeof props.apiHeaders === 'object'
+          ? props.apiHeaders
+          : (presetRecord?.headers ?? {}),
+      ...(props.apiQueryParams && typeof props.apiQueryParams === 'object'
+        ? { queryParams: props.apiQueryParams }
+        : presetRecord?.queryParams
+          ? { queryParams: presetRecord.queryParams }
+          : {}),
+      ...(Array.isArray(props.apiDataFilters)
+        ? { dataFilters: props.apiDataFilters }
+        : Array.isArray(presetRecord?.dataFilters)
+          ? { dataFilters: presetRecord.dataFilters }
+          : {}),
+      ...(typeof props.apiBody === 'string' && props.apiBody
+        ? { body: props.apiBody }
+        : presetRecord?.body
+          ? { body: presetRecord.body }
+          : {}),
+      itemsPath:
+        typeof props.apiItemsPath === 'string'
+          ? props.apiItemsPath
+          : (presetRecord?.itemsPath ?? ''),
+      ...(typeof props.apiTotalPath === 'string' && props.apiTotalPath
+        ? { totalPath: props.apiTotalPath }
+        : presetRecord?.totalPath
+          ? { totalPath: presetRecord.totalPath }
+          : {}),
+      ...(facetKeys.length > 0 ? { facetKeys } : {}),
+      fieldMap: {
+        id:
+          typeof props.apiFieldId === 'string' && props.apiFieldId
+            ? props.apiFieldId
+            : (presetRecord?.fieldId ?? 'id'),
+        title:
+          typeof props.apiFieldTitle === 'string' && props.apiFieldTitle
+            ? props.apiFieldTitle
+            : (presetRecord?.fieldTitle ?? 'title'),
+        ...(typeof props.apiFieldUrl === 'string' && props.apiFieldUrl
+          ? { url: props.apiFieldUrl }
+          : presetRecord?.fieldUrl
+            ? { url: presetRecord.fieldUrl }
+            : {}),
+        ...(typeof props.apiFieldExcerpt === 'string' && props.apiFieldExcerpt
+          ? { excerpt: props.apiFieldExcerpt }
+          : presetRecord?.fieldExcerpt
+            ? { excerpt: presetRecord.fieldExcerpt }
+            : {}),
+        ...(typeof props.apiFieldImage === 'string' && props.apiFieldImage
+          ? { image: props.apiFieldImage }
+          : presetRecord?.fieldImage
+            ? { image: presetRecord.fieldImage }
+            : {}),
+        ...(typeof props.apiFieldPublishedAt === 'string' &&
+        props.apiFieldPublishedAt
+          ? { publishedAt: props.apiFieldPublishedAt }
+          : presetRecord?.fieldPublishedAt
+            ? { publishedAt: presetRecord.fieldPublishedAt }
+            : {}),
+      },
+      cacheTtlSeconds:
+        typeof props.apiCacheTtlSeconds === 'number'
+          ? props.apiCacheTtlSeconds
+          : (presetRecord?.cacheTtlSeconds ?? 60),
+      timeoutMs:
+        typeof props.apiTimeoutMs === 'number'
+          ? props.apiTimeoutMs
+          : (presetRecord?.timeoutMs ?? 4000),
+    },
+  };
 }
 
 const loadQueryLoop: BlockLoader = async (props, ctx) => {
@@ -817,6 +974,15 @@ const loadQueryLoop: BlockLoader = async (props, ctx) => {
   const currentId =
     (ctx.post?.id as string | undefined) ?? (ctx.pageId as string | undefined);
 
+  const facetKeys =
+    source === 'external-api' ? extractExternalApiFacetKeys(props) : [];
+  const resolvedExternalApi =
+    source === 'external-api'
+      ? await resolveExternalApiConfigFromProps(props, ctx, facetKeys)
+      : undefined;
+  const resolvedApiConfig = resolvedExternalApi?.apiConfig;
+  const presetRecord = resolvedExternalApi?.presetRecord ?? null;
+
   const { resolveListingQuery } =
     await import('@/server/actions/listing.actions');
   const result = await resolveListingQuery(
@@ -825,6 +991,7 @@ const loadQueryLoop: BlockLoader = async (props, ctx) => {
       ...(typeof props.collectionId === 'string' && props.collectionId
         ? { collectionId: props.collectionId }
         : {}),
+      ...(resolvedApiConfig ? { apiConfig: resolvedApiConfig } : {}),
       filters,
       ...(source === 'collection-entries'
         ? { fieldFilters: sanitizeFieldFilters(props.fieldFilters) }
@@ -844,10 +1011,60 @@ const loadQueryLoop: BlockLoader = async (props, ctx) => {
     }
   );
 
+  let finalItems = result.items;
+  let finalTotal = result.total;
+  let finalTotalPages = result.totalPages;
+
+  const effectiveApiFields = Array.isArray(props.apiFields)
+    ? props.apiFields
+    : presetRecord?.fields;
+
+  if (source === 'external-api' && finalItems.length > 0) {
+    const { buildFieldMetaFromApiFields } = await import(
+      '@/lib/external-api-schema'
+    );
+    const customFieldsMeta = Array.isArray(effectiveApiFields)
+      ? buildFieldMetaFromApiFields(effectiveApiFields as any)
+      : {};
+
+    if (Object.keys(customFieldsMeta).length > 0) {
+      finalItems = finalItems.map(item => ({
+        ...item,
+        raw: {
+          ...(item.raw ?? {}),
+          __fieldMeta: {
+            ...((item.raw?.__fieldMeta as Record<string, unknown>) ?? {}),
+            ...customFieldsMeta,
+          },
+        },
+      }));
+    }
+
+    const selectedId =
+      typeof props.apiSelectedItemId === 'string' &&
+      props.apiSelectedItemId.trim()
+        ? props.apiSelectedItemId.trim()
+        : (presetRecord?.selectedItemId?.trim() ?? '');
+    if (selectedId) {
+      const matched = finalItems.filter(it => String(it.id) === selectedId);
+      if (matched.length > 0) {
+        if (props.apiFilterToSelectedItem !== false) {
+          finalItems = matched;
+          finalTotal = matched.length;
+          finalTotalPages = 1;
+        } else {
+          // Move selected post first so card template slot & preview inspect it first
+          const restItems = finalItems.filter(it => String(it.id) !== selectedId);
+          finalItems = [...matched, ...restItems];
+        }
+      }
+    }
+  }
+
   // Build crawlable page hrefs preserving other namespaces' params (R577 / QRY-07)
   const preserved = buildPreservedParams(ctx.searchParams, loopId);
   const pageHrefs: Record<number, string> = {};
-  for (let p = 1; p <= result.totalPages; p++) {
+  for (let p = 1; p <= finalTotalPages; p++) {
     const encoded = encodeNamespacedParams(
       { ...activeParams, page: p },
       loopId
@@ -860,10 +1077,16 @@ const loadQueryLoop: BlockLoader = async (props, ctx) => {
   const clearQs = clearSp.toString();
 
   return {
-    items: result.items,
-    total: result.total,
+    items: finalItems,
+    total: finalTotal,
     page: result.page,
-    totalPages: result.totalPages,
+    totalPages: finalTotalPages,
+    ...(result.error ? { error: result.error } : {}),
+    ...(source === 'external-api' &&
+    Array.isArray(effectiveApiFields) &&
+    !Array.isArray(props.apiFields)
+      ? { apiFields: effectiveApiFields }
+      : {}),
     facets: result.facets,
     activeParams,
     pageHrefs,
@@ -901,17 +1124,24 @@ const loadLoopGrid: BlockLoader = async (props, ctx) => {
   const templateId =
     typeof props.templateId === 'string' ? props.templateId : '';
   const draft = Boolean(ctx.editor || ctx.preview);
-  const [listing, template] = await Promise.all([
-    loadQueryLoop(props, ctx),
-    templateId
-      ? import('@/server/actions/loop-template.actions')
-          .then(m => m.getLoopTemplateDocument(templateId, draft))
-          .catch(err => {
-            console.error('[builder/loaders] loop template failed:', err);
-            return null;
-          })
-      : null,
-  ]);
+  const template = templateId
+    ? await import('@/server/actions/loop-template.actions')
+        .then(m => m.getLoopTemplateDocument(templateId, draft))
+        .catch(err => {
+          console.error('[builder/loaders] loop template failed:', err);
+          return null;
+        })
+    : null;
+
+  const effectiveProps =
+    props.source === 'external-api' &&
+    !(typeof props.apiEndpointUrl === 'string' && props.apiEndpointUrl.trim()) &&
+    !(typeof props.apiPresetId === 'string' && props.apiPresetId.trim()) &&
+    template?.externalApiId
+      ? { ...props, apiPresetId: template.externalApiId }
+      : props;
+
+  const listing = await loadQueryLoop(effectiveProps, ctx);
   if (!template) return { ...listing, template: null, templateName: '' };
   // Run loaders inside the template (menus, global blocks…) once; per-item
   // `loopItem` bindings stay for the grid to fill in.
@@ -975,10 +1205,22 @@ const loadQueryFilter: BlockLoader = async (props, ctx) => {
     // No post type picked yet: placeholder options in the editor.
     return { activeParams, totalResults: 0, preservedHiddenParams };
   }
+  const facetKeys =
+    source === 'external-api' ? extractExternalApiFacetKeys(props) : [];
+  const resolvedExternalApi =
+    source === 'external-api'
+      ? await resolveExternalApiConfigFromProps(props, ctx, facetKeys)
+      : undefined;
+  const resolvedApiConfig = resolvedExternalApi?.apiConfig;
+  const presetRecord = resolvedExternalApi?.presetRecord ?? null;
+  if (source === 'external-api' && !resolvedApiConfig) {
+    return { activeParams, totalResults: 0, preservedHiddenParams };
+  }
   const result = await resolveListingQuery(
     {
       source,
       ...(collectionId ? { collectionId } : {}),
+      ...(resolvedApiConfig ? { apiConfig: resolvedApiConfig } : {}),
       filters,
       sortField,
       sortOrder,

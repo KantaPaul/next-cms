@@ -144,6 +144,7 @@ import {
   convertBlogBlockToQueryLoop,
   toLoopItemContext,
 } from '@/builder/blocks/query-loop';
+import { resolveEffectiveFieldKind } from '@/builder/blocks/loop-item-field';
 import { LoopItemProvider } from '@/builder/blocks/query-loop-client';
 import { useLiveLoaded } from './use-live-loaded';
 import {
@@ -157,6 +158,7 @@ import type { BuilderData } from '@/builder/data';
 import { editorSetup } from '@/builder/definitions';
 import {
   ALL_PARTS,
+  BUTTON_PARTS,
   styleControl,
   VISUAL_MEDIA_PARTS,
 } from '@/builder/definitions/fields';
@@ -1206,6 +1208,308 @@ export function NewEditor({
         },
       };
     }
+    if (next.inspectorBlocks.LoopItemField) {
+      const lif = next.inspectorBlocks.LoopItemField;
+      const itemsField = lif.fields.items;
+      const byPath = new Map(
+        (loopItemFields ?? []).map(f => [f.path, f] as const)
+      );
+      const rowKind = (item: Record<string, unknown> | undefined) => {
+        const key =
+          typeof item?.customKey === 'string' ? item.customKey.trim() : '';
+        const meta = key ? byPath.get(key) : undefined;
+        return resolveEffectiveFieldKind((item ?? {}) as any, meta);
+      };
+      if (itemsField?.type === 'list' && itemsField.item) {
+        const itemDefs = itemsField.item;
+        next = {
+          ...next,
+          inspectorBlocks: {
+            ...next.inspectorBlocks,
+            LoopItemField: {
+              ...lif,
+              fields: {
+                ...lif.fields,
+                items: {
+                  ...itemsField,
+                  item: {
+                    ...itemDefs,
+                    ...(itemDefs.textSize
+                      ? {
+                          textSize: {
+                            ...itemDefs.textSize,
+                            when: (item: Record<string, unknown>) =>
+                              ['title', 'text', 'number', 'select'].includes(
+                                rowKind(item)
+                              ),
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.linkToItem
+                      ? {
+                          linkToItem: {
+                            ...itemDefs.linkToItem,
+                            when: (item: Record<string, unknown>) =>
+                              ['title', 'image', 'gallery', 'text'].includes(
+                                rowKind(item)
+                              ) && !item?.popupTrigger,
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.urlDisplay
+                      ? {
+                          urlDisplay: {
+                            ...itemDefs.urlDisplay,
+                            when: (item: Record<string, unknown>) =>
+                              ['permalink', 'url'].includes(rowKind(item)),
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.readMoreLabel
+                      ? {
+                          readMoreLabel: {
+                            ...itemDefs.readMoreLabel,
+                            when: (item: Record<string, unknown>) =>
+                              ['permalink', 'url'].includes(rowKind(item)) &&
+                              item?.urlDisplay !== 'text',
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.showArrow
+                      ? {
+                          showArrow: {
+                            ...itemDefs.showArrow,
+                            when: (item: Record<string, unknown>) =>
+                              ['permalink', 'url'].includes(rowKind(item)) &&
+                              item?.urlDisplay !== 'text',
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.urlConfig
+                      ? {
+                          urlConfig: {
+                            ...itemDefs.urlConfig,
+                            when: (item: Record<string, unknown>) =>
+                              ['permalink', 'url'].includes(rowKind(item)) &&
+                              item?.urlDisplay !== 'text',
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.dateFormat
+                      ? {
+                          dateFormat: {
+                            ...itemDefs.dateFormat,
+                            when: (item: Record<string, unknown>) =>
+                              rowKind(item) === 'date',
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.datePrefix
+                      ? {
+                          datePrefix: {
+                            ...itemDefs.datePrefix,
+                            when: (item: Record<string, unknown>) =>
+                              rowKind(item) === 'date',
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.authorDisplay
+                      ? {
+                          authorDisplay: {
+                            ...itemDefs.authorDisplay,
+                            when: (item: Record<string, unknown>) =>
+                              rowKind(item) === 'author',
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.authorPrefix
+                      ? {
+                          authorPrefix: {
+                            ...itemDefs.authorPrefix,
+                            when: (item: Record<string, unknown>) =>
+                              rowKind(item) === 'author' &&
+                              item?.authorDisplay !== 'avatar',
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.termsDisplay
+                      ? {
+                          termsDisplay: {
+                            ...itemDefs.termsDisplay,
+                            when: (item: Record<string, unknown>) =>
+                              rowKind(item) === 'terms',
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.termsTaxonomy
+                      ? {
+                          termsTaxonomy: {
+                            ...itemDefs.termsTaxonomy,
+                            when: (item: Record<string, unknown>) =>
+                              rowKind(item) === 'terms' &&
+                              item?.customKey !== 'category' &&
+                              item?.customKey !== 'tags',
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.maxLines
+                      ? {
+                          maxLines: {
+                            ...itemDefs.maxLines,
+                            when: (item: Record<string, unknown>) =>
+                              ['richtext', 'excerpt'].includes(rowKind(item)),
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.stripHtml
+                      ? {
+                          stripHtml: {
+                            ...itemDefs.stripHtml,
+                            when: (item: Record<string, unknown>) =>
+                              ['richtext', 'excerpt'].includes(rowKind(item)),
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.imageAspect
+                      ? {
+                          imageAspect: {
+                            ...itemDefs.imageAspect,
+                            when: (item: Record<string, unknown>) =>
+                              rowKind(item) === 'image',
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.galleryViewMode
+                      ? {
+                          galleryViewMode: {
+                            ...itemDefs.galleryViewMode,
+                            when: (item: Record<string, unknown>) =>
+                              rowKind(item) === 'gallery',
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.galleryAspect
+                      ? {
+                          galleryAspect: {
+                            ...itemDefs.galleryAspect,
+                            when: (item: Record<string, unknown>) =>
+                              rowKind(item) === 'gallery',
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.excludeFeaturedImage
+                      ? {
+                          excludeFeaturedImage: {
+                            ...itemDefs.excludeFeaturedImage,
+                            when: (item: Record<string, unknown>) =>
+                              rowKind(item) === 'gallery',
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.showGalleryBadge
+                      ? {
+                          showGalleryBadge: {
+                            ...itemDefs.showGalleryBadge,
+                            when: (item: Record<string, unknown>) =>
+                              ['image', 'gallery'].includes(rowKind(item)),
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.galleryBadgePosition
+                      ? {
+                          galleryBadgePosition: {
+                            ...itemDefs.galleryBadgePosition,
+                            when: (item: Record<string, unknown>) =>
+                              ['image', 'gallery'].includes(rowKind(item)) &&
+                              item?.showGalleryBadge !== false,
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.popupTrigger
+                      ? {
+                          popupTrigger: {
+                            ...itemDefs.popupTrigger,
+                            when: (item: Record<string, unknown>) =>
+                              ['image', 'gallery', 'video'].includes(
+                                rowKind(item)
+                              ),
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.overlayId
+                      ? {
+                          overlayId: {
+                            ...itemDefs.overlayId,
+                            when: (item: Record<string, unknown>) =>
+                              ['image', 'gallery', 'video'].includes(
+                                rowKind(item)
+                              ) && Boolean(item?.popupTrigger),
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.posterUrl
+                      ? {
+                          posterUrl: {
+                            ...itemDefs.posterUrl,
+                            when: (item: Record<string, unknown>) =>
+                              rowKind(item) === 'video' &&
+                              Boolean(item?.popupTrigger),
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.motion
+                      ? {
+                          motion: {
+                            ...itemDefs.motion,
+                            when: (item: Record<string, unknown>) =>
+                              rowKind(item) === 'image',
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.style?.type === 'custom'
+                      ? {
+                          style: {
+                            ...itemDefs.style,
+                            render: styleControl(ALL_PARTS, item => {
+                              const k = rowKind(item);
+                              if (
+                                [
+                                  'image',
+                                  'gallery',
+                                  'video',
+                                  'embed',
+                                ].includes(k)
+                              ) {
+                                return VISUAL_MEDIA_PARTS;
+                              }
+                              if (
+                                ['permalink', 'url', 'terms'].includes(k)
+                              ) {
+                                return BUTTON_PARTS;
+                              }
+                              return ALL_PARTS;
+                            }),
+                          },
+                        }
+                      : {}),
+                    ...(itemDefs.badgeStyle
+                      ? {
+                          badgeStyle: {
+                            ...itemDefs.badgeStyle,
+                            when: (item: Record<string, unknown>) =>
+                              ['image', 'gallery'].includes(rowKind(item)) &&
+                              item?.showGalleryBadge !== false,
+                          },
+                        }
+                      : {}),
+                  },
+                },
+              },
+            },
+          },
+        };
+      }
+    }
     return next;
   }, [
     baseSetup,
@@ -1215,6 +1519,7 @@ export function NewEditor({
     kind,
     collectionBlocks,
     collectionEntry,
+    loopItemFields,
     document,
   ]);
   const adapter = useMemo(

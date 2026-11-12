@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const sourceSchema = z.enum(['posts', 'collection']);
+export const sourceSchema = z.enum(['posts', 'collection', 'external-api']);
 
 export const contentSchema = z.object({
   root: z
@@ -19,6 +19,7 @@ export const createLoopTemplateSchema = z.object({
   name: z.string().trim().min(1).max(150),
   sourceType: sourceSchema,
   collectionId: z.string().nullish(),
+  externalApiId: z.string().nullish(),
   content: contentSchema.optional(),
 });
 
@@ -33,5 +34,6 @@ export const listLoopTemplateOptionsSchema = z
   .object({
     sourceType: sourceSchema.optional(),
     collectionId: z.string().nullish(),
+    externalApiId: z.string().nullish(),
   })
   .optional();

@@ -22,7 +22,11 @@ import {
   formActionsService,
 } from '@/server/services/form-actions';
 import { safeUrlSchema } from '@/builder/schemas/style.schema';
-import { isFieldVisible } from '@/builder/forms/logic';
+import {
+  evaluateFormula,
+  isFieldConditionallyRequired,
+  isFieldVisible,
+} from '@/builder/forms/logic';
 import { storage } from '@/server/storage';
 import { postTemplatesService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
 
@@ -52,10 +56,22 @@ export type FormField = {
   hiddenSource?: 'static' | 'url_param';
   conditions?: Array<{
     field: string;
-    operator: 'equals' | 'not_equals' | 'contains' | 'empty' | 'not_empty';
+    operator:
+      | 'equals'
+      | 'not_equals'
+      | 'contains'
+      | 'empty'
+      | 'not_empty'
+      | 'gt'
+      | 'gte'
+      | 'lt'
+      | 'lte';
     value?: string;
   }>;
   conditionMatch?: 'all' | 'any';
+  conditionAction?: 'show' | 'hide' | 'require';
+  formula?: string;
+  decimals?: number;
 };
 
 export type SniffResult = {
@@ -396,14 +412,25 @@ export function filterAndValidateFormPayload(
     const visible = isFieldVisible(field, rawStringValues);
     if (!visible) continue;
 
+    const isRequired = Boolean(
+      field.required || isFieldConditionallyRequired(field, rawStringValues)
+    );
+
     if (field.type === 'file') {
       const count = uploadedFileCounts[field.name] ?? 0;
-      if (field.required && count === 0) {
+      if (isRequired && count === 0) {
         return {
           ok: false,
           error: `${field.label || field.name} is required.`,
         };
       }
+    } else if (field.type === 'calculated') {
+      const computed = evaluateFormula(
+        field.formula,
+        rawStringValues,
+        field.decimals
+      );
+      payload[field.name] = computed !== null ? String(computed) : '';
     } else {
       const val = (rawStringValues[field.name] ?? '').slice(0, 5000);
       if (field.type === 'acceptance') {
@@ -415,7 +442,7 @@ export function filterAndValidateFormPayload(
           };
         }
         payload[field.name] = val;
-      } else if (field.required && !val.trim()) {
+      } else if (isRequired && !val.trim()) {
         return {
           ok: false,
           error: `${field.label || field.name} is required.`,
@@ -668,8 +695,18 @@ export const formsService = {
               mime: sniff.mime || file.type || 'application/octet-stream',
             });
           }
+        } else if (field.type === 'calculated') {
+          const computed = evaluateFormula(
+            field.formula,
+            rawStringValues,
+            field.decimals
+          );
+          payload[field.name] = computed !== null ? String(computed) : '';
         } else {
           const val = (rawStringValues[field.name] ?? '').slice(0, 5000);
+          const isRequired = Boolean(
+            field.required || isFieldConditionallyRequired(field, rawStringValues)
+          );
           payload[field.name] = val;
 
           if (field.type === 'acceptance') {
@@ -681,7 +718,7 @@ export const formsService = {
                 error: `${field.label || field.name} must be accepted.`,
               };
             }
-          } else if (field.required && !val.trim()) {
+          } else if (isRequired && !val.trim()) {
             return {
               ok: false as const,
               status: 400,

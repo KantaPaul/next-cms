@@ -12,6 +12,7 @@ export const LISTING_SOURCES = [
   'pages',
   'collection-entries',
   'videos',
+  'external-api',
 ] as const;
 
 export type ListingSource = (typeof LISTING_SOURCES)[number];
@@ -66,7 +67,32 @@ export const ALLOWED_FILTER_FIELDS: Record<ListingSource, readonly string[]> = {
     'minNumber',
     'maxNumber',
   ],
+  'external-api': [
+    'search',
+    'publishedAfter',
+    'publishedBefore',
+    'hasImage',
+    'minNumber',
+    'maxNumber',
+  ],
 } as const;
+
+export const EXT_FILTER_PREFIX = 'ext:';
+export const EXT_PARAM_PREFIX = 'ext_';
+export const EXT_KEY_PATTERN = /^[a-zA-Z0-9_.-]{1,120}$/;
+
+/** Extracts the raw field key from an `ext:<key>` filter field, or null. */
+export function externalApiFilterKey(field: string): string | null {
+  if (!field.startsWith(EXT_FILTER_PREFIX)) return null;
+  const key = field.slice(EXT_FILTER_PREFIX.length);
+  return EXT_KEY_PATTERN.test(key) ? key : null;
+}
+
+export interface ExternalApiFilterFieldConfig {
+  key: string;
+  label?: string;
+  style?: 'select' | 'checkboxes' | 'chips';
+}
 
 /** Allowlisted sortable fields per source. */
 export const ALLOWED_SORT_FIELDS: Record<ListingSource, readonly string[]> = {
@@ -74,7 +100,55 @@ export const ALLOWED_SORT_FIELDS: Record<ListingSource, readonly string[]> = {
   pages: ['publishedAt', 'title', 'createdAt', 'updatedAt'],
   'collection-entries': ['publishedAt', 'createdAt', 'updatedAt'],
   videos: ['publishedAt', 'title', 'position', 'duration', 'createdAt'],
+  'external-api': ['publishedAt', 'title'],
 } as const;
+
+export const externalApiFieldMapSchema = z.object({
+  id: z.string().min(1).default('id'),
+  title: z.string().min(1).default('title'),
+  slug: z.string().optional(),
+  url: z.string().optional(),
+  excerpt: z.string().optional(),
+  image: z.string().optional(),
+  publishedAt: z.string().optional(),
+});
+
+export type ExternalApiFieldMap = z.infer<typeof externalApiFieldMapSchema>;
+
+export const externalApiConfigSchema = z.object({
+  endpointUrl: z.string().url(),
+  method: z.enum(['GET', 'POST']).default('GET'),
+  headers: z.record(z.string(), z.string()).default({}),
+  queryParams: z.record(z.string(), z.string()).optional(),
+  dataFilters: z
+    .array(
+      z.object({
+        key: z.string(),
+        operator: z.enum([
+          'equals',
+          'not_equals',
+          'contains',
+          'not_contains',
+          'starts_with',
+          'gt',
+          'lt',
+          'in',
+          'not_empty',
+        ]),
+        value: z.string().optional(),
+      })
+    )
+    .optional(),
+  body: z.string().optional(),
+  itemsPath: z.string().default(''),
+  totalPath: z.string().optional(),
+  facetKeys: z.array(z.string()).optional(),
+  fieldMap: externalApiFieldMapSchema.default({ id: 'id', title: 'title' }),
+  cacheTtlSeconds: z.number().int().min(0).max(3600).default(60),
+  timeoutMs: z.number().int().min(500).max(10000).default(4000),
+});
+
+export type ExternalApiConfig = z.infer<typeof externalApiConfigSchema>;
 
 export type QueryFilterOperator =
   | 'eq'
@@ -144,6 +218,7 @@ export const listingQuerySchema = z
   .object({
     source: z.enum(LISTING_SOURCES),
     collectionId: z.string().optional(),
+    apiConfig: externalApiConfigSchema.optional(),
     filters: z.array(queryFilterSchema).default([]),
     /** Custom-field filters; collection-entries only. */
     fieldFilters: z.array(fieldFilterSchema).max(20).default([]),
@@ -170,6 +245,15 @@ export const listingQuerySchema = z
       });
     }
 
+    // 1b. Validate external-api requires apiConfig
+    if (val.source === 'external-api' && !val.apiConfig?.endpointUrl) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['apiConfig'],
+        message: 'apiConfig with endpointUrl is required when source is external-api',
+      });
+    }
+
     // 2. Validate sortField is allowlisted for the source
     const allowedSorts = ALLOWED_SORT_FIELDS[val.source] ?? [];
     const isFieldSort =
@@ -193,7 +277,10 @@ export const listingQuerySchema = z
     // 3. Validate each filter field is allowlisted for the source
     const allowedFilters = ALLOWED_FILTER_FIELDS[val.source] ?? [];
     val.filters.forEach((filter, idx) => {
-      if (!allowedFilters.includes(filter.field)) {
+      const isExtField =
+        val.source === 'external-api' &&
+        externalApiFilterKey(filter.field) !== null;
+      if (!isExtField && !allowedFilters.includes(filter.field)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['filters', idx, 'field'],
@@ -243,6 +330,7 @@ export interface ListingFacets {
   authors?: FacetOption[];
   providers?: FacetOption[];
   hasImage?: FacetOption[];
+  ext?: Record<string, FacetOption[]>;
 }
 
 export interface ListingQueryResult {
@@ -253,6 +341,7 @@ export interface ListingQueryResult {
   totalPages: number;
   hasMore: boolean;
   facets?: ListingFacets;
+  error?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -282,6 +371,7 @@ export interface ParsedListingParams {
   toggle?: boolean;
   sort?: string;
   order?: 'asc' | 'desc';
+  ext?: Record<string, string[]>;
 }
 
 /** Parses query params from URLSearchParams or record with an optional namespace prefix. */
@@ -354,6 +444,22 @@ export function parseNamespacedParams(
   const rawOrder = getParam('order')?.toLowerCase();
   const order = rawOrder === 'asc' || rawOrder === 'desc' ? rawOrder : undefined;
 
+  const extPrefix = formatNamespacedParam(EXT_PARAM_PREFIX, namespace);
+  const ext: Record<string, string[]> = {};
+  const rawKeys =
+    rawParams instanceof URLSearchParams
+      ? Array.from(new Set(rawParams.keys()))
+      : Object.keys(rawParams);
+  for (const fullKey of rawKeys) {
+    if (!fullKey.startsWith(extPrefix)) continue;
+    const fieldKey = fullKey.slice(extPrefix.length);
+    if (!EXT_KEY_PATTERN.test(fieldKey)) continue;
+    const values = getMultiParam(`${EXT_PARAM_PREFIX}${fieldKey}`);
+    if (values.length > 0) {
+      ext[fieldKey] = values;
+    }
+  }
+
   return {
     ...(page !== undefined && { page }),
     ...(search && { search: search.trim() }),
@@ -371,6 +477,7 @@ export function parseNamespacedParams(
     ...(toggle !== undefined && { toggle }),
     ...(sort && { sort: sort.trim() }),
     ...(order && { order }),
+    ...(Object.keys(ext).length > 0 && { ext }),
   };
 }
 
@@ -422,6 +529,16 @@ export function encodeNamespacedParams(
   }
   if (params.order) {
     encoded[formatNamespacedParam('order', namespace)] = params.order;
+  }
+  if (params.ext) {
+    for (const [fieldKey, values] of Object.entries(params.ext)) {
+      if (!EXT_KEY_PATTERN.test(fieldKey) || !Array.isArray(values)) continue;
+      const cleaned = values.map(v => v.trim()).filter(Boolean);
+      if (cleaned.length > 0) {
+        encoded[formatNamespacedParam(`${EXT_PARAM_PREFIX}${fieldKey}`, namespace)] =
+          cleaned.join(',');
+      }
+    }
   }
   return encoded;
 }

@@ -16,6 +16,7 @@ export type OverlayTriggerProps = Omit<
 > & {
   overlayId?: string | null;
   lightbox?: OverlayTriggerLightbox;
+  loopItem?: unknown;
   children: ReactNode;
 };
 
@@ -26,6 +27,7 @@ export type OverlayTriggerProps = Omit<
 export function OverlayTrigger({
   overlayId,
   lightbox,
+  loopItem,
   children,
   ...rest
 }: OverlayTriggerProps) {
@@ -33,6 +35,15 @@ export function OverlayTrigger({
 
   if (!id) {
     return <>{children}</>;
+  }
+
+  let loopItemAttr: string | undefined;
+  if (loopItem && typeof loopItem === 'object') {
+    try {
+      loopItemAttr = JSON.stringify(loopItem);
+    } catch {
+      loopItemAttr = undefined;
+    }
   }
 
   return (
@@ -46,6 +57,7 @@ export function OverlayTrigger({
       data-overlay-video={lightbox?.video || undefined}
       data-overlay-poster={lightbox?.poster || undefined}
       data-overlay-video-id={lightbox?.videoId || undefined}
+      data-overlay-loop-item={loopItemAttr}
       {...rest}
     >
       {children}

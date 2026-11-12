@@ -1,8 +1,8 @@
 /**
- * Loop Grid (Elementor-style Loop Builder). Queries blog posts or one post
- * type's entries and renders a saved Loop Item template once per item. Layout,
- * pagination, empty state and JSON-LD come from QueryLoop; this block only
- * swaps the card for the template.
+ * Loop Grid (Elementor-style Loop Builder). Queries blog posts, one post
+ * type's entries, or an External API and renders a saved Loop Item template
+ * once per item. Layout, pagination, empty state and JSON-LD come from
+ * QueryLoop; this block only swaps the card for the template.
  */
 import {
   type BlockComponents,
@@ -16,7 +16,7 @@ import { resolvePanels } from '../resolve-panels';
 import { QueryLoop, type QueryLoopProps } from './query-loop';
 import * as registry from './registry';
 
-export type LoopGridSource = 'posts' | 'collection-entries';
+export type LoopGridSource = 'posts' | 'collection-entries' | 'external-api';
 
 export type LoopGridProps = Omit<QueryLoopProps, 'source' | 'layout'> & {
   source?: LoopGridSource;
@@ -29,7 +29,9 @@ export type LoopGridProps = Omit<QueryLoopProps, 'source' | 'layout'> & {
   templateName?: string;
 };
 
-function hasBlocks(doc: BuilderDocument | null | undefined): doc is BuilderDocument {
+function hasBlocks(
+  doc: BuilderDocument | null | undefined
+): doc is BuilderDocument {
   return !!doc && Array.isArray(doc.rootSlot) && doc.rootSlot.length > 0;
 }
 
@@ -42,7 +44,7 @@ export function LoopGrid({
   card: _unusedCard,
   hasCustomCard: _unusedHasCard,
   fieldFilters: _fieldFilters,
-  source: _source,
+  source,
   ...rest
 }: LoopGridProps) {
   const ready = hasBlocks(template);
@@ -61,7 +63,7 @@ export function LoopGrid({
 
   return (
     <>
-      {editing && !ready && (
+      {editing && !ready && source !== 'external-api' && (
         <div className="mx-auto mb-3 max-w-3xl rounded-lg border border-dashed border-blue-300 bg-blue-50/60 px-4 py-3 text-sm text-slate-700">
           {templateId ? (
             <>
@@ -95,6 +97,7 @@ export function LoopGrid({
       )}
       <QueryLoop
         {...rest}
+        source={source}
         editing={editing}
         card={card}
         hasCustomCard={ready}

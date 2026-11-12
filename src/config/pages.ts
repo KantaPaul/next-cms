@@ -92,6 +92,7 @@ export const PAGES = {
     SITES: '/dashboard/sites',
     USERS: '/dashboard/users',
     API: '/dashboard/api',
+    EXTERNAL_API: '/dashboard/external-api',
     VIDEOS: '/dashboard/videos',
     LICENSES: '/dashboard/licenses',
     LICENSE: (id: string) => `/dashboard/licenses/${id}`,

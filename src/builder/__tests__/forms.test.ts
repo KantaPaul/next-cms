@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
+  evaluateFormula,
   type FormFieldLike,
+  getVisibleStepIndices,
+  isFieldConditionallyRequired,
   isFieldVisible,
   splitSteps,
   visibleRequiredFields,
@@ -188,6 +191,131 @@ describe('builder form logic (pure)', () => {
         req2.map(f => f.name),
         ['name', 'taxId', 'terms']
       );
+    });
+  });
+
+  describe('numeric operators & conditionAction (BLD-302)', () => {
+    it('evaluates gt, gte, lt, and lte operators numerically', () => {
+      const bulkDiscount: FormFieldLike = {
+        name: 'bulkNote',
+        type: 'text',
+        conditions: [{ field: 'qty', operator: 'gte', value: '10' }],
+      };
+      assert.equal(isFieldVisible(bulkDiscount, { qty: '10' }), true);
+      assert.equal(isFieldVisible(bulkDiscount, { qty: '25' }), true);
+      assert.equal(isFieldVisible(bulkDiscount, { qty: '9' }), false);
+      assert.equal(isFieldVisible(bulkDiscount, {}), false);
+
+      const smallOrder: FormFieldLike = {
+        name: 'smallFee',
+        type: 'text',
+        conditions: [
+          { field: 'qty', operator: 'gt', value: '0' },
+          { field: 'qty', operator: 'lt', value: '5' },
+        ],
+      };
+      assert.equal(isFieldVisible(smallOrder, { qty: '3' }), true);
+      assert.equal(isFieldVisible(smallOrder, { qty: '5' }), false);
+
+      const maxCheck: FormFieldLike = {
+        name: 'ok',
+        type: 'text',
+        conditions: [{ field: 'qty', operator: 'lte', value: '100' }],
+      };
+      assert.equal(isFieldVisible(maxCheck, { qty: '100' }), true);
+      assert.equal(isFieldVisible(maxCheck, { qty: '101' }), false);
+    });
+
+    it('supports hide and require conditionActions', () => {
+      const hiddenWhenMatched: FormFieldLike = {
+        name: 'shippingAddress',
+        type: 'text',
+        conditionAction: 'hide',
+        conditions: [{ field: 'pickup', operator: 'equals', value: 'yes' }],
+      };
+      assert.equal(isFieldVisible(hiddenWhenMatched, { pickup: 'yes' }), false);
+      assert.equal(isFieldVisible(hiddenWhenMatched, { pickup: 'no' }), true);
+
+      const requiredWhenMatched: FormFieldLike = {
+        name: 'companyVat',
+        type: 'text',
+        required: false,
+        conditionAction: 'require',
+        conditions: [{ field: 'plan', operator: 'equals', value: 'enterprise' }],
+      };
+      assert.equal(isFieldVisible(requiredWhenMatched, { plan: 'free' }), true);
+      assert.equal(
+        isFieldConditionallyRequired(requiredWhenMatched, { plan: 'free' }),
+        false
+      );
+      assert.equal(
+        isFieldConditionallyRequired(requiredWhenMatched, {
+          plan: 'enterprise',
+        }),
+        true
+      );
+      assert.deepEqual(
+        visibleRequiredFields([requiredWhenMatched], { plan: 'enterprise' }).map(
+          f => f.name
+        ),
+        ['companyVat']
+      );
+    });
+  });
+
+  describe('getVisibleStepIndices (BLD-302)', () => {
+    it('skips steps whose fields are all hidden', () => {
+      const fields: FormFieldLike[] = [
+        { name: 's1', type: 'step', label: 'Intro' },
+        { name: 'needsShipping', type: 'select' },
+        { name: 's2', type: 'step', label: 'Shipping' },
+        {
+          name: 'address',
+          type: 'text',
+          conditions: [
+            { field: 'needsShipping', operator: 'equals', value: 'yes' },
+          ],
+        },
+        { name: 's3', type: 'step', label: 'Confirm' },
+        { name: 'email', type: 'email' },
+      ];
+      const steps = splitSteps(fields);
+      assert.deepEqual(getVisibleStepIndices(steps, {}), [0, 2]);
+      assert.deepEqual(
+        getVisibleStepIndices(steps, { needsShipping: 'yes' }),
+        [0, 1, 2]
+      );
+    });
+  });
+
+  describe('evaluateFormula (BLD-302)', () => {
+    it('evaluates arithmetic expressions with field references and functions', () => {
+      assert.equal(
+        evaluateFormula('{qty} * {price} + 10', { qty: '3', price: '19.5' }),
+        68.5
+      );
+      assert.equal(
+        evaluateFormula('({subtotal} - {discount}) * 1.075', {
+          subtotal: '100',
+          discount: '20',
+        }),
+        86
+      );
+      assert.equal(
+        evaluateFormula('round(min({a}, {b}) / 3)', { a: '10', b: '25' }),
+        3
+      );
+      assert.equal(
+        evaluateFormula('max({a}, {b}) * 2', { a: '4', b: '9' }),
+        18
+      );
+    });
+
+    it('returns null for invalid formulas, division by zero, or empty input', () => {
+      assert.equal(evaluateFormula('', {}), null);
+      assert.equal(evaluateFormula('{a} / {b}', { a: '10', b: '0' }), null);
+      assert.equal(evaluateFormula('alert(1)', {}), null);
+      assert.equal(evaluateFormula('{a} +', { a: '1' }), null);
     });
   });
 });

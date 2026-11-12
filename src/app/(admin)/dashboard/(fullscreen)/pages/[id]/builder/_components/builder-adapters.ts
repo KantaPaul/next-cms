@@ -75,7 +75,13 @@ export type BuilderPageProps = {
   /** Loop Item templates: posts or entries the canvas can preview. */
   previewItems?: NormalizedListingItem[];
   /** Loop Item templates: fields offered by the `loopItem` dynamic source. */
-  loopItemFields?: { path: string; label: string; type?: string }[];
+  loopItemFields?: {
+    path: string;
+    label: string;
+    type?: string;
+    fieldType?: string;
+    config?: Record<string, unknown>;
+  }[];
 };
 
 /** Config for global blocks: no GlobalRef and no Global category so a global cannot nest another. */

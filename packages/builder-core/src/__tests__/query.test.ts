@@ -18,7 +18,33 @@ describe('Query foundation schema & validation (R571 / QRY-01)', () => {
       'pages',
       'collection-entries',
       'videos',
+      'external-api',
     ]);
+  });
+
+  it('validates external-api queries and requires apiConfig.endpointUrl', () => {
+    assert.throws(
+      () =>
+        listingQuerySchema.parse({
+          source: 'external-api',
+        }),
+      /apiConfig with endpointUrl is required/
+    );
+
+    const valid = listingQuerySchema.parse({
+      source: 'external-api',
+      apiConfig: {
+        endpointUrl: 'https://api.example.com/posts',
+        method: 'GET',
+        itemsPath: 'data.items',
+        fieldMap: { id: 'id', title: 'headline', excerpt: 'summary' },
+        cacheTtlSeconds: 120,
+      },
+      sortField: 'title',
+    });
+    assert.equal(valid.source, 'external-api');
+    assert.equal(valid.apiConfig?.endpointUrl, 'https://api.example.com/posts');
+    assert.equal(valid.apiConfig?.cacheTtlSeconds, 120);
   });
 
   it('validates a valid posts query', () => {
@@ -161,5 +187,47 @@ describe('Namespaced URL parameters (R573 / QRY-03)', () => {
       myBlock_q: 'cms',
       myBlock_category: 'tech',
     });
+  });
+
+  it('parses and encodes namespaced external API ext_ filter parameters', () => {
+    const parsed = parseNamespacedParams(
+      {
+        users_ext_address_city: 'Gwenborough,Wisokyburgh',
+        'users_ext_company.name': 'Romaguera-Crona',
+        other_ext_role: 'admin',
+      },
+      'users'
+    );
+    assert.deepEqual(parsed.ext, {
+      address_city: ['Gwenborough', 'Wisokyburgh'],
+      'company.name': ['Romaguera-Crona'],
+    });
+
+    const encoded = encodeNamespacedParams(
+      {
+        ext: {
+          'address.city': ['Gwenborough', 'Wisokyburgh'],
+        },
+      },
+      'users'
+    );
+    assert.deepEqual(encoded, {
+      'users_ext_address.city': 'Gwenborough,Wisokyburgh',
+    });
+  });
+
+  it('allows ext:<key> filters only for external-api source', () => {
+    const ok = listingQuerySchema.safeParse({
+      source: 'external-api',
+      apiConfig: { endpointUrl: 'https://jsonplaceholder.typicode.com/users' },
+      filters: [{ field: 'ext:address.city', operator: 'in', value: ['Gwenborough'] }],
+    });
+    assert.equal(ok.success, true);
+
+    const rejected = listingQuerySchema.safeParse({
+      source: 'posts',
+      filters: [{ field: 'ext:address.city', operator: 'in', value: ['Gwenborough'] }],
+    });
+    assert.equal(rejected.success, false);
   });
 });

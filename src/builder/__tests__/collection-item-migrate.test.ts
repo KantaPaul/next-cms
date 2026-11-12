@@ -3,11 +3,14 @@ import { describe, it } from 'node:test';
 import type { BuilderDocument } from '@nextcms/builder-core';
 import { migrateCollectionItems } from '../collection-item-migrate';
 
-const doc = (props: Record<string, unknown>): BuilderDocument =>
+const doc = (
+  props: Record<string, unknown>,
+  type = 'CollectionItem'
+): BuilderDocument =>
   ({
     version: 1,
     root: { props: {} },
-    nodes: { a: { id: 'a', type: 'CollectionItem', props, slots: {} } },
+    nodes: { a: { id: 'a', type, props, slots: {} } },
     children: ['a'],
   }) as unknown as BuilderDocument;
 
@@ -29,6 +32,29 @@ describe('migrateCollectionItems', () => {
         labelStyle: {},
       },
     ]);
+  });
+
+  it('migrates a legacy single-field LoopItemField into a one-row items list', () => {
+    const out = migrateCollectionItems(
+      doc(
+        {
+          field: 'custom',
+          customKey: 'gallery',
+          linkToItem: true,
+          showGalleryBadge: true,
+          galleryBadgePosition: 'top-right',
+          readMoreLabel: '',
+        },
+        'LoopItemField'
+      )
+    );
+    const props = out.nodes.a.props as Record<string, any>;
+    assert.equal(props.field, undefined);
+    assert.equal(Array.isArray(props.items), true);
+    assert.equal(props.items.length, 1);
+    assert.equal(props.items[0].field, 'custom');
+    assert.equal(props.items[0].customKey, 'gallery');
+    assert.equal(props.items[0].readMoreLabel, 'Read more');
   });
 
   it('leaves blocks that already have items, or no field, untouched', () => {

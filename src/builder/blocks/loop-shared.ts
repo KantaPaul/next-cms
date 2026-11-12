@@ -12,6 +12,8 @@ export const SAMPLE_LOOP_ITEMS: NormalizedListingItem[] = [
       'How structured content models, reusable blocks, and server-rendered queries keep multi-site teams fast.',
     image:
       'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&auto=format&fit=crop&q=80',
+    hasGallery: true,
+    galleryCount: 3,
     publishedAt: '2026-03-10T00:00:00.000Z',
     author: { id: 'author-1', name: 'Alex Morgan', image: null },
     terms: [
@@ -19,7 +21,7 @@ export const SAMPLE_LOOP_ITEMS: NormalizedListingItem[] = [
       { id: 'tag-1', name: 'Architecture', slug: 'architecture', taxonomy: 'tag' },
     ],
     source: 'posts',
-    raw: { readingTime: '5 min read', featured: true },
+    raw: { readingTime: '5 min read', featured: true, authorName: 'Alex Morgan' },
   },
   {
     id: 'sample-2',
@@ -37,7 +39,7 @@ export const SAMPLE_LOOP_ITEMS: NormalizedListingItem[] = [
       { id: 'tag-2', name: 'Localization', slug: 'localization', taxonomy: 'tag' },
     ],
     source: 'posts',
-    raw: { readingTime: '4 min read', featured: false },
+    raw: { readingTime: '4 min read', featured: false, authorName: 'Jamie Chen' },
   },
   {
     id: 'sample-3',
@@ -55,16 +57,99 @@ export const SAMPLE_LOOP_ITEMS: NormalizedListingItem[] = [
       { id: 'tag-3', name: 'Accessibility', slug: 'accessibility', taxonomy: 'tag' },
     ],
     source: 'posts',
-    raw: { readingTime: '6 min read', featured: true },
+    raw: { readingTime: '6 min read', featured: true, authorName: 'Sam Rivera' },
   },
 ];
 
-export const formatLoopDate = (iso: string | null | undefined, language = 'en') => {
+export type LoopDateFormat =
+  | 'medium'
+  | 'long'
+  | 'full'
+  | 'short'
+  | 'month-year'
+  | 'iso'
+  | 'relative'
+  | 'datetime';
+
+export const LOOP_DATE_FORMAT_OPTIONS: {
+  label: string;
+  value: LoopDateFormat;
+}[] = [
+  { label: 'Medium (Nov 5, 2026)', value: 'medium' },
+  { label: 'Long (November 5, 2026)', value: 'long' },
+  { label: 'Full (Thursday, November 5, 2026)', value: 'full' },
+  { label: 'Short (11/5/26)', value: 'short' },
+  { label: 'Month & Year (November 2026)', value: 'month-year' },
+  { label: 'ISO (2026-11-05)', value: 'iso' },
+  { label: 'Relative (e.g. 5 days ago)', value: 'relative' },
+  { label: 'Date & Time (Nov 5, 2026, 5:14 PM)', value: 'datetime' },
+];
+
+export const formatLoopDate = (
+  iso: string | null | undefined,
+  language = 'en',
+  format: LoopDateFormat = 'medium'
+): string | null => {
   if (!iso) return null;
   const parsed = new Date(iso);
   if (Number.isNaN(parsed.getTime())) return iso;
-  return parsed.toLocaleDateString(language, {
-    dateStyle: 'medium',
-    timeZone: 'UTC',
-  });
+
+  try {
+    switch (format) {
+      case 'iso':
+        return parsed.toISOString().slice(0, 10);
+      case 'month-year':
+        return parsed.toLocaleDateString(language, {
+          month: 'long',
+          year: 'numeric',
+          timeZone: 'UTC',
+        });
+      case 'long':
+        return parsed.toLocaleDateString(language, {
+          dateStyle: 'long',
+          timeZone: 'UTC',
+        });
+      case 'full':
+        return parsed.toLocaleDateString(language, {
+          dateStyle: 'full',
+          timeZone: 'UTC',
+        });
+      case 'short':
+        return parsed.toLocaleDateString(language, {
+          dateStyle: 'short',
+          timeZone: 'UTC',
+        });
+      case 'datetime':
+        return parsed.toLocaleString(language, {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+          timeZone: 'UTC',
+        });
+      case 'relative': {
+        const diffMs = parsed.getTime() - Date.now();
+        const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+        const rtf = new Intl.RelativeTimeFormat(language, { numeric: 'auto' });
+        if (Math.abs(diffDays) < 1) {
+          const diffHours = Math.round(diffMs / (1000 * 60 * 60));
+          if (Math.abs(diffHours) < 1) return 'just now';
+          return rtf.format(diffHours, 'hour');
+        }
+        if (Math.abs(diffDays) < 30) {
+          return rtf.format(diffDays, 'day');
+        }
+        if (Math.abs(diffDays) < 365) {
+          return rtf.format(Math.round(diffDays / 30), 'month');
+        }
+        return rtf.format(Math.round(diffDays / 365), 'year');
+      }
+      case 'medium':
+      default:
+        return parsed.toLocaleDateString(language, {
+          dateStyle: 'medium',
+          timeZone: 'UTC',
+        });
+    }
+  } catch {
+    return parsed.toISOString().slice(0, 10);
+  }
 };

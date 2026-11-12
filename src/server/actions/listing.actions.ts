@@ -131,3 +131,127 @@ export async function resolveRelatedCollectionEntries(input: {
     };
   });
 }
+
+/**
+ * Fetches an External API endpoint from the builder inspector, returning:
+ * - `postOptions`: selectable posts/items from the response
+ * - `keys`: all discovered keys (top-level, nested dot-notation like `address.street`, and array keys with `subKeys`)
+ * - `detectedItemsPath`: auto-detected items array path if root was an object wrapper
+ */
+export async function inspectExternalApiAction(input: {
+  endpointUrl: string;
+  method?: 'GET' | 'POST';
+  body?: string;
+  headers?: Record<string, string>;
+  queryParams?: Record<string, string>;
+  itemsPath?: string;
+  idKey?: string;
+  titleKey?: string;
+  timeoutMs?: number;
+}): Promise<{
+  ok: boolean;
+  error?: string;
+  postOptions: import('@/lib/external-api-schema').ExternalApiPreviewPostOption[];
+  keys: import('@/lib/external-api-schema').DiscoveredApiKey[];
+  detectedItemsPath: string;
+  totalItems: number;
+}> {
+  const endpointUrl = (input.endpointUrl ?? '').trim();
+  if (!endpointUrl) {
+    return {
+      ok: false,
+      error: 'Enter an External API Endpoint URL to fetch keys and posts.',
+      postOptions: [],
+      keys: [],
+      detectedItemsPath: '',
+      totalItems: 0,
+    };
+  }
+
+  try {
+    const { safeFetch } = await import('@/server/lib/safe-fetch');
+    const { interpolateEnvHeaders } = await import(
+      '@/server/services/listing-query.service'
+    );
+    const {
+      applyExternalApiQueryParams,
+      discoverExternalApiSchema,
+      extractExternalApiPostsList,
+    } = await import('@/lib/external-api-schema');
+
+    const method = input.method === 'POST' ? 'POST' : 'GET';
+    const headers = interpolateEnvHeaders(input.headers ?? {});
+    if (
+      method === 'POST' &&
+      input.body &&
+      !Object.keys(headers).some(k => k.toLowerCase() === 'content-type')
+    ) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    const timeoutMs = Math.min(Math.max(input.timeoutMs ?? 5000, 500), 10000);
+    const targetUrl = applyExternalApiQueryParams(
+      endpointUrl,
+      input.queryParams
+    );
+    const response = await safeFetch(targetUrl, {
+      method,
+      headers,
+      ...(method === 'POST' && input.body ? { body: input.body } : {}),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        error: `External API responded with status ${response.status}`,
+        postOptions: [],
+        keys: [],
+        detectedItemsPath: '',
+        totalItems: 0,
+      };
+    }
+
+    const payload: unknown = await response.json();
+    const { rawItems, postOptions, detectedItemsPath } =
+      extractExternalApiPostsList(
+        payload,
+        input.itemsPath ?? '',
+        input.idKey ?? 'id',
+        input.titleKey ?? 'title'
+      );
+
+    if (rawItems.length === 0) {
+      return {
+        ok: false,
+        error:
+          'External API response did not contain any object records at the specified path.',
+        postOptions: [],
+        keys: [],
+        detectedItemsPath,
+        totalItems: 0,
+      };
+    }
+
+    const keys = discoverExternalApiSchema(rawItems, 4);
+
+    return {
+      ok: true,
+      postOptions: postOptions.slice(0, 100),
+      keys,
+      detectedItemsPath,
+      totalItems: rawItems.length,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error:
+        err instanceof Error ? err.message : 'External API request failed.',
+      postOptions: [],
+      keys: [],
+      detectedItemsPath: '',
+      totalItems: 0,
+    };
+  }
+}
+

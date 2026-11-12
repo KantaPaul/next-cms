@@ -2,9 +2,12 @@
 
 import {
   encodeNamespacedParams,
+  EXT_PARAM_PREFIX,
+  type ExternalApiFilterFieldConfig,
   type FacetOption,
   formatNamespacedParam,
   type ListingFacets,
+  type ListingSource,
   type ParsedListingParams,
   parseNamespacedParams,
 } from '@nextcms/builder-core';
@@ -26,6 +29,8 @@ export type TaxonomyControlStyle = 'select' | 'checkboxes' | 'chips';
 
 export interface QueryFilterClientProps {
   targetLoopId?: string;
+  source?: ListingSource;
+  apiFilterFields?: ExternalApiFilterFieldConfig[];
   showKeyword?: boolean;
   keywordPlaceholder?: string;
   showCategories?: boolean;
@@ -56,6 +61,8 @@ export interface QueryFilterClientProps {
 
 export function QueryFilterClient({
   targetLoopId = '',
+  source,
+  apiFilterFields = [],
   showKeyword = true,
   keywordPlaceholder = 'Search items…',
   showCategories = true,
@@ -138,6 +145,12 @@ export function QueryFilterClient({
       ];
       for (const k of keysToClear) {
         next.delete(paramName(k));
+      }
+      const extPrefix = paramName(EXT_PARAM_PREFIX);
+      for (const k of Array.from(next.keys())) {
+        if (k.startsWith(extPrefix)) {
+          next.delete(k);
+        }
       }
 
       const encoded = encodeNamespacedParams(
@@ -319,16 +332,44 @@ export function QueryFilterClient({
         clearPatch: { toggle: undefined },
       });
     }
+    if (currentParams.ext) {
+      for (const [fieldKey, values] of Object.entries(currentParams.ext)) {
+        const fieldCfg = apiFilterFields.find(f => f.key === fieldKey);
+        const fieldLabel =
+          fieldCfg?.label?.trim() || fieldKey.split('.').pop() || fieldKey;
+        const facetList = facets?.ext?.[fieldKey] ?? [];
+        for (const val of values) {
+          const match = facetList.find(o => o.value === val);
+          const remaining = values.filter(v => v !== val);
+          const nextExt = { ...(currentParams.ext ?? {}) };
+          if (remaining.length > 0) {
+            nextExt[fieldKey] = remaining;
+          } else {
+            delete nextExt[fieldKey];
+          }
+          chips.push({
+            key: `ext:${fieldKey}:${val}`,
+            label: `${fieldLabel}: ${match?.label ?? val}`,
+            clearPatch: {
+              ext: Object.keys(nextExt).length > 0 ? nextExt : undefined,
+            },
+          });
+        }
+      }
+    }
     return chips;
   }, [
+    apiFilterFields,
     booleanToggleLabel,
     categoryOptions,
+    currentParams.ext,
     currentParams.from,
     currentParams.max,
     currentParams.min,
     currentParams.search,
     currentParams.to,
     currentParams.toggle,
+    facets?.ext,
     numberRangeLabel,
     selectedCategories,
     selectedTags,
@@ -452,6 +493,187 @@ export function QueryFilterClient({
     );
   };
 
+  const isExternalApi = source === 'external-api';
+  const normalizedApiFilterFields = useMemo(
+    () =>
+      isExternalApi && Array.isArray(apiFilterFields)
+        ? apiFilterFields
+            .filter(f => f && typeof f.key === 'string' && f.key.trim().length > 0)
+            .map(f => ({
+              key: f.key.trim(),
+              label:
+                f.label?.trim() ||
+                f.key
+                  .trim()
+                  .split('.')
+                  .pop()
+                  ?.replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+                  .replace(/[_-]+/g, ' ')
+                  .replace(/\b\w/g, c => c.toUpperCase()) ||
+                f.key.trim(),
+              style: (f.style ?? 'select') as TaxonomyControlStyle,
+            }))
+        : [],
+    [apiFilterFields, isExternalApi]
+  );
+
+  const getExtOptions = (fieldKey: string, label: string): FacetOption[] => {
+    const live = facets?.ext?.[fieldKey];
+    if (live && live.length > 0) return live;
+    if (editing) {
+      return [
+        { value: 'sample-1', label: `${label} 1`, count: 3 },
+        { value: 'sample-2', label: `${label} 2`, count: 2 },
+      ];
+    }
+    return [];
+  };
+
+  const toggleExtValue = (fieldKey: string, value: string) => {
+    const currentList = currentParams.ext?.[fieldKey] ?? [];
+    const exists = currentList.includes(value);
+    const nextList = exists
+      ? currentList.filter(v => v !== value)
+      : [...currentList, value];
+    const nextExt = { ...(currentParams.ext ?? {}) };
+    if (nextList.length > 0) {
+      nextExt[fieldKey] = nextList;
+    } else {
+      delete nextExt[fieldKey];
+    }
+    applyParams({
+      ext: Object.keys(nextExt).length > 0 ? nextExt : undefined,
+    });
+  };
+
+  const renderExternalApiFieldControl = (
+    fieldKey: string,
+    label: string,
+    style: TaxonomyControlStyle,
+    options: FacetOption[]
+  ) => {
+    const selected = currentParams.ext?.[fieldKey] ?? [];
+    const inputName = paramName(`${EXT_PARAM_PREFIX}${fieldKey}`);
+
+    if (style === 'select') {
+      return (
+        <label key={fieldKey} className="flex flex-col gap-1 text-xs font-medium">
+          <span {...labelEl}>{label}</span>
+          <select
+            name={inputName}
+            value={selected[0] ?? ''}
+            onChange={e => {
+              const nextVal = e.target.value;
+              const nextExt = { ...(currentParams.ext ?? {}) };
+              if (nextVal) {
+                nextExt[fieldKey] = [nextVal];
+              } else {
+                delete nextExt[fieldKey];
+              }
+              applyParams({
+                ext: Object.keys(nextExt).length > 0 ? nextExt : undefined,
+              });
+            }}
+            aria-label={label}
+            {...inputEl}
+          >
+            <option value="">All {label.toLowerCase()}</option>
+            {options.map(opt => (
+              <option key={opt.value} value={opt.value}>
+                {formatOptionLabel(opt)}
+              </option>
+            ))}
+          </select>
+        </label>
+      );
+    }
+
+    if (style === 'checkboxes') {
+      return (
+        <fieldset key={fieldKey} className="flex flex-col gap-1.5">
+          <legend {...el(styled, 'label', 's-muted mb-1 text-xs font-medium')}>
+            {label}
+          </legend>
+          <div className="flex flex-wrap gap-3">
+            {options.map(opt => {
+              const checked = selected.includes(opt.value);
+              return (
+                <label
+                  key={opt.value}
+                  className="inline-flex cursor-pointer items-center gap-1.5 text-sm"
+                >
+                  <input
+                    type="checkbox"
+                    name={inputName}
+                    value={opt.value}
+                    checked={checked}
+                    onChange={() => toggleExtValue(fieldKey, opt.value)}
+                    className="rounded border-slate-300"
+                  />
+                  <span>{formatOptionLabel(opt)}</span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+      );
+    }
+
+    return (
+      <div
+        key={fieldKey}
+        className="flex flex-col gap-1.5"
+        role="group"
+        aria-label={label}
+      >
+        <span {...el(styled, 'label', 's-muted text-xs font-medium')}>
+          {label}
+        </span>
+        <div className="flex flex-wrap gap-1.5">
+          {options.map(opt => {
+            const active = selected.includes(opt.value);
+            const nextList = active
+              ? selected.filter(v => v !== opt.value)
+              : [...selected, opt.value];
+            const nextExt = { ...(currentParams.ext ?? {}) };
+            if (nextList.length > 0) {
+              nextExt[fieldKey] = nextList;
+            } else {
+              delete nextExt[fieldKey];
+            }
+            const chipHref = buildFilterUrl({
+              ...currentParams,
+              ext: Object.keys(nextExt).length > 0 ? nextExt : undefined,
+            });
+            return (
+              <a
+                key={opt.value}
+                href={chipHref}
+                aria-pressed={active}
+                onClick={e => {
+                  e.preventDefault();
+                  toggleExtValue(fieldKey, opt.value);
+                }}
+                {...el(
+                  styled,
+                  active ? 'activeChip' : 'chip',
+                  cn(
+                    's-radius inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                    active
+                      ? 's-primary-bg border-transparent'
+                      : 's-surface s-border hover:opacity-80'
+                  )
+                )}
+              >
+                {formatOptionLabel(opt)}
+              </a>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   const filterControlsContent = (
     <div className="flex flex-col gap-4">
       <div className={fieldGrid}>
@@ -482,7 +704,8 @@ export function QueryFilterClient({
           </label>
         )}
 
-        {showCategories &&
+        {!isExternalApi &&
+          showCategories &&
           categoryStyle === 'select' &&
           renderTaxonomyControl(
             'Categories',
@@ -493,7 +716,8 @@ export function QueryFilterClient({
             'categories'
           )}
 
-        {showTags &&
+        {!isExternalApi &&
+          showTags &&
           tagStyle === 'select' &&
           renderTaxonomyControl(
             'Tags',
@@ -503,6 +727,18 @@ export function QueryFilterClient({
             'tag',
             'tags'
           )}
+
+        {isExternalApi &&
+          normalizedApiFilterFields
+            .filter(f => f.style === 'select')
+            .map(f =>
+              renderExternalApiFieldControl(
+                f.key,
+                f.label,
+                'select',
+                getExtOptions(f.key, f.label)
+              )
+            )}
 
         {showSort && (
           <label className="flex flex-col gap-1 text-xs font-medium">
@@ -537,7 +773,8 @@ export function QueryFilterClient({
       </div>
 
       {/* Non-select taxonomy controls (checkboxes / chips) */}
-      {showCategories &&
+      {!isExternalApi &&
+        showCategories &&
         categoryStyle !== 'select' &&
         renderTaxonomyControl(
           'Categories',
@@ -548,7 +785,8 @@ export function QueryFilterClient({
           'categories'
         )}
 
-      {showTags &&
+      {!isExternalApi &&
+        showTags &&
         tagStyle !== 'select' &&
         renderTaxonomyControl(
           'Tags',
@@ -558,6 +796,18 @@ export function QueryFilterClient({
           'tag',
           'tags'
         )}
+
+      {isExternalApi &&
+        normalizedApiFilterFields
+          .filter(f => f.style !== 'select')
+          .map(f =>
+            renderExternalApiFieldControl(
+              f.key,
+              f.label,
+              f.style,
+              getExtOptions(f.key, f.label)
+            )
+          )}
 
       {/* Date Range, Number Range & Boolean Toggle (R581 / QRY-11) */}
       {(showDateRange || showNumberRange || showBooleanToggle) && (

@@ -40,6 +40,8 @@ import {
   LightboxProvider,
   type LightboxContextValue,
 } from '@/components/site/lightbox-context';
+import { LoopItemProvider } from '@/builder/blocks/query-loop-client';
+import type { NormalizedListingItem } from '@nextcms/builder-core';
 
 /** Clicks on these close the overlay or work its controls, so they aren't conversions. */
 export const NOT_A_CONVERSION =
@@ -110,6 +112,9 @@ export function OverlayHost({ overlays }: { overlays: OverlayHostItem[] }) {
     Record<string, LightboxContextValue>
   >({});
   const lightboxDataRef = useRef<Record<string, LightboxContextValue>>({});
+  const [loopItemData, setLoopItemData] = useState<
+    Record<string, NormalizedListingItem>
+  >({});
 
   // Mutable mirrors so trigger listeners never need to re-subscribe when an
   // overlay opens or closes (which would restart delay timers and re-arm exit intent).
@@ -251,6 +256,22 @@ export function OverlayHost({ overlays }: { overlays: OverlayHostItem[] }) {
         } else {
           delete lightboxDataRef.current[id];
           setLightboxData(prev => {
+            if (!prev[id]) return prev;
+            const next = { ...prev };
+            delete next[id];
+            return next;
+          });
+        }
+        const rawLoopItem = opener.getAttribute('data-overlay-loop-item');
+        if (rawLoopItem) {
+          try {
+            const parsedItem = JSON.parse(rawLoopItem) as NormalizedListingItem;
+            setLoopItemData(prev => ({ ...prev, [id]: parsedItem }));
+          } catch {
+            // ignore malformed JSON
+          }
+        } else {
+          setLoopItemData(prev => {
             if (!prev[id]) return prev;
             const next = { ...prev };
             delete next[id];
@@ -420,10 +441,14 @@ export function OverlayHost({ overlays }: { overlays: OverlayHostItem[] }) {
     ) : null;
 
   const currentLightbox = activeId ? lightboxData[activeId] ?? null : null;
+  const currentLoopItem = activeId ? loopItemData[activeId] ?? null : null;
+  const innerContent = currentLoopItem ? (
+    <LoopItemProvider item={currentLoopItem}>{renderedContent}</LoopItemProvider>
+  ) : (
+    renderedContent
+  );
   const contentWithLightbox = (
-    <LightboxProvider value={currentLightbox}>
-      {renderedContent}
-    </LightboxProvider>
+    <LightboxProvider value={currentLightbox}>{innerContent}</LightboxProvider>
   );
 
   if (category === 'Drawer') {

@@ -10,7 +10,12 @@ import {
   type SlotRender,
 } from '@nextcms/builder-core';
 import type { ReactNode } from 'react';
+import type { ExternalApiFieldMapping } from '@/lib/external-api-schema';
 import { cn } from '@/lib/utils/cn';
+import {
+  type LoopItemFieldOption,
+  LoopPreviewProvider,
+} from '../controls/loop-preview';
 import {
   LoopItemProvider,
   QueryLoopCarousel,
@@ -31,12 +36,13 @@ import {
   type SectionSettings,
 } from './section';
 import type { ElementStyle } from '../style';
-import { el, linkEl } from './element';
+import { el } from './element';
 import {
   GalleryBadge,
   type GalleryBadgePosition,
   listingItemHasGallery,
 } from './gallery-badge';
+import { ExternalApiMappedFieldsView } from './loop-item-field';
 
 // ---------------------------------------------------------------------------
 // Sample Items for Editor Canvas (R575 / QRY-05)
@@ -186,6 +192,8 @@ interface DefaultItemCardProps {
   showDate?: boolean;
   showTerms?: boolean;
   language?: string;
+  editing?: boolean;
+  apiFields?: ExternalApiFieldMapping[];
   elements?: Record<string, ElementStyle>;
 }
 
@@ -202,13 +210,19 @@ function DefaultItemCard({
   showDate = true,
   showTerms = true,
   language = 'en',
+  editing,
+  apiFields,
   elements,
 }: DefaultItemCardProps) {
   const styled = { elements };
   const date = showDate ? formatLoopDate(item.publishedAt, language) : null;
   const author = showAuthor ? item.author?.name : null;
   const categories = (item.terms ?? []).filter(t => t.taxonomy === 'category');
-  const hasImg = showImage && Boolean(item.image);
+  const hasMappedApiFields = Array.isArray(apiFields) && apiFields.length > 0;
+  const hasExplicitMediaField =
+    hasMappedApiFields &&
+    apiFields.some(f => f.fieldType === 'media' && f.key);
+  const hasImg = showImage && Boolean(item.image) && !hasExplicitMediaField;
   const hasGallery = listingItemHasGallery(item);
 
   return (
@@ -269,57 +283,69 @@ function DefaultItemCard({
             featured ? 'justify-center p-6 s-tab-p-10' : 'p-5'
           )}
         >
-          {showTerms && categories.length > 0 && (
-            <p
-              {...el(
-                styled,
-                'cardCategory',
-                featured
-                  ? 'self-start s-eyebrow'
-                  : 's-primary-text text-xs font-semibold uppercase tracking-wider'
+          {hasMappedApiFields ? (
+            <ExternalApiMappedFieldsView
+              item={item}
+              apiFields={apiFields}
+              language={language}
+              editing={editing}
+              elements={elements}
+            />
+          ) : (
+            <>
+              {showTerms && categories.length > 0 && (
+                <p
+                  {...el(
+                    styled,
+                    'cardCategory',
+                    featured
+                      ? 'self-start s-eyebrow'
+                      : 's-primary-text text-xs font-semibold uppercase tracking-wider'
+                  )}
+                >
+                  {categories.map(c => c.name).join(' · ')}
+                </p>
               )}
-            >
-              {categories.map(c => c.name).join(' · ')}
-            </p>
-          )}
-          <h3
-            {...el(
-              styled,
-              'cardTitle',
-              cn(
-                'leading-snug',
-                featured ? 's-section-title' : 's-card-title text-lg'
-              )
-            )}
-          >
-            <a href={item.url} className="hover:underline">
-              {item.title}
-            </a>
-          </h3>
-          {showExcerpt && item.excerpt && (
-            <p
-              {...el(
-                styled,
-                'cardExcerpt',
-                cn(
-                  's-muted leading-relaxed',
-                  featured
-                    ? 'line-clamp-4 text-base s-tab-text-lg'
-                    : 'line-clamp-3 text-sm'
-                )
+              <h3
+                {...el(
+                  styled,
+                  'cardTitle',
+                  cn(
+                    'leading-snug',
+                    featured ? 's-section-title' : 's-card-title text-lg'
+                  )
+                )}
+              >
+                <a href={item.url} className="hover:underline">
+                  {item.title}
+                </a>
+              </h3>
+              {showExcerpt && item.excerpt && (
+                <p
+                  {...el(
+                    styled,
+                    'cardExcerpt',
+                    cn(
+                      's-muted leading-relaxed',
+                      featured
+                        ? 'line-clamp-4 text-base s-tab-text-lg'
+                        : 'line-clamp-3 text-sm'
+                    )
+                  )}
+                >
+                  {item.excerpt}
+                </p>
               )}
-            >
-              {item.excerpt}
-            </p>
-          )}
-          {(date || author) && (
-            <p {...el(styled, 'cardMeta', 's-muted mt-auto text-xs')}>
-              {author}
-              {author && date && ' · '}
-              {date && (
-                <time dateTime={item.publishedAt ?? undefined}>{date}</time>
+              {(date || author) && (
+                <p {...el(styled, 'cardMeta', 's-muted mt-auto text-xs')}>
+                  {author}
+                  {author && date && ' · '}
+                  {date && (
+                    <time dateTime={item.publishedAt ?? undefined}>{date}</time>
+                  )}
+                </p>
               )}
-            </p>
+            </>
           )}
         </div>
       </article>
@@ -341,7 +367,10 @@ export type QueryLoopLayout =
   | 'featured';
 
 export type QueryLoopPaginationStyle =
-  'numbered' | 'load-more' | 'infinite-scroll' | 'none';
+  | 'numbered'
+  | 'load-more'
+  | 'infinite-scroll'
+  | 'none';
 
 export type QueryLoopGap = 'sm' | 'md' | 'lg' | 'xl';
 
@@ -352,6 +381,10 @@ export interface QueryLoopProps extends CardStyleProps {
   source?: ListingSource;
   collectionId?: string;
   playlistId?: string;
+  /** External API selected post ID and repeatable field mappings. */
+  apiSelectedItemId?: string;
+  apiFilterToSelectedItem?: boolean;
+  apiFields?: ExternalApiFieldMapping[];
   lockedCategory?: string;
   lockedTag?: string;
   lockedTerm?: string;
@@ -379,6 +412,8 @@ export interface QueryLoopProps extends CardStyleProps {
   showDate?: boolean;
   showTerms?: boolean;
   emptyText?: string;
+  errorText?: string;
+  error?: string;
   isLoading?: boolean;
   // Slots
   card?: SlotRender;
@@ -476,8 +511,52 @@ function resolveMasonryColumnsClass(
   return `${m} ${t} ${d}`;
 }
 
+function buildLoopPreviewFieldsFromItems(
+  items: NormalizedListingItem[],
+  apiFields?: ExternalApiFieldMapping[]
+): LoopItemFieldOption[] {
+  const map = new Map<string, LoopItemFieldOption>();
+  for (const item of items) {
+    const rawMeta = (item.raw?.__fieldMeta ?? {}) as Record<
+      string,
+      { label?: string; type?: string; config?: Record<string, unknown> }
+    >;
+    for (const [key, m] of Object.entries(rawMeta)) {
+      if (!map.has(key)) {
+        map.set(key, {
+          path: key,
+          label: `${m.label || key} (${key})`,
+          fieldType: m.type,
+          config: m.config,
+        });
+      }
+    }
+  }
+  if (Array.isArray(apiFields)) {
+    for (const f of apiFields) {
+      if (!f || !f.key) continue;
+      map.set(f.key, {
+        path: f.key,
+        label: `${f.label || f.key} (${f.key})`,
+        fieldType: f.fieldType,
+        config: {
+          textMode: f.textMode,
+          urlMode: f.urlMode,
+          multiple: f.multiple,
+          isFeatured: f.isFeatured,
+          arrayLayout: f.arrayLayout,
+          nestedFields: f.nestedFields,
+        },
+      });
+    }
+  }
+  return Array.from(map.values());
+}
+
 export function QueryLoop({
   loopId = '',
+  source,
+  apiFields,
   eyebrow,
   title,
   subtitle,
@@ -496,6 +575,8 @@ export function QueryLoop({
   showDate = true,
   showTerms = true,
   emptyText = 'No matching items found.',
+  errorText = 'Unable to load external items right now.',
+  error,
   isLoading = false,
   card,
   emptyState,
@@ -527,6 +608,7 @@ export function QueryLoop({
   const regionId = `query-loop-${loopId || 'main'}`;
   const pageParamKey = formatNamespacedParam('page', loopId);
   const gapClass = GAP_CLASSES[gap] ?? GAP_CLASSES.md;
+  const loopPreviewFields = buildLoopPreviewFieldsFromItems(items, apiFields);
 
   const hasActiveFilter = Boolean(
     activeParams?.search ||
@@ -579,6 +661,8 @@ export function QueryLoop({
           showDate={showDate}
           showTerms={showTerms}
           language={language}
+          editing={editing}
+          apiFields={source === 'external-api' ? apiFields : undefined}
           elements={elements}
         />
       </LoopItemProvider>
@@ -590,7 +674,7 @@ export function QueryLoop({
     !editing && items.length > 0 ? buildItemListJsonLd(items, title) : null;
 
   const results = (
-    <>
+    <LoopPreviewProvider items={items} fields={loopPreviewFields}>
       {jsonLd && (
         <script
           type="application/ld+json"
@@ -638,6 +722,21 @@ export function QueryLoop({
             count={Math.min(items.length || 6, 12)}
             columnsDesktop={columnsDesktop}
           />
+        ) : error && items.length === 0 ? (
+          <div
+            role="alert"
+            data-query-loop-error
+            {...el(
+              { elements },
+              'empty',
+              's-surface s-border s-radius border p-8 text-center'
+            )}
+          >
+            <p className="s-muted text-base">{errorText}</p>
+            {editing && (
+              <p className="mt-2 text-xs text-red-600">{error}</p>
+            )}
+          </div>
         ) : items.length === 0 ? (
           /* Empty state slot (R578 / QRY-08) */
           <div
@@ -809,7 +908,7 @@ export function QueryLoop({
           />
         )}
       </div>
-    </>
+    </LoopPreviewProvider>
   );
 
   return (
@@ -846,6 +945,13 @@ export function QueryLoop({
               {...(unprefixFilterOptions(
                 rest as Record<string, unknown>
               ) as Partial<QueryFilterClientProps>)}
+              source={source}
+              apiFilterFields={
+                Array.isArray((rest as Record<string, unknown>).apiFilterFields)
+                  ? ((rest as Record<string, unknown>)
+                      .apiFilterFields as QueryFilterClientProps['apiFilterFields'])
+                  : undefined
+              }
               targetLoopId={loopId}
               orientation={filterPosition === 'top' ? 'horizontal' : 'vertical'}
               facets={facets ?? (editing ? SAMPLE_FACETS : undefined)}

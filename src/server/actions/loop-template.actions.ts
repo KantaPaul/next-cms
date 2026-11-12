@@ -24,7 +24,11 @@ const load = cache(
   async (
     id: string,
     wantDraft: boolean
-  ): Promise<{ name: string; document: BuilderDocument } | null> => {
+  ): Promise<{
+    name: string;
+    externalApiId: string | null;
+    document: BuilderDocument;
+  } | null> => {
     if (typeof id !== 'string' || !id) return null;
     const draft = wantDraft && (await canReadDrafts());
     const siteId = draft
@@ -35,7 +39,11 @@ const load = cache(
       draft,
     });
     if (!row) return null;
-    return { name: row.name, document: toDocument(row.content) };
+    return {
+      name: row.name,
+      externalApiId: row.externalApiId ?? null,
+      document: toDocument(row.content),
+    };
   }
 );
 

@@ -29,6 +29,7 @@ export const listLoopTemplateOptions = permissionProcedure(
     const rows = await loopTemplatesService.list({
       sourceType: input?.sourceType,
       collectionId: input?.collectionId ?? null,
+      externalApiId: input?.externalApiId ?? null,
     });
     return rows.map(r => ({
       id: r.id,
@@ -36,6 +37,8 @@ export const listLoopTemplateOptions = permissionProcedure(
       sourceType: r.sourceType,
       collectionId: r.collectionId,
       collectionName: r.collectionName,
+      externalApiId: r.externalApiId,
+      externalApiName: r.externalApiName,
       published: !!r.publishedAt,
     }));
   }

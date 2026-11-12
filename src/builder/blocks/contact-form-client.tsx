@@ -6,7 +6,13 @@ import 'react-phone-number-input/style.css';
 import { cn } from '@/lib/utils/cn';
 import type { ContactFormField } from './content';
 import { el, type ElementStyle } from './element';
-import { isFieldVisible, splitSteps } from '../forms/logic';
+import {
+  evaluateFormula,
+  getVisibleStepIndices,
+  isFieldConditionallyRequired,
+  isFieldVisible,
+  splitSteps,
+} from '../forms/logic';
 
 const INPUT_TYPES = new Set(['text', 'email', 'tel', 'number', 'date', 'url']);
 
@@ -120,8 +126,16 @@ export function ContactFormClient({
   const firstParty = !actionUrl;
 
   const steps = useMemo(() => splitSteps(fields), [fields]);
+  const visibleStepIndices = useMemo(
+    () => getVisibleStepIndices(steps, values),
+    [steps, values]
+  );
   const totalSteps = steps.length;
   const isMultiStep = totalSteps > 1;
+  const activeVisiblePos = Math.max(
+    visibleStepIndices.indexOf(currentStepIndex),
+    0
+  );
 
   const labelEl = el({ elements }, 'label');
   const reqEl = el({ elements }, 'required', 's-accent-text');
@@ -197,11 +211,17 @@ export function ContactFormClient({
         }
       }
     }
-    setCurrentStepIndex(prev => Math.min(prev + 1, totalSteps - 1));
+    const nextStep = visibleStepIndices[activeVisiblePos + 1];
+    if (nextStep !== undefined) {
+      setCurrentStepIndex(nextStep);
+    }
   };
 
   const handlePrev = () => {
-    setCurrentStepIndex(prev => Math.max(prev - 1, 0));
+    const prevStep = visibleStepIndices[activeVisiblePos - 1];
+    if (prevStep !== undefined) {
+      setCurrentStepIndex(prevStep);
+    }
   };
 
   const onFileChange = (
@@ -285,6 +305,34 @@ export function ContactFormClient({
 
     if (field.type === 'step') {
       return null;
+    }
+
+    if (field.type === 'calculated') {
+      const computed = evaluateFormula(field.formula, values, field.decimals);
+      const displayValue =
+        computed !== null
+          ? `${field.prefix ?? ''}${computed}${field.suffix ?? ''}`
+          : '—';
+      return (
+        <div key={id} className="grid gap-1.5 text-sm font-medium">
+          <span className={labelEl.className} style={labelEl.style}>
+            {field.label}
+          </span>
+          <output
+            htmlFor={id}
+            className={cn(inputEl.className, 's-surface-alt font-semibold')}
+            style={inputEl.style}
+          >
+            {displayValue}
+          </output>
+          <input
+            id={id}
+            type="hidden"
+            name={field.name}
+            value={computed !== null ? String(computed) : ''}
+          />
+        </div>
+      );
     }
 
     if (field.type === 'hidden') {
@@ -633,7 +681,7 @@ export function ContactFormClient({
 
       {/* Button controls */}
       <div className="flex items-center gap-3 pt-2">
-        {!editing && isMultiStep && currentStepIndex > 0 && (
+        {!editing && isMultiStep && activeVisiblePos > 0 && (
           <button
             type="button"
             onClick={handlePrev}
@@ -645,7 +693,9 @@ export function ContactFormClient({
           </button>
         )}
 
-        {!editing && isMultiStep && currentStepIndex < totalSteps - 1 ? (
+        {!editing &&
+        isMultiStep &&
+        activeVisiblePos < visibleStepIndices.length - 1 ? (
           <button
             type="button"
             onClick={handleNext}
