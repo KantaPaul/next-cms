@@ -1,0 +1,119 @@
+<?php
+
+/**
+ * Register routes for Media and Frontend
+ *
+ * @package kirki
+ */
+
+namespace Kirki;
+
+use Kirki\API\ContentManager\ContentManagerRest;
+
+if (!defined('ABSPATH')) {
+	exit; // Exit if accessed directly.
+}
+
+// use Kirki\API\ContentManager\ContentManagerRest; // Deprecated: routes now handled by Kirki\App\Http\Controllers\Api\CollectionController
+use Kirki\API\KirkiComments\KirkiCommentsRest;
+use Kirki\API\Media;
+use Kirki\API\Frontend\FrontendApi;
+
+/**
+ * API Class
+ */
+class API
+{
+
+
+
+	/**
+	 * Initialize the class
+	 *
+	 * @return void
+	 */
+	public function __construct()
+	{
+		add_action('rest_api_init', array($this, 'register_api'));
+		add_action('init', array($this, 'download_zip_endpoint'));
+	}
+
+	/**
+	 * Register_api
+	 *
+	 * @return void
+	 */
+	public function register_api()
+	{
+		// @todo: remove media from here
+		// Media apis.
+		// $media = new Media();
+		// $media->register_routes();
+
+		// @todo: remove them later
+		// ContentManagerRest routes are now registered via routes/api.php
+		// through the new framework (CollectionController + CollectionItemController).
+		// $content_manager = new ContentManagerRest();
+		// $content_manager->register_routes();
+
+		// @todo: remove them later
+		// $kirki_comments = new KirkiCommentsRest();
+		// $kirki_comments->register_routes();
+
+		FrontendApi::register();
+	}
+
+	public function download_zip_endpoint()
+	{
+		if (
+			!isset($_GET['page-export'], $_GET['file-name']) ||
+			'true' !== $_GET['page-export']
+		) {
+			return;
+		}
+
+		if (!isset($_GET['download_file_nonce']) || !wp_verify_nonce($_GET['download_file_nonce'], 'download_file_action')) {
+			wp_send_json_error(esc_html__('Not authorized.', 'kirki'));
+		}
+
+		if (!HelperFunctions::user_is_admin()) {
+			wp_send_json_error(esc_html__('Not authorized', 'kirki'), 401);
+		}
+
+		// TODO: need to check nonce
+		$this->downloadZIP();
+	}
+
+	private function downloadZIP()
+	{
+		$upload_dir = wp_upload_dir();
+		$file_name = sanitize_file_name($_GET['file-name']);
+		$file_name = basename($file_name);
+		// Check if the file has a .zip extension
+		if (pathinfo($file_name, PATHINFO_EXTENSION) !== 'zip') {
+			echo esc_html__('Invalid file type.', 'kirki');
+			die();
+		}
+		$zipFilePath = $upload_dir['basedir'] . "/$file_name";
+		// Send the zip file to the client.
+		header('Content-Type: application/zip');
+		header('Content-Disposition: attachment; filename="' . $file_name . '"');
+		header('Content-Length: ' . filesize($zipFilePath));
+		$this->output_file_and_cleanup($zipFilePath, $file_name);
+		exit;
+	}
+
+	private function output_file_and_cleanup($path, $name)
+	{
+		global $wp_filesystem;
+		if (empty($wp_filesystem)) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			WP_Filesystem();
+		}
+
+		if ($wp_filesystem->exists($path)) {
+			echo $wp_filesystem->get_contents($path); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			wp_delete_file($path);
+		}
+	}
+}

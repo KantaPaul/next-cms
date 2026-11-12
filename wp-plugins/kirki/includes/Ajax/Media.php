@@ -1,0 +1,1153 @@
+<?php
+
+/**
+ * Media api controller
+ *
+ * @package kirki
+ */
+
+namespace Kirki\Ajax;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Exit if accessed directly.
+}
+
+use Kirki\HelperFunctions;
+use DOMDocument;
+use DOMXPath;
+use InvalidArgumentException;
+use enshrined\svgSanitize\Sanitizer;
+use Exception;
+use Kirki\App\Services\FontService;
+
+/**
+ * Media API Class
+ */
+class Media {
+
+
+	/**
+	 * Format media data
+	 *
+	 * @param object $post wp post.
+	 * @return object formatted_data.
+	 */
+	public function format_media_data( $post ) {
+		$media_categories = array(
+			'image'  => KIRKI_SUPPORTED_MEDIA_TYPES['image'],
+			'video'  => KIRKI_SUPPORTED_MEDIA_TYPES['video'],
+			'svg'    => KIRKI_SUPPORTED_MEDIA_TYPES['svg'],
+			'audio'  => KIRKI_SUPPORTED_MEDIA_TYPES['audio'],
+			'lottie' => KIRKI_SUPPORTED_MEDIA_TYPES['lottie'],
+			'pdf'    => KIRKI_SUPPORTED_MEDIA_TYPES['pdf'],
+			'json'    => KIRKI_SUPPORTED_MEDIA_TYPES['json'],
+		);
+
+		$formatted_data = array();
+
+		foreach ( $post as $key => $value ) {
+			if ( 'ID' === $key ) {
+				$formatted_data['id'] = $value;
+			} elseif ( 'post_mime_type' === $key ) {
+				foreach ( $media_categories as $category => $mime_types ) {
+					if ( in_array( $value, $mime_types, true ) ) {
+						$formatted_data['category'] = 'svg' === $category ? 'image' : $category;
+						$formatted_data['type']     = $value;
+					}
+				}
+			} elseif ( 'guid' === $key ) {
+				$formatted_data['url'] = $value;
+			} elseif ( 'post_name' === $key ) {
+				$formatted_data['name'] = $value;
+				$formatted_data['alt']  = $value;
+			}
+		}
+
+		// media file size converting to human readable format
+		$formatted_data['file_size'] = filesize( get_attached_file( $post->ID ) );
+		$formatted_data['file_size'] = size_format( $formatted_data['file_size'] );
+
+		// media file extension
+		$file_path                        = get_attached_file( $post->ID );
+		$formatted_data['file_extension'] = pathinfo( $file_path, PATHINFO_EXTENSION );
+
+		$formatted_data['trash'] = false;
+
+		$formatted_data['thumbnail'] = wp_get_attachment_image_url( $post->ID );
+
+		return $formatted_data;
+	}
+
+	/**
+	 * Upload Media api
+	 *
+	 * @return void wp_send_json
+	 */
+	public static function upload_media() {
+		 $data = array();
+		//phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$files = isset( $_FILES['files'] ) ? wp_unslash( $_FILES['files'] ) : null;
+		if ( ! $files ) {
+			wp_send_json(
+				array(
+					'status'  => 'fail',
+					'message' => 'Invalid files',
+				)
+			);
+			die();
+		}
+		foreach ( $files['name'] as $key => $value ) {
+			if ( isset( $files['name'][ $key ] ) ) {
+				$tmp_name = wp_unslash( $files['tmp_name'][ $key ] );
+				$type     = wp_unslash( $files['type'][ $key ] );
+				if ( 'image/svg+xml' === $type && ! ( new self() )->validate_svg( $tmp_name ) ) {
+					wp_send_json(
+						array(
+							'status'  => 'fail',
+							'message' => 'Invalid SVG file',
+						)
+					);
+					die();
+				}
+				$file = array(
+					'name'     => wp_unslash( $files['name'][ $key ] ),
+					'type'     => $type,
+					'tmp_name' => $tmp_name,
+					'error'    => wp_unslash( $files['error'][ $key ] ),
+					'size'     => wp_unslash( $files['size'][ $key ] ),
+				);
+
+				$attachment_id = self::upload_single_media( $file );
+
+				if ( is_wp_error( $attachment_id ) ) {
+					$message = 'Some error occurred, please try again';
+					if ( isset( $attachment_id->errors['upload_error'][0] ) ) {
+						$message = $attachment_id->errors['upload_error'][0];
+					}
+					wp_send_json(
+						array(
+							'status'  => 'fail',
+							'message' => $message,
+						)
+					);
+				} else {
+					$post           = get_post( $attachment_id );
+					$formatted_data = ( new self() )->format_media_data( $post );
+					$data[]         = $formatted_data;
+				}
+			}
+		}
+
+		wp_send_json(
+			array(
+				'status' => 'success',
+				'data'   => $data,
+			)
+		);
+	}
+
+	public static function upload_single_media( $file ) {
+		$file = self::kirki_handle_upload_prefilter( $file );
+
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+
+		$_FILES = array( 'upload_file' => $file );
+
+		// $attachment_id = media_handle_upload('upload_file', 0);
+		$attachment_id = media_handle_upload(
+			'upload_file',
+			0,
+			array(),
+			array(
+				'test_form' => false,
+				'action'    => 'upload-attachment',
+			)
+		);
+
+		return $attachment_id;
+	}
+
+
+	/**
+	 * Upload Media Pre filter.
+	 * This method will call from 'wp_handle_upload_prefilter'this hook. which is imeplemented inside plugin init events file.
+	 *
+	 * @param array $file Original file.
+	 * @return array $file Converted file. If image optimization is enabled from kirki dashboard menu. then any image related file will converted to webp and return as file.
+	 */
+	public static function kirki_handle_upload_prefilter( $file ) {
+		$common_data = WpAdmin::get_common_data( true );
+		if ( ! isset( $common_data['image_optimization'] ) || ! $common_data['image_optimization'] ) {
+			return $file;
+		}
+		$filetype = wp_check_filetype( $file['name'] );
+
+		if ( 'image/jpeg' === $filetype['type'] || 'image/png' === $filetype['type'] ) {
+			if ( ! extension_loaded( 'gd' ) ) {
+				return $file;
+			}
+
+			$image           = ( 'image/jpeg' === $filetype['type'] ) ? imagecreatefromjpeg( $file['tmp_name'] ) : imagecreatefrompng( $file['tmp_name'] );
+			$webp_image_path = preg_replace( '/\\.[^.\\s]{3,4}$/', '', $file['tmp_name'] ) . '.webp';
+
+			imagewebp( $image, $webp_image_path, 80 );
+			imagedestroy( $image );
+
+			// copy the webp image back to the original tmp location.
+			copy( $webp_image_path, $file['tmp_name'] );
+
+			$file['name'] = preg_replace( '/\\.[^.\\s]{3,4}$/', '', $file['name'] ) . '.webp';
+			$file['type'] = 'image/webp';
+		}
+
+		return $file;
+	}
+
+	/**
+	 * Convert images generated sizes to webp format.
+	 * This method will call from 'wp_generate_attachment_metadata' this filter hook. which is imeplemented inside plugin init events file.
+	 *
+	 * @param array $metadata uploaded files attachment meta data.
+	 * @return array $metadata If image optimization is enabled from kirki dashboard menu then it will convert all images to webp otherwise return default metadata.
+	 */
+	public static function kirki_convert_sizes_to_webp( $metadata ) {
+		$common_data = WpAdmin::get_common_data( true );
+		if (
+			! isset( $common_data['image_optimization'] ) ||
+			! $common_data['image_optimization'] ||
+			! isset( $metadata['sizes'] ) ||
+			! isset( $metadata['image_meta'] )
+		) {
+			return $metadata;
+		}
+		if ( ! isset( $metadata['file'] ) ) {
+			return $metadata;
+		}
+		$upload_dir         = wp_upload_dir();
+		$original_image_dir = trailingslashit( $upload_dir['basedir'] ) . dirname( $metadata['file'] );
+		$image_files        = array_merge( array( $metadata['file'] ), array_column( $metadata['sizes'], 'file' ) );
+
+		foreach ( $image_files as $image_file ) {
+			$original_image_path = trailingslashit( $original_image_dir ) . $image_file;
+			$webp_image_path     = preg_replace( '/\\.[^.\\s]{3,4}$/', '', $original_image_path ) . '.webp';
+
+			if ( ! file_exists( $webp_image_path ) ) {
+				if ( ! extension_loaded( 'gd' ) ) {
+					continue;
+				}
+
+				$image_info = getimagesize( $original_image_path );
+
+				switch ( $image_info[2] ) {
+					case IMAGETYPE_JPEG:
+						$image = imagecreatefromjpeg( $original_image_path );
+						break;
+					case IMAGETYPE_PNG:
+						$image = imagecreatefrompng( $original_image_path );
+						break;
+					case IMAGETYPE_GIF:
+						$image = imagecreatefromgif( $original_image_path );
+						break;
+					default:
+						return $metadata;
+				}
+
+				imagewebp( $image, $webp_image_path, 80 );
+				imagedestroy( $image );
+			}
+
+			// Delete the original image.
+			if ( file_exists( $original_image_path ) ) {
+				wp_delete_file( $original_image_path );
+			}
+
+			$metadata = self::kirki_replace_file_in_metadata( $metadata, $image_file, basename( $webp_image_path ) );
+		}
+
+		return $metadata;
+	}
+
+	/**
+	 * Replace file to meta data.
+	 *
+	 * @param array  $metadata files attachment metadata.
+	 * @param string $old_file old file original path. (jpg, png, gif).
+	 * @param string $new_file new file original path.
+	 *
+	 * @return array $metadata files updated attachment metadata.
+	 */
+	private static function kirki_replace_file_in_metadata( $metadata, $old_file, $new_file ) {
+		if ( $old_file === $metadata['file'] ) {
+			$metadata['file'] = str_replace( $old_file, $new_file, $metadata['file'] );
+		}
+
+		foreach ( $metadata['sizes'] as $size => $info ) {
+			if ( $old_file === $info['file'] ) {
+				$metadata['sizes'][ $size ]['file'] = $new_file;
+			}
+		}
+
+		return $metadata;
+	}
+
+	/**
+	 * Upload custom font files (.ttf, .otf, .woff, .woff2), single or multiple.
+	 *
+	 * @return void wp_send_json.
+	 */
+	public static function upload_fonts() {
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+
+		global $wp_filesystem;
+		if ( ! is_object( $wp_filesystem ) ) {
+			WP_Filesystem();
+		}
+
+		$file            = isset( $_FILES['file'] ) ? wp_unslash( $_FILES['file'] ) : null;
+		$uploads         = wp_upload_dir();
+		$multiple_files  = self::normalize_multiple_files( isset( $_FILES['files'] ) ? $_FILES['files'] : null );
+
+		if ( ! empty( $multiple_files ) ) {
+			self::handle_multiple_raw_font_upload( $multiple_files, $wp_filesystem, $uploads );
+			return;
+		}
+
+		if ( ! $file || empty( $file['tmp_name'] ) || ! is_uploaded_file( $file['tmp_name'] ) ) {
+			wp_send_json(
+				array(
+					'status'  => 'failure',
+					'message' => 'Invalid file',
+				),
+			);
+		}
+
+		$filename           = sanitize_file_name( $file['name'] );
+		$file_extension     = strtolower( pathinfo( $filename, PATHINFO_EXTENSION ) );
+		$allowed_font_files = self::get_allowed_font_extensions();
+
+		if ( in_array( $file_extension, $allowed_font_files, true ) ) {
+			self::handle_raw_font_upload( $file, $filename, $file_extension, $wp_filesystem, $uploads );
+			return;
+		}
+
+		wp_send_json(
+			array(
+				'status'  => 'failure',
+				'message' => 'Only .ttf, .otf, .woff, .woff2 files are allowed',
+			)
+		);
+	}
+
+	/**
+	 * Allowed font file extensions.
+	 *
+	 * @return array
+	 */
+	private static function get_allowed_font_extensions() {
+		return array( 'ttf', 'otf', 'woff', 'woff2' );
+	}
+
+	/**
+	 * Verify that a file really is a font by inspecting its binary signature.
+	 *
+	 * @param string $file_path      Absolute path to the file on disk.
+	 * @param string $file_extension Extension claimed by the uploaded file name.
+	 * @return bool True when the binary signature matches the claimed extension.
+	 */
+	private static function is_valid_font_file( $file_path, $file_extension ) {
+		// if file is not readable or file size is less than 12 bytes, return false.
+		if ( ! is_readable( $file_path ) || filesize( $file_path ) < 12 ) {
+			return false;
+		}
+
+		// Opening the file in binary read mode ('rb').
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+		$handle = fopen( $file_path, 'rb' );
+		if ( ! $handle ) {
+			return false;
+		}
+
+		// Reading the first 4 bytes of the file to check its signature.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+		$header = fread( $handle, 4 ); 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+		fclose( $handle );
+
+		if ( false === $header || 4 !== strlen( $header ) ) {
+			return false;
+		}
+
+		// sfnt based fonts (.ttf / .otf) may use any of these version tags.
+		$sfnt_signatures = array(
+			"\x00\x01\x00\x00", // TrueType outlines.
+			'true',             // Legacy Apple TrueType.
+			'ttcf',             // TrueType collection.
+			'OTTO',             // CFF (PostScript) outlines.
+		);
+
+		$signatures = array(
+			'ttf'   => $sfnt_signatures,
+			'otf'   => $sfnt_signatures,
+			'woff'  => array( 'wOFF' ),
+			'woff2' => array( 'wOF2' ),
+		);
+
+		if ( ! isset( $signatures[ $file_extension ] ) ) {
+			return false;
+		}
+
+		return in_array( $header, $signatures[ $file_extension ], true );
+	}
+
+	private static function handle_raw_font_upload( $file, $filename, $file_extension, $wp_filesystem, $uploads, $family_override = null ) {
+		$allowed_font_files = self::get_allowed_font_extensions();
+		if ( ! in_array( $file_extension, $allowed_font_files, true ) ) {
+			wp_send_json(
+				array(
+					'status'  => 'failure',
+					'message' => 'Unsupported font file type',
+				)
+			);
+		}
+
+		$temp_dir = trailingslashit( $uploads['basedir'] ) .'kirki-font-temp/';
+		wp_mkdir_p( $temp_dir );
+		$temp_font = $temp_dir . wp_unique_filename( $temp_dir, $filename );
+
+		global $wp_filesystem;
+		if ( ! is_object( $wp_filesystem ) ) {
+			WP_Filesystem();
+		}
+
+		if ( ! $wp_filesystem->move( $file['tmp_name'], $temp_font ) ) {
+			wp_send_json(
+				array(
+					'status'  => 'failure',
+					'message' => 'Font upload failed',
+				)
+			);
+		}
+
+		$filetype      = wp_check_filetype_and_ext( $temp_font, $filename );
+		$detected_ext  = ! empty( $filetype['ext'] ) ? strtolower( $filetype['ext'] ) : $file_extension;
+		if ( empty( $detected_ext ) || ! in_array( $detected_ext, $allowed_font_files, true ) || ! self::is_valid_font_file( $temp_font, $detected_ext ) ) {
+			wp_delete_file( $temp_font );
+			wp_send_json(
+				array(
+					'status'  => 'failure',
+					'message' => 'Invalid font file type',
+				),
+			);
+		}
+
+		$font_meta          = self::get_font_metadata_from_filename( pathinfo( $filename, PATHINFO_FILENAME ) );
+		if ( $family_override && $family_override !== $font_meta['family'] ) {
+			$font_meta['family'] = $family_override;
+		}
+		$renamed_folder_name = self::normalize_font_family_slug( $font_meta['family'] );
+		$font_folder         = trailingslashit( $uploads['basedir'] ) .'kirki-fonts/' . $renamed_folder_name;
+
+		if ( is_dir( $font_folder ) ) {
+			self::delete_dir( $font_folder );
+		}
+
+		wp_mkdir_p( $font_folder );
+
+		$stored_font_name = wp_unique_filename( $font_folder, $filename );
+		$wp_filesystem->move( $temp_font, $font_folder . '/' . $stored_font_name );
+
+		$stylesheet = self::build_single_font_stylesheet( $font_meta, $stored_font_name, $detected_ext, $font_meta['family'] );
+		$wp_filesystem->put_contents( $font_folder . '/stylesheet.css', $stylesheet );
+
+		$data = array(
+			'fontUrl'  => trailingslashit( $uploads['baseurl'] ) .'kirki-fonts/' . $renamed_folder_name . '/stylesheet.css',
+			'family'   => $font_meta['family'],
+			'variants' => array( $font_meta['variant'] ),
+			'subsets'  => array( 'latin' ),
+			'uploaded' => true,
+			'version'  => 'v1',
+		);
+
+		wp_send_json(
+			array(
+				'status' => 'success',
+				'data'   => $data,
+			)
+		);
+	}
+
+	private static function get_font_metadata_from_filename( $filename ) {
+		$pattern           = strtolower( $filename );
+		$style             = ( strpos( $pattern, 'italic' ) !== false || strpos( $pattern, 'oblique' ) !== false ) ? 'italic' : 'normal';
+		$weight_keywords   = array(
+			'extrablack' => '900',
+			'black'      => '900',
+			'heavy'      => '900',
+			'extrabold'  => '800',
+			'ultrabold'  => '800',
+			'bold'       => '700',
+			'semibold'   => '600',
+			'demibold'   => '600',
+			'medium'     => '500',
+			'book'       => '400',
+			'regular'    => '400',
+			'normal'     => '400',
+			'semilight'  => '300',
+			'light'      => '300',
+			'extralight' => '200',
+			'ultralight' => '200',
+			'thin'       => '100',
+		);
+
+		$weight = '400';
+		foreach ( $weight_keywords as $keyword => $value ) {
+			if ( strpos( $pattern, $keyword ) !== false ) {
+				$weight = $value;
+				break;
+			}
+		}
+
+		if ( preg_match( '/(100|200|300|400|500|600|700|800|900)/', $pattern, $match ) ) {
+			$weight = $match[1];
+		}
+
+		$clean_family = preg_replace( array( '/(italic|oblique)/i', '/(extrablack|black|heavy|extrabold|ultrabold|semibold|semilight|demibold|bold|medium|book|regular|normal|light|extralight|ultralight|thin)/i', '/(100|200|300|400|500|600|700|800|900)/' ), ' ', $filename );
+		$clean_family = preg_replace( '/[-_]+/', ' ', $clean_family );
+		$clean_family = trim( $clean_family );
+		$family       = $clean_family ? ucwords( $clean_family ) : 'Custom Font';
+
+		$variant = self::get_variant_from_weight_and_style( $weight, $style );
+
+		return array(
+			'family' => $family,
+			'style'  => $style,
+			'weight' => $weight,
+			'variant'=> $variant,
+		);
+	}
+
+	private static function get_variant_from_weight_and_style( $weight, $style ) {
+		if ( '400' === $weight ) {
+			return ( 'italic' === $style ) ? 'italic' : 'regular';
+		}
+
+		return ( 'italic' === $style ) ? $weight . 'italic' : $weight;
+	}
+
+	private static function build_single_font_stylesheet( $font_meta, $stored_font_name, $file_extension, $family_override = null ) {
+		$formats = array(
+			'ttf'  => 'truetype',
+			'otf'  => 'opentype',
+			'woff' => 'woff',
+			'woff2'=> 'woff2',
+		);
+
+		$font_format = isset( $formats[ $file_extension ] ) ? $formats[ $file_extension ] : 'truetype';
+
+		$family = $family_override ? $family_override : $font_meta['family'];
+
+		return "@font-face {\n\tfont-family: '{$family}';\n\tfont-style: {$font_meta['style']};\n\tfont-weight: {$font_meta['weight']};\n\tfont-display: swap;\n\tsrc: url('{$stored_font_name}') format('{$font_format}');\n}\n";
+	}
+
+	private static function handle_multiple_raw_font_upload( $files, $wp_filesystem, $uploads ) {
+		$allowed_font_files = self::get_allowed_font_extensions();
+		$temp_dir          = trailingslashit( $uploads['basedir'] ) .'kirki-font-temp/';
+		wp_mkdir_p( $temp_dir );
+
+		$common_family        = null;
+		$common_family_slug   = null;
+		$font_folder          = null;
+		$renamed_folder_name  = null;
+		$stylesheet           = '';
+		$variants             = array();
+
+		foreach ( $files as $single_file ) {
+			$filename = sanitize_file_name( $single_file['name'] );
+			$ext      = strtolower( pathinfo( $filename, PATHINFO_EXTENSION ) );
+
+			if ( ! in_array( $ext, $allowed_font_files, true ) || empty( $single_file['tmp_name'] ) || ! is_uploaded_file( $single_file['tmp_name'] ) ) {
+				self::cleanup_temp_files( $temp_dir );
+				wp_send_json(
+					array(
+						'status'  => 'failure',
+						'message' => 'Invalid font files provided',
+					),
+				);
+			}
+
+			$temp_font = $temp_dir . wp_unique_filename( $temp_dir, $filename );
+			global $wp_filesystem;
+			if ( empty( $wp_filesystem ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+				WP_Filesystem();
+			}
+
+			if ( ! $wp_filesystem->move( $single_file['tmp_name'], $temp_font ) ) {
+				self::cleanup_temp_files( $temp_dir );
+				wp_send_json(
+					array(
+						'status'  => 'failure',
+						'message' => 'Font upload failed',
+					),
+				);
+			}
+
+			$filetype     = wp_check_filetype_and_ext( $temp_font, $filename );
+			$detected_ext = ! empty( $filetype['ext'] ) ? strtolower( $filetype['ext'] ) : $ext;
+			if ( empty( $detected_ext ) || ! in_array( $detected_ext, $allowed_font_files, true ) || ! self::is_valid_font_file( $temp_font, $detected_ext ) ) {
+				wp_delete_file( $temp_font );
+				self::cleanup_temp_files( $temp_dir );
+				wp_send_json(
+					array(
+						'status'  => 'failure',
+						'message' => 'Invalid font file type',
+					),
+				);
+			}
+
+			$basename        = pathinfo( $filename, PATHINFO_FILENAME );
+			$font_meta       = self::get_font_metadata_from_filename( $basename );
+			$current_slug    = self::normalize_font_family_slug( $font_meta['family'] );
+			$filename_slug   = self::get_family_hint_slug_from_filename( $basename );
+			$comparison_slug = $filename_slug ? $filename_slug : $current_slug;
+			if ( ! $common_family ) {
+				$common_family       = $font_meta['family'];
+				$common_family_slug  = $comparison_slug;
+				$renamed_folder_name = $common_family_slug;
+				$font_folder         = trailingslashit( $uploads['basedir'] ) .'kirki-fonts/' . $renamed_folder_name;
+
+				if ( is_dir( $font_folder ) ) {
+					self::delete_dir( $font_folder );
+				}
+				wp_mkdir_p( $font_folder );
+			}
+
+			if ( $comparison_slug !== $common_family_slug ) {
+				wp_delete_file( $temp_font );
+				self::delete_dir( $font_folder );
+				self::cleanup_temp_files( $temp_dir );
+				wp_send_json(
+					array(
+						'status'  => 'failure',
+						'message' => 'Please upload fonts from the same family in a single batch.',
+					),
+				);
+			}
+
+			$stored_font_name = wp_unique_filename( $font_folder, $filename );
+			$wp_filesystem->move( $temp_font, $font_folder . '/' . $stored_font_name );
+
+			$stylesheet .= self::build_single_font_stylesheet( $font_meta, $stored_font_name, $detected_ext, $common_family );
+			$variants[] = $font_meta['variant'];
+		}
+
+		self::cleanup_temp_files( $temp_dir );
+
+		if ( empty( $stylesheet ) || ! $font_folder ) {
+			wp_send_json(
+				array(
+					'status'  => 'failure',
+					'message' => 'Unable to process fonts',
+				),
+			);
+		}
+
+		$wp_filesystem->put_contents( $font_folder . '/stylesheet.css', $stylesheet );
+
+		$data = array(
+			'fontUrl'  => trailingslashit( $uploads['baseurl'] ) .'kirki-fonts/' . $renamed_folder_name . '/stylesheet.css',
+			'family'   => $common_family,
+			'variants' => array_values( array_unique( $variants ) ),
+			'subsets'  => array( 'latin' ),
+			'uploaded' => true,
+			'version'  => 'v1',
+		);
+
+		wp_send_json(
+			array(
+				'status' => 'success',
+				'data'   => $data,
+			),
+		);
+	}
+
+	private static function cleanup_temp_files( $temp_dir ) {
+		if ( is_dir( $temp_dir ) ) {
+			$files = glob( trailingslashit( $temp_dir ) . '*' );
+			if ( $files ) {
+				foreach ( $files as $file ) {
+					if ( is_file( $file ) ) {
+						wp_delete_file( $file );
+					}
+				}
+			}
+		}
+	}
+
+	private static function normalize_multiple_files( $files ) {
+		if ( empty( $files ) || ! isset( $files['name'] ) || ! is_array( $files['name'] ) ) {
+			return array();
+		}
+
+		$normalized = array();
+
+		foreach ( $files['name'] as $index => $name ) {
+			if ( empty( $files['tmp_name'][ $index ] ) ) {
+				continue;
+			}
+
+			$normalized[] = array(
+				'name'     => $name,
+				'type'     => $files['type'][ $index ],
+				'tmp_name' => $files['tmp_name'][ $index ],
+				'error'    => $files['error'][ $index ],
+				'size'     => $files['size'][ $index ],
+			);
+		}
+
+		return $normalized;
+	}
+
+	private static function normalize_font_family_slug( $family ) {
+		$family = strtolower( $family );
+		$slug   = preg_replace( '/[^a-z0-9]+/i', '-', $family );
+		$slug   = trim( preg_replace( '/-+/', '-', $slug ), '-' );
+
+		if ( ! $slug ) {
+			$slug = sanitize_file_name( str_replace( ' ', '', $family ) );
+		}
+
+		// Never return an empty slug: the callers append it to the kirki-fonts
+		// directory and delete that path, so an empty slug would wipe the whole
+		// kirki-fonts folder instead of a single font folder.
+		if ( ! $slug ) {
+			$slug = 'font-' . substr( md5( $family . microtime() ), 0, 12 );
+		}
+
+		return $slug;
+	}
+
+	private static function get_family_hint_slug_from_filename( $filename ) {
+		if ( empty( $filename ) ) {
+			return null;
+		}
+
+		$parts = preg_split( '/[-_]+/', $filename );
+		if ( empty( $parts ) ) {
+			return null;
+		}
+
+		if ( count( $parts ) < 2 ) {
+			return null;
+		}
+
+		$base = $parts[0];
+
+		return self::normalize_font_family_slug( $base );
+	}
+
+	/**
+	 * Remove custom font folder from server
+	 *
+	 * @return void wp_send_json.
+	 * 
+	 * @deprecated
+	 * @see \Kirki\App\Services\FontService::remove_custom_fonts_permanently_from_directory()
+	 */
+	public static function remove_custom_font_folder_from_server() {        //phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$data = HelperFunctions::sanitize_text( isset( $_POST['data'] ) ? $_POST['data'] : null );
+		if ( ! $data ) {
+			wp_send_json(
+				array(
+					'status'  => 'fail',
+					'message' => 'Invalid post data',
+				)
+			);
+			die();
+		}
+		$fonts = json_decode( stripslashes( $data ), true );
+
+		(new FontService())->remove_custom_fonts_permanently( $fonts );
+
+		// foreach ( $fonts as $key => $value ) {
+		// 	$upload_root_dir = wp_upload_dir()['basedir'];
+		// 	$upload_dir      = $upload_root_dir . '/' .'kirki-fonts/' . $value['family'];
+		// 	if ( is_dir( $upload_dir ) ) {
+		// 		self::delete_dir( $upload_dir );
+		// 	}
+
+		// 	// Remove font from local.
+		// 	$font_family_slug = sanitize_title_with_dashes( $value['family'] );
+		// 	$font_local_dir   = WP_CONTENT_DIR . "/uploads/kirki-fonts/{$font_family_slug}";
+
+		// 	if ( is_dir( $font_local_dir ) ) {
+		// 		HelperFunctions::delete_directory( $font_local_dir );
+		// 	}
+		// }
+		wp_send_json(
+			array(
+				'status'  => 'success',
+				'message' => 'Font folder deleted success',
+				// 'url'     => $upload_dir,
+			)
+		);
+	}
+
+	/**
+	 * Delete Dir
+	 *
+	 * @param string $dir_path directory path string.
+	 * @throws InvalidArgumentException If the $dir_path is not a directory.
+	 * @return void
+	 * @deprecated
+	 * @see \Kirki\Framework\Supports\Facades\File::delete()
+	 */
+	public static function delete_dir( $dir_path ) {
+		global $wp_filesystem;
+		if ( ! is_object( $wp_filesystem ) ) {
+			WP_Filesystem();
+		}
+		if ( ! is_dir( $dir_path ) ) {
+			return;
+		}
+		$wp_filesystem->delete( $dir_path, true );
+	}
+
+	/**
+	 * Get Font Family name using regex
+	 *
+	 * @param string $css_string css string.
+	 * @return string font family name.
+	 */
+	public static function get_font_family_name_using_regex( $css_string ) {
+		$pattern = '/font-family:.*?;/';
+		preg_match( $pattern, $css_string, $matches );
+		$font_family = $matches[0];
+		$font_family = str_replace( 'font-family:', '', $font_family );
+		$font_family = str_replace( ';', '', $font_family );
+		$font_family = str_replace( "'", '', $font_family );
+		$font_family = trim( $font_family );
+		return $font_family;
+	}
+
+	/**
+	 * Upload base64 image
+	 *
+	 * @return void wp send json
+	 */
+	public static function upload_base64_img() {        // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$source     = isset( $_POST['source'] ) ? $_POST['source'] : '';
+		$image_name = isset( $_POST['imageName'] ) ? $_POST['imageName'] : '';
+
+		$source     = HelperFunctions::sanitize_text( $source );
+		$image_name = HelperFunctions::sanitize_text( $image_name );
+
+		if ( empty( $source ) ) {
+			wp_send_json(
+				array(
+					'status'  => 'fail',
+					'message' => 'No image data provided',
+				)
+			);
+		}
+
+		/*
+		|--------------------------------------------------------------------------
+		| Configuration
+		|--------------------------------------------------------------------------
+		*/
+		$max_size_bytes = 5 * 1024 * 1024; // 5MB decoded limit
+		$allowed_mimes  = array(
+			'image/png'  => 'png',
+			'image/jpeg' => 'jpg',
+			'image/webp' => 'webp',
+		);
+
+		/*
+		|--------------------------------------------------------------------------
+		| Parse base64 header safely
+		|--------------------------------------------------------------------------
+		*/
+		if ( ! preg_match( '#^data:(image\/[a-zA-Z0-9.+-]+);base64,#', $source, $matches ) ) {
+			wp_send_json(
+				array(
+					'status'  => 'fail',
+					'message' => 'Invalid base64 image format',
+				)
+			);
+		}
+
+		$mime = strtolower( $matches[1] );
+
+		if ( ! isset( $allowed_mimes[ $mime ] ) ) {
+			wp_send_json(
+				array(
+					'status'  => 'fail',
+					'message' => 'Unsupported image type',
+				)
+			);
+		}
+
+		$base64 = substr( $source, strpos( $source, ',' ) + 1 );
+		$base64 = str_replace( ' ', '+', $base64 );
+
+		/*
+		|--------------------------------------------------------------------------
+		| Enforce decoded size quota (before decode)
+		|--------------------------------------------------------------------------
+		| Base64 expands data by ~33%, so estimate first
+		*/
+		$estimated_size = (int) ( strlen( $base64 ) * 0.75 );
+		if ( $estimated_size > $max_size_bytes ) {
+			wp_send_json(
+				array(
+					'status'  => 'fail',
+					'message' => 'Image exceeds maximum allowed size',
+				)
+			);
+		}
+
+		$decoded = base64_decode( $base64, true );
+
+		if ( $decoded === false ) {
+			wp_send_json(
+				array(
+					'status'  => 'fail',
+					'message' => 'Invalid base64 data',
+				)
+			);
+		}
+
+		if ( strlen( $decoded ) > $max_size_bytes ) {
+			wp_send_json(
+				array(
+					'status'  => 'fail',
+					'message' => 'Image exceeds maximum allowed size',
+				)
+			);
+		}
+
+		/*
+		|--------------------------------------------------------------------------
+		| Re-encode image to strip metadata & polyglots
+		|--------------------------------------------------------------------------
+		*/
+		$image = @imagecreatefromstring( $decoded );
+		if ( ! $image ) {
+			wp_send_json(
+				array(
+					'status'  => 'fail',
+					'message' => 'Image decoding failed',
+				)
+			);
+		}
+
+		ob_start();
+		switch ( $mime ) {
+			case 'image/png':
+				imagealphablending( $image, false );
+				imagesavealpha( $image, true );
+				imagepng( $image, null, 9 );
+				break;
+			case 'image/jpeg':
+				imagejpeg( $image, null, 90 );
+				break;
+			case 'image/webp':
+				imagewebp( $image, null, 90 );
+				break;
+		}
+		$clean_image = ob_get_clean();
+		imagedestroy( $image );
+
+		if ( ! $clean_image ) {
+			wp_send_json(
+				array(
+					'status'  => 'fail',
+					'message' => 'Failed to process image',
+				)
+			);
+		}
+
+		/*
+		|--------------------------------------------------------------------------
+		| Save using WordPress upload system
+		|--------------------------------------------------------------------------
+		*/
+		$extension = $allowed_mimes[ $mime ];
+		$filename  = $image_name
+			? sanitize_file_name( $image_name ) . '.' . $extension
+			: 'base64-image-' . gmdate( 'Y-m-d-His' ) . '.' . $extension;
+
+		$upload = wp_upload_bits( $filename, null, $clean_image );
+
+		if ( ! empty( $upload['error'] ) ) {
+			wp_send_json(
+				array(
+					'status'  => 'fail',
+					'message' => 'Error saving image',
+				)
+			);
+		}
+
+		$file = array(
+			'name'     => basename( $upload['file'] ),
+			'type'     => $mime,
+			'tmp_name' => $upload['file'],
+			'error'    => 0,
+			'size'     => filesize( $upload['file'] ),
+		);
+
+		$attachment_id = self::upload_single_media( $file );
+
+		if ( ! $attachment_id ) {
+			wp_send_json(
+				array(
+					'status'  => 'fail',
+					'message' => 'Failed to create media attachment',
+				)
+			);
+		}
+
+		$img = wp_get_attachment_image_src( $attachment_id, 'full' );
+
+		wp_send_json(
+			array(
+				'status' => 'success',
+				'src'    => $img[0],
+				'id'     => $attachment_id,
+			)
+		);
+	}
+
+	/**
+	 * Validate a svg file
+	 *
+	 * @param string $svg_file svg file path.
+	 * @return bool
+	 */
+	private function validate_svg( $svg_file ) {
+		if ( ! self::sanitize_svg_file( $svg_file ) ) {
+			if ( is_string( $svg_file ) && file_exists( $svg_file ) ) {
+				wp_delete_file( $svg_file );
+			}
+			return false;
+		}
+
+		return true; // SVG is sanitized and safe
+	}
+
+	/**
+	 * Sanitize an SVG file in place.
+	 *
+	 * The sanitized markup is written back over the file, so the bytes that
+	 * come to rest never contain script or other disallowed content. Returns
+	 * false when the file is not a valid SVG or cannot be made safe; the
+	 * caller decides whether to delete the file or reject the upload.
+	 *
+	 * @param string $svg_file Absolute path to the SVG file.
+	 * @return bool
+	 */
+	public static function sanitize_svg_file( $svg_file ) {
+		if ( ! is_string( $svg_file ) || ! file_exists( $svg_file ) || ! is_readable( $svg_file ) ) {
+			return false;
+		}
+
+		$svg = file_get_contents( $svg_file );
+		if ( $svg === false ) {
+			return false;
+		}
+
+		// Quick check to avoid non-SVG files (existing behavior).
+		if ( stripos( $svg, '<svg' ) === false ) {
+			return false;
+		}
+
+		// Initialize sanitizer.
+		$sanitizer = new Sanitizer();
+
+		// Security hardening.
+		$sanitizer->removeRemoteReferences( true ); // blocks external <use>, <image>, etc.
+		$sanitizer->minify( true );
+
+		// IMPORTANT:
+		// Do NOT call setAllowedTags() or setAllowedAttrs()
+		// The built-in allowlist is already safe and complete.
+
+		$clean_svg = $sanitizer->sanitize( $svg );
+
+		if ( $clean_svg === false ) {
+			return false; // Sanitization failed.
+		}
+
+		// Final validation using DOM.
+		$dom = new DOMDocument();
+		libxml_use_internal_errors( true );
+
+		if ( ! $dom->loadXML( $clean_svg, LIBXML_NONET ) ) {
+			return false;
+		}
+
+		// Ensure root element is <svg>.
+		if ( $dom->documentElement->nodeName !== 'svg' ) {
+			return false;
+		}
+
+		// Write the sanitized markup back so the sanitized bytes, not the
+		// original upload, are what actually gets stored.
+		if ( file_put_contents( $svg_file, $clean_svg ) === false ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Sanitize SVG uploads on WordPress's own upload path.
+	 *
+	 * Kirki's own uploader sanitizes SVGs, but enabling SVG support also opens
+	 * WordPress's native routes — wp-admin/upload.php, async-upload.php and the
+	 * REST media endpoint. Registered on wp_handle_upload_prefilter and
+	 * wp_handle_sideload_prefilter, this runs the same sanitizer on the temp
+	 * file before WordPress stores it, so no SVG with script content is ever
+	 * written to the uploads directory regardless of which route wrote it. An
+	 * SVG that cannot be made safe aborts the upload.
+	 *
+	 * SVGs are identified by extension and sniffed content rather than the
+	 * client-supplied MIME type, which the uploader chooses.
+	 *
+	 * @param array $file Upload array: { name, type, tmp_name, error, size }.
+	 * @return array
+	 */
+	public function kirki_sanitize_svg_on_upload( $file ) {
+		if ( ! is_array( $file ) || empty( $file['tmp_name'] ) || ! is_readable( $file['tmp_name'] ) ) {
+			return $file;
+		}
+
+		// Skip files that already carry an upload error.
+		if ( ! empty( $file['error'] ) ) {
+			return $file;
+		}
+
+		$name       = isset( $file['name'] ) ? strtolower( (string) $file['name'] ) : '';
+		$ext_is_svg = ( '.svg' === substr( $name, -4 ) );
+
+		$contents       = file_get_contents( $file['tmp_name'] );
+		$looks_like_svg = is_string( $contents ) && stripos( $contents, '<svg' ) !== false;
+
+		// Not an SVG by any signal: leave it for WordPress to handle.
+		if ( ! $ext_is_svg && ! $looks_like_svg ) {
+			return $file;
+		}
+
+		if ( ! self::sanitize_svg_file( $file['tmp_name'] ) ) {
+			$file['error'] = __( 'This SVG file could not be sanitized and was rejected.', 'kirki' );
+		}
+
+		return $file;
+	}
+
+}

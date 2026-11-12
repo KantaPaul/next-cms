@@ -1,0 +1,96 @@
+<?php
+
+namespace Kirki\App\FormActions\Actions;
+
+use Kirki\HelperFunctions;
+
+defined('ABSPATH') || exit;
+
+use Kirki\App\Constants\Form\FormWebhookMethods;
+use Kirki\App\Contracts\FormActionHandler;
+use Kirki\App\DTO\Form\FormConfigDTO;
+use Kirki\Framework\Supports\Facades\Http;
+
+/**
+ * Delivers a submission to a single configured webhook endpoint.
+ *
+ * Unlike the other channels, a webhook transport failure marks the whole
+ * submission as failed, so this is the only handler whose return value can be
+ * false.
+ */
+class WebhookActionHandler implements FormActionHandler
+{
+    public function handle(array $webhook, array $form_data, FormConfigDTO $form_config)
+    {
+        if (!isset($webhook['action'], $webhook['method'])) {
+            return false;
+        }
+
+        if ($webhook['method'] === FormWebhookMethods::GET) {
+            return $this->send_get($webhook['action'], $form_data);
+        }
+
+        if ($webhook['method'] === FormWebhookMethods::POST) {
+            return $this->send_post($webhook['action'], $form_data);
+        }
+
+        return false;
+    }
+
+    /**
+     * Send a GET webhook request.
+     *
+     * @param string $url       Webhook URL.
+     * @param array  $form_data Form data.
+     * @return bool Success status.
+     */
+    protected function send_get($url, $form_data)
+    {
+        if (!HelperFunctions::is_safe_url($url)) {
+            return false;
+        }
+
+        $query_string = http_build_query($form_data);
+        $url = rtrim($url, '/');
+        $url .= '/';
+
+        $response = Http::with_options($this->safe_request_options())->get($url . '?' . $query_string);
+
+        return $response->status() !== 0;
+    }
+
+    /**
+     * Send a POST webhook request.
+     *
+     * @param string $url       Webhook URL.
+     * @param array  $form_data Form data.
+     * @return bool Success status.
+     */
+    protected function send_post($url, $form_data)
+    {
+        if (!HelperFunctions::is_safe_url($url)) {
+            return false;
+        }
+
+        $response = Http::with_options($this->safe_request_options())->as_form()->post($url, $form_data);
+
+        return $response->status() !== 0;
+    }
+
+    /**
+     * Request options that keep the webhook on the URL is_safe_url() approved.
+     *
+     * is_safe_url() only checks the initial URL. Redirects would be followed without
+     * a re-check, so they are disabled; reject_unsafe_urls makes WordPress validate the
+     * target again at connect time (no private/loopback IPs, only ports 80, 443, 8080).
+     *
+     * @return array
+     */
+    protected function safe_request_options()
+    {
+        return [
+            'redirection' => 0,
+            'reject_unsafe_urls' => true,
+        ];
+    }
+}

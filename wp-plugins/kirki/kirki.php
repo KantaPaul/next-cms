@@ -1,0 +1,78 @@
+<?php
+/* THIS_FILE_IS_FREE */
+/**
+ * Kirki
+ *
+ * @package     kirki
+ * Plugin Name: Kirki
+ * Plugin URI: https://kirki.com
+ * Description: Kirki is an all-in-one no-code builder that empowers users to build professional-grade WordPress sites without writing any code. It’s a promising glimpse into the future of website development.
+ * Version: 6.4.2
+ * Author: Kirki
+ * Author URI: https://kirki.com
+ * License: GPLv2 or later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain: kirki
+ * Domain Path: /languages
+ * Requires at least: 5.9
+ * Requires PHP: 7.4
+ */
+
+use Kirki\HelperFunctions;
+
+if (!defined('ABSPATH')) {
+	exit; // Exit if accessed directly.
+}
+
+// Define KIRKI_VERSION early to prevent bundled Kirki versions from loading.
+if ( ! defined( 'KIRKI_VERSION' ) ) {
+	define( 'KIRKI_VERSION', '6.4.2' );
+}
+
+require_once plugin_dir_path( __FILE__ ) . 'config.php';
+require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/customizer/class-customizer.php';
+require_once __DIR__ . '/includes/KirkiBase.php';
+
+do_action( 'kirki_loaded' );
+
+if ( !class_exists('KirkiMain') && !class_exists('Droip') ) {
+	final class KirkiMain extends KirkiBase
+	{
+		protected function get_plugin_file(){
+			return __FILE__;
+		}
+
+		protected function load_version_specific_events(){
+			// TODO: This method will be removed in future version
+		}
+	}
+
+	/**
+	 * Initilizes the main plugin
+	 *
+	 * @return \Kirki
+	 */
+	if (!function_exists('KirkiMain')) {
+		/**
+		 * This function for entry point
+		 */
+		function KirkiMain()
+		{
+			return KirkiMain::init();
+		}
+
+		try {
+			// kick-off the plugin.
+			KirkiMain();
+		} catch (Exception $e) {
+		}
+	}
+}
+
+add_action('init', 'kirki_boot_application', 0);
+
+function kirki_boot_application()
+{
+	require_once KIRKI_PLUGIN_PATH . '/bootstrap/app.php';
+}

@@ -1,0 +1,209 @@
+<?php
+
+/**
+ * Plugin Loaded events handler
+ *
+ * @package kirki
+ */
+
+namespace Kirki\Manager;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Exit if accessed directly.
+}
+
+use Kirki\Admin;
+use Kirki\Ajax\Page;
+use Kirki\App\Services\PageStageMigrationService;
+use Kirki\App\Supports\Facades\Page as PageFacade;
+use Kirki\Frontend;
+use Kirki\HelperFunctions;
+
+use function Kirki\Framework\is_rest_request;
+
+/**
+ * Do some task during plugin activation
+ */
+class PluginLoadedEvents {
+
+
+
+	/**
+	 * Initilize the class
+	 *
+	 * @return void
+	 */
+	public function __construct() {
+		 add_action( 'plugins_loaded', array( $this, 'init_plugin' ) );
+		add_action( 'plugins_loaded', array( $this, 'do_migration_related_task' ) );
+
+		add_filter( 'cron_schedules', array( $this, 'register_stage_migration_schedule' ) );
+		add_action( PageStageMigrationService::CRON_HOOK, array( $this, 'run_stage_migration_batch' ) );
+		add_action( 'deleted_post', array( $this, 'delete_page_stages' ) );
+	}
+
+	/**
+	 * Add a "every minute" cron schedule for the version data migration
+	 *
+	 * @param array $schedules cron schedules.
+	 * @return array
+	 */
+	public function register_stage_migration_schedule( $schedules ) {
+		if ( ! isset( $schedules['kirki_stage_migration_interval'] ) ) {
+			$schedules['kirki_stage_migration_interval'] = array(
+				'interval' => MINUTE_IN_SECONDS,
+				'display'  => 'Kirki staging data migration',
+			);
+		}
+
+		return $schedules;
+	}
+
+	/**
+	 * Cron job: move one batch of old version data into the new tables
+	 *
+	 * @return void
+	 */
+	public function run_stage_migration_batch() {
+		( new PageStageMigrationService() )->run_batch();
+	}
+
+	/**
+	 * Delete the versions of a deleted page
+	 *
+	 * The foreign key does this too. This is a backup for databases without the foreign key.
+	 *
+	 * @param int $post_id deleted post id.
+	 * @return void
+	 */
+	public function delete_page_stages( $post_id ) {
+		PageFacade::stages()->delete_for_post( (int) $post_id );
+	}
+
+	/**
+	 * Initialize the plugin
+	 *
+	 * @return void
+	 */
+	public function init_plugin() {
+		if ( is_admin() ) {
+			new Admin();
+		} elseif (!is_rest_request()) {
+			new Frontend();
+		}
+	}
+
+	// This function updates the names of specific blocks to standardize them
+	public function update_block( $blocks ) {
+		// Loop through each block using its ID and content
+		foreach ( $blocks as $id => $block ) {
+			// Check if the block has a 'name' key
+			if ( isset( $block['name'] ) ) {
+				// If block name is one of the wrapper types, change it to 'items'
+				if (
+					$block['name'] === 'collection-wrapper' ||
+					$block['name'] === 'terms' ||
+					$block['name'] === 'users' ||
+					$block['name'] === 'comments' ||
+					$block['name'] === 'menus'
+				) {
+					$blocks[ $id ]['name'] = 'items';
+				}
+
+				// If block name is one of the item types, change it to 'item'
+				if (
+					$block['name'] === 'collection-item' ||
+					$block['name'] === 'term-item' ||
+					$block['name'] === 'user-item' ||
+					$block['name'] === 'comment-item' ||
+					$block['name'] === 'menu-item'
+				) {
+					$blocks[ $id ]['name'] = 'item';
+				}
+			}
+		}
+
+		// Return the updated blocks
+		return $blocks;
+	}
+
+	// This function goes through all stored page meta data and updates block names
+	public function alter_collection_names() {
+		// Get all meta data where key is matched (kirki meta key)
+		$data = Page::get_all_data_by_kirki_meta_key();
+
+		foreach ( $data as $key => $value ) {
+			$post_id    = $value['post_id'];       // ID of the post
+			$meta_key   = $value['meta_key'];     // Meta key name
+			$meta_value = $value['meta_value']; // Serialized meta value
+
+			$meta_value = unserialize( $meta_value, ['allowed_classes' => false] ); // Convert serialized data to array
+
+			// If the meta value has a 'blocks' key, handle it as a full page data
+			if ( isset( $meta_value['blocks'] ) ) {
+				$blocks         = $meta_value['blocks']; // Get the blocks array
+				$updated_blocks = $this->update_block( $blocks ); // Update block names
+
+				$meta_value['blocks'] = $updated_blocks; // Set updated blocks back
+				update_post_meta( $post_id, $meta_key, $meta_value ); // Save back to DB
+			} else {
+				// If no 'blocks' key, treat entire value as blocks array
+				$blocks         = $meta_value;
+				$updated_blocks = $this->update_block( $blocks ); // Update block names
+
+				$meta_value = $updated_blocks;
+				update_post_meta( $post_id, $meta_key, $meta_value ); // Save updated value
+			}
+		}
+	}
+
+
+	/**
+	 * Check version whether db needs update or not
+	 *
+	 * @return void
+	 */
+	public function do_migration_related_task() {
+		$version_in_db = HelperFunctions::get_kirki_version_from_db();
+		$needs_rewrite_flush = empty( $version_in_db ) || version_compare( $version_in_db, KIRKI_VERSION, '<' );
+
+		$db_altered_in3 = '2.1.0';
+		if ( empty( $version_in_db ) || version_compare( $version_in_db, $db_altered_in3, '<' ) ) {
+			$this->alter_collection_names();
+		}
+
+		$db_altered_in6 = '2.3.0';
+		if ( empty( $version_in_db ) || version_compare( $version_in_db, $db_altered_in6, '<' ) ) {
+			PluginActiveEvents::create_custom_tables();
+		}
+
+		$db_altered_in6 = '2.4.0';
+		if ( empty( $version_in_db ) || version_compare( $version_in_db, $db_altered_in6, '<' ) ) {
+			PluginActiveEvents::add_post_field_in_collaboaration_connected_table();
+		}
+
+		// Version history moved from wp_postmeta into its own tables.
+		$db_altered_in7 = '6.4.0';
+		if ( empty( $version_in_db ) || version_compare( $version_in_db, $db_altered_in7, '<' ) ) {
+			if ( ! PluginActiveEvents::create_page_stage_tables() ) {
+				/**
+				 * The tables could not be created (e.g. no CREATE permission).
+				 * Stop here and do not save the new version, so the next request tries again.
+				 * The old data stays in wp_postmeta and keeps working.
+				 */
+				error_log( 'Kirki: failed to create the page staging tables, staging data stays in wp_postmeta.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				return;
+			}
+
+			( new PageStageMigrationService() )->start();
+		} else {
+			( new PageStageMigrationService() )->ensure_scheduled();
+		}
+
+		HelperFunctions::set_kirki_version_in_db();
+
+		if ( $needs_rewrite_flush ) {
+			flush_rewrite_rules( false );
+		}
+	}
+}

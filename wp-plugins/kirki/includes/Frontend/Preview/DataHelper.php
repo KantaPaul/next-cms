@@ -1,0 +1,251 @@
+<?php
+/**
+ * Preview scripts data and styles helper
+ *
+ * @package kirki
+ */
+
+namespace Kirki\Frontend\Preview;
+
+use Kirki\HelperFunctions;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Exit if accessed directly.
+}
+
+/**
+ * Class DataHelper
+ */
+class DataHelper {
+
+	/**
+	 * Temporary IDs store
+	 *
+	 * @var array
+	 */
+	public $temp_ids = array();
+
+	/**
+	 * Temporary Data store
+	 *
+	 * @var array
+	 */
+	public $temp_data   = array();
+	public $temp_styles = array();
+
+	/**
+	 * Generate or retrieve a unique new ID for a given original ID.
+	 *
+	 * @param int    $id     Original ID.
+	 * @param string $prefix ID prefix.
+	 *
+	 * @return string Unique new ID.
+	 */
+	private function get_unique_new_id( $id, $prefix = 'kirki-s' ) {
+		if ( isset( $this->temp_ids[ $id ] ) ) {
+			return $this->temp_ids[ $id ];
+		}
+
+		$new_id                = $prefix . '-' . uniqid();
+		$this->temp_ids[ $id ] = $new_id;
+
+		return $new_id;
+	}
+
+	/**
+	 * Recursively update IDs and build a new data structure.
+	 *
+	 * @param array  $data      Source data array.
+	 * @param string $root      Root element ID.
+	 * @param string $symbol_id Optional symbol ID for class prefixing.
+	 */
+	public function rec_update_data_id_to_new_id( $data, $styles, $root, $symbol_id = null ) {
+		if ( ! isset( $data[ $root ] ) ) {
+			return;
+		}
+
+		$prefix        = $symbol_id ? 'kirki-s' . $symbol_id : null;
+		$new_id        = $this->get_unique_new_id( $root );
+		$element       = $data[ $root ];
+
+		if($element['name'] === 'collection' || $element['name'] === 'slider'){
+			$element['original_id'] = $element['id'];
+		}
+		$element['id'] = $new_id;
+
+		$style_ids = isset( $element['styleIds'] ) ? $element['styleIds'] : array();
+		$class_ids = isset( $element['properties']['classesIds'] ) ? $element['properties']['classesIds'] : array();
+
+		// Merge the global classIds with the styleIds to apply class styles
+		$style_ids = array_merge( $class_ids, $style_ids );
+
+		if ( ! empty( $style_ids ) ) {
+			foreach ( $style_ids as $style_id ) {
+				if ( isset( $styles[ $style_id ] ) ) {
+					$this->temp_styles[ $style_id ] = $styles[ $style_id ];
+				}
+			}
+		}
+		// Update parent ID
+		if ( $element['parentId'] !== null ) {
+			$element['parentId'] = $this->get_unique_new_id( $element['parentId'] );
+		}
+
+		// Update children
+		if ( ! empty( $element['children'] ) ) {
+			$children = array();
+			foreach ( $element['children'] as $child_id ) {
+				$child_new_id = $this->get_unique_new_id( $child_id );
+				$children[]   = $child_new_id;
+				$this->rec_update_data_id_to_new_id( $data, $styles, $child_id, $symbol_id );
+			}
+			$element['children'] = $children;
+		}
+
+		// Update content elements
+		if ( isset( $element['properties']['contents'] ) && is_array( $element['properties']['contents'] ) ) {
+			$contents = array();
+			foreach ( $element['properties']['contents'] as $content ) {
+				if ( is_array( $content ) && isset( $content['id'] ) ) {
+					$content_id = $this->get_unique_new_id( $content['id'] );
+					$contents[] = array( 'id' => $content_id );
+					$this->rec_update_data_id_to_new_id( $data, $styles, $content['id'], $symbol_id );
+				} else {
+					$contents[] = $content;
+				}
+			}
+			$element['properties']['contents'] = $contents;
+		}
+
+		// Update interaction class names and element IDs
+		if ( isset( $element['properties']['interactions'] ) ) {
+			$this->update_interactions( $element['properties']['interactions'], $prefix, $styles );
+		}
+		if ( isset( $element['properties']['interactionLibrary'] ) ) {
+			$element['properties']['interactionLibrary'] = $this->update_interaction_library( $element['properties']['interactionLibrary'], $prefix, $data );
+		}
+
+		$this->temp_data[ $element['id'] ] = $element;
+	}
+
+	/**
+	 * Helper function to update interaction class names and element IDs.
+	 *
+	 * @param array  &$interactions Interaction properties reference.
+	 * @param string $prefix        Optional prefix for class names.
+	 */
+	private function update_interactions( &$interactions, $prefix, $styles ) {
+		// TODO: we need to set $this->styles if available in interaction panel.
+		foreach ( $interactions as $key => &$value ) {
+			if ( $key === 'deviceAndClassList' && isset( $value['classList'] ) && $prefix ) {
+				$value['classList'] = HelperFunctions::add_prefix_to_class_name( $prefix, $value['classList'] );
+			} elseif ( $key === 'elementAsTrigger' ) {
+				foreach ( $value as &$event ) {
+					foreach ( $event as &$preset_or_custom ) {
+						foreach ( $preset_or_custom as &$action ) {
+							$new_data = array();
+
+							foreach ( $action['data'] as $ele_id => $animation ) {
+								if ( strpos( $ele_id, '____info' ) !== false ) {
+									continue;
+								}
+
+								$new_id              = $this->get_unique_new_id( $ele_id );
+								$new_data[ $new_id ] = $animation;
+
+								// Copy associated info and update classList if needed
+								$info_key = $ele_id . '____info';
+								if ( isset( $action['data'][ $info_key ] ) ) {
+									$info = $action['data'][ $info_key ];
+									if ( isset( $info['classList'] ) && $prefix ) {
+										$info['classList'] = HelperFunctions::add_prefix_to_class_name( $prefix, $info['classList'] );
+									}
+									$new_data[ $new_id . '____info' ] = $info;
+								}
+							}
+
+							$action['data'] = $new_data;
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+	private function update_interaction_library( $interactionLibrary, $prefix, $data ) {
+		
+		foreach ( $interactionLibrary as $library_item_index => $library_item ) {
+
+			if ( ! isset( $library_item['data'] ) || ! is_array( $library_item['data'] ) ) {
+				continue;
+			}
+
+			foreach ( $library_item['data'] as $viewport => $viewport_data ) {
+				if ( ! isset( $viewport_data['animation-target']['targets'] ) || ! is_array( $viewport_data['animation-target']['targets'] ) ) {
+					continue;
+				}
+
+				foreach ( $viewport_data['animation-target']['targets'] as $target_index => $target ) {
+					if ( empty( $target['targetId'] ) || ! isset( $data[ $target['targetId'] ] ) ) {
+						continue;
+					}
+
+					$interactionLibrary[ $library_item_index ]['data'][ $viewport ]['animation-target']['targets'][ $target_index ]['targetId'] = $this->get_unique_new_id( $target['targetId'] );
+				}
+			}
+		}
+
+		return $interactionLibrary;
+	}
+
+	/**
+	 * Recursively collect data and styles starting from a root block.
+	 *
+	 * @param string $root_id        Root block ID.
+	 * @param array  &$data_n_styles Output container for blocks and styles.
+	 * @param array  $data           Full block data set.
+	 * @param array  $styles         Full styles data set.
+	 */
+	public static function get_data_and_styles_from_root( $root_id, &$data_n_styles, $data = array(), $styles = array() ) {
+		if ( ! isset( $data[ $root_id ] ) ) {
+			return;
+		}
+
+		$block                               = $data[ $root_id ];
+		$data_n_styles['blocks'][ $root_id ] = $block;
+
+		// Add styles for this block
+		$style_ids = isset( $block['styleIds'] ) ? $block['styleIds'] : array();
+		$class_ids = isset( $block['properties']['classesIds'] ) ? $block['properties']['classesIds'] : array();
+
+		// Merge the global classIds with the styleIds to preview class styles
+		$style_ids = array_merge( $class_ids, $style_ids );
+
+		if ( ! empty( $style_ids ) ) {
+			foreach ( $style_ids as $style_id ) {
+				if ( isset( $styles[ $style_id ] ) ) {
+					$data_n_styles['styles'][ $style_id ] = $styles[ $style_id ];
+				}
+			}
+		}
+
+		// Traverse contents for text-based blocks
+		if ( isset( $block['name'] ) && in_array( $block['name'], array( 'paragraph', 'heading', 'text' ), true ) ) {
+			if ( ! empty( $block['properties']['contents'] ) && is_array( $block['properties']['contents'] ) ) {
+				foreach ( $block['properties']['contents'] as $content ) {
+					if ( is_array( $content ) && isset( $content['id'] ) ) {
+						self::get_data_and_styles_from_root( $content['id'], $data_n_styles, $data, $styles );
+					}
+				}
+			}
+		}
+
+		// Traverse children
+		if ( ! empty( $block['children'] ) ) {
+			foreach ( $block['children'] as $child_id ) {
+				self::get_data_and_styles_from_root( $child_id, $data_n_styles, $data, $styles );
+			}
+		}
+	}
+}

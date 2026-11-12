@@ -1,0 +1,512 @@
+<?php
+
+/**
+ * Preivew scripts data and styles helper
+ *
+ * @package kirki
+ */
+
+namespace Kirki\Frontend\Preview;
+
+use Kirki\Ajax\Users;
+use Kirki\API\ContentManager\ContentManagerHelper;
+use Kirki\HelperFunctions;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Exit if accessed directly.
+}
+
+/**
+ * DataHelper Class
+ */
+class Utils {
+
+	public static function get_items_data_from_dynamic_contents( $dynamic_content, $options ) {
+		$collection_type = $dynamic_content['collectionType'];
+		if ( $collection_type === 'users' ) {
+			return self::get_users_collection( $dynamic_content, $options );
+		} elseif ( $collection_type === 'posts' ) {
+			return self::get_posts_collection( $dynamic_content, $options );
+		} elseif ( $collection_type === 'terms' ) {
+			return self::get_terms_collection( $dynamic_content, $options );
+		} else {
+			$args       = self::get_common_args( $dynamic_content, $options );
+			$collection = apply_filters( 'kirki_collection_' . $dynamic_content['collectionType'], false, $args );
+			$data       = $collection ? $collection['data'] : array();
+			$pagination = $collection ? $collection['pagination'] : array();
+			$item_type  = $collection && isset( $collection['itemType'] ) ? $collection['itemType'] : 'post';
+			return array(
+				'data'       => $data,
+				'pagination' => $pagination,
+				'itemType'   => $item_type,
+			);
+		}
+	}
+
+	private static function get_posts_collection( $dynamic_content, $options ) {
+		$args       = self::get_common_args( $dynamic_content, $options );
+		$collection = HelperFunctions::get_posts( $args );
+		$data       = $collection['data'];
+		$pagination = $collection['pagination'];
+		return array(
+			'data'       => $data,
+			'pagination' => $pagination,
+			'itemType'   => 'post',
+		);
+	}
+	private static function get_terms_collection( $dynamic_content, $options ) {
+		$args = array(
+			'taxonomy'      => $dynamic_content['taxonomy'],
+			'hide_empty'    => false,
+			'current_page'  => isset( $options['page'] ) ? $options['page'] : 1,
+			'item_per_page' => isset( $dynamic_content['items'] ) ? $dynamic_content['items'] : 3,
+			'offset'        => isset( $dynamic_content['offset'] ) ? $dynamic_content['offset'] : 0,
+		);
+
+		if ( isset( $dynamic_content['inherit'] ) && $dynamic_content['inherit'] ) {
+			if ( isset( $options['itemType'] ) && $options['itemType'] === 'post' ) {
+				$post_parent = $options['post']->ID;
+			} else {
+				$post_parent = HelperFunctions::get_post_id_if_possible_from_url();
+			}
+			$args['post_parent'] = $post_parent;
+			$args['inherit']     = true;
+		}
+
+		$terms = HelperFunctions::get_terms( $args );
+
+		$data       = $terms['data'];
+		$pagination = $terms['pagination'];
+		return array(
+			'data'       => $data,
+			'pagination' => $pagination,
+			'itemType'   => 'term',
+		);
+	}
+
+	private static function get_users_collection( $dynamic_content, $options ) {
+		$args = array();
+
+		if ( isset( $dynamic_content['sorting'] ) && is_array( $dynamic_content['sorting'] ) ) {
+			$order   = $dynamic_content['sorting']['order'] ?? $dynamic_content['sorting']['type'] ?? 'DESC';
+			$orderby = $dynamic_content['sorting']['orderby'] ?? $dynamic_content['sorting']['value'] ?? 'date';
+			$args['sorting'] = array(
+				'order'   => $order,
+				'orderby' => $orderby,
+			);
+		}
+
+		if ( isset( $options['filters'] ) ) {
+			$args['filters'] = $options['filters'];
+		} elseif ( isset( $dynamic_content['filters'] ) ) {
+			$args['filters'] = $dynamic_content['filters'];
+		}
+
+		if ( isset( $dynamic_content['inherit'] ) && $dynamic_content['inherit'] === true ) {
+			$args['inherit']     = true;
+			$args['post_parent'] = $options['post']->ID ?? HelperFunctions::get_post_id_if_possible_from_url();
+		}
+
+		$item_per_page = isset( $dynamic_content['items'] ) ? $dynamic_content['items'] : 3;
+		$offset        = isset( $dynamic_content['offset'] ) ? $dynamic_content['offset'] : 0;
+
+		$current_page = 1;
+		if ( isset( $options['page'] ) ) {
+			$current_page = $options['page'];
+		}
+
+		$args['current_page']  = $current_page;
+		$args['item_per_page'] = $item_per_page;
+		$args['offset']        = $offset;
+
+		if ( isset( $options['q'] ) ) {
+			$args['q'] = $options['q'];
+		}
+
+		$users      = Users::get_users( $args );
+		$data       = $users['data'];
+		$pagination = $users['pagination'];
+
+		return array(
+			'data'       => $data,
+			'pagination' => $pagination,
+			'itemType'   => 'user',
+		);
+	}
+
+
+	private static function get_common_args( $dynamic_content, $options ) {
+		$args = array();
+		if ( isset( $dynamic_content['sorting'] ) && is_array( $dynamic_content['sorting'] ) ) {
+			$order   = $dynamic_content['sorting']['order'] ?? $dynamic_content['sorting']['type'] ?? 'DESC';
+			$orderby = $dynamic_content['sorting']['orderby'] ?? $dynamic_content['sorting']['value'] ?? 'date';
+			$args['sorting'] = array(
+				'order'   => $order,
+				'orderby' => $orderby,
+			);
+		}
+
+		if ( isset( $options['filters'] ) ) {
+			$args['filters'] = $options['filters'];
+		} elseif ( isset( $dynamic_content['filters'] ) ) {
+			$args['filters'] = $dynamic_content['filters'];
+		}
+
+		$search_related_collection_ids = isset( $options['search_related_collection_ids'] ) ? $options['search_related_collection_ids'] : array();
+		$is_searchable_collection_element = isset($search_related_collection_ids[$options['element_id']]);
+
+		if ( ! isset( $dynamic_content['relatedCollection'] ) && $is_searchable_collection_element ) {
+
+			// This code is for taxonomy filter START
+			$filters    = array();
+			$taxonomies = array();
+			if ( isset( $_GET['taxonomy'] ) && is_array( $_GET['taxonomy'] ) ) {
+				$taxonomies = $_GET['taxonomy'];
+			} elseif ( isset( $options['collection_param_filters'], $options['collection_param_filters']['taxonomy'] ) ) {
+				// This code came from pagination, filter, search api from frontend
+				$taxonomies = $options['collection_param_filters']['taxonomy'];
+			}
+			foreach ( $taxonomies as $name => $value ) {
+				if ( ! empty( $value ) ) {
+					$filters[] = array(
+						'id'       => 'taxonomy',
+						'type'     => 'taxonomy',
+						'taxonomy' => $name,
+						'terms'    => $value,
+					);
+				}
+			}
+
+			$args['filters'] = array_merge( $args['filters'], $filters );
+			// This code is for taxonomy filter END
+
+			// This code is for post/cm filter START
+			$ref_post_ids = array();
+			if ( isset( $_GET['post'], $_GET['post']['cm_post'] ) && is_array( $_GET['post']['cm_post'] ) ) {
+				$ref_post_ids = array_map( 'intval', $_GET['post']['cm_post'] );
+			} elseif ( isset( $options['collection_param_filters'], $options['collection_param_filters']['post'], $options['collection_param_filters']['post']['cm_post'] ) ) {
+				// This code came from pagination, filter, search api from frontend
+				$ref_post_ids = $options['collection_param_filters']['post']['cm_post'];
+			}
+
+			if ( ! empty( $ref_post_ids ) ) {
+
+				$included_post_ids = ContentManagerHelper::get_post_ids_by_ref_post_ids( $ref_post_ids );
+
+				$args['IDs'] = $included_post_ids;
+				// Make sure all post ids are integers
+			}
+			// This code is for post/cm filter END
+		}
+
+		if ( isset( $dynamic_content['type'] ) ) {
+			$args['name'] = $dynamic_content['type'];
+		}
+
+		if ( isset( $dynamic_content['inherit'] ) && $dynamic_content['inherit'] === true ) {
+			$args['inherit'] = true;
+
+			if ( isset( $options['itemType'], $options[ $options['itemType'] ], $options[ $options['itemType'] ]->ID ) ) {
+				// if itemType is set and it has ID property then use it as post_parent
+				$args['post_parent'] = $options[ $options['itemType'] ]->ID;
+			} else {
+				$args['post_parent'] = $options['post']->ID ?? HelperFunctions::get_post_id_if_possible_from_url();
+			}
+
+			if ( isset( $options['user'], $options['user']['ID'] ) ) {
+				// update $filter data with this user author in property
+
+				$args['context'] = array(
+					'id'             => $options['user']['ID'],
+					'collectionType' => 'user',
+				);
+			}
+			if ( isset( $options['term'] ) ) {
+				// update $filter data with this term in property
+				$args['context'] = array(
+					'id'             => $options['term']['term_id'],
+					'slug'           => $options['term']['slug'],
+					'taxonomy'       => $options['term']['taxonomy'],
+					'collectionType' => 'term',
+				);
+			}
+
+			if ( isset( $options['comment'] ) ) {
+				$comment = $options['comment'];
+
+				if ( isset( $comment['id'] ) ) {
+
+					$args['context'] = array(
+						'comment_ID' => $comment['id'], // comment_ID
+					);
+				} elseif ( isset( $comment['comment_ID'] ) ) {
+					$args['context'] = array(
+						'comment_ID' => $comment['comment_ID'], // comment_ID
+					);
+				}
+			}
+
+			// for external plugin support
+			if ( isset( $options['itemType'], $options[ $options['itemType'] ] ) ) {
+				$args['parent_item_type'] = $options['itemType'];
+				$args['parent_item']      = $options[ $options['itemType'] ];
+			}
+		}
+		if ( isset( $dynamic_content['related'] ) && $dynamic_content['related'] === true ) {
+			$args['related']             = true;
+			$args['related_post_parent'] = $options['post']->ID ?? HelperFunctions::get_post_id_if_possible_from_url();
+		}
+
+		if ( ! empty( $dynamic_content['type'] ) && false !== strpos( $dynamic_content['type'], KIRKI_CONTENT_MANAGER_PREFIX ) ) {
+			$parent_id           = str_replace( KIRKI_CONTENT_MANAGER_PREFIX . '_', '', $dynamic_content['type'] );
+			$args['post_parent'] = $parent_id;
+		}
+
+		$item_per_page = isset( $dynamic_content['items'] ) ? $dynamic_content['items'] : 3;
+		$offset        = isset( $dynamic_content['offset'] ) ? $dynamic_content['offset'] : 0;
+
+		$current_page = 1;
+		if ( isset( $options['page'] ) ) {
+			$current_page = $options['page'];
+		}
+
+		$args['current_page']  = $current_page;
+		$args['item_per_page'] = $item_per_page;
+		$args['offset']        = $offset;
+
+		// if options has query value
+		if ( isset( $options['q'] ) ) {
+			$args['q'] = $options['q'];
+		}
+
+		if(empty($args['q'])){
+			$args['q'] = HelperFunctions::sanitize_text(isset($_REQUEST['q']) ?$_REQUEST['q']:'' );
+		}
+		
+		if( (isset($options['inside_collection']) && $options['inside_collection'] === true) || !$is_searchable_collection_element ) {
+			// this is for nested collection like: terms, multiref etc
+			$args['current_page'] = 1;
+			$args['pagination'] = false;
+			$args['q'] = '';
+		}
+
+		return $args;
+	}
+
+	/**
+	 * Dynamic content types whose values are plain text by nature and must never
+	 * be rendered as live markup.
+	 *
+	 * Comment fields are the important case: their content is supplied by
+	 * (potentially unauthenticated) visitors, so anything stored there is
+	 * untrusted. `user` (and `author`, which resolves to a user's
+	 * display_name) are included for the same reason: display_name is writable
+	 * by any authenticated user on their own account through the core profile
+	 * form, and the KirkiComponentLibrary_* user-meta fields are writable by
+	 * unauthenticated visitors through the plugin's own registration route.
+	 * Rich types — `post` (post_content), `reference`, `gallery`,
+	 * `menu` — are deliberately excluded, because those are authored by users
+	 * with editing capabilities and are expected to emit HTML.
+	 *
+	 * @return string[]
+	 */
+	public static function get_plain_text_dynamic_content_types() {
+		return apply_filters( 'kirki_plain_text_dynamic_content_types', array( 'comment', 'user', 'author' ) );
+	}
+
+	/**
+	 * Escape a resolved dynamic value when its type is plain text by nature.
+	 *
+	 * The value is decoded first and then escaped, so markup that was stored in
+	 * entity-encoded form (`&lt;script&gt;`) is normalised to a single, escaped
+	 * representation and displays as the literal text the visitor typed instead
+	 * of turning back into a live tag further down the render pipeline.
+	 *
+	 * Decoding runs to a fixed point (repeatedly, until a pass changes nothing)
+	 * rather than once. A single pass leaves multiply-encoded input such as
+	 * `&amp;#91;` as `&#91;` — no literal bracket yet, so the bracket escaping
+	 * below has nothing to act on — and that residual entity would only turn
+	 * into a real `[`/`]` later, once the composed page runs back through
+	 * html_entity_decode() elsewhere in the render pipeline, after this
+	 * escaping step has already run. Decoding to a fixed point first means
+	 * every layer is gone before brackets are doubled, so nothing is left for
+	 * a later decode pass to reveal.
+	 *
+	 * After decoding, every square bracket is removed outright — single or
+	 * paired. A shortcode cannot exist without `[` and `]`, so deleting them
+	 * all guarantees visitor comment text can never be parsed as a shortcode by
+	 * any later do_shortcode() pass, regardless of how many decode passes a
+	 * later pipeline stage (decode_entities_without_creating_markup) performs.
+	 *
+	 * @param mixed $content         The resolved dynamic value.
+	 * @param array $dynamic_content The dynamic content definition.
+	 * @return mixed The escaped value, or the value untouched when it is not plain text.
+	 */
+	public static function esc_dynamic_text_value( $content, $dynamic_content ) {
+		if ( ! is_string( $content ) || '' === $content ) {
+			return $content;
+		}
+
+		$type = isset( $dynamic_content['type'] ) ? $dynamic_content['type'] : '';
+
+		if ( ! in_array( $type, self::get_plain_text_dynamic_content_types(), true ) ) {
+			return $content;
+		}
+
+		// Decode all HTML-entity layers so every hidden bracket pair is revealed.
+		do {
+			$before  = $content;
+			$content = html_entity_decode( $content, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		} while ( $content !== $before );
+
+		// Remove every square bracket outright — single or paired.
+		$content = str_replace( array( '[', ']' ), '', $content );
+
+		return htmlspecialchars( $content, ENT_QUOTES, 'UTF-8' );
+	}
+
+	/**
+	 * Sanitize a plain-text value at input time (storage), before it is saved.
+	 *
+	 * Counterpart to esc_dynamic_text_value(), which escapes at render time.
+	 * Same decode-to-fixed-point loop as the comment handler and the output
+	 * escaper (reused pattern, not a new control), so entity-encoded markup
+	 * (`&lt;script&gt;`, `&#91;kirki...&#93;`) cannot smuggle tags or
+	 * shortcodes past storage.
+	 *
+	 * Deliberately does NOT encode quotes or angle brackets here: quotes in
+	 * names (O'Brien) are legitimate data, and each output context neutralises
+	 * them correctly (esc_url() for src/href, esc_attr()/htmlspecialchars for
+	 * text). Stripping quotes at input would corrupt real names while adding
+	 * no safety the output layer does not already provide. Brackets, however,
+	 * have no legitimate use in a name/meta plain-text field and are the
+	 * shortcode trigger, so they are removed outright.
+	 *
+	 * @param mixed $value Raw user-supplied value.
+	 * @return mixed Sanitized string, or the value untouched when not a string.
+	 */
+	public static function sanitize_plain_text_input( $value ) {
+		if ( ! is_string( $value ) || '' === $value ) {
+			return $value;
+		}
+
+		// Decode all HTML-entity layers so hidden tags/brackets are revealed.
+		do {
+			$before = $value;
+			$value  = html_entity_decode( $value, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		} while ( $value !== $before );
+
+		$value = sanitize_text_field( $value );
+
+		// A shortcode cannot exist without `[` and `]`.
+		$value = str_replace( array( '[', ']' ), '', $value );
+
+		return $value;
+	}
+
+	public static function getDynamicRichTextValue( $dynamic_content, $options ) {
+		$html = '';
+		if ( ! $dynamic_content ) {
+			return $html;
+		}
+		// Post excerpt length for frontend. If post excerpt is used.
+		if (isset($dynamic_content['value']) && $dynamic_content['value'] === 'post_excerpt' && isset( $dynamic_content['postExcerptLength'] ) ) {
+			$post_excerpt_length                  = $dynamic_content['postExcerptLength'] ?? 55;
+			$GLOBALS['kirki_post_excerpt_length'] = $post_excerpt_length;
+		}
+
+		$contentInfo = array(
+			'dynamicContent' => $dynamic_content,
+			'options'        => $options,
+		);
+
+		if ( isset( $options['itemType'], $options[ $options['itemType'] ], $options[ $options['itemType'] ]->ID ) ) {
+			$contentInfo['collectionItem'] = array(
+				'ID' => $options[ $options['itemType'] ]->ID,
+			);
+		}
+		$content = apply_filters( 'kirki_dynamic_content', false, $contentInfo );
+		if ( $content ) {
+			return self::esc_dynamic_text_value( $content, $dynamic_content );
+		}
+
+		// fix warning
+		if(!isset($dynamic_content['value'])){
+			$dynamic_content['value'] = false;
+		}
+
+		if ( $dynamic_content['type'] === 'post' ) {
+			$dynamic_options = array();
+			$cm_field_type   = isset( $dynamic_content['cmFieldType'] ) ? $dynamic_content['cmFieldType'] : '';
+			if ( isset( $dynamic_content['format'] ) && 'post_date' === $dynamic_content['value'] ) {
+				$dynamic_options['format'] = $dynamic_content['format'];
+			} elseif ( ( 'post_time' === $dynamic_content['value'] || 'time' === $cm_field_type ) && isset( $dynamic_content['timeFormat'] ) ) {
+				$dynamic_options['timeFormat'] = $dynamic_content['timeFormat'];
+			}
+
+			$content = HelperFunctions::get_post_dynamic_content(
+				$dynamic_content['value'],
+				$options['post'] ?? null,
+				$dynamic_content['meta'] ?? '',
+				$dynamic_options
+			);
+
+			// `post_author` resolves to a user's display_name, which is writable
+			// by that user (Subscriber+) — treat it as untrusted plain text even
+			// though its container type is `post`.
+			if ( 'post_author' === $dynamic_content['value'] ) {
+				$content = self::esc_dynamic_text_value( $content, array( 'type' => 'author' ) );
+			}
+
+			$html .= $content;
+		} elseif ( $dynamic_content['type'] === 'term' && isset( $options['term'] ) && isset( $options['term'][ $dynamic_content['value'] ] ) ) {
+			$html .= $options['term'][ $dynamic_content['value'] ];
+		} elseif ( $dynamic_content['type'] === 'user' ) {
+			// $html .= $options['user'][ $dynamic_content['value'] ];
+			$user_id = $options['user']['ID'] ?? null;
+			// Inside a posts collection item, "User" means the item's author (not the viewer).
+			if ( ! $user_id && isset( $options['itemType'], $options['post']->ID ) && $options['itemType'] === 'post' ) {
+				$collection_item_post = get_post( $options['post']->ID );
+				$user_id              = $collection_item_post ? (int) $collection_item_post->post_author : null;
+			}
+			$content = HelperFunctions::get_user_dynamic_content(
+				$dynamic_content['value'],
+				$user_id,
+				$dynamic_content['meta'] ?? ''
+			);
+
+				// Date may need to format
+			if ( 'registered_date' === $dynamic_content['value'] && isset( $dynamic_content['format'] ) ) {
+				$content = HelperFunctions::format_date( $content, $dynamic_content['format'] );
+			}
+
+			// User-controlled values (display_name, registration meta) must
+			// never become live markup or shortcode source.
+			$content = self::esc_dynamic_text_value( $content, $dynamic_content );
+
+			$html .= $content;
+
+		} elseif ( $dynamic_content['type'] === 'menu' && isset( $options['menu'] ) && isset( $options['menu']->{$dynamic_content['value']} ) ) {
+			$html .= $options['menu']->{$dynamic_content['value']};
+		} elseif ( $dynamic_content['type'] === 'others' && isset( $dynamic_content['value'] ) ) {
+			// Post count is used in collection item index.
+			if ( $dynamic_content['value'] === 'item_index' && isset( $options['item_index'] ) ) {
+				$content = $options['item_index'];
+
+				$html .= $content;
+			}
+		} else {
+			$item_type = $dynamic_content['type'];
+			if ( isset( $options[ $item_type ] ) ) {
+				$data  = $options[ $item_type ] ?? array();
+				$value = isset( $data[ $dynamic_content['value'] ] ) ? $data[ $dynamic_content['value'] ] : '';
+				// Covers `author` / `comment` collection items that bypass the
+				// `kirki_dynamic_content` filter. No-op for trusted types.
+				$value  = self::esc_dynamic_text_value( $value, $dynamic_content );
+				$html .= $value;
+			}
+		}
+
+		return $html;
+	}
+}

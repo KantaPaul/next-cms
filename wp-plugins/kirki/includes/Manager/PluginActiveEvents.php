@@ -1,0 +1,320 @@
+<?php
+/**
+ * Plugin active events handler
+ *
+ * @package kirki
+ */
+
+namespace Kirki\Manager;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Exit if accessed directly.
+}
+use Kirki\HelperFunctions;
+
+// use function Kirki\Framework\migrator;
+
+/**
+ * Do some task during plugin activation
+ */
+class PluginActiveEvents {
+
+
+	/**
+	 * Initilize the class
+	 *
+	 * @return void
+	 */
+	public function __construct() {
+		$installed = get_option('kirki_installed' );
+		if ( ! $installed ) {
+			update_option('kirki_installed', time() );
+		}
+
+		HelperFunctions::set_kirki_version_in_db();
+		$this->deactivate_droip_plugin();
+
+		self::create_custom_tables();
+
+		// migrator()->run();
+	}
+
+	/**
+	 * Deactivate droip/droip.php plugin to prevent conflicts
+	 *
+	 * @return void
+	 */
+	private function deactivate_droip_plugin() {
+		if ( ! function_exists( 'is_plugin_active' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+		
+		$droip_plugin = 'droip/droip.php';
+		
+		if ( is_plugin_active( $droip_plugin ) ) {
+			deactivate_plugins( $droip_plugin );
+		}
+	}
+
+	/**
+	 * Create custom tables
+	 *
+	 * @return void
+	 */
+	public static function create_custom_tables() {
+		self::create_forms_table();
+		self::create_collaboration_table();
+		self::create_cm_reference_table();
+		self::create_comments_table();
+		self::create_page_stage_tables();
+	}
+
+	/**
+	 * Create forms table
+	 *
+	 * @return void
+	 */
+	private static function create_forms_table() {
+		global $wpdb;
+		$charset_collate = $wpdb->get_charset_collate();
+
+		$form_table       = $wpdb->prefix . KIRKI_FORM_TABLE;
+		$form_table_query = "CREATE TABLE IF NOT EXISTS $form_table (
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			post_id BIGINT UNSIGNED NOT NULL,
+			form_ele_id VARCHAR(255) NOT NULL,
+			name VARCHAR(255) DEFAULT 'My Kirki Form',
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id)
+		) $charset_collate;";
+
+		$form_data_table       = $wpdb->prefix . KIRKI_FORM_DATA_TABLE;
+		$form_data_table_query = "CREATE TABLE IF NOT EXISTS $form_data_table (
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			form_id BIGINT UNSIGNED NOT NULL,
+			user_id BIGINT UNSIGNED DEFAULT NULL,
+			session_id VARCHAR(255) NOT NULL,
+			timestamp BIGINT NOT NULL,
+			input_key VARCHAR(255) NOT NULL,
+			input_value VARCHAR(2000) NOT NULL,
+			input_type VARCHAR(100) NOT NULL DEFAULT 'text',
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY form_id (form_id)
+			-- FOREIGN KEY constraints are not handled by dbDelta reliably
+		) $charset_collate;";
+
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		dbDelta( $form_table_query );
+		dbDelta( $form_data_table_query );
+	}
+
+	/**
+	 * Create forms table
+	 *
+	 * @return void
+	 */
+	private static function create_collaboration_table() {
+		global $wpdb;
+		$charset_collate = $wpdb->get_charset_collate();
+
+		$table_name = $wpdb->prefix . KIRKI_COLLABORATION_TABLE;
+		$sql1       = "CREATE TABLE IF NOT EXISTS $table_name (
+      id bigint(20) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      user_id bigint(20) NOT NULL,
+      session_id varchar(50) NOT NULL,
+      parent varchar(255) NOT NULL COMMENT 'table name',
+      parent_id bigint(20) COMMENT 'table row id', 
+      data longtext COMMENT 'json data', 
+      status int(1) NOT NULL COMMENT '1=active, 2=sent, 0=expire', 
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) $charset_collate;";
+
+		$table_name = $wpdb->prefix . KIRKI_COLLABORATION_TABLE . '_connected';
+		$sql2       = "CREATE TABLE IF NOT EXISTS $table_name (
+		id bigint(20) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+		user_id bigint(20) NOT NULL,
+		post_id bigint(20) NOT NULL,
+		session_id varchar(50) NOT NULL,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+		) $charset_collate;";
+
+		$table_name = $wpdb->prefix . KIRKI_COLLABORATION_TABLE . '_sent';
+		$sql3       = "CREATE TABLE IF NOT EXISTS $table_name (
+		id bigint(20) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+		collaboration_id bigint(20) NOT NULL,
+		session_id varchar(50) NOT NULL,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+		) $charset_collate;";
+
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		dbDelta( $sql1 );
+		dbDelta( $sql2 );
+		dbDelta( $sql3 );
+	}
+
+	public static function add_post_field_in_collaboaration_connected_table() {
+		global $wpdb;
+		$table_name = $wpdb->prefix . KIRKI_COLLABORATION_TABLE . '_connected';
+		$columns    = $wpdb->get_results( "SHOW COLUMNS FROM $table_name LIKE 'post_id'" );
+
+		if ( empty( $columns ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange
+			$wpdb->query(
+				"ALTER TABLE $table_name ADD COLUMN post_id bigint(20) NOT NULL AFTER user_id"
+			);
+		}
+	}
+
+	/**
+	 * Kirki reference table
+	 *
+	 * @return void
+	 */
+	private static function create_cm_reference_table() {
+		/**
+		  * table name -> wp_kirki_cm_reference
+		  * table key -> post_id (foreign key) -> wp_posts -> ID (cascade)
+		  * table key -> field_meta_key (foreign key) -> wp_postmeta -> meta_key (cascade)
+		  * table key -> ref_post_id (foreign key) -> wp_posts -> ID (cascade)
+		  */
+		global $wpdb;
+		$charset_collate = $wpdb->get_charset_collate();
+
+		$table_name = $wpdb->prefix . KIRKI_CM_REFERENCE_TABLE;
+		$sql        = "CREATE TABLE IF NOT EXISTS $table_name (
+							id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+							post_id BIGINT(20) UNSIGNED NOT NULL,
+							field_meta_key VARCHAR(255) NOT NULL,
+							ref_post_id BIGINT(20) UNSIGNED NOT NULL,
+							PRIMARY KEY (id),
+							INDEX (post_id),
+							INDEX (ref_post_id),
+							FOREIGN KEY (post_id) REFERENCES {$wpdb->prefix}posts(ID) ON DELETE CASCADE,
+							FOREIGN KEY (ref_post_id) REFERENCES {$wpdb->prefix}posts(ID) ON DELETE CASCADE
+			) ENGINE=InnoDB $charset_collate;";
+
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		dbDelta( $sql );
+	}
+
+	/**
+	 * Create the page version tables
+	 *
+	 * They hold the version history that used to be saved in wp_postmeta
+	 * (`kirki_stage_versions` and `staged_{version}_{meta_key}`).
+	 *
+	 * @return bool True when both tables exist after the call.
+	 */
+	public static function create_page_stage_tables() {
+		global $wpdb;
+		$charset_collate = $wpdb->get_charset_collate();
+
+		$stages_table = $wpdb->prefix . KIRKI_PAGE_STAGES_TABLE;
+		$sql          = "CREATE TABLE IF NOT EXISTS $stages_table (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			post_id BIGINT(20) UNSIGNED NOT NULL,
+			type VARCHAR(50) NOT NULL DEFAULT 'page',
+			version BIGINT(20) UNSIGNED NOT NULL,
+			name VARCHAR(255) NOT NULL DEFAULT '',
+			edited_by BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
+			is_published TINYINT(1) NOT NULL DEFAULT 0,
+			no_legacy_global_style TINYINT(1) NOT NULL DEFAULT 0,
+			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY (id),
+			UNIQUE KEY post_version (post_id, version),
+			KEY post_id (post_id),
+			KEY post_published (post_id, is_published),
+			FOREIGN KEY (post_id) REFERENCES {$wpdb->prefix}posts(ID) ON DELETE CASCADE
+		) ENGINE=InnoDB $charset_collate;";
+
+		/**
+		 * One row per data key of a version. `stage_id` is the version row, which has the post
+		 * id and version number. The unique key starts with `stage_id`, so it also works as the
+		 * index for "get all data of this version".
+		 */
+		$stage_data_table = $wpdb->prefix . KIRKI_PAGE_STAGE_DATA_TABLE;
+		$sql2             = "CREATE TABLE IF NOT EXISTS $stage_data_table (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			stage_id BIGINT(20) UNSIGNED NOT NULL,
+			meta_key VARCHAR(191) NOT NULL,
+			meta_value LONGTEXT NULL,
+			PRIMARY KEY (id),
+			UNIQUE KEY stage_meta_key (stage_id, meta_key),
+			FOREIGN KEY (stage_id) REFERENCES $stages_table(id) ON DELETE CASCADE
+		) ENGINE=InnoDB $charset_collate;";
+
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		dbDelta( $sql );
+		dbDelta( $sql2 );
+
+		return self::page_stage_tables_exist();
+	}
+
+	/**
+	 * Do both version tables exist (and in the current shape)?
+	 *
+	 * dbDelta does not tell us when it fails, so we check the tables ourselves.
+	 *
+	 * @return bool
+	 */
+	public static function page_stage_tables_exist() {
+		global $wpdb;
+
+		foreach ( array( KIRKI_PAGE_STAGES_TABLE, KIRKI_PAGE_STAGE_DATA_TABLE ) as $table_suffix ) {
+			$table_name = $wpdb->prefix . $table_suffix;
+
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- table name is built from a constant.
+			$found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table_name ) ) );
+
+			if ( $found !== $table_name ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	private static function create_comments_table() {
+		global $wpdb;
+		$charset_collate = $wpdb->get_charset_collate();
+		$table_suffix    = KIRKI_COMMENTS_TABLE;
+		$table_name      = $wpdb->prefix . $table_suffix;
+
+		$sql = "CREATE TABLE IF NOT EXISTS $table_name (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			user_id BIGINT(20) UNSIGNED NOT NULL,
+			post_id BIGINT(20) UNSIGNED NOT NULL,
+			parent_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
+			comment TEXT NOT NULL,
+			meta_data VARCHAR(255) NOT NULL,
+			status INT(1) NOT NULL COMMENT '1=active, 2=resolved, 0=deleted',
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY (id),
+			KEY post_id (post_id),
+			FOREIGN KEY (post_id) REFERENCES {$wpdb->prefix}posts(ID) ON DELETE CASCADE
+		) ENGINE=InnoDB $charset_collate;";
+
+		$seen_table_name = $wpdb->prefix . $table_suffix . '_seen';
+		$sql2            = "CREATE TABLE IF NOT EXISTS $seen_table_name (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			comment_id BIGINT(20) UNSIGNED NOT NULL,
+			user_id BIGINT(20) UNSIGNED NOT NULL,
+			PRIMARY KEY (id),
+			UNIQUE KEY user_comment_unique (user_id, comment_id),
+			FOREIGN KEY (comment_id) REFERENCES $table_name(id) ON DELETE CASCADE
+		) ENGINE=InnoDB $charset_collate;";
+
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		dbDelta( $sql );
+		dbDelta( $sql2 );
+	}
+
+}

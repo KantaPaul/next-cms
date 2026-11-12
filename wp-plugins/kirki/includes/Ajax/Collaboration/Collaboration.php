@@ -1,0 +1,291 @@
+<?php
+/**
+ * Collaboration controller
+ *
+ * @package kirki
+ */
+
+namespace Kirki\Ajax\Collaboration;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Exit if accessed directly.
+}
+
+use Kirki\App\DTO\Collaboration\CreateCollaborationDTO;
+use Kirki\App\Services\CollaborationService;
+use Kirki\HelperFunctions;
+
+/**
+ * Collaboration class for running and getting the collaboration process.
+ */
+class Collaboration {
+
+	/**
+	 * This method will trigger from builder ajax actions.
+	 * This method will save all type and action related data inside data column.
+	 *
+	 * @return void wp_send_json
+	 * @deprecated
+	 * @see Kirki\App\Services\CollaborationService::save_actions()
+	 */
+	public static function save_actions() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$data = isset( $_POST['data'] ) ? $_POST['data'] : null;
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended
+		$session_id = HelperFunctions::sanitize_text( isset( $_POST['session_id'] ) ? sanitize_text_field( wp_unslash( $_POST['session_id'] ) ) : '' );
+		if ( empty( $data ) ) {
+			wp_send_json_error( array( 'message' => 'No data received' ) );
+		}
+		// Decode the JSON data
+		$data = json_decode( stripslashes( $data ), true );
+
+		$results = array();
+
+		// Handle both single action and batch of actions
+		if ( isset( $data[0] ) && is_array( $data[0] ) ) {
+			// Batch mode
+			foreach ( $data as $item ) {
+				$parent    = isset( $item['parent'] ) ? $item['parent'] : '';
+				$parent_id = isset( $item['parent_id'] ) ? $item['parent_id'] : '';
+				$action    = isset( $item['action'] ) ? $item['action'] : '';
+				$status    = 1;
+
+				$result = self::save_action_to_db( $parent, $parent_id, $action, $status, $session_id );
+				if ( $result ) {
+					$results[] = $result;
+				}
+			}
+		} else {
+			// Single action (backward compatible)
+			$parent    = isset( $data['parent'] ) ? $data['parent'] : '';
+			$parent_id = isset( $data['parent_id'] ) ? $data['parent_id'] : '';
+			$action    = isset( $data['action'] ) ? $data['action'] : '';
+			$status    = 1;
+
+			$result = self::save_action_to_db( $parent, $parent_id, $action, $status, $session_id );
+			if ( $result ) {
+				$results[] = $result;
+			}
+		}
+
+		wp_send_json_success( $results );
+	}
+
+
+	/**
+	 * Save action to db function will save a event if more than one people connected.
+	 *
+	 * @param string $parent post | styleblock for now.
+	 * @param string $parent_id post id or 0 if global data.
+	 * @param array  $data total event data.
+	 * @param int    $status event status.
+	 *
+	 * @return bool,array if success.
+	 * 
+	 * @deprecated
+	 * @see Kirki\App\Services\CollaborationService::save_action()
+	 */
+	public static function save_action_to_db( $parent, $parent_id, $data, $status = 1, $session_id = '', $cleanup = true ) {
+		return ( new CollaborationService() )->save_action(
+			CreateCollaborationDTO::from_array(
+				array(
+					'session_id' => $session_id,
+					'parent'     => $parent,
+					'parent_id'  => (int) $parent_id,
+					'data'       => $data,
+					'status'     => (int) $status,
+				)
+			),
+			$cleanup
+		);
+	}
+
+	/**
+	 * Send action is The main eventsouce function.
+	 * this method will start the eventsouce mechanism.
+	 *
+	 * @return void
+	 */
+	public static function send_actions() {
+		self::save_connection_data();
+		$sender = new Sender();
+		$sender->start();
+		self::clean_disconnected_rows();
+		exit();
+	}
+
+	/**
+	 * Save connection data
+	 */
+	private static function save_connection_data() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+		$session_id = HelperFunctions::sanitize_text( sanitize_text_field( wp_unslash( $_GET['session_id'] ) ) );
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+		$post_id = HelperFunctions::sanitize_text( sanitize_text_field( wp_unslash( $_GET['post_id'] ) ) );
+		$user_id = get_current_user_id();
+
+		if ( ! self::get_connection( $session_id ) ) {
+			self::add_connection( $user_id, $session_id, $post_id );
+		}
+
+	}
+
+	/**
+	 * Add connection if a user is give eventsource request.
+	 *
+	 * @param int    $user_id wp user id.
+	 * @param string $session_id current user session id.
+	 * @param int    $post_id current post id.
+	 */
+	private static function add_connection( $user_id, $session_id, $post_id ) {
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$wpdb->insert(
+			$wpdb->prefix . KIRKI_COLLABORATION_TABLE . '_connected',
+			array(
+				'user_id'    => (int) $user_id,
+				'post_id'    => (int) $post_id,
+				'session_id' => $session_id,
+			),
+			array(
+				'%d',
+				'%d',
+				'%s',
+			)
+		);
+		if ( $wpdb->insert_id ) {
+			// TODO: send connection id to all connected users for add
+			$this_connection = self::get_connection( $session_id );
+
+			$data = array(
+				'type'    => 'COLLABORATION_ADD_CONNECTION',
+				'payload' => array( 'data' => $this_connection ),
+			);
+			self::save_action_to_db( 'post', $post_id, $data, 1, $session_id );
+
+			return $this_connection;
+		}
+		return false;
+	}
+
+	/**
+	 * Get single connection.
+	 *
+	 * @param string $session_id current user session id.
+	 *
+	 * @return bool,array
+	 */
+	public static function get_connection( $session_id ) {
+		global $wpdb;
+		$query = $wpdb->prepare(
+			'SELECT * FROM %1s WHERE session_id = %s',
+			$wpdb->prefix . KIRKI_COLLABORATION_TABLE . '_connected',
+			$session_id
+		);
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared
+		$this_connection = $wpdb->get_row( $query );
+		if ( $this_connection ) {
+			$date = gmdate( 'Y-m-d H:i:s' );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->update(
+				$wpdb->prefix . KIRKI_COLLABORATION_TABLE . '_connected',
+				array(
+					'updated_at' => $date,
+				),
+				array(
+					'session_id' => $session_id,
+				),
+				array(
+					'%s',
+				),
+				array(
+					'%s',
+				)
+			);
+			return self::format_connection_data( $this_connection );
+		}
+		return false;
+	}
+
+	/**
+	 * Get all connected rows.
+	 * first clean disconnected rows then get only recent connected rows.
+	 *
+	 * @param bool $cleanup if true will clean disconnected rows.
+	 * @return array
+	 * 
+	 * @deprecated
+	 * @see Kirki\App\Services\CollaborationService::get_all_connected_rows()
+	 */
+	public static function get_all_connected_rows( $cleanup = true ) {
+		return ( new CollaborationService() )->get_all_connected_rows( $cleanup );
+	}
+
+	public static function get_connected_collaboration_users_list( $post_id ) {
+		global $wpdb;
+		$query = $wpdb->prepare(
+			'SELECT * FROM %1s WHERE post_id = %d',
+			$wpdb->prefix . KIRKI_COLLABORATION_TABLE . '_connected',
+			$post_id
+		);
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared
+		$res = $wpdb->get_results( $query );
+
+		foreach ( $res as $key => $connection ) {
+			$res[ $key ] = self::format_connection_data( $connection );
+		}
+		return $res;
+	}
+
+	private static function format_connection_data( $connection ) {
+		$connection->user_name = get_the_author_meta( 'display_name', $connection->user_id );
+		$connection->user_avatar = get_avatar_url( $connection->user_id );
+		return $connection;
+	}
+
+	/**
+	 * Clean disconnected rows if inactive less then 50 seconds.
+	 *
+	 * @return void
+	 * 
+	 * @deprecated
+	 * @see Kirki\App\Services\CollaborationService::clean_disconnected_rows()
+	 */
+	public static function clean_disconnected_rows() {
+		return ( new CollaborationService() )->clean_disconnected_rows();
+	}
+
+	/**
+	 * Delete connection if a user gives event close request.
+	 *
+	 * @param string $session_id current user session id.
+	 * @param bool   $send       whether to broadcast removal.
+	 */
+	public static function delete_connection( $session_id ) {
+		global $wpdb;
+
+		$table_name = $wpdb->prefix . KIRKI_COLLABORATION_TABLE . '_connected';
+
+		$query = $wpdb->prepare(
+			"SELECT * FROM $table_name WHERE session_id = %s",
+			$session_id
+		);
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared
+		$this_connection = $wpdb->get_row( $query );
+
+		if ( $this_connection ) {
+			$post_id = $this_connection->post_id;
+			$data    = array(
+				'type'    => 'COLLABORATION_REMOVE_CONNECTION',
+				'payload' => array( 'session_id' => $session_id ),
+			);
+
+			self::save_action_to_db( 'post', $post_id, $data, 1, $session_id );
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->delete( $table_name, array( 'session_id' => $session_id ) );
+	}
+
+}

@@ -1,0 +1,30 @@
+<?php
+
+namespace Kirki\App\Http\Requests\Page;
+
+defined('ABSPATH') || exit;
+
+use Kirki\App\Constants\PostStatus;
+use Kirki\Framework\Http\Request;
+use Kirki\Framework\Sanitizer;
+
+class PageUpdateRequest extends Request
+{
+    public function rules()
+    {
+        return [
+            'post_title' => 'nullable|string',
+            'post_name' => 'nullable|string',
+            'post_status' => 'nullable|string|in:' . PostStatus::DRAFT . ',' . PostStatus::PUBLISH,
+        ];
+    }
+
+    public function filters()
+    {
+        return [
+            'post_title' => Sanitizer::TEXT,
+            'post_name' => Sanitizer::TEXT,
+            'post_status' => Sanitizer::TEXT,
+        ];
+    }
+}

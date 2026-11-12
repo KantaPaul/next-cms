@@ -1,0 +1,180 @@
+<?php
+
+namespace Kirki\App\Supports;
+
+defined('ABSPATH') || exit;
+
+use Exception;
+use Kirki\Framework\Supports\Facades\File as FileHelper;
+use Kirki\Framework\Supports\Facades\Http;
+use Kirki\HelperFunctions;
+use PclZip;
+
+use function Kirki\App\get_upload_directory;
+use function Kirki\Framework\clean_path;
+
+class FileHandler 
+{
+	public static function get_temp_folder_path()
+	{
+		$temp_folder = 'kirki_temp';
+		
+		return get_upload_directory() . '/' . $temp_folder;
+	}
+
+	/**
+	 * Download zip file from remote server
+	 * 
+	 * @param string $remote_file_url
+	 * @param string $file_name
+	 * @return string|false -- if failed return false
+	 */
+    public static function download_zip_from_remote(string $remote_file_url, string $file_name)
+    {
+			// Extension check must run against the URL *path* only, not the whole
+			// URL — otherwise "?x=.zip" trivially satisfies a whole-string check.
+			$url_path = (string) wp_parse_url($remote_file_url, PHP_URL_PATH);
+			$file_ext = strtolower(pathinfo($url_path, PATHINFO_EXTENSION));
+			$allowed = ['zip'];
+
+			if (!in_array($file_ext, $allowed, true)) {
+				return false;
+			}
+
+			if (!HelperFunctions::is_safe_url($remote_file_url)) {
+				return false;
+			}
+
+			$args = array(
+				'timeout'    => 120,
+				'redirection' => 0,
+				'user-agent' => 'WordPress',
+			);
+
+			// Localhost is usually served over a self-signed certificate, which
+			// makes cURL refuse the request.
+			if (HelperFunctions::is_localenv()) {
+				$args['sslverify'] = false;
+			}
+
+			$response = wp_safe_remote_get($remote_file_url, $args);
+
+			if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
+				return false;
+			}
+
+			$body = wp_remote_retrieve_body($response);
+			if ($body === '' || $body === false) {
+				return false;
+			}
+
+			// Save the file locally.
+			// Local path to save the downloaded file.
+			$local_file_path = clean_path(get_upload_directory() . '/' . $file_name, false);
+
+			static::verify_directory_traversal($local_file_path);
+			
+			$is_downloaded = FileHelper::put($local_file_path, $body);
+
+			if (!$is_downloaded) {
+				return false;
+			}
+			
+			return $local_file_path;
+    }
+
+
+	/**
+	 * @param string      $zip_file_path
+	 * @param string      $destination_dir
+	 * @param array|null  $allowed_extensions When provided, every extracted
+	 *                                        member must be a directory or
+	 *                                        carry one of these extensions.
+	 * @return array|false
+	 * return false on failure
+	 */
+	public static function extract_zip_file(string $zip_file_path, string $destination_dir, ?array $allowed_extensions = null)
+	{
+		if (!class_exists('PclZip')) {
+			require_once ABSPATH . 'wp-admin/includes/class-pclzip.php';
+		}
+
+		$zip_file_path = clean_path($zip_file_path, false);
+
+		if (FileHelper::missing($zip_file_path)) {
+			return false;
+		}
+
+		if (!FileHelper::is_directory($destination_dir)) {
+			FileHelper::make_dir($destination_dir);
+		}
+
+		$zip = new PclZip($zip_file_path);
+
+		static::validate_zip_file($zip, $allowed_extensions);
+
+		$result = $zip->extract(
+			PCLZIP_OPT_PATH,
+			$destination_dir
+		);
+
+		if (is_array($result)) {
+			return $result;
+		}
+
+		return false;
+	}
+
+	public static function validate_zip_file(PclZip $zip, ?array $allowed_extensions = null)
+	{
+		$list = $zip->listContent();
+
+		if (!is_array($list)) {
+			throw new Exception(esc_html__('Failed to read ZIP file.', 'kirki'));
+		}
+
+		foreach ($list as $entry) {
+			 if (!isset($entry['filename'])) {
+				throw new Exception(esc_html__('Invalid ZIP file.', 'kirki'));
+			}
+
+			static::validate_zip_entry($entry['filename'], $allowed_extensions);
+		}
+	}
+
+	private static function validate_zip_entry(string $entry_filename, ?array $allowed_extensions = null)
+	{
+		$entry_filename = clean_path($entry_filename, false);
+
+		if (
+			$entry_filename === '' ||
+			str_contains($entry_filename, "\0") ||
+			str_starts_with($entry_filename, '/') ||
+			preg_match('/^[A-Za-z]:\//', $entry_filename)
+		) {
+			throw new Exception(esc_html__('Invalid ZIP file.', 'kirki'));
+		}
+
+		static::verify_directory_traversal($entry_filename);
+
+		// Directory entries end with '/' and carry no extension.
+		if ($allowed_extensions !== null && !str_ends_with($entry_filename, '/')) {
+			$extension = strtolower((string) pathinfo($entry_filename, PATHINFO_EXTENSION));
+
+			if (!in_array($extension, $allowed_extensions, true)) {
+				throw new Exception(esc_html__('Invalid file type in ZIP archive.', 'kirki'));
+			}
+		}
+
+		return true;
+	}
+
+	Public static function verify_directory_traversal(string $path) {
+		if (preg_match('#(^|/)\.\.(/|$)#', clean_path($path, false))) {
+			/* translators: %s: File Path */
+			throw new Exception(sprintf(esc_html__('Directory traversal detected in %s.', 'kirki'), $path));
+		}
+
+		return true;
+	}
+}
