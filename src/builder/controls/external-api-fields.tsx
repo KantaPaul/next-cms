@@ -37,6 +37,12 @@ import {
 import { inspectExternalApiAction } from '@/server/actions/listing.actions';
 import { LOOP_GALLERY_VIEW_OPTIONS } from '../blocks/loop-item-field';
 import { LOOP_DATE_FORMAT_OPTIONS } from '../blocks/loop-shared';
+import {
+  EXT_FILTER_STYLES,
+  type ExtFilterStyle,
+  isExtFilterStyle,
+} from '@/lib/external-api-visitor-filters';
+import { inheritTargetLoopApi } from '../query-filter-target';
 import { useEditorBridge } from './editor-bridge';
 import { OverlaySelect } from './overlay-picker';
 import { Switcher } from './primitives';
@@ -93,8 +99,18 @@ function buildInspectCacheKey(props?: Record<string, unknown>): string {
 }
 
 export function useExternalApiInspection(props?: Record<string, unknown>) {
-  const { selectedProps } = useEditorBridge();
-  const effectiveProps = props ?? selectedProps;
+  const { selectedProps, selectedType, targetLoopProps } = useEditorBridge();
+  // A Query Filter with no API of its own inspects its target loop's API.
+  const effectiveProps = useMemo(() => {
+    if (props) return props;
+    if (selectedType !== 'QueryFilter' || !selectedProps) return selectedProps;
+    return inheritTargetLoopApi(
+      selectedProps,
+      targetLoopProps
+        ? { id: '', type: 'LoopGrid', props: targetLoopProps }
+        : undefined
+    );
+  }, [props, selectedProps, selectedType, targetLoopProps]);
   const endpointUrl =
     typeof effectiveProps?.apiEndpointUrl === 'string'
       ? effectiveProps.apiEndpointUrl.trim()
@@ -1755,8 +1771,13 @@ export function ExternalApiPresetSelectField({
 export interface ExternalApiFilterFieldRow {
   key: string;
   label?: string;
-  style?: 'select' | 'checkboxes' | 'chips';
+  style?: ExtFilterStyle;
 }
+
+const EXT_FILTER_STYLE_OPTIONS = EXT_FILTER_STYLES.map(s => ({
+  value: s.value,
+  label: s.label,
+}));
 
 function formatKeyLabel(key: string): string {
   const leaf = key.split('.').pop() || key;
@@ -1887,7 +1908,7 @@ export function ExternalApiFilterFieldsControl({
                   className="h-7 w-full rounded border border-steel-300 bg-white px-2 font-mono text-xs dark:border-dark-300 dark:bg-dark-200"
                 />
               )}
-              <div className="grid grid-cols-2 gap-1.5">
+              <div className="grid grid-cols-1 gap-1.5">
                 <input
                   type="text"
                   value={row.label ?? ''}
@@ -1896,23 +1917,20 @@ export function ExternalApiFilterFieldsControl({
                   placeholder="Display label"
                   className="h-7 w-full rounded border border-steel-300 bg-white px-2 text-xs dark:border-dark-300 dark:bg-dark-200"
                 />
-                <select
+                <SearchableSelect
+                  size="sm"
+                  className="text-xs"
                   value={row.style ?? 'select'}
                   disabled={readOnly}
-                  onChange={e =>
+                  options={EXT_FILTER_STYLE_OPTIONS}
+                  placeholder="Input type…"
+                  searchPlaceholder="Search input types…"
+                  onValueChange={next =>
                     updateRow(idx, {
-                      style: e.target.value as
-                        | 'select'
-                        | 'checkboxes'
-                        | 'chips',
+                      style: isExtFilterStyle(next) ? next : 'select',
                     })
                   }
-                  className="h-7 w-full rounded border border-steel-300 bg-white px-1.5 text-xs dark:border-dark-300 dark:bg-dark-200"
-                >
-                  <option value="select">Dropdown select</option>
-                  <option value="chips">Filter chips</option>
-                  <option value="checkboxes">Checkboxes</option>
-                </select>
+                />
               </div>
             </div>
           ))}

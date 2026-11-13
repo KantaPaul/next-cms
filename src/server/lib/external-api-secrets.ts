@@ -240,6 +240,38 @@ export function maskHeadersForDisplay(
   return out;
 }
 
+function originOf(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Returns a preset's vault secrets only when the request goes to the preset's
+ * own origin. Block props (editable by anyone with `pages.edit`) can override
+ * the endpoint, and must not be able to send `{{secret.*}}` values elsewhere.
+ */
+export function secretsForEndpoint(
+  secrets: Record<string, string> | null | undefined,
+  presetEndpointUrl: string | null | undefined,
+  targetEndpointUrl: string | null | undefined
+): Record<string, string> {
+  if (!secrets || Object.keys(secrets).length === 0) return {};
+  return isSameOriginUrl(presetEndpointUrl, targetEndpointUrl) ? secrets : {};
+}
+
+/** True when both URLs parse and share scheme, host and port. */
+export function isSameOriginUrl(
+  a: string | null | undefined,
+  b: string | null | undefined
+): boolean {
+  const originA = originOf(a);
+  return originA !== null && originA === originOf(b);
+}
+
 function getEnvAllowlist(override?: string[]): Set<string> {
   if (override) {
     return new Set(override.map(s => s.trim()).filter(Boolean));

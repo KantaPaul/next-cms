@@ -195,10 +195,16 @@ export function StyleClassList({
  * Creates the editor's style class store for the host adapter, makes it the
  * global store, and starts loading. Call `store.flush()` before leaving the
  * editor so queued edits are saved.
+ *
+ * Pass `{ load: false }` when calling during render (e.g. inside `useMemo`)
+ * and call `store.load()` from an effect: loading calls the host adapter,
+ * which may be a server action, and starting one mid-render updates the
+ * router while another component renders.
  */
 export function initStyleClassStore(
   adapter?: StyleClassAdapter,
-  options?: StyleClassStoreOptions
+  options?: StyleClassStoreOptions,
+  { load = true }: { load?: boolean } = {}
 ): StyleClassStore | null {
   if (!adapter) {
     setStyleClassStore(null);
@@ -207,7 +213,7 @@ export function initStyleClassStore(
   getStyleClassStore()?.dispose();
   const store = createStyleClassStore(adapter, options);
   setStyleClassStore(store);
-  void store.load();
+  if (load) void store.load();
   return store;
 }
 

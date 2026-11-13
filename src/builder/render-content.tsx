@@ -11,11 +11,8 @@ import { siteContext } from '@/server/services/site-context';
 import { styleClassesService } from '@/server/services/style-classes.service';
 import { type LoaderContext, resolvePuckData } from './loaders';
 import type { PostView } from './post-template';
-import {
-  type RenderKind,
-  type RenderMetadata,
-  renderDocumentWithLoaders,
-} from './renderer';
+import type { RenderKind, RenderMetadata } from './renderer';
+import { renderDocumentWithLoaders } from './render-with-loaders';
 import { sanitizeRichText } from './sanitize';
 
 type RenderInput = {

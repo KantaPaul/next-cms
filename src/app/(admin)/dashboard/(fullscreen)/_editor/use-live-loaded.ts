@@ -3,6 +3,7 @@
 import type { BuilderNode, NodeId } from '@nextcms/builder-core';
 import type { EditorStore } from '@nextcms/builder-react';
 import { useEffect, useRef, useState } from 'react';
+import { collectLoopBlocks, resolveFilterProps } from '@/builder/query-filter-target';
 import { reloadNodeData } from '@/server/actions/builder-data.actions';
 
 /** Block types whose loaded data follows their props on the canvas. */
@@ -15,9 +16,21 @@ const LIVE_TYPES = new Set([
 ]);
 const DEBOUNCE_MS = 300;
 
+/**
+ * The props a block's loader runs with. A Query Filter with no API of its
+ * own takes its target loop's, so editing that loop's API reloads the filter.
+ */
+function loaderProps(
+  node: BuilderNode,
+  nodes: Record<NodeId, BuilderNode>
+): Record<string, unknown> {
+  if (node.type !== 'QueryFilter') return node.props;
+  return resolveFilterProps(node.props, collectLoopBlocks(nodes));
+}
+
 /** Props that change what a loader returns; slots and styling don't. */
-function queryKey(node: BuilderNode): string {
-  const { section: _s, elements: _e, animation: _a, ...rest } = node.props;
+function queryKey(props: Record<string, unknown>): string {
+  const { section: _s, elements: _e, animation: _a, ...rest } = props;
   return JSON.stringify(rest);
 }
 
@@ -42,9 +55,10 @@ export function useLiveLoaded(
     setLoaded(initial);
     // Nodes loaded on the server count as current.
     keys.current = {};
-    for (const node of Object.values(store.getState().doc.nodes)) {
+    const nodes = store.getState().doc.nodes;
+    for (const node of Object.values(nodes)) {
       if (LIVE_TYPES.has(node.type) && initial[node.id]) {
-        keys.current[node.id] = queryKey(node);
+        keys.current[node.id] = queryKey(loaderProps(node, nodes));
       }
     }
   }, [store, initial]);
@@ -54,7 +68,8 @@ export function useLiveLoaded(
       const nodes = store.getState().doc.nodes;
       for (const node of Object.values(nodes)) {
         if (!LIVE_TYPES.has(node.type)) continue;
-        const key = queryKey(node);
+        const props = loaderProps(node, nodes);
+        const key = queryKey(props);
         if (keys.current[node.id] === key) continue;
         keys.current[node.id] = key;
         clearTimeout(timers.current[node.id]);
@@ -63,7 +78,7 @@ export function useLiveLoaded(
           requests.current[node.id] = ticket;
           void reloadNodeData({
             type: node.type as 'LoopGrid',
-            props: node.props,
+            props,
             language,
             ...(entryId && { entryId }),
           })

@@ -14,6 +14,8 @@ import {
   type QueryFilter,
   fieldSortKey,
 } from '@nextcms/builder-core';
+import { logger } from '@/lib/logger';
+import { matchesExtFilter } from '@/lib/external-api-visitor-filters';
 import { fetchJsonCapped, safeFetch } from '@/server/lib/safe-fetch';
 import { interpolateExternalApiHeaders } from '@/server/lib/external-api-secrets';
 import {
@@ -1369,6 +1371,26 @@ function readStringField(obj: unknown, path?: string): string | null {
 }
 
 /**
+ * Keeps an API-supplied link or image only when it is `http(s)://`, a
+ * site-relative path, or a fragment. Blocks `javascript:`, `data:`,
+ * `vbscript:` and protocol-relative `//host` values from untrusted APIs.
+ */
+export function safeExternalUrl(value: string | null): string | null {
+  const v = value?.trim();
+  if (!v) return null;
+  if (v.startsWith('#')) return v;
+  if (v.startsWith('/') && !v.startsWith('//') && !v.startsWith('/\\')) {
+    return v;
+  }
+  try {
+    const u = new URL(v);
+    return u.protocol === 'https:' || u.protocol === 'http:' ? u.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Maps arbitrary JSON records from an external API into `NormalizedListingItem[]`.
  */
 export function normalizeExternalApiItems(
@@ -1398,20 +1420,22 @@ export function normalizeExternalApiItems(
       'Untitled';
     const slug = readStringField(item, fieldMap.slug) ?? id;
     const url =
-      readStringField(item, fieldMap.url) ??
-      readStringField(item, 'url') ??
-      readStringField(item, 'website') ??
-      '#';
+      safeExternalUrl(
+        readStringField(item, fieldMap.url) ??
+          readStringField(item, 'url') ??
+          readStringField(item, 'website')
+      ) ?? '#';
     const excerpt =
       readStringField(item, fieldMap.excerpt) ??
       readStringField(item, 'excerpt') ??
       readStringField(item, 'body') ??
       readStringField(item, 'description');
-    const image =
+    const image = safeExternalUrl(
       readStringField(item, fieldMap.image) ??
-      readStringField(item, 'image') ??
-      readStringField(item, 'thumbnail') ??
-      readStringField(item, 'avatar');
+        readStringField(item, 'image') ??
+        readStringField(item, 'thumbnail') ??
+        readStringField(item, 'avatar')
+    );
     const publishedAt =
       readStringField(item, fieldMap.publishedAt) ??
       readStringField(item, 'publishedAt') ??
@@ -1590,30 +1614,45 @@ async function resolveExternalApi(
       facets = { ext: extFacets };
     }
 
-    const extDataFilters: ExternalApiDataFilter[] = [];
+    // Visitor filters from the Query Filter (`ext_<key>` URL params). The
+    // value carries the operator: one of, `~text` contains, `min..max` range.
+    const extFilters: Array<{ key: string; values: string[] }> = [];
     for (const f of config.filters) {
       const extKey = externalApiFilterKey(f.field);
       if (!extKey) continue;
       const rawVals = Array.isArray(f.value)
         ? f.value.map(v => String(v))
         : [String(f.value)];
-      const cleaned = rawVals.map(v => v.trim()).filter(Boolean);
-      if (cleaned.length > 0) {
-        extDataFilters.push({
-          key: extKey,
-          operator: 'in',
-          value: cleaned.join(','),
-        });
-      }
+      const values = rawVals.map(v => v.trim()).filter(Boolean);
+      if (values.length > 0) extFilters.push({ key: extKey, values });
     }
 
-    const filteredExtracted = filterExternalApiRawItems(
-      baseFilteredExtracted,
-      extDataFilters
+    // A filter key no record has belongs to another loop's data (several
+    // loops can share one URL namespace): ignore it rather than empty this one.
+    const applicableExtFilters = extFilters.filter(f =>
+      baseFilteredExtracted.some(
+        row =>
+          row !== null &&
+          typeof row === 'object' &&
+          !Array.isArray(row) &&
+          extractNestedValue(row as Record<string, unknown>, f.key) !== undefined
+      )
     );
+    const filteredExtracted =
+      applicableExtFilters.length === 0
+        ? baseFilteredExtracted
+        : baseFilteredExtracted.filter(
+            row =>
+              row !== null &&
+              typeof row === 'object' &&
+              !Array.isArray(row) &&
+              applicableExtFilters.every(f =>
+                matchesExtFilter(row as Record<string, unknown>, f.key, f.values)
+              )
+          );
     let items = normalizeExternalApiItems(filteredExtracted, apiConfig.fieldMap);
 
-    let hasInteractiveFilter = extDataFilters.length > 0;
+    let hasInteractiveFilter = applicableExtFilters.length > 0;
 
     // Apply allowlisted search filter if present
     const searchFilter = config.filters.find(f => f.field === 'search');
@@ -1704,6 +1743,10 @@ async function resolveExternalApi(
       ...(facets ? { facets } : {}),
     };
   } catch (err) {
+    logger.warn('External API request failed', {
+      endpoint: safeEndpointForLog(apiConfig.endpointUrl),
+      error: err instanceof Error ? err.message : String(err),
+    });
     return {
       items: [],
       total: 0,
@@ -1711,7 +1754,39 @@ async function resolveExternalApi(
       pageSize,
       totalPages: 1,
       hasMore: false,
-      error: err instanceof Error ? err.message : 'External API request failed.',
+      error: publicExternalApiError(err),
     };
   }
+}
+
+/** Origin + path only: query strings may hold API keys. */
+function safeEndpointForLog(url: string): string {
+  try {
+    const u = new URL(url);
+    return `${u.origin}${u.pathname}`;
+  } catch {
+    return '[invalid url]';
+  }
+}
+
+/**
+ * Maps an outbound failure to a message safe for visitors. Raw messages can
+ * name resolved internal IPs (SSRF guard) or upstream details.
+ */
+export function publicExternalApiError(err: unknown): string {
+  const name = err instanceof Error ? err.name : '';
+  const message = err instanceof Error ? err.message : '';
+  if (name === 'TimeoutError' || name === 'AbortError') {
+    return 'External API request timed out.';
+  }
+  if (message.startsWith('SSRF guard') || message.startsWith('Only HTTP')) {
+    return 'External API endpoint is not allowed.';
+  }
+  if (message.includes('exceeds maximum allowed size')) {
+    return 'External API response is too large.';
+  }
+  if (err instanceof SyntaxError) {
+    return 'External API returned invalid JSON.';
+  }
+  return 'External API request failed.';
 }

@@ -9,7 +9,8 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { type BuilderDocument, type BuilderNode, DOCUMENT_VERSION } from '@nextcms/builder-core';
 import { NATIVE_BLOCKS } from '../definitions/native';
-import { applyStyleClasses, BuilderRenderer, renderDocumentWithLoaders } from '../renderer';
+import { applyStyleClasses, BuilderRenderer } from '../renderer';
+import { renderDocumentWithLoaders } from '../render-with-loaders';
 import { STYLE_CLASS_BLOCK_TYPES, supportsStyleClasses } from '../style-class-blocks';
 
 const CLASSES = { k: { name: 'test' }, combo: { name: 'is-large' } };

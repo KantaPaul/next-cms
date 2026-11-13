@@ -37,6 +37,7 @@ export type AuditTarget =
   | 'global_block'
   | 'loop_template'
   | 'api_key'
+  | 'external_api'
   | 'user'
   | 'site'
   | 'collection'

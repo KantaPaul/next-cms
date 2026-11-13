@@ -350,9 +350,11 @@ export const inspectExternalApiAction = permissionProcedure(
         const { fetchJsonCapped, safeFetch } = await import(
           '@/server/lib/safe-fetch'
         );
-        const { interpolateExternalApiHeaders, isMaskedSecret } = await import(
-          '@/server/lib/external-api-secrets'
-        );
+        const {
+          interpolateExternalApiHeaders,
+          isMaskedSecret,
+          isSameOriginUrl,
+        } = await import('@/server/lib/external-api-secrets');
         const {
           applyExternalApiQueryParams,
           discoverExternalApiSchema,
@@ -366,7 +368,9 @@ export const inspectExternalApiAction = permissionProcedure(
           const preset = await externalApisService.getByIdForRuntime(
             input.presetId
           );
-          if (preset) {
+          // Stored credentials only go to the preset's own origin, never to a
+          // different URL typed into the inspector.
+          if (preset && isSameOriginUrl(preset.endpointUrl, endpointUrl)) {
             secrets = preset.secrets ?? {};
             const storedHeaders = preset.headers ?? {};
             const merged: Record<string, string> = {};

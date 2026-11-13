@@ -353,7 +353,14 @@ export async function safeFetch(
     if (hop >= MAX_REDIRECTS) {
       throw new Error('SSRF guard: too many redirects.');
     }
-    target = new URL(location, safeUrl).toString();
+    const nextUrl = new URL(location, safeUrl);
+    target = nextUrl.toString();
+    // A redirect to another origin must not carry the caller's credentials:
+    // drop every header that is not a known-harmless content header, so a
+    // bearer token or `{{secret.*}}` value never reaches the redirect host.
+    if (nextUrl.origin !== safeUrl.origin && request?.headers) {
+      request = { ...request, headers: stripCrossOriginHeaders(request.headers) };
+    }
     // 303, and 301/302 after a POST, continue as a bodiless GET, like browsers do.
     if (
       response.status === 303 ||
@@ -363,6 +370,31 @@ export async function safeFetch(
       request = { ...request, method: 'GET', body: undefined };
     }
   }
+}
+
+/** Headers safe to forward when a redirect leaves the original origin. */
+const CROSS_ORIGIN_SAFE_HEADERS = new Set([
+  'accept',
+  'accept-language',
+  'content-language',
+  'content-type',
+  'user-agent',
+]);
+
+/**
+ * Keeps only harmless content-negotiation headers. Custom headers are dropped
+ * because any of them (`X-Api-Key`, `Token`, …) may carry a credential.
+ */
+export function stripCrossOriginHeaders(
+  headers: HeadersInit
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  new Headers(headers).forEach((value, key) => {
+    if (CROSS_ORIGIN_SAFE_HEADERS.has(key.toLowerCase())) {
+      out[key] = value;
+    }
+  });
+  return out;
 }
 
 export const DEFAULT_MAX_JSON_BYTES = 2 * 1024 * 1024;

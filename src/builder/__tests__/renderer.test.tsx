@@ -40,7 +40,7 @@ describe('BuilderRenderer renders', () => {
   });
 
   it('resolves dynamic content bindings and global theme tokens in renderDocumentWithLoaders', async () => {
-    const { renderDocumentWithLoaders } = await import('../renderer');
+    const { renderDocumentWithLoaders } = await import('../render-with-loaders');
     const { createDynamicBinding } = await import('@nextcms/builder-core');
 
     const doc: any = {

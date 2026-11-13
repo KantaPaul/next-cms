@@ -91,7 +91,8 @@ export function externalApiFilterKey(field: string): string | null {
 export interface ExternalApiFilterFieldConfig {
   key: string;
   label?: string;
-  style?: 'select' | 'checkboxes' | 'chips';
+  /** How the filter input looks; see EXT_FILTER_STYLES in the app. */
+  style?: 'select' | 'checkboxes' | 'radio' | 'chips' | 'search' | 'range' | 'toggle';
 }
 
 /** Allowlisted sortable fields per source. */

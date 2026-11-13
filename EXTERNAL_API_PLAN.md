@@ -114,13 +114,32 @@ Phase 1 items 1–3 must ship before this branch is deployed anywhere public. It
 
 ## 5. Checklist
 
-- [ ] P0: auth on `inspectExternalApiAction`
-- [ ] P0: lock down `resolveListingQuery` (no inline config / site / skipCache from clients)
-- [ ] P0: replace `{{env.*}}` with encrypted secrets or an allowlist
-- [ ] P1: mask secrets in list/get responses
-- [ ] P1: response size cap + LRU cache
-- [ ] P1: `EXTERNAL_API_MANAGE` permission
-- [ ] P1: DNS pinning in `safeFetch`
-- [ ] P2: URL scheme allowlist, generic errors, audit log, backup coverage, strict `fields` schema, rate limiting
+_Updated 2026-11-13._
+
+### Phase 1 — done
+- [x] P0: auth on `inspectExternalApiAction` (`EXTERNAL_API_MANAGE`) — commit `4dd4956`
+- [x] P0: lock down `resolveListingQuery`: public action takes a `presetId` only; inline config goes through the authenticated `resolveEditorListingQuery` — `4dd4956`
+- [x] P0: `{{env.*}}` limited to `EXT_API_*` / `EXTERNAL_API_ENV_ALLOWLIST`; AES-256-GCM `{{secret.*}}` vault — `4dd4956`
+- [x] P1: secrets and sensitive headers masked (`••••last4`) in list/get; masked round-trip keeps the stored value — `4dd4956`
+- [x] P1: 2 MB `fetchJsonCapped` + 500-entry LRU `listingCache` — `4dd4956`
+- [x] P1: `EXTERNAL_API_MANAGE` permission (Admin only) — `4dd4956`
+- [x] P1: DNS pinning in `safeFetch` (pinned `lookup`) — `4dd4956`
+
+### Gaps found after Phase 1 — done
+- [x] Cross-origin redirects drop credential headers (`stripCrossOriginHeaders` in `safe-fetch.ts`)
+- [x] Preset secrets only sent to the preset's own origin (`secretsForEndpoint` / `isSameOriginUrl`), in the block loaders and the inspector. Before this, a `pages.edit` user could set an inline `apiConfig` on a block that referenced a preset and send `{{secret.*}}` to any host.
+
+### P2 — done
+- [x] URL scheme allowlist for API item `url` / `image` (`safeExternalUrl`)
+- [x] Generic visitor-facing errors (`publicExternalApiError`); details logged with the query string removed
+- [x] Audit log for preset create / update / delete (`external_api` target; no secret values)
+- [x] Backup coverage for `external_apis` (vault + credential headers scrubbed; restore is insert-only)
+- [x] Strict, bounded `fields` schema (key, `fieldType`, nested fields)
+- [x] Tests: `src/server/services/__tests__/external-api-hardening.test.ts`
+
+### Still open
+- [ ] P2: rate limiting on outbound calls (per preset / per IP)
+- [ ] `{{env.EXT_API_*}}` is still resolved for inline block configs, so a `pages.edit` user can send allowlisted env values to any URL. Close this with Phase 2's "presets only" move (or set `allowEnvPlaceholders: false` for non-preset configs).
+- [ ] `pinnedNodeFetch` does not decompress gzip/br; it only works because no `Accept-Encoding` is sent. Strip a user-set `Accept-Encoding` header or decompress.
 - [ ] Phase 2 reliability items
 - [ ] Phase 3 extensions

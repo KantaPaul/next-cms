@@ -18,6 +18,11 @@ export type EditorBridge = {
   selectedProps?: Record<string, unknown>;
   parentType?: string;
   parentProps?: Record<string, unknown>;
+  /**
+   * For a selected Query Filter: the props of the loop it targets, so its
+   * controls can use that loop's External API (query-filter-target.ts).
+   */
+  targetLoopProps?: Record<string, unknown>;
   themeTokens?: Record<string, string>;
   /** The site's uploaded fonts, for font pickers. */
   customFonts?: CustomFont[];

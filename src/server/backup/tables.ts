@@ -13,6 +13,7 @@ import {
   collectionTaxonomies,
   collectionTemplates,
   collectionTerms,
+  externalApis,
   commentReactions,
   comments,
   formSubmissions,
@@ -65,6 +66,7 @@ export const EXCLUDED_SECRETS = [
   'api_keys.hashed_key',
   'site_settings.integrations.mailchimp.apiKey',
   'webhook_subscriptions.secret',
+  'external_apis.secrets and credential headers',
   'plugins.settings (secret fields)',
 ] as const;
 
@@ -136,6 +138,34 @@ export function scrubWebhookSubscriptionRow(
 ): Record<string, unknown> {
   const { secret: _s, ...rest } = row;
   return rest;
+}
+
+const SENSITIVE_HEADER_RE =
+  /^(authorization|proxy-authorization|cookie)$|secret|token|password|api[-_]?key/i;
+
+/**
+ * External API presets: drop the encrypted vault and any header that holds a
+ * credential. `{{secret.*}}` / `{{env.*}}` placeholders are kept, since they
+ * carry no value themselves.
+ */
+export function scrubExternalApiRow(
+  row: Record<string, unknown>
+): Record<string, unknown> {
+  const headers =
+    row.headers && typeof row.headers === 'object' && !Array.isArray(row.headers)
+      ? (row.headers as Record<string, unknown>)
+      : {};
+  const kept: Record<string, unknown> = {};
+  for (const [key, val] of Object.entries(headers)) {
+    const text = typeof val === 'string' ? val : '';
+    const isPlaceholder = /^(?:Bearer\s+)?\{\{(?:secret|env)\.[A-Za-z0-9_.-]+\}\}$/i.test(
+      text.trim()
+    );
+    if (text.startsWith('enc:v1:')) continue;
+    if (SENSITIVE_HEADER_RE.test(key) && !isPlaceholder) continue;
+    kept[key] = val;
+  }
+  return { ...row, headers: kept, secrets: {} };
 }
 
 export function scrubPluginBackupRow(
@@ -510,6 +540,16 @@ export const BACKUP_TABLES: BackupTableSpec[] = [
     scope: { kind: 'site', siteCol: loopTemplates.siteId },
     dateColumns: STANDARD_DATES,
     replaceOnRestore: true,
+  },
+  {
+    name: 'external_apis',
+    table: externalApis,
+    idCol: externalApis.id,
+    scope: { kind: 'site', siteCol: externalApis.siteId },
+    scrub: scrubExternalApiRow,
+    dateColumns: STANDARD_DATES,
+    // Insert-only: replacing would wipe the secrets that backups never hold.
+    replaceOnRestore: false,
   },
   {
     name: 'redirects',

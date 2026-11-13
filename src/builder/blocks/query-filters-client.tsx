@@ -21,9 +21,135 @@ import {
   useState,
   useTransition,
 } from 'react';
+import {
+  encodeExtRange,
+  encodeExtSearch,
+  type ExtFilterStyle,
+  formatExtValue,
+  isExtFilterStyle,
+  readExtRange,
+  readExtSearch,
+} from '@/lib/external-api-visitor-filters';
 import { cn } from '@/lib/utils/cn';
 import type { ElementStyle } from '../style';
 import { el } from './element';
+
+/** External API filter styles shown in the main row next to search and sort. */
+const COMPACT_EXT_STYLES = new Set<ExtFilterStyle>(['select', 'search', 'range', 'toggle']);
+
+type ElProps = Record<string, unknown>;
+
+/** Text search on one API field: applies on Enter or when the field loses focus. */
+function ExtSearchInput({
+  name,
+  label,
+  initial,
+  inputProps,
+  labelProps,
+  onCommit,
+}: {
+  name: string;
+  label: string;
+  initial: string;
+  inputProps: ElProps;
+  labelProps: ElProps;
+  onCommit: (text: string) => void;
+}) {
+  const [draft, setDraft] = useState(initial);
+  useEffect(() => setDraft(initial), [initial]);
+  const commit = () => {
+    if (draft.trim() !== initial) onCommit(draft);
+  };
+  return (
+    <label className="flex flex-col gap-1 text-xs font-medium">
+      <span {...labelProps}>{label}</span>
+      <input
+        type="search"
+        name={name}
+        value={draft}
+        onChange={e => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={e => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            commit();
+          }
+        }}
+        placeholder={`Search ${label.toLowerCase()}…`}
+        aria-label={label}
+        {...inputProps}
+      />
+    </label>
+  );
+}
+
+/** Min–max number range on one API field: applies on Enter or blur. */
+function ExtRangeInput({
+  name,
+  label,
+  initial,
+  inputProps,
+  labelProps,
+  onCommit,
+}: {
+  name: string;
+  label: string;
+  initial: { min: string; max: string };
+  inputProps: ElProps;
+  labelProps: ElProps;
+  onCommit: (min: string, max: string) => void;
+}) {
+  const [min, setMin] = useState(initial.min);
+  const [max, setMax] = useState(initial.max);
+  useEffect(() => {
+    setMin(initial.min);
+    setMax(initial.max);
+  }, [initial.min, initial.max]);
+  const commit = () => {
+    if (min !== initial.min || max !== initial.max) onCommit(min, max);
+  };
+  const onKeyDown = (e: { key: string; preventDefault: () => void }) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      commit();
+    }
+  };
+  return (
+    <fieldset className="flex flex-col gap-1 text-xs font-medium">
+      <legend {...labelProps} className={cn('mb-1', labelProps.className as string)}>
+        {label}
+      </legend>
+      <input type="hidden" name={name} value={encodeExtRange(min, max)} />
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          inputMode="decimal"
+          value={min}
+          onChange={e => setMin(e.target.value)}
+          onBlur={commit}
+          onKeyDown={onKeyDown}
+          placeholder="Min"
+          aria-label={`${label} minimum`}
+          {...inputProps}
+          className={cn(inputProps.className as string, 'w-full min-w-0')}
+        />
+        <span aria-hidden="true" className="s-muted">–</span>
+        <input
+          type="number"
+          inputMode="decimal"
+          value={max}
+          onChange={e => setMax(e.target.value)}
+          onBlur={commit}
+          onKeyDown={onKeyDown}
+          placeholder="Max"
+          aria-label={`${label} maximum`}
+          {...inputProps}
+          className={cn(inputProps.className as string, 'w-full min-w-0')}
+        />
+      </div>
+    </fieldset>
+  );
+}
 
 export type TaxonomyControlStyle = 'select' | 'checkboxes' | 'chips';
 
@@ -349,7 +475,7 @@ export function QueryFilterClient({
           }
           chips.push({
             key: `ext:${fieldKey}:${val}`,
-            label: `${fieldLabel}: ${match?.label ?? val}`,
+            label: `${fieldLabel}: ${match?.label ?? formatExtValue(val)}`,
             clearPatch: {
               ext: Object.keys(nextExt).length > 0 ? nextExt : undefined,
             },
@@ -511,7 +637,7 @@ export function QueryFilterClient({
                   .replace(/[_-]+/g, ' ')
                   .replace(/\b\w/g, c => c.toUpperCase()) ||
                 f.key.trim(),
-              style: (f.style ?? 'select') as TaxonomyControlStyle,
+              style: (isExtFilterStyle(f.style) ? f.style : 'select') as ExtFilterStyle,
             }))
         : [],
     [apiFilterFields, isExternalApi]
@@ -546,14 +672,104 @@ export function QueryFilterClient({
     });
   };
 
+  const setExtValues = (fieldKey: string, values: string[]) => {
+    const nextExt = { ...(currentParams.ext ?? {}) };
+    const clean = values.filter(Boolean);
+    if (clean.length > 0) {
+      nextExt[fieldKey] = clean;
+    } else {
+      delete nextExt[fieldKey];
+    }
+    applyParams({
+      ext: Object.keys(nextExt).length > 0 ? nextExt : undefined,
+    });
+  };
+
   const renderExternalApiFieldControl = (
     fieldKey: string,
     label: string,
-    style: TaxonomyControlStyle,
+    style: ExtFilterStyle,
     options: FacetOption[]
   ) => {
     const selected = currentParams.ext?.[fieldKey] ?? [];
     const inputName = paramName(`${EXT_PARAM_PREFIX}${fieldKey}`);
+
+    if (style === 'search') {
+      return (
+        <ExtSearchInput
+          key={fieldKey}
+          name={inputName}
+          label={label}
+          initial={readExtSearch(selected)}
+          inputProps={inputEl}
+          labelProps={labelEl}
+          onCommit={text => setExtValues(fieldKey, [encodeExtSearch(text)])}
+        />
+      );
+    }
+
+    if (style === 'range') {
+      return (
+        <ExtRangeInput
+          key={fieldKey}
+          name={inputName}
+          label={label}
+          initial={readExtRange(selected)}
+          inputProps={inputEl}
+          labelProps={labelEl}
+          onCommit={(min, max) => setExtValues(fieldKey, [encodeExtRange(min, max)])}
+        />
+      );
+    }
+
+    if (style === 'toggle') {
+      const on = selected.includes('true');
+      return (
+        <label
+          key={fieldKey}
+          className="inline-flex cursor-pointer items-center gap-2 self-end pb-2 text-sm"
+        >
+          <input
+            type="checkbox"
+            name={inputName}
+            value="true"
+            checked={on}
+            onChange={() => setExtValues(fieldKey, on ? [] : ['true'])}
+            className="rounded border-slate-300"
+          />
+          <span {...labelEl}>{label}</span>
+        </label>
+      );
+    }
+
+    if (style === 'radio') {
+      const current = selected[0] ?? '';
+      const radioOptions = [{ value: '', label: 'All', count: 0 }, ...options];
+      return (
+        <fieldset key={fieldKey} className="flex flex-col gap-1.5">
+          <legend {...el(styled, 'label', 's-muted mb-1 text-xs font-medium')}>
+            {label}
+          </legend>
+          <div className="flex flex-wrap gap-3">
+            {radioOptions.map(opt => (
+              <label
+                key={opt.value || '__all__'}
+                className="inline-flex cursor-pointer items-center gap-1.5 text-sm"
+              >
+                <input
+                  type="radio"
+                  name={inputName}
+                  value={opt.value}
+                  checked={current === opt.value}
+                  onChange={() => setExtValues(fieldKey, opt.value ? [opt.value] : [])}
+                />
+                <span>{opt.value ? formatOptionLabel(opt) : opt.label}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      );
+    }
 
     if (style === 'select') {
       return (
@@ -730,12 +946,12 @@ export function QueryFilterClient({
 
         {isExternalApi &&
           normalizedApiFilterFields
-            .filter(f => f.style === 'select')
+            .filter(f => COMPACT_EXT_STYLES.has(f.style))
             .map(f =>
               renderExternalApiFieldControl(
                 f.key,
                 f.label,
-                'select',
+                f.style,
                 getExtOptions(f.key, f.label)
               )
             )}
@@ -799,7 +1015,7 @@ export function QueryFilterClient({
 
       {isExternalApi &&
         normalizedApiFilterFields
-          .filter(f => f.style !== 'select')
+          .filter(f => !COMPACT_EXT_STYLES.has(f.style))
           .map(f =>
             renderExternalApiFieldControl(
               f.key,

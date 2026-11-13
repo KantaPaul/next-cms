@@ -33,6 +33,13 @@ import {
   resolveDynamicDocument,
 } from '@nextcms/builder-core';
 import type { VideoLibraryVideoItem } from '@/components/video/video-library';
+import {
+  collectLoopBlocks,
+  hasOwnExternalApi,
+  INHERITED_TEMPLATE_KEY,
+  type LoopBlockRef,
+  resolveFilterProps,
+} from './query-filter-target';
 import type { BlogActiveFilters, BlogPostsProps } from './blocks/blog';
 import type { BuilderItem } from './data';
 import { toDynamicPostRecord, type PostView } from './post-template';
@@ -944,6 +951,30 @@ async function resolveExternalApiConfigFromProps(
   };
 }
 
+/**
+ * A preset's vault secrets, only when the resolved endpoint is still on the
+ * preset's own origin (block props can override the endpoint).
+ */
+async function presetSecretsFor(
+  presetRecord: { secrets?: Record<string, string> | null; endpointUrl: string } | null,
+  apiConfig: unknown
+): Promise<{ secrets?: Record<string, string> }> {
+  if (!presetRecord?.secrets) return {};
+  const endpointUrl =
+    apiConfig && typeof apiConfig === 'object'
+      ? (apiConfig as { endpointUrl?: unknown }).endpointUrl
+      : undefined;
+  const { secretsForEndpoint } = await import(
+    '@/server/lib/external-api-secrets'
+  );
+  const secrets = secretsForEndpoint(
+    presetRecord.secrets,
+    presetRecord.endpointUrl,
+    typeof endpointUrl === 'string' ? endpointUrl : undefined
+  );
+  return Object.keys(secrets).length > 0 ? { secrets } : {};
+}
+
 const loadQueryLoop: BlockLoader = async (props, ctx) => {
   const loopId = typeof props.loopId === 'string' ? props.loopId.trim() : '';
   const {
@@ -1008,7 +1039,7 @@ const loadQueryLoop: BlockLoader = async (props, ctx) => {
       language: typeof ctx.language === 'string' ? ctx.language : undefined,
       currentId,
       includeFacets: true,
-      ...(presetRecord?.secrets ? { secrets: presetRecord.secrets } : {}),
+      ...(await presetSecretsFor(presetRecord, resolvedApiConfig)),
     }
   );
 
@@ -1186,7 +1217,38 @@ function archiveTokenPatch(
   return patch;
 }
 
-const loadQueryFilter: BlockLoader = async (props, ctx) => {
+/**
+ * A Query Filter in External API mode with no API of its own takes its
+ * target loop's API (see query-filter-target.ts). The loop list comes from
+ * `resolveDocumentData`; the editor's live reload sends inherited props.
+ */
+async function withInheritedLoopApi(
+  rawProps: Record<string, unknown>,
+  ctx: LoaderContext
+): Promise<Record<string, unknown>> {
+  const loops = Array.isArray(ctx.loopBlocks)
+    ? (ctx.loopBlocks as LoopBlockRef[])
+    : [];
+  let props = resolveFilterProps(rawProps, loops);
+  const templateId =
+    typeof props[INHERITED_TEMPLATE_KEY] === 'string'
+      ? (props[INHERITED_TEMPLATE_KEY] as string)
+      : '';
+  if (props.source === 'external-api' && !hasOwnExternalApi(props) && templateId) {
+    const template = await import('@/server/actions/loop-template.actions')
+      .then(m =>
+        m.getLoopTemplateDocument(templateId, Boolean(ctx.editor || ctx.preview))
+      )
+      .catch(() => null);
+    if (template?.externalApiId) {
+      props = { ...props, apiPresetId: template.externalApiId };
+    }
+  }
+  return props;
+}
+
+const loadQueryFilter: BlockLoader = async (rawProps, ctx) => {
+  const props = await withInheritedLoopApi(rawProps, ctx);
   const targetLoopId =
     typeof props.targetLoopId === 'string' ? props.targetLoopId.trim() : '';
   const { source, filters, activeParams, sortField, sortOrder } =
@@ -1204,7 +1266,7 @@ const loadQueryFilter: BlockLoader = async (props, ctx) => {
       : '';
   if (source === 'collection-entries' && !collectionId) {
     // No post type picked yet: placeholder options in the editor.
-    return { activeParams, totalResults: 0, preservedHiddenParams };
+    return { activeParams, totalResults: 0, preservedHiddenParams, targetLoopId };
   }
   const facetKeys =
     source === 'external-api' ? extractExternalApiFacetKeys(props) : [];
@@ -1215,7 +1277,7 @@ const loadQueryFilter: BlockLoader = async (props, ctx) => {
   const resolvedApiConfig = resolvedExternalApi?.apiConfig;
   const presetRecord = resolvedExternalApi?.presetRecord ?? null;
   if (source === 'external-api' && !resolvedApiConfig) {
-    return { activeParams, totalResults: 0, preservedHiddenParams };
+    return { activeParams, totalResults: 0, preservedHiddenParams, targetLoopId };
   }
   const result = await listingQueryService.resolve(
     {
@@ -1231,11 +1293,13 @@ const loadQueryFilter: BlockLoader = async (props, ctx) => {
     {
       language: typeof ctx.language === 'string' ? ctx.language : undefined,
       includeFacets: true,
-      ...(presetRecord?.secrets ? { secrets: presetRecord.secrets } : {}),
+      ...(await presetSecretsFor(presetRecord, resolvedApiConfig)),
     }
   );
 
   return {
+    // The linked loop's ID, so the filter writes to that loop's URL params.
+    targetLoopId,
     activeParams,
     facets: result.facets,
     totalResults: result.total,
@@ -1328,7 +1392,9 @@ export const getBlockLoader = registry.get;
 export const getBatchBlockLoader = registry.getBatch;
 export const listLoaderTypes = registry.types;
 /** Each node's loaded data, for the editor to show without storing it. */
-export const loadDocumentData = registry.load;
+/** Per-node loader patches (the editor's first pass). Query Filters see the page's loops. */
+export const loadDocumentData: typeof registry.load = (doc, ctx) =>
+  registry.load(doc, { ...ctx, loopBlocks: collectLoopBlocks(doc.nodes) });
 
 /**
  * Run loaders for every registered block type and return a new document with
@@ -1339,8 +1405,13 @@ export async function resolveDocumentData(
   ctx: LoaderContext = {}
 ): Promise<BuilderDocument> {
   const refs = collectDynamicRefs(doc);
+  // Query Filters read their target loop's API settings from this list.
+  const loaderCtx: LoaderContext = {
+    ...ctx,
+    loopBlocks: collectLoopBlocks(doc.nodes),
+  };
   const [resolved, picked] = await Promise.all([
-    registry.resolve(doc, ctx),
+    registry.resolve(doc, loaderCtx),
     Object.keys(refs).length
       ? import('@/server/actions/dynamic-refs.actions').then(m =>
           m.loadDynamicRefs(refs)

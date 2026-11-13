@@ -141,6 +141,7 @@ import {
 } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.actions';
 import { POST_REVISION_ACTIONS } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-revision-actions';
 import { EditorBridgeProvider } from '@/builder/controls/editor-bridge';
+import { collectLoopBlocks, findTargetLoop } from '@/builder/query-filter-target';
 import { getResponsiveCss } from '@/builder/responsive-css';
 import { supportsStyleClasses } from '@/builder/style-class-blocks';
 import { styleClassTagSchema } from '@/schemas/style-classes.schema';
@@ -454,6 +455,14 @@ function NewEditorBridge({
     const pos = findPosition(state.doc, state.selection[0]);
     return pos?.parentId ? state.doc.nodes[pos.parentId] : undefined;
   });
+  // Returns the loop node's own props object, so the selector stays stable.
+  const targetLoopProps = useEditor(state => {
+    if (state.selection.length !== 1) return undefined;
+    const selected = state.doc.nodes[state.selection[0]];
+    if (selected?.type !== 'QueryFilter') return undefined;
+    return findTargetLoop(collectLoopBlocks(state.doc.nodes), selected.props)
+      ?.props;
+  });
   const value = useMemo(
     () => ({
       device,
@@ -463,10 +472,20 @@ function NewEditorBridge({
       selectedProps: node?.props,
       parentType: parentNode?.type,
       parentProps: parentNode?.props,
+      targetLoopProps,
       themeTokens: themeTokens as Record<string, string> | undefined,
       customFonts,
     }),
-    [device, store, breakpoints, node, parentNode, themeTokens, customFonts]
+    [
+      device,
+      store,
+      breakpoints,
+      node,
+      parentNode,
+      targetLoopProps,
+      themeTokens,
+      customFonts,
+    ]
   );
   return <EditorBridgeProvider value={value}>{children}</EditorBridgeProvider>;
 }
@@ -1613,8 +1632,12 @@ export function NewEditor({
       usage: id => styleClassesActions.usage(page.siteId, id),
       usageCounts: () => styleClassesActions.usageCounts(page.siteId),
     };
-    return initStyleClassStore(adapter);
+    // Loaded from the effect below, not during render (it calls a server action).
+    return initStyleClassStore(adapter, undefined, { load: false });
   }, [page.siteId]);
+  useEffect(() => {
+    void styleClassStore?.load();
+  }, [styleClassStore]);
   // Style classes are off unless the site turns them on (Settings → Blocks).
   const [styleClassesOn, setStyleClassesOn] = useState(false);
   useEffect(() => {

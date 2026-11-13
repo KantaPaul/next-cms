@@ -6067,6 +6067,8 @@ export const QueryLoopBlock = defineBlock({
     },
     apiPresetId: {
       label: 'Saved External API',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'custom',
       render: ExternalApiPresetSelectField,
@@ -6074,6 +6076,8 @@ export const QueryLoopBlock = defineBlock({
     },
     apiEndpointUrl: {
       label: 'API Endpoint URL (HTTPS)',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'text',
       placeholder: 'https://api.example.com/posts',
@@ -6081,6 +6085,8 @@ export const QueryLoopBlock = defineBlock({
     },
     apiMethod: {
       label: 'HTTP Method',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'radio',
       options: [
@@ -6091,6 +6097,8 @@ export const QueryLoopBlock = defineBlock({
     },
     apiBody: {
       label: 'POST / GraphQL Body (JSON)',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'textarea',
       when: (props: any) =>
@@ -6098,6 +6106,8 @@ export const QueryLoopBlock = defineBlock({
     },
     apiItemsPath: {
       label: 'Items JSON Path (e.g. data.items)',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'text',
       placeholder: 'Leave blank if response root is an array',
@@ -6105,6 +6115,8 @@ export const QueryLoopBlock = defineBlock({
     },
     apiTotalPath: {
       label: 'Total Count Path (optional)',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'text',
       placeholder: 'e.g. meta.total',
@@ -6112,6 +6124,8 @@ export const QueryLoopBlock = defineBlock({
     },
     apiSelectedItemId: {
       label: 'Select Post / Item from API',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'custom',
       render: ExternalApiPostSelectField,
@@ -6119,6 +6133,8 @@ export const QueryLoopBlock = defineBlock({
     },
     apiFields: {
       label: 'Repeatable Content Fields, Nested Objects & View Types',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'custom',
       render: ExternalApiFieldsMapperControl,
@@ -6126,6 +6142,8 @@ export const QueryLoopBlock = defineBlock({
     },
     apiFieldId: {
       label: 'ID Field Key',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'custom',
       render: ExternalApiKeySelectField,
@@ -6133,6 +6151,8 @@ export const QueryLoopBlock = defineBlock({
     },
     apiFieldTitle: {
       label: 'Title Field Key',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'custom',
       render: ExternalApiKeySelectField,
@@ -6140,6 +6160,8 @@ export const QueryLoopBlock = defineBlock({
     },
     apiFieldUrl: {
       label: 'URL Field Key (optional)',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'custom',
       render: ExternalApiKeySelectField,
@@ -6147,6 +6169,8 @@ export const QueryLoopBlock = defineBlock({
     },
     apiFieldExcerpt: {
       label: 'Excerpt Field Key (optional)',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'custom',
       render: ExternalApiKeySelectField,
@@ -6154,6 +6178,8 @@ export const QueryLoopBlock = defineBlock({
     },
     apiFieldImage: {
       label: 'Image Field Key (optional)',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'custom',
       render: ExternalApiKeySelectField,
@@ -6161,6 +6187,8 @@ export const QueryLoopBlock = defineBlock({
     },
     apiFieldPublishedAt: {
       label: 'Published Date Field Key (optional)',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'custom',
       render: ExternalApiKeySelectField,
@@ -6168,6 +6196,8 @@ export const QueryLoopBlock = defineBlock({
     },
     apiCacheTtlSeconds: {
       label: 'Cache TTL (seconds, 0–3600)',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'number',
       min: 0,
@@ -6176,6 +6206,8 @@ export const QueryLoopBlock = defineBlock({
     },
     apiTimeoutMs: {
       label: 'Timeout (ms, 500–10000)',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'number',
       min: 500,
@@ -7267,6 +7299,18 @@ export const LoopItemFieldBlock = defineBlock({
   },
 });
 
+/**
+ * Query Filter API fields: a saved External API (or the target loop's, when
+ * left blank) supplies the endpoint and request settings, so the manual
+ * fields only show for a custom endpoint typed into the filter itself.
+ */
+const isFilterApiWithoutPreset = (props: any) =>
+  props?.source === 'external-api' && !props?.apiPresetId;
+const usesCustomFilterApi = (props: any) =>
+  isFilterApiWithoutPreset(props) &&
+  typeof props?.apiEndpointUrl === 'string' &&
+  props.apiEndpointUrl.trim() !== '';
+
 export const QueryFilterBlock = defineBlock({
   type: 'QueryFilter',
   label: 'Query Filter',
@@ -7295,7 +7339,9 @@ export const QueryFilterBlock = defineBlock({
           z.object({
             key: z.string(),
             label: z.string().optional(),
-            style: z.enum(['select', 'checkboxes', 'chips']).optional(),
+            style: z
+              .enum(['select', 'checkboxes', 'radio', 'chips', 'search', 'range', 'toggle'])
+              .optional(),
           })
         )
         .optional(),
@@ -7310,6 +7356,8 @@ export const QueryFilterBlock = defineBlock({
       label: 'Target Query Loop ID (leave blank for default loop)',
       group: CONTENT,
       type: 'text',
+      // External API filters link to the loop using the same saved API.
+      when: (props: any) => props.source !== 'external-api',
     },
     source: {
       label: 'Content source (match the target loop)',
@@ -7331,68 +7379,85 @@ export const QueryFilterBlock = defineBlock({
       when: (props: any) => props.source === 'collection-entries',
     },
     apiPresetId: {
-      label: 'Saved External API',
+      label: 'Saved External API (blank: use the target loop’s API)',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'custom',
       render: ExternalApiPresetSelectField,
       when: (props: any) => props.source === 'external-api',
     },
     apiEndpointUrl: {
-      label: 'API Endpoint URL (HTTPS)',
+      label: 'API Endpoint URL (blank: use the target loop’s API)',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'text',
       placeholder: 'https://api.example.com/posts',
-      when: (props: any) => props.source === 'external-api',
+      when: isFilterApiWithoutPreset,
     },
     apiMethod: {
       label: 'HTTP Method',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'radio',
       options: [
         { label: 'GET', value: 'GET' },
         { label: 'POST', value: 'POST' },
       ],
-      when: (props: any) => props.source === 'external-api',
+      when: usesCustomFilterApi,
     },
     apiBody: {
       label: 'POST / GraphQL Body (JSON)',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'textarea',
-      when: (props: any) =>
-        props.source === 'external-api' && props.apiMethod === 'POST',
+      when: (props: any) => usesCustomFilterApi(props) && props.apiMethod === 'POST',
     },
     apiItemsPath: {
       label: 'Items JSON Path (e.g. data.items)',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'text',
       placeholder: 'Leave blank if response root is an array',
-      when: (props: any) => props.source === 'external-api',
+      when: usesCustomFilterApi,
     },
     apiTotalPath: {
       label: 'Total Count Path (optional)',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'text',
       placeholder: 'e.g. meta.total',
-      when: (props: any) => props.source === 'external-api',
+      when: usesCustomFilterApi,
     },
     apiCacheTtlSeconds: {
       label: 'Cache TTL (seconds, 0–3600)',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'number',
       min: 0,
       max: 3600,
-      when: (props: any) => props.source === 'external-api',
+      when: usesCustomFilterApi,
     },
     apiTimeoutMs: {
       label: 'Timeout (ms, 500–10000)',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'number',
       min: 500,
       max: 10000,
-      when: (props: any) => props.source === 'external-api',
+      when: usesCustomFilterApi,
     },
     apiFilterFields: {
       label: 'External API Filter Fields',
+      tab: 'content',
+      section: 'External API',
       group: 'External API',
       type: 'custom',
       render: ExternalApiFilterFieldsControl,
