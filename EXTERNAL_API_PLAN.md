@@ -138,8 +138,8 @@ _Updated 2026-11-13._
 - [x] Tests: `src/server/services/__tests__/external-api-hardening.test.ts`
 
 ### Still open
-- [ ] P2: rate limiting on outbound calls (per preset / per IP)
-- [ ] `{{env.EXT_API_*}}` is still resolved for inline block configs, so a `pages.edit` user can send allowlisted env values to any URL. Close this with Phase 2's "presets only" move (or set `allowEnvPlaceholders: false` for non-preset configs).
-- [ ] `pinnedNodeFetch` does not decompress gzip/br; it only works because no `Accept-Encoding` is sent. Strip a user-set `Accept-Encoding` header or decompress.
+- [x] P2: rate limiting — 120 upstream calls/min per API host, 120 public listing calls/min per visitor IP, 30 inspector fetches/min per admin (`src/server/lib/external-api-rate-limit.ts`; env overrides `EXTERNAL_API_HOST_RATE_LIMIT`, `EXTERNAL_API_VISITOR_RATE_LIMIT`, `EXTERNAL_API_INSPECT_RATE_LIMIT`). Verified against the local DB: counter blocks past the limit and resets each window; host limit returns the "busy" message.
+- [x] `{{env.*}}` resolves only in headers from a saved preset, and only for that preset's own host; headers typed into a block never resolve it (`resolveBlockHeaders` in loaders.ts, service default `allowEnvPlaceholders: false`). Masked header copies in block props are swapped for the stored value.
+- [x] `pinnedNodeFetch` decodes gzip / deflate / br and always requests them; the 2 MB cap counts decoded bytes (zip-bomb safe).
 - [ ] Phase 2 reliability items
 - [ ] Phase 3 extensions

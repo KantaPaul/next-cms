@@ -6,6 +6,7 @@ import {
   listingQuerySchema,
 } from '@nextcms/builder-core';
 import { and, desc, eq, isNull, or, sql } from 'drizzle-orm';
+import { headers } from 'next/headers';
 import { z } from 'zod';
 import { PERMISSIONS } from '@/config/permissions';
 import { db } from '@/db';
@@ -55,9 +56,25 @@ export async function resolveListingQuery(
   rawInput: PublicListingQueryInput
 ): Promise<ListingQueryResult> {
   const input = publicListingInputSchema.parse(rawInput);
-  const site = await siteContext.publicSite();
   const pageSize = input.limit ?? 12;
   const page = input.page ?? 1;
+  // Public and callable by anyone: cap calls per visitor IP.
+  const { clientIp } = await import('@/server/lib/client-ip');
+  const { allowVisitorListingCall, EXTERNAL_API_RATE_LIMITED } = await import(
+    '@/server/lib/external-api-rate-limit'
+  );
+  if (!(await allowVisitorListingCall(clientIp(await headers())))) {
+    return {
+      items: [],
+      total: 0,
+      page,
+      pageSize,
+      totalPages: 1,
+      hasMore: false,
+      error: EXTERNAL_API_RATE_LIMITED,
+    };
+  }
+  const site = await siteContext.publicSite();
 
   if (input.source === 'external-api') {
     if (!input.presetId) {
@@ -128,6 +145,8 @@ export async function resolveListingQuery(
         includeFacets: input.includeFacets,
         skipCache: false,
         secrets: preset.secrets ?? {},
+        // Headers here come only from the saved, Admin-managed preset.
+        allowEnvPlaceholders: true,
       }
     );
   }
@@ -190,6 +209,10 @@ export const resolveEditorListingQuery = permissionProcedure(
       currentId: input.currentId,
       includeFacets: input.includeFacets,
       skipCache: Boolean(input.skipCache),
+      // Env placeholders only for users who manage External API connections.
+      allowEnvPlaceholders: ctx.access.permissions.includes(
+        PERMISSIONS.EXTERNAL_API_MANAGE
+      ),
     });
   });
 
@@ -326,6 +349,7 @@ export const inspectExternalApiAction = permissionProcedure(
   .action(
     async ({
       input,
+      ctx,
     }): Promise<{
       ok: boolean;
       error?: string;
@@ -339,6 +363,22 @@ export const inspectExternalApiAction = permissionProcedure(
         return {
           ok: false,
           error: 'Enter an External API Endpoint URL to fetch keys and posts.',
+          postOptions: [],
+          keys: [],
+          detectedItemsPath: '',
+          totalItems: 0,
+        };
+      }
+
+      const { allowExternalApiHostCall, allowInspectCall, EXTERNAL_API_RATE_LIMITED } =
+        await import('@/server/lib/external-api-rate-limit');
+      if (
+        !(await allowInspectCall(ctx.user.userId)) ||
+        !(await allowExternalApiHostCall(endpointUrl))
+      ) {
+        return {
+          ok: false,
+          error: EXTERNAL_API_RATE_LIMITED,
           postOptions: [],
           keys: [],
           detectedItemsPath: '',
@@ -363,6 +403,8 @@ export const inspectExternalApiAction = permissionProcedure(
 
         let secrets: Record<string, string> = {};
         let rawHeaders: Record<string, string> = { ...(input.headers ?? {}) };
+        // Env placeholders resolve only when inspecting a preset on its own host.
+        let allowEnv = false;
 
         if (input.presetId) {
           const preset = await externalApisService.getByIdForRuntime(
@@ -372,6 +414,7 @@ export const inspectExternalApiAction = permissionProcedure(
           // different URL typed into the inspector.
           if (preset && isSameOriginUrl(preset.endpointUrl, endpointUrl)) {
             secrets = preset.secrets ?? {};
+            allowEnv = true;
             const storedHeaders = preset.headers ?? {};
             const merged: Record<string, string> = {};
             for (const [k, v] of Object.entries(rawHeaders)) {
@@ -385,7 +428,9 @@ export const inspectExternalApiAction = permissionProcedure(
         }
 
         const method = input.method === 'POST' ? 'POST' : 'GET';
-        const headers = interpolateExternalApiHeaders(rawHeaders, secrets);
+        const headers = interpolateExternalApiHeaders(rawHeaders, secrets, {
+          allowEnv,
+        });
         if (
           method === 'POST' &&
           input.body &&

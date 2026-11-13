@@ -16,6 +16,10 @@ import {
 } from '@nextcms/builder-core';
 import { logger } from '@/lib/logger';
 import { matchesExtFilter } from '@/lib/external-api-visitor-filters';
+import {
+  allowExternalApiHostCall,
+  EXTERNAL_API_RATE_LIMITED,
+} from '@/server/lib/external-api-rate-limit';
 import { fetchJsonCapped, safeFetch } from '@/server/lib/safe-fetch';
 import { interpolateExternalApiHeaders } from '@/server/lib/external-api-secrets';
 import {
@@ -1492,7 +1496,8 @@ async function resolveExternalApi(
     const headers = interpolateExternalApiHeaders(
       apiConfig.headers ?? {},
       options?.secrets ?? {},
-      { allowEnv: options?.allowEnvPlaceholders ?? true }
+      // Off unless the caller vouches the headers came from a saved preset.
+      { allowEnv: options?.allowEnvPlaceholders === true }
     );
     if (
       apiConfig.method === 'POST' &&
@@ -1506,6 +1511,18 @@ async function resolveExternalApi(
       apiConfig.endpointUrl,
       apiConfig.queryParams
     );
+    // Only real upstream calls get here (cache hits return earlier).
+    if (!(await allowExternalApiHostCall(targetUrl))) {
+      return {
+        items: [],
+        total: 0,
+        page,
+        pageSize,
+        totalPages: 1,
+        hasMore: false,
+        error: EXTERNAL_API_RATE_LIMITED,
+      };
+    }
     const response = await safeFetch(targetUrl, {
       method: apiConfig.method,
       headers,

@@ -4,6 +4,7 @@ import http from 'node:http';
 import https from 'node:https';
 import net from 'node:net';
 import { Readable } from 'node:stream';
+import zlib from 'node:zlib';
 
 /**
  * Checks whether an IPv4 or IPv6 address belongs to private, loopback,
@@ -242,6 +243,27 @@ export function createPinnedLookup(
 
 const NULL_BODY_STATUSES = new Set([101, 204, 205, 304]);
 
+/**
+ * Decodes a gzip, deflate or brotli response body. Unknown or missing
+ * encodings pass through. Size caps (fetchJsonCapped) then count decoded
+ * bytes, so a small compressed "zip bomb" cannot slip past them.
+ */
+export function decodeResponseBody(
+  body: Readable,
+  contentEncoding: string | string[] | undefined
+): Readable {
+  const encoding = (Array.isArray(contentEncoding) ? contentEncoding.join(',') : contentEncoding ?? '')
+    .trim()
+    .toLowerCase();
+  let decoder: zlib.Gunzip | zlib.Inflate | zlib.BrotliDecompress | null = null;
+  if (encoding === 'gzip' || encoding === 'x-gzip') decoder = zlib.createGunzip();
+  else if (encoding === 'deflate') decoder = zlib.createInflate();
+  else if (encoding === 'br') decoder = zlib.createBrotliDecompress();
+  if (!decoder) return body;
+  body.on('error', err => decoder.destroy(err));
+  return body.pipe(decoder);
+}
+
 async function pinnedNodeFetch(
   url: URL,
   addresses: Array<{ address: string; family: number }>,
@@ -255,6 +277,10 @@ async function pinnedNodeFetch(
   headersObj.forEach((value, key) => {
     reqHeaders[key] = value;
   });
+  // Node's http client, unlike fetch, does not decode compressed bodies:
+  // always ask for encodings decodeResponseBody handles, replacing any
+  // Accept-Encoding a preset set (e.g. `zstd`) that we could not read.
+  reqHeaders['accept-encoding'] = 'gzip, deflate, br';
 
   let bodyBuffer: Buffer | undefined;
   if (init?.body !== undefined && init.body !== null) {
@@ -297,9 +323,16 @@ async function pinnedNodeFetch(
           }
         }
         const noBody = method === 'HEAD' || NULL_BODY_STATUSES.has(status);
-        const bodyStream = noBody
-          ? null
-          : (Readable.toWeb(res) as ReadableStream<Uint8Array>);
+        let bodyStream: ReadableStream<Uint8Array> | null = null;
+        if (!noBody) {
+          const decoded = decodeResponseBody(res, res.headers['content-encoding']);
+          if (decoded !== res) {
+            // The body is now decoded: these described the compressed bytes.
+            resHeaders.delete('content-encoding');
+            resHeaders.delete('content-length');
+          }
+          bodyStream = Readable.toWeb(decoded) as ReadableStream<Uint8Array>;
+        }
         resolve(
           new Response(bodyStream, {
             status,

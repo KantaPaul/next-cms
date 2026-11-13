@@ -829,6 +829,48 @@ function extractExternalApiFacetKeys(props: Record<string, unknown>): string[] {
   return keys;
 }
 
+/**
+ * Request headers for an External API block.
+ *
+ * `{{env.*}}` placeholders resolve only in values that come from the saved
+ * preset (Admin-managed) and only for the preset's own origin; they are
+ * resolved here. Headers typed into the block stay as typed, and the
+ * listing service never resolves env placeholders in them, so a `pages.edit`
+ * user cannot send server env values to a URL of their choosing. Masked
+ * copies (`••••1234`) left by the preset picker are replaced with the stored
+ * value, or dropped when that is not allowed.
+ */
+export async function resolveBlockHeaders(
+  rawHeaders: unknown,
+  presetRecord: { endpointUrl: string; headers?: Record<string, string> | null; secrets?: Record<string, string> | null } | null,
+  endpointUrl: string
+): Promise<Record<string, string>> {
+  const { interpolateExternalApiHeaders, isMaskedSecret, isSameOriginUrl } =
+    await import('@/server/lib/external-api-secrets');
+  const trusted = Boolean(
+    presetRecord && isSameOriginUrl(presetRecord.endpointUrl, endpointUrl)
+  );
+  const stored = trusted ? (presetRecord?.headers ?? {}) : {};
+  const fromPreset = (headers: Record<string, string>) =>
+    interpolateExternalApiHeaders(headers, presetRecord?.secrets ?? {}, {
+      allowEnv: true,
+    });
+
+  if (!rawHeaders || typeof rawHeaders !== 'object' || Array.isArray(rawHeaders)) {
+    return fromPreset(stored);
+  }
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(rawHeaders as Record<string, unknown>)) {
+    if (typeof value !== 'string') continue;
+    if (isMaskedSecret(value)) {
+      if (stored[key] !== undefined) out[key] = fromPreset({ [key]: stored[key] })[key];
+      continue;
+    }
+    out[key] = value;
+  }
+  return out;
+}
+
 async function resolveExternalApiConfigFromProps(
   props: Record<string, unknown>,
   ctx: LoaderContext,
@@ -839,11 +881,9 @@ async function resolveExternalApiConfigFromProps(
       typeof import('@/server/services/external-apis.service').externalApisService.getPresetForRender
     >
   > = null;
-  if (
-    typeof props.apiPresetId === 'string' &&
-    props.apiPresetId.trim() &&
-    !(typeof props.apiEndpointUrl === 'string' && props.apiEndpointUrl.trim())
-  ) {
+  // Loaded even when the block has its own endpoint: stored header values
+  // stand in for the masked copies the preset picker leaves in block props.
+  if (typeof props.apiPresetId === 'string' && props.apiPresetId.trim()) {
     try {
       const { externalApisService } = await import(
         '@/server/services/external-apis.service'
@@ -879,10 +919,11 @@ async function resolveExternalApiConfigFromProps(
       endpointUrl: effectiveEndpointUrl,
       method:
         (props.apiMethod ?? presetRecord?.method) === 'POST' ? 'POST' : 'GET',
-      headers:
-        props.apiHeaders && typeof props.apiHeaders === 'object'
-          ? props.apiHeaders
-          : (presetRecord?.headers ?? {}),
+      headers: await resolveBlockHeaders(
+        props.apiHeaders,
+        presetRecord,
+        effectiveEndpointUrl
+      ),
       ...(props.apiQueryParams && typeof props.apiQueryParams === 'object'
         ? { queryParams: props.apiQueryParams }
         : presetRecord?.queryParams
