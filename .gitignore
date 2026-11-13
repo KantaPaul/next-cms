@@ -145,3 +145,7 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 prototype/
+.DS_Store
+
+# Third-party WordPress plugin kept locally for reference only
+wp-plugins/kirki/
