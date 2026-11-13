@@ -100,6 +100,7 @@ import { QuickInsertPopover, type QuickInsertTarget } from './quick-insert';
 import { PartReorderOverlay } from './part-reorder';
 import { ResizeHandles, type ResizeHandlesFor } from './resize';
 import {
+  getCopiedClassIds,
   copyBlockStyle,
   getCopiedBlockStyles,
   hasCopiedBlockStyles,
@@ -1529,6 +1530,15 @@ export function EditorCanvas({
               disabled: !hasCopiedBlockStyles(),
               run: () => pasteBlockStyle(store, id),
             },
+            ...(getCopiedClassIds().length > 0
+              ? [
+                  {
+                    id: 'paste-style-no-classes',
+                    label: 'Paste Style Without Classes',
+                    run: () => pasteBlockStyle(store, id, { classes: false }),
+                  },
+                ]
+              : []),
             {
               id: 'reset-defaults',
               label: 'Reset to Defaults',

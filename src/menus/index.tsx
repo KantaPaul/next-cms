@@ -153,7 +153,7 @@ export function getMenuItems(): {
       name: 'External API',
       href: PAGES.DASHBOARD.EXTERNAL_API,
       icon: <Globe className="w-[18px]" />,
-      permission: PERMISSIONS.PAGES_EDIT,
+      permission: PERMISSIONS.EXTERNAL_API_MANAGE,
     },
     {
       name: 'Post types',

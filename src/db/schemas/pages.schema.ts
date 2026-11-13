@@ -26,6 +26,7 @@ import {
   DEFAULT_BLOCK_SETTINGS,
 } from '@/config/block-manager';
 import { users } from '@/db/schemas/auth.schema';
+import { type BuilderSettings, DEFAULT_BUILDER_SETTINGS } from '@/config/builder-settings';
 import { DEFAULT_SITE_ID } from '@/db/schemas/sites.schema';
 import { type VideoSettings, DEFAULT_VIDEO_SETTINGS } from '@/db/schemas/video.schema';
 import {
@@ -621,6 +622,10 @@ export const siteSettings = pgTable('site_settings', {
     .$type<BackupSettings>()
     .default(DEFAULT_BACKUP_SETTINGS)
     .notNull(),
+  builderSettings: jsonb('builder_settings')
+    .$type<BuilderSettings>()
+    .default(DEFAULT_BUILDER_SETTINGS)
+    .notNull(),
   breakpoints: jsonb('breakpoints')
     .$type<BreakpointConfig>()
     .default(DEFAULT_BREAKPOINTS)
@@ -629,6 +634,25 @@ export const siteSettings = pgTable('site_settings', {
   googleAnalyticsId: varchar('google_analytics_id', { length: 50 }),
   updatedAt: baseColumns.updatedAt,
 });
+
+export const styleClasses = pgTable('style_classes', {
+  ...baseColumns,
+  siteId: text('site_id').notNull().default(DEFAULT_SITE_ID),
+  name: varchar('name', { length: 80 }).notNull(),
+  kind: varchar('kind', { length: 8 }).notNull().default('class'),
+  tag: varchar('tag', { length: 16 }),
+  /** Combo classes: the base class this one modifies. Deleting the base deletes its combos. */
+  comboOf: text('combo_of').references((): AnyPgColumn => styleClasses.id, {
+    onDelete: 'cascade',
+  }),
+  variants: jsonb('variants')
+    .$type<Record<string, Record<string, string>>>()
+    .notNull()
+    .default({}),
+}, t => [
+  uniqueIndex('style_classes_site_name_uq').on(t.siteId, t.name),
+  index('style_classes_combo_of_index').on(t.comboOf),
+]);
 
 export const globalBlocks = pgTable(
   'global_blocks',

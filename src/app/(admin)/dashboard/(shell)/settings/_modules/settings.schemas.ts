@@ -313,3 +313,8 @@ export const breakpointsSchema = z
       });
     }
   });
+
+/** Site-level builder switches (Settings → Blocks). */
+export const builderSettingsSchema = z.object({
+  styleClasses: z.boolean(),
+});

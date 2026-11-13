@@ -11,7 +11,14 @@
  */
 
 import type { ComponentType, ReactNode } from 'react';
+import { compileStyleClasses } from './compile-classes';
 import { puckToDocument } from './converter';
+import type {
+  CssDeclarations,
+  StyleClass,
+  StyleState,
+  VariantKey,
+} from './style-classes';
 import type { BlockDefinition } from './define';
 import { toBlockSchema } from './define';
 import {
@@ -202,3 +209,7 @@ export function deserializeDocument(json: string): DocumentValidation {
     return { ok: false, issues: ['Could not parse JSON.'] };
   }
 }
+
+/** Compiles persisted style classes into a CSS string (KRK-02). */
+export { compileStyleClasses };
+export type { CssDeclarations, StyleClass, StyleState, VariantKey };

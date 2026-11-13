@@ -7,6 +7,7 @@ import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { metaObject } from '@/lib/utils/metadata';
 import { accessService } from '@/server/services/access.service';
 import { siteSettingsService } from '@/server/services/site-settings.service';
+import { adminSiteId } from '@/server/services/site-context';
 import { entryRenderContext } from '@/app/(admin)/dashboard/(fullscreen)/_editor/entry-context';
 
 export const metadata = metaObject('Entry custom layout builder');
@@ -52,6 +53,7 @@ export default async function CollectionEntryBuilderPage({
       collectionEntry={context.collectionEntry}
       page={{
         id: entry.id,
+        siteId: await adminSiteId(),
         title: entry.slug,
         slug: entry.slug,
         language: entry.language || 'en',

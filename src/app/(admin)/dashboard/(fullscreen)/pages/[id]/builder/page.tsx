@@ -59,6 +59,7 @@ export default async function BuilderPage({
       searchParams={searchParams}
       page={{
         id: page.id,
+        siteId: page.siteId,
         title: page.title,
         slug: page.slug,
         language: page.language,

@@ -39,6 +39,8 @@ export * from './state-styles';
 export * from './state-styles-ui';
 export * from './style-classes';
 export * from './style-classes-ui';
+export * from './class-styles-panel';
+export * from './classes-view';
 export * from './style-controls';
 export * from './store';
 export * from './version-compare';

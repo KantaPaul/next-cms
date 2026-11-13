@@ -1,29 +1,197 @@
 'use server';
 
-import type {
-  ListingQueryResult,
-  NormalizedListingItem,
+import {
+  type ListingQueryResult,
+  type NormalizedListingItem,
+  listingQuerySchema,
 } from '@nextcms/builder-core';
 import { and, desc, eq, isNull, or, sql } from 'drizzle-orm';
+import { z } from 'zod';
+import { PERMISSIONS } from '@/config/permissions';
 import { db } from '@/db';
 import { collections } from '@/db/schema';
+import { permissionProcedure } from '@/server/procedures/permission.procedure';
+import { externalApisService } from '@/server/services/external-apis.service';
 import { siteContext } from '@/server/services/site-context';
-import {
-  type ListingQueryOptions,
-  listingQueryService,
-} from '@/server/services/listing-query.service';
+import { listingQueryService } from '@/server/services/listing-query.service';
 import {
   type PaginatedSearchResponse,
   type SearchQueryInput,
   searchIndex,
 } from '@/server/services/search.service';
 
+const publicListingInputSchema = z.object({
+  source: z.enum([
+    'posts',
+    'pages',
+    'collection-entries',
+    'videos',
+    'external-api',
+  ]),
+  collectionId: z.string().optional(),
+  presetId: z.string().min(1).optional(),
+  filters: z.array(z.any()).optional(),
+  fieldFilters: z.array(z.any()).optional(),
+  sortField: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+  limit: z.number().int().min(1).max(100).optional(),
+  offset: z.number().int().min(0).optional(),
+  page: z.number().int().min(1).optional(),
+  excludeCurrent: z.boolean().optional(),
+  currentId: z.string().optional(),
+  language: z.string().optional(),
+  includeFacets: z.boolean().optional(),
+});
+
+export type PublicListingQueryInput = z.infer<typeof publicListingInputSchema>;
+
+/**
+ * Public listing query action.
+ * Never accepts inline `apiConfig`, caller-supplied `site`, or `skipCache`.
+ * External API queries must reference a saved `presetId` belonging to the
+ * server-resolved public site.
+ */
 export async function resolveListingQuery(
-  rawConfig: unknown,
-  options?: ListingQueryOptions
+  rawInput: PublicListingQueryInput
 ): Promise<ListingQueryResult> {
-  return listingQueryService.resolve(rawConfig, options);
+  const input = publicListingInputSchema.parse(rawInput);
+  const site = await siteContext.publicSite();
+  const pageSize = input.limit ?? 12;
+  const page = input.page ?? 1;
+
+  if (input.source === 'external-api') {
+    if (!input.presetId) {
+      return {
+        items: [],
+        total: 0,
+        page,
+        pageSize,
+        totalPages: 1,
+        hasMore: false,
+        error: 'External API presetId is required.',
+      };
+    }
+    const preset = await externalApisService.getByIdForRuntime(
+      input.presetId,
+      site.id
+    );
+    if (!preset) {
+      return {
+        items: [],
+        total: 0,
+        page,
+        pageSize,
+        totalPages: 1,
+        hasMore: false,
+        error: 'External API preset not found.',
+      };
+    }
+    return listingQueryService.resolve(
+      {
+        source: 'external-api',
+        filters: input.filters,
+        sortField: input.sortField,
+        sortOrder: input.sortOrder,
+        limit: input.limit,
+        offset: input.offset,
+        page: input.page,
+        excludeCurrent: input.excludeCurrent,
+        currentId: input.currentId,
+        apiConfig: {
+          endpointUrl: preset.endpointUrl,
+          method: preset.method === 'POST' ? 'POST' : 'GET',
+          headers: preset.headers ?? {},
+          queryParams: preset.queryParams ?? {},
+          dataFilters: preset.dataFilters ?? [],
+          ...(preset.body ? { body: preset.body } : {}),
+          itemsPath: preset.itemsPath ?? '',
+          ...(preset.totalPath ? { totalPath: preset.totalPath } : {}),
+          fieldMap: {
+            id: preset.fieldId || 'id',
+            title: preset.fieldTitle || 'title',
+            ...(preset.fieldUrl ? { url: preset.fieldUrl } : {}),
+            ...(preset.fieldExcerpt ? { excerpt: preset.fieldExcerpt } : {}),
+            ...(preset.fieldImage ? { image: preset.fieldImage } : {}),
+            ...(preset.fieldPublishedAt
+              ? { publishedAt: preset.fieldPublishedAt }
+              : {}),
+          },
+          fields: preset.fields ?? [],
+          cacheTtlSeconds: preset.cacheTtlSeconds ?? 60,
+          timeoutMs: preset.timeoutMs ?? 4000,
+        },
+      },
+      {
+        site,
+        language: input.language,
+        currentId: input.currentId,
+        includeFacets: input.includeFacets,
+        skipCache: false,
+        secrets: preset.secrets ?? {},
+      }
+    );
+  }
+
+  return listingQueryService.resolve(
+    {
+      source: input.source,
+      ...(input.collectionId ? { collectionId: input.collectionId } : {}),
+      filters: input.filters,
+      ...(input.fieldFilters ? { fieldFilters: input.fieldFilters } : {}),
+      sortField: input.sortField,
+      sortOrder: input.sortOrder,
+      limit: input.limit,
+      offset: input.offset,
+      page: input.page,
+      excludeCurrent: input.excludeCurrent,
+      currentId: input.currentId,
+    },
+    {
+      site,
+      language: input.language,
+      currentId: input.currentId,
+      includeFacets: input.includeFacets,
+      skipCache: false,
+    }
+  );
 }
+
+/**
+ * Authenticated editor/preview listing query action.
+ * Inline `apiConfig` is permitted only for users with `EXTERNAL_API_MANAGE`.
+ */
+export const resolveEditorListingQuery = permissionProcedure(
+  PERMISSIONS.PAGES_EDIT
+)
+  .input(
+    z.object({
+      config: z.unknown(),
+      language: z.string().optional(),
+      currentId: z.string().optional(),
+      includeFacets: z.boolean().optional(),
+      skipCache: z.boolean().optional(),
+    })
+  )
+  .action(async ({ input, ctx }) => {
+    const parsed = listingQuerySchema.parse(input.config);
+    if (
+      parsed.source === 'external-api' &&
+      parsed.apiConfig &&
+      !ctx.access.permissions.includes(PERMISSIONS.EXTERNAL_API_MANAGE)
+    ) {
+      throw new Error(
+        'Missing permission to execute inline external API configurations.'
+      );
+    }
+    const site = await siteContext.adminSite(ctx.user.userId);
+    return listingQueryService.resolve(parsed, {
+      site,
+      language: input.language,
+      currentId: input.currentId,
+      includeFacets: input.includeFacets,
+      skipCache: Boolean(input.skipCache),
+    });
+  });
 
 export async function resolvePaginatedSearch(
   input: SearchQueryInput
@@ -132,126 +300,163 @@ export async function resolveRelatedCollectionEntries(input: {
   });
 }
 
+const inspectExternalApiSchema = z.object({
+  presetId: z.string().optional(),
+  endpointUrl: z.string().trim().default(''),
+  method: z.enum(['GET', 'POST']).optional(),
+  body: z.string().optional(),
+  headers: z.record(z.string(), z.string()).optional(),
+  queryParams: z.record(z.string(), z.string()).optional(),
+  itemsPath: z.string().optional(),
+  idKey: z.string().optional(),
+  titleKey: z.string().optional(),
+  timeoutMs: z.number().optional(),
+});
+
 /**
  * Fetches an External API endpoint from the builder inspector, returning:
  * - `postOptions`: selectable posts/items from the response
  * - `keys`: all discovered keys (top-level, nested dot-notation like `address.street`, and array keys with `subKeys`)
  * - `detectedItemsPath`: auto-detected items array path if root was an object wrapper
  */
-export async function inspectExternalApiAction(input: {
-  endpointUrl: string;
-  method?: 'GET' | 'POST';
-  body?: string;
-  headers?: Record<string, string>;
-  queryParams?: Record<string, string>;
-  itemsPath?: string;
-  idKey?: string;
-  titleKey?: string;
-  timeoutMs?: number;
-}): Promise<{
-  ok: boolean;
-  error?: string;
-  postOptions: import('@/lib/external-api-schema').ExternalApiPreviewPostOption[];
-  keys: import('@/lib/external-api-schema').DiscoveredApiKey[];
-  detectedItemsPath: string;
-  totalItems: number;
-}> {
-  const endpointUrl = (input.endpointUrl ?? '').trim();
-  if (!endpointUrl) {
-    return {
-      ok: false,
-      error: 'Enter an External API Endpoint URL to fetch keys and posts.',
-      postOptions: [],
-      keys: [],
-      detectedItemsPath: '',
-      totalItems: 0,
-    };
-  }
+export const inspectExternalApiAction = permissionProcedure(
+  PERMISSIONS.EXTERNAL_API_MANAGE
+)
+  .input(inspectExternalApiSchema)
+  .action(
+    async ({
+      input,
+    }): Promise<{
+      ok: boolean;
+      error?: string;
+      postOptions: import('@/lib/external-api-schema').ExternalApiPreviewPostOption[];
+      keys: import('@/lib/external-api-schema').DiscoveredApiKey[];
+      detectedItemsPath: string;
+      totalItems: number;
+    }> => {
+      const endpointUrl = (input.endpointUrl ?? '').trim();
+      if (!endpointUrl) {
+        return {
+          ok: false,
+          error: 'Enter an External API Endpoint URL to fetch keys and posts.',
+          postOptions: [],
+          keys: [],
+          detectedItemsPath: '',
+          totalItems: 0,
+        };
+      }
 
-  try {
-    const { safeFetch } = await import('@/server/lib/safe-fetch');
-    const { interpolateEnvHeaders } = await import(
-      '@/server/services/listing-query.service'
-    );
-    const {
-      applyExternalApiQueryParams,
-      discoverExternalApiSchema,
-      extractExternalApiPostsList,
-    } = await import('@/lib/external-api-schema');
+      try {
+        const { fetchJsonCapped, safeFetch } = await import(
+          '@/server/lib/safe-fetch'
+        );
+        const { interpolateExternalApiHeaders, isMaskedSecret } = await import(
+          '@/server/lib/external-api-secrets'
+        );
+        const {
+          applyExternalApiQueryParams,
+          discoverExternalApiSchema,
+          extractExternalApiPostsList,
+        } = await import('@/lib/external-api-schema');
 
-    const method = input.method === 'POST' ? 'POST' : 'GET';
-    const headers = interpolateEnvHeaders(input.headers ?? {});
-    if (
-      method === 'POST' &&
-      input.body &&
-      !Object.keys(headers).some(k => k.toLowerCase() === 'content-type')
-    ) {
-      headers['Content-Type'] = 'application/json';
+        let secrets: Record<string, string> = {};
+        let rawHeaders: Record<string, string> = { ...(input.headers ?? {}) };
+
+        if (input.presetId) {
+          const preset = await externalApisService.getByIdForRuntime(
+            input.presetId
+          );
+          if (preset) {
+            secrets = preset.secrets ?? {};
+            const storedHeaders = preset.headers ?? {};
+            const merged: Record<string, string> = {};
+            for (const [k, v] of Object.entries(rawHeaders)) {
+              merged[k] =
+                isMaskedSecret(v) && storedHeaders[k] !== undefined
+                  ? storedHeaders[k]
+                  : v;
+            }
+            rawHeaders = merged;
+          }
+        }
+
+        const method = input.method === 'POST' ? 'POST' : 'GET';
+        const headers = interpolateExternalApiHeaders(rawHeaders, secrets);
+        if (
+          method === 'POST' &&
+          input.body &&
+          !Object.keys(headers).some(k => k.toLowerCase() === 'content-type')
+        ) {
+          headers['Content-Type'] = 'application/json';
+        }
+
+        const timeoutMs = Math.min(
+          Math.max(input.timeoutMs ?? 5000, 500),
+          10000
+        );
+        const targetUrl = applyExternalApiQueryParams(
+          endpointUrl,
+          input.queryParams
+        );
+        const response = await safeFetch(targetUrl, {
+          method,
+          headers,
+          ...(method === 'POST' && input.body ? { body: input.body } : {}),
+          signal: AbortSignal.timeout(timeoutMs),
+        });
+
+        if (!response.ok) {
+          return {
+            ok: false,
+            error: `External API responded with status ${response.status}`,
+            postOptions: [],
+            keys: [],
+            detectedItemsPath: '',
+            totalItems: 0,
+          };
+        }
+
+        const payload: unknown = await fetchJsonCapped(response);
+        const { rawItems, postOptions, detectedItemsPath } =
+          extractExternalApiPostsList(
+            payload,
+            input.itemsPath ?? '',
+            input.idKey ?? 'id',
+            input.titleKey ?? 'title'
+          );
+
+        if (rawItems.length === 0) {
+          return {
+            ok: false,
+            error:
+              'External API response did not contain any object records at the specified path.',
+            postOptions: [],
+            keys: [],
+            detectedItemsPath,
+            totalItems: 0,
+          };
+        }
+
+        const keys = discoverExternalApiSchema(rawItems, 4);
+
+        return {
+          ok: true,
+          postOptions: postOptions.slice(0, 100),
+          keys,
+          detectedItemsPath,
+          totalItems: rawItems.length,
+        };
+      } catch (err) {
+        return {
+          ok: false,
+          error:
+            err instanceof Error ? err.message : 'External API request failed.',
+          postOptions: [],
+          keys: [],
+          detectedItemsPath: '',
+          totalItems: 0,
+        };
+      }
     }
-
-    const timeoutMs = Math.min(Math.max(input.timeoutMs ?? 5000, 500), 10000);
-    const targetUrl = applyExternalApiQueryParams(
-      endpointUrl,
-      input.queryParams
-    );
-    const response = await safeFetch(targetUrl, {
-      method,
-      headers,
-      ...(method === 'POST' && input.body ? { body: input.body } : {}),
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-
-    if (!response.ok) {
-      return {
-        ok: false,
-        error: `External API responded with status ${response.status}`,
-        postOptions: [],
-        keys: [],
-        detectedItemsPath: '',
-        totalItems: 0,
-      };
-    }
-
-    const payload: unknown = await response.json();
-    const { rawItems, postOptions, detectedItemsPath } =
-      extractExternalApiPostsList(
-        payload,
-        input.itemsPath ?? '',
-        input.idKey ?? 'id',
-        input.titleKey ?? 'title'
-      );
-
-    if (rawItems.length === 0) {
-      return {
-        ok: false,
-        error:
-          'External API response did not contain any object records at the specified path.',
-        postOptions: [],
-        keys: [],
-        detectedItemsPath,
-        totalItems: 0,
-      };
-    }
-
-    const keys = discoverExternalApiSchema(rawItems, 4);
-
-    return {
-      ok: true,
-      postOptions: postOptions.slice(0, 100),
-      keys,
-      detectedItemsPath,
-      totalItems: rawItems.length,
-    };
-  } catch (err) {
-    return {
-      ok: false,
-      error:
-        err instanceof Error ? err.message : 'External API request failed.',
-      postOptions: [],
-      keys: [],
-      detectedItemsPath: '',
-      totalItems: 0,
-    };
-  }
-}
+  );
 

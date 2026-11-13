@@ -57,6 +57,7 @@ interface DraftApiState {
   endpointUrl: string;
   method: 'GET' | 'POST';
   headers: HeaderRow[];
+  secrets: HeaderRow[];
   queryParams: HeaderRow[];
   dataFilters: ExternalApiDataFilter[];
   body: string;
@@ -83,6 +84,7 @@ function emptyDraft(): DraftApiState {
     endpointUrl: '',
     method: 'GET',
     headers: [],
+    secrets: [],
     queryParams: [],
     dataFilters: [],
     body: '',
@@ -107,6 +109,10 @@ function recordToDraft(rec: ExternalApiRecord): DraftApiState {
     key,
     value,
   }));
+  const secretEntries = Object.entries(rec.secrets ?? {}).map(([key, value]) => ({
+    key,
+    value,
+  }));
   const queryParamEntries = Object.entries(rec.queryParams ?? {}).map(
     ([key, value]) => ({
       key,
@@ -120,6 +126,7 @@ function recordToDraft(rec: ExternalApiRecord): DraftApiState {
     endpointUrl: rec.endpointUrl,
     method: rec.method === 'POST' ? 'POST' : 'GET',
     headers: headerEntries,
+    secrets: secretEntries,
     queryParams: queryParamEntries,
     dataFilters: Array.isArray(rec.dataFilters) ? rec.dataFilters : [],
     body: rec.body ?? '',
@@ -160,6 +167,15 @@ export function ExternalApiManager({
     return out;
   }, [draft.headers]);
 
+  const secretsRecord = useMemo(() => {
+    const out: Record<string, string> = {};
+    for (const s of draft.secrets) {
+      const k = s.key.trim();
+      if (k) out[k] = s.value;
+    }
+    return out;
+  }, [draft.secrets]);
+
   const queryParamsRecord = useMemo(() => {
     const out: Record<string, string> = {};
     for (const p of draft.queryParams) {
@@ -172,6 +188,7 @@ export function ExternalApiManager({
   // Shape compatible with builder external-api-fields controls
   const controlProps = useMemo<Record<string, unknown>>(
     () => ({
+      ...(draft.id ? { apiPresetId: draft.id } : {}),
       apiEndpointUrl: draft.endpointUrl,
       apiMethod: draft.method,
       apiHeaders: headersRecord,
@@ -264,6 +281,7 @@ export function ExternalApiManager({
           endpointUrl: draft.endpointUrl.trim(),
           method: draft.method,
           headers: headersRecord,
+          secrets: secretsRecord,
           queryParams: queryParamsRecord,
           dataFilters: draft.dataFilters.filter(f => f.key.trim().length > 0),
           body: draft.body || null,
@@ -641,7 +659,7 @@ export function ExternalApiManager({
             <div className="space-y-2 rounded-lg border p-3">
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-semibold">
-                  Request Headers (supports ${'{ENV_VAR}'})
+                  Request Headers (supports {'{{secret.NAME}}'} and {'{{env.EXT_API_*}}'})
                 </Label>
                 <Button
                   type="button"
@@ -684,7 +702,7 @@ export function ExternalApiManager({
                       />
                       <Input
                         value={h.value}
-                        placeholder="Value (e.g. Bearer ${API_TOKEN})"
+                        placeholder="Value (e.g. Bearer {{secret.API_TOKEN}})"
                         onChange={e =>
                           setDraft(prev => ({
                             ...prev,
@@ -704,6 +722,90 @@ export function ExternalApiManager({
                           setDraft(prev => ({
                             ...prev,
                             headers: prev.headers.filter((_, i) => i !== idx),
+                          }))
+                        }
+                      >
+                        <Trash2 className="size-4 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Secrets Vault */}
+            <div className="space-y-2 rounded-lg border p-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-xs font-semibold">
+                    Secrets Vault (referenced as {'{{secret.NAME}}'})
+                  </Label>
+                  <p className="text-muted-foreground text-[11px]">
+                    Encrypted at rest with AES-256-GCM and masked after saving.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() =>
+                    setDraft(prev => ({
+                      ...prev,
+                      secrets: [...prev.secrets, { key: '', value: '' }],
+                    }))
+                  }
+                >
+                  <Plus className="size-3.5" /> Add Secret
+                </Button>
+              </div>
+              {draft.secrets.length === 0 ? (
+                <p className="text-muted-foreground text-xs">
+                  No vault secrets configured.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {draft.secrets.map((s, idx) => (
+                    <div
+                      // biome-ignore lint/suspicious/noArrayIndexKey: secret rows
+                      key={idx}
+                      className="flex items-center gap-2"
+                    >
+                      <Input
+                        value={s.key}
+                        placeholder="Secret name (e.g. API_TOKEN)"
+                        onChange={e =>
+                          setDraft(prev => ({
+                            ...prev,
+                            secrets: prev.secrets.map((row, i) =>
+                              i === idx ? { ...row, key: e.target.value } : row
+                            ),
+                          }))
+                        }
+                      />
+                      <Input
+                        type="password"
+                        value={s.value}
+                        placeholder="Secret value"
+                        onChange={e =>
+                          setDraft(prev => ({
+                            ...prev,
+                            secrets: prev.secrets.map((row, i) =>
+                              i === idx
+                                ? { ...row, value: e.target.value }
+                                : row
+                            ),
+                          }))
+                        }
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() =>
+                          setDraft(prev => ({
+                            ...prev,
+                            secrets: prev.secrets.filter((_, i) => i !== idx),
                           }))
                         }
                       >

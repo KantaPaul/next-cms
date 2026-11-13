@@ -162,3 +162,46 @@ export function pruneDetached(doc: BuilderDocument): BuilderDocument {
   for (const id of reachable) if (doc.nodes[id]) nodes[id] = doc.nodes[id];
   return { ...doc, nodes };
 }
+
+/** Replaces the ordered class ids on a node. One history step. */
+export function setNodeClasses(
+  doc: BuilderDocument,
+  id: NodeId,
+  classIds: NodeId[]
+): BuilderDocument {
+  const node = doc.nodes[id];
+  if (!node) return doc;
+  const next = classIds.filter(
+    (c, i) => typeof c === 'string' && c.length > 0 && classIds.indexOf(c) === i
+  );
+  const current = Array.isArray(node.props.classIds) ? (node.props.classIds as unknown[]) : [];
+  // Unchanged: return the same document so no empty undo step is recorded.
+  if (current.length === next.length && current.every((c, i) => c === next[i])) return doc;
+  return {
+    ...doc,
+    nodes: { ...doc.nodes, [id]: { ...node, props: { ...node.props, classIds: next } } },
+  };
+}
+
+/** Adds a class to a node's ordered class list. One history step. */
+export function addNodeClass(doc: BuilderDocument, id: NodeId, classId: NodeId): BuilderDocument {
+  const node = doc.nodes[id];
+  if (!node) return doc;
+  const current = (node.props.classIds as NodeId[] | undefined) ?? [];
+  if (current.includes(classId)) return doc;
+  return setNodeClasses(doc, id, [...current, classId]);
+}
+
+/** Removes a class from a node's ordered class list. One history step. */
+export function removeNodeClass(doc: BuilderDocument, id: NodeId, classId: NodeId): BuilderDocument {
+  const node = doc.nodes[id];
+  if (!node) return doc;
+  const current = (node.props.classIds as NodeId[] | undefined) ?? [];
+  if (!current.includes(classId)) return doc;
+  return setNodeClasses(doc, id, current.filter(c => c !== classId));
+}
+
+/** Reorders a node's class ids. One history step. */
+export function reorderNodeClasses(doc: BuilderDocument, id: NodeId, classIds: NodeId[]): BuilderDocument {
+  return setNodeClasses(doc, id, classIds);
+}

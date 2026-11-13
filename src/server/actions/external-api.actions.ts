@@ -10,7 +10,6 @@ import type {
 } from '@/lib/external-api-schema';
 import { permissionProcedure } from '@/server/procedures/permission.procedure';
 import { externalApisService } from '@/server/services/external-apis.service';
-import { adminSiteId, siteContext } from '@/server/services/site-context';
 
 const externalApiInputSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(160),
@@ -22,6 +21,7 @@ const externalApiInputSchema = z.object({
     .max(1000),
   method: z.enum(['GET', 'POST']).default('GET'),
   headers: z.record(z.string(), z.string()).default({}),
+  secrets: z.record(z.string(), z.string()).default({}),
   body: z.string().optional().nullable(),
   itemsPath: z.string().trim().max(255).default(''),
   totalPath: z.string().trim().max(255).optional().nullable(),
@@ -58,20 +58,24 @@ const externalApiInputSchema = z.object({
   timeoutMs: z.number().int().min(500).max(10000).default(4000),
 });
 
-export const listExternalApisAction = permissionProcedure(PERMISSIONS.PAGES_EDIT)
+export const listExternalApisAction = permissionProcedure(
+  PERMISSIONS.EXTERNAL_API_MANAGE
+)
   .input(z.object({}).optional())
   .action(async () => {
     return externalApisService.list();
   });
 
-export const getExternalApiAction = permissionProcedure(PERMISSIONS.PAGES_EDIT)
+export const getExternalApiAction = permissionProcedure(
+  PERMISSIONS.EXTERNAL_API_MANAGE
+)
   .input(z.object({ id: z.string().min(1) }))
   .action(async ({ input }) => {
     return externalApisService.getById(input.id);
   });
 
 export const createExternalApiAction = permissionProcedure(
-  PERMISSIONS.PAGES_EDIT
+  PERMISSIONS.EXTERNAL_API_MANAGE
 )
   .input(externalApiInputSchema)
   .action(async ({ input }) => {
@@ -85,7 +89,7 @@ export const createExternalApiAction = permissionProcedure(
   });
 
 export const updateExternalApiAction = permissionProcedure(
-  PERMISSIONS.PAGES_EDIT
+  PERMISSIONS.EXTERNAL_API_MANAGE
 )
   .input(externalApiInputSchema.extend({ id: z.string().min(1) }))
   .action(async ({ input }) => {
@@ -100,7 +104,7 @@ export const updateExternalApiAction = permissionProcedure(
   });
 
 export const deleteExternalApiAction = permissionProcedure(
-  PERMISSIONS.PAGES_EDIT
+  PERMISSIONS.EXTERNAL_API_MANAGE
 )
   .input(z.object({ id: z.string().min(1) }))
   .action(async ({ input }) => {
@@ -108,18 +112,3 @@ export const deleteExternalApiAction = permissionProcedure(
     revalidatePath(PAGES.DASHBOARD.EXTERNAL_API);
     return { ok: true };
   });
-
-/**
- * Loads a saved External API preset for block rendering (`loadQueryLoop`).
- * Safe to call from both public pages and the builder editor.
- */
-export async function getExternalApiPresetForRender(
-  id: string,
-  isEditorOrPreview = false
-) {
-  if (!id) return null;
-  const siteId = isEditorOrPreview
-    ? await adminSiteId()
-    : (await siteContext.publicSite()).id;
-  return externalApisService.getById(id, siteId);
-}

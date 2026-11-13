@@ -101,7 +101,8 @@ export function Section({
     hasBgParallax && 'isolate',
     hidden,
     className,
-    itemClassName
+    itemClassName,
+    s.styleClassName
   );
   const outerStyle = itemStyle ? { ...styles.style, ...itemStyle } : styles.style;
   const inner = cn(

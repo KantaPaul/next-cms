@@ -7,6 +7,7 @@ import { loopTemplatePreviewData } from '@/server/loop-template-preview';
 import { loopTemplatesService } from '@/server/services/loop-templates.service';
 import { requirePermission } from '@/server/services/require-permission';
 import { siteSettingsService } from '@/server/services/site-settings.service';
+import { adminSiteId } from '@/server/services/site-context';
 
 export const metadata = metaObject('Edit loop item');
 
@@ -39,6 +40,7 @@ export default async function LoopTemplateEditorPage({
       kind="loop-item"
       page={{
         id: template.id,
+        siteId: await adminSiteId(),
         title: template.name,
         slug: template.id,
         language: 'en',

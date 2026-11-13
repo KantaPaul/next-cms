@@ -48,6 +48,9 @@ import {
   type NodeMeta,
   updateRootProps,
   wrapNodes,
+  setNodeClasses as setNodeClassIds,
+  addNodeClass as addNodeClassId,
+  removeNodeClass as removeNodeClassId,
 } from '@nextcms/builder-core';
 
 export type EditorState = {
@@ -66,7 +69,18 @@ export type EditorState = {
   breakpoints: BreakpointConfig;
   /** True while dragging a resize handle on the canvas. */
   resizing: boolean;
+  /**
+   * What the Style tab's class editor edits (KRK-03): a style class of the
+   * selected block (null = the block's own settings) and the state or
+   * pseudo-element (`hover`, `hover:before`, `nth-child(2n)`; null = none).
+   * Resets when the primary selection changes.
+   */
+  classEdit: ClassEditTarget;
 };
+
+export type ClassEditTarget = { classId: string | null; state: string | null };
+
+const NO_CLASS_EDIT: ClassEditTarget = { classId: null, state: null };
 
 export type EditorStoreOptions = {
   document: BuilderDocument;
@@ -103,10 +117,15 @@ export function createEditorStore({
     device: 'desktop',
     breakpoints,
     resizing: false,
+    classEdit: NO_CLASS_EDIT,
   };
   const listeners = new Set<Listener>();
 
   const set = (next: Partial<EditorState>) => {
+    // A class edit target belongs to one block: drop it when another is selected.
+    if (next.selection && next.selection[0] !== state.selection[0] && next.classEdit === undefined) {
+      next = { ...next, classEdit: NO_CLASS_EDIT };
+    }
     state = { ...state, ...next };
     for (const listener of listeners) listener();
   };
@@ -502,6 +521,34 @@ export function createEditorStore({
       return apply(doc, label, { mergeKey });
     },
 
+    /** Replaces the ordered class ids on a node (duplicates dropped). One history step. */
+    setNodeClasses(id: NodeId, classIds: NodeId[]) {
+      const doc = setNodeClassIds(state.doc, id, classIds);
+      if (doc === state.doc) return false;
+      return apply(doc, 'Change classes');
+    },
+
+    /** Adds a class to the end of a node's class list. One history step. */
+    addNodeClass(id: NodeId, classId: NodeId) {
+      const doc = addNodeClassId(state.doc, id, classId);
+      if (doc === state.doc) return false;
+      return apply(doc, 'Add class');
+    },
+
+    /** Removes a class from a node's class list. One history step. */
+    removeNodeClass(id: NodeId, classId: NodeId) {
+      const doc = removeNodeClassId(state.doc, id, classId);
+      if (doc === state.doc) return false;
+      return apply(doc, 'Remove class');
+    },
+
+    /** Reorders a node's class ids; the first is the base class. One history step. */
+    reorderNodeClasses(id: NodeId, classIds: NodeId[]) {
+      const doc = setNodeClassIds(state.doc, id, classIds);
+      if (doc === state.doc) return false;
+      return apply(doc, 'Reorder classes');
+    },
+
     updateRootProps(patch: Record<string, unknown>, mergeKey?: string) {
       return apply(updateRootProps(state.doc, patch), 'Edit page', { mergeKey });
     },
@@ -639,6 +686,14 @@ export function createEditorStore({
 
     setDevice(device: Device) {
       if (state.device !== device) set({ device });
+    },
+
+    /** Chooses what the class editor edits (KRK-03). Same object when unchanged. */
+    setClassEdit(target: Partial<ClassEditTarget>) {
+      const next = { ...state.classEdit, ...target };
+      if (next.classId === null) next.state = null;
+      if (next.classId === state.classEdit.classId && next.state === state.classEdit.state) return;
+      set({ classEdit: next });
     },
 
     setBreakpoints(nextBreakpoints: BreakpointConfig) {

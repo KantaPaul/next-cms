@@ -222,8 +222,13 @@ export function renderContainerBody({
   );
   const empty = p.editing && !children;
 
+  // A Container's style classes go on its layout element (the one whose
+  // children they arrange), not on the outer Section wrapper.
+  const styleClassName = p.section?.styleClassName;
+  const section = styleClassName ? { ...p.section, styleClassName: undefined } : p.section;
+
   const body = (
-    <Tag className={cn('s-cntr', bodyClasses)} style={bodyStyle}>
+    <Tag className={cn('s-cntr', bodyClasses, styleClassName)} style={bodyStyle}>
       {empty ? (
         <div className="flex h-32 w-full items-center justify-center rounded-md border border-dashed border-steel-200 bg-steel-50 text-[11px] text-steel-400">
           Drop blocks here
@@ -236,7 +241,7 @@ export function renderContainerBody({
 
   return (
     <Section
-      section={p.section}
+      section={section}
       editing={p.editing}
       itemClassName={itemClassName}
       itemStyle={itemStyle}

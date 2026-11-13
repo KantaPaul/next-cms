@@ -59,6 +59,12 @@ import {
   type UserAccess,
 } from '@/server/services/access.service';
 import { auditService } from '@/server/services/audit.service';
+import { revalidateStyleClassCss } from '@/server/services/style-classes.service';
+import {
+  type BuilderSettings,
+  DEFAULT_BUILDER_SETTINGS,
+  normalizeBuilderSettings,
+} from '@/config/builder-settings';
 
 export type SiteSettingsInput = {
   siteName: string;
@@ -146,6 +152,7 @@ async function loadSettings(siteId: string) {
         backupSettings:
           (row.backupSettings as BackupSettings) ?? DEFAULT_BACKUP_SETTINGS,
         breakpoints: normalizeBreakpointConfig(row.breakpoints),
+        builderSettings: normalizeBuilderSettings(row.builderSettings),
       };
 
     const [created] = await db
@@ -180,6 +187,7 @@ async function loadSettings(siteId: string) {
       backupSettings:
         (settings?.backupSettings as BackupSettings) ?? DEFAULT_BACKUP_SETTINGS,
       breakpoints: normalizeBreakpointConfig(settings?.breakpoints),
+      builderSettings: normalizeBuilderSettings(settings?.builderSettings),
     };
   } catch {
     return {
@@ -214,6 +222,7 @@ async function loadSettings(siteId: string) {
       consent: DEFAULT_CONSENT_SETTINGS,
       backupSettings: DEFAULT_BACKUP_SETTINGS,
       breakpoints: DEFAULT_BREAKPOINTS,
+      builderSettings: DEFAULT_BUILDER_SETTINGS,
       robotsTxt: null,
       googleAnalyticsId: null,
       updatedAt: new Date(),
@@ -384,6 +393,28 @@ export const siteSettingsService = {
       targetName: 'Site settings (blocks)',
     });
     return blockSettings;
+  },
+
+  /** Site-level builder switches (style classes). Clears the class CSS cache. */
+  updateBuilderSettings: async (input: unknown, access: UserAccess): Promise<BuilderSettings> => {
+    await accessService.assertPermission(access.userId, PERMISSIONS.SETTINGS_MANAGE);
+    const siteId = await adminSiteId();
+    await loadSettings(siteId);
+    const builderSettings = normalizeBuilderSettings(input);
+    await db
+      .update(siteSettings)
+      .set({ builderSettings, updatedAt: new Date() })
+      .where(eq(siteSettings.siteId, siteId));
+    // Pages render with or without classes from now on.
+    revalidateStyleClassCss(siteId);
+    await auditService.log({
+      actorId: access.userId,
+      action: 'settings_change',
+      targetType: 'settings',
+      targetId: siteId,
+      targetName: `Style classes ${builderSettings.styleClasses ? 'on' : 'off'}`,
+    });
+    return builderSettings;
   },
 
   updateVideoSettings: async (
@@ -579,6 +610,8 @@ export const siteSettingsService = {
       .update(siteSettings)
       .set({ breakpoints: normalized, updatedAt: new Date() })
       .where(eq(siteSettings.siteId, siteId));
+    // Class CSS is compiled per breakpoint, so it must be rebuilt too.
+    revalidateStyleClassCss(siteId);
     await auditService.log({
       actorId: access.userId,
       action: 'settings_change',

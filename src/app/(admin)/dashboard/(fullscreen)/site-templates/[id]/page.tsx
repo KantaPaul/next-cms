@@ -7,6 +7,7 @@ import { PERMISSIONS } from '@/config/permissions';
 import { metaObject } from '@/lib/utils/metadata';
 import { requirePermission } from '@/server/services/require-permission';
 import { siteSettingsService } from '@/server/services/site-settings.service';
+import { adminSiteId } from '@/server/services/site-context';
 
 export const metadata = metaObject('Edit site template');
 
@@ -60,6 +61,7 @@ export default async function HeaderFooterBuilderPage({
       category={block.category}
       page={{
         id: block.id,
+        siteId: await adminSiteId(),
         title: block.name,
         slug: block.id,
         language: 'en',

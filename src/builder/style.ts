@@ -425,6 +425,11 @@ export function hasActiveMotion(m?: MotionEffectsSettings): boolean {
 }
 
 export type SectionSettings = {
+  /**
+   * Style class names (`c-card c-is-large`) added by the renderer from the
+   * block's `classIds` (KRK-01). Render-time only; never stored.
+   */
+  styleClassName?: string;
   paddingY?: 'none' | 'sm' | 'md' | 'lg';
   background?: 'default' | 'muted' | 'primary' | 'dark';
   hideOn?: Device[];

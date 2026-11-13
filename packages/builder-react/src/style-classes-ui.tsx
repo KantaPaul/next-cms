@@ -1,6 +1,8 @@
 /**
- * Reusable style classes UI (R724 / UXE-14): save a block's style as a named
- * class, apply it to other blocks, see where it is used, and detach it.
+ * Reusable style classes UI (R724 / UXE-14 → KRK-01): save a block's style as a
+ * named class, apply it to other blocks, see where it is used, and detach it.
+ * Classes live in the host adapter; nodes reference them by id via
+ * `node.props.classIds`.
  */
 
 import { type CSSProperties, useState } from 'react';
@@ -9,9 +11,14 @@ import {
   createStyleClassStore,
   getStyleClassStore,
   setStyleClassStore,
+  slugifyClassName,
+  type StyleClassAdapter,
   type StyleClassStore,
+  type StyleClassStoreOptions,
+  uniqueClassName,
+  useStyleClasses,
 } from './style-classes';
-import type { BuilderNode } from '@nextcms/builder-core';
+import type { BuilderNode, NodeId } from '@nextcms/builder-core';
 
 const smallButton: CSSProperties = {
   padding: '2px 6px',
@@ -23,115 +30,103 @@ const smallButton: CSSProperties = {
   cursor: 'pointer',
 };
 
-/** Save a block's style as a named class, or apply an existing class. */
-export function StyleClassControl({
-  nodeId,
-  styles,
-}: {
-  nodeId: string;
-  /** Current style values captured from the block, to save as a class. */
-  styles: Record<string, unknown>;
-}) {
-  const classes = getClasses();
-  const blockClass = classes.blockClasses[nodeId as never as string];
-  const [className, setClassName] = useState('');
+/**
+ * Creates a named class and applies it to the block. The class starts empty:
+ * its styles are edited in the Style tab once a class is selected (KRK-03).
+ */
+export function StyleClassControl({ nodeId }: { nodeId: NodeId }) {
+  const editor = useEditorStore();
+  const store = getStyleClassStore();
+  const { classes, error } = useStyleClasses(store);
+  const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
+  const slug = slugifyClassName(name);
 
-  const saveAsClass = () => {
-    const sc = getStyleClassStore();
-    if (!sc) return;
-    const name = className.trim() || `Class ${Object.keys(classes.classes).length + 1}`;
+  const create = async () => {
+    if (!store || !slug) return;
     setSaving(true);
-    sc.saveClass(name, styles);
-    sc.applyClass(nodeId as never as string, name);
-    setSaving(false);
-    setClassName('');
+    try {
+      const unique = uniqueClassName(slug, Object.values(classes).map(cls => cls.name));
+      const created = await store.createClass({ name: unique, kind: 'class', variants: {} });
+      editor.addNodeClass(nodeId, created.id);
+      setName('');
+    } catch {
+      /* the store sets `error`, shown below */
+    } finally {
+      setSaving(false);
+    }
   };
-
-  const usedBy = blockClass
-    ? classes.classes[blockClass as never as string]?.usedBy.length ?? 0
-    : 0;
 
   return (
     <div style={{ display: 'grid', gap: 8, font: '13px/1.4 system-ui, sans-serif' }}>
       <div style={{ font: '600 12px/1.4 system-ui, sans-serif', opacity: 0.8 }}>
         Style class
       </div>
-      {blockClass ? (
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          <span style={{ font: '13px/1.4 system-ui, sans-serif', color: '#4f46e5' }}>
-            {blockClass}
-          </span>
-          <span style={{ font: '11px/1 system-ui, sans-serif', opacity: 0.6 }}>
-            {usedBy} block(s)
-          </span>
-          <button
-            type="button"
-            aria-label="Detach style class"
-            onClick={() => {
-              const store = getStyleClassStore();
-              if (store) store.detachClass(nodeId as never as string);
-            }}
-            style={{
-              ...smallButton,
-              color: '#dc2626',
-            }}
-          >
-            Detach
-          </button>
-        </div>
-      ) : (
-        <div style={{ display: 'flex', gap: 6 }}>
-          <input
-            type="text"
-            value={className}
-            onChange={(event) => setClassName(event.target.value)}
-            placeholder="Class name"
-            style={{
-              flex: 1,
-              padding: '6px 8px',
-              borderRadius: 6,
-              border: '1px solid rgba(127,127,127,.35)',
-              background: 'transparent',
-              color: 'inherit',
-              font: '13px/1.4 system-ui, sans-serif',
-            }}
-          />
-          <button
-            type="button"
-            disabled={!className.trim() || saving}
-            onClick={saveAsClass}
-            style={{
-              ...smallButton,
-              background: saving ? 'rgba(127,127,127,.3)' : 'rgba(79,70,229,.15)',
-              color: saving ? 'rgba(127,127,127,.6)' : '#4f46e5',
-            }}
-          >
-            Save as class
-          </button>
-        </div>
+      <form
+        style={{ display: 'flex', gap: 6 }}
+        onSubmit={event => {
+          event.preventDefault();
+          void create();
+        }}
+      >
+        <input
+          type="text"
+          value={name}
+          onChange={event => setName(event.target.value)}
+          placeholder="Class name"
+          aria-label="New class name"
+          style={{
+            flex: 1,
+            padding: '6px 8px',
+            borderRadius: 6,
+            border: '1px solid rgba(127,127,127,.35)',
+            background: 'transparent',
+            color: 'inherit',
+            font: '13px/1.4 system-ui, sans-serif',
+          }}
+        />
+        <button
+          type="submit"
+          disabled={!store || !slug || saving}
+          style={{
+            ...smallButton,
+            background: saving ? 'rgba(127,127,127,.3)' : 'rgba(79,70,229,.15)',
+            color: saving ? 'rgba(127,127,127,.6)' : '#4f46e5',
+          }}
+        >
+          {saving ? 'Creating…' : 'Create class'}
+        </button>
+      </form>
+      {name && slug && slug !== name && (
+        <p style={{ margin: 0, opacity: 0.6, font: '12px/1.4 system-ui, sans-serif' }}>
+          Will be named <code>.{slug}</code>
+        </p>
+      )}
+      {error && (
+        <p role="alert" style={{ margin: 0, color: '#dc2626', font: '12px/1.4 system-ui, sans-serif' }}>
+          {error}
+        </p>
       )}
     </div>
   );
 }
 
-/** Gets style class state, or defaults. */
-function getClasses() {
-  const sc = getStyleClassStore();
-  return sc ? sc.getState() : { classes: {}, blockClasses: {} };
-}
-
-/** A list of all style classes with apply/detach/delete actions. */
+/** A list of all style classes with apply/detach actions for the selected node. */
 export function StyleClassList({
   onApply,
   onDetach,
 }: {
-  onApply: (blockId: string, className: string) => void;
-  onDetach: (blockId: string) => void;
+  onApply: (blockId: string, classId: string) => void;
+  onDetach: (blockId: string, classId: string) => void;
 }) {
   const store = useEditorStore();
-  const classes = getClasses();
+  const classes = useStyleClasses();
   const selectedId = store.getState().selection[0];
+  const currentClasses =
+    selectedId &&
+    store.getState().doc.nodes[selectedId as never as string]?.props?.classIds;
+
+  const current = Array.isArray(currentClasses) ? new Set(currentClasses) : new Set<string>();
 
   return (
     <div style={{ display: 'grid', gap: 8, font: '13px/1.4 system-ui, sans-serif' }}>
@@ -143,64 +138,76 @@ export function StyleClassList({
           No style classes yet. Save a block&apos;s style as a class to reuse it.
         </p>
       )}
-      {Object.entries(classes.classes).map(([name, klass]) => (
-        <div
-          key={name}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '6px 8px',
-            borderRadius: 6,
-            border: '1px solid rgba(127,127,127,.25)',
-            background: 'rgba(127,127,127,.05)',
-          }}
-        >
-          <span style={{ flex: 1, font: '13px/1.4 system-ui, sans-serif', color: '#4f46e5' }}>
-            {name}
-          </span>
-          <span style={{ font: '11px/1 system-ui, sans-serif', opacity: 0.6 }}>
-            {klass.usedBy.length} block(s) · updated{' '}
-            {new Date(klass.updatedAt).toLocaleDateString()}
-          </span>
-          {selectedId && (
-            <button
-              type="button"
-              aria-label={`Apply "${name}" to selection`}
-              onClick={() => onApply(selectedId, name)}
-              style={{
-                ...smallButton,
-                background: 'rgba(79,70,229,.15)',
-                color: '#4f46e5',
-              }}
-            >
-              Apply
-            </button>
-          )}
-          <button
-            type="button"
-            aria-label={`Delete "${name}"`}
-            onClick={() => {
-              const sc = getStyleClassStore();
-              if (sc) sc.deleteClass(name);
-            }}
+      {Object.entries(classes.classes).map(([classId, klass]) => {
+        const applied = current.has(classId);
+        return (
+          <div
+            key={classId}
             style={{
-              ...smallButton,
-              color: '#dc2626',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '6px 8px',
+              borderRadius: 6,
+              border: '1px solid rgba(127,127,127,.25)',
+              background: applied ? 'rgba(79,70,229,.15)' : 'rgba(127,127,127,.05)',
             }}
           >
-            Delete
-          </button>
-        </div>
-      ))}
+            <span style={{ flex: 1, font: '13px/1.4 system-ui, sans-serif', color: '#4f46e5' }}>
+              {klass.name}
+            </span>
+            {selectedId && (
+              <button
+                type="button"
+                disabled={applied}
+                aria-label={applied ? 'Already applied' : `Apply "${klass.name}"`}
+                onClick={() => onApply(selectedId as never as string, classId)}
+                style={{
+                  ...smallButton,
+                  background: 'rgba(79,70,229,.15)',
+                  color: '#4f46e5',
+                }}
+              >
+                Apply
+              </button>
+            )}
+            {selectedId && applied && (
+              <button
+                type="button"
+                aria-label={`Detach "${klass.name}"`}
+                onClick={() => onDetach(selectedId as never as string, classId)}
+                style={{
+                  ...smallButton,
+                  color: '#dc2626',
+                }}
+              >
+                Detach
+              </button>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-/** Sets the global style class store (called by the host editor shell). */
-export function initStyleClassStore(): StyleClassStore {
-  const store = createStyleClassStore();
+/**
+ * Creates the editor's style class store for the host adapter, makes it the
+ * global store, and starts loading. Call `store.flush()` before leaving the
+ * editor so queued edits are saved.
+ */
+export function initStyleClassStore(
+  adapter?: StyleClassAdapter,
+  options?: StyleClassStoreOptions
+): StyleClassStore | null {
+  if (!adapter) {
+    setStyleClassStore(null);
+    return null;
+  }
+  getStyleClassStore()?.dispose();
+  const store = createStyleClassStore(adapter, options);
   setStyleClassStore(store);
+  void store.load();
   return store;
 }
 

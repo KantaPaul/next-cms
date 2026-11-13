@@ -24,6 +24,7 @@ import {
   consentSettingsSchema,
   backupSettingsSchema,
   breakpointsSchema,
+  builderSettingsSchema,
 } from './settings.schemas';
 import { z } from 'zod';
 
@@ -132,6 +133,19 @@ export const updateBlockSettings = permissionProcedure(
       ctx.access
     );
     revalidatePath(PAGES.DASHBOARD.SETTINGS_BLOCKS);
+    return { ok: true, data };
+  });
+
+/** Turns style classes on or off for the site (KRK-01). */
+export const updateBuilderSettings = permissionProcedure(
+  PERMISSIONS.SETTINGS_MANAGE
+)
+  .input(builderSettingsSchema)
+  .action(async ({ input, ctx }) => {
+    const data = await siteSettingsService.updateBuilderSettings(input, ctx.access);
+    revalidatePath(PAGES.DASHBOARD.SETTINGS_BLOCKS);
+    // Published pages render with or without classes from now on.
+    revalidatePath('/', 'layout');
     return { ok: true, data };
   });
 

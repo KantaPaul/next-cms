@@ -26,7 +26,9 @@ import {
   normalizeBreakpointConfig,
   type RenderOptions,
   renderDocument,
+  collectUsedClassIds,
   renderNodes,
+  styleClassNameFor,
 } from '@nextcms/builder-core';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils/cn';
@@ -60,6 +62,8 @@ export type RenderMetadata = {
   editing?: boolean;
   /** Extra context passed through to blocks that need it (post, searchParams, …). */
   [key: string]: unknown;
+  /** Style class id -> { name } for resolving classIds on rendered blocks. */
+  classes?: Record<string, { name: string }>;
 };
 
 const MAX_WIDTH: Record<string, string> = {
@@ -126,7 +130,7 @@ export function cmsTransformProps(
   const realPost = metadata.post as PostView | undefined;
   const post = realPost ?? SAMPLE_POST;
   const page = metadata.page as { id?: string; title?: string } | undefined;
-  return (node, props) => {
+  const transform = (node: BuilderNode, props: Record<string, unknown>): Record<string, unknown> => {
     if (node.type === 'Breadcrumbs') {
       // Real context only: without it the block shows a sample trail in the editor.
       return kind === 'post'
@@ -167,6 +171,25 @@ export function cmsTransformProps(
       ? { ...props, post }
       : resolvePanels(node, props);
   };
+  // Style classes apply to every block, after the block-specific changes.
+  return (node, props) => applyStyleClasses(transform(node, props), metadata.classes);
+}
+
+/**
+ * Resolves a node's `classIds` to class names (KRK-01) and hands them to the
+ * block twice: as `styleClassName`, and inside `section` settings so the
+ * shared `Section` wrapper puts them on the block's outer element without a
+ * per-block change. Blocks without a `Section` read `styleClassName`.
+ */
+export function applyStyleClasses(
+  props: Record<string, unknown>,
+  classes: Record<string, { name: string }> | undefined
+): Record<string, unknown> {
+  const styleClassName = styleClassNameFor(props.classIds, classes);
+  if (!styleClassName) return props;
+  const section =
+    props.section && typeof props.section === 'object' ? (props.section as Record<string, unknown>) : {};
+  return { ...props, styleClassName, section: { ...section, styleClassName } };
 }
 
 function renderOptions(
@@ -349,14 +372,35 @@ export function renderDocumentSubtree(
  * Resolve server data (R685) then render. Preferred public-site entry once
  * the R686 flag switches off Puck.
  */
+export type RenderWithLoadersOptions = {
+  /**
+   * Loads names and CSS for the style classes the resolved document uses
+   * (KRK-01). Supplied by the server (render-content); this file is also
+   * bundled for the editor, so it must not import the database itself.
+   */
+  loadStyleClasses?: (
+    usedIds: Set<string>
+  ) => Promise<{ classes: Record<string, { name: string }>; css: string }>;
+};
+
 export async function renderDocumentWithLoaders(
   doc: BuilderDocument,
   ctx: LoaderContext = {},
   metadata: RenderMetadata = {},
-  kind: RenderKind = 'page'
+  kind: RenderKind = 'page',
+  options: RenderWithLoadersOptions = {}
 ): Promise<ReactNode> {
   const mergedCtx: LoaderContext = { ...metadata, ...ctx };
   const resolved = await resolveDocumentData(doc, mergedCtx);
+  // Collected after loading, so classes inside global blocks count too.
+  const usedClassIds = collectUsedClassIds(resolved);
+  const styleClasses =
+    options.loadStyleClasses && usedClassIds.size > 0
+      ? await options.loadStyleClasses(usedClassIds).catch(error => {
+          console.error('[style-classes] could not load classes for render', error);
+          return null;
+        })
+      : null;
   // Path routing: add the site slug to links typed into content; on a
   // non-default locale, point links at their translations (localeLinks).
   const siteSlug = typeof mergedCtx.siteSlug === 'string' ? mergedCtx.siteSlug : '';
@@ -365,12 +409,13 @@ export async function renderDocumentWithLoaders(
   const prefix = (Boolean(siteSlug) || Boolean(localeLinks?.size)) && !metadata.editing;
   const document = prefix ? prefixDocumentLinks(resolved, siteSlug, localeLinks) : resolved;
   const post = metadata.post as PostView | undefined;
-  return (
+  const rendered = (
     <BuilderRenderer
       kind={kind}
       document={document}
       metadata={{
         ...metadata,
+        ...(styleClasses ? { classes: { ...metadata.classes, ...styleClasses.classes } } : {}),
         ...(prefix && post?.body
           ? {
               post: {
@@ -392,5 +437,13 @@ export async function renderDocumentWithLoaders(
         themeTokens: metadata.themeTokens ?? mergedCtx.themeTokens,
       }}
     />
+  );
+  if (!styleClasses?.css) return rendered;
+  return (
+    <>
+      {/* Compiled from sanitized declarations and checked class names (compileStyleClasses). */}
+      <style data-style-classes="" dangerouslySetInnerHTML={{ __html: styleClasses.css }} />
+      {rendered}
+    </>
   );
 }

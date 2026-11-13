@@ -8,6 +8,7 @@ import { PERMISSIONS } from '@/config/permissions';
 import { metaObject } from '@/lib/utils/metadata';
 import { requirePermission } from '@/server/services/require-permission';
 import { siteSettingsService } from '@/server/services/site-settings.service';
+import { adminSiteId } from '@/server/services/site-context';
 
 export const metadata = metaObject('Edit page template');
 
@@ -38,6 +39,7 @@ export default async function PageTemplateEditorPage({
       kind="page-template"
       page={{
         id: template.id,
+        siteId: await adminSiteId(),
         title: template.name,
         slug: template.id,
         language: 'en',

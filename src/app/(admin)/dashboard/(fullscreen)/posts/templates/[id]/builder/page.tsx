@@ -9,6 +9,7 @@ import { metaObject } from '@/lib/utils/metadata';
 import { accessService } from '@/server/services/access.service';
 import { blogService } from '@/server/services/blog.service';
 import { siteSettingsService } from '@/server/services/site-settings.service';
+import { adminSiteId } from '@/server/services/site-context';
 
 export const metadata = metaObject('Post template');
 
@@ -48,6 +49,7 @@ export default async function PostTemplateBuilderPage({
       post={previewPost}
       page={{
         id: template.id,
+        siteId: await adminSiteId(),
         title: template.name,
         slug: '',
         language: 'en',

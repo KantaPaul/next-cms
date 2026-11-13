@@ -14,7 +14,8 @@ import {
   type QueryFilter,
   fieldSortKey,
 } from '@nextcms/builder-core';
-import { safeFetch } from '@/server/lib/safe-fetch';
+import { fetchJsonCapped, safeFetch } from '@/server/lib/safe-fetch';
+import { interpolateExternalApiHeaders } from '@/server/lib/external-api-secrets';
 import {
   applyExternalApiQueryParams,
   type ExternalApiDataFilter,
@@ -83,6 +84,8 @@ export interface ListingQueryOptions {
   currentId?: string;
   includeFacets?: boolean;
   skipCache?: boolean;
+  secrets?: Record<string, string>;
+  allowEnvPlaceholders?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -98,7 +101,51 @@ interface CacheEntry {
 }
 
 const LISTING_CACHE_TTL_MS = 60_000;
-const listingCache = new Map<string, CacheEntry>();
+export const LISTING_CACHE_MAX_ENTRIES = 500;
+
+export function createListingCache(maxEntries = LISTING_CACHE_MAX_ENTRIES) {
+  const store = new Map<string, CacheEntry>();
+
+  return {
+    get(key: string): CacheEntry | undefined {
+      const entry = store.get(key);
+      if (!entry) return undefined;
+      if (entry.expiresAt <= Date.now()) {
+        store.delete(key);
+        return undefined;
+      }
+      // Refresh LRU position
+      store.delete(key);
+      store.set(key, entry);
+      return entry;
+    },
+    set(key: string, entry: CacheEntry): void {
+      if (store.has(key)) {
+        store.delete(key);
+      }
+      while (store.size >= maxEntries) {
+        const oldest = store.keys().next().value;
+        if (oldest === undefined) break;
+        store.delete(oldest);
+      }
+      store.set(key, entry);
+    },
+    delete(key: string): void {
+      store.delete(key);
+    },
+    entries(): IterableIterator<[string, CacheEntry]> {
+      return store.entries();
+    },
+    get size(): number {
+      return store.size;
+    },
+    clear(): void {
+      store.clear();
+    },
+  };
+}
+
+const listingCache = createListingCache(LISTING_CACHE_MAX_ENTRIES);
 
 export function buildListingCacheKey(
   siteId: string,
@@ -172,7 +219,7 @@ export const listingQueryService = {
 
     if (!options?.skipCache) {
       const cached = listingCache.get(cacheKey);
-      if (cached && cached.expiresAt > Date.now()) {
+      if (cached) {
         return cached.result;
       }
     }
@@ -235,7 +282,8 @@ export const listingQueryService = {
           pageSize,
           offset,
           page,
-          includeFacets
+          includeFacets,
+          options
         );
         break;
     }
@@ -1279,21 +1327,16 @@ async function loadCollectionEntryTerms(entryIds: string[]) {
 // External REST / GraphQL API Resolver (CMS-103)
 // ---------------------------------------------------------------------------
 
-const ENV_PLACEHOLDER_RE = /\{\{env\.([A-Za-z0-9_]+)\}\}/g;
-
 /**
- * Interpolates `{{env.VAR_NAME}}` placeholders in header values server-side.
+ * Interpolates `{{secret.NAME}}` and allowlisted `{{env.VAR_NAME}}`
+ * placeholders in header values server-side.
  */
 export function interpolateEnvHeaders(
-  headers: Record<string, string>
+  headers: Record<string, string>,
+  secrets: Record<string, string> = {},
+  options?: { allowEnv?: boolean; envAllowlist?: string[] }
 ): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const [key, value] of Object.entries(headers)) {
-    out[key] = value.replace(ENV_PLACEHOLDER_RE, (_, name: string) => {
-      return process.env[name] ?? '';
-    });
-  }
-  return out;
+  return interpolateExternalApiHeaders(headers, secrets, options);
 }
 
 /**
@@ -1405,7 +1448,8 @@ async function resolveExternalApi(
   pageSize: number,
   offset: number,
   page: number,
-  includeFacets = false
+  includeFacets = false,
+  options?: ListingQueryOptions
 ): Promise<ListingQueryResult> {
   const apiConfig = config.apiConfig;
   if (!apiConfig?.endpointUrl) {
@@ -1421,7 +1465,11 @@ async function resolveExternalApi(
   }
 
   try {
-    const headers = interpolateEnvHeaders(apiConfig.headers ?? {});
+    const headers = interpolateExternalApiHeaders(
+      apiConfig.headers ?? {},
+      options?.secrets ?? {},
+      { allowEnv: options?.allowEnvPlaceholders ?? true }
+    );
     if (
       apiConfig.method === 'POST' &&
       apiConfig.body &&
@@ -1455,7 +1503,7 @@ async function resolveExternalApi(
       };
     }
 
-    const payload: unknown = await response.json();
+    const payload: unknown = await fetchJsonCapped(response);
     const rawItemsPath = (apiConfig.itemsPath ?? '').trim();
     let extracted = extractJsonPath(payload, rawItemsPath);
     if (

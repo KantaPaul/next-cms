@@ -30,6 +30,10 @@ export const externalApis = pgTable(
       .$type<Record<string, string>>()
       .notNull()
       .default({}),
+    secrets: jsonb('secrets')
+      .$type<Record<string, string>>()
+      .notNull()
+      .default({}),
     body: text('body'),
     itemsPath: varchar('items_path', { length: 255 }).notNull().default(''),
     totalPath: varchar('total_path', { length: 255 }),

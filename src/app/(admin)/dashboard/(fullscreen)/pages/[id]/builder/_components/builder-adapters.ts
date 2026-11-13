@@ -52,6 +52,7 @@ import type { BuilderKind } from './builder-context';
 export type BuilderPageProps = {
   page: {
     id: string;
+    siteId: string;
     title: string;
     slug: string;
     language: string;

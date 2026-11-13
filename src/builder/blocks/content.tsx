@@ -697,7 +697,8 @@ export function Column(p: ColumnProps) {
         styles.innerClasses,
         hidden,
         alignClass,
-        vAlignClass
+        vAlignClass,
+        s.styleClassName
       )}
       style={styles.style}
     >

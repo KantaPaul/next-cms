@@ -12,7 +12,7 @@ const TITLE = 'External APIs';
 export const metadata = { ...metaObject(TITLE) };
 
 export default async function ExternalApiPage() {
-  const { allowed } = await requirePermission(PERMISSIONS.PAGES_EDIT);
+  const { allowed } = await requirePermission(PERMISSIONS.EXTERNAL_API_MANAGE);
   const breadcrumbs = [
     { title: 'Dashboard', href: PAGES.DASHBOARD.ROOT },
     { title: TITLE, href: PAGES.DASHBOARD.EXTERNAL_API },

@@ -780,6 +780,46 @@ export function rowsOfLoopItemField(
   ];
 }
 
+export function isExternalHttpUrl(url: string): boolean {
+  return /^https?:\/\//i.test(url.trim());
+}
+
+/**
+ * Allows only `http(s):` and relative URLs (`/`, `./`, `../`, `?`, `#`).
+ * Rejects `javascript:`, `data:`, `vbscript:`, etc.
+ */
+export function sanitizeLoopUrl(
+  rawUrl: string | null | undefined,
+  fallback = '#'
+): string {
+  const trimmed = (rawUrl ?? '').trim();
+  if (!trimmed) return fallback;
+  if (
+    trimmed.startsWith('/') ||
+    trimmed.startsWith('./') ||
+    trimmed.startsWith('../') ||
+    trimmed.startsWith('?') ||
+    trimmed.startsWith('#')
+  ) {
+    // Reject protocol-relative `//evil.tld` if someone didn't intend it?
+    // Wait: `//` can be protocol-relative, so only allow single `/` or relative paths.
+    if (trimmed.startsWith('//')) return fallback;
+    return trimmed;
+  }
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return trimmed;
+    }
+  } catch {
+    // Relative path without leading slash (e.g. `posts/hello`) if it has no scheme colon
+    if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed)) {
+      return trimmed;
+    }
+  }
+  return fallback;
+}
+
 function resolveLoopItemHref(
   item: (typeof SAMPLE_LOOP_ITEMS)[number],
   row: LoopItemFieldRow
@@ -787,13 +827,12 @@ function resolveLoopItemHref(
   const sp = row.singlePageUrl?.trim();
   if (sp) {
     const encodedId = encodeURIComponent(String(item.id ?? ''));
-    if (sp.includes('{{id}}')) {
-      return sp.replaceAll('{{id}}', encodedId);
-    }
-    const sep = sp.includes('?') ? '&' : '?';
-    return `${sp}${sep}itemId=${encodedId}`;
+    const raw = sp.includes('{{id}}')
+      ? sp.replaceAll('{{id}}', encodedId)
+      : `${sp}${sp.includes('?') ? '&' : '?'}itemId=${encodedId}`;
+    return sanitizeLoopUrl(raw, '#');
   }
-  return item.url;
+  return sanitizeLoopUrl(item.url, '#');
 }
 
 function LoopItemFieldRowView({
@@ -1385,7 +1424,8 @@ function LoopItemFieldRowView({
       }
 
       if (viewMode === 'featured-badge') {
-        const firstImg = galleryImages[0];
+        const firstImg = sanitizeLoopUrl(galleryImages[0], '');
+        if (!firstImg) return null;
         const aspectClass =
           aspect === 'square'
             ? 'aspect-square'
@@ -1432,6 +1472,7 @@ function LoopItemFieldRowView({
           ) : row.linkToItem !== false || Boolean(row.singlePageUrl?.trim()) ? (
             <a
               href={itemHref}
+              rel={isExternalHttpUrl(itemHref) ? 'noopener noreferrer' : undefined}
               className="relative block overflow-hidden rounded-lg"
             >
               {imgNode}
@@ -1494,7 +1535,13 @@ function LoopItemFieldRowView({
               {titleText}
             </OverlayTrigger>
           ) : row.linkToItem !== false || Boolean(row.singlePageUrl?.trim()) ? (
-            <a href={titleHref} className="hover:underline">
+            <a
+              href={titleHref}
+              rel={
+                isExternalHttpUrl(titleHref) ? 'noopener noreferrer' : undefined
+              }
+              className="hover:underline"
+            >
               {titleText}
             </a>
           ) : (
@@ -1889,16 +1936,23 @@ function LoopItemFieldRowView({
         );
       }
 
-      const resolvedFinalHref =
+      const resolvedFinalHref = sanitizeLoopUrl(
         isPermalink && row.singlePageUrl?.trim()
           ? resolveLoopItemHref(item, row)
-          : finalHref;
+          : finalHref,
+        '#'
+      );
+      const effectiveRel =
+        rel ||
+        (isExternalHttpUrl(resolvedFinalHref)
+          ? 'noopener noreferrer'
+          : undefined);
 
       return wrapWithLabel(
         <a
           href={resolvedFinalHref}
           target={newTab ? '_blank' : undefined}
-          rel={rel}
+          rel={effectiveRel}
           className={linkProps.className}
           style={linkProps.style}
         >
@@ -2041,7 +2095,11 @@ function LoopItemFieldRowView({
               {strVal}
             </OverlayTrigger>
           ) : row.linkToItem || Boolean(row.singlePageUrl?.trim()) ? (
-            <a href={valHref} className="hover:underline">
+            <a
+              href={valHref}
+              rel={isExternalHttpUrl(valHref) ? 'noopener noreferrer' : undefined}
+              className="hover:underline"
+            >
               {strVal}
             </a>
           ) : (

@@ -10,7 +10,7 @@ import { metaObject } from '@/lib/utils/metadata';
 import { accessService } from '@/server/services/access.service';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 import { SAMPLE_POST } from '@/builder/post-template';
-import { getAdminSiteContext } from '@/server/services/site-context';
+import { getAdminSiteContext, adminSiteId } from '@/server/services/site-context';
 import {
   entryRenderContext,
   previewEntryId,
@@ -76,6 +76,7 @@ export default async function CollectionBlockBuilderPage({
       collectionEntry={previewEntry}
       page={{
         id: block.id,
+        siteId: await adminSiteId(),
         title: block.name,
         slug: '',
         language: preview?.language ?? defaultLocale,

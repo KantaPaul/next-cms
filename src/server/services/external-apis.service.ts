@@ -10,7 +10,15 @@ import type {
   ExternalApiFieldMapping,
 } from '@/lib/external-api-schema';
 import { ApplicationException } from '@/lib/utils/error';
-import { adminSiteId } from '@/server/services/site-context';
+import {
+  decryptHeadersForRuntime,
+  decryptSecretMap,
+  encryptHeadersForStorage,
+  encryptSecretMap,
+  maskHeadersForDisplay,
+  maskSecretMap,
+} from '@/server/lib/external-api-secrets';
+import { adminSiteId, siteContext } from '@/server/services/site-context';
 
 export interface ExternalApiUpsertInput {
   name: string;
@@ -18,6 +26,7 @@ export interface ExternalApiUpsertInput {
   endpointUrl: string;
   method: 'GET' | 'POST';
   headers?: Record<string, string>;
+  secrets?: Record<string, string>;
   body?: string | null;
   itemsPath?: string;
   totalPath?: string | null;
@@ -36,14 +45,23 @@ export interface ExternalApiUpsertInput {
   timeoutMs?: number;
 }
 
+function maskExternalApiRecord(row: ExternalApiRecord): ExternalApiRecord {
+  return {
+    ...row,
+    headers: maskHeadersForDisplay(row.headers ?? {}),
+    secrets: maskSecretMap(row.secrets ?? {}),
+  };
+}
+
 export const externalApisService = {
   list: async (siteId?: string): Promise<ExternalApiRecord[]> => {
     const resolvedSiteId = siteId ?? (await adminSiteId());
-    return db
+    const rows = await db
       .select()
       .from(externalApis)
       .where(eq(externalApis.siteId, resolvedSiteId))
       .orderBy(desc(externalApis.updatedAt), desc(externalApis.createdAt));
+    return rows.map(maskExternalApiRecord);
   },
 
   getById: async (
@@ -58,7 +76,46 @@ export const externalApisService = {
         and(eq(externalApis.id, id), eq(externalApis.siteId, resolvedSiteId))
       )
       .limit(1);
-    return row ?? null;
+    return row ? maskExternalApiRecord(row) : null;
+  },
+
+  /**
+   * Server-only: returns decrypted headers & vault secrets for outbound API
+   * execution. Never expose this directly to client components.
+   */
+  getByIdForRuntime: async (
+    id: string,
+    siteId?: string
+  ): Promise<ExternalApiRecord | null> => {
+    const resolvedSiteId = siteId ?? (await adminSiteId());
+    const [row] = await db
+      .select()
+      .from(externalApis)
+      .where(
+        and(eq(externalApis.id, id), eq(externalApis.siteId, resolvedSiteId))
+      )
+      .limit(1);
+    if (!row) return null;
+    return {
+      ...row,
+      headers: decryptHeadersForRuntime(row.headers ?? {}),
+      secrets: decryptSecretMap(row.secrets ?? {}),
+    };
+  },
+
+  /**
+   * Loads a saved External API preset with decrypted secrets for server-side
+   * block rendering (`loadQueryLoop` / `loadQueryFilter`).
+   */
+  getPresetForRender: async (
+    id: string,
+    isEditorOrPreview = false
+  ): Promise<ExternalApiRecord | null> => {
+    if (!id) return null;
+    const siteId = isEditorOrPreview
+      ? await adminSiteId()
+      : (await siteContext.publicSite()).id;
+    return externalApisService.getByIdForRuntime(id, siteId);
   },
 
   create: async (
@@ -74,7 +131,8 @@ export const externalApisService = {
         description: input.description?.trim() || null,
         endpointUrl: input.endpointUrl.trim(),
         method: input.method === 'POST' ? 'POST' : 'GET',
-        headers: input.headers ?? {},
+        headers: encryptHeadersForStorage(input.headers ?? {}),
+        secrets: encryptSecretMap(input.secrets ?? {}),
         body: input.body ?? null,
         itemsPath: input.itemsPath?.trim() ?? '',
         totalPath: input.totalPath?.trim() || null,
@@ -96,7 +154,7 @@ export const externalApisService = {
     if (!created) {
       throw new ApplicationException('Failed to create External API preset.');
     }
-    return created;
+    return maskExternalApiRecord(created);
   },
 
   update: async (
@@ -105,6 +163,16 @@ export const externalApisService = {
     siteId?: string
   ): Promise<ExternalApiRecord> => {
     const resolvedSiteId = siteId ?? (await adminSiteId());
+    const [existing] = await db
+      .select()
+      .from(externalApis)
+      .where(
+        and(eq(externalApis.id, id), eq(externalApis.siteId, resolvedSiteId))
+      )
+      .limit(1);
+    if (!existing) {
+      throw new ApplicationException('External API preset not found.');
+    }
     const [updated] = await db
       .update(externalApis)
       .set({
@@ -112,7 +180,14 @@ export const externalApisService = {
         description: input.description?.trim() || null,
         endpointUrl: input.endpointUrl.trim(),
         method: input.method === 'POST' ? 'POST' : 'GET',
-        headers: input.headers ?? {},
+        headers: encryptHeadersForStorage(
+          input.headers ?? {},
+          existing.headers ?? {}
+        ),
+        secrets: encryptSecretMap(
+          input.secrets ?? {},
+          existing.secrets ?? {}
+        ),
         body: input.body ?? null,
         itemsPath: input.itemsPath?.trim() ?? '',
         totalPath: input.totalPath?.trim() || null,
@@ -137,7 +212,7 @@ export const externalApisService = {
     if (!updated) {
       throw new ApplicationException('External API preset not found.');
     }
-    return updated;
+    return maskExternalApiRecord(updated);
   },
 
   remove: async (id: string, siteId?: string): Promise<void> => {

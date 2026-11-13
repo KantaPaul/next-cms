@@ -8,6 +8,7 @@ import { applyFilters } from '@/server/plugins/hooks';
 import { pluginsService } from '@/server/plugins/plugins.service';
 import { localeLinksService } from '@/server/services/locale-links.service';
 import { siteContext } from '@/server/services/site-context';
+import { styleClassesService } from '@/server/services/style-classes.service';
 import { type LoaderContext, resolvePuckData } from './loaders';
 import type { PostView } from './post-template';
 import {
@@ -119,7 +120,8 @@ export async function renderBuilderContent({
     doc,
     { ...(nextMetadata as LoaderContext), localeLinks },
     nextMetadata,
-    kind
+    kind,
+    { loadStyleClasses: usedIds => styleClassesService.classesForRender(siteId, usedIds) }
   );
 }
 

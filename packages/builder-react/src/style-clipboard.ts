@@ -7,6 +7,8 @@ import type { EditorStore } from './store';
  * toolbar actions, and keyboard shortcuts (⌘⇧C / ⌘⇧V and ⌥⌘C / ⌥⌘V).
  */
 let copiedBlockStyles: Record<string, unknown> | null = null;
+/** Style classes of the copied block (KRK-01), pasted with its styles. Same site, so ids stay valid. */
+let copiedClassIds: string[] = [];
 
 /** Section keys that belong to identity/visibility/motion and must not be overwritten by style paste. */
 const PRESERVED_SECTION_KEYS = new Set([
@@ -67,12 +69,24 @@ export function getCopiedBlockStyles(): Record<string, unknown> | null {
   return copiedBlockStyles;
 }
 
-export function setCopiedBlockStyles(styles: Record<string, unknown> | null) {
+export function setCopiedBlockStyles(styles: Record<string, unknown> | null, classIds: string[] = []) {
   copiedBlockStyles = styles;
+  copiedClassIds = classIds;
+}
+
+/** Class ids copied with the last style copy. */
+export function getCopiedClassIds(): string[] {
+  return copiedClassIds;
 }
 
 export function hasCopiedBlockStyles(): boolean {
-  return !!copiedBlockStyles && Object.keys(copiedBlockStyles).length > 0;
+  return (!!copiedBlockStyles && Object.keys(copiedBlockStyles).length > 0) || copiedClassIds.length > 0;
+}
+
+function classIdsOf(props: Record<string, unknown>): string[] {
+  return Array.isArray(props.classIds)
+    ? (props.classIds as unknown[]).filter((id): id is string => typeof id === 'string' && id.length > 0)
+    : [];
 }
 
 /**
@@ -179,13 +193,18 @@ export function copyBlockStyle(
     }
   }
 
-  if (Object.keys(patch).length === 0) {
+  const classIds = classIdsOf(targetNode.props);
+  if (Object.keys(patch).length === 0 && classIds.length === 0) {
     showToast({ type: 'info', message: 'Nothing to copy' });
     return null;
   }
 
   copiedBlockStyles = patch;
-  showToast({ type: 'success', message: 'Style copied' });
+  copiedClassIds = classIds;
+  showToast({
+    type: 'success',
+    message: classIds.length ? `Style copied with ${classIds.length} class${classIds.length === 1 ? '' : 'es'}` : 'Style copied',
+  });
   return patch;
 }
 
@@ -194,9 +213,17 @@ export function copyBlockStyle(
  */
 export function pasteBlockStyle(
   store: EditorStore,
-  targetId?: NodeId
+  targetId?: NodeId,
+  options: {
+    /**
+     * Also give the target the copied block's classes, replacing its own
+     * (default true). False pastes only the block-level settings.
+     */
+    classes?: boolean;
+  } = {}
 ): boolean {
-  if (!copiedBlockStyles || Object.keys(copiedBlockStyles).length === 0) {
+  const withClasses = options.classes !== false && copiedClassIds.length > 0;
+  if ((!copiedBlockStyles || Object.keys(copiedBlockStyles).length === 0) && !withClasses) {
     showToast({ type: 'info', message: 'Nothing to paste' });
     return false;
   }
@@ -208,7 +235,7 @@ export function pasteBlockStyle(
   const targetSchema = store.schemas[targetNode.type];
   const filteredPatch: Record<string, unknown> = {};
 
-  for (const [key, val] of Object.entries(copiedBlockStyles)) {
+  for (const [key, val] of Object.entries(copiedBlockStyles ?? {})) {
     if (!targetHasPropKey(targetSchema, key, val)) continue;
     if (key === 'section' && isPlainObject(val)) {
       const existingSection = isPlainObject(targetNode.props.section)
@@ -225,6 +252,12 @@ export function pasteBlockStyle(
     }
   }
 
+  if (withClasses) {
+    const current = classIdsOf(targetNode.props);
+    const same = current.length === copiedClassIds.length && current.every((c, i) => c === copiedClassIds[i]);
+    if (!same) filteredPatch.classIds = [...copiedClassIds];
+  }
+
   if (Object.keys(filteredPatch).length === 0) {
     showToast({
       type: 'info',
@@ -233,8 +266,9 @@ export function pasteBlockStyle(
     return false;
   }
 
+  // One update, so styles and classes paste as a single undo step.
   store.updateProps(id, filteredPatch);
-  showToast({ type: 'success', message: 'Style pasted' });
+  showToast({ type: 'success', message: filteredPatch.classIds ? 'Style and classes pasted' : 'Style pasted' });
   return true;
 }
 

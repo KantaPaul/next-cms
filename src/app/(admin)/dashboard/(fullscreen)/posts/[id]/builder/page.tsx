@@ -40,6 +40,7 @@ export default async function PostBuilderPage({
       post={draft?.view}
       page={{
         id: post.id,
+        siteId: post.siteId,
         title: post.title,
         slug: post.slug,
         language: post.language,

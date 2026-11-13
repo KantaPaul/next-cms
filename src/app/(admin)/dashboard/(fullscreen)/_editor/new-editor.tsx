@@ -34,6 +34,8 @@ import {
   puckToDocument,
   removeNode,
   repairDocument,
+  compileStyleClasses,
+  type StyleClass,
 } from '@nextcms/builder-core';
 import {
   type BlockAction,
@@ -55,21 +57,24 @@ import {
   Inspector,
   HistoryPanel,
   indexedDbStorage,
+  ClassesView,
+  ForcedStatePreview,
+  importLegacyStyleClasses,
+  SelectedClassStyles,
+  useStyleClasses,
   initStyleClassStore,
   isTypingTarget,
-  LayersPanel,
   type LocalCopy,
+  type StyleClassAdapter,
+  LayersPanel,
   LiveChecksPanel,
   PresencePanel,
   ResizablePanel,
-  StyleClassControl,
-  StyleClassList,
   StateStyleSwitch,
   type SaveInput,
   type SaveQueue,
   type SaveResult,
   SHORTCUTS,
-  StyleClassList as StyleClassesList,
   useDragController,
   useEditor,
   useEditorKeyboard,
@@ -81,8 +86,6 @@ import {
   createPreferencesStore,
   getPreferencesStore,
   setPreferencesStore,
-  getStyleClassStore,
-  captureStyles,
   SinglePanel,
   type TemplateItem,
   E12ControlsProvider,
@@ -139,6 +142,8 @@ import {
 import { POST_REVISION_ACTIONS } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-revision-actions';
 import { EditorBridgeProvider } from '@/builder/controls/editor-bridge';
 import { getResponsiveCss } from '@/builder/responsive-css';
+import { supportsStyleClasses } from '@/builder/style-class-blocks';
+import { styleClassTagSchema } from '@/schemas/style-classes.schema';
 import { buildCustomFontsCss, type CustomFont } from '@/builder/fonts';
 import {
   convertBlogBlockToQueryLoop,
@@ -205,6 +210,7 @@ import {
   type BuilderPageProps,
 } from '../pages/[id]/builder/_components/builder-adapters';
 import type { BuilderTarget } from '../pages/[id]/builder/_components/builder-context';
+import { styleClassesActions } from '../pages/[id]/builder/_components/style-classes.client';
 import {
   type GlobalSection,
   SaveGlobalDialogView,
@@ -258,6 +264,29 @@ function actionError(result: unknown): string | null {
       : value.error;
   if (value.errors) return 'Some fields are not valid.';
   return null;
+}
+
+/** Canvas class map while style classes are off (stable, so memos keep). */
+const NO_STYLE_CLASSES: Record<string, StyleClass> = {};
+
+/** Where to edit an entry that uses a style class (Classes manager links). */
+function styleClassUsageHref(hit: { entryId: string; kind?: string }): string | undefined {
+  const id = encodeURIComponent(hit.entryId);
+  switch (hit.kind) {
+    case 'page':
+      return `/dashboard/pages/${id}/builder`;
+    case 'global-block':
+      return `/dashboard/templates/globals/${id}`;
+    case 'page-template':
+      return `/dashboard/templates/${id}`;
+    case 'post-template':
+      return `/dashboard/posts/templates/${id}/builder`;
+    case 'loop-template':
+      return `/dashboard/templates/loop/${id}`;
+    default:
+      // Collection templates and blocks are edited under their collection's slug.
+      return undefined;
+  }
 }
 
 function EditorSiteRoot({
@@ -1573,8 +1602,51 @@ export function NewEditor({
   useEffect(() => {
     store.setBreakpoints(breakpoints);
   }, [store, breakpoints]);
-  // Initialize B9 stores: style classes (R724) and preferences (R733).
-  useMemo(() => initStyleClassStore(), []);
+  // Style classes (KRK-01): database-backed store for this site.
+  const styleClassStore = useMemo(() => {
+    const adapter: StyleClassAdapter = {
+      list: () => styleClassesActions.list(page.siteId),
+      create: input => styleClassesActions.create(page.siteId, input),
+      // Kind, tag and combo base are fixed after creation; only name and variants change.
+      update: (id, patch) => styleClassesActions.update(page.siteId, id, patch),
+      remove: (id, opts) => styleClassesActions.remove(page.siteId, id, opts?.force),
+      usage: id => styleClassesActions.usage(page.siteId, id),
+      usageCounts: () => styleClassesActions.usageCounts(page.siteId),
+    };
+    return initStyleClassStore(adapter);
+  }, [page.siteId]);
+  // Style classes are off unless the site turns them on (Settings → Blocks).
+  const [styleClassesOn, setStyleClassesOn] = useState(false);
+  useEffect(() => {
+    let live = true;
+    styleClassesActions
+      .isEnabled(page.siteId)
+      .then(on => live && setStyleClassesOn(on))
+      .catch(() => live && setStyleClassesOn(false));
+    return () => {
+      live = false;
+    };
+  }, [page.siteId]);
+  useEffect(() => {
+    if (!styleClassStore) return;
+    // One-time import of class names from the old localStorage store, once
+    // loaded, and only when classes are on (creating is refused otherwise).
+    const unsubscribe = styleClassStore.subscribe(() => {
+      if (!styleClassesOn || styleClassStore.getState().status !== 'ready') return;
+      unsubscribe();
+      void importLegacyStyleClasses(styleClassStore);
+    });
+    // Save queued class edits before the page closes.
+    const onPageHide = () => {
+      void styleClassStore.flush();
+    };
+    window.addEventListener('pagehide', onPageHide);
+    return () => {
+      unsubscribe();
+      window.removeEventListener('pagehide', onPageHide);
+      void styleClassStore.flush().finally(() => styleClassStore.dispose());
+    };
+  }, [styleClassStore, styleClassesOn]);
   useMemo(() => {
     setPreferencesStore(createPreferencesStore());
   }, []);
@@ -1773,15 +1845,28 @@ export function NewEditor({
     };
   }, [frameWindow]);
 
+  // Style classes (KRK-01): names resolve classIds on the canvas, and their
+  // compiled CSS goes into the frame with the responsive CSS, updating live.
+  // When classes are off the canvas matches the published page: no class
+  // names and no class CSS.
+  const { classes: loadedClasses } = useStyleClasses();
+  const classes = styleClassesOn ? loadedClasses : NO_STYLE_CLASSES;
+  const canvasCss = useMemo(() => {
+    const responsive = getResponsiveCss(breakpoints);
+    const list = Object.values(classes);
+    if (list.length === 0) return responsive;
+    return `${responsive}\n${compileStyleClasses({ classes: list, breakpoints, forceStates: true })}`;
+  }, [breakpoints, classes]);
   const metadata = useMemo(
     () => ({
       themeTokens,
       breakpoints,
       motionPreview,
       language: page.language,
+      classes,
       ...(setup.renderKind === 'post' && { post: post ?? SAMPLE_POST }),
     }),
-    [themeTokens, breakpoints, motionPreview, page.language, setup.renderKind, post]
+    [themeTokens, breakpoints, motionPreview, page.language, setup.renderKind, post, classes]
   );
   const components = useMemo(
     () => rendererComponents(setup.renderKind, enabledPluginIds),
@@ -2174,12 +2259,15 @@ export function NewEditor({
     </div>
   );
   const canvas = (
+    <>
+    {/* Previews the class state chosen in the inspector on the selected block. */}
+    <ForcedStatePreview frameDoc={frameWindow?.document} />
     <EditorCanvas
       components={components}
       drag={drag}
       transformProps={transformProps}
       loaded={liveLoaded}
-      responsiveCss={getResponsiveCss(breakpoints)}
+      responsiveCss={canvasCss}
       renderRoot={renderRoot}
       onFrame={onFrame}
       resizeHandles={cmsResizeHandles}
@@ -2196,6 +2284,7 @@ export function NewEditor({
           : `preview.site/${(page as any).slug || 'home'}`
       }
     />
+    </>
   );
   const rightPanelContent = (
     <section aria-label="Settings" className="p-4">
@@ -2224,6 +2313,11 @@ export function NewEditor({
           </div>
         </div>
         {rightPanel === 'settings' && (
+          <div className="mb-4 border-b border-[var(--ne-border)] pb-4 empty:hidden">
+            {styleClassesOn && <SelectedClassStyles supports={supportsStyleClasses} />}
+          </div>
+        )}
+        {rightPanel === 'settings' && (
           <Inspector
             rootLabel={adapter.label ?? 'Page'}
             blocks={setup.inspectorBlocks}
@@ -2242,26 +2336,17 @@ export function NewEditor({
         )}
         {rightPanel === 'style-classes' && (
           <div className="p-3">
-            {store.getState().selection.length === 1 && (
-              <StyleClassControl
-                nodeId={store.getState().selection[0]}
-                styles={captureStyles(
-                  store.getState().doc.nodes[
-                    store.getState().selection[0] as never as string
-                  ]
-                )}
-              />
+            {styleClassesOn ? (
+              <ClassesView hrefFor={styleClassUsageHref} tags={styleClassTagSchema.options} />
+            ) : (
+              <p className="text-xs text-steel-500">
+                Style classes are off for this site.{' '}
+                <a className="underline" href="/dashboard/settings/blocks">
+                  Turn them on in Settings → Blocks
+                </a>
+                .
+              </p>
             )}
-            <StyleClassesList
-              onApply={(blockId: string, className: string) => {
-                const sc = getStyleClassStore();
-                if (sc) sc.applyClass(blockId as never as string, className);
-              }}
-              onDetach={(blockId: string) => {
-                const sc = getStyleClassStore();
-                if (sc) sc.detachClass(blockId as never as string);
-              }}
-            />
           </div>
         )}
         {rightPanel === 'presence' && (

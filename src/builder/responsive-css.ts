@@ -1,10 +1,12 @@
 import {
   type BreakpointConfig,
   DEFAULT_BREAKPOINTS,
-  DEVICES,
+  CASCADE_MEDIA_DEVICES,
+  cascadeMediaQueryFor,
   type Device,
   enabledDevices,
   fallbackFor,
+  mediaQueryFor,
   normalizeBreakpointConfig,
 } from '@nextcms/builder-core';
 
@@ -192,37 +194,7 @@ function bandMediaQuery(
   device: Device,
   config: BreakpointConfig
 ): string | null {
-  const byDevice = new Map(config.map(e => [e.device, e]));
-  const enabled = enabledDevices(config);
-  if (!enabled.includes(device)) return null;
-
-  if (device === 'widescreen') {
-    return `(min-width:${byDevice.get('widescreen')!.width}px)`;
-  }
-
-  const idx = DEVICES.indexOf(device);
-  let smallerWidth: number | null = null;
-  for (let i = idx + 1; i < DEVICES.length; i++) {
-    const d = DEVICES[i];
-    if (enabled.includes(d)) {
-      smallerWidth = byDevice.get(d)!.width;
-      break;
-    }
-  }
-
-  if (device === 'desktop') {
-    const hasWs = enabled.includes('widescreen');
-    const parts: string[] = [];
-    if (smallerWidth !== null) parts.push(`(min-width:${smallerWidth + 1}px)`);
-    if (hasWs) parts.push(`(max-width:${byDevice.get('widescreen')!.width - 1}px)`);
-    return parts.length > 0 ? parts.join(' and ') : null;
-  }
-
-  const maxW = byDevice.get(device)!.width;
-  if (smallerWidth !== null) {
-    return `(min-width:${smallerWidth + 1}px) and (max-width:${maxW}px)`;
-  }
-  return `(max-width:${maxW}px)`;
+  return mediaQueryFor(device, config);
 }
 
 function buildBlockLayoutCss(
@@ -370,17 +342,12 @@ export function buildResponsiveCss(
   // 1. Base rules (desktop)
   parts.push(buildRulesForChain(['desktop'], 'desktop'));
 
-  // 2. Widescreen (min-width)
-  if (enabled.includes('widescreen')) {
-    const w = byDevice.get('widescreen')!.width;
-    parts.push(`@media (min-width:${w}px){${buildRulesForChain(fallbackFor('widescreen', config), 'widescreen')}}`);
-  }
-
-  // 3. Smaller breakpoints, largest to smallest (max-width)
-  for (const d of ['laptop', 'tablet_extra', 'tablet', 'mobile_extra', 'mobile'] as const) {
-    if (!enabled.includes(d)) continue;
-    const w = byDevice.get(d)!.width;
-    parts.push(`@media (max-width:${w}px){${buildRulesForChain(fallbackFor(d, config), d)}}`);
+  // 2–3. Widescreen (min-width), then smaller breakpoints largest to smallest
+  // (max-width). Same queries as style classes (compileStyleClasses).
+  for (const d of CASCADE_MEDIA_DEVICES) {
+    const mq = cascadeMediaQueryFor(d, config);
+    if (!mq) continue;
+    parts.push(`@media ${mq}{${buildRulesForChain(fallbackFor(d, config), d)}}`);
   }
 
   // 4. Header mobile-menu swap rules

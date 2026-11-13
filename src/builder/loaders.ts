@@ -829,7 +829,7 @@ async function resolveExternalApiConfigFromProps(
 ) {
   let presetRecord: Awaited<
     ReturnType<
-      typeof import('@/server/actions/external-api.actions').getExternalApiPresetForRender
+      typeof import('@/server/services/external-apis.service').externalApisService.getPresetForRender
     >
   > = null;
   if (
@@ -838,10 +838,10 @@ async function resolveExternalApiConfigFromProps(
     !(typeof props.apiEndpointUrl === 'string' && props.apiEndpointUrl.trim())
   ) {
     try {
-      const { getExternalApiPresetForRender } = await import(
-        '@/server/actions/external-api.actions'
+      const { externalApisService } = await import(
+        '@/server/services/external-apis.service'
       );
-      presetRecord = await getExternalApiPresetForRender(
+      presetRecord = await externalApisService.getPresetForRender(
         props.apiPresetId.trim(),
         Boolean(ctx.editor || ctx.preview)
       );
@@ -983,9 +983,9 @@ const loadQueryLoop: BlockLoader = async (props, ctx) => {
   const resolvedApiConfig = resolvedExternalApi?.apiConfig;
   const presetRecord = resolvedExternalApi?.presetRecord ?? null;
 
-  const { resolveListingQuery } =
-    await import('@/server/actions/listing.actions');
-  const result = await resolveListingQuery(
+  const { listingQueryService } =
+    await import('@/server/services/listing-query.service');
+  const result = await listingQueryService.resolve(
     {
       source,
       ...(typeof props.collectionId === 'string' && props.collectionId
@@ -1008,6 +1008,7 @@ const loadQueryLoop: BlockLoader = async (props, ctx) => {
       language: typeof ctx.language === 'string' ? ctx.language : undefined,
       currentId,
       includeFacets: true,
+      ...(presetRecord?.secrets ? { secrets: presetRecord.secrets } : {}),
     }
   );
 
@@ -1195,8 +1196,8 @@ const loadQueryFilter: BlockLoader = async (props, ctx) => {
     targetLoopId
   );
 
-  const { resolveListingQuery } =
-    await import('@/server/actions/listing.actions');
+  const { listingQueryService } =
+    await import('@/server/services/listing-query.service');
   const collectionId =
     source === 'collection-entries' && typeof props.collectionId === 'string'
       ? props.collectionId.trim()
@@ -1216,7 +1217,7 @@ const loadQueryFilter: BlockLoader = async (props, ctx) => {
   if (source === 'external-api' && !resolvedApiConfig) {
     return { activeParams, totalResults: 0, preservedHiddenParams };
   }
-  const result = await resolveListingQuery(
+  const result = await listingQueryService.resolve(
     {
       source,
       ...(collectionId ? { collectionId } : {}),
@@ -1230,6 +1231,7 @@ const loadQueryFilter: BlockLoader = async (props, ctx) => {
     {
       language: typeof ctx.language === 'string' ? ctx.language : undefined,
       includeFacets: true,
+      ...(presetRecord?.secrets ? { secrets: presetRecord.secrets } : {}),
     }
   );
 

@@ -1,6 +1,9 @@
 import 'server-only';
 import dns from 'node:dns/promises';
+import http from 'node:http';
+import https from 'node:https';
 import net from 'node:net';
+import { Readable } from 'node:stream';
 
 /**
  * Checks whether an IPv4 or IPv6 address belongs to private, loopback,
@@ -122,15 +125,19 @@ const defaultDnsLookup: DnsLookupFn = async hostname => {
   return dns.lookup(hostname, { all: true });
 };
 
+export interface ResolvedSafeUrl {
+  url: URL;
+  addresses: Array<{ address: string; family: number }>;
+}
+
 /**
- * Validates that a target URL is safe from SSRF attacks.
- * Rejects non-HTTPS (unless NODE_ENV=development and localhost),
- * and rejects private, loopback, link-local and multicast IPs.
+ * Validates that a target URL is safe from SSRF attacks and returns the
+ * parsed URL along with its DNS-verified IP addresses for connection pinning.
  */
-export async function assertSafeUrl(
+export async function resolveSafeUrl(
   urlStr: string,
   options?: { lookup?: DnsLookupFn; nodeEnv?: string }
-): Promise<URL> {
+): Promise<ResolvedSafeUrl> {
   let url: URL;
   try {
     url = new URL(urlStr);
@@ -148,7 +155,11 @@ export async function assertSafeUrl(
     if (url.protocol !== 'http:' && url.protocol !== 'https:') {
       throw new Error('Only HTTP/HTTPS URLs are allowed for localhost.');
     }
-    return url;
+    const family = rawHost === '::1' ? 6 : 4;
+    return {
+      url,
+      addresses: [{ address: family === 6 ? '::1' : '127.0.0.1', family }],
+    };
   }
 
   if (url.protocol !== 'https:') {
@@ -157,11 +168,12 @@ export async function assertSafeUrl(
 
   const lookupFn = options?.lookup ?? defaultDnsLookup;
 
-  if (net.isIP(rawHost)) {
+  const ipFamily = net.isIP(rawHost);
+  if (ipFamily) {
     if (isPrivateOrReservedIp(rawHost)) {
       throw new Error(`SSRF guard: prohibited IP address ${rawHost}`);
     }
-    return url;
+    return { url, addresses: [{ address: rawHost, family: ipFamily }] };
   }
 
   const records = await lookupFn(rawHost);
@@ -175,7 +187,135 @@ export async function assertSafeUrl(
     }
   }
 
+  return { url, addresses: records };
+}
+
+/**
+ * Validates that a target URL is safe from SSRF attacks.
+ * Rejects non-HTTPS (unless NODE_ENV=development and localhost),
+ * and rejects private, loopback, link-local and multicast IPs.
+ */
+export async function assertSafeUrl(
+  urlStr: string,
+  options?: { lookup?: DnsLookupFn; nodeEnv?: string }
+): Promise<URL> {
+  const { url } = await resolveSafeUrl(urlStr, options);
   return url;
+}
+
+/**
+ * Creates a `dns.lookup`-compatible function pinned to pre-validated IP
+ * addresses so `http`/`https` never re-resolves DNS (prevents DNS rebinding).
+ */
+export function createPinnedLookup(
+  addresses: Array<{ address: string; family: number }>
+): http.RequestOptions['lookup'] {
+  return ((
+    _hostname: string,
+    optsOrCb:
+      | { family?: number; all?: boolean }
+      | ((err: NodeJS.ErrnoException | null, address: unknown, family?: number) => void),
+    maybeCb?: (
+      err: NodeJS.ErrnoException | null,
+      address: unknown,
+      family?: number
+    ) => void
+  ) => {
+    const cb = typeof optsOrCb === 'function' ? optsOrCb : maybeCb;
+    const opts = typeof optsOrCb === 'function' ? {} : optsOrCb ?? {};
+    if (!cb) return;
+    if (addresses.length === 0) {
+      cb(new Error('No pinned IP addresses available.'), undefined);
+      return;
+    }
+    if (opts.all) {
+      cb(null, addresses);
+      return;
+    }
+    const preferred =
+      opts.family === 4 || opts.family === 6
+        ? addresses.find(a => a.family === opts.family) ?? addresses[0]
+        : addresses[0];
+    cb(null, preferred.address, preferred.family);
+  }) as http.RequestOptions['lookup'];
+}
+
+const NULL_BODY_STATUSES = new Set([101, 204, 205, 304]);
+
+async function pinnedNodeFetch(
+  url: URL,
+  addresses: Array<{ address: string; family: number }>,
+  init?: RequestInit
+): Promise<Response> {
+  const isHttps = url.protocol === 'https:';
+  const transport = isHttps ? https : http;
+  const method = (init?.method ?? 'GET').toUpperCase();
+  const headersObj = new Headers(init?.headers);
+  const reqHeaders: Record<string, string> = {};
+  headersObj.forEach((value, key) => {
+    reqHeaders[key] = value;
+  });
+
+  let bodyBuffer: Buffer | undefined;
+  if (init?.body !== undefined && init.body !== null) {
+    if (typeof init.body === 'string') {
+      bodyBuffer = Buffer.from(init.body, 'utf8');
+    } else if (init.body instanceof Uint8Array) {
+      bodyBuffer = Buffer.from(init.body);
+    } else if (init.body instanceof ArrayBuffer) {
+      bodyBuffer = Buffer.from(init.body);
+    } else {
+      bodyBuffer = Buffer.from(String(init.body), 'utf8');
+    }
+    if (!headersObj.has('content-length')) {
+      reqHeaders['content-length'] = String(bodyBuffer.byteLength);
+    }
+  }
+
+  const rawHost = url.hostname.replace(/^\[|\]$/g, '');
+  const lookup = createPinnedLookup(addresses);
+
+  return new Promise<Response>((resolve, reject) => {
+    const req = transport.request(
+      url,
+      {
+        method,
+        headers: reqHeaders,
+        lookup,
+        signal: init?.signal ?? undefined,
+        ...(isHttps && !net.isIP(rawHost) ? { servername: rawHost } : {}),
+      },
+      res => {
+        const status = res.statusCode ?? 500;
+        const resHeaders = new Headers();
+        for (const [k, v] of Object.entries(res.headers)) {
+          if (v === undefined) continue;
+          if (Array.isArray(v)) {
+            for (const item of v) resHeaders.append(k, item);
+          } else {
+            resHeaders.set(k, v);
+          }
+        }
+        const noBody = method === 'HEAD' || NULL_BODY_STATUSES.has(status);
+        const bodyStream = noBody
+          ? null
+          : (Readable.toWeb(res) as ReadableStream<Uint8Array>);
+        resolve(
+          new Response(bodyStream, {
+            status,
+            statusText: res.statusMessage ?? '',
+            headers: resHeaders,
+          })
+        );
+      }
+    );
+
+    req.on('error', err => reject(err));
+    if (bodyBuffer) {
+      req.write(bodyBuffer);
+    }
+    req.end();
+  });
 }
 
 const MAX_REDIRECTS = 3;
@@ -186,8 +326,8 @@ const MAX_REDIRECTS = 3;
  * hop passes the same check: a public URL can't bounce the request to
  * 169.254.169.254 or the internal network.
  *
- * Known limit: the address is resolved here and again by fetch, so a DNS
- * rebinding attacker with a very short TTL could still swap it in between.
+ * When using the default `fetch`, the underlying socket connects via a pinned
+ * DNS lookup to the already-validated IP addresses, preventing DNS rebinding.
  */
 export async function safeFetch(
   url: string | URL,
@@ -198,8 +338,14 @@ export async function safeFetch(
   let target = typeof url === 'string' ? url : url.toString();
   let request: RequestInit | undefined = init;
   for (let hop = 0; ; hop++) {
-    const safeUrl = await assertSafeUrl(target, options);
-    const response = await fetchFn(safeUrl, { ...request, redirect: 'manual' });
+    const { url: safeUrl, addresses } = await resolveSafeUrl(target, options);
+    const response =
+      fetchFn === fetch
+        ? await pinnedNodeFetch(safeUrl, addresses, {
+            ...request,
+            redirect: 'manual',
+          })
+        : await fetchFn(safeUrl, { ...request, redirect: 'manual' });
     const location = response.headers.get('location');
     if (response.status < 300 || response.status >= 400 || !location) {
       return response;
@@ -217,4 +363,62 @@ export async function safeFetch(
       request = { ...request, method: 'GET', body: undefined };
     }
   }
+}
+
+export const DEFAULT_MAX_JSON_BYTES = 2 * 1024 * 1024;
+
+/**
+ * Reads and parses a JSON response body with a hard byte limit to prevent
+ * unbounded memory allocation from oversized or streaming responses.
+ */
+export async function fetchJsonCapped(
+  response: Response,
+  maxBytes: number = DEFAULT_MAX_JSON_BYTES
+): Promise<unknown> {
+  const contentLength = response.headers.get('content-length');
+  if (contentLength) {
+    const declared = Number(contentLength);
+    if (Number.isFinite(declared) && declared > maxBytes) {
+      await response.body?.cancel().catch(() => {});
+      throw new Error(
+        `External API response exceeds maximum allowed size (${maxBytes} bytes).`
+      );
+    }
+  }
+
+  if (!response.body) {
+    const text = await response.text();
+    if (Buffer.byteLength(text, 'utf8') > maxBytes) {
+      throw new Error(
+        `External API response exceeds maximum allowed size (${maxBytes} bytes).`
+      );
+    }
+    return JSON.parse(text);
+  }
+
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) {
+        totalBytes += value.byteLength;
+        if (totalBytes > maxBytes) {
+          await reader.cancel().catch(() => {});
+          throw new Error(
+            `External API response exceeds maximum allowed size (${maxBytes} bytes).`
+          );
+        }
+        chunks.push(value);
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const combined = Buffer.concat(chunks, totalBytes);
+  return JSON.parse(combined.toString('utf8'));
 }

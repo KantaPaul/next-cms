@@ -179,6 +179,76 @@ export function fallbackFor(
   return chain;
 }
 
+/**
+ * Media-query devices in cascade order: widescreen (min-width) first, then the
+ * smaller breakpoints from largest to smallest (max-width). Later rules win,
+ * so a tablet value also applies on phones unless mobile sets its own.
+ */
+export const CASCADE_MEDIA_DEVICES: readonly Device[] = [
+  'widescreen',
+  'laptop',
+  'tablet_extra',
+  'tablet',
+  'mobile_extra',
+  'mobile',
+];
+
+/**
+ * The cascading media query for style values on a device: `(min-width:W)` for
+ * widescreen, `(max-width:W)` for smaller devices, null for the desktop base or
+ * a disabled device. Block props (responsive-css) and style classes both use
+ * it, so a value set on a breakpoint cascades the same way in both.
+ */
+export function cascadeMediaQueryFor(
+  device: Device,
+  config: BreakpointConfig = DEFAULT_BREAKPOINTS
+): string | null {
+  if (device === 'desktop') return null;
+  const entry = config.find(e => e.device === device);
+  if (!entry || !enabledDevices(config).includes(device)) return null;
+  return device === 'widescreen'
+    ? `(min-width:${entry.width}px)`
+    : `(max-width:${entry.width}px)`;
+}
+
+/**
+ * The band media query that matches only one device's own width range, or
+ * null for the desktop base. Use it for per-device visibility, not for style
+ * values (those cascade; see `cascadeMediaQueryFor`).
+ */
+export function mediaQueryFor(
+  device: Device,
+  config: BreakpointConfig = DEFAULT_BREAKPOINTS
+): string | null {
+  const byDevice = new Map(config.map(e => [e.device, e]));
+  const enabled = enabledDevices(config);
+  if (!enabled.includes(device)) return null;
+  if (device === 'widescreen') {
+    return `(min-width:${byDevice.get('widescreen')!.width}px)`;
+  }
+  const idx = DEVICES.indexOf(device);
+  let smallerWidth: number | null = null;
+  for (let i = idx + 1; i < DEVICES.length; i++) {
+    const d = DEVICES[i];
+    if (enabled.includes(d)) {
+      smallerWidth = byDevice.get(d)!.width;
+      break;
+    }
+  }
+  if (device === 'desktop') {
+    const hasWs = enabled.includes('widescreen');
+    const parts: string[] = [];
+    if (smallerWidth !== null) parts.push(`(min-width:${smallerWidth + 1}px)`);
+    if (hasWs) parts.push(`(max-width:${byDevice.get('widescreen')!.width - 1}px)`);
+    return parts.length > 0 ? parts.join(' and ') : null;
+  }
+  const maxW = byDevice.get(device)!.width;
+  if (smallerWidth !== null) {
+    return `(min-width:${smallerWidth + 1}px) and (max-width:${maxW}px)`;
+  }
+  return `(max-width:${maxW}px)`;
+}
+
 /** Maps a viewport width (px) to the active enabled device. */
 export function deviceForWidth(
   width: number,

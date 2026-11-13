@@ -9,6 +9,7 @@ import { NotFoundException } from '@/lib/utils/error';
 import { metaObject } from '@/lib/utils/metadata';
 import { accessService } from '@/server/services/access.service';
 import { siteSettingsService } from '@/server/services/site-settings.service';
+import { adminSiteId } from '@/server/services/site-context';
 import { entryToPostView, SAMPLE_POST } from '@/builder/post-template';
 
 export const metadata = metaObject('Single template builder');
@@ -95,6 +96,7 @@ export default async function CollectionTemplateBuilderPage({
       collectionEntry={previewEntry}
       page={{
         id: template.id,
+        siteId: await adminSiteId(),
         title: template.name,
         slug: '',
         language: 'en',

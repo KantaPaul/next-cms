@@ -161,7 +161,13 @@ export function useExternalApiInspection(props?: Record<string, unknown>) {
           typeof effectiveProps.apiQueryParams === 'object'
             ? (effectiveProps.apiQueryParams as Record<string, string>)
             : undefined;
+        const presetId =
+          typeof effectiveProps?.apiPresetId === 'string' &&
+          effectiveProps.apiPresetId.trim()
+            ? effectiveProps.apiPresetId.trim()
+            : undefined;
         req = inspectExternalApiAction({
+          ...(presetId ? { presetId } : {}),
           endpointUrl,
           method,
           headers,
@@ -171,14 +177,30 @@ export function useExternalApiInspection(props?: Record<string, unknown>) {
           idKey,
           titleKey,
           timeoutMs,
-        }).catch(err => ({
-          ok: false,
-          error: err instanceof Error ? err.message : 'Failed to inspect API',
-          postOptions: [],
-          keys: [],
-          detectedItemsPath: '',
-          totalItems: 0,
-        }));
+        })
+          .then((res): InspectionResult => {
+            if (res && 'ok' in res) return res;
+            const errMsg =
+              res && 'error' in res && typeof res.error === 'string'
+                ? res.error
+                : 'Failed to inspect API';
+            return {
+              ok: false,
+              error: errMsg,
+              postOptions: [],
+              keys: [],
+              detectedItemsPath: '',
+              totalItems: 0,
+            };
+          })
+          .catch(err => ({
+            ok: false,
+            error: err instanceof Error ? err.message : 'Failed to inspect API',
+            postOptions: [],
+            keys: [],
+            detectedItemsPath: '',
+            totalItems: 0,
+          }));
         inspectCache.set(cacheKey, req);
       }
       req.then(res => {

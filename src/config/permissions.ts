@@ -16,6 +16,8 @@ export const PERMISSIONS = {
   LICENSES_MANAGE: 'licenses.manage',
   POST_TYPES_MANAGE: 'post_types.manage',
   COMMENTS_MODERATE: 'comments.moderate',
+  DESIGN_MANAGE: 'design.manage',
+  EXTERNAL_API_MANAGE: 'external_api.manage',
 } as const;
 
 export type BuiltinPermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -103,6 +105,16 @@ export const PERMISSION_MATRIX: {
     key: PERMISSIONS.COMMENTS_MODERATE,
     label: 'Approve, reply to, and remove blog comments',
     roles: { Admin: true, Editor: true, Author: false, Viewer: false },
+  },
+  {
+    key: PERMISSIONS.DESIGN_MANAGE,
+    label: 'Manage site design tokens, classes, and theme',
+    roles: { Admin: true, Editor: false, Author: false, Viewer: false },
+  },
+  {
+    key: PERMISSIONS.EXTERNAL_API_MANAGE,
+    label: 'Manage external API connections and secrets',
+    roles: { Admin: true, Editor: false, Author: false, Viewer: false },
   },
   ...PLUGIN_PERMISSIONS.map(perm => ({
     key: perm.key as PermissionKey,

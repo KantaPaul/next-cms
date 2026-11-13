@@ -8,6 +8,7 @@ import { requirePermission } from '@/server/services/require-permission';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 import { SettingsNav } from '../_components/settings-nav';
 import { BlockManager } from './_components/block-manager';
+import { BuilderSwitches } from './_components/builder-switches';
 import { buildBlockManagerEditors } from './editors';
 
 const TITLE = 'Block manager';
@@ -52,6 +53,7 @@ export default async function BlockManagerPage({
     <>
       <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
       <SettingsNav />
+      <BuilderSwitches settings={settings.builderSettings} />
       <BlockManager editors={editors} initialEditor={initialEditor} />
     </>
   );

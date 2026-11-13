@@ -1,5 +1,13 @@
 import React, { useId, useRef, useState } from 'react';
-import { validateDocument } from '@nextcms/builder-core';
+import {
+  type BuilderDocument,
+  type BundledStyleClass,
+  bundleStyleClasses,
+  remapDocumentClassIds,
+  STYLE_CLASS_BUNDLE_KEY,
+  splitStyleClassBundle,
+  validateDocument,
+} from '@nextcms/builder-core';
 import { Button, Dialog, Menu, type MenuItem } from '@nextcms/editor-ui';
 import {
   AlertCircle,
@@ -12,6 +20,18 @@ import {
   Upload,
 } from 'lucide-react';
 import { useEditor, useEditorStore } from './context';
+import { getStyleClassStore, importStyleClassBundle } from './style-classes';
+
+/**
+ * The document as an export file. When it uses style classes, the file also
+ * carries them (`styleClasses`), so importing it on another site recreates
+ * them (KRK-01).
+ */
+export function documentExportJson(doc: BuilderDocument): string {
+  const store = getStyleClassStore();
+  const bundle = store ? bundleStyleClasses(doc, store.getState().classes) : [];
+  return JSON.stringify(bundle.length ? { ...doc, [STYLE_CLASS_BUNDLE_KEY]: bundle } : doc, null, 2);
+}
 
 export interface JsonExportButtonProps {
   documentName?: string;
@@ -31,7 +51,7 @@ export function JsonExportButton({
   const [modalTab, setModalTab] = useState<'inspect' | 'import'>('inspect');
   const [copied, setCopied] = useState(false);
 
-  const getDocJsonString = () => JSON.stringify(doc, null, 2);
+  const getDocJsonString = () => documentExportJson(doc);
 
   const handleDownload = () => {
     const jsonStr = getDocJsonString();
@@ -161,11 +181,14 @@ export function JsonExportImportDialog({
     valid: boolean;
     issues?: string[];
     parsedDoc?: any;
+    bundle?: BundledStyleClass[];
   }>({ checked: false, valid: false });
+  const [applying, setApplying] = useState(false);
+  const [importNote, setImportNote] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const getDocJsonString = () => JSON.stringify(doc, null, 2);
+  const getDocJsonString = () => documentExportJson(doc);
 
   const handleCopy = async () => {
     try {
@@ -211,13 +234,15 @@ export function JsonExportImportDialog({
       return;
     }
     try {
-      const parsed = JSON.parse(text);
+      // A file may carry its style classes next to the document.
+      const { document: parsed, bundle } = splitStyleClassBundle(JSON.parse(text));
       const res = validateDocument(parsed);
       if (res.ok) {
         setValidation({
           checked: true,
           valid: true,
           parsedDoc: res.document,
+          bundle,
         });
       } else {
         setValidation({
@@ -235,13 +260,32 @@ export function JsonExportImportDialog({
     }
   };
 
-  const handleApplyImport = () => {
-    if (!validation.valid || !validation.parsedDoc) return;
+  const handleApplyImport = async () => {
+    if (!validation.valid || !validation.parsedDoc || applying) return;
+    let next = validation.parsedDoc as BuilderDocument;
+    const bundle = validation.bundle ?? [];
+    const classStore = getStyleClassStore();
+    let warning: string | null = null;
+    if (bundle.length && classStore) {
+      setApplying(true);
+      try {
+        // Classes first, so the document can point at this site's ids.
+        const result = await importStyleClassBundle(classStore, bundle);
+        next = remapDocumentClassIds(next, result.map);
+        if (result.failed.length) {
+          warning = `Imported, but ${result.failed.length} class${result.failed.length === 1 ? '' : 'es'} could not be created (${result.failed.join(', ')}). Those styles were left out.`;
+        }
+      } finally {
+        setApplying(false);
+      }
+    }
     // Apply as a single undoable history step
-    store.replaceDocument(validation.parsedDoc, {
+    store.replaceDocument(next, {
       label: 'Import document JSON',
     });
-    onClose();
+    // Stay open only to show what was left out.
+    if (warning) setImportNote(warning);
+    else onClose();
   };
 
   return (
@@ -380,17 +424,29 @@ export function JsonExportImportDialog({
               </div>
             )}
 
+            {validation.valid && (validation.bundle?.length ?? 0) > 0 && !importNote && (
+              <p className="text-xs text-[var(--ne-text-muted)]">
+                Includes {validation.bundle?.length} style class
+                {validation.bundle?.length === 1 ? '' : 'es'}. Classes with the same name and styles are reused; others are
+                added (renamed if the name is taken).
+              </p>
+            )}
+            {importNote && (
+              <p role="status" className="text-xs text-[var(--ne-warning,#b45309)]">
+                {importNote}
+              </p>
+            )}
             <div className="flex items-center justify-end gap-2 pt-2">
               <Button size="sm" variant="outline" onClick={onClose}>
-                Cancel
+                {importNote ? 'Close' : 'Cancel'}
               </Button>
               <Button
                 size="sm"
                 variant="primary"
-                disabled={!validation.valid}
-                onClick={handleApplyImport}
+                disabled={!validation.valid || applying || Boolean(importNote)}
+                onClick={() => void handleApplyImport()}
               >
-                Apply as One Step
+                {applying ? 'Importing…' : 'Apply as One Step'}
               </Button>
             </div>
           </div>
