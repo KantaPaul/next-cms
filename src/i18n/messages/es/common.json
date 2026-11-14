@@ -97,5 +97,16 @@
     "openOverlayLabel": "Abrir ventana emergente o panel",
     "invalidUrl": "Introduce una URL válida.",
     "invalidUrlFormat": "Introduce una URL con el formato correcto (p. ej., https://www.example.com)."
+  },
+  "statuses": {
+    "draft": "Borrador",
+    "review": "En revisión",
+    "scheduled": "Programada",
+    "published": "Publicada",
+    "archived": "Archivada"
+  },
+  "visibilities": {
+    "public": "Pública",
+    "private": "Privada"
   }
 }

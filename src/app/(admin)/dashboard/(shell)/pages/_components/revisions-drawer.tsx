@@ -1,6 +1,6 @@
 'use client';
 
-import { formatDistanceToNow } from 'date-fns';
+import { useFormatter, useTranslations } from 'next-intl';
 import { Eye, History, Loader2, RotateCcw, Save } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, useTransition } from 'react';
@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils/cn';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
+import { useRelativeTime } from '@/i18n/use-content-labels';
 
 type RevisionRow = {
   id: string;
@@ -92,6 +93,11 @@ export function RevisionsDrawer({
   const [preview, setPreview] = useState<RevisionDetail | null>(null);
   const [isPending, startTransition] = useTransition();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const t = useTranslations('content.revisions');
+  const format = useFormatter();
+  const relative = useRelativeTime();
+  const dateTime = (value: Date | string) =>
+    format.dateTime(new Date(value), { dateStyle: 'medium', timeStyle: 'short' });
 
   const load = useCallback(async () => {
     const response = await listRevisions({ id: pageId });
@@ -116,7 +122,7 @@ export function RevisionsDrawer({
       await handleActionResponse(
         (await restoreRevision({ revisionId: id })) as never,
         () => {
-          toast.success('Revision restored to the draft');
+          toast.success(t('restored'));
           setPreview(null);
           onOpenChange(false);
           onRestored?.();
@@ -130,10 +136,10 @@ export function RevisionsDrawer({
       await handleActionResponse(
         (await createRevision({
           id: pageId,
-          label: 'Manual snapshot',
+          label: t('manualSnapshot'),
         })) as never,
         () => {
-          toast.success('Snapshot saved');
+          toast.success(t('snapshotSaved'));
           void load();
         }
       );
@@ -148,11 +154,10 @@ export function RevisionsDrawer({
         >
           <SheetHeader className="border-b border-border p-5">
             <SheetTitle className="flex items-center gap-2">
-              <History className="size-5" /> Revision history
+              <History className="size-5" /> {t('title')}
             </SheetTitle>
             <SheetDescription>
-              Autosaves are kept every few minutes. Restoring replaces the
-              current draft.
+              {t('hint')}
             </SheetDescription>
             <Button
               type="button"
@@ -162,17 +167,17 @@ export function RevisionsDrawer({
               onClick={snapshot}
               disabled={isPending}
             >
-              <Save /> Save snapshot of current draft
+              <Save /> {t('saveSnapshot')}
             </Button>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto">
             {rows === null ? (
               <p className="flex items-center gap-2 p-5 text-sm text-muted-foreground">
-                <Loader2 className="size-4 animate-spin" /> Loading…
+                <Loader2 className="size-4 animate-spin" /> {t('loading')}
               </p>
             ) : rows.length === 0 ? (
               <p className="p-5 text-sm text-muted-foreground">
-                No revisions yet. They appear after you save or publish.
+                {t('empty')}
               </p>
             ) : (
               <ol className="divide-y divide-border">
@@ -186,31 +191,33 @@ export function RevisionsDrawer({
                             KIND_STYLES[row.kind]
                           )}
                         >
-                          {row.kind}
+                          {t(`kind.${row.kind}`)}
                         </span>
                         <span className="truncate text-sm font-medium">
                           {row.label ?? row.title}
                         </span>
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(row.createdAt), {
-                          addSuffix: true,
-                        })}
-                        {row.authorName ? ` · ${row.authorName}` : ''} ·{' '}
-                        {row.layout
-                          ? row.layout === 'custom'
-                            ? 'Custom layout'
-                            : 'Shared template'
-                          : row.editorType === 'builder'
-                            ? 'Builder'
-                            : 'Rich text'}
+                        {[
+                          relative(row.createdAt),
+                          row.authorName,
+                          row.layout
+                            ? row.layout === 'custom'
+                              ? t('customLayout')
+                              : t('sharedTemplate')
+                            : row.editorType === 'builder'
+                              ? t('builder')
+                              : t('richText'),
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
                       </p>
                     </div>
                     <Button
                       type="button"
                       size="sm"
                       variant="ghost"
-                      aria-label={`Preview revision from ${new Date(row.createdAt).toLocaleString()}`}
+                      aria-label={t('previewFrom', { date: dateTime(row.createdAt) })}
                       onClick={() => openPreview(row.id)}
                       disabled={busyId === row.id}
                     >
@@ -238,8 +245,8 @@ export function RevisionsDrawer({
         >
           <DialogHeader>
             <DialogTitle>
-              {preview?.label ?? 'Revision'} ·{' '}
-              {preview && new Date(preview.createdAt).toLocaleString()}
+              {preview?.label ?? t('revision')} ·{' '}
+              {preview && dateTime(preview.createdAt)}
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto rounded-md border border-border p-5">
@@ -254,14 +261,14 @@ export function RevisionsDrawer({
               variant="outline"
               onClick={() => setPreview(null)}
             >
-              Close
+              {t('close')}
             </Button>
             <Button
               type="button"
               onClick={() => preview && restore(preview.id)}
               disabled={isPending}
             >
-              <RotateCcw /> Restore this version
+              <RotateCcw /> {t('restore')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -277,6 +284,7 @@ function RevisionBody({
   content: unknown;
   themeScope?: 'light' | 'dark';
 }) {
+  const t = useTranslations('content.revisions');
   if (typeof content === 'string') {
     return (
       <div
@@ -306,11 +314,11 @@ function RevisionBody({
           </li>
         ))}
         {!content.content.length && (
-          <li className="text-sm text-muted-foreground">Empty page</li>
+          <li className="text-sm text-muted-foreground">{t('emptyPage')}</li>
         )}
       </ol>
     );
   }
 
-  return <p className="text-sm text-muted-foreground">Empty draft</p>;
+  return <p className="text-sm text-muted-foreground">{t('emptyDraft')}</p>;
 }

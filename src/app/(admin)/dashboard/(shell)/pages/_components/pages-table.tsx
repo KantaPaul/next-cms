@@ -1,7 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { ColumnDef } from '@tanstack/react-table';
-import { formatDistanceToNow } from 'date-fns';
 import {
   ExternalLink,
   Home,
@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import Link from '@/components/atoms/next/link';
 import { useRouter } from 'next/navigation';
-import { useTransition } from 'react';
+import { useMemo, useTransition } from 'react';
 import { toast } from 'sonner';
 import {
   deletePage,
@@ -30,7 +30,8 @@ import { StatusBadge } from '@/components/atoms/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
-import { pageStatusOptions } from '@/db/schemas/shared.schema';
+import { RelativeTime } from '@/components/atoms/relative-time';
+import { useStatusLabel, useStatusOptions } from '@/i18n/use-content-labels';
 import { useSiteLocales } from '@/providers/site-locales';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import { maybeOfferRedirect } from '@/components/dashboard/redirect-offer';
@@ -44,28 +45,32 @@ export const PAGE_STATUS_COLORS = {
   archived: 'archived',
 } as const;
 
+type ListT = ReturnType<typeof useTranslations<'content.list'>>;
+
 const filtersFor = (
-  locales: { label: string; value: string }[]
+  locales: { label: string; value: string }[],
+  statusOptions: { label: string; value: string }[],
+  t: ListT
 ): FilterConfig[] => [
   {
     name: 'status',
     type: 'select',
-    placeholder: 'All statuses',
-    options: pageStatusOptions,
+    placeholder: t('allStatuses'),
+    options: statusOptions,
   },
   {
     name: 'editorType',
     type: 'select',
-    placeholder: 'All editors',
+    placeholder: t('allEditors'),
     options: [
-      { label: 'Visual builder', value: 'builder' },
-      { label: 'Rich text', value: 'richtext' },
+      { label: t('visualBuilder'), value: 'builder' },
+      { label: t('richText'), value: 'richtext' },
     ],
   },
   {
     name: 'language',
     type: 'select',
-    placeholder: 'All languages',
+    placeholder: t('allLanguages'),
     options: locales,
   },
 ];
@@ -80,6 +85,8 @@ function RowActions({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const { permissions, userId } = useAccess();
+  const t = useTranslations('content.actions');
+  const tToast = useTranslations('content.toasts');
   const canPublish = permissions.includes(PERMISSIONS.PAGES_PUBLISH);
   const canEdit =
     permissions.includes(PERMISSIONS.PAGES_EDIT) &&
@@ -99,18 +106,18 @@ function RowActions({
       {canEdit && (
         <ActionDropdownItem
           href={PAGES.DASHBOARD.PAGES.EDIT(page.id)}
-          label="Edit settings & content"
+          label={t('editSettingsContent')}
         />
       )}
       {canEdit && page.editorType === 'builder' && (
         <ActionDropdownItem
           href={PAGES.DASHBOARD.PAGES.BUILDER(page.id)}
-          label="Open visual builder"
+          label={t('openVisualBuilder')}
         />
       )}
       {page.status === 'published' ? (
         <ActionDropdownItem
-          label="View live page"
+          label={t('viewLivePage')}
           onClick={() =>
             window.open(
               PAGES.SITE.page(
@@ -126,45 +133,43 @@ function RowActions({
         />
       ) : (
         <ActionDropdownItem
-          label="Preview draft"
+          label={t('previewDraft')}
           onClick={() => window.open(PAGES.SITE.PREVIEW(page.id), '_blank')}
         />
       )}
       {permissions.includes(PERMISSIONS.PAGES_CREATE) && (
         <ActionDropdownItem
-          label="Duplicate"
+          label={t('duplicate')}
           onClick={() =>
-            run(() => duplicatePage({ id: page.id }), 'Page duplicated')
+            run(() => duplicatePage({ id: page.id }), tToast('pageDuplicated'))
           }
         />
       )}
       {canPublish &&
         (page.status === 'published' ? (
           <ActionDropdownItem
-            label="Unpublish"
+            label={t('unpublish')}
             onClick={() =>
-              run(() => unpublishPage({ id: page.id }), 'Page unpublished')
+              run(() => unpublishPage({ id: page.id }), tToast('pageUnpublished'))
             }
           />
         ) : (
           <ActionDropdownItem
-            label="Publish now"
+            label={t('publishNow')}
             onClick={() =>
-              run(() => publishPage({ id: page.id }), 'Page published')
+              run(() => publishPage({ id: page.id }), tToast('pagePublished'))
             }
           />
         ))}
       {permissions.includes(PERMISSIONS.PAGES_DELETE) && (
         <ActionDropdownItem
-          label="Delete"
+          label={t('delete')}
           className="text-red-600 dark:text-red-400"
           onClick={() => {
             if (
-              confirm(
-                `Delete "${page.title}"? It will be removed from the site.`
-              )
+              confirm(t('confirmDelete', { title: page.title }))
             ) {
-              run(() => deletePage({ id: page.id }), 'Page deleted');
+              run(() => deletePage({ id: page.id }), tToast('pageDeleted'));
             }
           }}
         />
@@ -173,10 +178,14 @@ function RowActions({
   );
 }
 
-const buildColumns = (siteSlug?: string): ColumnDef<PageListItem>[] => [
+const buildColumns = (
+  t: ListT,
+  statusLabel: (status: string) => string,
+  siteSlug?: string
+): ColumnDef<PageListItem>[] => [
   {
     accessorKey: 'title',
-    header: 'Title',
+    header: t('title'),
     enableSorting: true,
     cell: ({ row }) => {
       const page = row.original;
@@ -189,13 +198,13 @@ const buildColumns = (siteSlug?: string): ColumnDef<PageListItem>[] => [
             {page.isHome && (
               <Home
                 className="size-3.5 text-indigo-500"
-                aria-label="Home page"
+                aria-label={t('homePage')}
               />
             )}
             {page.isBlogIndex && (
               <Newspaper
                 className="size-3.5 text-indigo-500"
-                aria-label="Blog page"
+                aria-label={t('blogPage')}
               />
             )}
             {page.title}
@@ -209,7 +218,7 @@ const buildColumns = (siteSlug?: string): ColumnDef<PageListItem>[] => [
   },
   {
     accessorKey: 'status',
-    header: 'Status',
+    header: t('status'),
     enableSorting: true,
     cell: ({ row }) => {
       const { status, scheduledAt } = row.original;
@@ -217,6 +226,7 @@ const buildColumns = (siteSlug?: string): ColumnDef<PageListItem>[] => [
         <div className="flex flex-col gap-1">
           <StatusBadge
             status={status}
+            label={statusLabel(status)}
             statusColor={PAGE_STATUS_COLORS[status]}
           />
           {status === 'scheduled' && scheduledAt && (
@@ -230,7 +240,7 @@ const buildColumns = (siteSlug?: string): ColumnDef<PageListItem>[] => [
   },
   {
     accessorKey: 'editorType',
-    header: 'Editor',
+    header: t('editor'),
     cell: ({ row }) => (
       <Badge variant="outline" className="gap-1">
         {row.original.editorType === 'builder' ? (
@@ -238,34 +248,32 @@ const buildColumns = (siteSlug?: string): ColumnDef<PageListItem>[] => [
         ) : (
           <PenLine className="size-3" />
         )}
-        {row.original.editorType === 'builder' ? 'Visual builder' : 'Rich text'}
+        {row.original.editorType === 'builder' ? t('visualBuilder') : t('richText')}
       </Badge>
     ),
   },
   {
     accessorKey: 'language',
-    header: 'Language',
+    header: t('language'),
     cell: ({ row }) => (
       <span className="uppercase">{row.original.language}</span>
     ),
   },
   {
     accessorKey: 'authorName',
-    header: 'Author',
+    header: t('author'),
     cell: ({ row }) => row.original.authorName ?? '—',
   },
   {
     accessorKey: 'updatedAt',
-    header: 'Updated',
+    header: t('updated'),
     enableSorting: true,
-    cell: ({ row }) => {
-      const date = row.original.updatedAt ?? row.original.createdAt;
-      return (
-        <span className="whitespace-nowrap text-sm">
-          {formatDistanceToNow(new Date(date), { addSuffix: true })}
-        </span>
-      );
-    },
+    cell: ({ row }) => (
+      <RelativeTime
+        date={row.original.updatedAt ?? row.original.createdAt}
+        className="whitespace-nowrap text-sm"
+      />
+    ),
   },
   {
     id: 'actions',
@@ -285,7 +293,7 @@ const buildColumns = (siteSlug?: string): ColumnDef<PageListItem>[] => [
             target="_blank"
             rel="noreferrer"
             className="p-1 text-steel-400 hover:text-steel-700"
-            aria-label="Open live page"
+            aria-label={t('openLivePage')}
           >
             <ExternalLink className="size-4" />
           </a>
@@ -306,14 +314,25 @@ export function PagesTable({
   siteSlug?: string;
 }) {
   const { locales } = useSiteLocales();
+  const t = useTranslations('content.list');
+  const statusLabel = useStatusLabel();
+  const statusOptions = useStatusOptions();
+  const columns = useMemo(
+    () => buildColumns(t, statusLabel, siteSlug),
+    [t, statusLabel, siteSlug]
+  );
+  const filters = useMemo(
+    () => filtersFor(locales, statusOptions, t),
+    [locales, statusOptions, t]
+  );
   return (
     <DataTable
-      columns={buildColumns(siteSlug)}
+      columns={columns}
       data={data}
       totalCount={totalCount}
-      filters={filtersFor(locales)}
+      filters={filters}
       inlineSearch
-      searchPlaceHolder="Search by title or slug"
+      searchPlaceHolder={t('search')}
       showClearButton
     />
   );

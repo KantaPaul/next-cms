@@ -1,5 +1,6 @@
 'use client';
 
+import { useFormatter, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { saveDraft } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.actions';
 
@@ -99,12 +100,17 @@ export function AutosaveIndicator({
   status: AutosaveStatus;
   savedAt: Date | null;
 }) {
+  const t = useTranslations('content.autosave');
+  const format = useFormatter();
+  const time = savedAt
+    ? format.dateTime(savedAt, { hour: 'numeric', minute: '2-digit', second: '2-digit' })
+    : '';
   const label = {
-    idle: savedAt ? `Saved ${savedAt.toLocaleTimeString()}` : 'No changes',
-    pending: 'Unsaved changes',
-    saving: 'Saving draft…',
-    saved: `Draft saved ${savedAt?.toLocaleTimeString() ?? ''}`,
-    error: 'Autosave failed',
+    idle: savedAt ? t('savedAt', { time }) : t('noChanges'),
+    pending: t('unsaved'),
+    saving: t('saving'),
+    saved: t('draftSavedAt', { time }),
+    error: t('failed'),
   }[status];
 
   const color = {

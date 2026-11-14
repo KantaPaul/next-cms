@@ -1,7 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { ColumnDef } from '@tanstack/react-table';
-import { formatDistanceToNow } from 'date-fns';
 import {
   ExternalLink,
   FileText,
@@ -14,8 +14,10 @@ import { useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { PAGE_STATUS_COLORS } from '@/app/(admin)/dashboard/(shell)/pages/_components/pages-table';
 import {
+  type LayoutLabelT,
   layoutLabel,
   SetTemplateDialog,
+  useLayoutLabel,
 } from '@/app/(admin)/dashboard/(shell)/posts/_components/set-template-dialog';
 import type { PostTemplateListItem } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
 import {
@@ -35,40 +37,44 @@ import { StatusBadge } from '@/components/atoms/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
-import {
-  pageStatusOptions,
-} from '@/db/schemas/shared.schema';
+import { RelativeTime } from '@/components/atoms/relative-time';
+import { useStatusLabel, useStatusOptions } from '@/i18n/use-content-labels';
 import { useSiteLocales } from '@/providers/site-locales';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import { maybeOfferRedirect } from '@/components/dashboard/redirect-offer';
 import { useAccess } from '@/providers/access.provider';
 
+type ListT = ReturnType<typeof useTranslations<'content.list'>>;
+
 const buildFilters = (
   templates: PostTemplateListItem[],
-  locales: { label: string; value: string }[]
+  locales: { label: string; value: string }[],
+  statusOptions: { label: string; value: string }[],
+  t: ListT,
+  tLayout: LayoutLabelT
 ): FilterConfig[] => [
   {
     name: 'status',
     type: 'select',
-    placeholder: 'All statuses',
-    options: pageStatusOptions,
+    placeholder: t('allStatuses'),
+    options: statusOptions,
   },
   {
     name: 'layout',
     type: 'select',
-    placeholder: 'All layouts',
+    placeholder: t('allLayouts'),
     options: [
-      { label: 'Default template', value: 'default' },
+      { label: tLayout('defaultTemplate'), value: 'default' },
       ...templates
-        .filter(t => !t.isDefault)
-        .map(t => ({ label: t.name, value: t.id })),
-      { label: 'Custom layout', value: 'custom' },
+        .filter(tpl => !tpl.isDefault)
+        .map(tpl => ({ label: tpl.name, value: tpl.id })),
+      { label: tLayout('customLayout'), value: 'custom' },
     ],
   },
   {
     name: 'language',
     type: 'select',
-    placeholder: 'All languages',
+    placeholder: t('allLanguages'),
     options: locales,
   },
 ];
@@ -86,6 +92,8 @@ function RowActions({
   const [isPending, startTransition] = useTransition();
   const [templateOpen, setTemplateOpen] = useState(false);
   const { permissions, userId } = useAccess();
+  const t = useTranslations('content.actions');
+  const tToast = useTranslations('content.toasts');
   const canPublish = permissions.includes(PERMISSIONS.PAGES_PUBLISH);
   const canEdit =
     permissions.includes(PERMISSIONS.PAGES_EDIT) &&
@@ -106,31 +114,31 @@ function RowActions({
         {canEdit && (
           <ActionDropdownItem
             href={PAGES.DASHBOARD.POSTS.EDIT(post.id)}
-            label="Edit post"
+            label={t('editPost')}
           />
         )}
         {canEdit && (
           <ActionDropdownItem
-            label="Set post template"
+            label={t('setPostTemplate')}
             onClick={() => setTemplateOpen(true)}
           />
         )}
         {canEdit && post.layout === 'custom' && (
           <ActionDropdownItem
             href={PAGES.DASHBOARD.POSTS.BUILDER(post.id)}
-            label="Open layout builder"
+            label={t('openLayoutBuilder')}
           />
         )}
         {post.status === 'published' ? (
           <ActionDropdownItem
-            label="View live post"
+            label={t('viewLivePost')}
             onClick={() =>
               window.open(PAGES.SITE.post(post.slug, post.language, siteSlug), '_blank')
             }
           />
         ) : (
           <ActionDropdownItem
-            label="Preview draft"
+            label={t('previewDraft')}
             onClick={() =>
               window.open(PAGES.SITE.PREVIEW_POST(post.id), '_blank')
             }
@@ -138,39 +146,37 @@ function RowActions({
         )}
         {permissions.includes(PERMISSIONS.PAGES_CREATE) && (
           <ActionDropdownItem
-            label="Duplicate"
+            label={t('duplicate')}
             onClick={() =>
-              run(() => duplicatePost({ id: post.id }), 'Post duplicated')
+              run(() => duplicatePost({ id: post.id }), tToast('postDuplicated'))
             }
           />
         )}
         {canPublish &&
           (post.status === 'published' ? (
             <ActionDropdownItem
-              label="Unpublish"
+              label={t('unpublish')}
               onClick={() =>
-                run(() => unpublishPost({ id: post.id }), 'Post unpublished')
+                run(() => unpublishPost({ id: post.id }), tToast('postUnpublished'))
               }
             />
           ) : (
             <ActionDropdownItem
-              label="Publish now"
+              label={t('publishNow')}
               onClick={() =>
-                run(() => publishPost({ id: post.id }), 'Post published')
+                run(() => publishPost({ id: post.id }), tToast('postPublished'))
               }
             />
           ))}
         {permissions.includes(PERMISSIONS.PAGES_DELETE) && (
           <ActionDropdownItem
-            label="Delete"
+            label={t('delete')}
             className="text-red-600 dark:text-red-400"
             onClick={() => {
               if (
-                confirm(
-                  `Delete "${post.title}"? It will be removed from the site.`
-                )
+                confirm(t('confirmDelete', { title: post.title }))
               ) {
-                run(() => deletePost({ id: post.id }), 'Post deleted');
+                run(() => deletePost({ id: post.id }), tToast('postDeleted'));
               }
             }}
           />
@@ -190,11 +196,14 @@ function RowActions({
 
 const buildColumns = (
   templates: PostTemplateListItem[],
+  t: ListT,
+  statusLabel: (status: string) => string,
+  tLayout: LayoutLabelT,
   siteSlug?: string
 ): ColumnDef<PostListItem>[] => [
   {
     accessorKey: 'title',
-    header: 'Title',
+    header: t('title'),
     enableSorting: true,
     cell: ({ row }) => {
       const post = row.original;
@@ -229,7 +238,7 @@ const buildColumns = (
   },
   {
     accessorKey: 'status',
-    header: 'Status',
+    header: t('status'),
     enableSorting: true,
     cell: ({ row }) => {
       const { status, scheduledAt } = row.original;
@@ -237,6 +246,7 @@ const buildColumns = (
         <div className="flex flex-col gap-1">
           <StatusBadge
             status={status}
+            label={statusLabel(status)}
             statusColor={PAGE_STATUS_COLORS[status]}
           />
           {status === 'scheduled' && scheduledAt && (
@@ -250,7 +260,7 @@ const buildColumns = (
   },
   {
     accessorKey: 'layout',
-    header: 'Layout',
+    header: t('layout'),
     cell: ({ row }) => (
       <Badge variant="outline" className="gap-1">
         {row.original.layout === 'custom' ? (
@@ -258,34 +268,32 @@ const buildColumns = (
         ) : (
           <LayoutTemplate className="size-3" />
         )}
-        {layoutLabel(row.original, templates)}
+        {layoutLabel(row.original, templates, tLayout)}
       </Badge>
     ),
   },
   {
     accessorKey: 'language',
-    header: 'Language',
+    header: t('language'),
     cell: ({ row }) => (
       <span className="uppercase">{row.original.language}</span>
     ),
   },
   {
     accessorKey: 'authorName',
-    header: 'Author',
+    header: t('author'),
     cell: ({ row }) => row.original.authorName ?? '—',
   },
   {
     accessorKey: 'updatedAt',
-    header: 'Updated',
+    header: t('updated'),
     enableSorting: true,
-    cell: ({ row }) => {
-      const date = row.original.updatedAt ?? row.original.createdAt;
-      return (
-        <span className="whitespace-nowrap text-sm">
-          {formatDistanceToNow(new Date(date), { addSuffix: true })}
-        </span>
-      );
-    },
+    cell: ({ row }) => (
+      <RelativeTime
+        date={row.original.updatedAt ?? row.original.createdAt}
+        className="whitespace-nowrap text-sm"
+      />
+    ),
   },
   {
     id: 'actions',
@@ -303,7 +311,7 @@ const buildColumns = (
             target="_blank"
             rel="noreferrer"
             className="p-1 text-steel-400 hover:text-steel-700"
-            aria-label="Open live post"
+            aria-label={t('openLivePost')}
           >
             <ExternalLink className="size-4" />
           </a>
@@ -325,14 +333,18 @@ export function PostsTable({
   templates: PostTemplateListItem[];
   siteSlug?: string;
 }) {
-  const columns = useMemo(() => buildColumns(templates, siteSlug), [
-    templates,
-    siteSlug,
-  ]);
+  const t = useTranslations('content.list');
+  const tLayout = useLayoutLabel();
+  const statusLabel = useStatusLabel();
+  const statusOptions = useStatusOptions();
+  const columns = useMemo(
+    () => buildColumns(templates, t, statusLabel, tLayout, siteSlug),
+    [templates, t, statusLabel, tLayout, siteSlug]
+  );
   const { locales } = useSiteLocales();
   const filters = useMemo(
-    () => buildFilters(templates, locales),
-    [templates, locales]
+    () => buildFilters(templates, locales, statusOptions, t, tLayout),
+    [templates, locales, statusOptions, t, tLayout]
   );
 
   return (
@@ -342,7 +354,7 @@ export function PostsTable({
       totalCount={totalCount}
       filters={filters}
       inlineSearch
-      searchPlaceHolder="Search by title or slug"
+      searchPlaceHolder={t('search')}
       showClearButton
     />
   );

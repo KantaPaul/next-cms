@@ -1,14 +1,15 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import Link from '@/components/atoms/next/link';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { FieldFactory } from '@/components/atoms/forms/factory/field-factory';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import {
-  pageStatusOptions,
-  pageVisibilityStatusOptions,
-} from '@/db/schema';
+  useStatusOptions,
+  useVisibilityOptions,
+} from '@/i18n/use-content-labels';
 import { useSiteLocales } from '@/providers/site-locales';
 import type { CreatePagesInput } from '@/db/validations/pages.validation';
 import { cn } from '@/lib/utils/cn';
@@ -41,10 +42,13 @@ export const SidebarEditor = ({
   const status = useWatch({ control, name: 'status' });
   const headerTemplateId = useWatch({ control, name: 'headerTemplateId' });
   const footerTemplateId = useWatch({ control, name: 'footerTemplateId' });
+  const t = useTranslations('content.fields');
+  const allStatusOptions = useStatusOptions();
+  const visibilityOptions = useVisibilityOptions();
 
   const statusOptions = canPublish
-    ? pageStatusOptions
-    : pageStatusOptions.filter(
+    ? allStatusOptions
+    : allStatusOptions.filter(
         o => ['draft', 'review'].includes(o.value) || o.value === currentStatus
       );
 
@@ -99,14 +103,14 @@ export const SidebarEditor = ({
   }
 
   const headerOptions = [
-    { label: 'Site Default', value: '' },
-    { label: 'None (Hide header)', value: 'none' },
+    { label: t('siteDefault'), value: '' },
+    { label: t('noneHeader'), value: 'none' },
     ...uniqueHeaders,
   ];
 
   const footerOptions = [
-    { label: 'Site Default', value: '' },
-    { label: 'None (Hide footer)', value: 'none' },
+    { label: t('siteDefault'), value: '' },
+    { label: t('noneFooter'), value: 'none' },
     ...uniqueFooters,
   ];
 
@@ -119,74 +123,74 @@ export const SidebarEditor = ({
           [
             {
               name: 'status',
-              label: 'Status',
+              label: t('status'),
               type: 'select',
-              placeholder: 'Select status',
+              placeholder: t('selectStatus'),
               options: statusOptions,
               isRequired: true,
               isClearable: false,
             },
             {
               name: 'visibility',
-              label: 'Visibility',
+              label: t('visibility'),
               type: 'select',
-              placeholder: 'Select visibility',
-              options: pageVisibilityStatusOptions,
+              placeholder: t('selectVisibility'),
+              options: visibilityOptions,
               isRequired: true,
               isClearable: false,
             },
             {
               name: 'slug',
-              label: 'Slug',
+              label: t('slug'),
               type: 'text',
               placeholder: 'my-page',
               isRequired: true,
             },
             {
               name: 'language',
-              label: 'Language',
+              label: t('language'),
               type: 'select',
               options: locales,
               isClearable: false,
             },
             {
               name: 'isHome',
-              label: 'Use as home page',
+              label: t('useAsHome'),
               type: 'switch',
             },
             {
               name: 'isBlogIndex',
-              label: 'Use as blog page',
+              label: t('useAsBlog'),
               type: 'switch',
             },
             {
               name: 'categories',
-              label: 'Categories',
+              label: t('categories'),
               type: 'multiselect',
               placeholder: taxonomy.categories.length
-                ? 'Select categories'
-                : 'No categories yet',
+                ? t('selectCategories')
+                : t('noCategories'),
               options: taxonomy.categories,
             },
             {
               name: 'tags',
-              label: 'Tags',
+              label: t('tags'),
               type: 'multiselect',
-              placeholder: taxonomy.tags.length ? 'Select tags' : 'No tags yet',
+              placeholder: taxonomy.tags.length ? t('selectTags') : t('noTags'),
               options: taxonomy.tags,
             },
             {
               name: 'headerTemplateId',
               label: (
                 <span className="flex items-center justify-between w-full">
-                  <span>Header template</span>
+                  <span>{t('headerTemplate')}</span>
                   {headerTemplateId ? (
                     <Link
                       href={PAGES.DASHBOARD.HEADER_FOOTER_EDIT(headerTemplateId)}
                       target="_blank"
                       className="text-xs font-normal text-indigo-600 hover:underline"
                     >
-                      Edit
+                      {t('edit')}
                     </Link>
                   ) : null}
                 </span>
@@ -199,14 +203,14 @@ export const SidebarEditor = ({
               name: 'footerTemplateId',
               label: (
                 <span className="flex items-center justify-between w-full">
-                  <span>Footer template</span>
+                  <span>{t('footerTemplate')}</span>
                   {footerTemplateId ? (
                     <Link
                       href={PAGES.DASHBOARD.HEADER_FOOTER_EDIT(footerTemplateId)}
                       target="_blank"
                       className="text-xs font-normal text-indigo-600 hover:underline"
                     >
-                      Edit
+                      {t('edit')}
                     </Link>
                   ) : null}
                 </span>
@@ -221,9 +225,9 @@ export const SidebarEditor = ({
       {status === 'scheduled' && (
         <div className="px-4 pt-4">
           <FieldShell
-            label="Publish at"
+            label={t('publishAt')}
             htmlFor="scheduledAt"
-            hint="The page goes live automatically at this time."
+            hint={t('publishAtHint', { kind: 'page' })}
             error={formState.errors.scheduledAt?.message as string | undefined}
           >
             <input
@@ -237,8 +241,7 @@ export const SidebarEditor = ({
       )}
       {!canPublish && (
         <p className="mx-4 mt-4 rounded-md bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
-          Your role can save drafts and submit pages for review. An editor
-          publishes them.
+          {t('roleNotice', { kind: 'page' })}
         </p>
       )}
     </div>

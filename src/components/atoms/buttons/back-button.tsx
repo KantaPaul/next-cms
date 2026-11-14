@@ -3,6 +3,7 @@
 import { ChevronLeft, Loader2 } from 'lucide-react';
 import Link from '@/components/atoms/next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { forwardRef } from 'react';
 import { Button, type ButtonProps } from '@/components/ui/button';
 import { cn } from '@/lib/utils/cn';
@@ -14,17 +15,19 @@ interface BackButtonType extends ButtonProps {
 }
 
 export const BackButton = forwardRef<HTMLButtonElement, BackButtonType>(
-  ({ text = 'Back', href, className, isLoading = false, ...rest }, ref) => {
+  ({ text, href, className, isLoading = false, ...rest }, ref) => {
     const router = useRouter();
+    const t = useTranslations('common');
+    const label = text ?? t('back');
 
     const buttonContent = (
       <>
         {isLoading ? (
           <Loader2 className="size-4 animate-spin" />
         ) : (
-          <ChevronLeft className="size-4" />
+          <ChevronLeft className="size-4 rtl:-scale-x-100" />
         )}
-        <span className={cn('inline-block')}>{text}</span>
+        <span className={cn('inline-block')}>{label}</span>
       </>
     );
 

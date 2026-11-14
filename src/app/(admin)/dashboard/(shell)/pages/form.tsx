@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
 import { Eye, History } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -45,7 +46,6 @@ import { FormFactory } from '@/components/atoms/forms/factory';
 import { StatusBadge } from '@/components/atoms/status-badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MESSAGES } from '@/config/messages';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import {
@@ -57,6 +57,7 @@ import { maybeOfferRedirect } from '@/components/dashboard/redirect-offer';
 import { useCan } from '@/providers/access.provider';
 import { useDataProvider } from '@/providers/data.provider';
 import { useAdminHref, useSiteLocales } from '@/providers/site-locales';
+import { useStatusLabel } from '@/i18n/use-content-labels';
 
 type PageFormData = {
   initialValues?: PageDetail | null;
@@ -85,6 +86,7 @@ export default function CreateOrUpdateForm({ id }: { id: string }) {
 function PageForm({ id }: { id: string }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const t = useTranslations('content');
   const { initialValues, taxonomy, templates, globalBlocks } =
     useDataProvider<PageFormData>();
   const isCreate = !initialValues;
@@ -157,10 +159,7 @@ function PageForm({ id }: { id: string }) {
           status: string;
         };
         toast.success(
-          MESSAGES.MODULE_ACTION_SUCCESSFULLY(
-            'Page',
-            initialValues ? 'updated' : 'created'
-          )
+          initialValues ? t('toasts.pageUpdated') : t('toasts.pageCreated')
         );
 
         if (!initialValues) {
@@ -214,10 +213,10 @@ function PageForm({ id }: { id: string }) {
         <aside className="w-full border-t border-steel-200 bg-white dark:border-dark-300 dark:bg-dark-50 lg:w-96 lg:overflow-auto lg:border-s lg:border-t-0">
           <Tabs defaultValue="page" className="gap-0">
             <TabsList className="m-3 grid grid-cols-3">
-              <TabsTrigger value="page">Page</TabsTrigger>
-              <TabsTrigger value="seo">SEO</TabsTrigger>
+              <TabsTrigger value="page">{t('tabs.page')}</TabsTrigger>
+              <TabsTrigger value="seo">{t('tabs.seo')}</TabsTrigger>
               <TabsTrigger value="share" disabled={isCreate}>
-                Share
+                {t('tabs.share')}
               </TabsTrigger>
             </TabsList>
             <TabsContent value="page">
@@ -254,6 +253,8 @@ function EditorToolbar({
 }) {
   const { initialValues } = useDataProvider<PageFormData>();
   const canPublish = useCan(PERMISSIONS.PAGES_PUBLISH);
+  const t = useTranslations('content.toolbar');
+  const statusLabel = useStatusLabel();
   const { control, setValue, getValues } = useFormContext<CreatePagesInput>();
   const [title, content, editorType] = useWatch({
     control,
@@ -288,11 +289,12 @@ function EditorToolbar({
         <>
           <StatusBadge
             status={initialValues.status}
+            label={statusLabel(initialValues.status)}
             statusColor={PAGE_STATUS_COLORS[initialValues.status]}
           />
           {initialValues.hasUnpublishedChanges && (
             <span className="text-xs text-amber-600">
-              Draft differs from the live version
+              {t('draftDiffers')}
             </span>
           )}
           {isRichText && (
@@ -309,7 +311,7 @@ function EditorToolbar({
               size="sm"
               onClick={() => setRevisionsOpen(true)}
             >
-              <History /> Revisions
+              <History /> {t('revisions')}
             </Button>
             <Button type="button" variant="outline" size="sm" asChild>
               <a
@@ -317,7 +319,7 @@ function EditorToolbar({
                 target="_blank"
                 rel="noreferrer"
               >
-                <Eye /> Preview
+                <Eye /> {t('preview')}
               </a>
             </Button>
           </>
@@ -329,7 +331,7 @@ function EditorToolbar({
           size="sm"
           disabled={isPending}
         >
-          {isPending ? 'Saving…' : 'Save'}
+          {isPending ? t('saving') : t('save')}
         </Button>
         {canPublish ? (
           <Button
@@ -339,8 +341,8 @@ function EditorToolbar({
             onClick={() => submitWithStatus('published')}
           >
             {initialValues?.status === 'published'
-              ? 'Update live page'
-              : 'Publish'}
+              ? t('updateLivePage')
+              : t('publish')}
           </Button>
         ) : (
           <Button
@@ -349,7 +351,7 @@ function EditorToolbar({
             disabled={isPending}
             onClick={() => submitWithStatus('review')}
           >
-            Submit for review
+            {t('submitForReview')}
           </Button>
         )}
       </div>

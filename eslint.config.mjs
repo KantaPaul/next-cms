@@ -136,6 +136,8 @@ const eslintConfig = [
       'src/components/organisms/header/**/*.tsx',
       'src/components/dashboard/lang-switcher.tsx',
       'src/components/dashboard/site-switcher.tsx',
+      'src/app/(admin)/dashboard/(shell)/pages/**/*.tsx',
+      'src/app/(admin)/dashboard/(shell)/posts/**/*.tsx',
     ],
     ignores: ['src/components/**/__tests__/**'],
     rules: {

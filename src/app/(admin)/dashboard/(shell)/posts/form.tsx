@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
 import { Eye, History, LayoutTemplate, PanelsTopLeft } from 'lucide-react';
 import Link from '@/components/atoms/next/link';
@@ -32,6 +33,7 @@ import {
 import {
   layoutLabel,
   SetTemplateDialog,
+  useLayoutLabel,
 } from '@/app/(admin)/dashboard/(shell)/posts/_components/set-template-dialog';
 import { POST_REVISION_ACTIONS } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-revision-actions';
 import type { PostTemplateListItem } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
@@ -48,13 +50,13 @@ import { StatusBadge } from '@/components/atoms/status-badge';
 import { MediaField } from '@/components/media/media-picker';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MESSAGES } from '@/config/messages';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import {
-  pageStatusOptions,
-  pageVisibilityStatusOptions,
-} from '@/db/schema';
+  useStatusLabel,
+  useStatusOptions,
+  useVisibilityOptions,
+} from '@/i18n/use-content-labels';
 import { useAdminHref, useSiteLocales } from '@/providers/site-locales';
 import {
   type CreatePostInput,
@@ -86,6 +88,7 @@ export default function PostForm({ id }: { id: string }) {
 function PostFormInner({ id }: { id: string }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const t = useTranslations('content');
   const { initialValues, taxonomy } = useDataProvider<PostFormData>();
   const markSavedRef = useRef<(snapshot: string) => void>(() => {});
 
@@ -132,10 +135,7 @@ function PostFormInner({ id }: { id: string }) {
       await handleActionResponse(response, post => {
         void maybeOfferRedirect(post);
         toast.success(
-          MESSAGES.MODULE_ACTION_SUCCESSFULLY(
-            'Post',
-            initialValues ? 'updated' : 'created'
-          )
+          initialValues ? t('toasts.postUpdated') : t('toasts.postCreated')
         );
 
         if (!initialValues) {
@@ -167,10 +167,10 @@ function PostFormInner({ id }: { id: string }) {
         <aside className="w-full border-t border-steel-200 bg-white dark:border-dark-300 dark:bg-dark-50 lg:w-96 lg:overflow-auto lg:border-s lg:border-t-0">
           <Tabs defaultValue="post" className="gap-0">
             <TabsList className="m-3 grid grid-cols-3">
-              <TabsTrigger value="post">Post</TabsTrigger>
-              <TabsTrigger value="seo">SEO</TabsTrigger>
+              <TabsTrigger value="post">{t('tabs.post')}</TabsTrigger>
+              <TabsTrigger value="seo">{t('tabs.seo')}</TabsTrigger>
               <TabsTrigger value="share" disabled={!initialValues}>
-                Share
+                {t('tabs.share')}
               </TabsTrigger>
             </TabsList>
             <TabsContent value="post">
@@ -196,6 +196,7 @@ function PostFormInner({ id }: { id: string }) {
 function PostMainEditor({ isCreate }: { isCreate: boolean }) {
   const { setValue, register, control } = useFormContext<CreatePostInput>();
   const excerpt = useWatch({ control, name: 'excerpt' });
+  const t = useTranslations('content.fields');
 
   return (
     <div className="mx-auto w-full max-w-4xl px-6 py-8 lg:px-12">
@@ -207,7 +208,7 @@ function PostMainEditor({ isCreate }: { isCreate: boolean }) {
             {
               name: 'title',
               type: 'text',
-              placeholder: 'Add title',
+              placeholder: t('addTitle'),
               className:
                 '[&>div]:max-w-full [&>div>input]:text-4xl [&>div>input]:h-auto [&>div>input]:p-0 [&>div>input]:shadow-none [&>div>input]:border-0 [&>div>input]:outline-none [&>div>input]:focus-visible:outline-none [&>div>input]:focus-visible:ring-0 font-bold',
               callback: value => {
@@ -226,13 +227,13 @@ function PostMainEditor({ isCreate }: { isCreate: boolean }) {
           htmlFor="post-excerpt"
           label={
             <>
-              Excerpt{' '}
+              {t('excerpt')}{' '}
               <span className="text-xs font-normal text-steel-400">
-                {excerpt?.length ?? 0}/300
+                {`${excerpt?.length ?? 0}/300`}
               </span>
             </>
           }
-          hint="Shown under the title and on post cards."
+          hint={t('excerptHint')}
         >
           <textarea
             id="post-excerpt"
@@ -245,7 +246,7 @@ function PostMainEditor({ isCreate }: { isCreate: boolean }) {
           control={control}
           name="featuredImage"
           render={({ field }) => (
-            <FieldShell label="Featured image">
+            <FieldShell label={t('featuredImage')}>
               <MediaField value={field.value ?? ''} onChange={field.onChange} />
             </FieldShell>
           )}
@@ -261,7 +262,7 @@ function PostMainEditor({ isCreate }: { isCreate: boolean }) {
               {
                 name: 'body',
                 type: 'textEditor',
-                placeholder: 'Write your post…',
+                placeholder: t('writePost'),
               },
             ],
           ]}
@@ -282,9 +283,12 @@ function PostSidebar({
   const canPublish = useCan(PERMISSIONS.PAGES_PUBLISH);
   const { register, control, formState } = useFormContext<CreatePostInput>();
   const status = useWatch({ control, name: 'status' });
+  const t = useTranslations('content.fields');
+  const allStatusOptions = useStatusOptions();
+  const visibilityOptions = useVisibilityOptions();
   const statusOptions = canPublish
-    ? pageStatusOptions
-    : pageStatusOptions.filter(
+    ? allStatusOptions
+    : allStatusOptions.filter(
         o => ['draft', 'review'].includes(o.value) || o.value === post?.status
       );
 
@@ -298,7 +302,7 @@ function PostSidebar({
           [
             {
               name: 'status',
-              label: 'Status',
+              label: t('status'),
               type: 'select',
               options: statusOptions,
               isRequired: true,
@@ -306,45 +310,45 @@ function PostSidebar({
             },
             {
               name: 'visibility',
-              label: 'Visibility',
+              label: t('visibility'),
               type: 'select',
-              options: pageVisibilityStatusOptions,
+              options: visibilityOptions,
               isRequired: true,
               isClearable: false,
             },
             {
               name: 'slug',
-              label: 'Slug',
+              label: t('slug'),
               type: 'text',
               placeholder: 'my-post',
               isRequired: true,
             },
             {
               name: 'language',
-              label: 'Language',
+              label: t('language'),
               type: 'select',
               options: locales,
               isClearable: false,
             },
             {
               name: 'categories',
-              label: 'Categories',
+              label: t('categories'),
               type: 'multiselect',
               placeholder: taxonomy.categories.length
-                ? 'Select categories'
-                : 'No categories yet',
+                ? t('selectCategories')
+                : t('noCategories'),
               options: taxonomy.categories,
             },
             {
               name: 'tags',
-              label: 'Tags',
+              label: t('tags'),
               type: 'multiselect',
-              placeholder: taxonomy.tags.length ? 'Select tags' : 'No tags yet',
+              placeholder: taxonomy.tags.length ? t('selectTags') : t('noTags'),
               options: taxonomy.tags,
             },
             {
               name: 'allowComments',
-              label: 'Allow comments',
+              label: t('allowComments'),
               type: 'switch',
             },
           ],
@@ -353,9 +357,9 @@ function PostSidebar({
       {status === 'scheduled' && (
         <div className="px-4 pt-4">
           <FieldShell
-            label="Publish at"
+            label={t('publishAt')}
             htmlFor="scheduledAt"
-            hint="The post goes live automatically at this time."
+            hint={t('publishAtHint', { kind: 'post' })}
             error={formState.errors.scheduledAt?.message as string | undefined}
           >
             <input
@@ -369,8 +373,7 @@ function PostSidebar({
       )}
       {!canPublish && (
         <p className="mx-4 mt-4 rounded-md bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
-          Your role can save drafts and submit posts for review. An editor
-          publishes them.
+          {t('roleNotice', { kind: 'post' })}
         </p>
       )}
     </div>
@@ -381,6 +384,9 @@ function LayoutSection({ post }: { post: PostDetail }) {
   const { templates } = useDataProvider<PostFormData>();
   const canManageTemplates = useCan(PERMISSIONS.PAGES_PUBLISH);
   const [open, setOpen] = useState(false);
+  const t = useTranslations('content.layout');
+  const tActions = useTranslations('content.actions');
+  const tLayout = useLayoutLabel();
   const isCustom = post.layout === 'custom';
   const templateId =
     post.templateId ?? templates.find(t => t.isDefault)?.id ?? null;
@@ -389,20 +395,20 @@ function LayoutSection({ post }: { post: PostDetail }) {
   return (
     <div className="px-4 pt-1">
       <p className="mb-2 text-sm font-medium text-steel-700 dark:text-steel-200">
-        Layout
+        {t('title')}
       </p>
       <div className="flex items-start gap-3 rounded-md border border-steel-200 p-3 dark:border-dark-300">
         <Icon className="mt-0.5 size-4 shrink-0 text-indigo-600" />
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-medium">
-            {layoutLabel(post, templates)}
+            {layoutLabel(post, templates, tLayout)}
           </span>
           <span className="block text-xs text-steel-500">
             {isCustom
-              ? 'This post has its own canvas.'
+              ? t('ownCanvas')
               : post.templateId
-                ? 'Renders through this template.'
-                : 'Follows the default template.'}
+                ? t('rendersThrough')
+                : t('followsDefault')}
           </span>
         </span>
       </div>
@@ -413,12 +419,12 @@ function LayoutSection({ post }: { post: PostDetail }) {
           size="sm"
           onClick={() => setOpen(true)}
         >
-          Set post template
+          {tActions('setPostTemplate')}
         </Button>
         {isCustom ? (
           <Button type="button" variant="outline" size="sm" asChild>
             <Link href={PAGES.DASHBOARD.POSTS.BUILDER(post.id)}>
-              Open layout builder
+              {tActions('openLayoutBuilder')}
             </Link>
           </Button>
         ) : (
@@ -426,7 +432,7 @@ function LayoutSection({ post }: { post: PostDetail }) {
           templateId && (
             <Button type="button" variant="outline" size="sm" asChild>
               <Link href={PAGES.DASHBOARD.POSTS.TEMPLATE_BUILDER(templateId)}>
-                Edit template
+                {t('editTemplate')}
               </Link>
             </Button>
           )
@@ -454,6 +460,8 @@ function PostToolbar({
 }) {
   const { initialValues } = useDataProvider<PostFormData>();
   const canPublish = useCan(PERMISSIONS.PAGES_PUBLISH);
+  const t = useTranslations('content.toolbar');
+  const statusLabel = useStatusLabel();
   const { control, setValue, getValues } = useFormContext<CreatePostInput>();
   const [title, body] = useWatch({ control, name: ['title', 'body'] });
   const [revisionsOpen, setRevisionsOpen] = useState(false);
@@ -483,11 +491,12 @@ function PostToolbar({
         <>
           <StatusBadge
             status={initialValues.status}
+            label={statusLabel(initialValues.status)}
             statusColor={PAGE_STATUS_COLORS[initialValues.status]}
           />
           {initialValues.hasUnpublishedChanges && (
             <span className="text-xs text-amber-600">
-              Draft differs from the live version
+              {t('draftDiffers')}
             </span>
           )}
           <AutosaveIndicator status={status} savedAt={savedAt} />
@@ -502,7 +511,7 @@ function PostToolbar({
               size="sm"
               onClick={() => setRevisionsOpen(true)}
             >
-              <History /> Revisions
+              <History /> {t('revisions')}
             </Button>
             <Button type="button" variant="outline" size="sm" asChild>
               <a
@@ -510,7 +519,7 @@ function PostToolbar({
                 target="_blank"
                 rel="noreferrer"
               >
-                <Eye /> Preview
+                <Eye /> {t('preview')}
               </a>
             </Button>
           </>
@@ -522,7 +531,7 @@ function PostToolbar({
           size="sm"
           disabled={isPending}
         >
-          {isPending ? 'Saving…' : 'Save'}
+          {isPending ? t('saving') : t('save')}
         </Button>
         {canPublish ? (
           <Button
@@ -532,8 +541,8 @@ function PostToolbar({
             onClick={() => submitWithStatus('published')}
           >
             {initialValues?.status === 'published'
-              ? 'Update live post'
-              : 'Publish'}
+              ? t('updateLivePost')
+              : t('publish')}
           </Button>
         ) : (
           <Button
@@ -542,7 +551,7 @@ function PostToolbar({
             disabled={isPending}
             onClick={() => submitWithStatus('review')}
           >
-            Submit for review
+            {t('submitForReview')}
           </Button>
         )}
       </div>

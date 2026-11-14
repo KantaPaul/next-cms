@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Loader2, Sparkles } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { generateSeo } from '@/app/(admin)/dashboard/(shell)/pages/_modules/ai.actions';
@@ -17,6 +18,7 @@ export function SeoAiButton({
   onApply: (result: SeoSuggestion) => void;
 }) {
   const enabled = useAiEnabled();
+  const t = useTranslations('content.seoAi');
   const [isPending, startTransition] = useTransition();
   const [suggestion, setSuggestion] = useState<SeoSuggestion | null>(null);
 
@@ -33,7 +35,7 @@ export function SeoAiButton({
     <div className="rounded-lg border border-violet-200 bg-violet-50/60 p-3 dark:border-violet-900 dark:bg-violet-950/30">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-violet-800 dark:text-violet-200">
-          Generate metadata from the saved draft.
+          {t('intro')}
         </p>
         <Button
           type="button"
@@ -43,20 +45,20 @@ export function SeoAiButton({
           disabled={isPending}
         >
           {isPending ? <Loader2 className="animate-spin" /> : <Sparkles />}{' '}
-          Suggest
+          {t('suggest')}
         </Button>
       </div>
       {suggestion && (
         <div className="mt-3 space-y-2 text-xs">
           <p>
-            <span className="font-semibold">Title:</span> {suggestion.title}
+            <span className="font-semibold">{t('title')}</span> {suggestion.title}
           </p>
           <p>
-            <span className="font-semibold">Description:</span>{' '}
+            <span className="font-semibold">{t('description')}</span>{' '}
             {suggestion.description}
           </p>
           <p>
-            <span className="font-semibold">Keywords:</span>{' '}
+            <span className="font-semibold">{t('keywords')}</span>{' '}
             {suggestion.keywords}
           </p>
           <div className="flex gap-2 pt-1">
@@ -68,7 +70,7 @@ export function SeoAiButton({
                 setSuggestion(null);
               }}
             >
-              Apply
+              {t('apply')}
             </Button>
             <Button
               type="button"
@@ -76,7 +78,7 @@ export function SeoAiButton({
               variant="ghost"
               onClick={() => setSuggestion(null)}
             >
-              Discard
+              {t('discard')}
             </Button>
           </div>
         </div>

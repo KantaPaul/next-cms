@@ -3,10 +3,8 @@ import Link from '@/components/atoms/next/link';
 import { PostsTable } from '@/app/(admin)/dashboard/(shell)/posts/_components/posts-table';
 import { postTemplatesService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
 import { postsService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.service';
-import {
-  breadcrumbs,
-  TITLE,
-} from '@/app/(admin)/dashboard/(shell)/posts/breadcrumbs';
+import { postsHeader } from '@/app/(admin)/dashboard/(shell)/posts/breadcrumbs';
+import { getAdminTranslations } from '@/i18n/server';
 import CreateButton from '@/components/atoms/buttons/create-button';
 import { PageHeader } from '@/components/organisms/page-header';
 import { Button } from '@/components/ui/button';
@@ -21,9 +19,9 @@ import { metaObject } from '@/lib/utils/metadata';
 import { accessService } from '@/server/services/access.service';
 import { siteContext, siteSlugPrefix } from '@/server/services/site-context';
 
-export const metadata = {
-  ...metaObject(TITLE),
-};
+export async function generateMetadata() {
+  return metaObject((await postsHeader()).title);
+}
 
 export default async function PostsPage({
   searchParams,
@@ -41,20 +39,26 @@ export default async function PostsPage({
     postTemplatesService.list(),
   ]);
   const siteSlug = siteSlugPrefix(await siteContext.publicSite());
+  const [{ title, breadcrumbs }, t, tCommon] = await Promise.all([
+    postsHeader(),
+    getAdminTranslations('posts'),
+    getAdminTranslations('common'),
+  ]);
+  const tStatus = (status: string) => tCommon(`statuses.${status}` as never);
 
   return (
     <>
-      <PageHeader title={TITLE} breadcrumbs={breadcrumbs}>
+      <PageHeader title={title} breadcrumbs={breadcrumbs}>
         <div className="flex items-center gap-2">
           {access.permissions.includes(PERMISSIONS.PAGES_PUBLISH) && (
             <Button variant="outline" asChild>
               <Link href={PAGES.DASHBOARD.POSTS.TEMPLATES}>
-                <LayoutTemplate /> Post templates
+                <LayoutTemplate /> {t('postTemplates')}
               </Link>
             </Button>
           )}
           {access.permissions.includes(PERMISSIONS.PAGES_CREATE) && (
-            <CreateButton href={PAGES.DASHBOARD.POSTS.CREATE} text="New post" />
+            <CreateButton href={PAGES.DASHBOARD.POSTS.CREATE} text={t('newPost')} />
           )}
         </div>
       </PageHeader>
@@ -67,7 +71,7 @@ export default async function PostsPage({
             className="rounded-lg border border-steel-200 px-4 py-3 dark:border-dark-300"
           >
             <div className="text-xs uppercase tracking-wide text-steel-400">
-              {status}
+              {tStatus(status)}
             </div>
             <div className="text-2xl font-semibold">{counts[status] ?? 0}</div>
           </div>

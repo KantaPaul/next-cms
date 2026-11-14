@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Check, FileText, LayoutTemplate, Sparkles } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useFormContext, useWatch } from 'react-hook-form';
@@ -35,6 +36,7 @@ export function TemplatePicker({ templates }: { templates: TemplateOption[] }) {
   const templateId = useWatch({ control, name: 'templateId' });
   const editorType = useWatch({ control, name: 'editorType' });
   const aiEnabled = useAiEnabled();
+  const t = useTranslations('content.picker');
   const startWithAi = useSearchParams().get(START_WITH_AI_PARAM) === 'ai';
 
   const choose = (
@@ -56,14 +58,14 @@ export function TemplatePicker({ templates }: { templates: TemplateOption[] }) {
   const blankOptions = [
     {
       type: 'richtext' as const,
-      name: 'Blank article',
-      description: 'Rich-text editor for posts and docs',
+      name: t('blankArticle'),
+      description: t('blankArticleDesc'),
       icon: FileText,
     },
     {
       type: 'builder' as const,
-      name: 'Blank landing page',
-      description: 'Drag-and-drop visual builder',
+      name: t('blankLanding'),
+      description: t('blankLandingDesc'),
       icon: LayoutTemplate,
     },
   ];
@@ -71,7 +73,7 @@ export function TemplatePicker({ templates }: { templates: TemplateOption[] }) {
   return (
     <section className="mt-6">
       <h3 className="mb-3 text-sm font-semibold text-steel-600 dark:text-steel-300">
-        Start from
+        {t('startFrom')}
       </h3>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {blankOptions.map(option => {
@@ -112,11 +114,9 @@ export function TemplatePicker({ templates }: { templates: TemplateOption[] }) {
           )}
         >
           <Sparkles className="mb-1 size-5 text-violet-500" />
-          <span className="font-medium">Generate with AI</span>
+          <span className="font-medium">{t('generateWithAi')}</span>
           <span className="text-xs text-steel-500">
-            {aiEnabled === false
-              ? 'Set GEMINI_API_KEY on the server to enable AI generation'
-              : 'Describe the page and review generated blocks in the builder'}
+            {aiEnabled === false ? t('aiDisabled') : t('aiEnabled')}
           </span>
           {aiSelected && (
             <Check className="absolute end-3 top-3 size-4 text-violet-600" />

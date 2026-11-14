@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { LayoutTemplate } from 'lucide-react';
 import Link from '@/components/atoms/next/link';
 import { useFormContext, useWatch } from 'react-hook-form';
@@ -26,6 +27,7 @@ export const MainEditor = ({
   className?: string;
 }) => {
   const { setValue, control } = useFormContext<CreatePagesInput>();
+  const t = useTranslations('content');
   const editorType = useWatch({ control, name: 'editorType' });
   const blockCount = isBuilderData(builderContent)
     ? builderContent.content.length
@@ -43,7 +45,7 @@ export const MainEditor = ({
             {
               name: 'title',
               type: 'text',
-              placeholder: 'Add title',
+              placeholder: t('fields.addTitle'),
               className:
                 '[&>div]:max-w-full [&>div>input]:text-4xl [&>div>input]:h-auto [&>div>input]:p-0 [&>div>input]:shadow-none [&>div>input]:border-0 [&>div>input]:outline-none [&>div>input]:focus-visible:outline-none [&>div>input]:focus-visible:ring-0 font-bold',
               callback: value => {
@@ -64,18 +66,18 @@ export const MainEditor = ({
           <LayoutTemplate className="size-10 text-indigo-500" />
           <div>
             <h3 className="text-lg font-semibold">
-              This page uses the visual builder
+              {t('builder.usesBuilder')}
             </h3>
             <p className="mt-1 max-w-md text-sm text-steel-500">
               {isCreate
-                ? 'Create the page first, then you will be taken to the drag-and-drop builder.'
-                : `The draft has ${blockCount} block${blockCount === 1 ? '' : 's'}. Layout and content are edited in the full-screen builder.`}
+                ? t('builder.createFirst')
+                : t('builder.blockCount', { count: blockCount })}
             </p>
           </div>
           {pageId && (
             <Button asChild>
               <Link href={PAGES.DASHBOARD.PAGES.BUILDER(pageId)}>
-                Open visual builder
+                {t('builder.open')}
               </Link>
             </Button>
           )}
@@ -90,7 +92,7 @@ export const MainEditor = ({
                 {
                   name: 'content',
                   type: 'textEditor',
-                  placeholder: 'Start writing…',
+                  placeholder: t('fields.startWriting'),
                 },
               ],
             ]}

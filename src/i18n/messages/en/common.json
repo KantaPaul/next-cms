@@ -97,5 +97,16 @@
     "openOverlayLabel": "Open popup or drawer",
     "invalidUrl": "Please enter a valid URL.",
     "invalidUrlFormat": "Enter a valid URL in the correct format (e.g., https://www.example.com)."
+  },
+  "statuses": {
+    "draft": "Draft",
+    "review": "In review",
+    "scheduled": "Scheduled",
+    "published": "Published",
+    "archived": "Archived"
+  },
+  "visibilities": {
+    "public": "Public",
+    "private": "Private"
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { formatDistanceToNow } from 'date-fns';
+import { useTranslations } from 'next-intl';
 import { LayoutTemplate, Loader2, Plus } from 'lucide-react';
 import Link from '@/components/atoms/next/link';
 import { useRouter } from 'next/navigation';
@@ -34,6 +34,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { PAGES } from '@/config/pages';
+import { RelativeTime } from '@/components/atoms/relative-time';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 
 type DetailsTarget =
@@ -50,6 +51,7 @@ function TemplateDetailsDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const router = useRouter();
+  const t = useTranslations('posts.templates');
   const editing = target?.mode === 'edit' ? target.template : null;
   const [name, setName] = useState(editing?.name ?? '');
   const [description, setDescription] = useState(editing?.description ?? '');
@@ -65,7 +67,7 @@ function TemplateDetailsDialog({
         await handleActionResponse(
           updatePostTemplate({ id: editing.id, name, description }),
           () => {
-            toast.success('Template updated');
+            toast.success(t('updated'));
             onOpenChange(false);
             router.refresh();
           }
@@ -76,7 +78,7 @@ function TemplateDetailsDialog({
       await handleActionResponse(
         createPostTemplate({ name, description, fromId: fromId || null }),
         created => {
-          toast.success('Template created');
+          toast.success(t('created'));
           router.push(PAGES.DASHBOARD.POSTS.TEMPLATE_BUILDER(created.id));
         }
       );
@@ -89,40 +91,38 @@ function TemplateDetailsDialog({
         <form onSubmit={submit} className="flex flex-col gap-4">
           <DialogHeader>
             <DialogTitle>
-              {editing ? 'Rename template' : 'New post template'}
+              {editing ? t('renameTitle') : t('newTitle')}
             </DialogTitle>
             <DialogDescription>
-              {editing
-                ? 'The name and description show when picking a template for a post.'
-                : 'Create a layout, then assign it to posts from the posts list.'}
+              {editing ? t('renameHint') : t('newHint')}
             </DialogDescription>
           </DialogHeader>
-          <FieldShell label="Name" htmlFor="template-name">
+          <FieldShell label={t('name')} htmlFor="template-name">
             <input
               id="template-name"
               className={inputClass}
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder="e.g. Long read"
+              placeholder={t('namePlaceholder')}
               maxLength={150}
               autoFocus
             />
           </FieldShell>
-          <FieldShell label="Description" htmlFor="template-description">
+          <FieldShell label={t('description')} htmlFor="template-description">
             <textarea
               id="template-description"
               className={textareaClass}
               value={description}
               onChange={e => setDescription(e.target.value)}
-              placeholder="When to use this layout"
+              placeholder={t('descriptionPlaceholder')}
               maxLength={500}
             />
           </FieldShell>
           {!editing && (
             <FieldShell
-              label="Start from"
+              label={t('startFrom')}
               htmlFor="template-from"
-              hint="The new template starts as a copy of this layout."
+              hint={t('startFromHint')}
             >
               <select
                 id="template-from"
@@ -130,7 +130,7 @@ function TemplateDetailsDialog({
                 value={fromId}
                 onChange={e => setFromId(e.target.value)}
               >
-                <option value="">Built-in layout</option>
+                <option value="">{t('builtIn')}</option>
                 {templates.map(t => (
                   <option key={t.id} value={t.id}>
                     {t.name}
@@ -145,11 +145,11 @@ function TemplateDetailsDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Cancel
+              {t('cancel')}
             </Button>
             <Button type="submit" disabled={isPending || !name.trim()}>
               {isPending && <Loader2 className="size-4 animate-spin" />}
-              {editing ? 'Save' : 'Create and edit layout'}
+              {editing ? t('save') : t('createAndEdit')}
             </Button>
           </DialogFooter>
         </form>
@@ -167,6 +167,7 @@ function RowActions({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const t = useTranslations('posts.templates');
 
   const run = (
     fn: () => Promise<unknown>,
@@ -185,48 +186,49 @@ function RowActions({
     <ActionDropdown isLoading={isPending} variant="vertical">
       <ActionDropdownItem
         href={PAGES.DASHBOARD.POSTS.TEMPLATE_BUILDER(template.id)}
-        label="Edit layout"
+        label={t('editLayout')}
       />
-      <ActionDropdownItem label="Rename" onClick={onRename} />
+      <ActionDropdownItem label={t('rename')} onClick={onRename} />
       <ActionDropdownItem
-        label="Duplicate"
+        label={t('duplicate')}
         onClick={() =>
           run(
             () => duplicatePostTemplate({ id: template.id }),
-            'Template duplicated'
+            t('duplicated')
           )
         }
       />
       {!template.isDefault && (
         <ActionDropdownItem
-          label="Set as default"
+          label={t('setDefault')}
           disabled={!template.isPublished}
           title={
             template.isPublished
               ? undefined
-              : 'Publish the template before making it the default'
+              : t('publishFirst')
           }
           onClick={() =>
             run(
               () => setDefaultPostTemplate({ id: template.id }),
-              `"${template.name}" is now the default template`
+              t('nowDefault', { name: template.name })
             )
           }
         />
       )}
       {!template.isDefault && (
         <ActionDropdownItem
-          label="Delete"
+          label={t('delete')}
           className="text-red-600 dark:text-red-400"
           onClick={() => {
+            const question = t('confirmDelete', { name: template.name });
             const moved = template.postCount
-              ? ` ${template.postCount} ${template.postCount === 1 ? 'post moves' : 'posts move'} to the default template.`
+              ? ` ${t('postsMove', { count: template.postCount })}`
               : '';
 
-            if (confirm(`Delete "${template.name}"?${moved}`)) {
+            if (confirm(`${question}${moved}`)) {
               run(
                 () => deletePostTemplate({ id: template.id }),
-                'Template deleted'
+                t('deleted')
               );
             }
           }}
@@ -237,14 +239,15 @@ function RowActions({
 }
 
 function StatusCell({ template }: { template: PostTemplateListItem }) {
-  if (!template.isPublished) return <Badge variant="outline">Draft</Badge>;
+  const t = useTranslations('posts.templates');
+  if (!template.isPublished) return <Badge variant="outline">{t('draft')}</Badge>;
   if (template.hasUnpublishedChanges)
     return (
       <Badge
         variant="outline"
         className="border-amber-300 text-amber-700 dark:text-amber-300"
       >
-        Unpublished changes
+        {t('unpublishedChanges')}
       </Badge>
     );
   return (
@@ -252,7 +255,7 @@ function StatusCell({ template }: { template: PostTemplateListItem }) {
       variant="outline"
       className="border-emerald-300 text-emerald-700 dark:text-emerald-300"
     >
-      Published
+      {t('published')}
     </Badge>
   );
 }
@@ -263,22 +266,23 @@ export function PostTemplatesTable({
   templates: PostTemplateListItem[];
 }) {
   const [details, setDetails] = useState<DetailsTarget | null>(null);
+  const t = useTranslations('posts.templates');
 
   return (
     <>
       <div className="mb-4 flex justify-end">
         <Button type="button" onClick={() => setDetails({ mode: 'create' })}>
-          <Plus /> New template
+          <Plus /> {t('newTemplate')}
         </Button>
       </div>
       <div className="overflow-x-auto rounded-lg border border-steel-200 dark:border-dark-300">
         <table className="w-full min-w-[640px] text-sm">
           <thead className="bg-steel-50 text-start text-xs uppercase tracking-wide text-steel-500 dark:bg-dark-100">
             <tr>
-              <th className="px-4 py-2.5 font-medium">Template</th>
-              <th className="px-4 py-2.5 font-medium">Status</th>
-              <th className="px-4 py-2.5 font-medium">Posts</th>
-              <th className="px-4 py-2.5 font-medium">Updated</th>
+              <th className="px-4 py-2.5 text-start font-medium">{t('colTemplate')}</th>
+              <th className="px-4 py-2.5 text-start font-medium">{t('colStatus')}</th>
+              <th className="px-4 py-2.5 text-start font-medium">{t('colPosts')}</th>
+              <th className="px-4 py-2.5 text-start font-medium">{t('colUpdated')}</th>
               <th className="w-12 px-4 py-2.5" />
             </tr>
           </thead>
@@ -301,7 +305,7 @@ export function PostTemplatesTable({
                           {template.name}
                         </Link>
                         {template.isDefault && (
-                          <Badge variant="secondary">Default</Badge>
+                          <Badge variant="secondary">{t('default')}</Badge>
                         )}
                       </div>
                       {template.description && (
@@ -324,9 +328,7 @@ export function PostTemplatesTable({
                   </Link>
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-steel-500">
-                  {formatDistanceToNow(new Date(template.updatedAt), {
-                    addSuffix: true,
-                  })}
+                  <RelativeTime date={template.updatedAt} />
                 </td>
                 <td className="px-4 py-3 text-end">
                   <RowActions

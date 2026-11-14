@@ -97,5 +97,16 @@
     "openOverlayLabel": "فتح نافذة منبثقة أو درج",
     "invalidUrl": "يرجى إدخال رابط صالح.",
     "invalidUrlFormat": "أدخل رابطًا بالتنسيق الصحيح (مثل https://www.example.com)."
+  },
+  "statuses": {
+    "draft": "مسودة",
+    "review": "قيد المراجعة",
+    "scheduled": "مجدولة",
+    "published": "منشورة",
+    "archived": "مؤرشفة"
+  },
+  "visibilities": {
+    "public": "عامة",
+    "private": "خاصة"
   }
 }

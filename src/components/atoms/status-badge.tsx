@@ -106,12 +106,15 @@ export type StatusType = keyof typeof statusColorMaps;
 
 interface StatusBadgeProps {
   status: string | null;
+  /** Display text; defaults to the title-cased status. Pass a translated label in the admin. */
+  label?: string;
   className?: string;
   statusColor?: keyof typeof statusColorMaps;
 }
 
 export function StatusBadge({
   status,
+  label,
   className,
   statusColor,
 }: StatusBadgeProps): JSX.Element {
@@ -131,7 +134,7 @@ export function StatusBadge({
         className
       )}
     >
-      {titleCase(status)}
+      {label ?? titleCase(status)}
     </Badge>
   );
 }

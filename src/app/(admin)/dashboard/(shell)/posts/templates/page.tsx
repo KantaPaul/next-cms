@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { postTemplatesService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
-import { breadcrumbs as postsBreadcrumbs } from '@/app/(admin)/dashboard/(shell)/posts/breadcrumbs';
+import { postsHeader } from '@/app/(admin)/dashboard/(shell)/posts/breadcrumbs';
+import { getAdminTranslations } from '@/i18n/server';
 import { PostTemplatesTable } from '@/app/(admin)/dashboard/(shell)/posts/templates/_components/templates-table';
 import { PageHeader } from '@/components/organisms/page-header';
 import { PAGES } from '@/config/pages';
@@ -9,11 +10,10 @@ import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { metaObject } from '@/lib/utils/metadata';
 import { accessService } from '@/server/services/access.service';
 
-const TITLE = 'Post templates';
-
-export const metadata = {
-  ...metaObject(TITLE),
-};
+export async function generateMetadata() {
+  const t = await getAdminTranslations('posts');
+  return metaObject(t('postTemplates'));
+}
 
 export default async function PostTemplatesPage() {
   const { userId } = await getCurrentUserAndTeamId();
@@ -21,21 +21,24 @@ export default async function PostTemplatesPage() {
   if (!accessService.can(access, PERMISSIONS.PAGES_PUBLISH))
     redirect(PAGES.DASHBOARD.POSTS.INDEX);
 
-  const templates = await postTemplatesService.list();
+  const [templates, t, { breadcrumbs: postsBreadcrumbs }] = await Promise.all([
+    postTemplatesService.list(),
+    getAdminTranslations('posts'),
+    postsHeader(),
+  ]);
+  const title = t('postTemplates');
 
   return (
     <>
       <PageHeader
-        title={TITLE}
+        title={title}
         breadcrumbs={[
           ...postsBreadcrumbs,
-          { title: TITLE, href: PAGES.DASHBOARD.POSTS.TEMPLATES },
+          { title, href: PAGES.DASHBOARD.POSTS.TEMPLATES },
         ]}
       />
       <p className="-mt-2 mb-6 max-w-2xl text-sm text-steel-500">
-        Single-post layouts. The default template applies to every post that
-        hasn&rsquo;t picked another one. Assign a template to a post from the
-        three-dot menu on the posts list.
+        {t('templatesIntro')}
       </p>
       <PostTemplatesTable templates={templates} />
     </>

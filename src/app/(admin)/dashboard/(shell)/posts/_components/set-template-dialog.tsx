@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { LayoutTemplate, Loader2, PanelsTopLeft, Star } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
@@ -36,24 +37,47 @@ export type TemplateTarget = {
 export const currentChoice = (post: TemplateTarget) =>
   post.layout === 'custom' ? CUSTOM : (post.templateId ?? DEFAULT);
 
-/** Label for where a post's layout comes from. */
+/** Translator for the `content.layout` messages (see `useLayoutLabel`). */
+export type LayoutLabelT = (
+  key: 'customLayout' | 'template' | 'defaultNamed' | 'defaultTemplate',
+  values?: { name: string }
+) => string;
+
+const ENGLISH_LAYOUT_LABELS: LayoutLabelT = (key, values) =>
+  ({
+    customLayout: 'Custom layout',
+    template: 'Template',
+    defaultNamed: `Default (${values?.name ?? ''})`,
+    defaultTemplate: 'Default template',
+  })[key];
+
+/**
+ * Label for where a post's layout comes from. Pass `t` (from
+ * `useLayoutLabel`) for the admin UI language; without it the label is English.
+ */
 export function layoutLabel(
   post: Pick<TemplateTarget, 'layout' | 'templateId'> & {
     templateName?: string | null;
   },
-  templates: Pick<PostTemplateListItem, 'id' | 'name' | 'isDefault'>[]
+  templates: Pick<PostTemplateListItem, 'id' | 'name' | 'isDefault'>[],
+  t: LayoutLabelT = ENGLISH_LAYOUT_LABELS
 ) {
-  if (post.layout === 'custom') return 'Custom layout';
+  if (post.layout === 'custom') return t('customLayout');
   if (post.templateId)
     return (
       post.templateName ??
-      templates.find(t => t.id === post.templateId)?.name ??
-      'Template'
+      templates.find(tpl => tpl.id === post.templateId)?.name ??
+      t('template')
     );
-  const fallback = templates.find(t => t.isDefault)?.name;
+  const fallback = templates.find(tpl => tpl.isDefault)?.name;
   return fallback && fallback.toLowerCase() !== 'default'
-    ? `Default (${fallback})`
-    : 'Default template';
+    ? t('defaultNamed', { name: fallback })
+    : t('defaultTemplate');
+}
+
+/** The `content.layout` translator to pass to `layoutLabel`. */
+export function useLayoutLabel(): LayoutLabelT {
+  return useTranslations('content.layout') as unknown as LayoutLabelT;
 }
 
 function Option({
@@ -119,7 +143,7 @@ export function SetTemplateDialog({
   templates,
   open,
   onOpenChange,
-  title = 'Set post template',
+  title,
   onSwitchLayout,
   onSetTemplate,
 }: {
@@ -132,6 +156,8 @@ export function SetTemplateDialog({
   onSetTemplate?: (templateId: string | null) => Promise<unknown>;
 }) {
   const router = useRouter();
+  const t = useTranslations('content.setTemplate');
+  const tLayout = useTranslations('content.layout');
   const [choice, setChoice] = useState(() => currentChoice(post));
   const [isPending, startTransition] = useTransition();
   const defaultTemplate = templates.find(t => t.isDefault);
@@ -158,12 +184,13 @@ export function SetTemplateDialog({
       await handleActionResponse(result as any, () => {
         toast.success(
           choice === CUSTOM
-            ? 'Custom layout created'
-            : `"${post.title}" now uses ${
-                choice === DEFAULT
-                  ? 'the default template'
-                  : templates.find(t => t.id === choice)?.name
-              }`
+            ? t('customCreated')
+            : choice === DEFAULT
+              ? t('nowUsesDefault', { title: post.title })
+              : t('nowUses', {
+                  title: post.title,
+                  template: templates.find(tpl => tpl.id === choice)?.name ?? '',
+                })
         );
         onOpenChange(false);
         router.refresh();
@@ -174,26 +201,26 @@ export function SetTemplateDialog({
     <Dialog open={open} onOpenChange={close}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle>{title ?? t('title')}</DialogTitle>
           <DialogDescription>
-            Choose the layout &ldquo;{post.title}&rdquo; renders through.
+            {t('intro', { title: post.title })}
           </DialogDescription>
         </DialogHeader>
 
         <div
           role="radiogroup"
-          aria-label="Post template"
+          aria-label={t('ariaLabel')}
           className="-mx-1 flex max-h-[55vh] flex-col gap-2 overflow-y-auto px-1"
         >
           <Option
             selected={choice === DEFAULT}
             onSelect={() => setChoice(DEFAULT)}
             icon={Star}
-            title="Use default template"
+            title={t('useDefault')}
             description={
               defaultTemplate
-                ? `Follows the default, currently "${defaultTemplate.name}". Changes when another template becomes the default.`
-                : 'Follows whichever template is the default.'
+                ? t('followsDefaultNamed', { name: defaultTemplate.name })
+                : t('followsDefault')
             }
           />
           {templates.map(template => (
@@ -207,14 +234,13 @@ export function SetTemplateDialog({
               badge={
                 <>
                   {template.isDefault && (
-                    <Badge variant="secondary">Default</Badge>
+                    <Badge variant="secondary">{t('default')}</Badge>
                   )}
                   {!template.isPublished && (
-                    <Badge variant="outline">Not published</Badge>
+                    <Badge variant="outline">{t('notPublished')}</Badge>
                   )}
                   <span className="text-xs font-normal text-steel-400">
-                    {template.postCount}{' '}
-                    {template.postCount === 1 ? 'post' : 'posts'}
+                    {t('postCount', { count: template.postCount ?? 0 })}
                   </span>
                 </>
               }
@@ -224,21 +250,20 @@ export function SetTemplateDialog({
             selected={choice === CUSTOM}
             onSelect={() => setChoice(CUSTOM)}
             icon={PanelsTopLeft}
-            title="Custom layout"
-            description="Give this post its own canvas, starting from its current template."
+            title={tLayout('customLayout')}
+            description={t('customLayoutDesc')}
           />
         </div>
 
         {post.layout === 'custom' && choice !== CUSTOM && (
           <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-            This post&rsquo;s custom layout is removed from the draft. It stays
-            in revision history.
+            {t('customRemoved')}
           </p>
         )}
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => close(false)}>
-            Cancel
+            {t('cancel')}
           </Button>
           <Button
             type="button"
@@ -246,7 +271,7 @@ export function SetTemplateDialog({
             disabled={isPending || unchanged}
           >
             {isPending && <Loader2 className="size-4 animate-spin" />}
-            Apply
+            {t('apply')}
           </Button>
         </DialogFooter>
       </DialogContent>

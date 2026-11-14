@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Controller, useFormContext, useWatch } from 'react-hook-form';
 import { MediaField } from '@/components/media/media-picker';
 import { Switch } from '@/components/ui/switch';
@@ -47,6 +48,7 @@ export function SeoPanel({
   pathPrefix?: string;
 }) {
   const { register, control, setValue } = useFormContext<CreatePagesInput>();
+  const t = useTranslations('content.seo');
   const [title, slug, seoTitle, seoDescription, language, isHome] = useWatch({
     control,
     name: [
@@ -59,10 +61,9 @@ export function SeoPanel({
     ],
   });
 
-  const displayTitle = seoTitle || title || `Untitled ${kind}`;
+  const displayTitle = seoTitle || title || t('untitled', { kind });
   const displayDescription =
-    seoDescription ||
-    `Add a meta description to control how this ${kind} appears in search results.`;
+    seoDescription || t('descriptionFallback', { kind });
   const host = env.NEXT_PUBLIC_BASE_URL.replace(/^https?:\/\//, '').replace(
     /\/$/,
     ''
@@ -76,7 +77,7 @@ export function SeoPanel({
     <div className="flex flex-col gap-4 px-4 pb-6">
       <div
         className="rounded-lg border border-steel-200 bg-white p-3 dark:border-dark-300 dark:bg-dark-100"
-        aria-label="Search result preview"
+        aria-label={t('searchPreview')}
       >
         <p className="truncate text-xs text-emerald-700 dark:text-emerald-400">
           {host}
@@ -107,7 +108,7 @@ export function SeoPanel({
         htmlFor="seo-title"
         label={
           <>
-            Meta title{' '}
+            {t('metaTitle')}{' '}
             <Counter value={seoTitle?.length ?? 0} limit={TITLE_LIMIT} />
           </>
         }
@@ -115,7 +116,7 @@ export function SeoPanel({
         <input
           id="seo-title"
           className={inputClass}
-          placeholder={title || 'Page title'}
+          placeholder={title || t('titlePlaceholder')}
           {...register('seo.title')}
         />
       </FieldShell>
@@ -124,7 +125,7 @@ export function SeoPanel({
         htmlFor="seo-description"
         label={
           <>
-            Meta description{' '}
+            {t('metaDescription')}{' '}
             <Counter
               value={seoDescription?.length ?? 0}
               limit={DESCRIPTION_LIMIT}
@@ -142,8 +143,8 @@ export function SeoPanel({
 
       <FieldShell
         htmlFor="seo-keywords"
-        label="Keywords"
-        hint="Comma separated"
+        label={t('keywords')}
+        hint={t('keywordsHint')}
       >
         <input
           id="seo-keywords"
@@ -154,8 +155,8 @@ export function SeoPanel({
 
       <FieldShell
         htmlFor="seo-canonical"
-        label="Canonical URL"
-        hint={`Leave empty to use this ${kind}'s own URL.`}
+        label={t('canonicalUrl')}
+        hint={t('canonicalHint', { kind })}
       >
         <input
           id="seo-canonical"
@@ -171,7 +172,7 @@ export function SeoPanel({
         name="seo.noIndex"
         render={({ field }) => (
           <Switch
-            label="Hide from search engines (noindex)"
+            label={t('noIndex')}
             checked={!!field.value}
             onChange={field.onChange}
           />
@@ -179,9 +180,9 @@ export function SeoPanel({
       />
 
       <hr className="border-steel-200 dark:border-dark-300" />
-      <h4 className="text-sm font-semibold">Social sharing</h4>
+      <h4 className="text-sm font-semibold">{t('socialSharing')}</h4>
 
-      <FieldShell htmlFor="seo-og-title" label="Open Graph title">
+      <FieldShell htmlFor="seo-og-title" label={t('ogTitle')}>
         <input
           id="seo-og-title"
           className={inputClass}
@@ -190,7 +191,7 @@ export function SeoPanel({
         />
       </FieldShell>
 
-      <FieldShell htmlFor="seo-og-description" label="Open Graph description">
+      <FieldShell htmlFor="seo-og-description" label={t('ogDescription')}>
         <textarea
           id="seo-og-description"
           rows={2}
@@ -203,14 +204,14 @@ export function SeoPanel({
         control={control}
         name="seo.ogImage"
         render={({ field }) => (
-          <FieldShell label="Open Graph image">
+          <FieldShell label={t('ogImage')}>
             <MediaField value={field.value ?? ''} onChange={field.onChange} />
           </FieldShell>
         )}
       />
 
       <div className="grid grid-cols-2 gap-3">
-        <FieldShell htmlFor="seo-og-type" label="OG type">
+        <FieldShell htmlFor="seo-og-type" label={t('ogType')}>
           <select
             id="seo-og-type"
             className={inputClass}
@@ -223,22 +224,22 @@ export function SeoPanel({
             ))}
           </select>
         </FieldShell>
-        <FieldShell htmlFor="seo-twitter" label="Twitter card">
+        <FieldShell htmlFor="seo-twitter" label={t('twitterCard')}>
           <select
             id="seo-twitter"
             className={inputClass}
             {...register('seo.twitterCard')}
           >
-            <option value="summary_large_image">Large image</option>
-            <option value="summary">Summary</option>
+            <option value="summary_large_image">{t('largeImage')}</option>
+            <option value="summary">{t('summary')}</option>
           </select>
         </FieldShell>
       </div>
 
       <FieldShell
         htmlFor="seo-schema"
-        label="Structured data"
-        hint="Adds a JSON-LD block of this type to the page."
+        label={t('structuredData')}
+        hint={t('structuredDataHint')}
       >
         <select
           id="seo-schema"
