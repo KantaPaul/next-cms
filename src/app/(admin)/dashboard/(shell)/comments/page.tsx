@@ -29,7 +29,7 @@ export default async function CommentsPage({
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="comments" />
+        <AccessDenied />
       </>
     );
   }

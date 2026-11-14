@@ -10,6 +10,8 @@ import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { toEntryFieldConfigs } from '../../_modules/entry-fields';
 import { loadPostTypeRoute } from '../../_modules/post-type-route';
 import { EntryEditor } from '../../components/entry-editor';
+import { getAdminTranslations } from '@/i18n/server';
+import { postTypesCrumbs } from '@/app/(admin)/dashboard/(shell)/collections/breadcrumbs';
 
 /** New entry: `/dashboard/collections/{slug}/create` (post-style editor). */
 export default async function CreateCollectionEntryPage({
@@ -23,12 +25,12 @@ export default async function CreateCollectionEntryPage({
     PAGES.DASHBOARD.COLLECTION_CREATE
   );
   const { allowed } = await requirePermission(PERMISSIONS.PAGES_EDIT);
-  const singular = collection.singularName || 'Entry';
-  const title = `New ${singular.toLowerCase()}`;
+  const t = await getAdminTranslations('collections.entries');
+  const singular = collection.singularName || t('fallbackSingular');
+  const title = t('newSingular', { singular: singular.toLowerCase() });
 
   const breadcrumbs = [
-    { title: 'Dashboard', href: PAGES.DASHBOARD.ROOT },
-    { title: 'Post types', href: PAGES.DASHBOARD.COLLECTIONS },
+    ...(await postTypesCrumbs()),
     {
       title: collection.name,
       href: PAGES.DASHBOARD.COLLECTION(collection.slug),
@@ -40,7 +42,7 @@ export default async function CreateCollectionEntryPage({
     return (
       <>
         <PageHeader title={title} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="entries" />
+        <AccessDenied />
       </>
     );
   }

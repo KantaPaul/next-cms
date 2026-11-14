@@ -20,6 +20,8 @@ import { siteContext, siteSlugPrefix } from '@/server/services/site-context';
 import { loadPostTypeRoute } from '../_modules/post-type-route';
 import { EntriesTable } from '../components/entries-table';
 import { PostTypeTabs } from '../components/post-type-tabs';
+import { getAdminTranslations } from '@/i18n/server';
+import { postTypesCrumbs } from '@/app/(admin)/dashboard/(shell)/collections/breadcrumbs';
 
 /** One post type's entries: `/dashboard/collections/{slug}` (mirroring `/dashboard/posts`). */
 export default async function CollectionEntriesPage({
@@ -33,9 +35,12 @@ export default async function CollectionEntriesPage({
   const collection = await loadPostTypeRoute(slug, PAGES.DASHBOARD.COLLECTION);
   const { allowed } = await requirePermission(PERMISSIONS.PAGES_EDIT);
 
+  const [t, tCommon] = await Promise.all([
+    getAdminTranslations('collections.entries'),
+    getAdminTranslations('common.statuses'),
+  ]);
   const breadcrumbs = [
-    { title: 'Dashboard', href: PAGES.DASHBOARD.ROOT },
-    { title: 'Post types', href: PAGES.DASHBOARD.COLLECTIONS },
+    ...(await postTypesCrumbs()),
     {
       title: collection.name,
       href: PAGES.DASHBOARD.COLLECTION(collection.slug),
@@ -46,7 +51,7 @@ export default async function CollectionEntriesPage({
     return (
       <>
         <PageHeader title={collection.name} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="entries" />
+        <AccessDenied />
       </>
     );
   }
@@ -78,7 +83,7 @@ export default async function CollectionEntriesPage({
   ]);
 
   const supports = normalizePostTypeSupports(collection.supports);
-  const singular = collection.singularName || 'Entry';
+  const singular = collection.singularName || t('fallbackSingular');
   const siteSlug = siteSlugPrefix(await siteContext.publicSite());
 
   return (
@@ -90,18 +95,18 @@ export default async function CollectionEntriesPage({
               <Link
                 href={PAGES.DASHBOARD.COLLECTION_TEMPLATES(collection.slug)}
               >
-                <LayoutTemplate className="size-4" /> Templates
+                <LayoutTemplate className="size-4" /> {t('templates')}
               </Link>
             </Button>
           )}
           <Button variant="outline" asChild>
             <Link href={PAGES.DASHBOARD.COLLECTION_SETTINGS(collection.slug)}>
-              <Settings className="size-4" /> Settings
+              <Settings className="size-4" /> {t('settings')}
             </Link>
           </Button>
           <CreateButton
             href={PAGES.DASHBOARD.COLLECTION_CREATE(collection.slug)}
-            text={`New ${singular.toLowerCase()}`}
+            text={t('newSingular', { singular: singular.toLowerCase() })}
           />
         </div>
       </PageHeader>
@@ -121,7 +126,7 @@ export default async function CollectionEntriesPage({
               className="rounded-lg border border-steel-200 px-4 py-3 dark:border-dark-300"
             >
               <div className="text-xs uppercase tracking-wide text-steel-400">
-                {status === 'review' ? 'Under review' : status}
+                {tCommon(status)}
               </div>
               <div className="text-2xl font-semibold">
                 {counts[status] ?? 0}
@@ -133,14 +138,16 @@ export default async function CollectionEntriesPage({
 
       {fields.length === 0 && (
         <p className="mb-4 rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-          This post type has no fields yet.{' '}
-          <Link
-            href={PAGES.DASHBOARD.COLLECTION_SETTINGS(collection.slug)}
-            className="text-primary underline"
-          >
-            Add fields
-          </Link>{' '}
-          before creating entries.
+          {t.rich('noFields', {
+            link: chunks => (
+              <Link
+                href={PAGES.DASHBOARD.COLLECTION_SETTINGS(collection.slug)}
+                className="text-primary underline"
+              >
+                {chunks}
+              </Link>
+            ),
+          })}
         </p>
       )}
 

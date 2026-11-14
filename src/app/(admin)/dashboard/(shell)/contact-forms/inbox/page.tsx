@@ -30,7 +30,7 @@ export default async function FormInboxPage({
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="form submissions" />
+        <AccessDenied />
       </>
     );
   }

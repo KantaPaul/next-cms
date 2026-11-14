@@ -9,6 +9,7 @@ import { requirePermission } from '@/server/services/require-permission';
 import { loadPostTypeRoute } from '../../../_modules/post-type-route';
 import { PostTypeTabs } from '../../../components/post-type-tabs';
 import { TermManager } from '../../../components/term-manager';
+import { postTypesCrumbs } from '@/app/(admin)/dashboard/(shell)/collections/breadcrumbs';
 
 export default async function CollectionTaxonomyPage({
   params,
@@ -20,8 +21,7 @@ export default async function CollectionTaxonomyPage({
   const { allowed } = await requirePermission(PERMISSIONS.PAGES_EDIT);
 
   const breadcrumbs = [
-    { title: 'Dashboard', href: PAGES.DASHBOARD.ROOT },
-    { title: 'Post types', href: PAGES.DASHBOARD.COLLECTIONS },
+    ...(await postTypesCrumbs()),
     {
       title: collection.name,
       href: PAGES.DASHBOARD.COLLECTION(collection.slug),
@@ -32,7 +32,7 @@ export default async function CollectionTaxonomyPage({
     return (
       <>
         <PageHeader title={collection.name} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="taxonomies" />
+        <AccessDenied />
       </>
     );
   }

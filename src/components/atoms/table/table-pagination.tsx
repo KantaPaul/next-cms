@@ -1,3 +1,5 @@
+'use client';
+
 import { useTranslations } from 'next-intl';
 import { Flex } from '@/components/atoms/layout';
 import {

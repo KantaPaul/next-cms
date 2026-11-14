@@ -1,3 +1,5 @@
+'use client';
+
 import { useTranslations } from 'next-intl';
 // import { ActionButton } from '@/components/atoms/action-button';
 import { Grid } from '@/components/atoms/layout';

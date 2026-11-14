@@ -53,7 +53,7 @@ export default async function HeaderFooterPage({
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="site templates" />
+        <AccessDenied />
       </>
     );
   }

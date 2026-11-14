@@ -1,3 +1,5 @@
+'use client';
+
 import { useTranslations } from 'next-intl';
 import { useSize } from 'ahooks';
 import isEmpty from 'lodash/isEmpty';

@@ -26,7 +26,7 @@ export default async function SitesPage() {
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="sites" />
+        <AccessDenied />
       </>
     );
   }

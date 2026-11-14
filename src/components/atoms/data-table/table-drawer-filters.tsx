@@ -1,3 +1,5 @@
+'use client';
+
 import { useTranslations } from 'next-intl';
 // import { FilterItem } from '@/components/atoms/filter-toolbar/filter-item';
 import type { FilterConfig } from '@/components/atoms/filter-toolbar/types';

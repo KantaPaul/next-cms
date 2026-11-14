@@ -22,7 +22,7 @@ export default async function ExternalApiPage() {
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="external APIs" />
+        <AccessDenied />
       </>
     );
   }

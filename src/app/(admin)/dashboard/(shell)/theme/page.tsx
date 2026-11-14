@@ -24,7 +24,7 @@ export default async function ThemePage() {
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="site theme" />
+        <AccessDenied />
       </>
     );
   }

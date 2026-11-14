@@ -1,9 +1,9 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import Link from '@/components/atoms/next/link';
 import { useRouter } from 'next/navigation';
-import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { Loader2, Plus, Puzzle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ import {
   textareaClass,
 } from '@/app/(admin)/dashboard/(shell)/pages/_components/field-shell';
 import { PAGES } from '@/config/pages';
+import { RelativeTime } from '@/components/atoms/relative-time';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import {
   createCollectionBlockAction,
@@ -46,12 +47,19 @@ export type CollectionBlockItem = {
   updatedAt: Date;
 };
 
-const usageLabel = ({ entries, templates }: CollectionBlockItem['usage']) => {
-  const parts = [
-    entries && `${entries} ${entries === 1 ? 'entry' : 'entries'}`,
-    templates && `${templates} ${templates === 1 ? 'template' : 'templates'}`,
-  ].filter(Boolean);
-  return parts.length ? `Used in ${parts.join(' and ')}` : 'Not used yet';
+type BlocksT = ReturnType<typeof useTranslations<'collections.blocks'>>;
+
+const usageLabel = (
+  { entries, templates }: CollectionBlockItem['usage'],
+  t: BlocksT
+) => {
+  const entriesText = entries ? t('entries', { count: entries }) : '';
+  const templatesText = templates ? t('templatesCount', { count: templates }) : '';
+  if (entriesText && templatesText)
+    return t('usedInBoth', { entries: entriesText, templates: templatesText });
+  if (entriesText || templatesText)
+    return t('usedIn', { items: entriesText || templatesText });
+  return t('notUsed');
 };
 
 type DetailsTarget =
@@ -67,6 +75,7 @@ export function CollectionBlocksTable({
   collectionSlug: string;
   blocks: CollectionBlockItem[];
 }) {
+  const t = useTranslations('collections.blocks');
   const router = useRouter();
   const [target, setTarget] = useState<DetailsTarget | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -76,7 +85,7 @@ export function CollectionBlocksTable({
     await handleActionResponse(
       duplicateCollectionBlockAction({ id: block.id }),
       created => {
-        toast.success(`Created copy of "${block.name}"`);
+        toast.success(t('copied', { name: block.name }));
         if (created && typeof created === 'object' && 'id' in created) {
           router.push(
             PAGES.DASHBOARD.COLLECTION_BLOCK_BUILDER(
@@ -96,8 +105,8 @@ export function CollectionBlocksTable({
     if (
       !confirm(
         block.usage.entries + block.usage.templates > 0
-          ? `Delete block "${block.name}"? ${usageLabel(block.usage)}. They will show nothing for it on the live site until the block is replaced.`
-          : `Delete block "${block.name}"? It is not used by any entry or template.`
+          ? t('confirmDeleteUsed', { name: block.name, usage: usageLabel(block.usage, t) })
+          : t('confirmDeleteUnused', { name: block.name })
       )
     ) {
       return;
@@ -106,7 +115,7 @@ export function CollectionBlocksTable({
     await handleActionResponse(
       deleteCollectionBlockAction({ id: block.id }),
       () => {
-        toast.success(`Deleted block "${block.name}"`);
+        toast.success(t('deleted', { name: block.name }));
         router.refresh();
       }
     );
@@ -117,11 +126,10 @@ export function CollectionBlocksTable({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-steel-500">
-          Reusable blocks for this post type. Insert them in this type&apos;s
-          entry builders; each one renders with the current entry&apos;s data.
+          {t('intro')}
         </p>
         <Button size="sm" onClick={() => setTarget({ mode: 'create' })}>
-          <Plus className="size-4" /> New block
+          <Plus className="size-4" /> {t('new')}
         </Button>
       </div>
 
@@ -129,10 +137,10 @@ export function CollectionBlocksTable({
         <table className="w-full text-start text-sm">
           <thead className="border-b border-steel-200 bg-steel-50 text-xs font-semibold uppercase text-steel-600 dark:border-dark-300 dark:bg-dark-100 dark:text-steel-400">
             <tr>
-              <th className="px-4 py-3">Block</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Updated</th>
-              <th className="px-4 py-3 text-end">Actions</th>
+              <th className="px-4 py-3 text-start">{t('colBlock')}</th>
+              <th className="px-4 py-3 text-start">{t('colStatus')}</th>
+              <th className="px-4 py-3 text-start">{t('colUpdated')}</th>
+              <th className="px-4 py-3 text-end">{t('colActions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-steel-100 dark:divide-dark-300">
@@ -142,7 +150,7 @@ export function CollectionBlocksTable({
                   colSpan={4}
                   className="px-4 py-8 text-center text-sm text-steel-500"
                 >
-                  No blocks yet. Create one to design it for this post type.
+                  {t('empty')}
                 </td>
               </tr>
             ) : (
@@ -170,7 +178,7 @@ export function CollectionBlocksTable({
                       </p>
                     )}
                     <p className="mt-0.5 text-xs text-steel-400">
-                      {usageLabel(block.usage)}
+                      {usageLabel(block.usage, t)}
                     </p>
                   </td>
                   <td className="px-4 py-3">
@@ -180,30 +188,28 @@ export function CollectionBlocksTable({
                           variant="outline"
                           className="border-amber-300 text-amber-700"
                         >
-                          Unpublished changes
+                          {t('unpublishedChanges')}
                         </Badge>
                       ) : (
                         <Badge
                           variant="outline"
                           className="border-emerald-300 text-emerald-700"
                         >
-                          Published
+                          {t('published')}
                         </Badge>
                       )
                     ) : (
                       <Badge
                         variant="outline"
                         className="border-steel-300 text-steel-600"
-                        title="Entries using this block show nothing for it on the live site until you publish it."
+                        title={t('notPublishedHint')}
                       >
-                        Not published
+                        {t('notPublished')}
                       </Badge>
                     )}
                   </td>
                   <td className="px-4 py-3 text-steel-500 text-xs">
-                    {formatDistanceToNow(new Date(block.updatedAt), {
-                      addSuffix: true,
-                    })}
+                    <RelativeTime date={block.updatedAt} />
                   </td>
                   <td className="px-4 py-3 text-end">
                     <div className="flex items-center justify-end gap-2">
@@ -214,21 +220,21 @@ export function CollectionBlocksTable({
                             block.id
                           )}
                         >
-                          Open builder
+                          {t('openBuilder')}
                         </Link>
                       </Button>
                       <ActionDropdown isLoading={pendingId === block.id}>
                         <ActionDropdownItem
-                          label="Rename / edit info"
+                          label={t('rename')}
                           onClick={() => setTarget({ mode: 'edit', block })}
                         />
                         <ActionDropdownItem
-                          label="Duplicate"
+                          label={t('duplicate')}
                           onClick={() => handleDuplicate(block)}
                         />
                         <ActionDropdownItem
                           className="text-red-600 hover:text-red-700"
-                          label="Delete"
+                          label={t('delete')}
                           onClick={() => handleDelete(block)}
                         />
                       </ActionDropdown>
@@ -265,6 +271,7 @@ function BlockDetailsDialog({
   blocks: CollectionBlockItem[];
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useTranslations('collections.blocks');
   const router = useRouter();
   const editing = target?.mode === 'edit' ? target.block : null;
   const [name, setName] = useState(editing?.name ?? '');
@@ -280,7 +287,7 @@ function BlockDetailsDialog({
         await handleActionResponse(
           updateCollectionBlockAction({ id: editing.id, name, description }),
           () => {
-            toast.success('Block updated');
+            toast.success(t('updated'));
             onOpenChange(false);
             router.refresh();
           }
@@ -296,7 +303,7 @@ function BlockDetailsDialog({
           fromId: fromId || null,
         }),
         created => {
-          toast.success('Block created');
+          toast.success(t('created'));
           if (created && typeof created === 'object' && 'id' in created) {
             router.push(
               PAGES.DASHBOARD.COLLECTION_BLOCK_BUILDER(
@@ -317,37 +324,37 @@ function BlockDetailsDialog({
       <DialogContent className="sm:max-w-lg">
         <form onSubmit={submit} className="flex flex-col gap-4">
           <DialogHeader>
-            <DialogTitle>{editing ? 'Rename block' : 'New block'}</DialogTitle>
+            <DialogTitle>{editing ? t('renameTitle') : t('newTitle')}</DialogTitle>
             <DialogDescription>
               {editing
-                ? 'The name shows on the block chip in the entry builder.'
-                : 'Create a reusable block, then design it for this post type.'}
+                ? t('renameHint')
+                : t('newHint')}
             </DialogDescription>
           </DialogHeader>
-          <FieldShell label="Name" htmlFor="block-name">
+          <FieldShell label={t('name')} htmlFor="block-name">
             <input
               id="block-name"
               className={inputClass}
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder="e.g. Member card"
+              placeholder={t('namePlaceholder')}
               maxLength={150}
               autoFocus
               required
             />
           </FieldShell>
-          <FieldShell label="Description" htmlFor="block-description">
+          <FieldShell label={t('description')} htmlFor="block-description">
             <textarea
               id="block-description"
               className={textareaClass}
               value={description}
               onChange={e => setDescription(e.target.value)}
-              placeholder="What this block shows"
+              placeholder={t('descriptionPlaceholder')}
               maxLength={500}
             />
           </FieldShell>
           {!editing && blocks.length > 0 && (
-            <FieldShell label="Start from" htmlFor="block-from">
+            <FieldShell label={t('startFrom')} htmlFor="block-from">
               <select
                 id="block-from"
                 className={inputClass}
@@ -368,11 +375,11 @@ function BlockDetailsDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Cancel
+              {t('cancel')}
             </Button>
             <Button type="submit" disabled={isPending || !name.trim()}>
               {isPending && <Loader2 className="animate-spin size-4 me-1" />}
-              {editing ? 'Save' : 'Create block'}
+              {editing ? t('save') : t('create')}
             </Button>
           </DialogFooter>
         </form>

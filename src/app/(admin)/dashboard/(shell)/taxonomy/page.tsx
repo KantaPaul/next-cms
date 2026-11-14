@@ -27,7 +27,7 @@ export default async function TaxonomyPage() {
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="taxonomies" />
+        <AccessDenied />
       </>
     );
   }

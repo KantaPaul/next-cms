@@ -26,7 +26,7 @@ export default async function BreakpointsSettingsPage() {
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="breakpoint settings" />
+        <AccessDenied />
       </>
     );
   }

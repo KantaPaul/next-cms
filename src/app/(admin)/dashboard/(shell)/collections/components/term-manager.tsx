@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Loader2, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, type ReactNode, useState, useTransition } from 'react';
@@ -96,18 +97,19 @@ export function TermManager({
   };
   terms: CollectionTermNode[];
 }) {
+  const t = useTranslations('collections.terms');
   const router = useRouter();
   const [editing, setEditing] = useState<CollectionTermNode | 'new' | null>(
     null
   );
   const [pendingId, setPendingId] = useState<string | null>(null);
 
-  const singular = taxonomy.singularName || 'Term';
+  const singular = taxonomy.singularName || t('fallbackSingular');
 
   const handleDelete = async (term: CollectionTermNode) => {
     if (
       !confirm(
-        `Delete ${singular.toLowerCase()} "${term.name}"? Entries keep their content; the assignment is removed.`
+        t('confirmDelete', { singular: singular.toLowerCase(), name: term.name })
       )
     ) {
       return;
@@ -116,7 +118,7 @@ export function TermManager({
     await handleActionResponse(
       deleteTermAction({ id: term.id, collectionSlug }),
       () => {
-        toast.success(`Deleted ${singular.toLowerCase()} "${term.name}"`);
+        toast.success(t('deleted', { singular: singular.toLowerCase(), name: term.name }));
         router.refresh();
       }
     );
@@ -128,8 +130,8 @@ export function TermManager({
       title={taxonomy.name}
       description={
         taxonomy.hierarchical
-          ? `Hierarchical taxonomy for this post type. Child terms inherit their parent's place in the tree.`
-          : `Flat tags for this post type.`
+          ? t('hierarchicalIntro')
+          : t('flatIntro')
       }
     >
       {editing ? (
@@ -150,7 +152,7 @@ export function TermManager({
           className="self-start"
           onClick={() => setEditing('new')}
         >
-          <Plus /> Add {singular.toLowerCase()}
+          <Plus /> {t('add', { name: singular.toLowerCase() })}
         </Button>
       )}
 
@@ -164,23 +166,27 @@ export function TermManager({
                 className="flex items-center gap-3 px-3 py-2 text-sm"
               >
                 <span
-                  style={{ paddingLeft: term.depth * 20 }}
+                  style={{ paddingInlineStart: term.depth * 20 }}
                   className="flex min-w-0 flex-1 items-center gap-2"
                 >
-                  {term.depth > 0 && <span className="text-steel-300">└</span>}
+                  {term.depth > 0 && (
+                    <span aria-hidden="true" className="text-steel-300 rtl:-scale-x-100">
+                      {'└'}
+                    </span>
+                  )}
                   <span className="truncate font-medium">{term.name}</span>
                   <span className="truncate text-xs text-steel-400">
                     /{term.slug}
                   </span>
                 </span>
                 <span className="rounded bg-steel-100 px-1.5 py-0.5 text-xs text-steel-600 dark:bg-dark-300 dark:text-steel-300">
-                  {term.count} {term.count === 1 ? 'entry' : 'entries'}
+                  {t('count', { count: term.count })}
                 </span>
                 <Button
                   type="button"
                   size="icon"
                   variant="ghost"
-                  aria-label={`Edit ${term.name}`}
+                  aria-label={t('edit', { name: term.name })}
                   onClick={() => setEditing(term)}
                 >
                   <Pencil />
@@ -189,7 +195,7 @@ export function TermManager({
                   type="button"
                   size="icon"
                   variant="ghost"
-                  aria-label={`Delete ${term.name}`}
+                  aria-label={t('delete', { name: term.name })}
                   className="text-red-600 hover:text-red-700"
                   disabled={pendingId === term.id}
                   onClick={() => handleDelete(term)}
@@ -224,13 +230,13 @@ export function TermManager({
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="rounded bg-steel-100 px-1.5 py-0.5 text-xs text-steel-600 dark:bg-dark-300 dark:text-steel-300">
-                    {term.count} {term.count === 1 ? 'entry' : 'entries'}
+                    {t('count', { count: term.count })}
                   </span>
                   <Button
                     type="button"
                     size="icon"
                     variant="ghost"
-                    aria-label={`Edit ${term.name}`}
+                    aria-label={t('edit', { name: term.name })}
                     onClick={() => setEditing(term)}
                   >
                     <Pencil />
@@ -239,7 +245,7 @@ export function TermManager({
                     type="button"
                     size="icon"
                     variant="ghost"
-                    aria-label={`Delete ${term.name}`}
+                    aria-label={t('delete', { name: term.name })}
                     className="text-red-600 hover:text-red-700"
                     disabled={pendingId === term.id}
                     onClick={() => handleDelete(term)}
@@ -257,7 +263,7 @@ export function TermManager({
         )
       ) : (
         <p className="rounded-md border border-dashed border-steel-200 px-3 py-6 text-center text-sm text-steel-500 dark:border-dark-300">
-          No {taxonomy.name.toLowerCase()} yet.
+          {t('empty', { name: taxonomy.name.toLowerCase() })}
         </p>
       )}
     </Panel>
@@ -281,6 +287,7 @@ function TermForm({
   allTerms: CollectionTermNode[];
   onDone: () => void;
 }) {
+  const t = useTranslations('collections.terms');
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const { name, slug, suffix, setName } = useSlugSync(
@@ -314,14 +321,14 @@ function TermForm({
     e.preventDefault();
     const trimmedName = name.trim();
     if (!trimmedName) {
-      toast.error('Term name is required');
+      toast.error(t('nameRequired'));
       return;
     }
     const derivedSlug = (
       slug || (trimmedName ? `${slugify(trimmedName)}-${suffix}` : '')
     ).trim();
     if (!derivedSlug) {
-      toast.error('Could not generate a valid slug from this name');
+      toast.error(t('slugInvalid'));
       return;
     }
 
@@ -333,7 +340,7 @@ function TermForm({
     );
     if (nameClash) {
       toast.error(
-        `A ${singularName.toLowerCase()} with this name or slug already exists.`
+        t('exists', { singular: singularName.toLowerCase() })
       );
       return;
     }
@@ -353,7 +360,7 @@ function TermForm({
         ),
         () => {
           toast.success(
-            term ? `${singularName} updated` : `${singularName} created`
+            term ? t('updated', { singular: singularName }) : t('created', { singular: singularName })
           );
           router.refresh();
           onDone();
@@ -371,10 +378,10 @@ function TermForm({
         inputClassName={inputClass}
         value={name}
         onChange={e => setName(e.target.value)}
-        placeholder={`e.g. New ${singularName.toLowerCase()}`}
+        placeholder={t('namePlaceholder', { singular: singularName.toLowerCase() })}
         required
         maxLength={100}
-        label="Name"
+        label={t('name')}
         isRequired
         // autoFocus
       />
@@ -387,17 +394,17 @@ function TermForm({
         value={slug || (name ? `${slugify(name)}-${suffix}` : '—')}
         readOnly
         tabIndex={-1}
-        placeholder="e.g. cat-one-TC123545"
-        label="Slug (auto-generated)"
+        placeholder={t('slugPlaceholder', { example: 'cat-one-TC123545' })}
+        label={t('slug')}
       />
       {hierarchical && (
-        <Field label="Parent" className="sm:col-span-2">
+        <Field label={t('parent')} className="sm:col-span-2">
           <select
             className={inputClass}
             value={parentId}
             onChange={e => setParentId(e.target.value)}
           >
-            <option value="">None (top level)</option>
+            <option value="">{t('noParent')}</option>
             {allTerms
               .filter(t => !descendants.has(t.id))
               .map(t => (
@@ -409,7 +416,7 @@ function TermForm({
           </select>
         </Field>
       )}
-      <Field label="Description" className="sm:col-span-2">
+      <Field label={t('description')} className="sm:col-span-2">
         <Textarea
           className={cn(inputClass, 'h-auto py-2')}
           rows={2}
@@ -421,11 +428,11 @@ function TermForm({
         <Button type="submit" size="sm" disabled={isPending}>
           {isPending && <Loader2 className="animate-spin" />}{' '}
           {term
-            ? `Save ${singularName.toLowerCase()}`
-            : `Create ${singularName.toLowerCase()}`}
+            ? t('save', { singular: singularName.toLowerCase() })
+            : t('create', { singular: singularName.toLowerCase() })}
         </Button>
         <Button type="button" size="sm" variant="ghost" onClick={onDone}>
-          <X /> Cancel
+          <X /> {t('cancel')}
         </Button>
       </div>
     </form>

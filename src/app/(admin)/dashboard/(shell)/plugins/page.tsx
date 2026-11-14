@@ -22,7 +22,7 @@ export default async function PluginsPage() {
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="plugins" />
+        <AccessDenied />
       </>
     );
   }

@@ -40,7 +40,7 @@ export default async function LicensesPage({
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="license management" />
+        <AccessDenied />
       </>
     );
   }

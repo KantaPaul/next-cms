@@ -44,7 +44,7 @@ export async function SettingsSectionPage({
     return (
       <>
         <PageHeader title={title} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="site settings" />
+        <AccessDenied />
       </>
     );
   }

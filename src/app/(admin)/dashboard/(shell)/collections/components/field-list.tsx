@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -57,10 +58,11 @@ export function FieldList({
   fields: FieldRow[];
   collectionId: string;
 }) {
+  const t = useTranslations('collections.fieldForm');
   if (fields.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        No fields yet. Add one above.
+        {t('empty')}
       </p>
     );
   }
@@ -85,6 +87,8 @@ function FieldRowForm({
   field: FieldRow;
   collectionId: string;
 }) {
+  const t = useTranslations('collections.fieldForm');
+  const tTypes = useTranslations('collections.fieldTypes');
   const router = useRouter();
   const mediaMeta = readMediaFieldConfig(field.config);
   const initialTextMode = readTextFieldMode(field.config);
@@ -167,7 +171,7 @@ function FieldRowForm({
                 render={({ field: f }) => (
                   <FormItem className="flex-1">
                     <FormLabel>
-                      Label{' '}
+                      {t('label')}{' '}
                       <code className="text-xs font-normal text-muted-foreground">
                         {field.key}
                       </code>
@@ -184,7 +188,7 @@ function FieldRowForm({
                 name="type"
                 render={({ field: f }) => (
                   <FormItem>
-                    <FormLabel>Type</FormLabel>
+                    <FormLabel>{t('type')}</FormLabel>
                     <Select value={f.value} onValueChange={f.onChange}>
                       <FormControl>
                         <SelectTrigger className="w-36">
@@ -194,7 +198,7 @@ function FieldRowForm({
                       <SelectContent>
                         {FIELD_TYPES.map(option => (
                           <SelectItem key={option.value} value={option.value}>
-                            {option.label}
+                            {tTypes(`${option.value}.label`)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -214,13 +218,13 @@ function FieldRowForm({
                       />
                     </FormControl>
                     <FormLabel className="text-xs font-normal">
-                      Required
+                      {t('required')}
                     </FormLabel>
                   </FormItem>
                 )}
               />
               <Button type="submit" size="sm" disabled={isPending}>
-                {isPending ? 'Saving…' : 'Save'}
+                {isPending ? t('saving') : t('save')}
               </Button>
             </div>
             {currentType === 'media' && (
@@ -248,7 +252,7 @@ function FieldRowForm({
                             : 'text-xs font-normal cursor-pointer'
                         }
                       >
-                        Multiple image upload
+                        {t('multipleImages')}
                       </FormLabel>
                     </FormItem>
                   )}
@@ -276,7 +280,7 @@ function FieldRowForm({
                             : 'text-xs font-normal cursor-pointer'
                         }
                       >
-                        Featured image (one at a time)
+                        {t('featuredOne')}
                       </FormLabel>
                     </FormItem>
                   )}
@@ -309,7 +313,7 @@ function FieldRowForm({
           }}
         >
           <Button type="submit" variant="destructive" size="sm">
-            Delete
+            {t('delete')}
           </Button>
         </form>
       </div>

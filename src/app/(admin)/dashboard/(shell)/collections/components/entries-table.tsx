@@ -1,7 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { ColumnDef } from '@tanstack/react-table';
-import { formatDistanceToNow } from 'date-fns';
 import {
   ExternalLink,
   FileText,
@@ -14,9 +14,13 @@ import { useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { PAGE_STATUS_COLORS } from '@/app/(admin)/dashboard/(shell)/pages/_components/pages-table';
 import {
+  type LayoutLabelT,
   layoutLabel,
   SetTemplateDialog,
+  useLayoutLabel,
 } from '@/app/(admin)/dashboard/(shell)/posts/_components/set-template-dialog';
+import { RelativeTime } from '@/components/atoms/relative-time';
+import { useStatusLabel, useStatusOptions } from '@/i18n/use-content-labels';
 import {
   deleteEntryAction,
   duplicateEntryAction,
@@ -68,23 +72,25 @@ export type CollectionTemplateItem = {
   isDefault: boolean;
 };
 
-const STATUS_OPTIONS = [
-  { label: 'Published', value: 'published' },
-  { label: 'Draft', value: 'draft' },
-  { label: 'Under review', value: 'review' },
-  { label: 'Scheduled', value: 'scheduled' },
-];
+/** Entries use every page/post status except `archived`. */
+const ENTRY_STATUSES = ['published', 'draft', 'review', 'scheduled'];
+
+type ListT = ReturnType<typeof useTranslations<'content.list'>>;
+type EntriesT = ReturnType<typeof useTranslations<'collections.entries'>>;
 
 const buildFilters = (
   templates: CollectionTemplateItem[],
-  locales: { label: string; value: string }[]
+  locales: { label: string; value: string }[],
+  statusOptions: { label: string; value: string }[],
+  t: ListT,
+  tLayout: LayoutLabelT
 ): FilterConfig[] => [
   ...(locales.length > 1
     ? [
         {
           name: 'language',
           type: 'select',
-          placeholder: 'All languages',
+          placeholder: t('allLanguages'),
           options: locales,
         } as FilterConfig,
       ]
@@ -92,19 +98,19 @@ const buildFilters = (
   {
     name: 'status',
     type: 'select',
-    placeholder: 'All statuses',
-    options: STATUS_OPTIONS,
+    placeholder: t('allStatuses'),
+    options: statusOptions.filter(o => ENTRY_STATUSES.includes(o.value)),
   },
   {
     name: 'layout',
     type: 'select',
-    placeholder: 'All layouts',
+    placeholder: t('allLayouts'),
     options: [
-      { label: 'Default template', value: 'default' },
+      { label: tLayout('defaultTemplate'), value: 'default' },
       ...templates
-        .filter(t => !t.isDefault)
-        .map(t => ({ label: t.name, value: t.id })),
-      { label: 'Custom layout', value: 'custom' },
+        .filter(tpl => !tpl.isDefault)
+        .map(tpl => ({ label: tpl.name, value: tpl.id })),
+      { label: tLayout('customLayout'), value: 'custom' },
     ],
   },
 ];
@@ -134,6 +140,8 @@ function RowActions({
   const [isPending, startTransition] = useTransition();
   const [templateOpen, setTemplateOpen] = useState(false);
   const { permissions, userId } = useAccess();
+  const t = useTranslations('collections.entries');
+  const tActions = useTranslations('content.actions');
   const canPublish = permissions.includes(PERMISSIONS.PAGES_PUBLISH);
   const canEdit =
     permissions.includes(PERMISSIONS.PAGES_EDIT) &&
@@ -155,31 +163,31 @@ function RowActions({
         {canEdit && (
           <ActionDropdownItem
             href={PAGES.DASHBOARD.COLLECTION_ENTRY_EDIT(collectionSlug, entry.id)}
-            label="Edit entry"
+            label={t('editEntry')}
           />
         )}
         {canEdit && (
           <ActionDropdownItem
-            label="Set entry template"
+            label={t('setEntryTemplate')}
             onClick={() => setTemplateOpen(true)}
           />
         )}
         {canEdit && entry.layout === 'custom' && (
           <ActionDropdownItem
             href={PAGES.DASHBOARD.COLLECTION_ENTRY_BUILDER(collectionSlug, entry.id)}
-            label="Open layout builder"
+            label={tActions('openLayoutBuilder')}
           />
         )}
         {entry.status === 'published' ? (
           <ActionDropdownItem
-            label="View live entry"
+            label={t('viewLiveEntry')}
             onClick={() =>
               window.open(`/${collectionSlug}/${entry.slug}`, '_blank')
             }
           />
         ) : (
           <ActionDropdownItem
-            label="Preview draft"
+            label={tActions('previewDraft')}
             onClick={() =>
               window.open(`/${collectionSlug}/${entry.slug}`, '_blank')
             }
@@ -187,11 +195,11 @@ function RowActions({
         )}
         {permissions.includes(PERMISSIONS.PAGES_CREATE) && (
           <ActionDropdownItem
-            label="Duplicate"
+            label={tActions('duplicate')}
             onClick={() =>
               run(
                 () => duplicateEntryAction({ id: entry.id }),
-                'Entry duplicated'
+                t('duplicated')
               )
             }
           />
@@ -199,38 +207,36 @@ function RowActions({
         {canPublish &&
           (entry.status === 'published' ? (
             <ActionDropdownItem
-              label="Unpublish"
+              label={tActions('unpublish')}
               onClick={() =>
                 run(
                   () => unpublishEntryAction({ id: entry.id }),
-                  'Entry unpublished'
+                  t('unpublished')
                 )
               }
             />
           ) : (
             <ActionDropdownItem
-              label="Publish now"
+              label={tActions('publishNow')}
               onClick={() =>
                 run(
                   () => publishEntryAction({ id: entry.id }),
-                  'Entry published'
+                  t('published')
                 )
               }
             />
           ))}
         {permissions.includes(PERMISSIONS.PAGES_DELETE) && (
           <ActionDropdownItem
-            label="Delete"
+            label={tActions('delete')}
             className="text-red-600 dark:text-red-400"
             onClick={() => {
               if (
-                confirm(
-                  `Delete "${displayTitle}"? It will be removed from the site.`
-                )
+                confirm(tActions('confirmDelete', { title: displayTitle }))
               ) {
                 run(
                   () => deleteEntryAction({ id: entry.id, collectionSlug }),
-                  'Entry deleted'
+                  t('deletedToast')
                 );
               }
             }}
@@ -248,7 +254,7 @@ function RowActions({
           templates={templates}
           open={templateOpen}
           onOpenChange={setTemplateOpen}
-          title="Set entry template"
+          title={t('setEntryTemplate')}
           onSwitchLayout={layout =>
             switchEntryLayoutAction({ id: entry.id, layout })
           }
@@ -266,8 +272,15 @@ const buildColumns = (
   siteSlug: string,
   templates: CollectionTemplateItem[],
   fields: { key: string; label: string; type: string }[],
+  labels: {
+    t: ListT;
+    tEntries: EntriesT;
+    tLayout: LayoutLabelT;
+    statusLabel: (status: string) => string;
+  },
   defaultLocale = 'en'
 ): ColumnDef<EntryListItem>[] => {
+  const { t, tEntries, tLayout, statusLabel } = labels;
   // Up to two key custom fields (excluding name/title which is already primary)
   const extraFields = fields
     .filter(
@@ -281,7 +294,7 @@ const buildColumns = (
   const cols: ColumnDef<EntryListItem>[] = [
     {
       accessorKey: 'slug',
-      header: 'Title / Slug',
+      header: tEntries('titleSlug'),
       enableSorting: true,
       cell: ({ row }) => {
         const entry = row.original;
@@ -328,7 +341,7 @@ const buildColumns = (
     },
     {
       accessorKey: 'status',
-      header: 'Status',
+      header: t('status'),
       enableSorting: true,
       cell: ({ row }) => {
         const { status, scheduledAt } = row.original;
@@ -336,6 +349,7 @@ const buildColumns = (
           <div className="flex flex-col gap-1">
             <StatusBadge
               status={status}
+              label={statusLabel(status)}
               statusColor={
                 PAGE_STATUS_COLORS[status as keyof typeof PAGE_STATUS_COLORS] ??
                 'draft'
@@ -352,7 +366,7 @@ const buildColumns = (
     },
     {
       accessorKey: 'layout',
-      header: 'Layout',
+      header: t('layout'),
       cell: ({ row }) => {
         const entry = row.original;
         return (
@@ -368,7 +382,8 @@ const buildColumns = (
                 templateId: entry.templateId,
                 templateName: entry.templateName,
               },
-              templates
+              templates,
+              tLayout
             )}
           </Badge>
         );
@@ -395,7 +410,7 @@ const buildColumns = (
   cols.push(
     {
       accessorKey: 'language',
-      header: 'Language',
+      header: t('language'),
       cell: ({ row }) => (
         <span className="rounded bg-steel-100 px-1.5 py-0.5 text-xs font-medium uppercase text-steel-600 dark:bg-dark-200 dark:text-steel-300">
           {row.original.language ?? '—'}
@@ -404,7 +419,7 @@ const buildColumns = (
     },
     {
       accessorKey: 'authorName',
-      header: 'Author',
+      header: t('author'),
       cell: ({ row }) => (
         <span className="text-sm text-steel-600 dark:text-steel-300">
           {row.original.authorName ?? '—'}
@@ -413,16 +428,14 @@ const buildColumns = (
     },
     {
       accessorKey: 'updatedAt',
-      header: 'Updated',
+      header: t('updated'),
       enableSorting: true,
       cell: ({ row }) => {
         const date = row.original.updatedAt ?? row.original.createdAt;
-        return (
-          <span className="whitespace-nowrap text-sm text-steel-500">
-            {date
-              ? formatDistanceToNow(new Date(date), { addSuffix: true })
-              : '—'}
-          </span>
+        return date ? (
+          <RelativeTime date={date} className="whitespace-nowrap text-sm text-steel-500" />
+        ) : (
+          <span className="text-sm text-steel-500">—</span>
         );
       },
     },
@@ -444,7 +457,7 @@ const buildColumns = (
               target="_blank"
               rel="noreferrer"
               className="p-1 text-steel-400 hover:text-steel-700"
-              aria-label="Open live entry"
+              aria-label={tEntries('openLiveEntry')}
             >
               <ExternalLink className="size-4" />
             </a>
@@ -479,15 +492,27 @@ export function EntriesTable({
   siteSlug: string;
 }) {
   const { locales, defaultLocale } = useSiteLocales();
+  const t = useTranslations('content.list');
+  const tEntries = useTranslations('collections.entries');
+  const tLayout = useLayoutLabel();
+  const statusLabel = useStatusLabel();
+  const statusOptions = useStatusOptions();
   const columns = useMemo(
     () =>
-      buildColumns(collectionSlug, siteSlug, templates, fields, defaultLocale),
-    [collectionSlug, siteSlug, templates, fields, defaultLocale]
+      buildColumns(
+        collectionSlug,
+        siteSlug,
+        templates,
+        fields,
+        { t, tEntries, tLayout, statusLabel },
+        defaultLocale
+      ),
+    [collectionSlug, siteSlug, templates, fields, t, tEntries, tLayout, statusLabel, defaultLocale]
   );
 
   const filters = useMemo(
-    () => buildFilters(templates, locales),
-    [templates, locales]
+    () => buildFilters(templates, locales, statusOptions, t, tLayout),
+    [templates, locales, statusOptions, t, tLayout]
   );
 
   return (
@@ -497,7 +522,7 @@ export function EntriesTable({
       totalCount={totalCount}
       filters={filters}
       inlineSearch
-      searchPlaceHolder="Search by title or slug"
+      searchPlaceHolder={t('search')}
       showClearButton
     />
   );

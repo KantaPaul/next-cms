@@ -1,3 +1,5 @@
+'use client';
+
 import { useTranslations } from 'next-intl';
 import { type JSX, useTransition } from 'react';
 import { Text } from '@/components/atoms/content';

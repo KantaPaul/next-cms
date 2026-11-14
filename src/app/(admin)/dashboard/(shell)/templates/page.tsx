@@ -24,7 +24,7 @@ export default async function TemplatesPage() {
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="templates and global blocks" />
+        <AccessDenied />
       </>
     );
   }

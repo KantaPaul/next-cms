@@ -13,8 +13,13 @@ import { commentsService } from '@/server/services/comments.service';
 import { requirePermission } from '@/server/services/require-permission';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 import { loadPostTypeRoute } from '../../_modules/post-type-route';
+import { getAdminTranslations } from '@/i18n/server';
+import { postTypesCrumbs } from '@/app/(admin)/dashboard/(shell)/collections/breadcrumbs';
 
-export const metadata = metaObject('Comments');
+export async function generateMetadata() {
+  const t = await getAdminTranslations('collections.entries.comments');
+  return metaObject(t('title'));
+}
 
 export default async function CollectionCommentsPage({
   params,
@@ -30,15 +35,16 @@ export default async function CollectionCommentsPage({
   );
   const { allowed } = await requirePermission(PERMISSIONS.COMMENTS_MODERATE);
 
+  const t = await getAdminTranslations('collections.entries.comments');
+  const pageTitle = `${t('title')} · ${collection.name}`;
   const breadcrumbs = [
-    { title: 'Dashboard', href: PAGES.DASHBOARD.ROOT },
-    { title: 'Post types', href: PAGES.DASHBOARD.COLLECTIONS },
+    ...(await postTypesCrumbs()),
     {
       title: collection.name,
       href: PAGES.DASHBOARD.COLLECTION(collection.slug),
     },
     {
-      title: 'Comments',
+      title: t('title'),
       href: PAGES.DASHBOARD.COLLECTION_COMMENTS(collection.slug),
     },
   ];
@@ -47,10 +53,10 @@ export default async function CollectionCommentsPage({
     return (
       <>
         <PageHeader
-          title={`Comments · ${collection.name}`}
+          title={pageTitle}
           breadcrumbs={breadcrumbs}
         />
-        <AccessDenied what="comments" />
+        <AccessDenied />
       </>
     );
   }
@@ -68,7 +74,7 @@ export default async function CollectionCommentsPage({
   return (
     <>
       <PageHeader
-        title={`Comments · ${collection.name}`}
+        title={pageTitle}
         breadcrumbs={breadcrumbs}
       />
       <CommentsModerationView
@@ -82,14 +88,17 @@ export default async function CollectionCommentsPage({
         extraWarning={
           !supports.comments ? (
             <p className="mb-4 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200">
-              Comments are switched off for {collection.name.toLowerCase()} (
-              <Link
-                href={PAGES.DASHBOARD.COLLECTION_SETTINGS(collection.slug)}
-                className="underline underline-offset-2"
-              >
-                Fields &amp; settings
-              </Link>
-              ). Visitors can’t post new ones.
+              {t.rich('switchedOff', {
+                name: collection.name.toLowerCase(),
+                link: chunks => (
+                  <Link
+                    href={PAGES.DASHBOARD.COLLECTION_SETTINGS(collection.slug)}
+                    className="underline underline-offset-2"
+                  >
+                    {chunks}
+                  </Link>
+                ),
+              })}
             </p>
           ) : undefined
         }

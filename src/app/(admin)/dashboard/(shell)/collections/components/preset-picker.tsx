@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -11,6 +12,9 @@ import { createPostTypeFromPreset } from '../_modules/collections.actions';
 
 /** One-click cards that install a ready-made post type with its fields. */
 export function PresetPicker() {
+  const t = useTranslations('collections.presets');
+  const presetName = (preset: { id: string; name: string }) =>
+    t.has(`items.${preset.id}.name`) ? t(`items.${preset.id}.name` as never) : preset.name;
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
 
@@ -21,10 +25,10 @@ export function PresetPicker() {
     const result = await createPostTypeFromPreset(fd);
     setPending(null);
     if (!result.ok || !result.slug) {
-      toast.error(result.error ?? 'Failed to add post type.');
+      toast.error(result.error ?? t('failed'));
       return;
     }
-    toast.success('Post type added. Add your first entry.');
+    toast.success(t('added'));
     router.push(PAGES.DASHBOARD.COLLECTION(result.slug));
   };
 
@@ -39,10 +43,12 @@ export function PresetPicker() {
             <span className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
               <PostTypeIcon name={preset.icon} className="size-4" />
             </span>
-            <p className="font-medium">{preset.name}</p>
+            <p className="font-medium">{presetName(preset)}</p>
           </div>
           <p className="flex-1 text-xs text-muted-foreground">
-            {preset.description}
+            {t.has(`items.${preset.id}.description`)
+              ? t(`items.${preset.id}.description` as never)
+              : preset.description}
           </p>
           <p className="text-xs text-muted-foreground">
             {preset.fields.map(f => f.label).join(' · ')}
@@ -53,7 +59,7 @@ export function PresetPicker() {
             disabled={pending !== null}
             onClick={() => install(preset.id)}
           >
-            {pending === preset.id ? 'Adding…' : `Add ${preset.name}`}
+            {pending === preset.id ? t('adding') : t('add', { name: presetName(preset) })}
           </Button>
         </div>
       ))}

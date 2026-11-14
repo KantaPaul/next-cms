@@ -26,7 +26,7 @@ export default async function BackupsToolPage() {
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="site backups" />
+        <AccessDenied />
       </>
     );
   }

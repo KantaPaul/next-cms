@@ -3,6 +3,8 @@ import { PageHeader } from '@/components/organisms/page-header';
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import { metaObject } from '@/lib/utils/metadata';
+import { getAdminTranslations } from '@/i18n/server';
+import { postTypesCrumbs } from '@/app/(admin)/dashboard/(shell)/collections/breadcrumbs';
 import { accessService } from '@/server/services/access.service';
 import { requirePermission } from '@/server/services/require-permission';
 import { pagesServices } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
@@ -18,22 +20,24 @@ import { CollectionList } from './components/collection-list';
 import { CreateCollectionForm } from './components/create-collection-form';
 import { PresetPicker } from './components/preset-picker';
 
-const TITLE = 'Post types';
-
-export const metadata = { ...metaObject(TITLE) };
+export async function generateMetadata() {
+  const t = await getAdminTranslations('collections');
+  return metaObject(t('title'));
+}
 
 export default async function CollectionsPage() {
   const { allowed, access } = await requirePermission(PERMISSIONS.PAGES_EDIT);
-  const breadcrumbs = [
-    { title: 'Dashboard', href: PAGES.DASHBOARD.ROOT },
-    { title: TITLE, href: PAGES.DASHBOARD.COLLECTIONS },
-  ];
+  const [breadcrumbs, t] = await Promise.all([
+    postTypesCrumbs(),
+    getAdminTranslations('collections'),
+  ]);
+  const TITLE = t('title');
 
   if (!allowed) {
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="post types" />
+        <AccessDenied />
       </>
     );
   }
@@ -59,10 +63,9 @@ export default async function CollectionsPage() {
       {canManage && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Start from a preset</CardTitle>
+            <CardTitle>{t('presets.title')}</CardTitle>
             <CardDescription>
-              Adds the post type with its fields ready to fill in. Show the
-              entries on any page with the “Post type entries” block.
+              {t('presets.intro')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -74,7 +77,7 @@ export default async function CollectionsPage() {
         {canManage && (
           <Card className="lg:col-span-4">
             <CardHeader>
-              <CardTitle>Create a custom post type</CardTitle>
+              <CardTitle>{t('create.title')}</CardTitle>
             </CardHeader>
             <CardContent>
               <CreateCollectionForm templatePages={templatePages} />

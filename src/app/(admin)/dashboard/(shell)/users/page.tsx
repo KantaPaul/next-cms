@@ -27,7 +27,7 @@ export default async function UsersPage() {
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="users and roles" />
+        <AccessDenied />
       </>
     );
   }

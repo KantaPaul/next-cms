@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useState, useTransition, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from '@/components/atoms/next/link';
@@ -47,7 +48,9 @@ import { SeoPanel } from '@/app/(admin)/dashboard/(shell)/pages/_components/seo-
 import {
   SetTemplateDialog,
   layoutLabel,
+  useLayoutLabel,
 } from '@/app/(admin)/dashboard/(shell)/posts/_components/set-template-dialog';
+import { useStatusLabel } from '@/i18n/use-content-labels';
 import { EntryDataFields, type EntryFieldConfig } from './entry-data-fields';
 import {
   EntryLanguageSection,
@@ -128,6 +131,13 @@ export function EntryEditor({
   const canPublish = useCan(PERMISSIONS.PAGES_PUBLISH);
   const supports = normalizePostTypeSupports(collection.supports);
   const [slugTouched, setSlugTouched] = useState(!!entry?.slug);
+  const t = useTranslations('collections.entries');
+  const tContent = useTranslations('content');
+  const tStatus = useTranslations('common.statuses');
+  const tVisibility = useTranslations('common.visibilities');
+  const statusLabel = useStatusLabel();
+  const singular = collection.singularName || t('fallbackSingular');
+  const singularLower = singular.toLowerCase();
 
   const initialTerms = useMemo(() => {
     const map: Record<string, string[]> = {};
@@ -236,8 +246,8 @@ export function EntryEditor({
       await handleActionResponse(saveEntryAction(payload), result => {
         toast.success(
           entry
-            ? `${collection.singularName || 'Entry'} updated`
-            : `${collection.singularName || 'Entry'} created`
+            ? t('updated', { singular })
+            : t('created', { singular })
         );
         if (!entry && result && typeof result === 'object' && 'id' in result) {
           router.push(
@@ -262,7 +272,7 @@ export function EntryEditor({
     if (!entry) return;
     if (
       !confirm(
-        `Delete this ${collection.singularName?.toLowerCase() || 'entry'}? This cannot be undone.`
+        t('confirmDeleteThis', { singular: singularLower })
       )
     ) {
       return;
@@ -271,7 +281,7 @@ export function EntryEditor({
       await handleActionResponse(
         deleteEntryAction({ id: entry.id, collectionSlug: collection.slug }),
         () => {
-          toast.success(`${collection.singularName || 'Entry'} deleted`);
+          toast.success(t('deleted', { singular }));
           router.push(PAGES.DASHBOARD.COLLECTION(collection.slug));
         }
       );
@@ -300,6 +310,7 @@ export function EntryEditor({
           {entry && (
             <StatusBadge
               status={entry.status}
+              label={statusLabel(entry.status)}
               statusColor={
                 PAGE_STATUS_COLORS[
                   entry.status as keyof typeof PAGE_STATUS_COLORS
@@ -316,7 +327,7 @@ export function EntryEditor({
                   target="_blank"
                   rel="noreferrer"
                 >
-                  <Eye className="size-4" /> Preview
+                  <Eye className="size-4" /> {tContent('toolbar.preview')}
                 </a>
               </Button>
             )}
@@ -327,7 +338,7 @@ export function EntryEditor({
               size="sm"
               disabled={isPending}
             >
-              {isPending ? 'Saving…' : 'Save'}
+              {isPending ? tContent('toolbar.saving') : tContent('toolbar.save')}
             </Button>
 
             {canPublish ? (
@@ -338,8 +349,8 @@ export function EntryEditor({
                 onClick={() => submitWithStatus('published')}
               >
                 {entry?.status === 'published'
-                  ? `Update live ${collection.singularName?.toLowerCase() || 'entry'}`
-                  : 'Publish'}
+                  ? t('updateLive', { singular: singularLower })
+                  : tContent('toolbar.publish')}
               </Button>
             ) : (
               <Button
@@ -348,7 +359,7 @@ export function EntryEditor({
                 disabled={isPending}
                 onClick={() => submitWithStatus('review')}
               >
-                Submit for review
+                {tContent('toolbar.submitForReview')}
               </Button>
             )}
 
@@ -359,7 +370,7 @@ export function EntryEditor({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    aria-label="More options"
+                    aria-label={t('moreOptions')}
                   >
                     <MoreVertical className="size-4" />
                   </Button>
@@ -369,8 +380,8 @@ export function EntryEditor({
                     className="text-red-600 focus:text-red-600"
                     onClick={handleDelete}
                   >
-                    <Trash2 className="me-2 size-4" /> Delete{' '}
-                    {collection.singularName?.toLowerCase() || 'entry'}
+                    <Trash2 className="me-2 size-4" />{' '}
+                    {t('deleteSingular', { singular: singularLower })}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -395,13 +406,13 @@ export function EntryEditor({
                       htmlFor="entry-excerpt"
                       label={
                         <>
-                          Excerpt{' '}
+                          {tContent('fields.excerpt')}{' '}
                           <span className="text-xs font-normal text-steel-400">
-                            {excerptValue?.length ?? 0}/300
+                            {`${excerptValue?.length ?? 0}/300`}
                           </span>
                         </>
                       }
-                      hint="Brief summary shown in listings and previews."
+                      hint={t('excerptHint')}
                     >
                       <textarea
                         id="entry-excerpt"
@@ -423,9 +434,11 @@ export function EntryEditor({
                 className={`m-3 grid ${supports.seo ? 'grid-cols-2' : 'grid-cols-1'}`}
               >
                 <TabsTrigger value="entry">
-                  {collection.singularName || 'Entry'}
+                  {singular}
                 </TabsTrigger>
-                {supports.seo && <TabsTrigger value="seo">SEO</TabsTrigger>}
+                {supports.seo && (
+                  <TabsTrigger value="seo">{tContent('tabs.seo')}</TabsTrigger>
+                )}
               </TabsList>
 
               <TabsContent value="entry" className="space-y-6 pb-6">
@@ -442,37 +455,37 @@ export function EntryEditor({
                 <div className="space-y-4 px-4">
                   {supports.status && (
                     <>
-                      <FieldShell label="Status" htmlFor="entry-status">
+                      <FieldShell label={tContent('fields.status')} htmlFor="entry-status">
                         <select
                           id="entry-status"
                           className={inputClass}
                           {...register('status')}
                         >
-                          <option value="draft">Draft</option>
-                          <option value="review">Under review</option>
-                          <option value="scheduled">Scheduled</option>
+                          <option value="draft">{tStatus('draft')}</option>
+                          <option value="review">{tStatus('review')}</option>
+                          <option value="scheduled">{tStatus('scheduled')}</option>
                           {canPublish && (
-                            <option value="published">Published</option>
+                            <option value="published">{tStatus('published')}</option>
                           )}
                         </select>
                       </FieldShell>
 
-                      <FieldShell label="Visibility" htmlFor="entry-visibility">
+                      <FieldShell label={tContent('fields.visibility')} htmlFor="entry-visibility">
                         <select
                           id="entry-visibility"
                           className={inputClass}
                           {...register('visibility')}
                         >
-                          <option value="public">Public</option>
-                          <option value="private">Private</option>
+                          <option value="public">{tVisibility('public')}</option>
+                          <option value="private">{tVisibility('private')}</option>
                         </select>
                       </FieldShell>
 
                       {currentStatus === 'scheduled' && (
                         <FieldShell
-                          label="Publish at"
+                          label={tContent('fields.publishAt')}
                           htmlFor="entry-scheduled-at"
-                          hint="The entry goes live automatically at this time."
+                          hint={t('publishAtHint')}
                         >
                           <input
                             id="entry-scheduled-at"
@@ -493,7 +506,7 @@ export function EntryEditor({
                     translations={translations}
                   />
 
-                  <FieldShell label="Slug" htmlFor="entry-slug">
+                  <FieldShell label={tContent('fields.slug')} htmlFor="entry-slug">
                     <input
                       id="entry-slug"
                       className={inputClass}
@@ -505,14 +518,14 @@ export function EntryEditor({
                   </FieldShell>
 
                   {supports.author && (
-                    <FieldShell label="Author">
+                    <FieldShell label={t('author')}>
                       <input
                         className={`${inputClass} bg-steel-50 text-steel-500 dark:bg-dark-100 dark:text-steel-400`}
                         value={
                           entry?.author?.name ||
                           entry?.author?.email ||
                           currentUserName ||
-                          'Current user'
+                          t('currentUser')
                         }
                         readOnly
                         disabled
@@ -544,7 +557,7 @@ export function EntryEditor({
                             htmlFor="entry-allow-comments"
                             className="cursor-pointer text-sm font-medium text-steel-700 dark:text-steel-200"
                           >
-                            Allow comments
+                            {tContent('fields.allowComments')}
                           </label>
                           <Switch
                             id="entry-allow-comments"
@@ -586,6 +599,10 @@ function LayoutSection({
   const [open, setOpen] = useState(false);
   const canManageTemplates = useCan(PERMISSIONS.PAGES_PUBLISH);
   const isCustom = entry.layout === 'custom';
+  const t = useTranslations('collections.entries');
+  const tLayoutMsgs = useTranslations('content.layout');
+  const tActions = useTranslations('content.actions');
+  const tLayout = useLayoutLabel();
   const templateId =
     entry.templateId ?? templates.find(t => t.isDefault)?.id ?? null;
   const Icon = isCustom ? PanelsTopLeft : LayoutTemplate;
@@ -601,20 +618,20 @@ function LayoutSection({
   return (
     <div className="px-4 pt-1">
       <p className="mb-2 text-sm font-medium text-steel-700 dark:text-steel-200">
-        Layout
+        {tLayoutMsgs('title')}
       </p>
       <div className="flex items-start gap-3 rounded-md border border-steel-200 p-3 dark:border-dark-300">
         <Icon className="mt-0.5 size-4 shrink-0 text-indigo-600" />
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-medium">
-            {layoutLabel(target, templates)}
+            {layoutLabel(target, templates, tLayout)}
           </span>
           <span className="block text-xs text-steel-500">
             {isCustom
-              ? 'This entry has its own canvas.'
+              ? t('ownCanvas')
               : entry.templateId
-                ? 'Renders through this template.'
-                : 'Follows the default template.'}
+                ? tLayoutMsgs('rendersThrough')
+                : tLayoutMsgs('followsDefault')}
           </span>
         </span>
       </div>
@@ -625,7 +642,7 @@ function LayoutSection({
           size="sm"
           onClick={() => setOpen(true)}
         >
-          Set template
+          {t('setTemplate')}
         </Button>
         {isCustom ? (
           <Button type="button" variant="outline" size="sm" asChild>
@@ -635,7 +652,7 @@ function LayoutSection({
                 entry.id
               )}
             >
-              Open layout builder
+              {tActions('openLayoutBuilder')}
             </Link>
           </Button>
         ) : (
@@ -648,7 +665,7 @@ function LayoutSection({
                   templateId
                 )}
               >
-                Edit template
+                {tLayoutMsgs('editTemplate')}
               </Link>
             </Button>
           )
@@ -661,7 +678,7 @@ function LayoutSection({
         templates={templates}
         open={open}
         onOpenChange={setOpen}
-        title="Set entry template"
+        title={t('setEntryTemplate')}
         onSwitchLayout={layout =>
           switchEntryLayoutAction({ id: entry.id, layout })
         }
@@ -687,6 +704,7 @@ function TaxonomySelectField({
     | Record<string, string[]>
     | undefined;
   const selectedIds: string[] = allTerms?.[taxonomy.id] ?? [];
+  const t = useTranslations('collections.entries');
 
   const optionsArray: Option[] = useMemo(() => {
     return terms.map(t => ({
@@ -714,7 +732,7 @@ function TaxonomySelectField({
           target="_blank"
           className="text-xs text-primary hover:underline"
         >
-          Manage
+          {t('manage')}
         </Link>
       </div>
 
@@ -725,8 +743,8 @@ function TaxonomySelectField({
         value={handleMultiSelect(selectedOptions, selectedIds)}
         placeholder={
           optionsArray.length
-            ? `Select ${taxonomy.name.toLowerCase()}…`
-            : `No ${taxonomy.name.toLowerCase()} yet`
+            ? t('selectTerms', { name: taxonomy.name.toLowerCase() })
+            : t('noTerms', { name: taxonomy.name.toLowerCase() })
         }
         isDisabled={optionsArray.length === 0}
         onChange={newValue => {

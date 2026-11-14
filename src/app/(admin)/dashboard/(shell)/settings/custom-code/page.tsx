@@ -26,7 +26,7 @@ export default async function CustomCodePage() {
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="custom code settings" />
+        <AccessDenied />
       </>
     );
   }

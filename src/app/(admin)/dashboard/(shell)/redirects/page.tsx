@@ -22,7 +22,7 @@ export default async function RedirectsPage() {
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="redirects" />
+        <AccessDenied />
       </>
     );
   }

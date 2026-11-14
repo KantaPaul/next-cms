@@ -25,7 +25,7 @@ export default async function ImportPage() {
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="site import" />
+        <AccessDenied />
       </>
     );
   }

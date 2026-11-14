@@ -26,7 +26,7 @@ export default async function ConsentSettingsPage() {
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="cookie consent settings" />
+        <AccessDenied />
       </>
     );
   }

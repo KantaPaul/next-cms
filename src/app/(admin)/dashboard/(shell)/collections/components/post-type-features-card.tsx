@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -24,6 +25,7 @@ export function PostTypeFeaturesCard({
   collectionSlug: string;
   initialSupports?: PostTypeSupports;
 }) {
+  const t = useTranslations('collections.features');
   const router = useRouter();
   const [supports, setSupports] = useState<PostTypeSupports>(() =>
     normalizePostTypeSupports(initialSupports)
@@ -45,7 +47,7 @@ export function PostTypeFeaturesCard({
           supports,
         }),
         () => {
-          toast.success('Features updated');
+          toast.success(t('updated'));
           setDirty(false);
           router.refresh();
         }
@@ -58,9 +60,9 @@ export function PostTypeFeaturesCard({
       <CardHeader>
         <div className="flex items-center justify-between gap-3">
           <div>
-            <CardTitle>Features & Capabilities</CardTitle>
+            <CardTitle>{t('title')}</CardTitle>
             <CardDescription>
-              Toggle built-in WordPress-style feature groups supported by this post type.
+              {t('intro')}
             </CardDescription>
           </div>
           <Button
@@ -69,7 +71,7 @@ export function PostTypeFeaturesCard({
             onClick={save}
             disabled={!dirty || isPending}
           >
-            {isPending && <Loader2 className="animate-spin" />} Save features
+            {isPending && <Loader2 className="animate-spin" />} {t('save')}
           </Button>
         </div>
       </CardHeader>
@@ -88,17 +90,17 @@ export function PostTypeFeaturesCard({
                     htmlFor={inputId}
                     className="cursor-pointer text-sm font-medium"
                   >
-                    {feature.label}
+                    {t(`items.${feature.key}.label`)}
                   </label>
                   <p className="text-xs text-steel-500">
-                    {feature.description}
+                    {t(`items.${feature.key}.description`)}
                   </p>
                 </div>
                 <Switch
                   id={inputId}
                   checked={isSupported}
                   onChange={checked => toggle(feature.key, checked)}
-                  aria-label={`Toggle ${feature.label}`}
+                  aria-label={t('toggle', { name: t(`items.${feature.key}.label`) })}
                 />
               </li>
             );

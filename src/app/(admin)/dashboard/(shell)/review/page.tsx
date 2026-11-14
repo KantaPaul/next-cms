@@ -22,7 +22,7 @@ export default async function ReviewPage() {
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="the review queue" />
+        <AccessDenied />
       </>
     );
   }

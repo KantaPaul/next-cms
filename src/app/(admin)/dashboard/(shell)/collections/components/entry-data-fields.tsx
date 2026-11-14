@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
 import { TextEditor } from '@/components/atoms/text-editor';
 import { MediaField, MultiMediaField } from '@/components/media/media-picker';
@@ -59,6 +60,7 @@ export function EntryDataFields({
   fields: EntryFieldConfig[];
   onFieldChange?: (key: string, value: unknown) => void;
 }) {
+  const t = useTranslations('collections.entries');
   const { control } = useFormContext();
 
   return fields.map(config => (
@@ -117,11 +119,11 @@ export function EntryDataFields({
               >
                 <FormControl>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="None" />
+                    <SelectValue placeholder={t('none')} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value={NONE}>None</SelectItem>
+                  <SelectItem value={NONE}>{t('none')}</SelectItem>
                   {options.map(o => (
                     <SelectItem key={o.id} value={o.id}>
                       {o.label}
@@ -141,7 +143,7 @@ export function EntryDataFields({
                 {label}
                 {config.isFeatured && (
                   <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-medium text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
-                    Featured
+                    {t('featured')}
                   </span>
                 )}
               </div>
@@ -186,12 +188,12 @@ export function EntryDataFields({
               {label}
               {isVideoMode && (
                 <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-medium text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
-                  Video URL
+                  {t('videoUrl')}
                 </span>
               )}
               {isEmbedMode && (
                 <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-                  Embed URL
+                  {t('embedUrl')}
                 </span>
               )}
             </div>

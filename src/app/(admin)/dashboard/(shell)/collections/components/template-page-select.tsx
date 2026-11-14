@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+import { useStatusLabel } from '@/i18n/use-content-labels';
 import { useFormContext } from 'react-hook-form';
 import {
   FormControl,
@@ -26,6 +28,8 @@ export function TemplatePageSelect({
 }: {
   templatePages: TemplatePageOption[];
 }) {
+  const t = useTranslations('collections.templatePage');
+  const statusLabel = useStatusLabel();
   const { control } = useFormContext<{ templatePageId?: string | null }>();
 
   return (
@@ -34,28 +38,28 @@ export function TemplatePageSelect({
       name="templatePageId"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>Template page (optional)</FormLabel>
+          <FormLabel>{t('label')}</FormLabel>
           <Select
             value={field.value || NONE}
             onValueChange={value => field.onChange(value === NONE ? '' : value)}
           >
             <FormControl>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="None" />
+                <SelectValue placeholder={t('none')} />
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              <SelectItem value={NONE}>None</SelectItem>
+              <SelectItem value={NONE}>{t('none')}</SelectItem>
               {templatePages.map(page => (
                 <SelectItem key={page.id} value={page.id}>
-                  {page.title} (/{page.slug})
-                  {page.status !== 'published' ? ` — ${page.status}` : ''}
+                  {`${page.title} (/${page.slug})`}
+                  {page.status !== 'published' ? ` — ${statusLabel(page.status)}` : ''}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <FormDescription className="text-xs">
-            Builder pages from this site. Only published pages render entries.
+            {t('hint')}
           </FormDescription>
           <FormMessage />
         </FormItem>

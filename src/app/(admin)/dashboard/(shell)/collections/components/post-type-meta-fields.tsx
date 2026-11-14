@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
 import { PostTypeIcon } from '@/components/atoms/post-type-icon';
 import { FormInput as Input } from '@/components/ui/input';
@@ -22,6 +23,7 @@ type MetaValues = {
 
 /** Singular label, icon grid and description shared by create + settings forms. */
 export function PostTypeMetaFields() {
+  const t = useTranslations('collections.meta');
   const { control } = useFormContext<MetaValues>();
 
   return (
@@ -31,16 +33,16 @@ export function PostTypeMetaFields() {
         name="singularName"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Singular name</FormLabel>
+            <FormLabel>{t('singularName')}</FormLabel>
             <FormControl>
               <Input
                 {...field}
                 value={field.value ?? ''}
-                placeholder="e.g. Team member"
+                placeholder={t('singularPlaceholder')}
               />
             </FormControl>
             <p className="text-xs text-muted-foreground">
-              Used for buttons like “New team member”.
+              {t('singularHint')}
             </p>
             <FormMessage />
           </FormItem>
@@ -51,10 +53,10 @@ export function PostTypeMetaFields() {
         name="icon"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Icon</FormLabel>
+            <FormLabel>{t('icon')}</FormLabel>
             <div
               role="radiogroup"
-              aria-label="Icon"
+              aria-label={t('icon')}
               className="grid grid-cols-6 gap-1.5"
             >
               {POST_TYPE_ICONS.map(name => {
@@ -89,7 +91,7 @@ export function PostTypeMetaFields() {
         name="description"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Description (optional)</FormLabel>
+            <FormLabel>{t('description')}</FormLabel>
             <FormControl>
               <Textarea {...field} value={field.value ?? ''} rows={2} />
             </FormControl>

@@ -27,7 +27,7 @@ export default async function MenusPage() {
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="menus" />
+        <AccessDenied />
       </>
     );
   }

@@ -1,3 +1,5 @@
+'use client';
+
 import { useTranslations } from 'next-intl';
 import { ChevronsUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';

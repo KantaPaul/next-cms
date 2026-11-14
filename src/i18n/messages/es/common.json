@@ -108,5 +108,10 @@
   "visibilities": {
     "public": "Pública",
     "private": "Privada"
+  },
+  "accessDenied": {
+    "title": "No tienes acceso a esta página",
+    "body": "Tu rol no incluye este permiso. Pide a un administrador que actualice tu rol en Usuarios y roles.",
+    "back": "Volver al panel"
   }
 }

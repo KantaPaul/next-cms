@@ -35,7 +35,7 @@ export default async function BlockManagerPage({
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="block settings" />
+        <AccessDenied />
       </>
     );
   }

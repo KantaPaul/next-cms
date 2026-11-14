@@ -23,8 +23,13 @@ import { requirePermission } from '@/server/services/require-permission';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 import { loadPostTypeRoute } from '../../../_modules/post-type-route';
 import { CollectionBlockManager } from '../../../components/collection-block-manager';
+import { getAdminTranslations } from '@/i18n/server';
+import { postTypesCrumbs } from '@/app/(admin)/dashboard/(shell)/collections/breadcrumbs';
 
-export const metadata = metaObject('Block template settings');
+export async function generateMetadata() {
+  const t = await getAdminTranslations('collections.settings');
+  return metaObject(t('blockTemplateSettings'));
+}
 
 export default async function CollectionBlockSettingsPage({
   params,
@@ -45,19 +50,20 @@ export default async function CollectionBlockSettingsPage({
   const allowed =
     canManage || accessService.can(access, PERMISSIONS.SETTINGS_MANAGE);
 
+  const t = await getAdminTranslations('collections.settings');
+  const pageTitle = `${t('blockTemplateSettings')} · ${collection.name}`;
   const breadcrumbs = [
-    { title: 'Dashboard', href: PAGES.DASHBOARD.ROOT },
-    { title: 'Post types', href: PAGES.DASHBOARD.COLLECTIONS },
+    ...(await postTypesCrumbs()),
     {
       title: collection.name,
       href: PAGES.DASHBOARD.COLLECTION(collection.slug),
     },
     {
-      title: 'Fields & settings',
+      title: t('fieldsSettings'),
       href: PAGES.DASHBOARD.COLLECTION_SETTINGS(collection.slug),
     },
     {
-      title: 'Block template settings',
+      title: t('blockTemplateSettings'),
       href: PAGES.DASHBOARD.COLLECTION_SETTINGS_BLOCKS(collection.slug),
     },
   ];
@@ -66,10 +72,10 @@ export default async function CollectionBlockSettingsPage({
     return (
       <>
         <PageHeader
-          title={`Block template settings · ${collection.name}`}
+          title={pageTitle}
           breadcrumbs={breadcrumbs}
         />
-        <AccessDenied what="post type block settings" />
+        <AccessDenied />
       </>
     );
   }
@@ -87,28 +93,29 @@ export default async function CollectionBlockSettingsPage({
   return (
     <>
       <PageHeader
-        title={`Block template settings · ${collection.name}`}
+        title={pageTitle}
         breadcrumbs={breadcrumbs}
       >
         <Button variant="outline" asChild>
           <Link href={PAGES.DASHBOARD.COLLECTION_SETTINGS(collection.slug)}>
-            <ArrowLeft className="size-4" /> Back to settings
+            <ArrowLeft className="size-4 rtl:-scale-x-100" /> {t('backToSettings')}
           </Link>
         </Button>
       </PageHeader>
       <Card>
         <CardHeader>
-          <CardTitle>Block template settings</CardTitle>
+          <CardTitle>{t('blockTemplateSettings')}</CardTitle>
           <CardDescription>
-            Choose which blocks appear in this post type’s entry, single
-            template, and collection block editors. Uncustomized tabs inherit{' '}
-            <Link
-              href={PAGES.DASHBOARD.SETTINGS_BLOCKS}
-              className="text-primary underline-offset-4 hover:underline"
-            >
-              Settings → Blocks
-            </Link>
-            .
+            {t.rich('blockSettingsIntro', {
+              link: chunks => (
+                <Link
+                  href={PAGES.DASHBOARD.SETTINGS_BLOCKS}
+                  className="text-primary underline-offset-4 hover:underline"
+                >
+                  {chunks}
+                </Link>
+              ),
+            })}
           </CardDescription>
         </CardHeader>
         <CardContent>

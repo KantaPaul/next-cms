@@ -30,7 +30,7 @@ export default async function LicenseDetailPage({ params }: LicenseDetailPagePro
     return (
       <>
         <PageHeader title={`License ${id}`} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="license details" />
+        <AccessDenied />
       </>
     );
   }

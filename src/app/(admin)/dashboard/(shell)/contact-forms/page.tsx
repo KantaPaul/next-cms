@@ -24,7 +24,7 @@ export default async function ContactFormsPage() {
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="contact forms" />
+        <AccessDenied />
       </>
     );
   }

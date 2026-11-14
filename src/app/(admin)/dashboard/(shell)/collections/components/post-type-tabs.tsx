@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import Link from '@/components/atoms/next/link';
 import { usePathname } from 'next/navigation';
 import { PAGES } from '@/config/pages';
@@ -16,6 +17,7 @@ export function PostTypeTabs({
   taxonomies?: { key: string; name: string }[];
   supports?: PostTypeSupports;
 }) {
+  const t = useTranslations('collections.tabs');
   const pathname = usePathname();
 
   const entriesHref = PAGES.DASHBOARD.COLLECTION(slug);
@@ -29,7 +31,7 @@ export function PostTypeTabs({
     active: boolean;
   }[] = [
     {
-      title: 'Entries',
+      title: t('entries'),
       href: entriesHref,
       icon: FileText,
       active: pathname === entriesHref,
@@ -50,7 +52,7 @@ export function PostTypeTabs({
 
   if (supports?.template !== false) {
     tabs.push({
-      title: 'Templates',
+      title: t('templates'),
       href: templatesHref,
       icon: LayoutTemplate,
       active: pathname === templatesHref || pathname?.startsWith(`${templatesHref}/`),
@@ -58,7 +60,7 @@ export function PostTypeTabs({
   }
 
   tabs.push({
-    title: 'Settings',
+    title: t('settings'),
     href: settingsHref,
     icon: Settings,
     active: pathname === settingsHref,
@@ -66,7 +68,7 @@ export function PostTypeTabs({
 
   return (
     <nav
-      aria-label="Post type sections"
+      aria-label={t('ariaLabel')}
       className="mb-6 flex items-center gap-2 overflow-x-auto border-b border-steel-200 dark:border-dark-300"
     >
       {tabs.map(tab => {

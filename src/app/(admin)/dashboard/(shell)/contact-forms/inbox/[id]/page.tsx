@@ -56,7 +56,7 @@ export default async function SubmissionPage({
     return (
       <>
         <PageHeader title="Submission" breadcrumbs={breadcrumbs} />
-        <AccessDenied what="form submissions" />
+        <AccessDenied />
       </>
     );
   }

@@ -1,7 +1,10 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+import { useStatusLabel } from '@/i18n/use-content-labels';
 import { useState, useTransition } from 'react';
-import Link from '@/components/atoms/next/link';
+import NextLink from 'next/link';
+import { adminHref } from '@/lib/locale/admin-href';
 import { useRouter } from 'next/navigation';
 import { Languages } from 'lucide-react';
 import { toast } from 'sonner';
@@ -51,18 +54,27 @@ export function EntryLanguageSection({
   translations: EntryTranslationRow[];
 }) {
   const router = useRouter();
-  const { locales } = useSiteLocales();
+  const { locales, defaultLocale } = useSiteLocales();
+  // A translation opens in its own language, not the one the dashboard is in.
+  const editInLanguage = (id: string, code: string) =>
+    adminHref(
+      PAGES.DASHBOARD.COLLECTION_ENTRY_EDIT(collectionSlug, id),
+      code,
+      defaultLocale
+    );
   const [target, setTarget] = useState('');
   const [isPending, startTransition] = useTransition();
+  const t = useTranslations('collections.entries.language');
+  const statusLabel = useStatusLabel();
   const labelOf = (code: string) =>
     locales.find(l => l.value === code)?.label ?? code;
 
   if (!entry) {
     return (
       <FieldShell
-        label="Language"
+        label={t('label')}
         htmlFor="entry-language"
-        hint="Add other languages after saving, as translations."
+        hint={t('hint')}
       >
         <select
           id="entry-language"
@@ -89,13 +101,10 @@ export function EntryLanguageSection({
       await handleActionResponse(
         await createEntryTranslationAction({ id: entry.id, language: target }),
         created => {
-          toast.success(`${labelOf(target)} translation draft created`);
+          toast.success(t('translationCreated', { language: labelOf(target) }));
           setTarget('');
           router.push(
-            PAGES.DASHBOARD.COLLECTION_ENTRY_EDIT(
-              collectionSlug,
-              (created as { id: string }).id
-            )
+            editInLanguage((created as { id: string }).id, target)
           );
         }
       );
@@ -105,38 +114,37 @@ export function EntryLanguageSection({
     <section className="space-y-3 rounded-md border border-steel-200 p-3 dark:border-dark-300">
       <div>
         <h4 className="flex items-center gap-2 text-sm font-semibold">
-          <Languages className="size-4" /> Language & translations
+          <Languages className="size-4" /> {t('title')}
         </h4>
         <p className="mt-1 text-xs text-steel-500">
-          This entry is in{' '}
-          <span className="font-medium text-foreground">
-            {labelOf(entry.language)}
-          </span>
-          .
+          {t.rich('entryIsIn', {
+            language: labelOf(entry.language),
+            b: chunks => (
+              <span className="font-medium text-foreground">{chunks}</span>
+            ),
+          })}
         </p>
       </div>
 
       {translations.length > 0 && (
         <ul className="space-y-2">
-          {translations.map(t => (
+          {translations.map(tr => (
             <li
-              key={t.id}
+              key={tr.id}
               className="flex items-center justify-between gap-2 rounded-md border border-steel-200 p-2 text-sm dark:border-dark-300"
             >
-              <Link
-                href={PAGES.DASHBOARD.COLLECTION_ENTRY_EDIT(
-                  collectionSlug,
-                  t.id
-                )}
+              <NextLink
+                href={editInLanguage(tr.id, tr.language)}
                 className="min-w-0 truncate hover:underline"
               >
-                <span className="font-medium">{labelOf(t.language)}</span> ·{' '}
-                {titleOf(t)}
-              </Link>
+                <span className="font-medium">{labelOf(tr.language)}</span> ·{' '}
+                {titleOf(tr)}
+              </NextLink>
               <StatusBadge
-                status={t.status as never}
+                status={tr.status as never}
+                label={statusLabel(tr.status)}
                 statusColor={
-                  PAGE_STATUS_COLORS[t.status as keyof typeof PAGE_STATUS_COLORS]
+                  PAGE_STATUS_COLORS[tr.status as keyof typeof PAGE_STATUS_COLORS]
                 }
               />
             </li>
@@ -147,12 +155,12 @@ export function EntryLanguageSection({
       {available.length > 0 ? (
         <div className="flex gap-2">
           <select
-            aria-label="Translation language"
+            aria-label={t('translationLanguage')}
             value={target}
             onChange={e => setTarget(e.target.value)}
             className={inputClass}
           >
-            <option value="">Add a language…</option>
+            <option value="">{t('addLanguage')}</option>
             {available.map(l => (
               <option key={l.value} value={l.value}>
                 {l.label}
@@ -166,12 +174,12 @@ export function EntryLanguageSection({
             onClick={translate}
             disabled={!target || isPending}
           >
-            Translate
+            {t('translate')}
           </Button>
         </div>
       ) : (
         <p className="text-xs text-steel-500">
-          Translated into every enabled language.
+          {t('allTranslated')}
         </p>
       )}
     </section>

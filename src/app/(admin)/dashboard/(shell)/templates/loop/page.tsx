@@ -28,7 +28,7 @@ export default async function LoopTemplatesPage({
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="loop item templates" />
+        <AccessDenied />
       </>
     );
   }

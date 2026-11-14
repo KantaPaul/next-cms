@@ -1,3 +1,6 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import Link from '@/components/atoms/next/link';
 import {
   Table,
@@ -28,15 +31,16 @@ export function CollectionList({
   rows: CollectionRow[];
   canManage?: boolean;
 }) {
+  const t = useTranslations('collections.list');
   return (
     <div className="rounded-lg border">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Slug</TableHead>
-            {canManage && <TableHead>Template Page</TableHead>}
-            <TableHead className="text-end">Actions</TableHead>
+            <TableHead>{t('name')}</TableHead>
+            <TableHead>{t('slug')}</TableHead>
+            {canManage && <TableHead>{t('templatePage')}</TableHead>}
+            <TableHead className="text-end">{t('actions')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -46,7 +50,7 @@ export function CollectionList({
                 colSpan={canManage ? 4 : 3}
                 className="h-24 text-center text-muted-foreground"
               >
-                No post types yet. Start from a preset or create your own.
+                {t('empty')}
               </TableCell>
             </TableRow>
           ) : (
@@ -71,7 +75,7 @@ export function CollectionList({
                         <Link
                           href={PAGES.DASHBOARD.PAGES.BUILDER(row.templatePageId)}
                           className="text-primary hover:underline font-medium text-sm"
-                          title="Open builder for this template page"
+                          title={t('openTemplateBuilder')}
                         >
                           {row.templateName}
                         </Link>
@@ -80,7 +84,7 @@ export function CollectionList({
                       )
                     ) : (
                       <span className="text-muted-foreground text-xs italic">
-                        None
+                        {t('none')}
                       </span>
                     )}
                   </TableCell>
@@ -89,13 +93,13 @@ export function CollectionList({
                   <div className="flex justify-end gap-2">
                     <Button size="sm" asChild>
                       <Link href={PAGES.DASHBOARD.COLLECTION(row.slug)}>
-                        Entries
+                        {t('entries')}
                       </Link>
                     </Button>
                     {canManage && (
                       <Button size="sm" variant="outline" asChild>
                         <Link href={PAGES.DASHBOARD.COLLECTION_SETTINGS(row.slug)}>
-                          Fields & settings
+                          {t('fieldsSettings')}
                         </Link>
                       </Button>
                     )}

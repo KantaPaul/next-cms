@@ -138,8 +138,16 @@ const eslintConfig = [
       'src/components/dashboard/site-switcher.tsx',
       'src/app/(admin)/dashboard/(shell)/pages/**/*.tsx',
       'src/app/(admin)/dashboard/(shell)/posts/**/*.tsx',
+      'src/app/(admin)/dashboard/(shell)/collections/**/*.tsx',
     ],
-    ignores: ['src/components/**/__tests__/**'],
+    ignores: [
+      'src/components/**/__tests__/**',
+      // Not imported anywhere (older entry UI): delete or translate.
+      'src/app/(admin)/dashboard/(shell)/collections/components/entry-status-card.tsx',
+      'src/app/(admin)/dashboard/(shell)/collections/components/entry-list.tsx',
+      'src/app/(admin)/dashboard/(shell)/collections/components/create-entry-form.tsx',
+      'src/app/(admin)/dashboard/(shell)/collections/components/edit-entry-form.tsx',
+    ],
     rules: {
       'react/jsx-no-literals': [
         'error',

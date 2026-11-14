@@ -1,9 +1,9 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import Link from '@/components/atoms/next/link';
 import { useRouter } from 'next/navigation';
-import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 import { LayoutTemplate, Loader2, Plus, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ import {
   textareaClass,
 } from '@/app/(admin)/dashboard/(shell)/pages/_components/field-shell';
 import { PAGES } from '@/config/pages';
+import { RelativeTime } from '@/components/atoms/relative-time';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import {
   createCollectionTemplateAction,
@@ -60,6 +61,7 @@ export function CollectionTemplatesTable({
   collectionSlug: string;
   templates: CollectionTemplateItem[];
 }) {
+  const t = useTranslations('collections.templates');
   const router = useRouter();
   const [target, setTarget] = useState<DetailsTarget | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -69,7 +71,7 @@ export function CollectionTemplatesTable({
     await handleActionResponse(
       setDefaultCollectionTemplateAction({ id: tmpl.id }),
       () => {
-        toast.success(`"${tmpl.name}" is now the default template`);
+        toast.success(t('nowDefault', { name: tmpl.name }));
         router.refresh();
       }
     );
@@ -81,7 +83,7 @@ export function CollectionTemplatesTable({
     await handleActionResponse(
       duplicateCollectionTemplateAction({ id: tmpl.id }),
       created => {
-        toast.success(`Created copy of "${tmpl.name}"`);
+        toast.success(t('copied', { name: tmpl.name }));
         if (created && typeof created === 'object' && 'id' in created) {
           router.push(
             PAGES.DASHBOARD.COLLECTION_TEMPLATE_BUILDER(
@@ -100,7 +102,7 @@ export function CollectionTemplatesTable({
   const handleDelete = async (tmpl: CollectionTemplateItem) => {
     if (
       !confirm(
-        `Delete template "${tmpl.name}"? Entries assigned to it will fall back to the default template.`
+        t('confirmDelete', { name: tmpl.name })
       )
     ) {
       return;
@@ -109,7 +111,7 @@ export function CollectionTemplatesTable({
     await handleActionResponse(
       deleteCollectionTemplateAction({ id: tmpl.id }),
       () => {
-        toast.success(`Deleted template "${tmpl.name}"`);
+        toast.success(t('deleted', { name: tmpl.name }));
         router.refresh();
       }
     );
@@ -120,11 +122,10 @@ export function CollectionTemplatesTable({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-steel-500">
-          Single-entry layouts for this post type. The default template applies to
-          every entry that hasn&rsquo;t picked another one.
+          {t('intro')}
         </p>
         <Button size="sm" onClick={() => setTarget({ mode: 'create' })}>
-          <Plus className="size-4" /> New template
+          <Plus className="size-4" /> {t('new')}
         </Button>
       </div>
 
@@ -132,11 +133,11 @@ export function CollectionTemplatesTable({
         <table className="w-full text-start text-sm">
           <thead className="border-b border-steel-200 bg-steel-50 text-xs font-semibold uppercase text-steel-600 dark:border-dark-300 dark:bg-dark-100 dark:text-steel-400">
             <tr>
-              <th className="px-4 py-3">Template</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Used by</th>
-              <th className="px-4 py-3">Updated</th>
-              <th className="px-4 py-3 text-end">Actions</th>
+              <th className="px-4 py-3 text-start">{t('colTemplate')}</th>
+              <th className="px-4 py-3 text-start">{t('colStatus')}</th>
+              <th className="px-4 py-3 text-start">{t('colUsedBy')}</th>
+              <th className="px-4 py-3 text-start">{t('colUpdated')}</th>
+              <th className="px-4 py-3 text-end">{t('colActions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-steel-100 dark:divide-dark-300">
@@ -146,7 +147,7 @@ export function CollectionTemplatesTable({
                   colSpan={5}
                   className="px-4 py-8 text-center text-sm text-steel-500"
                 >
-                  No single templates defined yet.
+                  {t('empty')}
                 </td>
               </tr>
             ) : (
@@ -166,7 +167,7 @@ export function CollectionTemplatesTable({
                       </Link>
                       {tmpl.isDefault && (
                         <Badge variant="outline" className="gap-1 border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-                          <Star className="size-3 fill-amber-500 text-amber-500" /> Default
+                          <Star className="size-3 fill-amber-500 text-amber-500" /> {t('default')}
                         </Badge>
                       )}
                     </div>
@@ -180,26 +181,24 @@ export function CollectionTemplatesTable({
                     {tmpl.isPublished ? (
                       tmpl.hasUnpublishedChanges ? (
                         <Badge variant="outline" className="border-amber-300 text-amber-700">
-                          Unpublished changes
+                          {t('unpublishedChanges')}
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="border-emerald-300 text-emerald-700">
-                          Published
+                          {t('published')}
                         </Badge>
                       )
                     ) : (
                       <Badge variant="outline" className="border-steel-300 text-steel-600">
-                        Draft only
+                        {t('draftOnly')}
                       </Badge>
                     )}
                   </td>
                   <td className="px-4 py-3 text-steel-600 dark:text-steel-400">
-                    {tmpl.entryCount} {tmpl.entryCount === 1 ? 'entry' : 'entries'}
+                    {t('entryCount', { count: tmpl.entryCount })}
                   </td>
                   <td className="px-4 py-3 text-steel-500 text-xs">
-                    {formatDistanceToNow(new Date(tmpl.updatedAt), {
-                      addSuffix: true,
-                    })}
+                    <RelativeTime date={tmpl.updatedAt} />
                   </td>
                   <td className="px-4 py-3 text-end">
                     <div className="flex items-center justify-end gap-2">
@@ -210,28 +209,28 @@ export function CollectionTemplatesTable({
                             tmpl.id
                           )}
                         >
-                          Open builder
+                          {t('openBuilder')}
                         </Link>
                       </Button>
                       <ActionDropdown isLoading={pendingId === tmpl.id}>
                         {!tmpl.isDefault && (
                           <ActionDropdownItem
-                            label="Set as default"
+                            label={t('setDefault')}
                             onClick={() => handleSetDefault(tmpl)}
                           />
                         )}
                         <ActionDropdownItem
-                          label="Rename / edit info"
+                          label={t('rename')}
                           onClick={() => setTarget({ mode: 'edit', template: tmpl })}
                         />
                         <ActionDropdownItem
-                          label="Duplicate"
+                          label={t('duplicate')}
                           onClick={() => handleDuplicate(tmpl)}
                         />
                         {!tmpl.isDefault && (
                           <ActionDropdownItem
                             className="text-red-600 hover:text-red-700"
-                            label="Delete"
+                            label={t('delete')}
                             onClick={() => handleDelete(tmpl)}
                           />
                         )}
@@ -269,6 +268,7 @@ function TemplateDetailsDialog({
   templates: CollectionTemplateItem[];
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useTranslations('collections.templates');
   const router = useRouter();
   const editing = target?.mode === 'edit' ? target.template : null;
   const [name, setName] = useState(editing?.name ?? '');
@@ -286,7 +286,7 @@ function TemplateDetailsDialog({
         await handleActionResponse(
           updateCollectionTemplateAction({ id: editing.id, name, description }),
           () => {
-            toast.success('Template updated');
+            toast.success(t('updated'));
             onOpenChange(false);
             router.refresh();
           }
@@ -302,7 +302,7 @@ function TemplateDetailsDialog({
           fromId: fromId || null,
         }),
         created => {
-          toast.success('Template created');
+          toast.success(t('created'));
           if (created && typeof created === 'object' && 'id' in created) {
             router.push(
               PAGES.DASHBOARD.COLLECTION_TEMPLATE_BUILDER(
@@ -324,47 +324,47 @@ function TemplateDetailsDialog({
         <form onSubmit={submit} className="flex flex-col gap-4">
           <DialogHeader>
             <DialogTitle>
-              {editing ? 'Rename template' : 'New single template'}
+              {editing ? t('renameTitle') : t('newTitle')}
             </DialogTitle>
             <DialogDescription>
               {editing
-                ? 'The name and description show when picking a template for an entry.'
-                : 'Create a single layout, then assign it to entries or set it as default.'}
+                ? t('renameHint')
+                : t('newHint')}
             </DialogDescription>
           </DialogHeader>
-          <FieldShell label="Name" htmlFor="template-name">
+          <FieldShell label={t('name')} htmlFor="template-name">
             <input
               id="template-name"
               className={inputClass}
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder="e.g. Profile layout"
+              placeholder={t('namePlaceholder')}
               maxLength={150}
               autoFocus
               required
             />
           </FieldShell>
-          <FieldShell label="Description" htmlFor="template-description">
+          <FieldShell label={t('description')} htmlFor="template-description">
             <textarea
               id="template-description"
               className={textareaClass}
               value={description}
               onChange={e => setDescription(e.target.value)}
-              placeholder="When to use this layout"
+              placeholder={t('descriptionPlaceholder')}
               maxLength={500}
             />
           </FieldShell>
           {!editing && templates.length > 0 && (
-            <FieldShell label="Start from" htmlFor="template-from">
+            <FieldShell label={t('startFrom')} htmlFor="template-from">
               <select
                 id="template-from"
                 className={inputClass}
                 value={fromId}
                 onChange={e => setFromId(e.target.value)}
               >
-                {templates.map(t => (
-                  <option key={t.id} value={t.id}>
-                    {t.name} {t.isDefault ? '(default)' : ''}
+                {templates.map(tpl => (
+                  <option key={tpl.id} value={tpl.id}>
+                    {tpl.name} {tpl.isDefault ? t('defaultSuffix') : ''}
                   </option>
                 ))}
               </select>
@@ -376,11 +376,11 @@ function TemplateDetailsDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Cancel
+              {t('cancel')}
             </Button>
             <Button type="submit" disabled={isPending || !name.trim()}>
               {isPending && <Loader2 className="animate-spin size-4 me-1" />}
-              {editing ? 'Save' : 'Create template'}
+              {editing ? t('save') : t('create')}
             </Button>
           </DialogFooter>
         </form>

@@ -27,7 +27,7 @@ export default async function CollectionEntryPage({
     return (
       <>
         <PageHeader title={collection.name} />
-        <AccessDenied what="entry" />
+        <AccessDenied />
       </>
     );
   }

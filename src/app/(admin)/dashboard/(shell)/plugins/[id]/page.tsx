@@ -31,7 +31,7 @@ export default async function PluginSettingsPage({
     return (
       <>
         <PageHeader title="Plugin Settings" breadcrumbs={breadcrumbs} />
-        <AccessDenied what="plugin settings" />
+        <AccessDenied />
       </>
     );
   }

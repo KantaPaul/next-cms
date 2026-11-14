@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useState, useTransition, type FormEvent } from 'react';
 import Link from '@/components/atoms/next/link';
 import { useRouter } from 'next/navigation';
@@ -32,6 +33,7 @@ export function PostTypeTaxonomiesCard({
   collectionSlug: string;
   taxonomies: TaxonomyRow[];
 }) {
+  const t = useTranslations('collections.taxonomies');
   const router = useRouter();
   const [editing, setEditing] = useState<TaxonomyRow | 'new' | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -47,9 +49,7 @@ export function PostTypeTaxonomiesCard({
     );
     if (exists) {
       toast.error(
-        type === 'categories'
-          ? 'A Categories taxonomy already exists.'
-          : 'A Tags taxonomy already exists.'
+        type === 'categories' ? t('categoriesExists') : t('tagsExists')
       );
       return;
     }
@@ -74,7 +74,7 @@ export function PostTypeTaxonomiesCard({
 
       await handleActionResponse(saveTaxonomyAction(payload), () => {
         toast.success(
-          type === 'categories' ? 'Categories taxonomy added' : 'Tags taxonomy added'
+          type === 'categories' ? t('categoriesAdded') : t('tagsAdded')
         );
         router.refresh();
       });
@@ -84,7 +84,7 @@ export function PostTypeTaxonomiesCard({
   const handleDelete = async (tax: TaxonomyRow) => {
     if (
       !confirm(
-        `Delete taxonomy "${tax.name}"? All its terms and entry relations will be removed.`
+        t('confirmDelete', { name: tax.name })
       )
     ) {
       return;
@@ -93,7 +93,7 @@ export function PostTypeTaxonomiesCard({
     await handleActionResponse(
       deleteTaxonomyAction({ id: tax.id, collectionSlug }),
       () => {
-        toast.success(`Deleted taxonomy "${tax.name}"`);
+        toast.success(t('deleted', { name: tax.name }));
         router.refresh();
       }
     );
@@ -112,9 +112,9 @@ export function PostTypeTaxonomiesCard({
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <CardTitle>Taxonomies</CardTitle>
+            <CardTitle>{t('title')}</CardTitle>
             <CardDescription>
-              Organise entries into categories, tags, or custom hierarchical and flat groupings.
+              {t('intro')}
             </CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -126,7 +126,7 @@ export function PostTypeTaxonomiesCard({
                 onClick={() => handleQuickAdd('categories')}
                 disabled={isPending}
               >
-                <FolderTree className="size-3.5" /> Add Categories
+                <FolderTree className="size-3.5" /> {t('addCategories')}
               </Button>
             )}
             {!hasTags && (
@@ -137,7 +137,7 @@ export function PostTypeTaxonomiesCard({
                 onClick={() => handleQuickAdd('tags')}
                 disabled={isPending}
               >
-                <Tag className="size-3.5" /> Add Tags
+                <Tag className="size-3.5" /> {t('addTags')}
               </Button>
             )}
             {!editing && (
@@ -146,7 +146,7 @@ export function PostTypeTaxonomiesCard({
                 size="sm"
                 onClick={() => setEditing('new')}
               >
-                <Plus className="size-3.5" /> Add taxonomy
+                <Plus className="size-3.5" /> {t('add')}
               </Button>
             )}
           </div>
@@ -183,12 +183,14 @@ export function PostTypeTaxonomiesCard({
                         {tax.name}
                       </Link>
                       <span className="rounded bg-steel-100 px-1.5 py-0.5 text-xs text-steel-600 dark:bg-dark-300 dark:text-steel-300">
-                        {tax.hierarchical ? 'Hierarchical' : 'Flat'}
+                        {tax.hierarchical ? t('hierarchical') : t('flat')}
                       </span>
                     </div>
                     <span className="text-xs text-steel-500">
-                      Slug: {tax.key}
-                      {tax.singularName ? ` · Singular: ${tax.singularName}` : ''}
+                      {t('slug', { key: tax.key })}
+                      {tax.singularName
+                        ? ` · ${t('singular', { name: tax.singularName })}`
+                        : ''}
                     </span>
                   </div>
                 </div>
@@ -201,14 +203,14 @@ export function PostTypeTaxonomiesCard({
                         tax.key
                       )}
                     >
-                      Manage terms
+                      {t('manageTerms')}
                     </Link>
                   </Button>
                   <Button
                     type="button"
                     size="icon"
                     variant="ghost"
-                    aria-label={`Edit ${tax.name}`}
+                    aria-label={t('edit', { name: tax.name })}
                     onClick={() => setEditing(tax)}
                   >
                     <Pencil className="size-4" />
@@ -217,7 +219,7 @@ export function PostTypeTaxonomiesCard({
                     type="button"
                     size="icon"
                     variant="ghost"
-                    aria-label={`Delete ${tax.name}`}
+                    aria-label={t('delete', { name: tax.name })}
                     className="text-red-600 hover:text-red-700"
                     disabled={pendingId === tax.id}
                     onClick={() => handleDelete(tax)}
@@ -234,7 +236,7 @@ export function PostTypeTaxonomiesCard({
           </ul>
         ) : (
           <p className="rounded-md border border-dashed border-steel-200 px-3 py-6 text-center text-sm text-steel-500 dark:border-dark-300">
-            No taxonomies defined yet. Use &ldquo;Add Categories&rdquo; or &ldquo;Add Tags&rdquo; to quickly set up standard classification.
+            {t('empty')}
           </p>
         )}
       </CardContent>
@@ -255,6 +257,7 @@ function TaxonomyForm({
   existingTaxonomies: TaxonomyRow[];
   onDone: () => void;
 }) {
+  const t = useTranslations('collections.taxonomies');
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [name, setName] = useState(taxonomy?.name ?? '');
@@ -273,12 +276,12 @@ function TaxonomyForm({
     e.preventDefault();
     const trimmedName = name.trim();
     if (!trimmedName) {
-      toast.error('Taxonomy name is required');
+      toast.error(t('nameRequired'));
       return;
     }
     const derivedKey = (key || slugify(trimmedName)).trim().toLowerCase();
     if (!derivedKey) {
-      toast.error('Could not generate a valid key from this name');
+      toast.error(t('keyInvalid'));
       return;
     }
 
@@ -289,7 +292,7 @@ function TaxonomyForm({
           t.key.toLowerCase() === derivedKey)
     );
     if (clash) {
-      toast.error(`A taxonomy named "${trimmedName}" already exists for this post type.`);
+      toast.error(t('exists', { name: trimmedName }));
       return;
     }
 
@@ -304,7 +307,7 @@ function TaxonomyForm({
           hierarchical,
         }),
         () => {
-          toast.success(taxonomy ? 'Taxonomy updated' : 'Taxonomy created');
+          toast.success(taxonomy ? t('updated') : t('created'));
           router.refresh();
           onDone();
         }
@@ -318,29 +321,29 @@ function TaxonomyForm({
       className="grid gap-4 rounded-md border border-steel-200 bg-steel-50 p-4 sm:grid-cols-2 dark:border-dark-300 dark:bg-dark-100"
     >
       <label className="flex flex-col gap-1 text-sm font-medium">
-        Name (Plural)
+        {t('namePlural')}
         <input
           className={inputClass}
           value={name}
           onChange={e => handleNameChange(e.target.value)}
-          placeholder="e.g. Departments"
+          placeholder={t('namePlaceholder')}
           required
           autoFocus
         />
       </label>
 
       <label className="flex flex-col gap-1 text-sm font-medium">
-        Singular Name
+        {t('singularName')}
         <input
           className={inputClass}
           value={singularName}
           onChange={e => setSingularName(e.target.value)}
-          placeholder="e.g. Department"
+          placeholder={t('singularPlaceholder')}
         />
       </label>
 
       <label className="flex flex-col gap-1 text-sm font-medium">
-        Key (auto-generated)
+        {t('key')}
         <input
           className={cn(
             inputClass,
@@ -349,31 +352,31 @@ function TaxonomyForm({
           value={key || (name ? slugify(name) : '—')}
           readOnly
           tabIndex={-1}
-          placeholder="Auto-generated from name"
+          placeholder={t('keyPlaceholder')}
         />
       </label>
 
       <div className="flex items-center justify-between rounded-md border border-steel-200 bg-white p-3 dark:border-dark-300 dark:bg-dark-200">
         <div className="flex flex-col">
-          <span className="text-sm font-medium">Hierarchical</span>
+          <span className="text-sm font-medium">{t('hierarchical')}</span>
           <span className="text-xs text-steel-500">
-            Allow nested parent/child terms (like categories)
+            {t('hierarchicalHint')}
           </span>
         </div>
         <Switch
           checked={hierarchical}
           onChange={setHierarchical}
-          aria-label="Hierarchical taxonomy"
+          aria-label={t('hierarchicalLabel')}
         />
       </div>
 
       <div className="flex gap-2 sm:col-span-2">
         <Button type="submit" size="sm" disabled={isPending}>
           {isPending && <Loader2 className="animate-spin size-4" />}{' '}
-          {taxonomy ? 'Save taxonomy' : 'Create taxonomy'}
+          {taxonomy ? t('save') : t('create')}
         </Button>
         <Button type="button" size="sm" variant="ghost" onClick={onDone}>
-          <X className="size-4" /> Cancel
+          <X className="size-4" /> {t('cancel')}
         </Button>
       </div>
     </form>

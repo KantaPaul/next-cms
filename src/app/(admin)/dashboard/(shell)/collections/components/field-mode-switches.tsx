@@ -1,18 +1,11 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Switch } from '@/components/ui/switch';
 import type { TextFieldMode, UrlFieldMode } from '@/config/post-types';
 
-const TEXT_MODES: { value: TextFieldMode; label: string }[] = [
-  { value: 'plain', label: 'Plain text' },
-  { value: 'video', label: 'Video URL' },
-  { value: 'embed', label: 'Embed URL' },
-];
-
-const URL_MODES: { value: UrlFieldMode; label: string }[] = [
-  { value: 'video', label: 'Video URL' },
-  { value: 'other', label: 'Other URL' },
-];
+const TEXT_MODES: TextFieldMode[] = ['plain', 'video', 'embed'];
+const URL_MODES: UrlFieldMode[] = ['video', 'other'];
 
 /** Mutually exclusive switch group for `text` fields: Plain text, Video URL, or Embed URL. */
 export function TextModeSwitches({
@@ -24,6 +17,7 @@ export function TextModeSwitches({
   onChange: (next: TextFieldMode) => void;
   compact?: boolean;
 }) {
+  const t = useTranslations('collections.modes');
   return (
     <div
       className={
@@ -33,20 +27,20 @@ export function TextModeSwitches({
       }
     >
       {TEXT_MODES.map(mode => {
-        const active = value === mode.value;
+        const active = value === mode;
         return (
           <label
-            key={mode.value}
+            key={mode}
             className="flex cursor-pointer items-center gap-2 font-normal"
           >
             <Switch
               checked={active}
               onChange={checked => {
-                if (checked) onChange(mode.value);
-                else if (active && mode.value !== 'plain') onChange('plain');
+                if (checked) onChange(mode);
+                else if (active && mode !== 'plain') onChange('plain');
               }}
             />
-            <span className={compact ? 'text-xs' : 'text-sm'}>{mode.label}</span>
+            <span className={compact ? 'text-xs' : 'text-sm'}>{t(mode)}</span>
           </label>
         );
       })}
@@ -64,6 +58,7 @@ export function UrlModeSwitches({
   onChange: (next: UrlFieldMode) => void;
   compact?: boolean;
 }) {
+  const t = useTranslations('collections.modes');
   return (
     <div
       className={
@@ -73,20 +68,20 @@ export function UrlModeSwitches({
       }
     >
       {URL_MODES.map(mode => {
-        const active = value === mode.value;
+        const active = value === mode;
         return (
           <label
-            key={mode.value}
+            key={mode}
             className="flex cursor-pointer items-center gap-2 font-normal"
           >
             <Switch
               checked={active}
               onChange={checked => {
-                if (checked) onChange(mode.value);
-                else onChange(mode.value === 'video' ? 'other' : 'video');
+                if (checked) onChange(mode);
+                else onChange(mode === 'video' ? 'other' : 'video');
               }}
             />
-            <span className={compact ? 'text-xs' : 'text-sm'}>{mode.label}</span>
+            <span className={compact ? 'text-xs' : 'text-sm'}>{t(mode)}</span>
           </label>
         );
       })}

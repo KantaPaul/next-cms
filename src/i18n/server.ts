@@ -26,8 +26,8 @@ export const adminUiLocale = cache(async (): Promise<UiLocale> => {
  * would fall back to English, because the admin has no next-intl routing to
  * tell it the locale.
  */
-export async function getAdminTranslations<N extends MessageNamespace>(
-  namespace: N
-) {
+export async function getAdminTranslations<
+  N extends MessageNamespace | `${MessageNamespace}.${string}`,
+>(namespace: N) {
   return getTranslations({ locale: await adminUiLocale(), namespace });
 }

@@ -26,7 +26,7 @@ export default async function ApiKeysPage() {
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="API keys" />
+        <AccessDenied />
       </>
     );
   }

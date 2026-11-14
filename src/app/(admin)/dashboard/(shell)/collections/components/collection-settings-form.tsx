@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -42,6 +43,8 @@ export function CollectionSettingsForm({
   collection,
   templatePages,
 }: CollectionSettingsFormProps) {
+  const t = useTranslations('collections.settings');
+  const tCreate = useTranslations('collections.create');
   const form = useForm<CollectionSettingsInput>({
     resolver: zodResolver(updateCollectionSchema),
     defaultValues: {
@@ -78,7 +81,7 @@ export function CollectionSettingsForm({
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Name (plural)</FormLabel>
+              <FormLabel>{tCreate('namePlural')}</FormLabel>
               <FormControl>
                 <Input {...field} value={field.value ?? ''} required />
               </FormControl>
@@ -91,7 +94,7 @@ export function CollectionSettingsForm({
           name="slug"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Slug</FormLabel>
+              <FormLabel>{tCreate('slug')}</FormLabel>
               <FormControl>
                 <Input {...field} value={field.value ?? ''} required />
               </FormControl>
@@ -102,7 +105,7 @@ export function CollectionSettingsForm({
         <PostTypeMetaFields />
         <TemplatePageSelect templatePages={templatePages} />
         <Button type="submit" disabled={isPending}>
-          {isPending ? 'Saving…' : 'Save'}
+          {isPending ? t('saving') : t('save')}
         </Button>
         {error && <p className="text-sm text-destructive">{error}</p>}
       </form>

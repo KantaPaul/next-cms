@@ -20,6 +20,8 @@ import { FieldList } from '../../components/field-list';
 import { PostTypeFeaturesCard } from '../../components/post-type-features-card';
 import { PostTypeTabs } from '../../components/post-type-tabs';
 import { PostTypeTaxonomiesCard } from '../../components/post-type-taxonomies-card';
+import { getAdminTranslations } from '@/i18n/server';
+import { postTypesCrumbs } from '@/app/(admin)/dashboard/(shell)/collections/breadcrumbs';
 
 export default async function CollectionPage({
   params,
@@ -37,15 +39,15 @@ export default async function CollectionPage({
   const allowed =
     canManage || accessService.can(access, PERMISSIONS.SETTINGS_MANAGE);
 
+  const t = await getAdminTranslations('collections.settings');
   const breadcrumbs = [
-    { title: 'Dashboard', href: PAGES.DASHBOARD.ROOT },
-    { title: 'Post types', href: PAGES.DASHBOARD.COLLECTIONS },
+    ...(await postTypesCrumbs()),
     {
       title: collection.name,
       href: PAGES.DASHBOARD.COLLECTION(collection.slug),
     },
     {
-      title: 'Fields & settings',
+      title: t('fieldsSettings'),
       href: PAGES.DASHBOARD.COLLECTION_SETTINGS(collection.slug),
     },
   ];
@@ -54,7 +56,7 @@ export default async function CollectionPage({
     return (
       <>
         <PageHeader title={collection.name} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="post type fields" />
+        <AccessDenied />
       </>
     );
   }
@@ -75,12 +77,12 @@ export default async function CollectionPage({
             <Link
               href={PAGES.DASHBOARD.COLLECTION_SETTINGS_BLOCKS(collection.slug)}
             >
-              <Blocks className="size-4" /> Block template settings
+              <Blocks className="size-4" /> {t('blockTemplateSettings')}
             </Link>
           </Button>
           <Button asChild>
             <Link href={PAGES.DASHBOARD.COLLECTION(collection.slug)}>
-              Manage {collection.name.toLowerCase()}
+              {t('manage', { name: collection.name })}
             </Link>
           </Button>
         </div>
@@ -94,7 +96,7 @@ export default async function CollectionPage({
         <div className="space-y-6 lg:col-span-4">
           <Card>
             <CardHeader>
-              <CardTitle>Settings</CardTitle>
+              <CardTitle>{t('title')}</CardTitle>
             </CardHeader>
             <CardContent>
               <CollectionSettingsForm
@@ -117,7 +119,7 @@ export default async function CollectionPage({
           />
           <Card>
             <CardHeader>
-              <CardTitle>Add field</CardTitle>
+              <CardTitle>{t('addField')}</CardTitle>
             </CardHeader>
             <CardContent>
               <AddFieldForm
@@ -130,7 +132,7 @@ export default async function CollectionPage({
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Fields</CardTitle>
+              <CardTitle>{t('fields')}</CardTitle>
             </CardHeader>
             <CardContent>
               <FieldList fields={fields} collectionId={collection.id} />

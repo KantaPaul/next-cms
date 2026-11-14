@@ -51,7 +51,7 @@ export default async function PluginAdminPageRoute({
     return (
       <>
         <PageHeader title={adminPage.title} breadcrumbs={breadcrumbs} />
-        <AccessDenied what={adminPage.title} />
+        <AccessDenied />
       </>
     );
   }

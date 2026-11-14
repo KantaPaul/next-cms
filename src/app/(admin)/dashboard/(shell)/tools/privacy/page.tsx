@@ -24,7 +24,7 @@ export default async function PrivacyToolPage() {
     return (
       <>
         <PageHeader title={TITLE} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="privacy tools" />
+        <AccessDenied />
       </>
     );
   }

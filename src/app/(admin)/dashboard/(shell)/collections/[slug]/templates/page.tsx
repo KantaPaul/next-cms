@@ -9,6 +9,8 @@ import { normalizePostTypeSupports } from '@/config/post-types';
 import { loadPostTypeRoute } from '../../_modules/post-type-route';
 import { PostTypeTabs } from '../../components/post-type-tabs';
 import { CollectionTemplatesTable } from '../../components/collection-templates-table';
+import { getAdminTranslations } from '@/i18n/server';
+import { postTypesCrumbs } from '@/app/(admin)/dashboard/(shell)/collections/breadcrumbs';
 
 export default async function CollectionTemplatesPage({
   params,
@@ -22,15 +24,15 @@ export default async function CollectionTemplatesPage({
   );
   const { allowed } = await requirePermission(PERMISSIONS.PAGES_EDIT);
 
+  const t = await getAdminTranslations('collections.templates');
   const breadcrumbs = [
-    { title: 'Dashboard', href: PAGES.DASHBOARD.ROOT },
-    { title: 'Post types', href: PAGES.DASHBOARD.COLLECTIONS },
+    ...(await postTypesCrumbs()),
     {
       title: collection.name,
       href: PAGES.DASHBOARD.COLLECTION(collection.slug),
     },
     {
-      title: 'Templates',
+      title: t('title'),
       href: PAGES.DASHBOARD.COLLECTION_TEMPLATES(collection.slug),
     },
   ];
@@ -38,8 +40,8 @@ export default async function CollectionTemplatesPage({
   if (!allowed) {
     return (
       <>
-        <PageHeader title={`Templates · ${collection.name}`} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="templates" />
+        <PageHeader title={`${t('title')} · ${collection.name}`} breadcrumbs={breadcrumbs} />
+        <AccessDenied />
       </>
     );
   }
@@ -54,7 +56,7 @@ export default async function CollectionTemplatesPage({
   return (
     <>
       <PageHeader
-        title={`Templates · ${collection.name}`}
+        title={`${t('title')} · ${collection.name}`}
         breadcrumbs={breadcrumbs}
       />
       {/* <PostTypeTabs

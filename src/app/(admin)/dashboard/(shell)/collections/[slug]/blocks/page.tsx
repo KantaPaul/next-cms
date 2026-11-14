@@ -6,6 +6,8 @@ import { collectionBlocksService } from '@/server/services/collection-blocks.ser
 import { requirePermission } from '@/server/services/require-permission';
 import { loadPostTypeRoute } from '../../_modules/post-type-route';
 import { CollectionBlocksTable } from '../../components/collection-blocks-table';
+import { getAdminTranslations } from '@/i18n/server';
+import { postTypesCrumbs } from '@/app/(admin)/dashboard/(shell)/collections/breadcrumbs';
 
 export default async function CollectionBlocksPage({
   params,
@@ -19,15 +21,15 @@ export default async function CollectionBlocksPage({
   );
   const { allowed } = await requirePermission(PERMISSIONS.PAGES_EDIT);
 
+  const t = await getAdminTranslations('collections.blocks');
   const breadcrumbs = [
-    { title: 'Dashboard', href: PAGES.DASHBOARD.ROOT },
-    { title: 'Post types', href: PAGES.DASHBOARD.COLLECTIONS },
+    ...(await postTypesCrumbs()),
     {
       title: collection.name,
       href: PAGES.DASHBOARD.COLLECTION(collection.slug),
     },
     {
-      title: 'Blocks',
+      title: t('title'),
       href: PAGES.DASHBOARD.COLLECTION_BLOCKS(collection.slug),
     },
   ];
@@ -35,8 +37,8 @@ export default async function CollectionBlocksPage({
   if (!allowed) {
     return (
       <>
-        <PageHeader title={`Blocks · ${collection.name}`} breadcrumbs={breadcrumbs} />
-        <AccessDenied what="blocks" />
+        <PageHeader title={`${t('title')} · ${collection.name}`} breadcrumbs={breadcrumbs} />
+        <AccessDenied />
       </>
     );
   }
@@ -46,7 +48,7 @@ export default async function CollectionBlocksPage({
   return (
     <>
       <PageHeader
-        title={`Blocks · ${collection.name}`}
+        title={`${t('title')} · ${collection.name}`}
         breadcrumbs={breadcrumbs}
       />
       <CollectionBlocksTable
