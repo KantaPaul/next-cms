@@ -28,6 +28,7 @@ import {
 } from '@/app/(admin)/dashboard/(shell)/collections/_modules/collections.schemas';
 import {
   BLOCK_EDITOR_TYPES,
+  blockSetupKind,
   COLLECTION_BLOCK_EDITOR_TYPES,
   hiddenBlocksFor,
   normalizeCollectionBlockSettings,
@@ -761,7 +762,8 @@ describe('CollectionBlockSettings', () => {
       hidden: {},
     });
     for (const editor of siteEditors) {
-      const setup = editorSetup(editor.kind);
+      // Search and Archive templates list the global block editor's blocks.
+      const setup = editorSetup(blockSetupKind(editor.kind));
       const listed = editor.groups.flatMap(g => g.blocks.map(b => b.type));
       const schemaTypes = Object.keys(setup.schemas);
       assert.equal(listed.length, new Set(listed).size);

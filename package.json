@@ -13,7 +13,7 @@
     "lint:fix": "next lint --fix",
     "plugins:sync": "tsx --import ./scripts/server-only-stub.mjs scripts/plugins-sync.ts",
     "plugin:new": "tsx --import ./scripts/server-only-stub.mjs scripts/plugin-new.ts",
-    "test": "tsx --import ./scripts/server-only-stub.mjs --test src/server/services/__tests__/*.test.ts src/server/plugins/__tests__/*.test.ts src/server/import/__tests__/*.test.ts src/lib/video/__tests__/video.test.ts src/lib/license/__tests__/*.test.ts src/lib/overlays/__tests__/*.test.ts src/config/__tests__/permissions.test.ts src/builder/__tests__/*.test.ts src/builder/__tests__/*.test.tsx packages/*/src/__tests__/*.test.ts packages/*/src/__tests__/*.test.tsx plugins/*/__tests__/*.test.ts scripts/lib/__tests__/*.test.ts",
+    "test": "tsx --import ./scripts/server-only-stub.mjs --test src/server/services/__tests__/*.test.ts src/server/plugins/__tests__/*.test.ts src/server/import/__tests__/*.test.ts src/lib/video/__tests__/video.test.ts src/lib/license/__tests__/*.test.ts src/lib/overlays/__tests__/*.test.ts src/config/__tests__/*.test.ts src/builder/__tests__/*.test.ts src/builder/__tests__/*.test.tsx packages/*/src/__tests__/*.test.ts packages/*/src/__tests__/*.test.tsx plugins/*/__tests__/*.test.ts scripts/lib/__tests__/*.test.ts",
     "test:unit": "vitest run",
     "test:vitest": "vitest run",
     "test:e2e": "playwright test",

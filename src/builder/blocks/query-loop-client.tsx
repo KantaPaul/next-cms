@@ -4,6 +4,7 @@ import type { NormalizedListingItem } from '@nextcms/builder-core';
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
+  type AnchorHTMLAttributes,
   createContext,
   type ReactNode,
   useCallback,
@@ -37,6 +38,26 @@ export function LoopItemProvider({
 
 export function useLoopItem(): NormalizedListingItem | null {
   return useContext(LoopItemContext);
+}
+
+/**
+ * Client anchor for `#overlay:<id>` links inside a Loop Grid card (e.g. a
+ * Container link). Attaches `data-overlay-loop-item` when rendered inside
+ * `LoopItemProvider` so OverlayHost receives the clicked item.
+ */
+export function OverlayLoopAnchor(
+  props: AnchorHTMLAttributes<HTMLAnchorElement>
+) {
+  const item = useLoopItem();
+  let loopItemAttr: string | undefined;
+  if (item) {
+    try {
+      loopItemAttr = JSON.stringify(item);
+    } catch {
+      loopItemAttr = undefined;
+    }
+  }
+  return <a {...props} data-overlay-loop-item={loopItemAttr} />;
 }
 
 // ---------------------------------------------------------------------------

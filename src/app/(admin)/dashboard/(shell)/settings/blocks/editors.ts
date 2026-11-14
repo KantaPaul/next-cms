@@ -1,7 +1,9 @@
 import 'server-only';
 import { editorSetup } from '@/builder/definitions';
 import {
+  type BlockEditorGroup,
   type BlockEditorKind,
+  blockSetupKind,
   type BlockSettings,
   type CollectionBlockEditorKind,
   type CollectionBlockSettings,
@@ -15,12 +17,12 @@ import type { BlockManagerEditor } from './_components/block-manager';
  * resolves active/default hidden lists for either site-wide or collection settings.
  */
 export function buildBlockManagerEditors(
-  editorTypes: readonly { kind: BlockEditorKind; label: string }[],
+  editorTypes: readonly { kind: BlockEditorKind; label: string; group?: BlockEditorGroup }[],
   siteBlockSettings: BlockSettings,
   collectionBlockSettings?: CollectionBlockSettings | null
 ): BlockManagerEditor[] {
-  return editorTypes.map(({ kind, label }) => {
-    const setup = editorSetup(kind);
+  return editorTypes.map(({ kind, label, group: section }) => {
+    const setup = editorSetup(blockSetupKind(kind));
     const seen = new Set<string>();
     const groups = setup.groups
       .map(group => {
@@ -65,6 +67,7 @@ export function buildBlockManagerEditors(
       return {
         kind,
         label,
+        ...(section ? { section } : {}),
         groups,
         hidden: hiddenBlocksFor(
           siteBlockSettings,
@@ -80,6 +83,7 @@ export function buildBlockManagerEditors(
     return {
       kind,
       label,
+      ...(section ? { section } : {}),
       groups,
       hidden: siteHidden,
       defaultHidden: defaultHiddenBlocks(kind, available),

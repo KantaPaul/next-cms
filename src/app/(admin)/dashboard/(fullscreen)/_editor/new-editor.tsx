@@ -125,6 +125,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
 } from 'react';
@@ -159,7 +160,13 @@ import {
   loopItemDynamicSources,
   pickPreviewItem,
 } from '@/builder/controls/loop-preview';
-import { APPROVED_DYNAMIC_SOURCES, type NormalizedListingItem } from '@nextcms/builder-core';
+import {
+  APPROVED_DYNAMIC_SOURCES,
+  CURRENT_ITEM_REF,
+  collectDynamicRefs,
+  type NormalizedListingItem,
+} from '@nextcms/builder-core';
+import { loadExternalApiRecords } from '@/server/actions/external-api-records.actions';
 import type { BuilderData } from '@/builder/data';
 import { editorSetup } from '@/builder/definitions';
 import {
@@ -1964,12 +1971,47 @@ export function NewEditor({
     }
     return DEFAULT_DYNAMIC_SOURCES;
   }, [isLoopItem, loopItemFields, kind, collectionEntry]);
+  // Preview records for "External API Item" bindings: loaded on open for
+  // presets the document uses, then fetched once for each newly picked one.
+  const [apiRecords, setApiRecords] = useState<Record<string, Record<string, unknown>>>(
+    () => dynamicRefs.externalApiRecords ?? {}
+  );
+  const requestedApiRecords = useRef(
+    new Set(Object.keys(dynamicRefs.externalApiRecords ?? {}))
+  );
+  useEffect(() => {
+    const check = () => {
+      const ids = collectDynamicRefs(store.getState().doc).externalApi ?? [];
+      const missing = ids.filter(id => !requestedApiRecords.current.has(id));
+      if (missing.length === 0) return;
+      for (const id of missing) requestedApiRecords.current.add(id);
+      loadExternalApiRecords({ presetIds: missing, draft: true })
+        .then(records => {
+          if (records && Object.keys(records).length > 0) {
+            setApiRecords(prev => ({ ...prev, ...records }));
+          }
+        })
+        .catch(() => {});
+    };
+    check();
+    const unsubscribe = store.subscribe(check);
+    return () => {
+      unsubscribe();
+    };
+  }, [store]);
   const dynamicContext = useMemo(
     () => ({
       ...(loopPreviewItem && {
         loopItem: toLoopItemContext(loopPreviewItem),
         custom: loopPreviewItem.raw ?? {},
       }),
+      externalApi: {
+        ...apiRecords,
+        // In a Loop Item template the preview item is "the current item".
+        ...(loopPreviewItem?.source === 'external-api' && {
+          [CURRENT_ITEM_REF]: toLoopItemContext(loopPreviewItem),
+        }),
+      },
       language: page.language,
       page: { title: page.title, slug: page.slug, language: page.language },
       ...(setup.renderKind === 'post' && {
@@ -1983,10 +2025,14 @@ export function NewEditor({
       pageRef: recordsById(dynamicRefs.pages),
       postRef: recordsById(dynamicRefs.posts),
     }),
-    [page.title, page.slug, page.language, setup.renderKind, post, collectionEntry, dynamicRefs, loopPreviewItem]
+    [page.title, page.slug, page.language, setup.renderKind, post, collectionEntry, dynamicRefs, loopPreviewItem, apiRecords]
   );
   const refChoices = useMemo(
-    () => ({ page: dynamicRefs.pages, post: dynamicRefs.posts }),
+    () => ({
+      page: dynamicRefs.pages,
+      post: dynamicRefs.posts,
+      externalApi: dynamicRefs.externalApis ?? [],
+    }),
     [dynamicRefs]
   );
   const customFontsCss = useMemo(

@@ -459,11 +459,13 @@ export const OVERLAY_ALLOWED_TYPES: readonly string[] = [
   'Spacer',
   'Divider',
   'OverlayClose',
+  'LoopItemField',
 ];
 
 export const OVERLAY_GROUPS: BlockGroup[] = [
   { title: 'Layout', types: ['Container', 'Columns', 'Spacer', 'Divider'] },
   { title: 'Content', types: ['Heading', 'RichText', 'Image', 'LightboxImage'] },
+  { title: 'Loop Item', types: ['LoopItemField'] },
   {
     title: 'Actions & Conversion',
     types: ['Button', 'OverlayClose', 'Newsletter', 'ContactForm'],
@@ -673,7 +675,11 @@ export function getOverlayRootFields(
     } as FieldDef,
     selector: {
       label: 'Click selector (e.g. .open-cta)',
+      description:
+        'A CSS selector on the page. To open this popup from a Loop Grid item with that item\u2019s data, turn on \u201cOpen popup/drawer on click\u201d on the Loop Grid field instead.',
       type: 'text',
+      // Read as-is by the popup script: a binding would only empty it.
+      dynamic: false,
       tab: 'trigger',
       group: 'Trigger',
       path: 'trigger.selector',
@@ -771,6 +777,7 @@ export function getOverlayRootFields(
     startsAt: {
       label: 'Start date & time (ISO)',
       type: 'text',
+      dynamic: false,
       tab: 'schedule',
       group: 'Schedule',
       path: 'startsAt',
@@ -778,6 +785,7 @@ export function getOverlayRootFields(
     endsAt: {
       label: 'End date & time (ISO)',
       type: 'text',
+      dynamic: false,
       tab: 'schedule',
       group: 'Schedule',
       path: 'endsAt',

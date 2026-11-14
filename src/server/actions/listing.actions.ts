@@ -12,7 +12,10 @@ import { PERMISSIONS } from '@/config/permissions';
 import { db } from '@/db';
 import { collections } from '@/db/schema';
 import { permissionProcedure } from '@/server/procedures/permission.procedure';
-import { externalApisService } from '@/server/services/external-apis.service';
+import {
+  externalApisService,
+  presetToApiConfig,
+} from '@/server/services/external-apis.service';
 import { siteContext } from '@/server/services/site-context';
 import { listingQueryService } from '@/server/services/listing-query.service';
 import {
@@ -114,29 +117,7 @@ export async function resolveListingQuery(
         page: input.page,
         excludeCurrent: input.excludeCurrent,
         currentId: input.currentId,
-        apiConfig: {
-          endpointUrl: preset.endpointUrl,
-          method: preset.method === 'POST' ? 'POST' : 'GET',
-          headers: preset.headers ?? {},
-          queryParams: preset.queryParams ?? {},
-          dataFilters: preset.dataFilters ?? [],
-          ...(preset.body ? { body: preset.body } : {}),
-          itemsPath: preset.itemsPath ?? '',
-          ...(preset.totalPath ? { totalPath: preset.totalPath } : {}),
-          fieldMap: {
-            id: preset.fieldId || 'id',
-            title: preset.fieldTitle || 'title',
-            ...(preset.fieldUrl ? { url: preset.fieldUrl } : {}),
-            ...(preset.fieldExcerpt ? { excerpt: preset.fieldExcerpt } : {}),
-            ...(preset.fieldImage ? { image: preset.fieldImage } : {}),
-            ...(preset.fieldPublishedAt
-              ? { publishedAt: preset.fieldPublishedAt }
-              : {}),
-          },
-          fields: preset.fields ?? [],
-          cacheTtlSeconds: preset.cacheTtlSeconds ?? 60,
-          timeoutMs: preset.timeoutMs ?? 4000,
-        },
+        apiConfig: presetToApiConfig(preset),
       },
       {
         site,

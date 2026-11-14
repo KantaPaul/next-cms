@@ -64,6 +64,8 @@ interface SheetContentProps
   showCloseButton?: boolean;
   /** Inline style for the backdrop, e.g. a custom background colour. */
   overlayStyle?: React.CSSProperties;
+  /** Optional portal target (e.g. `.site-root` so theme CSS variables apply). */
+  portalContainer?: HTMLElement | null;
 }
 
 const SheetContent = React.forwardRef<
@@ -77,11 +79,12 @@ const SheetContent = React.forwardRef<
       children,
       showCloseButton = true,
       overlayStyle,
+      portalContainer,
       ...props
     },
     ref
   ) => (
-    <SheetPortal>
+    <SheetPortal container={portalContainer}>
       <SheetOverlay className="backdrop-blur-sm" style={overlayStyle} />
       <SheetPrimitive.Content
         ref={ref}

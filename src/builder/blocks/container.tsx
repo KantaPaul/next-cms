@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { cn } from '@/lib/utils/cn';
 import type { BuilderItem } from '../data';
+import { OverlayLoopAnchor } from './query-loop-client';
 import {
   deviceForWidth,
   pick,
@@ -247,7 +248,15 @@ export function renderContainerBody({
       itemStyle={itemStyle}
     >
       {editorNotes}
-      {linkProps ? <a {...linkProps}>{body}</a> : body}
+      {linkProps ? (
+        linkProps.href?.startsWith('#overlay:') ? (
+          <OverlayLoopAnchor {...linkProps}>{body}</OverlayLoopAnchor>
+        ) : (
+          <a {...linkProps}>{body}</a>
+        )
+      ) : (
+        body
+      )}
     </Section>
   );
 }

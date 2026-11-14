@@ -1,5 +1,6 @@
 import type { BuilderDocument, BuilderNode, NodeId } from './document';
 import {
+  APPROVED_DYNAMIC_SOURCES,
   type DynamicBinding,
   type DynamicTransform,
   isDynamicBinding,
@@ -20,10 +21,19 @@ export interface DynamicContext {
   custom?: Record<string, unknown>;
   /** When true, leaves `{ $dynamic: 'loopItem' }` bindings intact until per-item loop rendering. */
   preserveLoopBindings?: boolean;
+  /**
+   * Sources whose bindings stay intact when the context has no data for
+   * them, to be resolved in a later pass (e.g. `externalApi` in a popup,
+   * filled with the item it is opened from).
+   */
+  preserveSources?: string[];
   [key: string]: unknown;
 }
 
 const DISALLOWED_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
+
+/** Record key meaning "the current item" for picked-record sources. */
+export const CURRENT_ITEM_REF = '*';
 
 /** Safely retrieves a nested value by dot path, blocking prototype access. */
 export function getPathValue(
@@ -114,22 +124,57 @@ export function resolveDynamicValue(
     return value;
   }
 
+  if (
+    context.preserveSources?.includes(value.$dynamic) &&
+    context[value.$dynamic] === undefined
+  ) {
+    return value;
+  }
+
+  // "Current item" External API bindings (no preset chosen) wait, like Loop
+  // Item bindings, for the card or popup that supplies the item.
+  if (
+    value.$dynamic === 'externalApi' &&
+    !value.ref &&
+    context.preserveLoopBindings === true &&
+    !(
+      context.externalApi &&
+      typeof context.externalApi === 'object' &&
+      Object.hasOwn(context.externalApi, CURRENT_ITEM_REF)
+    )
+  ) {
+    return value;
+  }
+
   if (depth >= MAX_RESOLUTION_DEPTH) {
     return value.fallback ?? '';
   }
 
   const { $dynamic: source, path, fallback, transform, ref } = value;
   // Picked-record sources keep their records by id: `context.postRef[id]`.
+  // A `*` entry is "the current item" (a Loop Grid card, or the item a popup
+  // was opened from) and answers for any id.
   const records = context[source] as Record<string, unknown> | undefined;
+  const hasCurrent = Boolean(records && Object.hasOwn(records, CURRENT_ITEM_REF));
+  // A picked-record source keeps a map of records, never one record itself:
+  // without a ref (or a field path) there is nothing to show but the
+  // current item, so the map can never leak out as the bound value.
+  const picked = Boolean(APPROVED_DYNAMIC_SOURCES[source]?.pick);
   const sourceData = ref
     ? records && Object.hasOwn(records, ref)
       ? records[ref]
-      : undefined
-    : records;
+      : hasCurrent
+        ? records?.[CURRENT_ITEM_REF]
+        : undefined
+    : hasCurrent
+      ? records?.[CURRENT_ITEM_REF]
+      : picked
+        ? undefined
+        : records;
 
   let resolved: unknown;
   if (sourceData && typeof sourceData === 'object') {
-    resolved = path ? getPathValue(sourceData, path) : sourceData;
+    resolved = path ? getPathValue(sourceData, path) : picked ? undefined : sourceData;
   } else if (source === 'custom' && context.custom) {
     resolved = path ? getPathValue(context.custom, path) : undefined;
   }

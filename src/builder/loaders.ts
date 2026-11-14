@@ -1218,7 +1218,11 @@ const loadLoopGrid: BlockLoader = async (props, ctx) => {
   if (!template) return { ...listing, template: null, templateName: '' };
   // Run loaders inside the template (menus, global blocks…) once; per-item
   // `loopItem` bindings stay for the grid to fill in.
-  const document = await resolveDocumentData(template.document, ctx);
+  // External API bindings wait for each card's own item (itemBindingContext).
+  const document = await resolveDocumentData(template.document, {
+    ...ctx,
+    deferExternalApi: true,
+  });
   return { ...listing, template: document, templateName: template.name };
 };
 
@@ -1441,23 +1445,60 @@ export const loadDocumentData: typeof registry.load = (doc, ctx) =>
  * Run loaders for every registered block type and return a new document with
  * resolved props. Failures are logged and the original props kept.
  */
+/** The `?itemId=` value of the request, if any. */
+function requestItemId(ctx: LoaderContext): string | undefined {
+  const raw = ctx.searchParams?.itemId;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+/** Records for "External API Item" bindings, by preset id. */
+async function loadExternalApiRecordsFor(
+  presetIds: string[],
+  ctx: LoaderContext
+): Promise<Record<string, Record<string, unknown>>> {
+  if (presetIds.length === 0) return {};
+  try {
+    const { loadExternalApiRecords } = await import(
+      '@/server/actions/external-api-records.actions'
+    );
+    return await loadExternalApiRecords({
+      presetIds,
+      itemId: requestItemId(ctx),
+      draft: Boolean(ctx.editor || ctx.preview),
+    });
+  } catch (error) {
+    console.error('[builder/loaders] External API records failed:', error);
+    return {};
+  }
+}
+
+/**
+ * Loads block data and resolves dynamic bindings.
+ *
+ * With `ctx.deferExternalApi`, "External API Item" bindings stay intact so a
+ * popup can fill them with the item it is opened from; the server render
+ * then calls `resolveDeferredExternalApi` for its default view.
+ */
 export async function resolveDocumentData(
   doc: BuilderDocument,
   ctx: LoaderContext = {}
 ): Promise<BuilderDocument> {
-  const refs = collectDynamicRefs(doc);
+  const { externalApi: externalApiIds = [], ...refs } = collectDynamicRefs(doc);
+  const deferExternalApi = ctx.deferExternalApi === true;
   // Query Filters read their target loop's API settings from this list.
   const loaderCtx: LoaderContext = {
     ...ctx,
     loopBlocks: collectLoopBlocks(doc.nodes),
   };
-  const [resolved, picked] = await Promise.all([
+  const [resolved, picked, externalApi] = await Promise.all([
     registry.resolve(doc, loaderCtx),
     Object.keys(refs).length
       ? import('@/server/actions/dynamic-refs.actions').then(m =>
           m.loadDynamicRefs(refs)
         )
       : undefined,
+    deferExternalApi ? undefined : loadExternalApiRecordsFor(externalApiIds, ctx),
   ]);
   return resolveDynamicDocument(resolved, {
     ...ctx,
@@ -1465,8 +1506,31 @@ export async function resolveDocumentData(
       ? { post: toDynamicPostRecord(ctx.post as Record<string, unknown>) }
       : {}),
     ...picked,
+    ...(externalApi ? { externalApi } : {}),
     preserveLoopBindings: true,
+    ...(deferExternalApi ? { preserveSources: ['externalApi'] } : {}),
   });
+}
+
+/** Second pass for a document resolved with `deferExternalApi`. */
+export async function resolveDeferredExternalApi(
+  doc: BuilderDocument,
+  ctx: LoaderContext = {}
+): Promise<BuilderDocument> {
+  const { externalApi: ids = [] } = collectDynamicRefs(doc);
+  const externalApi = await loadExternalApiRecordsFor(ids, ctx);
+  return resolveDynamicDocument(doc, { externalApi, preserveLoopBindings: true });
+}
+
+/** Whether a resolved document still has per-item bindings to fill client-side. */
+export function hasItemBindings(doc: BuilderDocument): boolean {
+  if (
+    Object.values(doc.nodes ?? {}).some(node => node?.type === 'LoopItemField')
+  ) {
+    return true;
+  }
+  const text = JSON.stringify(doc.nodes);
+  return text.includes('"$dynamic":"externalApi"') || text.includes('"$dynamic":"loopItem"');
 }
 
 /**

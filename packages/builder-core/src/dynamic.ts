@@ -71,8 +71,11 @@ export interface DynamicSourceDef {
   label: string;
   description: string;
   fields: DynamicSourceField[];
-  /** The binding names one record of this kind in `ref`, picked in the editor. */
-  pick?: 'page' | 'post';
+  /**
+   * The binding names one record of this kind in `ref`, picked in the editor
+   * (`externalApi`: a saved External API preset).
+   */
+  pick?: 'page' | 'post' | 'externalApi';
 }
 
 export const APPROVED_DYNAMIC_SOURCES: Record<string, DynamicSourceDef> = {
@@ -169,6 +172,15 @@ export const APPROVED_DYNAMIC_SOURCES: Record<string, DynamicSourceDef> = {
       { key: 'category', label: 'Primary Category', type: 'text' },
       { key: 'tags', label: 'Tags', type: 'text' },
     ],
+  },
+  externalApi: {
+    id: 'externalApi',
+    label: 'External API Item',
+    description:
+      'A field of a saved External API record: the item a popup was opened from, the ?itemId= item, or the first record',
+    pick: 'externalApi',
+    // Fields come from the chosen preset's field mapping (any dot path works).
+    fields: [],
   },
   custom: {
     id: 'custom',

@@ -6,6 +6,7 @@ import {
   type SyntheticEvent,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -41,7 +42,11 @@ import {
   type LightboxContextValue,
 } from '@/components/site/lightbox-context';
 import { LoopItemProvider } from '@/builder/blocks/query-loop-client';
-import type { NormalizedListingItem } from '@nextcms/builder-core';
+import {
+  type BuilderDocument,
+  type NormalizedListingItem,
+  resolveDynamicDocument,
+} from '@nextcms/builder-core';
 
 /** Clicks on these close the overlay or work its controls, so they aren't conversions. */
 export const NOT_A_CONVERSION =
@@ -53,9 +58,65 @@ export type OverlayHostItem = {
   category: 'Popup' | 'Drawer';
   settings: OverlaySettings;
   renderedContent: ReactNode;
+  /** Document with per-item bindings intact (External API Item, Loop Item). */
+  clientDocument?: BuilderDocument;
   publishedAt: string | null;
   draft: boolean;
 };
+
+type ItemRenderModules = {
+  renderer: typeof import('@/builder/renderer');
+  queryLoop: typeof import('@/builder/blocks/query-loop');
+};
+
+/**
+ * A popup opened from a Loop Grid item: renders the popup document in the
+ * browser with that item as the binding context, so "External API Item"
+ * fields show the clicked record. Shows the server render while the
+ * renderer loads.
+ */
+function ItemPopupContent({
+  document,
+  item,
+  fallback,
+}: {
+  document: BuilderDocument;
+  item: NormalizedListingItem;
+  fallback: ReactNode;
+}) {
+  const [modules, setModules] = useState<ItemRenderModules | null>(null);
+  useEffect(() => {
+    let live = true;
+    Promise.all([import('@/builder/renderer'), import('@/builder/blocks/query-loop')])
+      .then(([renderer, queryLoop]) => {
+        if (live) setModules({ renderer, queryLoop });
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, []);
+  const resolved = useMemo(
+    () =>
+      modules
+        ? resolveDynamicDocument(document, {
+            ...modules.queryLoop.itemBindingContext(item),
+            preserveLoopBindings: true,
+          })
+        : null,
+    [document, item, modules]
+  );
+  if (!modules || !resolved) return <>{fallback}</>;
+  return (
+    <LoopItemProvider item={item}>
+      <modules.renderer.BuilderRenderer
+        kind="page"
+        document={resolved}
+        metadata={{ editing: false }}
+      />
+    </LoopItemProvider>
+  );
+}
 
 type EventType = 'view' | 'close' | 'conversion';
 
@@ -115,6 +176,10 @@ export function OverlayHost({ overlays }: { overlays: OverlayHostItem[] }) {
   const [loopItemData, setLoopItemData] = useState<
     Record<string, NormalizedListingItem>
   >({});
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setPortalContainer(document.querySelector<HTMLElement>('.site-root'));
+  }, []);
 
   // Mutable mirrors so trigger listeners never need to re-subscribe when an
   // overlay opens or closes (which would restart delay timers and re-arm exit intent).
@@ -443,7 +508,17 @@ export function OverlayHost({ overlays }: { overlays: OverlayHostItem[] }) {
   const currentLightbox = activeId ? lightboxData[activeId] ?? null : null;
   const currentLoopItem = activeId ? loopItemData[activeId] ?? null : null;
   const innerContent = currentLoopItem ? (
-    <LoopItemProvider item={currentLoopItem}>{renderedContent}</LoopItemProvider>
+    <LoopItemProvider item={currentLoopItem}>
+      {current.clientDocument ? (
+        <ItemPopupContent
+          document={current.clientDocument}
+          item={currentLoopItem}
+          fallback={renderedContent}
+        />
+      ) : (
+        renderedContent
+      )}
+    </LoopItemProvider>
   ) : (
     renderedContent
   );
@@ -471,6 +546,7 @@ export function OverlayHost({ overlays }: { overlays: OverlayHostItem[] }) {
           side={side}
           showCloseButton={false}
           overlayStyle={overlayStyle}
+          portalContainer={portalContainer}
           className={cn(
             's-ov-panel overflow-y-auto shadow-2xl',
             noAnimation && '!animate-none !duration-0'
@@ -507,6 +583,7 @@ export function OverlayHost({ overlays }: { overlays: OverlayHostItem[] }) {
       <DialogContent
         showCloseButton={false}
         overlayStyle={overlayStyle}
+        portalContainer={portalContainer}
         className={cn(
           's-ov-panel block overflow-y-auto shadow-2xl sm:max-w-none',
           POPUP_POSITION[layout.position] ?? POPUP_POSITION.center,

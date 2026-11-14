@@ -17,11 +17,62 @@ export type DynamicRefItem = { id: string; title: string } & Record<
   unknown
 >;
 
+/** A saved External API preset as offered by the binding picker. */
+export type ExternalApiRefOption = {
+  id: string;
+  title: string;
+  fields: { key: string; label: string; type: 'text' | 'image' | 'url' | 'date' | 'number' }[];
+};
+
 /** Picker options per kind, for the editor. */
 export type DynamicRefOptions = {
   pages: DynamicRefItem[];
   posts: DynamicRefItem[];
+  /** Saved External API presets (editor only). */
+  externalApis?: ExternalApiRefOption[];
+  /** Preview records for External API bindings, by preset id. */
+  externalApiRecords?: Record<string, Record<string, unknown>>;
 };
+
+type PresetFieldSource = {
+  fieldId?: string | null;
+  fieldTitle?: string | null;
+  fieldUrl?: string | null;
+  fieldExcerpt?: string | null;
+  fieldImage?: string | null;
+  fieldPublishedAt?: string | null;
+  fields?: { key?: string; label?: string; fieldType?: string }[] | null;
+};
+
+const FIELD_TYPE_MAP: Record<string, ExternalApiRefOption['fields'][number]['type']> = {
+  media: 'image',
+  url: 'url',
+  date: 'date',
+  number: 'number',
+};
+
+/** Binding fields for a preset: its core mapping first, then mapped fields. */
+export function presetBindingFields(preset: PresetFieldSource): ExternalApiRefOption['fields'] {
+  const out: ExternalApiRefOption['fields'] = [];
+  const seen = new Set<string>();
+  const add = (key: string | null | undefined, label: string, type: ExternalApiRefOption['fields'][number]['type']) => {
+    const k = key?.trim();
+    if (!k || seen.has(k)) return;
+    seen.add(k);
+    out.push({ key: k, label, type });
+  };
+  add(preset.fieldTitle || 'title', 'Title', 'text');
+  add(preset.fieldImage, 'Image', 'image');
+  add(preset.fieldExcerpt, 'Excerpt', 'text');
+  add(preset.fieldUrl, 'URL', 'url');
+  add(preset.fieldPublishedAt, 'Published date', 'date');
+  for (const field of preset.fields ?? []) {
+    if (!field?.key) continue;
+    add(field.key, field.label?.trim() || field.key, FIELD_TYPE_MAP[field.fieldType ?? ''] ?? 'text');
+  }
+  add(preset.fieldId || 'id', 'ID', 'text');
+  return out;
+}
 
 const PICKER_LIMIT = 200;
 

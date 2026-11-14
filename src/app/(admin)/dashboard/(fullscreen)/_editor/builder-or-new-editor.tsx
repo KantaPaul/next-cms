@@ -36,6 +36,7 @@ export async function BuilderOrNewEditor({
     loadEditorData({
       content: props.page.content,
       kind: props.kind ?? 'page',
+      category: props.category,
       language: props.page.language,
       themeTokens: props.themeTokens,
       post: props.post,

@@ -11,7 +11,12 @@ import 'server-only';
 import { type BuilderDocument, collectUsedClassIds } from '@nextcms/builder-core';
 import type { ReactNode } from 'react';
 import type { LocaleLinkMap } from '@/lib/utils/locale-links';
-import { type LoaderContext, resolveDocumentData } from './loaders';
+import {
+  hasItemBindings,
+  type LoaderContext,
+  resolveDeferredExternalApi,
+  resolveDocumentData,
+} from './loaders';
 import type { PostView } from './post-template';
 import {
   BuilderRenderer,
@@ -32,7 +37,12 @@ export type RenderWithLoadersOptions = {
    */
   loadStyleClasses?: (
     usedIds: Set<string>
-  ) => Promise<{ classes: Record<string, { name: string }>; css: string }>;
+  ) => Promise<{ classes: Record<string, { name: string }>; css: string }>;  /**
+   * Receives the resolved document with per-item bindings (External API
+   * Item, Loop Item) still intact, when it has any. A popup re-renders it in
+   * the browser with the item it was opened from.
+   */
+  onClientDocument?: (doc: BuilderDocument) => void;
 };
 
 export async function renderDocumentWithLoaders(
@@ -43,7 +53,14 @@ export async function renderDocumentWithLoaders(
   options: RenderWithLoadersOptions = {}
 ): Promise<ReactNode> {
   const mergedCtx: LoaderContext = { ...metadata, ...ctx };
-  const resolved = await resolveDocumentData(doc, mergedCtx);
+  let resolved: BuilderDocument;
+  if (options.onClientDocument) {
+    const deferred = await resolveDocumentData(doc, { ...mergedCtx, deferExternalApi: true });
+    if (hasItemBindings(deferred)) options.onClientDocument(deferred);
+    resolved = await resolveDeferredExternalApi(deferred, mergedCtx);
+  } else {
+    resolved = await resolveDocumentData(doc, mergedCtx);
+  }
   // Collected after loading, so classes inside global blocks count too.
   const usedClassIds = collectUsedClassIds(resolved);
   const styleClasses =

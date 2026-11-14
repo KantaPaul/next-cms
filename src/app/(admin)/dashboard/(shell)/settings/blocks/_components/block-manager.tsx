@@ -6,7 +6,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import type { BlockEditorKind, BlockSettings } from '@/config/block-manager';
+import {
+  BLOCK_EDITOR_GROUPS,
+  type BlockEditorGroup,
+  type BlockEditorKind,
+  type BlockSettings,
+} from '@/config/block-manager';
 import { cn } from '@/lib/utils/cn';
 import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import { updateBlockSettings } from '../../_modules/settings.actions';
@@ -14,6 +19,8 @@ import { updateBlockSettings } from '../../_modules/settings.actions';
 export type BlockManagerEditor = {
   kind: BlockEditorKind;
   label: string;
+  /** Section of the editor list (content editors, site templates). */
+  section?: BlockEditorGroup;
   groups: { title: string; blocks: { type: string; label: string }[] }[];
   hidden: string[];
   defaultHidden: string[];
@@ -71,6 +78,17 @@ export function BlockManager({
   const [saving, setSaving] = useState(false);
 
   const editor = editors.find(e => e.kind === active) ?? editors[0];
+  // Editor list in sections; entries without one (collection settings) form a single list.
+  const navSections = useMemo(() => {
+    if (!editors.some(e => e.section)) {
+      return [{ id: 'all', label: '', editors }];
+    }
+    return BLOCK_EDITOR_GROUPS.map(group => ({
+      id: group.id,
+      label: group.label,
+      editors: editors.filter(e => (e.section ?? 'content') === group.id),
+    })).filter(section => section.editors.length > 0);
+  }, [editors]);
   const current = hidden[editor.kind] ?? [];
   const total = editor.groups.reduce((n, g) => n + g.blocks.length, 0);
 
@@ -150,31 +168,38 @@ export function BlockManager({
 
   return (
     <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
-      <nav aria-label="Editor types" className="flex gap-1 overflow-x-auto lg:flex-col">
-        {editors.map(e => {
-          const shown =
-            e.groups.reduce((n, g) => n + g.blocks.length, 0) -
-            (hidden[e.kind]?.length ?? 0);
-          const count = e.groups.reduce((n, g) => n + g.blocks.length, 0);
-          return (
-            <button
-              key={e.kind}
-              type="button"
-              onClick={() => selectEditor(e.kind)}
-              className={cn(
-                'flex shrink-0 items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors',
-                e.kind === active
-                  ? 'bg-primary/10 font-semibold text-primary'
-                  : 'text-steel-600 hover:bg-steel-100 dark:text-steel-300 dark:hover:bg-dark-200'
-              )}
-            >
-              <span>{e.label}</span>
-              <span className="text-xs tabular-nums opacity-70">
-                {shown}/{count}
-              </span>
-            </button>
-          );
-        })}
+      <nav aria-label="Editor types" className="flex gap-4 overflow-x-auto lg:flex-col">
+        {navSections.map(section => (
+          <div key={section.id} className="flex shrink-0 gap-1 lg:flex-col">
+            {navSections.length > 1 && (
+              <h3 className="hidden px-3 pb-1 pt-1 text-[11px] font-semibold uppercase tracking-wide text-steel-500 lg:block">
+                {section.label}
+              </h3>
+            )}
+            {section.editors.map(e => {
+              const count = e.groups.reduce((n, g) => n + g.blocks.length, 0);
+              const shown = count - (hidden[e.kind]?.length ?? 0);
+              return (
+                <button
+                  key={e.kind}
+                  type="button"
+                  onClick={() => selectEditor(e.kind)}
+                  className={cn(
+                    'flex shrink-0 items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors',
+                    e.kind === active
+                      ? 'bg-primary/10 font-semibold text-primary'
+                      : 'text-steel-600 hover:bg-steel-100 dark:text-steel-300 dark:hover:bg-dark-200'
+                  )}
+                >
+                  <span>{e.label}</span>
+                  <span className="text-xs tabular-nums opacity-70">
+                    {shown}/{count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       <section aria-label={`${editor.label} blocks`} className="min-w-0">

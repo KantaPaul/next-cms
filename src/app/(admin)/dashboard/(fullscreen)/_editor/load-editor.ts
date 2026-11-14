@@ -12,7 +12,7 @@ import type { SerializedPluginFormAction } from '@/builder/fields/plugin-editor-
 import { loadDocumentData } from '@/builder/loaders';
 import type { PostView } from '@/builder/post-template';
 import { documentIssues } from '@/builder/validate-document';
-import { hiddenBlocksFor } from '@/config/block-manager';
+import { blockSettingsKindFor, hiddenBlocksFor } from '@/config/block-manager';
 import { PLUGIN_BLOCK_OWNER } from '@/plugins/client-blocks';
 import { SERVER_PLUGINS_BY_ID } from '@/plugins/generated/server-registry';
 import { applyFilters } from '@/server/plugins/hooks';
@@ -23,8 +23,11 @@ import {
   type DynamicRefItem,
   type DynamicRefOptions,
   dynamicRefsService,
+  presetBindingFields,
 } from '@/server/services/dynamic-refs.service';
-import { adminSiteId } from '@/server/services/site-context';
+import { externalApiRecordsService } from '@/server/services/external-api-records.service';
+import { externalApisService } from '@/server/services/external-apis.service';
+import { adminSiteId, siteContext } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
 
 export type EditorData = {
@@ -60,6 +63,37 @@ function withPicked(
   return [...options, ...Object.values(picked).filter(item => !known.has(item.id))];
 }
 
+/**
+ * Saved External API presets for "External API Item" bindings, and preview
+ * records for the presets this document already uses.
+ */
+async function externalApiRefOptions(
+  presetIds: string[]
+): Promise<Pick<DynamicRefOptions, 'externalApis' | 'externalApiRecords'>> {
+  try {
+    const siteId = await adminSiteId();
+    const [presets, site] = await Promise.all([
+      externalApisService.list(siteId),
+      siteContext.getById(siteId),
+    ]);
+    const records =
+      site && presetIds.length > 0
+        ? await externalApiRecordsService.load(presetIds, site)
+        : {};
+    return {
+      externalApis: presets.map(preset => ({
+        id: preset.id,
+        title: preset.name,
+        fields: presetBindingFields(preset),
+      })),
+      externalApiRecords: records,
+    };
+  } catch (error) {
+    console.error('[load-editor] External API options failed:', error);
+    return { externalApis: [], externalApiRecords: {} };
+  }
+}
+
 /** Everything the new editor needs on load, in one server pass (R744). */
 export async function loadEditorData({
   content,
@@ -69,9 +103,12 @@ export async function loadEditorData({
   post,
   collectionEntry,
   collectionId,
+  category,
 }: {
   content: unknown;
   kind: string;
+  /** Global block category; Search and Archive templates have their own block list. */
+  category?: string;
   language: string;
   themeTokens: unknown;
   post?: PostView;
@@ -94,6 +131,7 @@ export async function loadEditorData({
     collectionRow,
     enabledPluginSet,
     rawFormActions,
+    externalApiRefs,
   ] = await Promise.all([
     loadDocumentData(document, {
       language,
@@ -116,6 +154,7 @@ export async function loadEditorData({
       : Promise.resolve(null),
     pluginsService.getEnabledIds(siteId),
     applyFilters('form.actions', [], { siteId }),
+    externalApiRefOptions(collectDynamicRefs(document).externalApi ?? []),
   ]);
 
   const disabledPluginBlocks: Record<string, string> = {};
@@ -142,7 +181,7 @@ export async function loadEditorData({
     issues: documentIssues(document, setup.definitions),
     hiddenBlocks: hiddenBlocksFor(
       settings.blockSettings,
-      kind,
+      blockSettingsKindFor(kind, category),
       Array.from(
         new Set([
           ...setup.groups.flatMap(group => group.types),
@@ -157,6 +196,7 @@ export async function loadEditorData({
     dynamicRefs: {
       pages: withPicked(options.pages, picked.pageRef),
       posts: withPicked(options.posts, picked.postRef),
+      ...externalApiRefs,
     },
     collectionEntry,
     collectionBlocks,

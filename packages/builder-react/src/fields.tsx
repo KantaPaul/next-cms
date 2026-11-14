@@ -15,6 +15,7 @@ import {
   type Device,
   type DynamicBinding,
   type DynamicSourceDef,
+  type DynamicSourceField,
   type FieldDef,
   fieldVisible,
   getPath,
@@ -1171,16 +1172,33 @@ export function fieldControlId(name: string): string {
   return `field-${name.replace(/[^\w-]/g, '-')}`;
 }
 
-/** Records a picked-item source (`pageRef`, `postRef`) can point at. */
+/** Records a picked-item source (`pageRef`, `postRef`, `externalApi`) can point at. */
 export type DynamicRefChoices = {
   page: { id: string; title: string }[];
   post: { id: string; title: string }[];
+  /** Saved External API presets, with the fields their mapping offers. */
+  externalApi?: { id: string; title: string; fields?: DynamicSourceField[] }[];
 };
 
 const DynamicRefsContext = createContext<DynamicRefChoices>({
   page: [],
   post: [],
+  externalApi: [],
 });
+
+const PICK_LABELS: Record<
+  NonNullable<DynamicSourceDef['pick']>,
+  { label: string; choose: string; none: string }
+> = {
+  page: { label: 'Page', choose: 'Choose a page…', none: 'No published pages' },
+  post: { label: 'Blog post', choose: 'Choose a post…', none: 'No published posts' },
+  externalApi: {
+    label: 'External API',
+    // No preset: the item a popup was opened from, or the Loop Grid card's item.
+    choose: 'Current item (popup / Loop Grid card)',
+    none: 'Current item (popup / Loop Grid card)',
+  },
+};
 
 /** Gives dynamic bindings the pages and posts to choose from. */
 export const DynamicRefsProvider = DynamicRefsContext.Provider;
@@ -1211,6 +1229,7 @@ export function useDynamicSources(): DynamicSourcesValue {
 
 /** Whether an inspector field accepts `{ $dynamic: ... }` data bindings. */
 export function fieldAllowsDynamic(field: FieldDef): boolean {
+  if (field.dynamic === false) return false;
   return Boolean(
     field.dynamic ||
       field.type === 'text' ||
@@ -1261,10 +1280,17 @@ export function DynamicBindingField({
   const currentSource = value.$dynamic || 'page';
   const currentPath = value.path || '';
   const sourceDef = sources[currentSource] ?? APPROVED_DYNAMIC_SOURCES[currentSource];
-  const availableFields = sourceDef?.fields ?? [];
   const refChoices = useContext(DynamicRefsContext);
   const pickKind = sourceDef?.pick;
-  const choices = pickKind ? refChoices[pickKind] : [];
+  const choices: { id: string; title: string; fields?: DynamicSourceField[] }[] = pickKind
+    ? (refChoices[pickKind] ?? [])
+    : [];
+  const pickLabels = pickKind ? PICK_LABELS[pickKind] : null;
+  // An External API binding lists the chosen preset's mapped fields.
+  const availableFields =
+    pickKind === 'externalApi'
+      ? (choices.find(c => c.id === value.ref)?.fields ?? [])
+      : (sourceDef?.fields ?? []);
 
   return (
     <div
@@ -1317,7 +1343,9 @@ export function DynamicBindingField({
             onChange={e => {
               const newSource = e.target.value;
               const def = sources[newSource];
-              const firstField = def?.fields[0]?.key ?? '';
+              // External API fields depend on the API chosen next; start with `title`.
+              const firstField =
+                def?.fields[0]?.key ?? (def?.pick === 'externalApi' ? 'title' : '');
               const { ref: _ref, ...rest } = value;
               onChange({ ...rest, $dynamic: newSource, path: firstField });
             }}
@@ -1362,23 +1390,36 @@ export function DynamicBindingField({
         </div>
       </div>
 
-      {pickKind && (
+      {pickKind && pickLabels && (
         <div>
           <label style={{ display: 'block', fontSize: '11px', color: 'var(--ne-text-muted, #64748b)', marginBottom: 2 }}>
-            {pickKind === 'post' ? 'Blog post' : 'Page'}
+            {pickLabels.label}
           </label>
           <select
             value={value.ref ?? ''}
             onChange={e => {
               const { ref: _ref, ...rest } = value;
-              onChange(e.target.value ? { ...rest, ref: e.target.value } : rest);
+              const nextRef = e.target.value;
+              if (!nextRef) {
+                onChange(rest);
+                return;
+              }
+              // Keep the field if the new preset has it, else take its first one.
+              const nextFields = choices.find(c => c.id === nextRef)?.fields ?? [];
+              const keepPath =
+                pickKind !== 'externalApi' ||
+                nextFields.length === 0 ||
+                nextFields.some(f => f.key === value.path);
+              onChange({
+                ...rest,
+                ref: nextRef,
+                ...(keepPath ? {} : { path: nextFields[0]?.key ?? '' }),
+              });
             }}
             style={inputStyle}
           >
             <option value="">
-              {choices.length
-                ? `Choose a ${pickKind === 'post' ? 'post' : 'page'}…`
-                : `No published ${pickKind === 'post' ? 'posts' : 'pages'}`}
+              {choices.length ? pickLabels.choose : pickLabels.none}
             </option>
             {value.ref && !choices.some(c => c.id === value.ref) && (
               <option value={value.ref}>Unavailable item</option>

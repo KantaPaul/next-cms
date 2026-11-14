@@ -21,6 +21,8 @@ type RenderInput = {
   kind?: RenderKind;
   /** Theme tokens, language, search params, and the post for post layouts. */
   metadata: RenderMetadata;
+  /** See `RenderWithLoadersOptions.onClientDocument` (popups). */
+  onClientDocument?: (doc: BuilderDocument) => void;
 };
 
 async function applyHtmlFiltersToDocument(
@@ -60,6 +62,7 @@ export async function renderBuilderContent({
   content,
   kind = 'page',
   metadata,
+  onClientDocument,
 }: RenderInput): Promise<ReactNode> {
   const siteId =
     typeof metadata.siteId === 'string'
@@ -118,7 +121,10 @@ export async function renderBuilderContent({
     { ...(nextMetadata as LoaderContext), localeLinks },
     nextMetadata,
     kind,
-    { loadStyleClasses: usedIds => styleClassesService.classesForRender(siteId, usedIds) }
+    {
+      loadStyleClasses: usedIds => styleClassesService.classesForRender(siteId, usedIds),
+      ...(onClientDocument ? { onClientDocument } : {}),
+    }
   );
 }
 

@@ -53,6 +53,34 @@ function maskExternalApiRecord(row: ExternalApiRecord): ExternalApiRecord {
   };
 }
 
+/**
+ * The listing service's `apiConfig` for a saved preset (decrypted runtime
+ * record from `getByIdForRuntime`).
+ */
+export function presetToApiConfig(preset: ExternalApiRecord) {
+  return {
+    endpointUrl: preset.endpointUrl,
+    method: preset.method === 'POST' ? ('POST' as const) : ('GET' as const),
+    headers: preset.headers ?? {},
+    queryParams: preset.queryParams ?? {},
+    dataFilters: preset.dataFilters ?? [],
+    ...(preset.body ? { body: preset.body } : {}),
+    itemsPath: preset.itemsPath ?? '',
+    ...(preset.totalPath ? { totalPath: preset.totalPath } : {}),
+    fieldMap: {
+      id: preset.fieldId || 'id',
+      title: preset.fieldTitle || 'title',
+      ...(preset.fieldUrl ? { url: preset.fieldUrl } : {}),
+      ...(preset.fieldExcerpt ? { excerpt: preset.fieldExcerpt } : {}),
+      ...(preset.fieldImage ? { image: preset.fieldImage } : {}),
+      ...(preset.fieldPublishedAt ? { publishedAt: preset.fieldPublishedAt } : {}),
+    },
+    fields: preset.fields ?? [],
+    cacheTtlSeconds: preset.cacheTtlSeconds ?? 60,
+    timeoutMs: preset.timeoutMs ?? 4000,
+  };
+}
+
 export const externalApisService = {
   list: async (siteId?: string): Promise<ExternalApiRecord[]> => {
     const resolvedSiteId = siteId ?? (await adminSiteId());

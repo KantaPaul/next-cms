@@ -1,6 +1,7 @@
 import {
   type BuilderDocument,
   type BuilderNode,
+  CURRENT_ITEM_REF,
   formatNamespacedParam,
   type ListingFacets,
   type ListingSource,
@@ -78,6 +79,22 @@ export function toLoopItemContext(
     terms: item.terms ?? [],
     source: item.source,
     raw: item.raw ?? {},
+  };
+}
+
+/**
+ * Binding context for one listing item: `loopItem`, `custom` (raw fields)
+ * and, for External API items, `externalApi` as "the current item" (`*`),
+ * so "External API Item" bindings in a card or popup show this item.
+ */
+export function itemBindingContext(
+  item: NormalizedListingItem
+): Record<string, unknown> {
+  const loopItem = toLoopItemContext(item);
+  return {
+    loopItem,
+    custom: item.raw ?? {},
+    ...(item.source === 'external-api' ? { externalApi: { [CURRENT_ITEM_REF]: loopItem } } : {}),
   };
 }
 
@@ -629,16 +646,12 @@ export function QueryLoop({
     item: NormalizedListingItem,
     index: number
   ): ReactNode => {
-    const loopItemData = toLoopItemContext(item);
     if (typeof card === 'function' && hasCustomCard) {
       return (
         <LoopItemProvider key={item.id} item={item}>
           <article className={cardClassName}>
             {card({
-              itemContext: {
-                loopItem: loopItemData,
-                custom: item.raw ?? {},
-              },
+              itemContext: itemBindingContext(item),
               itemIndex: index,
             })}
           </article>
@@ -701,9 +714,7 @@ export function QueryLoop({
             item card):
           </p>
           {card({
-            itemContext: {
-              loopItem: toLoopItemContext(items[0] ?? SAMPLE_LOOP_ITEMS[0]),
-            },
+            itemContext: itemBindingContext(items[0] ?? SAMPLE_LOOP_ITEMS[0]),
             itemIndex: 0,
             minEmptyHeight: 48,
           })}

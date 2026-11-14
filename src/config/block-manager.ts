@@ -5,19 +5,32 @@
  * it: it is only left out of the insert panel.
  */
 
+/** Sections of the block manager's editor list. */
+export const BLOCK_EDITOR_GROUPS = [
+  { id: 'content', label: 'Content editors' },
+  { id: 'site-templates', label: 'Site templates' },
+] as const;
+
+export type BlockEditorGroup = (typeof BLOCK_EDITOR_GROUPS)[number]['id'];
+
 export const BLOCK_EDITOR_TYPES = [
-  { kind: 'page', label: 'Pages' },
-  { kind: 'post', label: 'Post layouts' },
-  { kind: 'post-template', label: 'Post templates' },
-  { kind: 'page-template', label: 'Page templates' },
-  { kind: 'loop-item', label: 'Loop items' },
-  { kind: 'entry', label: 'Post type entries' },
-  { kind: 'entry-template', label: 'Post type templates' },
-  { kind: 'collection-block', label: 'Collection blocks' },
-  { kind: 'global', label: 'Global blocks' },
-  { kind: 'contact-form', label: 'Contact forms' },
-  { kind: 'header', label: 'Header' },
-  { kind: 'footer', label: 'Footer' },
+  { kind: 'page', label: 'Pages', group: 'content' },
+  { kind: 'post', label: 'Post layouts', group: 'content' },
+  { kind: 'post-template', label: 'Post templates', group: 'content' },
+  { kind: 'page-template', label: 'Page templates', group: 'content' },
+  { kind: 'loop-item', label: 'Loop items', group: 'content' },
+  { kind: 'entry', label: 'Post type entries', group: 'content' },
+  { kind: 'entry-template', label: 'Post type templates', group: 'content' },
+  { kind: 'collection-block', label: 'Collection blocks', group: 'content' },
+  { kind: 'global', label: 'Global blocks', group: 'content' },
+  { kind: 'contact-form', label: 'Contact forms', group: 'content' },
+  { kind: 'header', label: 'Header', group: 'site-templates' },
+  { kind: 'footer', label: 'Footer', group: 'site-templates' },
+  { kind: 'mega-menu', label: 'Mega menu', group: 'site-templates' },
+  { kind: 'search', label: 'Search', group: 'site-templates' },
+  { kind: 'archive', label: 'Archive', group: 'site-templates' },
+  { kind: 'popup', label: 'Popup', group: 'site-templates' },
+  { kind: 'drawer', label: 'Drawer', group: 'site-templates' },
 ] as const;
 
 export type BlockEditorKind = (typeof BLOCK_EDITOR_TYPES)[number]['kind'];
@@ -40,6 +53,36 @@ export type CollectionBlockEditorKind =
 export const COLLECTION_BLOCK_EDITOR_KINDS = COLLECTION_BLOCK_EDITOR_TYPES.map(
   t => t.kind
 ) as [CollectionBlockEditorKind, ...CollectionBlockEditorKind[]];
+
+/**
+ * Search and Archive templates open in the global block editor: they offer
+ * its blocks, but keep their own block list in settings.
+ */
+const SETUP_KIND: Partial<Record<BlockEditorKind, string>> = {
+  search: 'global',
+  archive: 'global',
+};
+
+/** The editor whose blocks a block-manager entry lists. */
+export function blockSetupKind(kind: string): string {
+  return SETUP_KIND[kind as BlockEditorKind] ?? kind;
+}
+
+const CATEGORY_KIND: Record<string, BlockEditorKind> = {
+  Search: 'search',
+  Archive: 'archive',
+};
+
+/**
+ * The block-settings entry an editor uses: a Search or Archive template in
+ * the global block editor uses its own entry, everything else its kind.
+ */
+export function blockSettingsKindFor(kind: string, category?: string | null): string {
+  if (kind === 'global' && category && CATEGORY_KIND[category]) {
+    return CATEGORY_KIND[category];
+  }
+  return kind;
+}
 
 export type BlockSettings = {
   /** Hidden block types per editor type. A missing kind uses the default. */

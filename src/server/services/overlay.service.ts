@@ -7,6 +7,7 @@ import { renderBuilderContent } from '@/builder/render-content';
 import { normalizeOverlaySettings } from '@/lib/overlays/settings';
 import { matchTargeting } from '@/lib/overlays/targeting';
 import type { OverlaySettings } from '@/lib/overlays/types';
+import type { BuilderDocument } from '@nextcms/builder-core';
 import type { ReactNode } from 'react';
 
 export type ActiveOverlayItem = {
@@ -15,6 +16,11 @@ export type ActiveOverlayItem = {
   category: 'Popup' | 'Drawer';
   settings: OverlaySettings;
   renderedContent: ReactNode;
+  /**
+   * The popup's document with per-item bindings intact, when it has any; the
+   * host renders it with the Loop Grid item the popup was opened from.
+   */
+  clientDocument?: BuilderDocument;
   publishedAt: string | null;
   draft: boolean;
 };
@@ -79,8 +85,12 @@ export const overlayService = {
 
       if (!isMatch) continue;
 
+      let clientDocument: BuilderDocument | undefined;
       const renderedContent = await renderBuilderContent({
         content: data,
+        onClientDocument: doc => {
+          clientDocument = doc;
+        },
         kind: 'page',
         metadata: {
           editing: false,
@@ -100,6 +110,7 @@ export const overlayService = {
         category,
         settings,
         renderedContent,
+        ...(clientDocument ? { clientDocument } : {}),
         publishedAt: row.publishedAt
           ? new Date(row.publishedAt).toISOString()
           : null,

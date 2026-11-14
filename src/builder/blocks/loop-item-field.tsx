@@ -542,6 +542,7 @@ function LoopFeaturedGallerySlider({
   galleryAspect = 'wide',
   popupTrigger,
   overlayId,
+  loopItem,
   badgeElements,
   className,
   style,
@@ -556,6 +557,8 @@ function LoopFeaturedGallerySlider({
   galleryAspect?: GalleryAspect;
   popupTrigger?: boolean;
   overlayId?: string;
+  /** The card's item, so a popup opened from the image can show its data. */
+  loopItem?: unknown;
   badgeElements?: Record<string, ElementStyle>;
   className?: string;
   style?: CSSProperties;
@@ -597,6 +600,7 @@ function LoopFeaturedGallerySlider({
       <OverlayTrigger
         overlayId={overlayId}
         lightbox={{ image: currentSrc, alt: `${alt} ${currentIdx + 1}` }}
+        loopItem={loopItem}
         className="block w-full overflow-hidden"
       >
         {imgNode}
@@ -1356,6 +1360,7 @@ function LoopItemFieldRowView({
             overlayId={row.overlayId}
             className="relative block overflow-hidden"
             lightbox={{ image: imgSrc, alt: item.title }}
+            loopItem={item}
           >
             {inner}
           </OverlayTrigger>
@@ -1416,6 +1421,7 @@ function LoopItemFieldRowView({
             galleryAspect={aspect}
             popupTrigger={row.popupTrigger}
             overlayId={row.overlayId}
+            loopItem={item}
             badgeElements={badgeElements}
             className={cn(...valueStyle.classes)}
             style={valueStyle.style}
