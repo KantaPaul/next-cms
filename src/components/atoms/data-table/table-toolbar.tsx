@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { Table } from '@tanstack/react-table';
 import isEmpty from 'lodash/isEmpty';
 import { Grid3x3, List, X } from 'lucide-react';
@@ -72,6 +73,7 @@ export function TableToolbar<TData>({
       layout?: string;
     }>();
   const columnControl = personalizedProps?.columnControl ?? true;
+  const t = useTranslations('common.table');
 
   // Calculate pagination info for "Showing x-x of x" display
   const currentPage = Number.parseInt(queryParams.page || '1', 10) || 1;
@@ -119,8 +121,8 @@ export function TableToolbar<TData>({
       {totalCount !== undefined && (
         <Text className="font-geist-mono text-steel-700 dark:text-steel-200 text-sm font-medium whitespace-nowrap">
           {totalCount > 0
-            ? `Showing ${startItem}-${endItem} of ${totalCount}`
-            : 'No Records found'}
+            ? t('showing', { start: startItem, end: endItem, total: totalCount })
+            : t('noRecords')}
         </Text>
       )}
       {inlineSearch && !disableSearch && (
@@ -153,7 +155,7 @@ export function TableToolbar<TData>({
         {!isEmpty(drawerFilters.filters) && (
           <TableDrawerFilters
             isDesktop={isDesktop}
-            title={isDesktop ? 'More Filters' : 'Filters'}
+            title={isDesktop ? t('moreFilters') : t('filters')}
             {...drawerFilters}
           />
         )}
@@ -165,7 +167,7 @@ export function TableToolbar<TData>({
             onClick={() => removeParams(allFilters)}
             size="sm"
           >
-            Clear
+            {t('clear')}
             <X size={15} />
           </Button>
         )}
@@ -177,7 +179,7 @@ export function TableToolbar<TData>({
             // isLoading={isPending}
             onClick={handleLayoutToggle}
             size="sm"
-            title={`Switch to ${queryParams.layout === 'grid' ? 'List' : 'Grid'}`}
+            title={queryParams.layout === 'grid' ? t('switchToList') : t('switchToGrid')}
             variant="outline"
           >
             {queryParams.layout === 'grid' ? (

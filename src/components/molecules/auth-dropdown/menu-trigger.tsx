@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { ChevronsUpDown, Loader2 } from 'lucide-react';
 import * as React from 'react';
 import Avatar from '@/components/atoms/avatar';
@@ -14,6 +15,7 @@ export const MenuTrigger = React.forwardRef<
     isLoading?: boolean;
   }
 >(({ className, user, isLoading, ...props }, ref) => {
+  const t = useTranslations('common.ui');
   const userAvatar = user?.image;
 
   return (
@@ -29,7 +31,7 @@ export const MenuTrigger = React.forwardRef<
     >
       {isLoading ? (
         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" /> Logging Out
+          <Loader2 className="size-4 animate-spin" /> {t('loggingOut')}
         </span>
       ) : (
         <Flex align="center" className="gap-2">

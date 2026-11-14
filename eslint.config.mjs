@@ -130,16 +130,23 @@ const eslintConfig = [
   // here once its strings are moved to src/i18n/messages (Phase 3).
   {
     files: [
-      'src/components/molecules/sidebar/**/*.tsx',
+      'src/components/atoms/**/*.tsx',
+      'src/components/ui/**/*.tsx',
+      'src/components/molecules/**/*.tsx',
       'src/components/organisms/header/**/*.tsx',
-      'src/components/molecules/auth-dropdown/auth-dropdown.tsx',
       'src/components/dashboard/lang-switcher.tsx',
       'src/components/dashboard/site-switcher.tsx',
     ],
+    ignores: ['src/components/**/__tests__/**'],
     rules: {
       'react/jsx-no-literals': [
         'error',
-        { noStrings: false, ignoreProps: true, allowedStrings: ['·', '—', '/', '|', ':', '…'] },
+        {
+          noStrings: false,
+          ignoreProps: true,
+          // Punctuation, required-field asterisks and skeleton/page digits.
+          allowedStrings: ['·', '—', '-', '/', '|', ':', '…', '*', '+', '1', '2', '3'],
+        },
       ],
     },
   },

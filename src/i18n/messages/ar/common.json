@@ -37,5 +37,65 @@
   "createTranslation": "إنشاء ترجمة",
   "noTranslationTitle": "لا توجد نسخة باللغة {language} بعد",
   "noTranslationDescription": "لم تتم ترجمة هذا العنصر إلى {language} بعد. هل تريد إنشاء مسودة ترجمة الآن؟",
-  "exportSite": "تصدير الموقع"
+  "exportSite": "تصدير الموقع",
+  "ui": {
+    "close": "إغلاق",
+    "previous": "السابق",
+    "next": "التالي",
+    "goToPreviousPage": "الانتقال إلى الصفحة السابقة",
+    "goToNextPage": "الانتقال إلى الصفحة التالية",
+    "morePages": "صفحات أخرى",
+    "more": "المزيد",
+    "toggleSidebar": "إظهار أو إخفاء الشريط الجانبي",
+    "sidebarTitle": "الشريط الجانبي",
+    "sidebarDescription": "يعرض الشريط الجانبي على الجوال.",
+    "loggingOut": "جارٍ تسجيل الخروج"
+  },
+  "table": {
+    "showing": "عرض {start}-{end} من {total}",
+    "noRecords": "لم يتم العثور على سجلات",
+    "rowsPerPage": "صفوف لكل صفحة",
+    "filters": "عوامل التصفية",
+    "moreFilters": "مزيد من عوامل التصفية",
+    "clear": "مسح",
+    "switchToList": "التبديل إلى عرض القائمة",
+    "switchToGrid": "التبديل إلى عرض الشبكة",
+    "sortAsc": "ترتيب تصاعدي",
+    "sortDesc": "ترتيب تنازلي",
+    "clearSort": "إلغاء الترتيب",
+    "search": "بحث..."
+  },
+  "select": {
+    "search": "بحث...",
+    "searchOrCreate": "ابحث أو اكتب للإنشاء...",
+    "noOptions": "لا توجد خيارات.",
+    "selectAll": "تحديد الكل",
+    "create": "إنشاء «{value}»"
+  },
+  "date": {
+    "pickDate": "اختر تاريخًا",
+    "time": "الوقت",
+    "openCalendar": "فتح التقويم"
+  },
+  "rangeFilter": {
+    "clear": "مسح",
+    "apply": "تطبيق",
+    "minValue": "القيمة الدنيا",
+    "maxValue": "القيمة القصوى"
+  },
+  "form": {
+    "addRecord": "إضافة سجل",
+    "clearInput": "مسح الحقل"
+  },
+  "editor": {
+    "typography": "الطباعة",
+    "paragraph": "فقرة",
+    "heading": "عنوان {level}",
+    "pasteLink": "الصق رابطًا",
+    "add": "إضافة",
+    "openOverlay": "فتح نافذة منبثقة/درج…",
+    "openOverlayLabel": "فتح نافذة منبثقة أو درج",
+    "invalidUrl": "يرجى إدخال رابط صالح.",
+    "invalidUrlFormat": "أدخل رابطًا بالتنسيق الصحيح (مثل https://www.example.com)."
+  }
 }

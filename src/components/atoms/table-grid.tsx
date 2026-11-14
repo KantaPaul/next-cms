@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useSize } from 'ahooks';
 import get from 'lodash/get';
 import isEmpty from 'lodash/isEmpty';
@@ -199,6 +200,7 @@ export function TableGrid<TData>({
   expandedRows: controlledExpandedRows,
   onExpandedRowsChange,
 }: TableGridProps<TData>) {
+  const t = useTranslations('common.table');
   const containerRef = useRef(null);
   const containerSize = useSize(containerRef);
   const innerContainerRef = useRef(null);
@@ -362,7 +364,7 @@ export function TableGrid<TData>({
               'col-span-full border-t py-8 text-center text-steel-500'
             )}
           >
-            No Records Found
+            {t('noRecords')}
           </Box>
         )}
 

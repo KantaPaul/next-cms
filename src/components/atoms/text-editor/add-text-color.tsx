@@ -100,8 +100,10 @@ export function AddTextColor({
             style={{
               color: activeColorItem?.color,
             }}
+            aria-hidden="true"
           >
-            T
+            {/* Colour swatch glyph, not translatable text. */}
+            {'T'}
           </span>
         </Toggle>
       </PopoverTrigger>

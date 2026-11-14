@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import isEmpty from 'lodash/isEmpty';
 import { SearchIcon, X } from 'lucide-react';
 import { usePathname, useSearchParams } from 'next/navigation';
@@ -31,6 +32,7 @@ function SearchBase({
   ...rest
 }: SearchBaseProps) {
   const [value, setValue] = useState(initialQuery);
+  const t = useTranslations('common.table');
   const pathname = usePathname();
   const { pending } = useFormStatus();
   const searchParams = useSearchParams();
@@ -75,7 +77,7 @@ function SearchBase({
         name="search"
         // label="Search"
         inputClassName={cn(inputClassName)}
-        placeholder={placeholder ?? 'Search...'}
+        placeholder={placeholder ?? t('search')}
         value={value}
         onChange={onChange}
         {...rest}

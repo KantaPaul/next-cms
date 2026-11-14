@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 // import { Button } from '@/components/atoms/button/button';
@@ -25,6 +26,7 @@ export function NumberRangeFilter({
   handlers,
   config,
 }: NumberRangeFilterProps) {
+  const t = useTranslations('common.rangeFilter');
   const [minRange, setMinRange] = useState('');
   const [maxRange, setMaxRange] = useState('');
 
@@ -60,13 +62,13 @@ export function NumberRangeFilter({
               onClick={handleClear}
               type="button"
             >
-              clear
+              {t('clear')}
             </button>
           )}
         </div>
       )}
       <Input
-        aria-label="Min Value"
+        aria-label={t('minValue')}
         inputClassName="rounded-e-none xl:rounded-e-none focus-within:relative focus-within:z-10"
         // isClearable={false}
         onChange={e => setMinRange(e.target.value)}
@@ -76,7 +78,7 @@ export function NumberRangeFilter({
         value={minRange}
       />
       <Input
-        aria-label="Max Value"
+        aria-label={t('maxValue')}
         inputClassName="-ms-px rounded-none xl:rounded-none focus-within:relative focus-within:z-10"
         // isClearable={false}
         onChange={e => setMaxRange(e.target.value)}
@@ -92,7 +94,7 @@ export function NumberRangeFilter({
         // size={size}
         variant="outline"
       >
-        Apply
+        {t('apply')}
       </Button>
     </div>
   );

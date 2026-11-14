@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { Editor } from '@tiptap/react';
 import {
   AlignCenter,
@@ -53,6 +54,7 @@ interface ToolbarProps {
 }
 
 export function Toolbar({ className, editor }: ToolbarProps) {
+  const t = useTranslations('common.editor');
   const [url, setUrl] = useState<string>('');
 
   const isValidUrl = (string: string): boolean => {
@@ -71,7 +73,7 @@ export function Toolbar({ className, editor }: ToolbarProps) {
     }
 
     if (!isValidUrl(url)) {
-      toast.error('Please enter a valid URL');
+      toast.error(t('invalidUrl'));
       editor.chain().focus().extendMarkRange('link').unsetLink().run();
       return;
     }
@@ -80,13 +82,13 @@ export function Toolbar({ className, editor }: ToolbarProps) {
   };
 
   const getCurrentTextStyle = () => {
-    if (editor.isActive('heading', { level: 1 })) return 'Heading 1';
-    if (editor.isActive('heading', { level: 2 })) return 'Heading 2';
-    if (editor.isActive('heading', { level: 3 })) return 'Heading 3';
-    if (editor.isActive('heading', { level: 4 })) return 'Heading 4';
-    if (editor.isActive('heading', { level: 5 })) return 'Heading 5';
-    if (editor.isActive('heading', { level: 6 })) return 'Heading 6';
-    return 'Paragraph';
+    if (editor.isActive('heading', { level: 1 })) return t('heading', { level: 1 });
+    if (editor.isActive('heading', { level: 2 })) return t('heading', { level: 2 });
+    if (editor.isActive('heading', { level: 3 })) return t('heading', { level: 3 });
+    if (editor.isActive('heading', { level: 4 })) return t('heading', { level: 4 });
+    if (editor.isActive('heading', { level: 5 })) return t('heading', { level: 5 });
+    if (editor.isActive('heading', { level: 6 })) return t('heading', { level: 6 });
+    return t('paragraph');
   };
 
   return (
@@ -114,7 +116,7 @@ export function Toolbar({ className, editor }: ToolbarProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56">
           <DropdownMenuLabel className="mx-1 select-none px-2 pt-1.5 pb-2 font-semibold text-muted-foreground text-xs">
-            Typography
+            {t('typography')}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
@@ -124,7 +126,7 @@ export function Toolbar({ className, editor }: ToolbarProps) {
             >
               <div className="flex items-center gap-2">
                 <Type className="h-4 w-4" />
-                <span>Paragraph</span>
+                <span>{t('paragraph')}</span>
               </div>
               {editor.isActive('paragraph') && <Check className="h-4 w-4" />}
             </DropdownMenuItem>
@@ -136,7 +138,7 @@ export function Toolbar({ className, editor }: ToolbarProps) {
             >
               <div className="flex items-center gap-2">
                 <Heading1 className="h-4 w-4" />
-                <span>Heading 1</span>
+                <span>{t('heading', { level: 1 })}</span>
               </div>
               {editor.isActive('heading', { level: 1 }) && (
                 <Check className="h-4 w-4" />
@@ -150,7 +152,7 @@ export function Toolbar({ className, editor }: ToolbarProps) {
             >
               <div className="flex items-center gap-2">
                 <Heading2 className="h-4 w-4" />
-                <span>Heading 2</span>
+                <span>{t('heading', { level: 2 })}</span>
               </div>
               {editor.isActive('heading', { level: 2 }) && (
                 <Check className="h-4 w-4" />
@@ -164,7 +166,7 @@ export function Toolbar({ className, editor }: ToolbarProps) {
             >
               <div className="flex items-center gap-2">
                 <Heading3 className="h-4 w-4" />
-                <span>Heading 3</span>
+                <span>{t('heading', { level: 3 })}</span>
               </div>
               {editor.isActive('heading', { level: 3 }) && (
                 <Check className="h-4 w-4" />
@@ -178,7 +180,7 @@ export function Toolbar({ className, editor }: ToolbarProps) {
             >
               <div className="flex items-center gap-2">
                 <HeadingIcon className="h-4 w-4" />
-                <span>Heading 4</span>
+                <span>{t('heading', { level: 4 })}</span>
               </div>
               {editor.isActive('heading', { level: 4 }) && (
                 <Check className="h-4 w-4" />
@@ -192,7 +194,7 @@ export function Toolbar({ className, editor }: ToolbarProps) {
             >
               <div className="flex items-center gap-2">
                 <HeadingIcon className="h-4 w-4" />
-                <span>Heading 5</span>
+                <span>{t('heading', { level: 5 })}</span>
               </div>
               {editor.isActive('heading', { level: 5 }) && (
                 <Check className="h-4 w-4" />
@@ -206,7 +208,7 @@ export function Toolbar({ className, editor }: ToolbarProps) {
             >
               <div className="flex items-center gap-2">
                 <HeadingIcon className="h-4 w-4" />
-                <span>Heading 6</span>
+                <span>{t('heading', { level: 6 })}</span>
               </div>
               {editor.isActive('heading', { level: 6 }) && (
                 <Check className="h-4 w-4" />
@@ -318,11 +320,11 @@ export function Toolbar({ className, editor }: ToolbarProps) {
         <PopoverContent className="w-80 space-y-2">
           <div className="flex space-x-2">
             <Input
-              placeholder="Paste link"
+              placeholder={t('pasteLink')}
               value={url}
               onChange={e => setUrl(e.target.value)}
             />
-            <Button onClick={setLink}>Add</Button>
+            <Button onClick={setLink}>{t('add')}</Button>
           </div>
           <OverlaySelect
             value={

@@ -37,5 +37,65 @@
   "createTranslation": "Crear traducción",
   "noTranslationTitle": "Aún no hay versión en {language}",
   "noTranslationDescription": "Este elemento aún no se ha traducido al {language}. ¿Quieres crear un borrador de traducción ahora?",
-  "exportSite": "Exportar sitio"
+  "exportSite": "Exportar sitio",
+  "ui": {
+    "close": "Cerrar",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "goToPreviousPage": "Ir a la página anterior",
+    "goToNextPage": "Ir a la página siguiente",
+    "morePages": "Más páginas",
+    "more": "Más",
+    "toggleSidebar": "Mostrar u ocultar la barra lateral",
+    "sidebarTitle": "Barra lateral",
+    "sidebarDescription": "Muestra la barra lateral en móvil.",
+    "loggingOut": "Cerrando sesión"
+  },
+  "table": {
+    "showing": "Mostrando {start}-{end} de {total}",
+    "noRecords": "No se encontraron registros",
+    "rowsPerPage": "Filas por página",
+    "filters": "Filtros",
+    "moreFilters": "Más filtros",
+    "clear": "Limpiar",
+    "switchToList": "Cambiar a vista de lista",
+    "switchToGrid": "Cambiar a vista de cuadrícula",
+    "sortAsc": "Orden ascendente",
+    "sortDesc": "Orden descendente",
+    "clearSort": "Quitar orden",
+    "search": "Buscar..."
+  },
+  "select": {
+    "search": "Buscar...",
+    "searchOrCreate": "Busca o escribe para crear...",
+    "noOptions": "No hay opciones.",
+    "selectAll": "Seleccionar todo",
+    "create": "Crear «{value}»"
+  },
+  "date": {
+    "pickDate": "Elige una fecha",
+    "time": "Hora",
+    "openCalendar": "Abrir calendario"
+  },
+  "rangeFilter": {
+    "clear": "Limpiar",
+    "apply": "Aplicar",
+    "minValue": "Valor mínimo",
+    "maxValue": "Valor máximo"
+  },
+  "form": {
+    "addRecord": "Añadir registro",
+    "clearInput": "Borrar campo"
+  },
+  "editor": {
+    "typography": "Tipografía",
+    "paragraph": "Párrafo",
+    "heading": "Título {level}",
+    "pasteLink": "Pega un enlace",
+    "add": "Añadir",
+    "openOverlay": "Abrir ventana emergente/panel…",
+    "openOverlayLabel": "Abrir ventana emergente o panel",
+    "invalidUrl": "Introduce una URL válida.",
+    "invalidUrlFormat": "Introduce una URL con el formato correcto (p. ej., https://www.example.com)."
+  }
 }

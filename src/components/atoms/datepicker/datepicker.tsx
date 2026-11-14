@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { format, isValid } from 'date-fns';
 import { Calendar as CalendarIcon, X } from 'lucide-react';
 import * as React from 'react';
@@ -76,6 +77,7 @@ function DatePickerInner<IsRange extends boolean | undefined = false>(
   props: DatePickerProps<IsRange>,
   ref: React.ForwardedRef<DatePickerRef>
 ) {
+  const tDate = useTranslations('common.date');
   const {
     selected,
     startDate,
@@ -316,7 +318,7 @@ function DatePickerInner<IsRange extends boolean | undefined = false>(
             {showTimeSelect && (
               <div className="flex items-center justify-between border-t border-border p-3">
                 <span className="text-xs font-medium text-muted-foreground">
-                  Time
+                  {tDate('time')}
                 </span>
                 <input
                   type="time"

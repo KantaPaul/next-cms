@@ -91,8 +91,12 @@ BreadcrumbSeparator.displayName = 'BreadcrumbSeparator';
 
 const BreadcrumbEllipsis = ({
   className,
+  label = 'More',
   ...props
-}: React.ComponentProps<'span'>) => (
+}: React.ComponentProps<'span'> & {
+  /** Screen-reader text; pass a translated string (this renders on the server too). */
+  label?: string;
+}) => (
   <span
     role="presentation"
     aria-hidden="true"
@@ -100,7 +104,7 @@ const BreadcrumbEllipsis = ({
     {...props}
   >
     <Ellipsis className="h-4 w-4" />
-    <span className="sr-only">More</span>
+    <span className="sr-only">{label}</span>
   </span>
 );
 BreadcrumbEllipsis.displayName = 'BreadcrumbEllipsis';

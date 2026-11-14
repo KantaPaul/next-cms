@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Check, ChevronsUpDown, Loader2, Plus, X } from 'lucide-react';
 import * as React from 'react';
 import { FieldError, Label } from '@/components/atoms/forms';
@@ -32,6 +33,7 @@ export interface CreatableSelectProps<IsMulti extends boolean = false>
 export function CreatableSelect<IsMulti extends boolean = false>(
   props: CreatableSelectProps<IsMulti>
 ) {
+  const t = useTranslations('common.select');
   const {
     value,
     error,
@@ -258,13 +260,13 @@ export function CreatableSelect<IsMulti extends boolean = false>(
           <Command className="w-full">
             {isSearchable && (
               <CommandInput
-                placeholder="Search or type to create..."
+                placeholder={t('searchOrCreate')}
                 value={searchValue}
                 onValueChange={setSearchValue}
               />
             )}
             <CommandList className="max-h-60 overflow-y-auto">
-              <CommandEmpty>No options found.</CommandEmpty>
+              <CommandEmpty>{t('noOptions')}</CommandEmpty>
 
               {canCreate && (
                 <CommandGroup>
@@ -274,7 +276,7 @@ export function CreatableSelect<IsMulti extends boolean = false>(
                     className="flex items-center gap-2 cursor-pointer font-medium text-primary"
                   >
                     <Plus className="size-4" />
-                    <span>Create &ldquo;{searchValue.trim()}&rdquo;</span>
+                    <span>{t('create', { value: searchValue.trim() })}</span>
                   </CommandItem>
                 </CommandGroup>
               )}

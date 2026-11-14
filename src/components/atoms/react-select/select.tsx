@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Check, ChevronsUpDown, Loader2, X } from 'lucide-react';
 import * as React from 'react';
 import { FieldError, Label } from '@/components/atoms/forms';
@@ -104,6 +105,7 @@ export function ReactSelect({
   ref,
   ...props
 }: SelectProps<Option, boolean> & { ref?: React.Ref<HTMLButtonElement> }) {
+  const t = useTranslations('common.select');
   const {
     value,
     error,
@@ -320,13 +322,13 @@ export function ReactSelect({
           <Command className="w-full">
             {isSearchable && (
               <CommandInput
-                placeholder="Search..."
+                placeholder={t('search')}
                 value={searchValue}
                 onValueChange={setSearchValue}
               />
             )}
             <CommandList className="max-h-60 overflow-y-auto">
-              <CommandEmpty>No options found.</CommandEmpty>
+              <CommandEmpty>{t('noOptions')}</CommandEmpty>
 
               {isMulti && allowSelectAll && allOptions.length > 0 && (
                 <CommandGroup>
@@ -343,7 +345,7 @@ export function ReactSelect({
                             : false
                       }
                     />
-                    <span className="font-medium">Select All</span>
+                    <span className="font-medium">{t('selectAll')}</span>
                   </CommandItem>
                 </CommandGroup>
               )}

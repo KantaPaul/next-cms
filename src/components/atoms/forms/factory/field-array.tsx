@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { useSize } from 'ahooks';
 import isEmpty from 'lodash/isEmpty';
 import omit from 'lodash/omit';
@@ -33,6 +34,7 @@ export function FieldArray<TFieldValues extends FieldValues>({
   variant?: 'text' | 'flat' | 'outline' | undefined;
   column: FormFieldDef<TFieldValues>;
 }): JSX.Element {
+  const t = useTranslations('common.form');
   const containerRef = useRef(null);
   const containerSize = useSize(containerRef);
   const innerContainerRef = useRef(null);
@@ -248,7 +250,7 @@ export function FieldArray<TFieldValues extends FieldValues>({
             'col-span-full border-y text-center text-steel-500'
           )}
         >
-          <Button onClick={addField}>Add Record</Button>
+          <Button onClick={addField}>{t('addRecord')}</Button>
         </Box>
       )}
 

@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { type JSX, useTransition } from 'react';
 import { Text } from '@/components/atoms/content';
 import { SimplifiedPagination } from '@/components/atoms/data-table/pagination';
@@ -23,6 +24,7 @@ export function TablePagination({
   pageSizes,
 }: Readonly<TablePaginationProps>): JSX.Element {
   const [isPending, startTransition] = useTransition();
+  const t = useTranslations('common.table');
   const { queryParams, setQueryParams } = useQueryParams();
   const layout = queryParams?.layout;
 
@@ -47,7 +49,7 @@ export function TablePagination({
       )}
     >
       <Flex className="justify-center gap-2 md:justify-start">
-        <Text className="whitespace-nowrap font-medium">Rows per page</Text>
+        <Text className="whitespace-nowrap font-medium">{t('rowsPerPage')}</Text>
         <ReactSelect
           isSearchable={false}
           isClearable={false}

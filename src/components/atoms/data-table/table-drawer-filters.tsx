@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 // import { FilterItem } from '@/components/atoms/filter-toolbar/filter-item';
 import type { FilterConfig } from '@/components/atoms/filter-toolbar/types';
 import { Grid } from '@/components/atoms/layout';
@@ -22,6 +23,7 @@ export function TableDrawerFilters({
   description,
 }: TableDrawerFiltersProps) {
   const { openSheet } = useSheet();
+  const t = useTranslations('common.table');
 
   function handleOpenDrawer() {
     openSheet({
@@ -41,7 +43,7 @@ export function TableDrawerFilters({
       onClick={handleOpenDrawer}
       size="sm"
     >
-      {isDesktop ? 'More Filters' : 'Filters'}
+      {isDesktop ? t('moreFilters') : t('filters')}
     </Button>
   );
 }

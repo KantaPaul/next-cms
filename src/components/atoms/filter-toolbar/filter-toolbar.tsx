@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import isEmpty from 'lodash/isEmpty';
 import { X } from 'lucide-react';
 import { type JSX, useMemo } from 'react';
@@ -19,6 +20,7 @@ export function FilterToolbar({
   drawerFilters,
   hideClearButton = false,
 }: FilterToolbarProps): JSX.Element {
+  const t = useTranslations('common.table');
   const isDesktop = useMediaQuery('(min-width: 1600px)');
   const { queryParams, isPending, removeParams } = useQueryParams();
 
@@ -60,7 +62,7 @@ export function FilterToolbar({
           onClick={() => removeParams(filterNames)}
           variant="outline"
         >
-          Clear
+          {t('clear')}
           <X size={15} />
         </Button>
       )}

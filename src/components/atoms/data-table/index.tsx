@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { OnChangeFn, RowSelectionState } from '@tanstack/react-table';
 import {
   type ColumnDef,
@@ -363,6 +364,7 @@ const SortingUIIndicatorMap = {
 function ColumnHeader<TData, TValue>({
   header,
 }: Readonly<ColumnHeaderProps<TData, TValue>>) {
+  const t = useTranslations('common.table');
   // console.log('getCanSort', header.column.id, header.column.getCanSort());
 
   if (!header.column.getCanSort()) {
@@ -385,9 +387,9 @@ function ColumnHeader<TData, TValue>({
       )}
       title={
         {
-          asc: 'Sort ascending',
-          desc: ' Sort descending',
-        }[header.column.getNextSortingOrder() as string] ?? 'Clear sort'
+          asc: t('sortAsc'),
+          desc: t('sortDesc'),
+        }[header.column.getNextSortingOrder() as string] ?? t('clearSort')
       }
       type="button"
     >

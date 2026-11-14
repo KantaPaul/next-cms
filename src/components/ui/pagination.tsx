@@ -1,3 +1,6 @@
+'use client';
+
+import { useUiLabels } from '@/components/ui/ui-labels';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -68,15 +71,16 @@ function PaginationPrevious({
   className,
   ...props
 }: React.ComponentProps<typeof PaginationLink>) {
+  const labels = useUiLabels();
   return (
     <PaginationLink
-      aria-label="Go to previous page"
+      aria-label={labels.goToPreviousPage}
       size="default"
       className={cn('gap-1 px-2.5 sm:ps-2.5', className)}
       {...props}
     >
-      <ChevronLeftIcon />
-      <span className="hidden sm:block">Previous</span>
+      <ChevronLeftIcon className="rtl:-scale-x-100" />
+      <span className="hidden sm:block">{labels.previous}</span>
     </PaginationLink>
   );
 }
@@ -85,15 +89,16 @@ function PaginationNext({
   className,
   ...props
 }: React.ComponentProps<typeof PaginationLink>) {
+  const labels = useUiLabels();
   return (
     <PaginationLink
-      aria-label="Go to next page"
+      aria-label={labels.goToNextPage}
       size="default"
       className={cn('gap-1 px-2.5 sm:pe-2.5', className)}
       {...props}
     >
-      <span className="hidden sm:block">Next</span>
-      <ChevronRightIcon />
+      <span className="hidden sm:block">{labels.next}</span>
+      <ChevronRightIcon className="rtl:-scale-x-100" />
     </PaginationLink>
   );
 }
@@ -102,6 +107,7 @@ function PaginationEllipsis({
   className,
   ...props
 }: React.ComponentProps<'span'>) {
+  const labels = useUiLabels();
   return (
     <span
       aria-hidden
@@ -110,7 +116,7 @@ function PaginationEllipsis({
       {...props}
     >
       <MoreHorizontalIcon className="size-4" />
-      <span className="sr-only">More pages</span>
+      <span className="sr-only">{labels.morePages}</span>
     </span>
   );
 }

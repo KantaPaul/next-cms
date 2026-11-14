@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 // import { ActionButton } from '@/components/atoms/action-button';
 import { Grid } from '@/components/atoms/layout';
 import { useSheet } from '@/components/organisms/sheet';
@@ -16,6 +17,7 @@ export function TableDrawerFilters({
   isDesktop,
 }: TableDrawerFiltersProps) {
   const { openSheet } = useSheet();
+  const t = useTranslations('common.table');
 
   function handleOpenDrawer() {
     openSheet({
@@ -32,7 +34,7 @@ export function TableDrawerFilters({
 
   return (
     <Button className="rounded-md shadow-none" onClick={handleOpenDrawer}>
-      {isDesktop ? 'More Filters' : 'Filters'}
+      {isDesktop ? t('moreFilters') : t('filters')}
     </Button>
   );
 }

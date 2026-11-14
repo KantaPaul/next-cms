@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { Flex } from '@/components/atoms/layout';
 import {
   handleOnChange,
@@ -28,6 +29,7 @@ export default function TablePagination({
   ...props
 }: TablePaginationProps) {
   const { setQueryParams } = useQueryParams();
+  const t = useTranslations('common.table');
 
   if (!total) return null;
 
@@ -39,7 +41,7 @@ export default function TablePagination({
       )}
     >
       <Flex justify="start" className="w-auto">
-        <span className="text-sm text-muted-foreground">Rows per page:</span>
+        <span className="text-sm text-muted-foreground">{t('rowsPerPage')}</span>
         <ReactSelect
           size="sm"
           menuPlacement="auto"

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { CheckIcon, LinkIcon } from 'lucide-react';
 import {
   type Dispatch,
@@ -32,6 +33,7 @@ interface LinkSelectorProps {
 }
 
 export function AddLink({ editor, setIsOpen, isOpen }: LinkSelectorProps) {
+  const t = useTranslations('common.editor');
   const inputRef = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState<string>('');
 
@@ -43,7 +45,7 @@ export function AddLink({ editor, setIsOpen, isOpen }: LinkSelectorProps) {
 
     if (!isValidUrl(url)) {
       toast.error(
-        'Enter a valid URL in the correct format (e.g., https://www.example.com).'
+        t('invalidUrlFormat')
       );
       editor.chain().focus().extendMarkRange('link').unsetLink().run();
       return;
@@ -85,7 +87,7 @@ export function AddLink({ editor, setIsOpen, isOpen }: LinkSelectorProps) {
             ref={inputRef}
             // size="sm"
             // variant="text"
-            placeholder="Paste link"
+            placeholder={t('pasteLink')}
             className="w-full rounded-none"
             value={url}
             onChange={e => setUrl(e.target.value)}
@@ -102,8 +104,8 @@ export function AddLink({ editor, setIsOpen, isOpen }: LinkSelectorProps) {
           value={
             parseOverlayHref(editor?.getAttributes('link')?.href) ?? undefined
           }
-          placeholder="Open popup/drawer…"
-          ariaLabel="Open popup/drawer"
+          placeholder={t('openOverlay')}
+          ariaLabel={t('openOverlayLabel')}
           onChange={id => {
             if (!id) {
               editor.chain().focus().extendMarkRange('link').unsetLink().run();
