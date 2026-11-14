@@ -120,6 +120,7 @@ import {
   Wand2,
 } from 'lucide-react';
 import Link from '@/components/atoms/next/link';
+import { useAdminHref } from '@/providers/site-locales';
 import {
   type ReactNode,
   useCallback,
@@ -902,6 +903,9 @@ export function NewEditor({
   shell = 'legacy',
   layout,
 }: NewEditorProps) {
+  const toAdminHref = useAdminHref();
+  const pageSettingsHref =
+    kind === 'page' ? toAdminHref(`/dashboard/pages/${page.id}/edit`) : undefined;
   const hiddenFromInsert = useMemo(() => {
     const omitted = [...hiddenBlocks, ...Object.keys(disabledPluginBlocks)];
     if (
@@ -2392,7 +2396,7 @@ export function NewEditor({
             blocks={setup.inspectorBlocks}
             rootFields={setup.rootFields}
             rootDefaultProps={kind === 'page' ? { title: page.title } : undefined}
-            settingsHref={kind === 'page' ? `/dashboard/pages/${page.id}/edit` : undefined}
+            settingsHref={pageSettingsHref}
             empty={
               <p className="mb-2 text-xs text-steel-500">
                 Select a block to edit it.
@@ -2634,7 +2638,7 @@ export function NewEditor({
         rootFields={setup.rootFields}
         rootLabel={adapter.label ?? 'Page'}
         rootDefaultProps={kind === 'page' ? { title: page.title } : undefined}
-        settingsHref={kind === 'page' ? `/dashboard/pages/${page.id}/edit` : undefined}
+        settingsHref={pageSettingsHref}
         categories={setup.groups}
         hiddenTypes={hiddenFromInsert}
         templates={customTemplates}
@@ -2969,7 +2973,7 @@ export function NewEditor({
                   rootFields={setup.rootFields}
                   rootLabel={adapter.label ?? 'Page'}
                   rootDefaultProps={kind === 'page' ? { title: page.title } : undefined}
-                  settingsHref={kind === 'page' ? `/dashboard/pages/${page.id}/edit` : undefined}
+                  settingsHref={pageSettingsHref}
                   categories={setup.groups}
                   hiddenTypes={hiddenFromInsert}
                   templates={customTemplates}
@@ -2993,7 +2997,7 @@ export function NewEditor({
                   rootFields={setup.rootFields}
                   rootLabel={adapter.label ?? 'Page'}
                   rootDefaultProps={kind === 'page' ? { title: page.title } : undefined}
-                  settingsHref={kind === 'page' ? `/dashboard/pages/${page.id}/edit` : undefined}
+                  settingsHref={pageSettingsHref}
                   categories={setup.groups}
                   hiddenTypes={hiddenFromInsert}
                   templates={customTemplates}

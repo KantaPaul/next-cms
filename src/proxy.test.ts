@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { NextRequest } from 'next/server';
-import { proxy } from './proxy';
+import { config, proxy } from './proxy';
 
 describe('proxy dashboard locale rewrite', () => {
   it('rewrites /dashboard/es/pages to /dashboard/pages with x-cms-admin-locale', async () => {
@@ -24,5 +24,23 @@ describe('proxy dashboard locale rewrite', () => {
     });
     const res = await proxy(req);
     assert.equal(res.headers.get('x-middleware-request-x-cms-admin-locale'), null);
+  });
+});
+
+describe('proxy matcher', () => {
+  // Next only runs the proxy for paths the matcher accepts; the tests above
+  // call proxy() directly, so check the matcher itself too.
+  const matcher = new RegExp(`^${config.matcher[0]}$`);
+
+  it('runs the proxy on dashboard routes, with and without a locale', () => {
+    for (const path of ['/dashboard', '/dashboard/pages', '/dashboard/es/pages', '/dashboard/ar/pages/create']) {
+      assert.ok(matcher.test(path), path);
+    }
+  });
+
+  it('still skips api, _next and static files', () => {
+    for (const path of ['/api/forms/submit', '/_next/static/chunk.js', '/brand/logo.svg']) {
+      assert.ok(!matcher.test(path), path);
+    }
   });
 });

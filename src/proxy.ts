@@ -206,6 +206,6 @@ export const config = {
   // every dotted path let slugs like /blog/release-1.2 bypass maintenance mode
   // and redirects. Must stay a literal: Next reads it at build time.
   matcher: [
-    '/((?!_next|api|dashboard|login|.*\\.(?:ico|png|jpe?g|gif|webp|avif|svg|css|js|mjs|map|json|txt|xml|webmanifest|woff2?|ttf|otf|eot|mp4|webm|mp3|pdf)$).*)',
+    '/((?!_next|api|login|.*\\.(?:ico|png|jpe?g|gif|webp|avif|svg|css|js|mjs|map|json|txt|xml|webmanifest|woff2?|ttf|otf|eot|mp4|webm|mp3|pdf)$).*)',
   ],
 };
