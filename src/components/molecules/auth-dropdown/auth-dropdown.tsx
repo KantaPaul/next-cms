@@ -3,6 +3,7 @@
 import { Globe, KeyRound, LogOut, ShieldCheck } from 'lucide-react';
 import Link from '@/components/atoms/next/link';
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { MenuTrigger } from '@/components/molecules/auth-dropdown/menu-trigger';
 import {
   DropdownMenu,
@@ -20,6 +21,7 @@ import { signOut } from '@/server/actions/auth.actions';
 
 export default function AuthDropdown({ user }: { user: User }) {
   const [isPending, startTransition] = React.useTransition();
+  const tNav = useTranslations('nav');
 
   function handleLogOut() {
     startTransition(async () => {
@@ -52,14 +54,14 @@ export default function AuthDropdown({ user }: { user: User }) {
         <DropdownMenuItem asChild>
           <Link href={PAGES.DASHBOARD.ACCOUNT} className="cursor-pointer">
             <KeyRound className="me-2 size-4" />
-            <span>Account</span>
+            <span>{tNav('account')}</span>
           </Link>
         </DropdownMenuItem>
         <Can permission={PERMISSIONS.SETTINGS_MANAGE}>
           <DropdownMenuItem asChild>
             <Link href={PAGES.DASHBOARD.SITES} className="cursor-pointer">
               <Globe className="me-2 size-4" />
-              <span>Sites</span>
+              <span>{tNav('sites')}</span>
             </Link>
           </DropdownMenuItem>
         </Can>
@@ -67,7 +69,7 @@ export default function AuthDropdown({ user }: { user: User }) {
           <DropdownMenuItem asChild>
             <Link href={PAGES.DASHBOARD.LICENSES} className="cursor-pointer">
               <ShieldCheck className="me-2 size-4" />
-              <span>Licenses</span>
+              <span>{tNav('licenses')}</span>
             </Link>
           </DropdownMenuItem>
         </Can>
@@ -76,7 +78,7 @@ export default function AuthDropdown({ user }: { user: User }) {
           className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive"
         >
           <LogOut className="me-2 size-4" />
-          <span>Sign Out</span>
+          <span>{tNav('signOut')}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

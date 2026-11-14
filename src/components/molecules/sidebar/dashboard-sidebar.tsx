@@ -14,6 +14,7 @@ import { collectionsService } from '@/server/services/collections.service';
 import { collectionTaxonomiesService } from '@/server/services/collection-taxonomies.service';
 import { pluginsService } from '@/server/plugins/plugins.service';
 import { siteSettingsService } from '@/server/services/site-settings.service';
+import { getAdminTranslations } from '@/i18n/server';
 
 /** Active post types for the sidebar; an empty list if they can't be loaded. */
 async function sidebarPostTypes() {
@@ -68,10 +69,11 @@ export default async function SidebarProvider({
 }) {
   const session = await getSession();
   if (!session?.user?.id) redirect('/login');
-  const [postTypes, settings, pluginPages] = await Promise.all([
+  const [postTypes, settings, pluginPages, t] = await Promise.all([
     sidebarPostTypes(),
     siteSettingsService.get().catch(() => null),
     sidebarPluginPages(),
+    getAdminTranslations('nav'),
   ]);
   const siteMode = settings?.siteMode?.mode ?? 'live';
   const backupFailed = settings?.backupSettings?.lastStatus === 'failed';
@@ -90,14 +92,14 @@ export default async function SidebarProvider({
             <span className="inline-flex items-center gap-2">
               <AlertTriangle className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
               {siteMode === 'coming_soon'
-                ? 'Coming soon mode is active — public visitors see the coming-soon screen (200 noindex).'
-                : 'Maintenance mode is active — public visitors see a 503 maintenance page.'}
+                ? t('banners.comingSoon')
+                : t('banners.maintenance')}
             </span>
             <Link
               href={PAGES.DASHBOARD.SETTINGS}
               className="underline underline-offset-2 hover:opacity-80"
             >
-              Manage in Settings
+              {t('banners.manageInSettings')}
             </Link>
           </div>
         )}
@@ -108,13 +110,15 @@ export default async function SidebarProvider({
           >
             <span className="inline-flex items-center gap-2">
               <AlertTriangle className="size-3.5 shrink-0 text-rose-600 dark:text-rose-400" />
-              Last scheduled backup failed{backupError ? `: ${backupError}` : '.'}
+              {backupError
+                ? t('banners.backupFailedWithError', { error: backupError })
+                : t('banners.backupFailed')}
             </span>
             <Link
               href={PAGES.DASHBOARD.TOOLS_BACKUPS}
               className="underline underline-offset-2 hover:opacity-80"
             >
-              View backups
+              {t('banners.viewBackups')}
             </Link>
           </div>
         )}

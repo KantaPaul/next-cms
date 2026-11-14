@@ -2,7 +2,8 @@ import { RedirectType, redirect } from 'next/navigation';
 import { PAGES } from '@/config/pages';
 import { validateSession } from '@/lib/auth';
 import { AdminI18nProvider } from '@/components/providers/admin-i18n-provider';
-import { dirFor, resolveUiLocale } from '@/i18n/config';
+import { dirFor } from '@/i18n/config';
+import { adminUiLocale } from '@/i18n/server';
 import { loadMessages } from '@/i18n/request';
 import { AccessProvider } from '@/providers/access.provider';
 import { SiteLocalesProvider } from '@/providers/site-locales';
@@ -84,12 +85,7 @@ export default async function DashboardLayout({
     }
   }
 
-  const locale = await adminLocale();
-  const userUiLocale = (session.user as { uiLocale?: string | null }).uiLocale;
-  const uiLocale = resolveUiLocale({
-    userUiLocale,
-    contentLocale: locale,
-  });
+  const [locale, uiLocale] = await Promise.all([adminLocale(), adminUiLocale()]);
   const messages = await loadMessages(uiLocale);
 
   return (

@@ -2,6 +2,7 @@
 
 import { Logo } from '@/components/molecules/logo';
 import { useSidebar } from '@/components/ui/sidebar';
+import { BRAND } from '@/config/brand';
 
 interface SidebarLogoProps {
   className?: string;
@@ -10,9 +11,8 @@ interface SidebarLogoProps {
 export function SidebarLogo({ className }: SidebarLogoProps) {
   const { state } = useSidebar();
   return state === 'collapsed' ? (
-    <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-      L
-    </div>
+    // eslint-disable-next-line @next/next/no-img-element -- tiny static SVG
+    <img src={BRAND.mark} alt={BRAND.name} width={32} height={32} className="size-8" />
   ) : (
     <Logo className="py-0" />
   );

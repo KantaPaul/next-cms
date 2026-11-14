@@ -15,11 +15,13 @@ import { LangSwitcher } from '@/components/dashboard/lang-switcher';
 import { ExportWebsiteButton } from '@/components/dashboard/export-website-button';
 import { getCurrentUserAndTeamId } from '@/lib/auth';
 import { siteContext, siteSlugPrefix } from '@/server/services/site-context';
+import { getAdminTranslations } from '@/i18n/server';
 
 export default async function Header() {
-  const [currentUser, session] = await Promise.all([
+  const [currentUser, session, t] = await Promise.all([
     me(),
     getCurrentUserAndTeamId(),
+    getAdminTranslations('nav'),
   ]);
   const { user, profile } = currentUser;
   const [memberships, currentSite, site] = await Promise.all([
@@ -35,9 +37,8 @@ export default async function Header() {
         'sticky inset-x-0 top-0 z-50'
       )}
     >
-      {/* <SidebarTrigger className="ms-1" /> */}
 
-      <SidebarTrigger />
+      <SidebarTrigger label={t('toggleSidebar')} />
       <Button asChild size="sm" variant="outline">
         <Link
           href={PAGES.SITE.page(
@@ -50,7 +51,7 @@ export default async function Header() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <ExternalLink /> Visit site
+          <ExternalLink /> {t('visitSite')}
         </Link>
       </Button>
       <Flex justify="between" className="h-full gap-3 ps-1">
@@ -66,7 +67,7 @@ export default async function Header() {
             locales={site.locales}
             defaultLocale={site.defaultLocale}
           />
-          <ThemeToggle />
+          <ThemeToggle label={t('toggleTheme')} />
           {/* <TopBarPanel /> */}
           {/* <Box className="order-2 ms-1 items-center justify-center md:order-0 md:ms-0 lg:flex"> */}
           <AuthDropdown user={user} />

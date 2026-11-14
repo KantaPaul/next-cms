@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { SidebarLogo } from '@/components/molecules/sidebar/sidebar-logo';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -25,8 +26,14 @@ export function AppSidebar({
   ...props
 }: AppSidebarProps) {
   const { state } = useSidebar();
+  const tNav = useTranslations('nav');
   return (
-    <Sidebar collapsible="icon" {...props}>
+    <Sidebar
+      collapsible="icon"
+      mobileTitle={tNav('sidebarTitle')}
+      mobileDescription={tNav('sidebarDescription')}
+      {...props}
+    >
       <SidebarHeader className="sticky inset-x-0 top-0 h-16 flex-row items-center justify-between">
         <SidebarLogo />
         {APP_VERSION && state !== 'collapsed' && (

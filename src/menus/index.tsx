@@ -26,181 +26,181 @@ import {
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS, type PermissionKey } from '@/config/permissions';
 
-export function getMenuItems(): {
-  name: string;
-  labelKey?: string;
+/** A key in the `nav` messages namespace, e.g. `settingsMenu.general`. */
+export type NavLabelKey = string;
+
+export type MenuChild = { labelKey: NavLabelKey; href: string };
+
+export type MenuItem = {
+  labelKey: NavLabelKey;
   href: string;
   icon: React.ReactNode;
   permission?: PermissionKey;
-  children?: { name: string; labelKey?: string; href: string }[];
-}[] {
+  children?: MenuChild[];
+};
+
+/** The dashboard sidebar. Labels are `nav` message keys, translated in NavMain. */
+export function getMenuItems(): MenuItem[] {
   return [
     {
-      name: 'Pages',
       labelKey: 'pages',
       href: PAGES.DASHBOARD.PAGES.INDEX,
       icon: <GalleryVertical className="w-[18px]" />,
     },
     {
-      name: 'Analytics',
       labelKey: 'analytics',
       href: PAGES.DASHBOARD.ANALYTICS,
       icon: <BarChart3 className="w-[18px]" />,
     },
     {
-      name: 'Posts',
       labelKey: 'posts',
       href: PAGES.DASHBOARD.POSTS.INDEX,
       icon: <Newspaper className="w-[18px]" />,
     },
     {
-      name: 'Media Library',
-      labelKey: 'media',
+      labelKey: 'mediaLibrary',
       href: PAGES.DASHBOARD.MEDIA,
       icon: <ImageIcon className="w-[18px]" />,
     },
     {
-      name: 'Videos',
+      labelKey: 'videos',
       href: PAGES.DASHBOARD.VIDEOS,
       icon: <Play className="w-[18px]" />,
       permission: PERMISSIONS.VIDEOS_CREATE,
     },
     {
-      name: 'Templates & Globals',
+      labelKey: 'templatesGlobals',
       href: PAGES.DASHBOARD.TEMPLATES,
       icon: <LayoutTemplate className="w-[18px]" />,
     },
     {
-      name: 'Loop items',
+      labelKey: 'loopItems',
       href: PAGES.DASHBOARD.LOOP_TEMPLATES,
       icon: <LayoutGrid className="w-[18px]" />,
     },
     {
-      name: 'Site templates',
+      labelKey: 'siteTemplates',
       href: PAGES.DASHBOARD.HEADER_FOOTER,
       icon: <PanelTop className="w-[18px]" />,
       children: [
-        { name: 'Headers', href: `${PAGES.DASHBOARD.HEADER_FOOTER}?type=header` },
-        { name: 'Footers', href: `${PAGES.DASHBOARD.HEADER_FOOTER}?type=footer` },
-        { name: 'Archives', href: `${PAGES.DASHBOARD.HEADER_FOOTER}?type=archive` },
-        { name: 'Search', href: `${PAGES.DASHBOARD.HEADER_FOOTER}?type=search` },
-        { name: 'Mega menus', href: `${PAGES.DASHBOARD.HEADER_FOOTER}?type=megamenu` },
-        { name: 'Popups', href: `${PAGES.DASHBOARD.HEADER_FOOTER}?type=popup` },
-        { name: 'Drawers', href: `${PAGES.DASHBOARD.HEADER_FOOTER}?type=drawer` },
+        { labelKey: 'siteTemplatesMenu.headers', href: `${PAGES.DASHBOARD.HEADER_FOOTER}?type=header` },
+        { labelKey: 'siteTemplatesMenu.footers', href: `${PAGES.DASHBOARD.HEADER_FOOTER}?type=footer` },
+        { labelKey: 'siteTemplatesMenu.archives', href: `${PAGES.DASHBOARD.HEADER_FOOTER}?type=archive` },
+        { labelKey: 'siteTemplatesMenu.search', href: `${PAGES.DASHBOARD.HEADER_FOOTER}?type=search` },
+        { labelKey: 'siteTemplatesMenu.megaMenus', href: `${PAGES.DASHBOARD.HEADER_FOOTER}?type=megamenu` },
+        { labelKey: 'siteTemplatesMenu.popups', href: `${PAGES.DASHBOARD.HEADER_FOOTER}?type=popup` },
+        { labelKey: 'siteTemplatesMenu.drawers', href: `${PAGES.DASHBOARD.HEADER_FOOTER}?type=drawer` },
       ],
     },
     {
-      name: 'Contact forms',
+      labelKey: 'contactForms',
       href: PAGES.DASHBOARD.CONTACT_FORMS,
       icon: <Mail className="w-[18px]" />,
     },
     {
-      name: 'Comments',
+      labelKey: 'comments',
       href: PAGES.DASHBOARD.COMMENTS,
       icon: <MessagesSquare className="w-[18px]" />,
       permission: PERMISSIONS.COMMENTS_MODERATE,
     },
     {
-      name: 'Review',
+      labelKey: 'review',
       href: PAGES.DASHBOARD.REVIEW,
       icon: <ClipboardCheck className="w-[18px]" />,
       permission: PERMISSIONS.PAGES_PUBLISH,
     },
     {
-      name: 'Redirects',
+      labelKey: 'redirects',
       href: PAGES.DASHBOARD.REDIRECTS,
       icon: <CornerDownRight className="w-[18px]" />,
       permission: PERMISSIONS.SETTINGS_MANAGE,
     },
     {
-      name: 'Taxonomies',
+      labelKey: 'taxonomies',
       href: PAGES.DASHBOARD.TAXONOMY,
       icon: <FolderTree className="w-[18px]" />,
       permission: PERMISSIONS.SETTINGS_MANAGE,
     },
     {
-      name: 'Menus',
       labelKey: 'menus',
       href: PAGES.DASHBOARD.MENUS,
       icon: <MenuIcon className="w-[18px]" />,
       permission: PERMISSIONS.SETTINGS_MANAGE,
     },
     {
-      name: 'Theme',
       labelKey: 'theme',
       href: PAGES.DASHBOARD.THEME,
       icon: <Palette className="w-[18px]" />,
       permission: PERMISSIONS.SETTINGS_MANAGE,
     },
     {
-      name: 'Settings',
       labelKey: 'settings',
       href: PAGES.DASHBOARD.SETTINGS,
       icon: <Settings className="w-[18px]" />,
       permission: PERMISSIONS.SETTINGS_MANAGE,
       children: [
-        { name: 'General', href: PAGES.DASHBOARD.SETTINGS },
-        { name: 'Branding', href: PAGES.DASHBOARD.SETTINGS_BRANDING },
-        { name: 'Navigation & Templates', href: PAGES.DASHBOARD.SETTINGS_NAVIGATION },
-        { name: 'Site Search', href: PAGES.DASHBOARD.SETTINGS_SEARCH },
-        { name: 'Single pages', href: PAGES.DASHBOARD.SETTINGS_SINGLE_PAGES },
-        { name: 'Video library', href: PAGES.DASHBOARD.SETTINGS_VIDEO_LIBRARY },
-        { name: 'Authentication & access', href: PAGES.DASHBOARD.SETTINGS_AUTHENTICATION },
-        { name: 'Site mode', href: PAGES.DASHBOARD.SETTINGS_SITE_MODE },
-        { name: 'SEO & analytics', href: PAGES.DASHBOARD.SETTINGS_SEO },
-        { name: 'Other languages', href: PAGES.DASHBOARD.SETTINGS_LANGUAGES },
-        { name: 'Breakpoints', href: PAGES.DASHBOARD.SETTINGS_BREAKPOINTS },
-        { name: 'Cookie consent', href: PAGES.DASHBOARD.SETTINGS_CONSENT },
-        { name: 'Custom code', href: PAGES.DASHBOARD.SETTINGS_CUSTOM_CODE },
-        { name: 'Blocks', href: PAGES.DASHBOARD.SETTINGS_BLOCKS },
-        { name: 'License', href: PAGES.DASHBOARD.SETTINGS_LICENSE },
+        { labelKey: 'settingsMenu.general', href: PAGES.DASHBOARD.SETTINGS },
+        { labelKey: 'settingsMenu.branding', href: PAGES.DASHBOARD.SETTINGS_BRANDING },
+        { labelKey: 'settingsMenu.navigation', href: PAGES.DASHBOARD.SETTINGS_NAVIGATION },
+        { labelKey: 'settingsMenu.search', href: PAGES.DASHBOARD.SETTINGS_SEARCH },
+        { labelKey: 'settingsMenu.singlePages', href: PAGES.DASHBOARD.SETTINGS_SINGLE_PAGES },
+        { labelKey: 'settingsMenu.videoLibrary', href: PAGES.DASHBOARD.SETTINGS_VIDEO_LIBRARY },
+        { labelKey: 'settingsMenu.authentication', href: PAGES.DASHBOARD.SETTINGS_AUTHENTICATION },
+        { labelKey: 'settingsMenu.siteMode', href: PAGES.DASHBOARD.SETTINGS_SITE_MODE },
+        { labelKey: 'settingsMenu.seo', href: PAGES.DASHBOARD.SETTINGS_SEO },
+        { labelKey: 'settingsMenu.languages', href: PAGES.DASHBOARD.SETTINGS_LANGUAGES },
+        { labelKey: 'settingsMenu.breakpoints', href: PAGES.DASHBOARD.SETTINGS_BREAKPOINTS },
+        { labelKey: 'settingsMenu.consent', href: PAGES.DASHBOARD.SETTINGS_CONSENT },
+        { labelKey: 'settingsMenu.customCode', href: PAGES.DASHBOARD.SETTINGS_CUSTOM_CODE },
+        { labelKey: 'settingsMenu.blocks', href: PAGES.DASHBOARD.SETTINGS_BLOCKS },
+        { labelKey: 'settingsMenu.license', href: PAGES.DASHBOARD.SETTINGS_LICENSE },
       ],
     },
     {
-      name: 'Plugins',
+      labelKey: 'plugins',
       href: PAGES.DASHBOARD.PLUGINS,
       icon: <Plug className="w-[18px]" />,
       permission: PERMISSIONS.SETTINGS_MANAGE,
     },
     {
-      name: 'Users & Roles',
+      labelKey: 'usersRoles',
       href: PAGES.DASHBOARD.USERS,
       icon: <ShieldCheck className="w-[18px]" />,
       permission: PERMISSIONS.SETTINGS_MANAGE,
     },
     {
-      name: 'API Keys',
+      labelKey: 'apiKeys',
       href: PAGES.DASHBOARD.API,
       icon: <KeyRound className="w-[18px]" />,
       permission: PERMISSIONS.API_MANAGE,
     },
     {
-      name: 'External API',
+      labelKey: 'externalApi',
       href: PAGES.DASHBOARD.EXTERNAL_API,
       icon: <Globe className="w-[18px]" />,
       permission: PERMISSIONS.EXTERNAL_API_MANAGE,
     },
     {
-      name: 'Post types',
+      labelKey: 'postTypes',
       href: PAGES.DASHBOARD.COLLECTIONS,
       icon: <Database className="w-[18px]" />,
       permission: PERMISSIONS.PAGES_EDIT,
     },
     {
-      name: 'Webhooks',
+      labelKey: 'webhooks',
       href: PAGES.DASHBOARD.WEBHOOKS,
       icon: <Share2 className="w-[18px]" />,
       permission: PERMISSIONS.SETTINGS_MANAGE,
     },
     {
-      name: 'Tools',
+      labelKey: 'tools',
       href: PAGES.DASHBOARD.TOOLS_IMPORT,
       icon: <Wrench className="w-[18px]" />,
       permission: PERMISSIONS.SETTINGS_MANAGE,
       children: [
-        { name: 'Import', href: PAGES.DASHBOARD.TOOLS_IMPORT },
-        { name: 'Privacy', href: PAGES.DASHBOARD.TOOLS_PRIVACY },
-        { name: 'Backups', href: PAGES.DASHBOARD.TOOLS_BACKUPS },
+        { labelKey: 'toolsMenu.import', href: PAGES.DASHBOARD.TOOLS_IMPORT },
+        { labelKey: 'toolsMenu.privacy', href: PAGES.DASHBOARD.TOOLS_PRIVACY },
+        { labelKey: 'toolsMenu.backups', href: PAGES.DASHBOARD.TOOLS_BACKUPS },
       ],
     },
   ];

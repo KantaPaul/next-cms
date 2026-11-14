@@ -99,6 +99,15 @@ const eslintConfig = [
             },
           ],
         },
+      ],
+    },
+  },
+
+  // ✅ Admin links keep the locale prefix: no raw /dashboard strings in navigation calls
+  {
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
+    ignores: ['src/lib/locale/admin-href.ts', 'src/**/__tests__/**', 'src/**/*.test.ts'],
+    rules: {
       'no-restricted-syntax': [
         'error',
         {
@@ -113,6 +122,24 @@ const eslintConfig = [
           message:
             'Use adminRedirect() or adminHref() instead of a raw /dashboard string.',
         },
+      ],
+    },
+  },
+
+  // ✅ Translated admin areas: no hard-coded UI text. Add each folder/file
+  // here once its strings are moved to src/i18n/messages (Phase 3).
+  {
+    files: [
+      'src/components/molecules/sidebar/**/*.tsx',
+      'src/components/organisms/header/**/*.tsx',
+      'src/components/molecules/auth-dropdown/auth-dropdown.tsx',
+      'src/components/dashboard/lang-switcher.tsx',
+      'src/components/dashboard/site-switcher.tsx',
+    ],
+    rules: {
+      'react/jsx-no-literals': [
+        'error',
+        { noStrings: false, ignoreProps: true, allowedStrings: ['·', '—', '/', '|', ':', '…'] },
       ],
     },
   },

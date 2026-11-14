@@ -25,7 +25,7 @@ import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import type { PostTypeSupports } from '@/config/post-types';
 import { stripAdminLocale } from '@/lib/locale/admin-href';
-import { getMenuItems } from '@/menus';
+import { getMenuItems, type MenuItem } from '@/menus';
 import { useAccess } from '@/providers/access.provider';
 
 export type SidebarPostType = {
@@ -43,7 +43,21 @@ export type SidebarPluginPage = {
   permission?: string;
 };
 
-type NavItem = ReturnType<typeof getMenuItems>[number];
+/**
+ * A sidebar entry. Built-in entries carry a `nav` message key; post types,
+ * taxonomies and plugin pages carry their own (user-entered) `label`.
+ */
+type NavEntry = {
+  labelKey?: string;
+  label?: string;
+  href: string;
+};
+
+type NavItem = NavEntry &
+  Omit<MenuItem, 'labelKey' | 'children'> & {
+    children?: NavEntry[];
+    postType?: SidebarPostType;
+  };
 
 export function NavMain({
   postTypes = [],
@@ -57,31 +71,30 @@ export function NavMain({
   const searchParams = useSearchParams();
   const { permissions } = useAccess();
   const tNav = useTranslations('nav');
-  const labelFor = (item: { name: string; labelKey?: string }) =>
-    item.labelKey && tNav.has(item.labelKey) ? tNav(item.labelKey as never) : item.name;
+  const labelOf = (entry: NavEntry) =>
+    entry.label ?? (entry.labelKey ? tNav(entry.labelKey as never) : '');
 
   // Each post type gets its own entry after Posts, like WordPress.
-  const postTypeItems: (NavItem & { postType?: SidebarPostType })[] =
-    postTypes.map(type => ({
-      name: type.name,
-      href: PAGES.DASHBOARD.COLLECTION(type.slug),
-      icon: <PostTypeIcon name={type.icon} className="w-[18px]" />,
-      permission: PERMISSIONS.PAGES_EDIT,
-      postType: type,
-    }));
+  const postTypeItems: NavItem[] = postTypes.map(type => ({
+    label: type.name,
+    href: PAGES.DASHBOARD.COLLECTION(type.slug),
+    icon: <PostTypeIcon name={type.icon} className="w-[18px]" />,
+    permission: PERMISSIONS.PAGES_EDIT,
+    postType: type,
+  }));
   const visiblePluginPages = pluginPages.filter(
     p => !p.permission || permissions.includes(p.permission)
   );
-  const menuItems = getMenuItems()
-    .flatMap(item => {
-      if (item.name === 'Posts') return [item, ...postTypeItems];
-      if (item.name === 'Plugins' && visiblePluginPages.length > 0) {
+  const menuItems: NavItem[] = getMenuItems()
+    .flatMap((item): NavItem[] => {
+      if (item.labelKey === 'posts') return [item, ...postTypeItems];
+      if (item.labelKey === 'plugins' && visiblePluginPages.length > 0) {
         return [
           {
             ...item,
             children: [
-              { name: 'All plugins', href: PAGES.DASHBOARD.PLUGINS },
-              ...visiblePluginPages.map(p => ({ name: p.name, href: p.href })),
+              { labelKey: 'allPlugins', href: PAGES.DASHBOARD.PLUGINS },
+              ...visiblePluginPages.map(p => ({ label: p.name, href: p.href })),
             ],
           },
         ];
@@ -99,57 +112,53 @@ export function NavMain({
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>MENU ITEMS</SidebarGroupLabel>
+      <SidebarGroupLabel>{tNav('menuItems')}</SidebarGroupLabel>
       <SidebarMenu>
         {menuItems.map(item => {
-          const postType = (item as { postType?: SidebarPostType }).postType;
-          const isPostTypeItem = !!postType;
-          const isActive = isPostTypeItem
+          const { postType } = item;
+          const isActive = postType
             ? within(item.href)
             : item.href === PAGES.DASHBOARD.COLLECTIONS && inPostType
               ? false
               : item.href === pathname || pathname.startsWith(`${item.href}/`);
-          const { name, icon, href } = item;
+          const { icon, href } = item;
+          const name = labelOf(item);
 
-          const subItems: { name: string; href: string }[] | null =
-            isPostTypeItem && postType
-              ? [
-              {
-                name: 'Entries',
-                href: PAGES.DASHBOARD.COLLECTION(postType.slug),
-              },
-              ...(postType.taxonomies ?? []).map(tax => ({
-                name: tax.name,
-                href: PAGES.DASHBOARD.COLLECTION_TAXONOMY(
-                  postType.slug,
-                  tax.key
-                ),
-              })),
-              {
-                name: 'Blocks',
-                href: PAGES.DASHBOARD.COLLECTION_BLOCKS(postType.slug),
-              },
-              {
-                name: 'Templates',
-                href: PAGES.DASHBOARD.COLLECTION_TEMPLATES(postType.slug),
-              },
-              ...(postType.supports?.comments !== false &&
-              permissions.includes(PERMISSIONS.COMMENTS_MODERATE)
-                ? [
-                    {
-                      name: 'Comments',
-                      href: PAGES.DASHBOARD.COLLECTION_COMMENTS(postType.slug),
-                    },
-                  ]
-                : []),
-              {
-                name: 'Settings',
-                href: PAGES.DASHBOARD.COLLECTION_SETTINGS(postType.slug),
-              },
+          const subItems: NavEntry[] | null = postType
+            ? [
+                {
+                  labelKey: 'postTypeMenu.entries',
+                  href: PAGES.DASHBOARD.COLLECTION(postType.slug),
+                },
+                ...(postType.taxonomies ?? []).map(tax => ({
+                  label: tax.name,
+                  href: PAGES.DASHBOARD.COLLECTION_TAXONOMY(postType.slug, tax.key),
+                })),
+                {
+                  labelKey: 'postTypeMenu.blocks',
+                  href: PAGES.DASHBOARD.COLLECTION_BLOCKS(postType.slug),
+                },
+                {
+                  labelKey: 'postTypeMenu.templates',
+                  href: PAGES.DASHBOARD.COLLECTION_TEMPLATES(postType.slug),
+                },
+                ...(postType.supports?.comments !== false &&
+                permissions.includes(PERMISSIONS.COMMENTS_MODERATE)
+                  ? [
+                      {
+                        labelKey: 'postTypeMenu.comments',
+                        href: PAGES.DASHBOARD.COLLECTION_COMMENTS(postType.slug),
+                      },
+                    ]
+                  : []),
+                {
+                  labelKey: 'postTypeMenu.settings',
+                  href: PAGES.DASHBOARD.COLLECTION_SETTINGS(postType.slug),
+                },
               ]
-              : item.children?.length
-                ? item.children
-                : null;
+            : item.children?.length
+              ? item.children
+              : null;
 
           if (subItems) {
             const isSubActive = (subHref: string) => {
@@ -180,17 +189,13 @@ export function NavMain({
               >
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuButton
-                      asChild
-                      tooltip={name}
-                      isActive={isActive}
-                    >
-                      <span className='block cursor-pointer'>
+                    <SidebarMenuButton asChild tooltip={name} isActive={isActive}>
+                      <span className="block cursor-pointer">
                         {icon}
                         <span>{name}</span>
                         <SidebarMenuAction
-                          className="transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90"
-                          aria-label={`Toggle ${name} menu`}
+                          className="transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 rtl:-scale-x-100 rtl:group-data-[state=open]/collapsible:-rotate-90"
+                          aria-label={tNav('toggleMenu', { name })}
                         >
                           <ChevronRight className="size-4" />
                         </SidebarMenuAction>
@@ -199,20 +204,15 @@ export function NavMain({
                   </CollapsibleTrigger>
                   <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
                     <SidebarMenuSub>
-                      {subItems.map(sub => {
-                        return (
-                          <SidebarMenuSubItem key={sub.href}>
-                            <SidebarMenuSubButton
-                              asChild
-                              isActive={isSubActive(sub.href)}
-                            >
-                              <Link href={sub.href}>
-                                <span>{sub.name}</span>
-                              </Link>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        );
-                      })}
+                      {subItems.map(sub => (
+                        <SidebarMenuSubItem key={sub.href}>
+                          <SidebarMenuSubButton asChild isActive={isSubActive(sub.href)}>
+                            <Link href={sub.href}>
+                              <span>{labelOf(sub)}</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
                     </SidebarMenuSub>
                   </CollapsibleContent>
                 </SidebarMenuItem>
@@ -225,7 +225,7 @@ export function NavMain({
               <SidebarMenuButton asChild tooltip={name} isActive={isActive}>
                 <Link href={href}>
                   {icon}
-                  <span>{labelFor(item)}</span>
+                  <span>{name}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
