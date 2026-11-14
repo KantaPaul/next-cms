@@ -163,6 +163,8 @@ export function NavMain({
               }
               if (postType && subHref === PAGES.DASHBOARD.COLLECTION(postType.slug))
                 return pathname === subHref;
+              if (subHref === PAGES.DASHBOARD.SETTINGS)
+                return pathname === subHref;
               return pathname === subHref || pathname.startsWith(`${subHref}/`);
             };
 

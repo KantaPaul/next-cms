@@ -125,7 +125,21 @@ function NullableSelect({
   );
 }
 
+export type SettingsSectionKey =
+  | 'general'
+  | 'branding'
+  | 'navigation'
+  | 'search'
+  | 'single-pages'
+  | 'video-library'
+  | 'authentication'
+  | 'site-mode'
+  | 'seo'
+  | 'languages';
+
 export function SettingsForm({
+  section = 'general',
+  activeLocale,
   settings,
   siteSlug = null,
   menus,
@@ -134,6 +148,8 @@ export function SettingsForm({
   locales,
   defaultLocale,
 }: {
+  section?: SettingsSectionKey;
+  activeLocale?: string;
   settings: {
     siteName: string;
     siteDescription: string | null;
@@ -211,6 +227,7 @@ export function SettingsForm({
     },
     {
       onSuccess: () => {
+        form.reset(form.getValues());
         toast.success('Settings saved. The public site has been refreshed.');
         router.refresh();
       },
@@ -462,6 +479,7 @@ export function SettingsForm({
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit((data) => submit(data as unknown as SettingsInput))} className="flex flex-col">
+        {section === 'general' && (
         <Section
           title="General"
           description="How the site identifies itself in titles, the footer, and search results."
@@ -563,7 +581,9 @@ export function SettingsForm({
             }}
           />
         </Section>
+        )}
 
+        {section === 'branding' && (
         <Section
           title="Branding"
           description="Logo and icons from the media library. The default share image is used when a page has none."
@@ -596,7 +616,9 @@ export function SettingsForm({
             )}
           />
         </Section>
+        )}
 
+        {section === 'navigation' && (
         <Section
           title="Navigation & Templates"
           description="Pick which menus or visual builder templates render in the public header and footer."
@@ -652,7 +674,9 @@ export function SettingsForm({
             .
           </p>
         </Section>
+        )}
 
+        {section === 'search' && (
         <Section
           title="Site Search (Synonyms & Pinned Results)"
           description="Configure query synonyms and pinned featured results for the public site search."
@@ -811,7 +835,9 @@ export function SettingsForm({
             </div>
           </div>
         </Section>
+        )}
 
+        {section === 'single-pages' && (
         <Section
           title="Single pages"
           description="How blog posts and post-type entries behave on the public site."
@@ -893,7 +919,9 @@ export function SettingsForm({
             )}
           />
         </Section>
+        )}
 
+        {section === 'video-library' && (
         <Section
           title="Video library"
           description="Enable or disable video providers. Disabling a provider rejects new URLs for that provider; saved videos render an unavailable state."
@@ -970,7 +998,9 @@ export function SettingsForm({
             </Button>
           </div>
         </Section>
+        )}
 
+        {section === 'authentication' && (
         <Section
           title="Authentication & access"
           description="Configure login visibility, registration rules, session durations, and account security."
@@ -1164,7 +1194,9 @@ export function SettingsForm({
             }}
           />
         </Section>
+        )}
 
+        {section === 'site-mode' && (
         <Section
           title="Site mode"
           description="Put the public site into maintenance (HTTP 503) or coming soon (HTTP 200, noindex) mode while keeping the dashboard and staff access open."
@@ -1319,7 +1351,9 @@ export function SettingsForm({
             }}
           />
         </Section>
+        )}
 
+        {section === 'seo' && (
         <Section
           title="SEO & analytics"
           description="Crawler rules and measurement. Leave robots.txt empty to use the default rules."
@@ -1365,21 +1399,55 @@ export function SettingsForm({
             }}
           />
         </Section>
-        {locales.filter(locale => locale.code !== defaultLocale).length > 0 && (
-          <Section
-            title="Other languages"
-            description="Name, description, and default SEO for each language besides the default. Blank fields fall back to the main values."
-          >
-            {locales
-              .filter(locale => locale.code !== defaultLocale)
-              .map(locale => {
-                return (
-                  <div key={locale.code} className="grid gap-3 sm:col-span-2 sm:grid-cols-2">
+        )}
+
+        {section === 'languages' && (() => {
+          const otherLocales = locales.filter(
+            locale => locale.code !== defaultLocale
+          );
+          const currentLocale =
+            otherLocales.find(locale => locale.code === activeLocale) ??
+            otherLocales[0];
+
+          return (
+            <Section
+              title="Other languages"
+              description="Name, description, and default SEO for each language besides the default. Blank fields fall back to the main values."
+            >
+              {!currentLocale ? (
+                <p className="sm:col-span-2 text-sm text-steel-500">
+                  No additional languages are configured for this site.
+                </p>
+              ) : (
+                <>
+                  <div className="sm:col-span-2 flex flex-wrap items-center gap-2 border-b border-steel-100 pb-3 dark:border-dark-300">
+                    {otherLocales.map(locale => {
+                      const isSelected = locale.code === currentLocale.code;
+                      return (
+                        <Link
+                          key={locale.code}
+                          href={PAGES.DASHBOARD.SETTINGS_LANGUAGE(locale.code)}
+                          className={cn(
+                            'rounded-md border px-3 py-1.5 text-sm font-medium transition-colors',
+                            isSelected
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'border-steel-200 text-steel-600 hover:bg-steel-50 dark:border-dark-300 dark:text-steel-300 dark:hover:bg-dark-200'
+                          )}
+                        >
+                          {locale.label} ({locale.code})
+                        </Link>
+                      );
+                    })}
+                  </div>
+                  <div
+                    key={currentLocale.code}
+                    className="grid gap-3 sm:col-span-2 sm:grid-cols-2"
+                  >
                     <p className="sm:col-span-2 text-sm font-medium">
-                      {locale.label}
+                      {currentLocale.label}
                     </p>
                     <Controller
-                      name={`translations.${locale.code}.siteName`}
+                      name={`translations.${currentLocale.code}.siteName`}
                       render={({ field: f, fieldState }) => {
                         const id = useId();
                         return (
@@ -1394,7 +1462,7 @@ export function SettingsForm({
                       }}
                     />
                     <Controller
-                      name={`translations.${locale.code}.seoTitle`}
+                      name={`translations.${currentLocale.code}.seoTitle`}
                       render={({ field: f, fieldState }) => {
                         const id = useId();
                         return (
@@ -1409,7 +1477,7 @@ export function SettingsForm({
                       }}
                     />
                     <Controller
-                      name={`translations.${locale.code}.siteDescription`}
+                      name={`translations.${currentLocale.code}.siteDescription`}
                       render={({ field: f, fieldState }) => {
                         const id = useId();
                         return (
@@ -1424,7 +1492,7 @@ export function SettingsForm({
                       }}
                     />
                     <Controller
-                      name={`translations.${locale.code}.seoDescription`}
+                      name={`translations.${currentLocale.code}.seoDescription`}
                       render={({ field: f, fieldState }) => {
                         const id = useId();
                         return (
@@ -1439,12 +1507,14 @@ export function SettingsForm({
                       }}
                     />
                     <Controller
-                      name={`translations.${locale.code}.headerTemplateId`}
+                      name={`translations.${currentLocale.code}.headerTemplateId`}
                       render={({ field: f }) => {
                         const id = useId();
                         return (
                           <div>
-                            <Label htmlFor={id}>Header Template ({locale.label})</Label>
+                            <Label htmlFor={id}>
+                              Header Template ({currentLocale.label})
+                            </Label>
                             <NullableSelect
                               id={id}
                               value={f.value}
@@ -1457,12 +1527,14 @@ export function SettingsForm({
                       }}
                     />
                     <Controller
-                      name={`translations.${locale.code}.footerTemplateId`}
+                      name={`translations.${currentLocale.code}.footerTemplateId`}
                       render={({ field: f }) => {
                         const id = useId();
                         return (
                           <div>
-                            <Label htmlFor={id}>Footer Template ({locale.label})</Label>
+                            <Label htmlFor={id}>
+                              Footer Template ({currentLocale.label})
+                            </Label>
                             <NullableSelect
                               id={id}
                               value={f.value}
@@ -1475,10 +1547,11 @@ export function SettingsForm({
                       }}
                     />
                   </div>
-                );
-              })}
-          </Section>
-        )}
+                </>
+              )}
+            </Section>
+          );
+        })()}
 
         <div className="sticky bottom-0 z-10 -mx-5 flex items-center justify-end gap-3 border-t border-steel-100 bg-white/90 px-5 py-3 backdrop-blur xl:-mx-8 xl:px-8 dark:border-dark-300 dark:bg-dark-100/90">
           {form.formState.isDirty && (
