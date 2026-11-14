@@ -78,7 +78,7 @@ function Option({
       aria-checked={selected}
       onClick={onSelect}
       className={cn(
-        'flex w-full items-start gap-3 rounded-md border p-3 text-left transition-colors',
+        'flex w-full items-start gap-3 rounded-md border p-3 text-start transition-colors',
         selected
           ? 'border-indigo-400 bg-indigo-50 dark:border-indigo-500 dark:bg-indigo-950/40'
           : 'border-steel-200 hover:border-steel-300 dark:border-dark-300'

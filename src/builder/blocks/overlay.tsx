@@ -133,8 +133,8 @@ export function Heading(p: HeadingProps) {
           p.alignment === 'center'
             ? 'text-center'
             : p.alignment === 'right'
-              ? 'text-right'
-              : 'text-left',
+              ? 'text-end'
+              : 'text-start',
           customEl.className
         )}
         style={customEl.style}

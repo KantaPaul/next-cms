@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import type { OpenGraph } from 'next/dist/lib/metadata/types/opengraph-types';
+import { BRAND } from '@/config/brand';
 
 type MetaObjectParams = {
   title?: string;
@@ -28,7 +29,7 @@ export const metaObject = (
     desc = description;
   }
 
-  const siteName = 'Next CMS';
+  const siteName = BRAND.name;
   const siteTitle =
     process.env?.NODE_ENV === 'production'
       ? title

@@ -1,7 +1,7 @@
 'use client';
 
 import { LayoutTemplate } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { useFormContext, useWatch } from 'react-hook-form';
 import slugify from 'react-slugify';
 import { isBuilderData } from '@/builder/data';

@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { AccessDenied } from '@/components/organisms/access-denied';
 import { PageHeader } from '@/components/organisms/page-header';
 import { PAGES } from '@/config/pages';

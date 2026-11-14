@@ -554,7 +554,7 @@ export const DEFAULT_INTEGRATIONS: SiteIntegrations = {};
 export const siteSettings = pgTable('site_settings', {
   id: text('id').primaryKey().default(SITE_SETTINGS_ID),
   siteId: text('site_id').notNull().default(DEFAULT_SITE_ID).unique(),
-  siteName: varchar('site_name', { length: 100 }).default('Next CMS').notNull(),
+  siteName: varchar('site_name', { length: 100 }).default('Meridian').notNull(),
   siteDescription: text('site_description'),
   seoTitle: varchar('seo_title', { length: 160 }),
   seoDescription: text('seo_description'),
@@ -610,6 +610,11 @@ export const siteSettings = pgTable('site_settings', {
     .$type<SiteIntegrations>()
     .default(DEFAULT_INTEGRATIONS)
     .notNull(),
+  exportApiBase: text('export_api_base'),
+  exportAllowedOrigins: text('export_allowed_origins')
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
   siteMode: jsonb('site_mode')
     .$type<SiteModeSettings>()
     .default(DEFAULT_SITE_MODE)

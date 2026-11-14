@@ -2,7 +2,7 @@
 
 import { format } from 'date-fns';
 import { Loader2, Mail, Plus } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useState, useTransition } from 'react';
 import { toast } from 'sonner';
@@ -144,7 +144,7 @@ export function ContactFormsList({
                   <TableHeaderCell>Used on</TableHeaderCell>
                   <TableHeaderCell>Updated</TableHeaderCell>
                   <TableHeaderCell>Author</TableHeaderCell>
-                  <TableHeaderCell className="w-12 text-right">
+                  <TableHeaderCell className="w-12 text-end">
                     Actions
                   </TableHeaderCell>
                 </TableRow>
@@ -173,7 +173,7 @@ export function ContactFormsList({
                     <TableCell className="text-muted-foreground">
                       {form.createdByName ?? '—'}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-end">
                       <ActionDropdown
                         isLoading={pendingId === form.id}
                         variant="vertical"

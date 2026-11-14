@@ -96,10 +96,10 @@ export function renderGuideBody(topics: GuideTopic[] = GUIDE_TOPICS) {
         )}</article>`
     )
     .join('');
-  return `<div class="guide"><h1>Next CMS user guide</h1><p class="lead">Every dashboard screen, public route, and builder component.</p><div class="actions"><a href="${GUIDE_PDF_PATH}" download>Download PDF</a><a href="/blog/category/user-guide">Read as blog posts</a></div><nav class="toc"><h2>Contents</h2>${toc}</nav>${articles}</div>`;
+  return `<div class="guide"><h1>Meridian user guide</h1><p class="lead">Every dashboard screen, public route, and builder component.</p><div class="actions"><a href="${GUIDE_PDF_PATH}" download>Download PDF</a><a href="/blog/category/user-guide">Read as blog posts</a></div><nav class="toc"><h2>Contents</h2>${toc}</nav>${articles}</div>`;
 }
 
 /** A standalone HTML document, used to render the PDF. */
 export function renderGuideHtml(topics: GuideTopic[] = GUIDE_TOPICS) {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Next CMS user guide</title><style>${GUIDE_CSS}</style></head><body>${renderGuideBody(topics)}</body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Meridian user guide</title><style>${GUIDE_CSS}</style></head><body>${renderGuideBody(topics)}</body></html>`;
 }

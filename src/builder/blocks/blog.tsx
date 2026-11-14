@@ -315,7 +315,7 @@ export function BlogPosts(p: BlogPostsProps) {
             : p.emptyMessage ||
               (p.editing ? 'Published posts appear here.' : 'No posts yet.')}
           {filtering && !p.editing && (
-            <a href="?" className="s-primary-text ml-1 underline">
+            <a href="?" className="s-primary-text ms-1 underline">
               Clear filters
             </a>
           )}
@@ -482,7 +482,7 @@ export function PostMeta(
           <img
             src={avatar}
             alt=""
-            {...el(p, 'avatar', '-mr-2 size-9 rounded-full object-cover')}
+            {...el(p, 'avatar', '-me-2 size-9 rounded-full object-cover')}
           />
         ) : null}
         {author &&

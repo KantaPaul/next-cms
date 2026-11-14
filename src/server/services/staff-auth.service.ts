@@ -177,7 +177,7 @@ export const staffAuth = {
       const link = `${env.SITE_URL.replace(/\/$/, '')}/login/magic?token=${encodeURIComponent(token)}`;
       const mailed = await sendMail({
         to: normalized,
-        subject: 'Sign in to Next CMS',
+        subject: 'Sign in to Meridian',
         text: `Use this link to sign in. It expires in ${MAGIC_MINUTES} minutes.\n\n${link}`,
       });
       if (!mailed.sent)

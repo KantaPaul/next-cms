@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import {
   Table,
   TableBody,
@@ -64,7 +64,7 @@ export function EntryList({
               </TableHead>
             ))}
             <TableHead>Updated</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead className="text-end">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

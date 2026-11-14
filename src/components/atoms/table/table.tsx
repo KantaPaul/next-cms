@@ -51,7 +51,7 @@ export type TableType<T extends Record<string, any>> = {
 
 export const stickyCellBorderColor = `before:w-[1px] before:absolute before:h-full before:content-[""] before:bg-border before:top-0`;
 export const stickyCellBgColor =
-  'after:bg-card after:absolute after:-z-[1] after:left-0 after:top-[1px] after:bottom-0 after:right-0';
+  'after:bg-card after:absolute after:-z-[1] after:start-0 after:top-[1px] after:bottom-0 after:end-0';
 
 export const tableBorder = 'w-full rounded-xl border border-border bg-card';
 
@@ -125,19 +125,19 @@ export function Table<TData extends Record<string, any>>({
                         },
                       }}
                       className={cn(
-                        expandable && 'border-r-0',
+                        expandable && 'border-e-0',
                         isSticky && '2xl:sticky',
                         isSticky &&
                           cn(stickyCellBgColor, stickyCellBorderColor),
-                        isStickyRight && !isEmptyTable && 'right-0',
-                        isStickyLeft && !isEmptyTable && 'left-0',
+                        isStickyRight && !isEmptyTable && 'end-0',
+                        isStickyLeft && !isEmptyTable && 'start-0',
                         // isStickyRight &&
                         //   isScrollable &&
                         //   !isEmptyTable &&
                         //   'sticky-table-cell-right bg-white dark:bg-dark-50',
                         isStickyLeft &&
                           !isEmptyTable &&
-                          'sticky-table-cell-left left-0 border-r-0',
+                          'sticky-table-cell-left start-0 border-e-0',
                         // isStickyLeft &&
                         //   isNotScroll &&
                         //   !isEmptyTable &&
@@ -145,14 +145,14 @@ export function Table<TData extends Record<string, any>>({
                         header.column.columnDef.meta?.align === 'center' &&
                           'text-center',
                         header.column.columnDef.meta?.align === 'right' &&
-                          'text-right',
-                        // index + 1 === array.length - 1 && 'border-r-0',
+                          'text-end',
+                        // index + 1 === array.length - 1 && 'border-e-0',
                         isStickyRight &&
                           index + 1 === array.length &&
                           'sticky-table-cell-right',
                         classNames?.headerCellClassName,
-                        isStickyLeft && cn('before:-right-px'),
-                        isStickyRight && cn('before:-left-px'),
+                        isStickyLeft && cn('before:-end-px'),
+                        isStickyRight && cn('before:-start-px'),
                         className
                       )}
                     >
@@ -166,7 +166,7 @@ export function Table<TData extends Record<string, any>>({
                               header.column.columnDef.meta?.align ===
                                 'center' && 'justify-center text-center',
                               header.column.columnDef.meta?.align === 'right' &&
-                                'justify-end text-right'
+                                'justify-end text-end'
                             ),
                             onClick: header.column.getToggleSortingHandler(),
                           }}
@@ -243,33 +243,33 @@ export function Table<TData extends Record<string, any>>({
                           className={cn(
                             // 'truncate',
                             expandable &&
-                              'border-r-0 first:rounded-l-lg last:rounded-r-lg',
+                              'border-e-0 first:rounded-s-lg last:rounded-e-lg',
                             expandable &&
                               row.getIsExpanded() &&
                               'first:rounded-b-none last:rounded-b-none',
                             isSticky && '2xl:sticky',
                             isSticky &&
                               cn(stickyCellBgColor, stickyCellBorderColor),
-                            isStickyRight && 'right-0',
-                            isStickyLeft && 'left-0',
+                            isStickyRight && 'end-0',
+                            isStickyLeft && 'start-0',
                             // isStickyRight &&
                             //   isScrollable &&
                             //   'sticky-table-cell-right bg-white dark:bg-dark-50',
                             isStickyLeft &&
-                              'sticky-table-cell-left left-0 border-r-0',
+                              'sticky-table-cell-left start-0 border-e-0',
                             row.getIsSelected() && isSticky && 'bg-muted/70',
                             // isStickyLeft && isNotScroll && 'bg-transparent dark:bg-transparent',
                             cell.column.columnDef.meta?.align === 'center' &&
                               'text-center',
                             cell.column.columnDef.meta?.align === 'right' &&
-                              'text-right',
+                              'text-end',
                             classNames?.tableCellClassName,
-                            // cellIndex + 1 === cellArray.length - 1 && 'border-r-0',
+                            // cellIndex + 1 === cellArray.length - 1 && 'border-e-0',
                             isStickyRight &&
                               cellIndex + 1 === cellArray.length &&
                               'sticky-table-cell-right',
-                            isStickyLeft && cn('before:-right-px'),
-                            isStickyRight && cn('before:-left-px'),
+                            isStickyLeft && cn('before:-end-px'),
+                            isStickyRight && cn('before:-start-px'),
                             className
                           )}
                         >
@@ -337,15 +337,15 @@ export function Table<TData extends Record<string, any>>({
                           metaClassName,
                           classNames?.tableCellClassName,
                           isSticky && '2xl:sticky',
-                          isStickyRight && 'right-0',
-                          isStickyLeft && 'left-0',
+                          isStickyRight && 'end-0',
+                          isStickyLeft && 'start-0',
                           // isStickyRight &&
                           //   isScrollable &&
                           //   'sticky-table-cell-right bg-white dark:bg-dark-50',
-                          // isStickyLeft && 'sticky-table-cell-left left-0 border-r-0'
+                          // isStickyLeft && 'sticky-table-cell-left start-0 border-e-0'
                           // isStickyLeft && isNotScroll && 'bg-transparent dark:bg-transparent'
-                          isStickyLeft && cn('before:-right-px'),
-                          isStickyRight && cn('before:-left-px')
+                          isStickyLeft && cn('before:-end-px'),
+                          isStickyRight && cn('before:-start-px')
                         )}
                       >
                         {footer.isPlaceholder

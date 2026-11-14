@@ -214,7 +214,7 @@ export function LicenseSettingsView({
                 Product
               </span>
               <span className="font-semibold text-foreground">next-cms</span>
-              <span className="text-xs text-steel-500 ml-1.5">(Single-Install)</span>
+              <span className="text-xs text-steel-500 ms-1.5">(Single-Install)</span>
             </div>
             <div>
               <span className="text-xs font-medium text-steel-500 block uppercase tracking-wider">
@@ -264,10 +264,10 @@ export function LicenseSettingsView({
                         id={id}
                         type={showKey ? 'text' : 'password'}
                         placeholder="ncms_lic_..."
-                        className="font-mono text-sm pr-20"
+                        className="font-mono text-sm pe-20"
                         {...field}
                       />
-                      <div className="absolute right-1 flex items-center gap-1">
+                      <div className="absolute end-1 flex items-center gap-1">
                         <Button
                           type="button"
                           variant="ghost"
@@ -350,7 +350,7 @@ export function LicenseSettingsView({
                   disabled={isDeactivating || isManagePending}
                 >
                   {isDeactivating ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                    <Loader2 className="h-4 w-4 animate-spin me-1.5" />
                   ) : null}
                   Deactivate License
                 </Button>

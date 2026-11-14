@@ -509,7 +509,7 @@ export function LightboxImage(p: LightboxImageProps) {
                 onClick={prev}
                 disabled={!canPrev}
                 className={cn(
-                  'absolute left-3 top-1/2 -translate-y-1/2 z-10 size-10 rounded-full flex items-center justify-center bg-black/40 text-white hover:bg-black/70 disabled:opacity-20 disabled:pointer-events-none transition cursor-pointer',
+                  'absolute start-3 top-1/2 -translate-y-1/2 z-10 size-10 rounded-full flex items-center justify-center bg-black/40 text-white hover:bg-black/70 disabled:opacity-20 disabled:pointer-events-none transition cursor-pointer',
                   arrowEl.className
                 )}
                 style={arrowEl.style}
@@ -523,7 +523,7 @@ export function LightboxImage(p: LightboxImageProps) {
                 onClick={next}
                 disabled={!canNext}
                 className={cn(
-                  'absolute right-3 top-1/2 -translate-y-1/2 z-10 size-10 rounded-full flex items-center justify-center bg-black/40 text-white hover:bg-black/70 disabled:opacity-20 disabled:pointer-events-none transition cursor-pointer',
+                  'absolute end-3 top-1/2 -translate-y-1/2 z-10 size-10 rounded-full flex items-center justify-center bg-black/40 text-white hover:bg-black/70 disabled:opacity-20 disabled:pointer-events-none transition cursor-pointer',
                   arrowEl.className
                 )}
                 style={arrowEl.style}
@@ -538,7 +538,7 @@ export function LightboxImage(p: LightboxImageProps) {
             <div
               data-overlay-ui=""
               className={cn(
-                'absolute top-3 left-3 z-10 px-2.5 py-1 rounded bg-black/50 text-white text-xs font-medium tabular-nums pointer-events-none',
+                'absolute top-3 start-3 z-10 px-2.5 py-1 rounded bg-black/50 text-white text-xs font-medium tabular-nums pointer-events-none',
                 counterEl.className
               )}
               style={counterEl.style}

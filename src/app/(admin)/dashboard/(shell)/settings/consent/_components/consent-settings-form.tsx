@@ -160,7 +160,7 @@ export function ConsentSettingsForm({
                   })
                 }
               >
-                <RefreshCw className="mr-1 size-3.5" />
+                <RefreshCw className="me-1 size-3.5" />
                 Bump
               </Button>
             </div>
@@ -309,7 +309,7 @@ export function ConsentSettingsForm({
       <div className="flex items-center justify-end gap-3">
         {error && <p className="text-sm text-destructive">{error}</p>}
         <Button type="submit" disabled={isPending}>
-          {isPending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Save className="mr-2 size-4" />}
+          {isPending ? <Loader2 className="me-2 size-4 animate-spin" /> : <Save className="me-2 size-4" />}
           Save consent settings
         </Button>
       </div>

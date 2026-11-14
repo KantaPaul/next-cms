@@ -1,6 +1,7 @@
 'use client';
 
 import { Download } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Can } from '@/providers/access.provider';
 import { PERMISSIONS } from '@/config/permissions';
@@ -15,6 +16,7 @@ export function ExportWebsiteButton({
   variant?: 'outline' | 'default' | 'secondary' | 'ghost';
   showTextOnMobile?: boolean;
 }) {
+  const t = useTranslations('common');
   return (
     <Can permission={PERMISSIONS.SETTINGS_MANAGE}>
       <Button
@@ -23,10 +25,10 @@ export function ExportWebsiteButton({
         variant={variant}
         className={cn('inline-flex items-center gap-1.5 shrink-0', className)}
       >
-        <a href="/api/v1/export/site" download title="Export website (.zip)">
+        <a href="/api/v1/export/site" download title={t('exportSite')}>
           <Download className="h-4 w-4 shrink-0" />
           <span className={showTextOnMobile ? 'inline' : 'hidden md:inline'}>
-            Export website
+            {t('exportSite')}
           </span>
         </a>
       </Button>

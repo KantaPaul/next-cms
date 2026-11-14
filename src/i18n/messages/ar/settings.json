@@ -1,0 +1,12 @@
+{
+  "title": "الإعدادات",
+  "general": "عام",
+  "branding": "الهوية البصرية",
+  "localization": "اللغات",
+  "seo": "تحسين محركات البحث",
+  "export": "التصدير",
+  "siteMode": "وضع الموقع",
+  "blocks": "الكتل",
+  "exportApiBase": "رابط خادم النظام (CMS)",
+  "exportAllowedOrigins": "النطاقات المسموح بها للتصدير"
+}

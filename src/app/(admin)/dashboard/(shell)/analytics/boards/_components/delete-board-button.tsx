@@ -2,6 +2,8 @@
 
 import { Loader2, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { PAGES } from '@/config/pages';
+import { useAdminHref } from '@/providers/site-locales';
 import { useTransition } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -18,6 +20,7 @@ export function DeleteBoardButton({
   redirectToList?: boolean;
 }) {
   const router = useRouter();
+  const toAdminHref = useAdminHref();
   const [pending, start] = useTransition();
 
   const onDelete = () => {
@@ -28,7 +31,7 @@ export function DeleteBoardButton({
       await handleActionResponse(deleteBoard({ id }), () => {
         toast.success('Dashboard deleted');
         if (redirectToList) {
-          router.push('/dashboard/analytics/boards');
+          router.push(toAdminHref(PAGES.DASHBOARD.ANALYTICS_BOARDS));
         }
         router.refresh();
       });

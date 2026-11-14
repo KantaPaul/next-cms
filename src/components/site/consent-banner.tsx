@@ -8,8 +8,8 @@ import { useConsent } from './consent-provider';
 
 const POSITION_CLASSES = {
   'bottom-bar': 'inset-x-0 bottom-0 p-3 sm:p-4',
-  'bottom-left': 'bottom-4 left-4 right-4 sm:right-auto sm:max-w-md',
-  'bottom-right': 'bottom-4 left-4 right-4 sm:left-auto sm:max-w-md',
+  'bottom-left': 'bottom-4 start-4 end-4 sm:end-auto sm:max-w-md',
+  'bottom-right': 'bottom-4 start-4 end-4 sm:start-auto sm:max-w-md',
   center: 'inset-0 flex items-center justify-center bg-black/40 p-4',
 } as const;
 

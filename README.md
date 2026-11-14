@@ -1,6 +1,6 @@
-# Next CMS
+# Meridian
 
-A Next.js CMS with a visual page builder, blog, media library, and first-party analytics.
+A Next.js multi-site, multi-language CMS with a visual page builder, blog, media library, and first-party analytics.
 
 ## Requirements
 
@@ -150,3 +150,12 @@ type CustomBlock = {
 The loader adds the `section` field, so a plugin does not reimplement the section inspector. A duplicate `key` that matches a built-in block is ignored. Adding a later block means adding a file under `src/builder/custom/` and one line in that index. There is no marketplace and no remote install.
 
 Ship one example file, `src/builder/custom/example.tsx`, registered in the index, so the loader is exercised. It renders a heading and a text line and can be removed by deleting those two references.
+
+## Multi-language admin, RTL, and demo sites
+
+- **Admin locale URLs**: Default locale uses `/dashboard/...`; other locales prefix after `/dashboard` (e.g. `/dashboard/es/pages`, `/dashboard/ar/pages`) via proxy rewrite in `src/proxy.ts`.
+- **Admin UI i18n & RTL**: `next-intl` dictionaries live in `src/i18n/messages/{en,es,ar}/*.json` (verified by `pnpm i18n:check`). Users can set their own interface language in **Dashboard → Account**, including Arabic (`ar`) with full RTL layout and `IBM Plex Sans Arabic`.
+- **Branding**: Central brand config in `src/config/brand.ts` and SVG assets in `public/brand/{logo.svg,logo-dark.svg,mark.svg}` and `src/app/icon.svg`.
+- **Demo sites**: `pnpm db:seed` seeds `main` plus four `en/es/ar` demo sites: **Blog** (`/blog`), **Agency** (`/agency`), **Documentation** (`/docs`), and **Portfolio** (`/portfolio`). Reseed a single site with `pnpm db:seed --site=docs`. Regenerate docs markdown with `tsx --import ./scripts/server-only-stub.mjs scripts/docs-generate.ts`.
+- **Database backup & restore**: `pnpm db:download`, `pnpm db:restore`, and `pnpm db:backups` (uses `pg_dump`/`pg_restore` with automatic Docker `nextcms_db` fallback).
+- **Exported static site forms**: Static exports inject `window.__CMS__` (`api`, `site`, `locale`) and post forms/comments/privacy/consent to the CMS endpoints with CORS allow-list checks (`site_settings.export_allowed_origins`, `x-cms-site`).

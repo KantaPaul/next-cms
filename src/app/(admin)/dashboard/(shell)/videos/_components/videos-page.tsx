@@ -254,11 +254,11 @@ export function VideosPage({
           >
             {layout === 'sidebar' ? (
               <>
-                <Columns className="mr-1.5 h-4 w-4" /> Stacked
+                <Columns className="me-1.5 h-4 w-4" /> Stacked
               </>
             ) : (
               <>
-                <Layout className="mr-1.5 h-4 w-4" /> Sidebar
+                <Layout className="me-1.5 h-4 w-4" /> Sidebar
               </>
             )}
           </Button>
@@ -272,7 +272,7 @@ export function VideosPage({
             disabled={!canCreate}
             className="shadow-sm"
           >
-            <Plus className="mr-1.5 h-4 w-4" /> Add video
+            <Plus className="me-1.5 h-4 w-4" /> Add video
           </Button>
         </div>
       </div>
@@ -280,7 +280,7 @@ export function VideosPage({
       {/* Stacked Layout: Horizontal Playlists Chips */}
       {layout === 'stacked' && (
         <div className="flex flex-wrap items-center gap-2 pb-2">
-          <span className="text-xs font-semibold text-steel-500 uppercase tracking-wider mr-1">
+          <span className="text-xs font-semibold text-steel-500 uppercase tracking-wider me-1">
             Playlists:
           </span>
           <button
@@ -310,7 +310,7 @@ export function VideosPage({
             >
               <Folder className="h-3.5 w-3.5" />
               <span>{p.name}</span>
-              <span className="ml-1 px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-white/10 text-[10px]">
+              <span className="ms-1 px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-white/10 text-[10px]">
                 {p.videoCount}
               </span>
             </button>
@@ -319,10 +319,10 @@ export function VideosPage({
             <Button
               variant="outline"
               size="sm"
-              className="h-7 text-xs px-2.5 ml-auto"
+              className="h-7 text-xs px-2.5 ms-auto"
               onClick={() => setOpenPlaylistModal(true)}
             >
-              <FolderPlus className="mr-1 h-3.5 w-3.5" /> New playlist
+              <FolderPlus className="me-1 h-3.5 w-3.5" /> New playlist
             </Button>
           )}
         </div>
@@ -351,7 +351,7 @@ export function VideosPage({
                   className="h-7 px-2 text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
                   onClick={() => setOpenPlaylistModal(true)}
                 >
-                  <Plus className="mr-1 h-3 w-3" /> New
+                  <Plus className="me-1 h-3 w-3" /> New
                 </Button>
               )}
             </div>
@@ -390,7 +390,7 @@ export function VideosPage({
                     <Folder className="h-4 w-4 shrink-0" />
                     <span className="truncate">{p.name}</span>
                   </span>
-                  <span className="text-xs text-steel-400 ml-2">{p.videoCount}</span>
+                  <span className="text-xs text-steel-400 ms-2">{p.videoCount}</span>
                 </button>
               ))}
 
@@ -535,12 +535,12 @@ function SearchBar({
     <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center bg-white p-3 rounded-xl border border-steel-200 shadow-sm dark:border-dark-300 dark:bg-dark-100">
       {/* Search Input */}
       <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-steel-400" />
+        <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-steel-400" />
         <Input
           placeholder={dynamicPlaceholder}
           value={search}
           onChange={e => onSearchChange(e.target.value)}
-          className="pl-9 h-9 w-full bg-steel-50/50 dark:bg-dark-200/50"
+          className="ps-9 h-9 w-full bg-steel-50/50 dark:bg-dark-200/50"
         />
       </div>
 
@@ -596,7 +596,7 @@ function SearchBar({
             className="h-9 text-xs text-steel-500 hover:text-slate-900 dark:hover:text-white"
             title="Reset filters"
           >
-            <RefreshCw className="mr-1 h-3.5 w-3.5" /> Reset
+            <RefreshCw className="me-1 h-3.5 w-3.5" /> Reset
           </Button>
         )}
       </div>
@@ -661,12 +661,12 @@ function VideoTable({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-steel-200 bg-steel-50/60 dark:border-dark-300 dark:bg-dark-200/50 text-xs font-semibold uppercase tracking-wider text-steel-500">
-              <th className="text-left px-4 py-3">Video</th>
-              <th className="text-left px-4 py-3">Source</th>
-              <th className="text-left px-4 py-3">Playlist</th>
-              <th className="text-left px-4 py-3">Duration</th>
+              <th className="text-start px-4 py-3">Video</th>
+              <th className="text-start px-4 py-3">Source</th>
+              <th className="text-start px-4 py-3">Playlist</th>
+              <th className="text-start px-4 py-3">Duration</th>
               <th className="text-center px-4 py-3">Status</th>
-              <th className="text-right px-4 py-3">Actions</th>
+              <th className="text-end px-4 py-3">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-steel-100 dark:divide-dark-300/50">
@@ -762,7 +762,7 @@ function VideoTable({
                 </td>
 
                 {/* Actions */}
-                <td className="px-4 py-3 text-right whitespace-nowrap">
+                <td className="px-4 py-3 text-end whitespace-nowrap">
                   <div className="flex items-center justify-end gap-1">
                     <Button
                       variant="ghost"
@@ -771,7 +771,7 @@ function VideoTable({
                       className="h-8 px-2 text-xs text-steel-600 hover:text-slate-900"
                       title="Preview video"
                     >
-                      <Play className="h-3.5 w-3.5 mr-1 text-indigo-600" /> Preview
+                      <Play className="h-3.5 w-3.5 me-1 text-indigo-600" /> Preview
                     </Button>
 
                     <DropdownMenu>
@@ -783,16 +783,16 @@ function VideoTable({
                       <DropdownMenuContent align="end" className="w-44">
                         {video.status === 'published' ? (
                           <DropdownMenuItem onSelect={() => onUnpublish(video.id)}>
-                            <EyeOff className="mr-2 h-3.5 w-3.5 text-steel-500" /> Unpublish
+                            <EyeOff className="me-2 h-3.5 w-3.5 text-steel-500" /> Unpublish
                           </DropdownMenuItem>
                         ) : (
                           <DropdownMenuItem onSelect={() => onPublish(video.id)}>
-                            <Eye className="mr-2 h-3.5 w-3.5 text-emerald-600" /> Publish
+                            <Eye className="me-2 h-3.5 w-3.5 text-emerald-600" /> Publish
                           </DropdownMenuItem>
                         )}
                         {canEdit && (
                           <DropdownMenuItem onSelect={() => onEdit(video)}>
-                            <Edit3 className="mr-2 h-3.5 w-3.5 text-steel-500" /> Edit
+                            <Edit3 className="me-2 h-3.5 w-3.5 text-steel-500" /> Edit
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem asChild>
@@ -802,7 +802,7 @@ function VideoTable({
                             rel="noopener noreferrer"
                             className="flex items-center cursor-pointer"
                           >
-                            <ExternalLink className="mr-2 h-3.5 w-3.5 text-steel-500" /> Open URL
+                            <ExternalLink className="me-2 h-3.5 w-3.5 text-steel-500" /> Open URL
                           </a>
                         </DropdownMenuItem>
                         {canDelete && (
@@ -812,7 +812,7 @@ function VideoTable({
                               onSelect={() => onDelete(video.id)}
                               className="text-destructive focus:text-destructive"
                             >
-                              <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
+                              <Trash2 className="me-2 h-3.5 w-3.5" /> Delete
                             </DropdownMenuItem>
                           </>
                         )}
@@ -842,7 +842,7 @@ function VideoTable({
                         size="sm"
                         className="mt-4"
                       >
-                        <Plus className="mr-1.5 h-3.5 w-3.5" /> Add video
+                        <Plus className="me-1.5 h-3.5 w-3.5" /> Add video
                       </Button>
                     )}
                   </div>
@@ -937,7 +937,7 @@ function VideoGrid({
             </p>
             {canCreate && (
               <Button onClick={onAddVideo} size="sm" className="mt-4">
-                <Plus className="mr-1.5 h-3.5 w-3.5" /> Add video
+                <Plus className="me-1.5 h-3.5 w-3.5" /> Add video
               </Button>
             )}
           </div>
@@ -969,7 +969,7 @@ function VideoGrid({
 
                 {/* Duration Badge */}
                 {video.duration ? (
-                  <span className="absolute bottom-2 right-2 rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-medium text-white shadow">
+                  <span className="absolute bottom-2 end-2 rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-medium text-white shadow">
                     {formatDuration(video.duration)}
                   </span>
                 ) : null}
@@ -977,7 +977,7 @@ function VideoGrid({
                 {/* Source Badge */}
                 <span
                   className={cn(
-                    'absolute top-2 left-2 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider shadow-sm flex items-center gap-1',
+                    'absolute top-2 start-2 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider shadow-sm flex items-center gap-1',
                     video.provider === 'youtube'
                       ? 'bg-red-600 text-white'
                       : video.provider === 'vimeo'
@@ -992,7 +992,7 @@ function VideoGrid({
                 {/* Hover Play Button */}
                 <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/thumb:opacity-100 transition flex items-center justify-center">
                   <div className="h-10 w-10 rounded-full bg-white/90 shadow flex items-center justify-center text-slate-900 transition hover:scale-110">
-                    <Play className="h-5 w-5 fill-current ml-0.5" />
+                    <Play className="h-5 w-5 fill-current ms-0.5" />
                   </div>
                 </div>
               </div>
@@ -1036,20 +1036,20 @@ function VideoGrid({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onSelect={() => onPreview(video)}>
-                          <Play className="mr-2 h-3.5 w-3.5 text-indigo-600" /> Preview
+                          <Play className="me-2 h-3.5 w-3.5 text-indigo-600" /> Preview
                         </DropdownMenuItem>
                         {video.status === 'published' ? (
                           <DropdownMenuItem onSelect={() => onUnpublish(video.id)}>
-                            <EyeOff className="mr-2 h-3.5 w-3.5 text-steel-500" /> Unpublish
+                            <EyeOff className="me-2 h-3.5 w-3.5 text-steel-500" /> Unpublish
                           </DropdownMenuItem>
                         ) : (
                           <DropdownMenuItem onSelect={() => onPublish(video.id)}>
-                            <Eye className="mr-2 h-3.5 w-3.5 text-emerald-600" /> Publish
+                            <Eye className="me-2 h-3.5 w-3.5 text-emerald-600" /> Publish
                           </DropdownMenuItem>
                         )}
                         {canEdit && (
                           <DropdownMenuItem onSelect={() => onEdit(video)}>
-                            <Edit3 className="mr-2 h-3.5 w-3.5 text-steel-500" /> Edit
+                            <Edit3 className="me-2 h-3.5 w-3.5 text-steel-500" /> Edit
                           </DropdownMenuItem>
                         )}
                         {canDelete && (
@@ -1057,7 +1057,7 @@ function VideoGrid({
                             onSelect={() => onDelete(video.id)}
                             className="text-destructive focus:text-destructive"
                           >
-                            <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
+                            <Trash2 className="me-2 h-3.5 w-3.5" /> Delete
                           </DropdownMenuItem>
                         )}
                       </DropdownMenuContent>
@@ -1320,7 +1320,7 @@ function VideoForm({
                 disabled={!url || invalidUrl || isFetchingMetadata}
                 className="shrink-0 text-xs"
               >
-                <Sparkles className="mr-1 h-3.5 w-3.5 text-indigo-500" />
+                <Sparkles className="me-1 h-3.5 w-3.5 text-indigo-500" />
                 {isFetchingMetadata ? 'Fetching…' : 'Fetch Info'}
               </Button>
             </div>

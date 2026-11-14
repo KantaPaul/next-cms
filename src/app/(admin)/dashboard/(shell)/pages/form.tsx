@@ -56,7 +56,7 @@ import { handleActionResponse } from '@/lib/utils/handle-action-response';
 import { maybeOfferRedirect } from '@/components/dashboard/redirect-offer';
 import { useCan } from '@/providers/access.provider';
 import { useDataProvider } from '@/providers/data.provider';
-import { useSiteLocales } from '@/providers/site-locales';
+import { useAdminHref, useSiteLocales } from '@/providers/site-locales';
 
 type PageFormData = {
   initialValues?: PageDetail | null;
@@ -97,6 +97,7 @@ function PageForm({ id }: { id: string }) {
 
   // New items start in the dashboard's working language (header switcher).
   const { currentLocale } = useSiteLocales();
+  const toAdminHref = useAdminHref();
   const defaultValues = useMemo<CreatePagesInput>(
     () => ({
       title: initialValues?.title ?? '',
@@ -167,9 +168,11 @@ function PageForm({ id }: { id: string }) {
             !inputs.templateId &&
             searchParams.get(START_WITH_AI_PARAM) === 'ai';
           router.push(
-            saved.editorType === 'builder'
-              ? `${PAGES.DASHBOARD.PAGES.BUILDER(saved.id)}${startWithAi ? '?ai=generate' : ''}`
-              : PAGES.DASHBOARD.PAGES.EDIT(saved.id)
+            toAdminHref(
+              saved.editorType === 'builder'
+                ? `${PAGES.DASHBOARD.PAGES.BUILDER(saved.id)}${startWithAi ? '?ai=generate' : ''}`
+                : PAGES.DASHBOARD.PAGES.EDIT(saved.id)
+            )
           );
           return;
         }
@@ -208,7 +211,7 @@ function PageForm({ id }: { id: string }) {
             }
           />
         </div>
-        <aside className="w-full border-t border-steel-200 bg-white dark:border-dark-300 dark:bg-dark-50 lg:w-96 lg:overflow-auto lg:border-l lg:border-t-0">
+        <aside className="w-full border-t border-steel-200 bg-white dark:border-dark-300 dark:bg-dark-50 lg:w-96 lg:overflow-auto lg:border-s lg:border-t-0">
           <Tabs defaultValue="page" className="gap-0">
             <TabsList className="m-3 grid grid-cols-3">
               <TabsTrigger value="page">Page</TabsTrigger>
@@ -297,7 +300,7 @@ function EditorToolbar({
           )}
         </>
       )}
-      <div className="ml-auto flex flex-wrap items-center gap-2">
+      <div className="ms-auto flex flex-wrap items-center gap-2">
         {initialValues && (
           <>
             <Button

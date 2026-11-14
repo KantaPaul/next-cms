@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
@@ -126,13 +126,13 @@ export function CollectionBlocksTable({
       </div>
 
       <div className="overflow-hidden rounded-md border border-steel-200 bg-white dark:border-dark-300 dark:bg-dark-50">
-        <table className="w-full text-left text-sm">
+        <table className="w-full text-start text-sm">
           <thead className="border-b border-steel-200 bg-steel-50 text-xs font-semibold uppercase text-steel-600 dark:border-dark-300 dark:bg-dark-100 dark:text-steel-400">
             <tr>
               <th className="px-4 py-3">Block</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Updated</th>
-              <th className="px-4 py-3 text-right">Actions</th>
+              <th className="px-4 py-3 text-end">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-steel-100 dark:divide-dark-300">
@@ -205,7 +205,7 @@ export function CollectionBlocksTable({
                       addSuffix: true,
                     })}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-end">
                     <div className="flex items-center justify-end gap-2">
                       <Button variant="outline" size="sm" asChild>
                         <Link
@@ -371,7 +371,7 @@ function BlockDetailsDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={isPending || !name.trim()}>
-              {isPending && <Loader2 className="animate-spin size-4 mr-1" />}
+              {isPending && <Loader2 className="animate-spin size-4 me-1" />}
               {editing ? 'Save' : 'Create block'}
             </Button>
           </DialogFooter>

@@ -1,14 +1,19 @@
 import { RedirectType, redirect } from 'next/navigation';
 import { PAGES } from '@/config/pages';
 import { validateSession } from '@/lib/auth';
+import { AdminI18nProvider } from '@/components/providers/admin-i18n-provider';
+import { dirFor, resolveUiLocale } from '@/i18n/config';
+import { loadMessages } from '@/i18n/request';
 import { AccessProvider } from '@/providers/access.provider';
 import { SiteLocalesProvider } from '@/providers/site-locales';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
+import { adminHref } from '@/lib/locale/admin-href';
 import {
   ADMIN_LOCALE_COOKIE,
   pickAdminLocale,
 } from '@/lib/locale/admin-locale';
 import { accessService } from '@/server/services/access.service';
+import { ADMIN_LOCALE_HEADER, adminLocale } from '@/server/services/admin-locale';
 import { siteContext } from '@/server/services/site-context';
 import { licenseService } from '@/server/services/license.service';
 import { siteSettingsService } from '@/server/services/site-settings.service';
@@ -57,23 +62,51 @@ export default async function DashboardLayout({
   }
 
   const userId = session.user.id;
-  const [access, site] = await Promise.all([
+  const [access, site, headerList, cookieStore] = await Promise.all([
     accessService.getUserAccess(userId),
     siteContext.adminSite(userId),
+    headers(),
+    cookies(),
   ]);
 
+  const headerLocale = headerList.get(ADMIN_LOCALE_HEADER);
+  const pathname = headerList.get('x-pathname');
+  if (!headerLocale && pathname === '/dashboard') {
+    const remembered = pickAdminLocale(
+      cookieStore.get(ADMIN_LOCALE_COOKIE)?.value,
+      site.locales
+    );
+    if (remembered && remembered !== site.defaultLocale) {
+      redirect(
+        adminHref('/dashboard', remembered, site.defaultLocale),
+        RedirectType.replace
+      );
+    }
+  }
+
+  const locale = await adminLocale();
+  const userUiLocale = (session.user as { uiLocale?: string | null }).uiLocale;
+  const uiLocale = resolveUiLocale({
+    userUiLocale,
+    contentLocale: locale,
+  });
+  const messages = await loadMessages(uiLocale);
+
   return (
-    <AccessProvider value={access}>
-      <SiteLocalesProvider
-        locales={site.locales}
-        defaultLocale={site.defaultLocale}
-        initialLocale={pickAdminLocale(
-          (await cookies()).get(ADMIN_LOCALE_COOKIE)?.value,
-          site.locales
-        )}
-      >
-        {children}
-      </SiteLocalesProvider>
-    </AccessProvider>
+    <AdminI18nProvider
+      locale={uiLocale}
+      dir={dirFor(uiLocale)}
+      messages={messages}
+    >
+      <AccessProvider value={access}>
+        <SiteLocalesProvider
+          locales={site.locales}
+          defaultLocale={site.defaultLocale}
+          initialLocale={locale}
+        >
+          {children}
+        </SiteLocalesProvider>
+      </AccessProvider>
+    </AdminI18nProvider>
   );
 }

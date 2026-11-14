@@ -242,7 +242,7 @@ function TeamTable({
       </p>
       <div className="overflow-x-auto rounded-lg border border-steel-200 dark:border-dark-300">
         <table className="w-full min-w-[560px] text-sm">
-          <thead className="bg-steel-50 text-left text-xs uppercase tracking-wide text-steel-500 dark:bg-dark-100">
+          <thead className="bg-steel-50 text-start text-xs uppercase tracking-wide text-steel-500 dark:bg-dark-100">
             <tr>
               <th className="px-4 py-2.5 font-medium">User</th>
               <th className="px-4 py-2.5 font-medium">Role</th>
@@ -267,7 +267,7 @@ function TeamTable({
                         <div className="truncate font-medium">
                           {user.name || user.email}
                           {isSelf && (
-                            <span className="ml-2 text-xs font-normal text-steel-500">
+                            <span className="ms-2 text-xs font-normal text-steel-500">
                               (you)
                             </span>
                           )}
@@ -322,7 +322,7 @@ function TeamTable({
                           onClick={() => handleApprove(user)}
                         >
                           {approvingId === user.id && (
-                            <Loader2 className="mr-1 size-3 animate-spin" />
+                            <Loader2 className="me-1 size-3 animate-spin" />
                           )}
                           Approve
                         </Button>
@@ -359,7 +359,7 @@ function PermissionMatrix() {
         <table className="w-full min-w-[640px] text-sm">
           <thead className="bg-steel-50 text-xs dark:bg-dark-100">
             <tr>
-              <th className="px-4 py-2.5 text-left font-medium uppercase tracking-wide text-steel-500">
+              <th className="px-4 py-2.5 text-start font-medium uppercase tracking-wide text-steel-500">
                 Permission
               </th>
               {ROLE_NAMES.map(role => (

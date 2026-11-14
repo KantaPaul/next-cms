@@ -1,6 +1,7 @@
 'use client';
 
 import { ChevronRight } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { usePathname, useSearchParams } from 'next/navigation';
 import Link from '@/components/atoms/next/link';
 import { PostTypeIcon } from '@/components/atoms/post-type-icon';
@@ -23,10 +24,9 @@ import {
 import { PAGES } from '@/config/pages';
 import { PERMISSIONS } from '@/config/permissions';
 import type { PostTypeSupports } from '@/config/post-types';
-import { withAdminLanguage } from '@/lib/locale/admin-locale';
+import { stripAdminLocale } from '@/lib/locale/admin-href';
 import { getMenuItems } from '@/menus';
 import { useAccess } from '@/providers/access.provider';
-import { useSiteLocales } from '@/providers/site-locales';
 
 export type SidebarPostType = {
   id: string;
@@ -52,10 +52,13 @@ export function NavMain({
   postTypes?: SidebarPostType[];
   pluginPages?: SidebarPluginPage[];
 }) {
-  const pathname = usePathname();
+  const rawPathname = usePathname();
+  const pathname = stripAdminLocale(rawPathname).path;
   const searchParams = useSearchParams();
   const { permissions } = useAccess();
-  const { chosenLocale } = useSiteLocales();
+  const tNav = useTranslations('nav');
+  const labelFor = (item: { name: string; labelKey?: string }) =>
+    item.labelKey && tNav.has(item.labelKey) ? tNav(item.labelKey as never) : item.name;
 
   // Each post type gets its own entry after Posts, like WordPress.
   const postTypeItems: (NavItem & { postType?: SidebarPostType })[] =
@@ -203,9 +206,7 @@ export function NavMain({
                               asChild
                               isActive={isSubActive(sub.href)}
                             >
-                              <Link
-                                href={withAdminLanguage(sub.href, chosenLocale)}
-                              >
+                              <Link href={sub.href}>
                                 <span>{sub.name}</span>
                               </Link>
                             </SidebarMenuSubButton>
@@ -222,9 +223,9 @@ export function NavMain({
           return (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton asChild tooltip={name} isActive={isActive}>
-                <Link href={withAdminLanguage(href, chosenLocale)}>
+                <Link href={href}>
                   {icon}
-                  <span>{name}</span>
+                  <span>{labelFor(item)}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

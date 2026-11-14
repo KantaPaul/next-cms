@@ -154,16 +154,16 @@ function sendEvent(overlay: OverlayHostItem, type: EventType) {
 
 /** Popup position → classes. Each one resets the dialog's centred defaults it doesn't use. */
 const POPUP_POSITION: Record<string, string> = {
-  center: 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
-  top: 'top-8 bottom-auto left-1/2 -translate-x-1/2 translate-y-0',
-  bottom: 'top-auto bottom-8 left-1/2 -translate-x-1/2 translate-y-0',
-  'top-left': 'top-8 bottom-auto left-8 right-auto translate-x-0 translate-y-0',
+  center: 'top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2',
+  top: 'top-8 bottom-auto start-1/2 -translate-x-1/2 translate-y-0',
+  bottom: 'top-auto bottom-8 start-1/2 -translate-x-1/2 translate-y-0',
+  'top-left': 'top-8 bottom-auto start-8 end-auto translate-x-0 translate-y-0',
   'top-right':
-    'top-8 bottom-auto left-auto right-8 translate-x-0 translate-y-0',
+    'top-8 bottom-auto start-auto end-8 translate-x-0 translate-y-0',
   'bottom-left':
-    'top-auto bottom-8 left-8 right-auto translate-x-0 translate-y-0',
+    'top-auto bottom-8 start-8 end-auto translate-x-0 translate-y-0',
   'bottom-right':
-    'top-auto bottom-8 left-auto right-8 translate-x-0 translate-y-0',
+    'top-auto bottom-8 start-auto end-8 translate-x-0 translate-y-0',
 };
 
 export function OverlayHost({ overlays }: { overlays: OverlayHostItem[] }) {
@@ -499,7 +499,7 @@ export function OverlayHost({ overlays }: { overlays: OverlayHostItem[] }) {
         data-overlay-dismiss=""
         onClick={close}
         aria-label="Close"
-        className="absolute right-3 top-3 z-20 inline-flex size-8 items-center justify-center rounded-full bg-black/5 text-current opacity-80 transition hover:bg-black/10 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
+        className="absolute end-3 top-3 z-20 inline-flex size-8 items-center justify-center rounded-full bg-black/5 text-current opacity-80 transition hover:bg-black/10 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
       >
         <X className="size-4" aria-hidden />
       </button>

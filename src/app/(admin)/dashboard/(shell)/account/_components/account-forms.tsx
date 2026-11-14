@@ -1,9 +1,13 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { FormInput } from '@/components/ui/input';
+import { UI_LOCALE_LABELS, UI_LOCALES } from '@/i18n/config';
+import { updateUiLocaleAction } from '@/server/actions/account.actions';
 import { updateAuthorProfile } from '@/server/actions/profile.actions';
 import {
   disableTotp,
@@ -23,16 +27,60 @@ export function AccountForms({
     jobTitle: string;
     website: string;
     social: { x?: string; linkedin?: string; github?: string; instagram?: string };
+    uiLocale?: string | null;
   };
   hasPassword: boolean;
   totp: { secret: string; uri: string; enabled: boolean } | null;
 }) {
+  const t = useTranslations('account');
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [uiLocale, setUiLocale] = useState<string>(profile.uiLocale ?? 'auto');
+  const [savingLocale, startSavingLocale] = useTransition();
 
   return (
     <div className="grid max-w-lg gap-8">
+      <section className="grid gap-3 rounded-lg border p-4">
+        <div className="space-y-1">
+          <h3 className="text-sm font-semibold">{t('interfaceLanguage')}</h3>
+          <p className="text-xs text-muted-foreground">
+            {t('interfaceLanguageHint')}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <select
+            aria-label={t('interfaceLanguage')}
+            className="h-9 flex-1 rounded-md border bg-background px-3 text-sm"
+            value={uiLocale}
+            onChange={e => setUiLocale(e.target.value)}
+          >
+            <option value="auto">{t('automaticLanguage')}</option>
+            {UI_LOCALES.map(code => (
+              <option key={code} value={code}>
+                {UI_LOCALE_LABELS[code]}
+              </option>
+            ))}
+          </select>
+          <Button
+            type="button"
+            disabled={savingLocale}
+            onClick={() =>
+              startSavingLocale(async () => {
+                const res = await updateUiLocaleAction(
+                  uiLocale === 'auto' ? null : uiLocale
+                );
+                if (res.ok) {
+                  toast.success(t('preferencesSaved'));
+                  router.refresh();
+                }
+              })
+            }
+          >
+            {t('savePreferences')}
+          </Button>
+        </div>
+      </section>
       <form
         className="grid gap-3"
         onSubmit={async event => {

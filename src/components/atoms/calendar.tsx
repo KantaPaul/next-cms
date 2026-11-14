@@ -85,7 +85,7 @@ function Calendar({
           'select-none font-medium',
           captionLayout === 'label'
             ? 'text-sm'
-            : 'flex h-8 items-center gap-1 rounded-md pr-1 pl-2 text-sm [&>svg]:size-3.5 [&>svg]:text-zinc-500 dark:[&>svg]:text-zinc-400',
+            : 'flex h-8 items-center gap-1 rounded-md pe-1 ps-2 text-sm [&>svg]:size-3.5 [&>svg]:text-zinc-500 dark:[&>svg]:text-zinc-400',
           defaultClassNames.caption_label
         ),
         month_grid: 'w-full border-collapse',
@@ -104,16 +104,16 @@ function Calendar({
           defaultClassNames.week_number
         ),
         day: cn(
-          'group/day relative aspect-square h-full w-full select-none p-0 text-center [&:first-child[data-selected=true]_button]:rounded-l-md [&:last-child[data-selected=true]_button]:rounded-r-md',
+          'group/day relative aspect-square h-full w-full select-none p-0 text-center [&:first-child[data-selected=true]_button]:rounded-s-md [&:last-child[data-selected=true]_button]:rounded-e-md',
           defaultClassNames.day
         ),
         range_start: cn(
-          'rounded-l-md bg-zinc-100 dark:bg-zinc-800',
+          'rounded-s-md bg-zinc-100 dark:bg-zinc-800',
           defaultClassNames.range_start
         ),
         range_middle: cn('rounded-none', defaultClassNames.range_middle),
         range_end: cn(
-          'rounded-r-md bg-zinc-100 dark:bg-zinc-800',
+          'rounded-e-md bg-zinc-100 dark:bg-zinc-800',
           defaultClassNames.range_end
         ),
         today: cn(

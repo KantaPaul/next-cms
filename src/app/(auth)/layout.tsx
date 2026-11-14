@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
+import { BRAND } from '@/config/brand';
 
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Next Cms',
-  description: 'A simple CMS for React.',
+  title: BRAND.name,
+  description: BRAND.tagline,
 };
 
 export default async function RootLayout({

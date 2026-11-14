@@ -1,5 +1,5 @@
 import { LayoutTemplate } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { PostsTable } from '@/app/(admin)/dashboard/(shell)/posts/_components/posts-table';
 import { postTemplatesService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/post-templates.service';
 import { postsService } from '@/app/(admin)/dashboard/(shell)/posts/_modules/posts.service';

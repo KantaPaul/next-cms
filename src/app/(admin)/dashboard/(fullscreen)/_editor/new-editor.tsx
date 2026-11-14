@@ -119,7 +119,7 @@ import {
   Undo2,
   Wand2,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import {
   type ReactNode,
   useCallback,
@@ -396,25 +396,25 @@ function EditorSiteRoot({
                 's-ov-panel absolute z-20 max-w-full overflow-y-auto shadow-2xl transition-all',
                 overlayKind === 'drawer'
                   ? layout.position === 'left'
-                    ? 'top-0 left-0 bottom-0 h-full border-r'
+                    ? 'top-0 start-0 bottom-0 h-full border-e'
                     : layout.position === 'top'
-                      ? 'top-0 left-0 right-0 w-full border-b'
+                      ? 'top-0 start-0 end-0 w-full border-b'
                       : layout.position === 'bottom'
-                        ? 'bottom-0 left-0 right-0 w-full border-t'
-                        : 'top-0 right-0 bottom-0 h-full border-l'
+                        ? 'bottom-0 start-0 end-0 w-full border-t'
+                        : 'top-0 end-0 bottom-0 h-full border-s'
                   : layout.position === 'top-left'
-                    ? 'top-6 left-6 border'
+                    ? 'top-6 start-6 border'
                     : layout.position === 'top-right'
-                      ? 'top-6 right-6 border'
+                      ? 'top-6 end-6 border'
                       : layout.position === 'bottom-left'
-                        ? 'bottom-6 left-6 border'
+                        ? 'bottom-6 start-6 border'
                         : layout.position === 'bottom-right'
-                          ? 'bottom-6 right-6 border'
+                          ? 'bottom-6 end-6 border'
                           : layout.position === 'top'
-                            ? 'top-6 left-1/2 -translate-x-1/2 border'
+                            ? 'top-6 start-1/2 -translate-x-1/2 border'
                             : layout.position === 'bottom'
-                              ? 'bottom-6 left-1/2 -translate-x-1/2 border'
-                              : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border'
+                              ? 'bottom-6 start-1/2 -translate-x-1/2 border'
+                              : 'top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 border'
               )}
               style={{
                 ...(overlayLayout
@@ -2410,9 +2410,9 @@ export function NewEditor({
             ) : (
               <p className="text-xs text-steel-500">
                 Style classes are off for this site.{' '}
-                <a className="underline" href="/dashboard/settings/blocks">
+                <Link className="underline" href="/dashboard/settings/blocks">
                   Turn them on in Settings → Blocks
-                </a>
+                </Link>
                 .
               </p>
             )}
@@ -2811,7 +2811,7 @@ export function NewEditor({
               Collection: {collectionEntry.collection.name}
             </span>
           )}
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ms-auto flex items-center gap-2">
             <SaveIndicator queue={queue} />
             <DeviceSwitch />
             <StateStyleSwitch

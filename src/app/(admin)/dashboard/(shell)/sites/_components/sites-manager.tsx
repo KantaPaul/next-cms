@@ -214,7 +214,7 @@ export function SitesManager({
                       isEditing ? cancelEditing() : startEditing(site)
                     }
                   >
-                    <Pencil className="mr-1.5 size-3.5" />
+                    <Pencil className="me-1.5 size-3.5" />
                     {isEditing ? 'Editing' : 'Edit'}
                   </Button>
                   {site.slug && (
@@ -249,7 +249,7 @@ export function SitesManager({
                 onClick={cancelEditing}
                 className="h-7 px-2 text-xs"
               >
-                <X className="mr-1 size-3.5" />
+                <X className="me-1 size-3.5" />
                 Cancel
               </Button>
             )}
@@ -384,9 +384,9 @@ export function SitesManager({
               disabled={pending || watchedLocales.length === 0}
             >
               {pending ? (
-                <Loader2 className="mr-1.5 size-4 animate-spin" />
+                <Loader2 className="me-1.5 size-4 animate-spin" />
               ) : editingSiteId ? null : (
-                <Plus className="mr-1.5 size-4" />
+                <Plus className="me-1.5 size-4" />
               )}
               {editingSiteId ? 'Save changes' : 'Create site'}
             </Button>

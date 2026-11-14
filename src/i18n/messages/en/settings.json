@@ -1,0 +1,12 @@
+{
+  "title": "Settings",
+  "general": "General",
+  "branding": "Branding",
+  "localization": "Languages",
+  "seo": "SEO",
+  "export": "Export",
+  "siteMode": "Site mode",
+  "blocks": "Blocks",
+  "exportApiBase": "CMS endpoint URL",
+  "exportAllowedOrigins": "Allowed export origins"
+}

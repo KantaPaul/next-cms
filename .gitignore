@@ -85,6 +85,9 @@ out
 # Local media storage (MEDIA_LOCAL_DIR)
 /uploads
 
+# Database backups
+/backups/
+
 # Nuxt.js build / generate output
 .nuxt
 dist

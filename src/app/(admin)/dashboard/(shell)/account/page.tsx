@@ -33,6 +33,8 @@ export default async function AccountPage() {
           social:
             (session.user as { socialLinks?: Record<string, string> | null })
               .socialLinks ?? {},
+          uiLocale:
+            (session.user as { uiLocale?: string | null }).uiLocale ?? null,
         }}
         hasPassword={Boolean(
           (session.user as { passwordHash?: string | null }).passwordHash

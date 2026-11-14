@@ -36,7 +36,7 @@ export function BuilderSwitches({ settings }: { settings: BuilderSettings }) {
       <div className="flex items-start justify-between gap-4">
         <div>
           <label htmlFor="builder-style-classes" className="text-sm font-medium">
-            Style classes <span className="ml-1 rounded bg-steel-100 px-1.5 py-0.5 text-[11px] dark:bg-dark-200">Beta</span>
+            Style classes <span className="ms-1 rounded bg-steel-100 px-1.5 py-0.5 text-[11px] dark:bg-dark-200">Beta</span>
           </label>
           <p className="mt-1 max-w-prose text-xs text-steel-500">
             Reusable CSS classes for blocks, edited in the inspector and the Classes panel. Turning this off hides

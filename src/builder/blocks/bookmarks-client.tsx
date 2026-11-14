@@ -206,7 +206,7 @@ export function BookmarksDrawer({
             {...el(
               { elements },
               'badge',
-              'absolute -right-0.5 -top-0.5 flex min-w-4 items-center justify-center rounded-full bg-[var(--site-primary)] px-1 text-[10px] font-semibold leading-4 text-[var(--site-on-primary)]'
+              'absolute -end-0.5 -top-0.5 flex min-w-4 items-center justify-center rounded-full bg-[var(--site-primary)] px-1 text-[10px] font-semibold leading-4 text-[var(--site-on-primary)]'
             )}
           >
             {items.length}
@@ -228,7 +228,7 @@ export function BookmarksDrawer({
             {...el(
               { elements },
               'panel',
-              's-ov-right s-border relative flex h-full w-full max-w-sm flex-col border-l bg-[var(--site-bg)] text-[var(--site-fg)] shadow-2xl'
+              's-ov-right s-border relative flex h-full w-full max-w-sm flex-col border-s bg-[var(--site-bg)] text-[var(--site-fg)] shadow-2xl'
             )}
           >
             <div className="s-border flex items-center justify-between border-b px-5 py-4">
@@ -237,7 +237,7 @@ export function BookmarksDrawer({
                 {...el({ elements }, 'title', 'text-lg font-medium')}
               >
                 {title}
-                <span className="s-muted ml-2 text-sm">{items.length}</span>
+                <span className="s-muted ms-2 text-sm">{items.length}</span>
               </h2>
               <button
                 type="button"

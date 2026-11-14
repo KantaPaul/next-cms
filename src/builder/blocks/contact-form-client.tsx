@@ -3,6 +3,7 @@
 import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
+import { cmsApi, cmsSiteHeaders } from '@/lib/cms-api';
 import { cn } from '@/lib/utils/cn';
 import type { ContactFormField } from './content';
 import { el, type ElementStyle } from './element';
@@ -258,10 +259,14 @@ export function ContactFormClient({
     setServerError(null);
 
     try {
-      const response = await fetch(actionUrl || '/api/forms/submit', {
+      const targetUrl = actionUrl || cmsApi('/api/forms/submit');
+      const response = await fetch(targetUrl, {
         method: 'POST',
         body: new FormData(event.currentTarget),
-        headers: { Accept: 'application/json' },
+        headers: {
+          Accept: 'application/json',
+          ...(actionUrl ? {} : cmsSiteHeaders()),
+        },
       });
 
       const data = (await response.json().catch(() => null)) as {
@@ -657,7 +662,7 @@ export function ContactFormClient({
             tabIndex={-1}
             autoComplete="off"
             aria-hidden="true"
-            className="absolute -left-[9999px] h-px w-px overflow-hidden"
+            className="absolute -start-[9999px] h-px w-px overflow-hidden"
           />
           {TURNSTILE_SITE_KEY && (
             <div className="cf-turnstile" data-sitekey={TURNSTILE_SITE_KEY} />

@@ -1,6 +1,7 @@
 'use client';
 
 import { type FormEvent, useId, useState } from 'react';
+import { cmsApi, cmsSiteHeaders } from '@/lib/cms-api';
 import { cn } from '@/lib/utils/cn';
 import { el, type WithSection } from './element';
 import { Section } from './section';
@@ -50,10 +51,10 @@ export function Newsletter(p: NewsletterProps) {
     }
     setState('sending');
     try {
-      const response = await fetch('/api/forms/submit', {
+      const response = await fetch(cmsApi('/api/forms/submit'), {
         method: 'POST',
         body: new FormData(form),
-        headers: { Accept: 'application/json' },
+        headers: { Accept: 'application/json', ...cmsSiteHeaders() },
       });
       setState(response.ok ? 'sent' : 'error');
     } catch {
@@ -125,7 +126,7 @@ export function Newsletter(p: NewsletterProps) {
             tabIndex={-1}
             autoComplete="off"
             aria-hidden="true"
-            className="absolute -left-[9999px] h-px w-px overflow-hidden"
+            className="absolute -start-[9999px] h-px w-px overflow-hidden"
           />
           <button
             type="submit"

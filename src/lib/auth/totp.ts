@@ -64,6 +64,6 @@ export function verifyTotp(secret: string, token: string, window = 1) {
 }
 
 export function totpUri(email: string, secret: string) {
-  const label = encodeURIComponent(`Next CMS:${email}`);
-  return `otpauth://totp/${label}?secret=${secret}&issuer=${encodeURIComponent('Next CMS')}&digits=${DIGITS}&period=${STEP_SECONDS}`;
+  const label = encodeURIComponent(`Meridian:${email}`);
+  return `otpauth://totp/${label}?secret=${secret}&issuer=${encodeURIComponent('Meridian')}&digits=${DIGITS}&period=${STEP_SECONDS}`;
 }

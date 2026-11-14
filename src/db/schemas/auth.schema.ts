@@ -40,6 +40,7 @@ export const users = pgTable(
     totpEnabled: boolean('totp_enabled').default(false).notNull(),
     emailVerified: boolean('email_verified').default(false).notNull(),
     image: text('image'),
+    uiLocale: varchar('ui_locale', { length: 16 }),
     /** Short public bio shown by the Author Bio block on posts. */
     bio: text('bio'),
     /** Public author profile: shown by the Author card block. */

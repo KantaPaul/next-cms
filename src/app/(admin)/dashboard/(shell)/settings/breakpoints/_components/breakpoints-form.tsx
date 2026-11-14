@@ -122,7 +122,7 @@ export function BreakpointsForm({
             onClick={handleReset}
             disabled={isPending}
           >
-            <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+            <RotateCcw className="me-1.5 h-3.5 w-3.5" />
             Reset to defaults
           </Button>
         </div>
@@ -171,12 +171,12 @@ export function BreakpointsForm({
                             width: Number.parseInt(e.target.value, 10) || 0,
                           })
                         }
-                        className="h-8 w-24 text-right font-mono text-xs"
+                        className="h-8 w-24 text-end font-mono text-xs"
                       />
                       <span className="text-xs text-steel-500">px</span>
                     </div>
                   ) : (
-                    <span className="w-[114px] text-right text-xs text-steel-400">
+                    <span className="w-[114px] text-end text-xs text-steel-400">
                       Base width
                     </span>
                   )}
@@ -206,7 +206,7 @@ export function BreakpointsForm({
 
         <div className="mt-6 flex items-center justify-end gap-3 border-t border-steel-100 pt-4 dark:border-dark-300">
           <Button type="submit" disabled={isPending}>
-            <Save className="mr-1.5 h-4 w-4" />
+            <Save className="me-1.5 h-4 w-4" />
             {isPending ? 'Saving…' : 'Save breakpoints'}
           </Button>
         </div>

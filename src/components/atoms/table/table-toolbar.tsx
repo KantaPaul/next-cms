@@ -60,7 +60,7 @@ export function TableToolbar<TData>({
 
       <Flex
         className={cn(
-          'ml-auto w-auto items-center justify-center gap-1 sm:gap-2',
+          'ms-auto w-auto items-center justify-center gap-1 sm:gap-2',
           containerClassName
         )}
       >

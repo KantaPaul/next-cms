@@ -67,7 +67,7 @@ export function CollectionBlockRef(p: CollectionBlockRefProps) {
       )}
     >
       {p.editing && (
-        <span className="absolute right-2 top-2 z-10 flex items-center gap-2">
+        <span className="absolute end-2 top-2 z-10 flex items-center gap-2">
           {note && (
             <span className="rounded bg-amber-500 px-2 py-0.5 text-[11px] font-medium text-white">
               {note}

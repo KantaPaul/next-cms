@@ -1,5 +1,7 @@
 'use client';
 
+import { cmsApi, cmsSiteHeaders } from '@/lib/cms-api';
+
 import {
   createContext,
   type ReactNode,
@@ -186,10 +188,11 @@ export function ConsentProvider({
       }
 
       try {
-        await fetch('/api/consent', {
+        await fetch(cmsApi('/api/consent'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            ...cmsSiteHeaders(),
             ...(siteSlug ? { 'x-cms-site-slug': siteSlug } : {}),
           },
           body: JSON.stringify({

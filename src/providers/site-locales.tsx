@@ -1,10 +1,11 @@
 'use client';
 
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import {
   DEFAULT_LANGUAGE,
   SUPPORTED_LANGUAGES,
 } from '@/db/schemas/shared.schema';
+import { adminHref } from '@/lib/locale/admin-href';
 
 export type LocaleOption = { value: string; label: string };
 
@@ -81,4 +82,12 @@ export function SiteLocalesProvider({
 
 export function useSiteLocales() {
   return useContext(SiteLocalesContext);
+}
+
+export function useAdminHref() {
+  const { currentLocale, defaultLocale } = useSiteLocales();
+  return useCallback(
+    (path: string) => adminHref(path, currentLocale, defaultLocale),
+    [currentLocale, defaultLocale]
+  );
 }

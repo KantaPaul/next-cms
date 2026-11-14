@@ -13,7 +13,7 @@ export function TableCell({ children, colSpan, ...props }: TableCellProps) {
       title={title}
       colSpan={colSpan}
       className={cn(
-        'TableCell-root whitespace-nowrap border-border border-r px-4 py-2.5 text-left align-middle text-sm text-foreground tabular-nums last:border-r-0',
+        'TableCell-root whitespace-nowrap border-border border-e px-4 py-2.5 text-start align-middle text-sm text-foreground tabular-nums last:border-e-0',
         className
       )}
       {...rest}

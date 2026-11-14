@@ -378,7 +378,7 @@ function ColumnHeader<TData, TValue>({
       onClick={header.column.getToggleSortingHandler()}
       className={cn(
         'flex w-full cursor-pointer items-center select-none',
-        header?.column?.columnDef?.meta?.className?.includes('text-right') &&
+        header?.column?.columnDef?.meta?.className?.includes('text-end') &&
           'justify-end',
         focusOutline,
         'focus-visible:outline-offset-2'
@@ -392,7 +392,7 @@ function ColumnHeader<TData, TValue>({
       type="button"
     >
       {flexRender(header.column.columnDef.header, header.getContext())}
-      <SortingUIIndicator className="ml-2 h-4 w-4" />
+      <SortingUIIndicator className="ms-2 h-4 w-4" />
     </button>
   );
 }

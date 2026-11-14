@@ -212,7 +212,7 @@ function KeysTable({ keys }: { keys: ApiKeyListItem[] }) {
   return (
     <div className="overflow-x-auto rounded-lg border border-steel-200 dark:border-dark-300">
       <table className="w-full min-w-[640px] text-sm">
-        <thead className="bg-steel-50 text-left text-xs uppercase tracking-wide text-steel-500 dark:bg-dark-100">
+        <thead className="bg-steel-50 text-start text-xs uppercase tracking-wide text-steel-500 dark:bg-dark-100">
           <tr>
             <th className="px-4 py-2.5 font-medium">Name</th>
             <th className="px-4 py-2.5 font-medium">Key</th>
@@ -256,7 +256,7 @@ function KeysTable({ keys }: { keys: ApiKeyListItem[] }) {
                     {revoked ? 'Revoked' : 'Active'}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td className="px-4 py-3 text-end">
                   {!revoked && (
                     <Button
                       type="button"

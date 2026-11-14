@@ -203,9 +203,9 @@ export function PluginSettingsForm({
         <CardFooter className="border-t px-6 py-4">
           <Button type="submit" disabled={pending}>
             {pending ? (
-              <Loader2 className="mr-2 size-4 animate-spin" />
+              <Loader2 className="me-2 size-4 animate-spin" />
             ) : (
-              <Save className="mr-2 size-4" />
+              <Save className="me-2 size-4" />
             )}
             Save settings
           </Button>

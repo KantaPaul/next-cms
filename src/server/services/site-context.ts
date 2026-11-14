@@ -516,3 +516,34 @@ export function siteSlugPrefix(site: ResolvedSite): string | undefined {
 export async function siteBySlug(slug: string): Promise<ResolvedSite | null> {
   return getSiteBySlug(slug);
 }
+
+export function publicUrlFor({
+  site,
+  locale,
+  slug,
+  kind = 'page',
+  collectionSlug,
+  isHome = false,
+}: {
+  site: ResolvedSite;
+  locale?: string | null;
+  slug: string;
+  kind?: 'page' | 'post' | 'collection';
+  collectionSlug?: string;
+  isHome?: boolean;
+}): string {
+  const prefix = siteSlugPrefix(site);
+  const parts: string[] = [];
+  if (prefix) parts.push(prefix);
+  if (locale && locale !== site.defaultLocale) parts.push(locale);
+
+  if (kind === 'post') {
+    parts.push('blog', slug);
+  } else if (kind === 'collection' && collectionSlug) {
+    parts.push(collectionSlug, slug);
+  } else if (!isHome && slug && slug !== 'home') {
+    parts.push(slug);
+  }
+
+  return parts.length > 0 ? `/${parts.join('/')}` : '/';
+}

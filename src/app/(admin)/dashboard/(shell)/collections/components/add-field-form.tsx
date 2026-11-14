@@ -161,7 +161,7 @@ export function AddFieldForm({ collectionId, postTypes }: AddFieldFormProps) {
                   {FIELD_TYPES.map(option => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
-                      <span className="ml-2 text-xs text-muted-foreground">
+                      <span className="ms-2 text-xs text-muted-foreground">
                         {option.hint}
                       </span>
                     </SelectItem>
@@ -241,7 +241,7 @@ export function AddFieldForm({ collectionId, postTypes }: AddFieldFormProps) {
                     }
                   >
                     Featured image
-                    <span className="ml-1.5 text-xs text-muted-foreground">
+                    <span className="ms-1.5 text-xs text-muted-foreground">
                       (only one at a time)
                     </span>
                   </FormLabel>

@@ -11,10 +11,10 @@ export type GalleryBadgePosition =
   | 'bottom-left';
 
 const POSITION_CLASS: Record<GalleryBadgePosition, string> = {
-  'top-right': 'right-2.5 top-2.5',
-  'top-left': 'left-2.5 top-2.5',
-  'bottom-right': 'bottom-2.5 right-2.5',
-  'bottom-left': 'bottom-2.5 left-2.5',
+  'top-right': 'end-2.5 top-2.5',
+  'top-left': 'start-2.5 top-2.5',
+  'bottom-right': 'bottom-2.5 end-2.5',
+  'bottom-left': 'bottom-2.5 start-2.5',
 };
 
 /** Returns true when a listing item has multiple gallery images. */

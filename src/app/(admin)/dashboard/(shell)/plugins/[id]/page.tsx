@@ -1,5 +1,5 @@
 import { AlertTriangle, ArrowLeft, ExternalLink } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { notFound } from 'next/navigation';
 import { AccessDenied } from '@/components/organisms/access-denied';
 import { PageHeader } from '@/components/organisms/page-header';
@@ -56,7 +56,7 @@ export default async function PluginSettingsPage({
         <div className="flex flex-wrap items-center gap-2">
           <Button asChild size="sm" variant="outline">
             <Link href={PAGES.DASHBOARD.PLUGINS}>
-              <ArrowLeft className="mr-1.5 size-3.5" />
+              <ArrowLeft className="me-1.5 size-3.5" />
               Back to Plugins
             </Link>
           </Button>
@@ -74,7 +74,7 @@ export default async function PluginSettingsPage({
               <Button key={page.slug} asChild size="sm" variant="outline">
                 <Link href={PAGES.DASHBOARD.PLUGIN_PAGE(plugin.id, page.slug)}>
                   {page.title}
-                  <ExternalLink className="ml-1.5 size-3" />
+                  <ExternalLink className="ms-1.5 size-3" />
                 </Link>
               </Button>
             ))}

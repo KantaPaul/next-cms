@@ -1,5 +1,5 @@
 import { ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { notFound } from 'next/navigation';
 import { AccessDenied } from '@/components/organisms/access-denied';
 import { PageHeader } from '@/components/organisms/page-header';
@@ -65,7 +65,7 @@ export default async function PluginAdminPageRoute({
       <div>
         <Button asChild size="sm" variant="outline">
           <Link href={PAGES.DASHBOARD.PLUGIN_SETTINGS(id)}>
-            <ArrowLeft className="mr-1.5 size-3.5" />
+            <ArrowLeft className="me-1.5 size-3.5" />
             {serverDef.name} Settings
           </Link>
         </Button>

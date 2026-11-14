@@ -324,7 +324,7 @@ export function AuthorCard(
             <div
               className={cn(
                 'mt-2 border-t border-[var(--site-border)] pt-4',
-                stacked && 'text-left'
+                stacked && 'text-start'
               )}
             >
               <p className="s-eyebrow-plain mb-3">
@@ -422,7 +422,7 @@ function NavCard({
         cn(
           'group flex min-w-0 gap-4',
           minimal ? 'py-2' : 's-card s-card-outline s-hover-lift p-5',
-          dir === 'next' && 'sm:flex-row-reverse sm:text-right'
+          dir === 'next' && 'sm:flex-row-reverse sm:text-end'
         )
       )}
     >

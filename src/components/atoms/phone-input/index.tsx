@@ -76,11 +76,11 @@ export const PhoneNumberInput = forwardRef<
             error &&
               'border-red focus-within:border-red focus-within:ring-red hover:border-red hover:focus-within:border-red'
           )}
-          buttonClass={cn('ml-2 flex h-9 w-10 cursor-pointer items-center')}
+          buttonClass={cn('ms-2 flex h-9 w-10 cursor-pointer items-center')}
           inputClass={cn(
             'h-full w-full rounded-lg border-0 bg-transparent p-0 text-sm placeholder:opacity-60 focus:ring-0'
           )}
-          dropdownClass={cn('absolute top-12 left-0 w-full')}
+          dropdownClass={cn('absolute top-12 start-0 w-full')}
           searchClass={cn('searchClassName')}
           {...props}
         />

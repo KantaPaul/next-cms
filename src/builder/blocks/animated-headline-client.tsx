@@ -95,7 +95,7 @@ export function AnimatedHeadline(p: AnimatedHeadlineProps) {
       return (
         <svg
           viewBox="0 0 500 150"
-          className="absolute -top-[25%] -left-[10%] w-[120%] h-[150%] pointer-events-none stroke-primary"
+          className="absolute -top-[25%] -start-[10%] w-[120%] h-[150%] pointer-events-none stroke-primary"
           style={{ stroke: strokeColor }}
           fill="none"
           strokeWidth="8"
@@ -117,7 +117,7 @@ export function AnimatedHeadline(p: AnimatedHeadlineProps) {
       return (
         <svg
           viewBox="0 0 500 40"
-          className="absolute -bottom-2 left-0 w-full h-4 pointer-events-none stroke-primary"
+          className="absolute -bottom-2 start-0 w-full h-4 pointer-events-none stroke-primary"
           style={{ stroke: strokeColor }}
           fill="none"
           strokeWidth="8"
@@ -137,7 +137,7 @@ export function AnimatedHeadline(p: AnimatedHeadlineProps) {
       return (
         <svg
           viewBox="0 0 500 40"
-          className="absolute -bottom-3 left-0 w-full h-5 pointer-events-none stroke-primary"
+          className="absolute -bottom-3 start-0 w-full h-5 pointer-events-none stroke-primary"
           style={{ stroke: strokeColor }}
           fill="none"
           strokeWidth="6"
@@ -157,7 +157,7 @@ export function AnimatedHeadline(p: AnimatedHeadlineProps) {
     return (
       <svg
         viewBox="0 0 500 20"
-        className="absolute top-1/2 left-0 w-full h-3 -translate-y-1/2 pointer-events-none stroke-primary"
+        className="absolute top-1/2 start-0 w-full h-3 -translate-y-1/2 pointer-events-none stroke-primary"
         style={{ stroke: strokeColor }}
         fill="none"
         strokeWidth="6"
@@ -178,8 +178,8 @@ export function AnimatedHeadline(p: AnimatedHeadlineProps) {
           align === 'center'
             ? 'text-center'
             : align === 'right'
-              ? 'text-right'
-              : 'text-left'
+              ? 'text-end'
+              : 'text-start'
         )}
         style={headingEl.style}
       >

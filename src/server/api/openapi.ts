@@ -91,7 +91,7 @@ export function buildOpenApiSpec() {
   return {
     openapi: '3.1.0',
     info: {
-      title: 'Next CMS',
+      title: 'Meridian',
       version: '1.0.0',
       description:
         'Read API for published content. Send an API key as a bearer token.',

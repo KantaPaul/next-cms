@@ -440,7 +440,7 @@ export function ItemSlider(p: ItemSliderProps) {
             onClick={goToPrev}
             disabled={!loop && currentIndex === 0}
             aria-label="Previous slide"
-            className={cn(arrowEl.className, 'left-2')}
+            className={cn(arrowEl.className, 'start-2')}
             style={arrowEl.style}
           >
             <ChevronLeft className="size-5" />
@@ -450,7 +450,7 @@ export function ItemSlider(p: ItemSliderProps) {
             onClick={goToNext}
             disabled={!loop && currentIndex === pageCount - 1}
             aria-label="Next slide"
-            className={cn(arrowEl.className, 'right-2')}
+            className={cn(arrowEl.className, 'end-2')}
             style={arrowEl.style}
           >
             <ChevronRight className="size-5" />

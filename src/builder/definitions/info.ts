@@ -274,6 +274,17 @@ export const BLOCK_INFO: Record<string, BlockInfo> = {
   ThemeToggle: { description: 'Light and dark mode switch', semanticTag: 'button', defaultSize: '36px × 36px' },
   Bookmarks: { description: 'Saved-posts button and drawer (stored in the visitor’s browser)', semanticTag: 'div', defaultSize: '36px × 36px' },
   LanguageSwitcher: { description: 'Switch between site languages', semanticTag: 'div', defaultSize: 'auto × auto' },
+  Callout: { description: 'Highlighted callout box (info, tip, warning, danger)', semanticTag: 'aside', defaultSize: FULL },
+  Steps: { description: 'Numbered vertical step-by-step instructions', semanticTag: 'ol', defaultSize: FULL },
+  Kbd: { description: 'Inline keyboard shortcut keys', semanticTag: 'kbd', defaultSize: 'auto × auto' },
+  ApiTable: { description: 'Structured prop or API field reference table', semanticTag: 'table', defaultSize: FULL },
+  BeforeAfter: { description: 'Interactive before/after image comparison slider', semanticTag: 'div', defaultSize: FULL },
+  ReadingProgress: { description: 'Fixed top reading progress bar', semanticTag: 'div', defaultSize: '100% × 3px' },
+  DocsSidebar: { description: 'Collapsible documentation tree navigation', semanticTag: 'aside', defaultSize: '260px × auto' },
+  DocsPager: { description: 'Previous and next documentation page links', semanticTag: 'nav', defaultSize: FULL },
+  DocSearch: { description: 'Cmd-K documentation search dialog', semanticTag: 'div', defaultSize: '240px × 36px' },
+  PortfolioGrid: { description: 'Filterable project grid with discipline chips', semanticTag: 'section', defaultSize: FULL },
+  ProjectMeta: { description: 'Client, year, role, services, and live link sidebar', semanticTag: 'aside', defaultSize: FULL },
 };
 
 /** Adds BLOCK_INFO to a definition; fields already on the definition win. */

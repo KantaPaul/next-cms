@@ -89,8 +89,8 @@ export function MobileMenuClient({
     drawerSide === 'full'
       ? 'inset-0 w-full'
       : drawerSide === 'left'
-        ? 'inset-y-0 left-0 w-full max-w-sm border-r'
-        : 'inset-y-0 right-0 w-full max-w-sm border-l';
+        ? 'inset-y-0 start-0 w-full max-w-sm border-e'
+        : 'inset-y-0 end-0 w-full max-w-sm border-s';
 
   return (
     <div
@@ -226,7 +226,7 @@ export function MobileMenuClient({
                       </div>
 
                       {hasChildren && isExpanded && (
-                        <ul className="ml-4 flex flex-col space-y-1 border-l border-[var(--site-border)] py-1 pl-3">
+                        <ul className="ms-4 flex flex-col space-y-1 border-s border-[var(--site-border)] py-1 ps-3">
                           {item.children.map(child => (
                             <li key={child.id}>
                               <Link
@@ -433,7 +433,7 @@ export function SearchBoxClient({
             mode === 'inline'
               ? cn(
                   'absolute top-full mt-2 w-72 sm:w-80 s-tab-w-96 max-w-[calc(100vw-2rem)] z-50',
-                  align === 'right' ? 'right-0' : 'left-0'
+                  align === 'right' ? 'end-0' : 'start-0'
                 )
               : 'mt-3 w-full border-t border-[var(--site-border)] pt-3'
           )
@@ -578,7 +578,7 @@ export function SearchBoxClient({
               )}
             >
               <form action={searchPath} method="GET" className="relative">
-                <SearchIcon className="s-muted absolute left-3 top-3 size-5" />
+                <SearchIcon className="s-muted absolute start-3 top-3 size-5" />
                 <input
                   ref={inputRef}
                   type="search"
@@ -596,7 +596,7 @@ export function SearchBoxClient({
                   {...el(
                     styled,
                     'input',
-                    'w-full rounded-lg border border-[var(--site-border)] bg-transparent py-2.5 pl-11 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--site-primary)]'
+                    'w-full rounded-lg border border-[var(--site-border)] bg-transparent py-2.5 ps-11 pe-10 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--site-primary)]'
                   )}
                 />
                 <button
@@ -605,7 +605,7 @@ export function SearchBoxClient({
                     setModalOpen(false);
                     setShowFlyout(false);
                   }}
-                  className="s-muted absolute right-2.5 top-2.5 rounded p-1 hover:text-[var(--site-fg)]"
+                  className="s-muted absolute end-2.5 top-2.5 rounded p-1 hover:text-[var(--site-fg)]"
                 >
                   <X className="size-4" />
                 </button>
@@ -625,7 +625,7 @@ export function SearchBoxClient({
       className={cn('relative', className || 'w-48 sm:w-64')}
     >
       <form action={searchPath} method="GET" className="relative w-full">
-        <SearchIcon className="s-muted absolute left-2.5 top-2.5 size-4" />
+        <SearchIcon className="s-muted absolute start-2.5 top-2.5 size-4" />
         <input
           ref={inputRef}
           type="search"
@@ -643,7 +643,7 @@ export function SearchBoxClient({
           {...el(
             styled,
             'input',
-            'w-full rounded-md border border-[var(--site-border)] bg-[var(--site-surface)] py-1.5 pl-8 pr-3 text-xs placeholder:text-[var(--site-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--site-primary)]'
+            'w-full rounded-md border border-[var(--site-border)] bg-[var(--site-surface)] py-1.5 ps-8 pe-3 text-xs placeholder:text-[var(--site-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--site-primary)]'
           )}
         />
       </form>
@@ -723,7 +723,7 @@ export function AnnouncementBarClient({
         'relative w-full bg-[var(--site-primary)] text-[var(--site-on-primary)] px-4 py-2 text-xs sm:text-sm font-medium transition-all'
       )}
     >
-      <div className="mx-auto flex max-w-[var(--site-max-width,72rem)] items-center justify-center pr-8 text-center sm:pr-0">
+      <div className="mx-auto flex max-w-[var(--site-max-width,72rem)] items-center justify-center pe-8 text-center sm:pe-0">
         {link ? (
           <a
             href={link}
@@ -748,7 +748,7 @@ export function AnnouncementBarClient({
           {...el(
             styled,
             'dismiss',
-            'absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 opacity-80 hover:bg-black/10 hover:opacity-100 transition-colors'
+            'absolute end-3 top-1/2 -translate-y-1/2 rounded p-1 opacity-80 hover:bg-black/10 hover:opacity-100 transition-colors'
           )}
         >
           <X className="size-3.5" />
@@ -812,9 +812,9 @@ export function BackToTopClient({
 
   const posClasses =
     position === 'bottom-left'
-      ? 'fixed bottom-6 left-6 z-40'
+      ? 'fixed bottom-6 start-6 z-40'
       : position === 'bottom-right'
-        ? 'fixed bottom-6 right-6 z-40'
+        ? 'fixed bottom-6 end-6 z-40'
         : 'relative inline-flex';
 
   const IconComponent = icon === 'chevron' ? ChevronUp : ArrowUp;

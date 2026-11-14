@@ -12,7 +12,15 @@ import {
   parseConsentCookie,
 } from '@/lib/consent';
 import { siteContext } from '@/server/services/site-context';
+import {
+  checkPublicCors,
+  handlePublicCorsOptions,
+} from '@/server/lib/public-cors-site';
 import { siteSettingsService } from '@/server/services/site-settings.service';
+
+export async function OPTIONS(request: Request) {
+  return handlePublicCorsOptions(request);
+}
 
 const payloadSchema = z.object({
   categories: z.object({
@@ -30,16 +38,29 @@ function hashConsentVisitorKey(rawKey: string): string {
 }
 
 export async function POST(request: Request) {
+  const cors = await checkPublicCors(request);
+  if (!cors.allowed) {
+    return NextResponse.json(
+      { ok: false, error: cors.reason ?? 'Forbidden' },
+      { status: 403 }
+    );
+  }
   let rawBody: unknown;
   try {
     rawBody = await request.json();
   } catch {
-    return NextResponse.json({ ok: false, error: 'invalid_json' }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: 'invalid_json' },
+      { status: 400, headers: cors.headers }
+    );
   }
 
   const parsed = payloadSchema.safeParse(rawBody);
   if (!parsed.success) {
-    return NextResponse.json({ ok: false, error: 'invalid_payload' }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: 'invalid_payload' },
+      { status: 400, headers: cors.headers }
+    );
   }
 
   const [site, settings, jar] = await Promise.all([
@@ -73,11 +94,14 @@ export async function POST(request: Request) {
     c: categories,
   };
 
-  const res = NextResponse.json({
-    ok: true,
-    categories,
-    version,
-  });
+  const res = NextResponse.json(
+    {
+      ok: true,
+      categories,
+      version,
+    },
+    { headers: cors.headers }
+  );
 
   res.cookies.set(CONSENT_COOKIE_NAME, JSON.stringify(choice), {
     path: '/',

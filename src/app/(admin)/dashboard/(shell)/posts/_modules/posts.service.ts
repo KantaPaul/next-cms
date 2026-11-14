@@ -1,4 +1,5 @@
 import 'server-only';
+import { adminLocale } from '@/server/services/admin-locale';
 import {
   and,
   asc,
@@ -320,8 +321,11 @@ export const postsService = {
         eq(posts.layout, 'template'),
         eq(posts.templateId, layout)
       );
-    if (typeof language === 'string' && language)
-      conditions.push(eq(posts.language, language));
+    const activeLocale =
+      typeof language === 'string' && language ? language : await adminLocale();
+    if (activeLocale !== 'all') {
+      conditions.push(eq(posts.language, activeLocale));
+    }
 
     if (typeof search === 'string' && search.trim()) {
       const term = `%${search.trim()}%`;

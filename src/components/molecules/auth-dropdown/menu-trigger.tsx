@@ -41,7 +41,7 @@ export const MenuTrigger = React.forwardRef<
           <span className="hidden shrink-0 font-medium md:flex">
             {user?.name}
           </span>
-          <ChevronsUpDown className="ml-auto hidden size-4 opacity-50 md:flex" />
+          <ChevronsUpDown className="ms-auto hidden size-4 opacity-50 md:flex" />
         </Flex>
       )}
     </button>

@@ -816,9 +816,9 @@ export type CopyrightProps = {
 };
 
 const ALIGN_CLASS: Record<string, string> = {
-  left: 'text-left',
+  left: 'text-start',
   center: 'text-center',
-  right: 'text-right',
+  right: 'text-end',
 };
 
 export function Copyright({
@@ -1162,9 +1162,9 @@ export type ContactInfoProps = {
 };
 
 const CONTACT_ALIGN: Record<string, string> = {
-  left: 'items-start text-left justify-start',
+  left: 'items-start text-start justify-start',
   center: 'items-center text-center justify-center',
-  right: 'items-end text-right justify-end',
+  right: 'items-end text-end justify-end',
 };
 
 export function ContactInfo({

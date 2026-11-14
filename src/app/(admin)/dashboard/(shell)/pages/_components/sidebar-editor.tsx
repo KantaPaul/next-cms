@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { FieldFactory } from '@/components/atoms/forms/factory/field-factory';
 import { PAGES } from '@/config/pages';

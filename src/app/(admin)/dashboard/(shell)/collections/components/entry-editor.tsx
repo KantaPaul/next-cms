@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { format } from 'date-fns';
 import {
   Controller,
@@ -308,7 +308,7 @@ export function EntryEditor({
             />
           )}
 
-          <div className="ml-auto flex flex-wrap items-center gap-2">
+          <div className="ms-auto flex flex-wrap items-center gap-2">
             {entry && (
               <Button type="button" variant="outline" size="sm" asChild>
                 <a
@@ -369,7 +369,7 @@ export function EntryEditor({
                     className="text-red-600 focus:text-red-600"
                     onClick={handleDelete}
                   >
-                    <Trash2 className="mr-2 size-4" /> Delete{' '}
+                    <Trash2 className="me-2 size-4" /> Delete{' '}
                     {collection.singularName?.toLowerCase() || 'entry'}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -417,7 +417,7 @@ export function EntryEditor({
           </div>
 
           {/* Sidebar */}
-          <aside className="w-full border-t border-steel-200 bg-white dark:border-dark-300 dark:bg-dark-50 lg:w-96 lg:overflow-auto lg:border-l lg:border-t-0">
+          <aside className="w-full border-t border-steel-200 bg-white dark:border-dark-300 dark:bg-dark-50 lg:w-96 lg:overflow-auto lg:border-s lg:border-t-0">
             <Tabs defaultValue="entry" className="gap-0">
               <TabsList
                 className={`m-3 grid ${supports.seo ? 'grid-cols-2' : 'grid-cols-1'}`}

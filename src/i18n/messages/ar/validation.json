@@ -1,0 +1,13 @@
+{
+  "required": "هذا الحقل مطلوب",
+  "invalidType": "القيمة المتوقعة هي {expected}",
+  "minLength": "يجب أن يكون {min} أحرف على الأقل",
+  "maxLength": "يجب ألا يتجاوز {max} حرفاً",
+  "minNumber": "يجب أن يكون {min} على الأقل",
+  "maxNumber": "يجب ألا يتجاوز {max}",
+  "tooSmall": "القيمة صغيرة جداً",
+  "tooBig": "القيمة كبيرة جداً",
+  "invalidEmail": "أدخل بريداً إلكترونياً صالحاً",
+  "invalidUrl": "أدخل رابطاً صالحاً",
+  "invalidFormat": "تنسيق غير صالح"
+}

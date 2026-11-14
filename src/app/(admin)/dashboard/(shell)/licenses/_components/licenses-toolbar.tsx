@@ -2,6 +2,8 @@
 
 import { Plus, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { PAGES } from '@/config/pages';
+import { useAdminHref } from '@/providers/site-locales';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 
@@ -17,6 +19,7 @@ export function LicensesToolbar({
   onOpenIssueModal,
 }: LicensesToolbarProps) {
   const router = useRouter();
+  const toAdminHref = useAdminHref();
   const [search, setSearch] = useState(currentSearch);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -25,7 +28,7 @@ export function LicensesToolbar({
     if (search.trim()) params.set('q', search.trim());
     if (currentStatus) params.set('status', currentStatus);
     params.set('page', '1');
-    router.push(`/dashboard/licenses?${params.toString()}`);
+    router.push(toAdminHref(`${PAGES.DASHBOARD.LICENSES}?${params.toString()}`));
   };
 
   const handleStatusFilter = (status: string) => {
@@ -33,7 +36,7 @@ export function LicensesToolbar({
     if (search.trim()) params.set('q', search.trim());
     if (status) params.set('status', status);
     params.set('page', '1');
-    router.push(`/dashboard/licenses?${params.toString()}`);
+    router.push(toAdminHref(`${PAGES.DASHBOARD.LICENSES}?${params.toString()}`));
   };
 
   return (
@@ -43,13 +46,13 @@ export function LicensesToolbar({
         className="flex items-center gap-2 flex-1 max-w-md"
       >
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
             placeholder="Search public ID or prefix..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="w-full ps-9 pe-4 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
         <Button type="submit" variant="outline" size="sm">

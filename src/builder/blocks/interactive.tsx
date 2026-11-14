@@ -322,7 +322,7 @@ export function Slider(p: SliderProps) {
               onClick={goToPrev}
               disabled={!loop && currentIndex === 0}
               aria-label="Previous slide"
-              className={cn(arrowEl.className, 'left-2')}
+              className={cn(arrowEl.className, 'start-2')}
               style={arrowEl.style}
             >
               <ChevronLeft className="size-5" />
@@ -332,7 +332,7 @@ export function Slider(p: SliderProps) {
               onClick={goToNext}
               disabled={!loop && currentIndex === itemCount - 1}
               aria-label="Next slide"
-              className={cn(arrowEl.className, 'right-2')}
+              className={cn(arrowEl.className, 'end-2')}
               style={arrowEl.style}
             >
               <ChevronRight className="size-5" />
@@ -603,7 +603,7 @@ export function Accordion(p: AccordionProps) {
   const triggerEl = el(
     p,
     'trigger',
-    'flex w-full cursor-pointer items-center justify-between gap-4 text-left font-semibold transition hover:opacity-85'
+    'flex w-full cursor-pointer items-center justify-between gap-4 text-start font-semibold transition hover:opacity-85'
   );
   const panelEl = el(
     p,

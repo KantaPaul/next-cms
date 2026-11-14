@@ -113,9 +113,9 @@ export function columnsGridStyle(
 }
 
 export const HEADER_COL_JUSTIFY: Record<string, string> = {
-  start: 'justify-start text-left',
+  start: 'justify-start text-start',
   center: 'justify-center text-center',
-  end: 'justify-end text-right',
+  end: 'justify-end text-end',
 };
 
 export function headerColJustify(align: unknown, fallback: HeaderColAlign) {

@@ -28,29 +28,34 @@ import { PERMISSIONS, type PermissionKey } from '@/config/permissions';
 
 export function getMenuItems(): {
   name: string;
+  labelKey?: string;
   href: string;
   icon: React.ReactNode;
   permission?: PermissionKey;
-  children?: { name: string; href: string }[];
+  children?: { name: string; labelKey?: string; href: string }[];
 }[] {
   return [
     {
       name: 'Pages',
+      labelKey: 'pages',
       href: PAGES.DASHBOARD.PAGES.INDEX,
       icon: <GalleryVertical className="w-[18px]" />,
     },
     {
       name: 'Analytics',
+      labelKey: 'analytics',
       href: PAGES.DASHBOARD.ANALYTICS,
       icon: <BarChart3 className="w-[18px]" />,
     },
     {
       name: 'Posts',
+      labelKey: 'posts',
       href: PAGES.DASHBOARD.POSTS.INDEX,
       icon: <Newspaper className="w-[18px]" />,
     },
     {
       name: 'Media Library',
+      labelKey: 'media',
       href: PAGES.DASHBOARD.MEDIA,
       icon: <ImageIcon className="w-[18px]" />,
     },
@@ -115,18 +120,21 @@ export function getMenuItems(): {
     },
     {
       name: 'Menus',
+      labelKey: 'menus',
       href: PAGES.DASHBOARD.MENUS,
       icon: <MenuIcon className="w-[18px]" />,
       permission: PERMISSIONS.SETTINGS_MANAGE,
     },
     {
       name: 'Theme',
+      labelKey: 'theme',
       href: PAGES.DASHBOARD.THEME,
       icon: <Palette className="w-[18px]" />,
       permission: PERMISSIONS.SETTINGS_MANAGE,
     },
     {
       name: 'Settings',
+      labelKey: 'settings',
       href: PAGES.DASHBOARD.SETTINGS,
       icon: <Settings className="w-[18px]" />,
       permission: PERMISSIONS.SETTINGS_MANAGE,

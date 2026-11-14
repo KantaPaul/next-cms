@@ -1,6 +1,7 @@
 'use client';
 
 import { type FormEvent, useState } from 'react';
+import { cmsApi, cmsSiteHeaders } from '@/lib/cms-api';
 import { cn } from '@/lib/utils/cn';
 import { el, type ElementStyle } from './element';
 
@@ -40,9 +41,9 @@ export function PrivacyRequestClient({
     setStatus('sending');
     setErrorMsg(null);
     try {
-      const res = await fetch('/api/privacy/request', {
+      const res = await fetch(cmsApi('/api/privacy/request'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...cmsSiteHeaders() },
         body: JSON.stringify({ email, type }),
       });
       const data = (await res.json().catch(() => ({}))) as {

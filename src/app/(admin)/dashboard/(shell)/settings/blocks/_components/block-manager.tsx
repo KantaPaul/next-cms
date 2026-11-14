@@ -185,7 +185,7 @@ export function BlockManager({
                   type="button"
                   onClick={() => selectEditor(e.kind)}
                   className={cn(
-                    'flex shrink-0 items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors',
+                    'flex shrink-0 items-center justify-between gap-3 rounded-md px-3 py-2 text-start text-sm transition-colors',
                     e.kind === active
                       ? 'bg-primary/10 font-semibold text-primary'
                       : 'text-steel-600 hover:bg-steel-100 dark:text-steel-300 dark:hover:bg-dark-200'

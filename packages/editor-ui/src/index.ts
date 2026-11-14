@@ -4,6 +4,8 @@
 
 // A11y
 export * from './a11y/LiveAnnouncer';
+// I18n
+export * from './i18n';
 // Controls (E12)
 export * from './controls';
 export * from './feedback/ConflictDialog';

@@ -177,7 +177,7 @@ export function CreatableSelect<IsMulti extends boolean = false>(
             disabled={isDisabled || isReadOnly}
             aria-expanded={open}
             className={cn(
-              'group flex w-full items-center justify-between rounded-md border border-input bg-background text-left transition-colors',
+              'group flex w-full items-center justify-between rounded-md border border-input bg-background text-start transition-colors',
               'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none',
               'disabled:cursor-not-allowed disabled:opacity-50',
               sizes[size],
@@ -231,7 +231,7 @@ export function CreatableSelect<IsMulti extends boolean = false>(
               )}
             </div>
 
-            <div className="flex items-center gap-1 pl-1">
+            <div className="flex items-center gap-1 ps-1">
               {isLoading && (
                 <Loader2 className="size-4 animate-spin text-muted-foreground" />
               )}

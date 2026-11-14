@@ -16,17 +16,17 @@ export const classNames = {
   indicatorsContainer:
     'hover:!text-steel-200 dark:hover:!text-dark-300 custom-indicator-container',
   dropdownIndicator:
-    'text-steel-200 hover:!text-steel-400 dark:text-dark-600 dark:hover:!text-dark-800 !p-1 !mr-2',
+    'text-steel-200 hover:!text-steel-400 dark:text-dark-600 dark:hover:!text-dark-800 !p-1 !me-2',
   clearIndicator:
     'text-steel-200 hover:!text-steel-400 dark:text-dark-500 dark:hover:!text-steel-300 !p-1',
   indicatorSeparator: '!bg-steel-200 dark:!bg-steel-500',
   indicatorSeparatorIsFocused: '!bg-steel-400',
-  valueContainer: '!pl-3',
+  valueContainer: '!ps-3',
   multiValue: 'bg-steel-500 dark:bg-steel-600/70 !rounded',
-  multiValueLabel: 'text-steel-700 dark:text-steel-200 !pl-2.5 !text-sm',
-  singleValue: '!text-steel-700 dark:!text-steel-100 !pl-0 !text-sm',
+  multiValueLabel: 'text-steel-700 dark:text-steel-200 !ps-2.5 !text-sm',
+  singleValue: '!text-steel-700 dark:!text-steel-100 !ps-0 !text-sm',
   multiValueRemove:
-    'hover:[&]:!bg-transparent !pl-0 !pr-1.5 !text-steel-400 dark:!text-steel-300 hover:!text-steel-700 dark:hover:!text-steel-100',
+    'hover:[&]:!bg-transparent !ps-0 !pe-1.5 !text-steel-400 dark:!text-steel-300 hover:!text-steel-700 dark:hover:!text-steel-100',
   menu: 'bg-white dark:bg-dark-280 !border-steel-100 !shadow-lg dark:shadow-[0_3px_18px_rgba(0,0,0,0.1)] dark:border-dark-400 border dark:border !rounded-md !p-1.5',
   menuList: 'custom-scrollbar',
   menuPortal: '!z-[9999]',

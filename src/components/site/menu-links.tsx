@@ -147,7 +147,7 @@ export function MenuLinks({
                 {...el(
                   styled,
                   'dropdown',
-                  's-border invisible absolute left-0 top-[calc(100%+var(--dropdown-offset,0px))] z-20 min-w-44 rounded-md border bg-[var(--site-bg)] p-2 opacity-0 shadow-lg transition before:absolute before:inset-x-0 before:bottom-full before:h-[var(--dropdown-offset,0px)] group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100'
+                  's-border invisible absolute start-0 top-[calc(100%+var(--dropdown-offset,0px))] z-20 min-w-44 rounded-md border bg-[var(--site-bg)] p-2 opacity-0 shadow-lg transition before:absolute before:inset-x-0 before:bottom-full before:h-[var(--dropdown-offset,0px)] group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100'
                 )}
               >
                 {item.children.map(child => (

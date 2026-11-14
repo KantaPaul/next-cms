@@ -120,7 +120,7 @@ export function Section({
         muted
         playsInline
         poster={s.fill?.videoFallback || undefined}
-        className="absolute min-w-full min-h-full w-auto h-auto object-cover top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+        className="absolute min-w-full min-h-full w-auto h-auto object-cover top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2"
         src={s.fill?.videoUrl}
       />
     </div>

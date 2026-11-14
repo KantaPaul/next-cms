@@ -1,0 +1,13 @@
+{
+  "required": "Este campo es obligatorio",
+  "invalidType": "Se esperaba {expected}",
+  "minLength": "Debe tener al menos {min} caracteres",
+  "maxLength": "Debe tener como máximo {max} caracteres",
+  "minNumber": "Debe ser al menos {min}",
+  "maxNumber": "Debe ser como máximo {max}",
+  "tooSmall": "El valor es demasiado pequeño",
+  "tooBig": "El valor es demasiado grande",
+  "invalidEmail": "Introduce un correo electrónico válido",
+  "invalidUrl": "Introduce una URL válida",
+  "invalidFormat": "Formato no válido"
+}

@@ -32,7 +32,7 @@ const SwitchBase = React.forwardRef<
     >
       {isLoading && (
         <Spinner
-          className={cn('absolute z-10 size-3', props.checked && 'left-3')}
+          className={cn('absolute z-10 size-3', props.checked && 'start-3')}
         />
       )}
       <SwitchPrimitives.Thumb

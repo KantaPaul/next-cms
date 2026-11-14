@@ -1,5 +1,5 @@
 import { AlertTriangle } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { redirect } from 'next/navigation';
 import { AppSidebar } from '@/components/molecules/sidebar/app-sidebar';
 import Header from '@/components/organisms/header/header';

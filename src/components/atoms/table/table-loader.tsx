@@ -20,7 +20,7 @@ export function TableLoader(props: {
         <div className="grid w-full min-w-[800px] grid-cols-8">
           {Array.from({ length: 8 }).map((_, idx) => (
             <div
-              className="flex h-full flex-col divide-y divide-steel-200 border-steel-200/70 border-r border-b last:border-r-0 dark:divide-steel-600 dark:border-steel-600/70"
+              className="flex h-full flex-col divide-y divide-steel-200 border-steel-200/70 border-e border-b last:border-e-0 dark:divide-steel-600 dark:border-steel-600/70"
               key={`table-column-${idx}`}
             >
               <div className="flex h-10 w-full items-center justify-center bg-steel-200 px-4 dark:bg-steel-700">

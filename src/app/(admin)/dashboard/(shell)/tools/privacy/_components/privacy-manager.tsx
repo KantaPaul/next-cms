@@ -197,9 +197,9 @@ export function PrivacyManager({
           />
           <Button type="submit" disabled={isPending}>
             {isPending ? (
-              <Loader2 className="mr-2 size-4 animate-spin" />
+              <Loader2 className="me-2 size-4 animate-spin" />
             ) : (
-              <Search className="mr-2 size-4" />
+              <Search className="me-2 size-4" />
             )}
             Look up data
           </Button>
@@ -223,7 +223,7 @@ export function PrivacyManager({
             <div className="flex flex-wrap items-center gap-2">
               <Button asChild variant="outline" size="sm">
                 <a href={downloadHref}>
-                  <Download className="mr-1.5 size-4" />
+                  <Download className="me-1.5 size-4" />
                   Export ZIP
                 </a>
               </Button>
@@ -235,7 +235,7 @@ export function PrivacyManager({
                   disabled={isPending}
                   onClick={() => handleEmailExport(activeRequestId)}
                 >
-                  <Mail className="mr-1.5 size-4" />
+                  <Mail className="me-1.5 size-4" />
                   Email one-time link
                 </Button>
               )}
@@ -251,7 +251,7 @@ export function PrivacyManager({
                 }
                 onClick={() => setEraseOpen(true)}
               >
-                <Trash2 className="mr-1.5 size-4" />
+                <Trash2 className="me-1.5 size-4" />
                 Erase personal data
               </Button>
             </div>
@@ -402,7 +402,7 @@ export function PrivacyManager({
                         inspectEmail(req.email, req.visitorId, req.id)
                       }
                     >
-                      <Search className="mr-1.5 size-3.5" />
+                      <Search className="me-1.5 size-3.5" />
                       Preview data
                     </Button>
                     {req.type === 'export' && req.status === 'confirmed' && (
@@ -413,7 +413,7 @@ export function PrivacyManager({
                         disabled={isPending}
                         onClick={() => handleEmailExport(req.id)}
                       >
-                        <Mail className="mr-1.5 size-3.5" />
+                        <Mail className="me-1.5 size-3.5" />
                         Email export
                       </Button>
                     )}
@@ -425,7 +425,7 @@ export function PrivacyManager({
                         disabled={isPending}
                         onClick={() => handleReject(req.id)}
                       >
-                        <XCircle className="mr-1.5 size-3.5" />
+                        <XCircle className="me-1.5 size-3.5" />
                         Reject
                       </Button>
                     )}
@@ -453,7 +453,7 @@ export function PrivacyManager({
           </DialogHeader>
           {plan && (
             <div className="space-y-4 text-sm">
-              <ul className="list-disc space-y-1 pl-5 text-xs text-steel-600 dark:text-steel-300">
+              <ul className="list-disc space-y-1 ps-5 text-xs text-steel-600 dark:text-steel-300">
                 <li>
                   Delete <strong>{plan.counts.formSubmissions}</strong> form
                   submission(s) and <strong>{plan.counts.files}</strong>{' '}
@@ -516,7 +516,7 @@ export function PrivacyManager({
               disabled={isPending}
               onClick={handleErase}
             >
-              {isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
+              {isPending && <Loader2 className="me-2 size-4 animate-spin" />}
               Confirm erase
             </Button>
           </DialogFooter>

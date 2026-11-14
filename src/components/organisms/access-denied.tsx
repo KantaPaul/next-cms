@@ -1,5 +1,5 @@
 import { ShieldAlert } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { PAGES } from '@/config/pages';
 
 export function AccessDenied({ what = 'this area' }: { what?: string }) {

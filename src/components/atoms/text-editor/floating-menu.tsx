@@ -91,12 +91,12 @@ export function EditorFloatingMenu(props: EditorFloatingMenuProps) {
           )}
           key={index}
         >
-          <span className="flex h-10 w-10 items-center justify-center rounded border border-steel-100 bg-steel-50/30 text-left text-steel-500 dark:border-steel-600/30 dark:bg-steel-700 dark:text-steel-300">
+          <span className="flex h-10 w-10 items-center justify-center rounded border border-steel-100 bg-steel-50/30 text-start text-steel-500 dark:border-steel-600/30 dark:bg-steel-700 dark:text-steel-300">
             {item.icon}
           </span>
           <span>
-            <span className="block text-left font-medium">{item.title}</span>
-            <span className="block text-left text-steel-500 text-xs dark:text-steel-400">
+            <span className="block text-start font-medium">{item.title}</span>
+            <span className="block text-start text-steel-500 text-xs dark:text-steel-400">
               {item.description}
             </span>
           </span>

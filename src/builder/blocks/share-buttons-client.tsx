@@ -87,7 +87,7 @@ export function ShareButtonsClient({
           {...el(
             { elements },
             'label',
-            's-meta mr-1 font-semibold uppercase tracking-[0.14em]'
+            's-meta me-1 font-semibold uppercase tracking-[0.14em]'
           )}
         >
           {label}

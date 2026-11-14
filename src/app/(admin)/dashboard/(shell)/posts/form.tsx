@@ -2,7 +2,7 @@
 
 import { format } from 'date-fns';
 import { Eye, History, LayoutTemplate, PanelsTopLeft } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { useRouter } from 'next/navigation';
 import {
   type RefObject,
@@ -55,7 +55,7 @@ import {
   pageStatusOptions,
   pageVisibilityStatusOptions,
 } from '@/db/schema';
-import { useSiteLocales } from '@/providers/site-locales';
+import { useAdminHref, useSiteLocales } from '@/providers/site-locales';
 import {
   type CreatePostInput,
   createPostSchema,
@@ -91,6 +91,7 @@ function PostFormInner({ id }: { id: string }) {
 
   // New items start in the dashboard's working language (header switcher).
   const { currentLocale } = useSiteLocales();
+  const toAdminHref = useAdminHref();
   const defaultValues = useMemo<CreatePostInput>(
     () => ({
       title: initialValues?.title ?? '',
@@ -138,7 +139,9 @@ function PostFormInner({ id }: { id: string }) {
         );
 
         if (!initialValues) {
-          router.push(PAGES.DASHBOARD.POSTS.EDIT((post as { id: string }).id));
+          router.push(
+            toAdminHref(PAGES.DASHBOARD.POSTS.EDIT((post as { id: string }).id))
+          );
           return;
         }
 
@@ -161,7 +164,7 @@ function PostFormInner({ id }: { id: string }) {
         <div className="flex-1 lg:overflow-auto">
           <PostMainEditor isCreate={!initialValues} />
         </div>
-        <aside className="w-full border-t border-steel-200 bg-white dark:border-dark-300 dark:bg-dark-50 lg:w-96 lg:overflow-auto lg:border-l lg:border-t-0">
+        <aside className="w-full border-t border-steel-200 bg-white dark:border-dark-300 dark:bg-dark-50 lg:w-96 lg:overflow-auto lg:border-s lg:border-t-0">
           <Tabs defaultValue="post" className="gap-0">
             <TabsList className="m-3 grid grid-cols-3">
               <TabsTrigger value="post">Post</TabsTrigger>
@@ -490,7 +493,7 @@ function PostToolbar({
           <AutosaveIndicator status={status} savedAt={savedAt} />
         </>
       )}
-      <div className="ml-auto flex flex-wrap items-center gap-2">
+      <div className="ms-auto flex flex-wrap items-center gap-2">
         {initialValues && (
           <>
             <Button

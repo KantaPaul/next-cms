@@ -30,7 +30,7 @@ export function TextEditorViewer({
       editorProps: {
         attributes: {
           class:
-            'prose dark:prose-invert prose-sm sm:prose-base lg:prose-4xl [&_h1]:text-4xl [&_h2]:text-3xl [&_h3]:text-2xl [&_h4]:text-xl [&_h5]:text-lg [&_h6]:text-base focus:outline-none [&_ol]:list-decimal [&_ol]:ml-4 max-w-none text-steel-700 dark:text-steel-200',
+            'prose dark:prose-invert prose-sm sm:prose-base lg:prose-4xl [&_h1]:text-4xl [&_h2]:text-3xl [&_h3]:text-2xl [&_h4]:text-xl [&_h5]:text-lg [&_h6]:text-base focus:outline-none [&_ol]:list-decimal [&_ol]:ms-4 max-w-none text-steel-700 dark:text-steel-200',
         },
       },
       extensions: [
@@ -42,12 +42,12 @@ export function TextEditorViewer({
           },
           bulletList: {
             HTMLAttributes: {
-              class: 'list-disc leading-relaxed pl-7 my-11 text-sm',
+              class: 'list-disc leading-relaxed ps-7 my-11 text-sm',
             },
           },
           orderedList: {
             HTMLAttributes: {
-              class: 'list-decimal leading-relaxed pl-7 my-11 text-sm',
+              class: 'list-decimal leading-relaxed ps-7 my-11 text-sm',
             },
           },
           listItem: {

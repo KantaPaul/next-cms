@@ -90,7 +90,7 @@ function GalleryTile({
       ? `Open gallery (${extraCount + 1} more photos)`
       : `View ${alt} photo ${index + 1}`;
   const tileClass = cn(
-    'group relative block w-full overflow-hidden bg-black/5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--site-primary,#4f46e5)]',
+    'group relative block w-full overflow-hidden bg-black/5 text-start focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--site-primary,#4f46e5)]',
     aspectClass,
     className
   );
@@ -104,7 +104,7 @@ function GalleryTile({
         className="size-full object-cover transition duration-300 group-hover:scale-[1.03]"
       />
       {featuredBadge && index === 0 && (
-        <span className="pointer-events-none absolute left-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
+        <span className="pointer-events-none absolute start-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
           Featured
         </span>
       )}
@@ -113,7 +113,7 @@ function GalleryTile({
           +{extraCount}
         </span>
       ) : (
-        <span className="pointer-events-none absolute bottom-2 right-2 flex size-7 items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition group-hover:opacity-100">
+        <span className="pointer-events-none absolute bottom-2 end-2 flex size-7 items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition group-hover:opacity-100">
           <ZoomIn className="size-3.5" />
         </span>
       )}
@@ -295,7 +295,7 @@ export function CollectionGallery({
             type="button"
             aria-label="Previous image"
             onClick={() => setCarouselIndex((active - 1 + count) % count)}
-            className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white backdrop-blur-sm transition hover:bg-black/80"
+            className="absolute start-3 top-1/2 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white backdrop-blur-sm transition hover:bg-black/80"
           >
             <ChevronLeft className="size-4" />
           </button>
@@ -303,11 +303,11 @@ export function CollectionGallery({
             type="button"
             aria-label="Next image"
             onClick={() => setCarouselIndex((active + 1) % count)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white backdrop-blur-sm transition hover:bg-black/80"
+            className="absolute end-3 top-1/2 -translate-y-1/2 rounded-full bg-black/60 p-2 text-white backdrop-blur-sm transition hover:bg-black/80"
           >
             <ChevronRight className="size-4" />
           </button>
-          <span className="pointer-events-none absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
+          <span className="pointer-events-none absolute bottom-3 start-3 inline-flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
             <Images className="size-3.5" />
             {active + 1} / {count}
           </span>
@@ -570,7 +570,7 @@ export function CollectionGallery({
             type="button"
             aria-label="Close lightbox"
             onClick={() => setLightboxIndex(null)}
-            className="absolute right-0 top-0 z-10 rounded-full bg-white/15 p-2 text-white transition hover:bg-white/25"
+            className="absolute end-0 top-0 z-10 rounded-full bg-white/15 p-2 text-white transition hover:bg-white/25"
           >
             <X className="size-5" />
           </button>
@@ -581,7 +581,7 @@ export function CollectionGallery({
               onClick={() =>
                 setLightboxIndex((lightboxIndex - 1 + count) % count)
               }
-              className="absolute left-2 z-10 rounded-full bg-white/15 p-2.5 text-white transition hover:bg-white/25"
+              className="absolute start-2 z-10 rounded-full bg-white/15 p-2.5 text-white transition hover:bg-white/25"
             >
               <ChevronLeft className="size-5" />
             </button>
@@ -597,7 +597,7 @@ export function CollectionGallery({
               type="button"
               aria-label="Next photo"
               onClick={() => setLightboxIndex((lightboxIndex + 1) % count)}
-              className="absolute right-2 z-10 rounded-full bg-white/15 p-2.5 text-white transition hover:bg-white/25"
+              className="absolute end-2 z-10 rounded-full bg-white/15 p-2.5 text-white transition hover:bg-white/25"
             >
               <ChevronRight className="size-5" />
             </button>
@@ -608,7 +608,7 @@ export function CollectionGallery({
             className="mt-3 flex max-w-4xl items-center gap-2 overflow-x-auto pb-1"
             onClick={e => e.stopPropagation()}
           >
-            <span className="mr-2 text-xs font-medium text-white/80">
+            <span className="me-2 text-xs font-medium text-white/80">
               {lightboxIndex + 1} / {count}
               {lightboxIndex === 0 ? ' (Featured)' : ''}
             </span>

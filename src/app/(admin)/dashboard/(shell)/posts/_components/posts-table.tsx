@@ -8,7 +8,7 @@ import {
   LayoutTemplate,
   PanelsTopLeft,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
@@ -290,7 +290,7 @@ const buildColumns = (
   {
     id: 'actions',
     header: '',
-    meta: { className: 'w-12 text-right' },
+    meta: { className: 'w-12 text-end' },
     cell: ({ row }) => (
       <div className="flex items-center justify-end gap-1">
         {row.original.status === 'published' && (

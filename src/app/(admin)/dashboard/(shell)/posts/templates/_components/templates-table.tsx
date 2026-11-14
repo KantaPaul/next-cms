@@ -2,7 +2,7 @@
 
 import { formatDistanceToNow } from 'date-fns';
 import { LayoutTemplate, Loader2, Plus } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
@@ -126,7 +126,7 @@ function TemplateDetailsDialog({
             >
               <select
                 id="template-from"
-                className={`${inputClass} pr-8`}
+                className={`${inputClass} pe-8`}
                 value={fromId}
                 onChange={e => setFromId(e.target.value)}
               >
@@ -273,7 +273,7 @@ export function PostTemplatesTable({
       </div>
       <div className="overflow-x-auto rounded-lg border border-steel-200 dark:border-dark-300">
         <table className="w-full min-w-[640px] text-sm">
-          <thead className="bg-steel-50 text-left text-xs uppercase tracking-wide text-steel-500 dark:bg-dark-100">
+          <thead className="bg-steel-50 text-start text-xs uppercase tracking-wide text-steel-500 dark:bg-dark-100">
             <tr>
               <th className="px-4 py-2.5 font-medium">Template</th>
               <th className="px-4 py-2.5 font-medium">Status</th>
@@ -328,7 +328,7 @@ export function PostTemplatesTable({
                     addSuffix: true,
                   })}
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td className="px-4 py-3 text-end">
                   <RowActions
                     template={template}
                     onRename={() => setDetails({ mode: 'edit', template })}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition, type FormEvent } from 'react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Loader2, Pencil, Plus, Tag, Trash2, X, FolderTree } from 'lucide-react';

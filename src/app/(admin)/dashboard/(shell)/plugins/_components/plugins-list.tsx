@@ -2,7 +2,7 @@
 
 import { formatDistanceToNow } from 'date-fns';
 import { AlertTriangle, ExternalLink, Plug, Settings, X } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
@@ -102,13 +102,13 @@ export function PluginsList({
 
       <div className="overflow-x-auto rounded-lg border border-border bg-card">
         <table className="w-full min-w-[680px] text-sm">
-          <thead className="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
+          <thead className="border-b border-border bg-muted/40 text-start text-xs uppercase tracking-wider text-muted-foreground">
             <tr>
               <th className="px-4 py-3 font-medium">Plugin</th>
               <th className="px-4 py-3 font-medium">Version</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Enabled</th>
-              <th className="px-4 py-3 text-right font-medium">Actions</th>
+              <th className="px-4 py-3 text-end font-medium">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -145,7 +145,7 @@ export function PluginsList({
                                 <span className="font-medium">Last error:</span>{' '}
                                 {plugin.lastError}
                                 {plugin.lastErrorAt && (
-                                  <span className="ml-1.5 opacity-75">
+                                  <span className="ms-1.5 opacity-75">
                                     (
                                     {formatDistanceToNow(
                                       new Date(plugin.lastErrorAt),
@@ -184,12 +184,12 @@ export function PluginsList({
                       onChange={checked => onToggle(plugin, checked)}
                     />
                   </td>
-                  <td className="px-4 py-4 text-right">
+                  <td className="px-4 py-4 text-end">
                     <div className="flex flex-wrap items-center justify-end gap-2">
                       {!isMissingCode && (
                         <Button asChild size="sm" variant="outline">
                           <Link href={PAGES.DASHBOARD.PLUGIN_SETTINGS(plugin.id)}>
-                            <Settings className="mr-1.5 size-3.5" />
+                            <Settings className="me-1.5 size-3.5" />
                             Settings
                           </Link>
                         </Button>
@@ -209,7 +209,7 @@ export function PluginsList({
                               )}
                             >
                               {page.title}
-                              <ExternalLink className="ml-1.5 size-3" />
+                              <ExternalLink className="ms-1.5 size-3" />
                             </Link>
                           </Button>
                         ))}

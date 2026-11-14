@@ -432,7 +432,7 @@ export function LicenseDetailView({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-start text-xs">
             <thead className="bg-slate-50 dark:bg-slate-950/50 border-b border-slate-200 dark:border-slate-800 uppercase tracking-wider text-slate-500">
               <tr>
                 <th className="px-6 py-3 font-semibold">Timestamp</th>

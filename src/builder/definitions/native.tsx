@@ -28,6 +28,7 @@ import {
 } from '../blocks/post-extras';
 import { Audio } from '../blocks/audio';
 import { PrivacyRequest } from '../blocks/privacy-request';
+import { PHASE5_BLOCKS } from './phase5';
 import { BookmarksDrawer } from '../blocks/bookmarks-client';
 import { Container, DEFAULT_CONTAINER } from '../blocks/container';
 import {
@@ -8912,6 +8913,7 @@ export const NATIVE_BLOCKS = [
   TestimonialCarouselBlock,
   HotspotBlock,
   LottieBlock,
+  ...PHASE5_BLOCKS,
 ];
 export const PAGE_ROOT_FIELDS = {
   maxWidth: {

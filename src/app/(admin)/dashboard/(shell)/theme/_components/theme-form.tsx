@@ -660,7 +660,7 @@ export function ThemeForm({
                   <button
                     type="button"
                     onClick={() => setEditingToken({ ...token })}
-                    className="flex items-center gap-2 text-left hover:opacity-80 transition"
+                    className="flex items-center gap-2 text-start hover:opacity-80 transition"
                     title={`Edit token "${token.name}"`}
                   >
                     <span
@@ -1087,7 +1087,7 @@ export function ThemeForm({
                 <span className="font-mono text-steel-500">
                   ({deletingToken.value})
                 </span>
-                <span className="ml-auto font-mono text-[11px] text-steel-400">
+                <span className="ms-auto font-mono text-[11px] text-steel-400">
                   --site-token-{deletingToken.id}
                 </span>
               </div>

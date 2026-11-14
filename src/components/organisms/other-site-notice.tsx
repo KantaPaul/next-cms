@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowLeftRight } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 import { Button } from '@/components/ui/button';

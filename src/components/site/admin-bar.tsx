@@ -151,7 +151,7 @@ function BarContents({ bar }: { bar: Bar }) {
         )}
         <div className="hidden items-center gap-0.5 md:flex">{quickLinks}</div>
         {bar.preview && (
-          <span className="ml-1 inline-flex items-center gap-1 rounded bg-amber-400 px-1.5 py-1 text-[11px] font-semibold text-amber-950">
+          <span className="ms-1 inline-flex items-center gap-1 rounded bg-amber-400 px-1.5 py-1 text-[11px] font-semibold text-amber-950">
             <Eye className="size-3" />
             Preview / Draft
           </span>
@@ -159,7 +159,7 @@ function BarContents({ bar }: { bar: Bar }) {
         {bar.siteMode && bar.siteMode !== 'live' && (
           <a
             href={links.settings ?? links.dashboard}
-            className="ml-1 inline-flex items-center gap-1 rounded bg-rose-500/90 px-1.5 py-1 text-[11px] font-semibold text-white hover:bg-rose-500"
+            className="ms-1 inline-flex items-center gap-1 rounded bg-rose-500/90 px-1.5 py-1 text-[11px] font-semibold text-white hover:bg-rose-500"
           >
             <AlertTriangle className="size-3" />
             {bar.siteMode === 'coming_soon'
@@ -213,7 +213,7 @@ function UserMenu({ bar }: { bar: Bar }) {
         type="button"
         disabled={pending}
         onClick={() => startTransition(async () => void (await signOut()))}
-        className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-white/10 focus-visible:bg-white/10 focus-visible:outline-none disabled:opacity-60"
+        className="flex w-full items-center gap-2 px-3 py-2 text-start hover:bg-white/10 focus-visible:bg-white/10 focus-visible:outline-none disabled:opacity-60"
       >
         <LogOut className="size-3.5" />
         {pending ? 'Logging out…' : 'Log out'}
@@ -311,7 +311,7 @@ function Dropdown({
           onClick={() => setOpen(false)}
           className={cn(
             'absolute top-full mt-px min-w-44 max-w-[calc(100vw-1rem)] overflow-hidden rounded-b-md border border-white/10 bg-zinc-900 py-1 text-zinc-100 shadow-lg',
-            align === 'right' ? 'right-0' : 'left-0'
+            align === 'right' ? 'end-0' : 'start-0'
           )}
         >
           {children}

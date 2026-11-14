@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { Download, FileText } from 'lucide-react';
 import { AccessDenied } from '@/components/organisms/access-denied';
 import { PageHeader } from '@/components/organisms/page-header';

@@ -92,7 +92,7 @@ export function Toolbar({ className, editor }: ToolbarProps) {
   return (
     <div
       className={cn(
-        'scrollbar-hide editor-toolbar sticky top-0 left-0 z-20 flex w-full select-none items-center overflow-x-auto rounded-t-lg border-x border-t bg-background/95 p-1 backdrop-blur-sm supports-backdrop-blur:bg-background/60',
+        'scrollbar-hide editor-toolbar sticky top-0 start-0 z-20 flex w-full select-none items-center overflow-x-auto rounded-t-lg border-x border-t bg-background/95 p-1 backdrop-blur-sm supports-backdrop-blur:bg-background/60',
         borderColor,
         className
       )}
@@ -103,7 +103,7 @@ export function Toolbar({ className, editor }: ToolbarProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 gap-1 pr-1 pl-2 hover:bg-steel-50 dark:hover:bg-dark-300"
+            className="h-8 gap-1 pe-1 ps-2 hover:bg-steel-50 dark:hover:bg-dark-300"
           >
             <Type className="size-4" />
             <span className="max-w-[100px] overflow-hidden text-ellipsis whitespace-nowrap">

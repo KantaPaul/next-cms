@@ -1,4 +1,5 @@
 import 'server-only';
+import { adminLocale } from '@/server/services/admin-locale';
 import {
   and,
   asc,
@@ -367,8 +368,11 @@ export const pagesServices = {
       conditions.push(eq(pages.status, status as never));
     if (typeof editorType === 'string' && editorType)
       conditions.push(eq(pages.editorType, editorType as never));
-    if (typeof language === 'string' && language)
-      conditions.push(eq(pages.language, language));
+    const activeLocale =
+      typeof language === 'string' && language ? language : await adminLocale();
+    if (activeLocale !== 'all') {
+      conditions.push(eq(pages.language, activeLocale));
+    }
 
     if (typeof search === 'string' && search.trim()) {
       const term = `%${search.trim()}%`;

@@ -43,11 +43,11 @@ export function usePinningStyles() {
       isPinned ? 'relative md:sticky' : 'relative',
       isPinned &&
         'before:absolute before:top-0 before:h-full before:w-[1px] before:bg-border before:content-[""]',
-      isPinned === 'left' && 'before:-right-px',
-      isPinned === 'right' && 'before:-left-px',
+      isPinned === 'left' && 'before:-end-px',
+      isPinned === 'right' && 'before:-start-px',
       // sticky cell bg color
       isPinned && 'after:-z-[1] after:absolute after:bg-card',
-      isPinned && 'after:top-[1px] after:right-0 after:bottom-0 after:left-0'
+      isPinned && 'after:top-[1px] after:end-0 after:bottom-0 after:start-0'
     );
   }
 

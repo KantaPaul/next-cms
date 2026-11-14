@@ -1,5 +1,6 @@
 import { LayoutTemplate, Settings } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
+import { adminLocale } from '@/server/services/admin-locale';
 import CreateButton from '@/components/atoms/buttons/create-button';
 import { AccessDenied } from '@/components/organisms/access-denied';
 import { PageHeader } from '@/components/organisms/page-header';
@@ -58,6 +59,13 @@ export default async function CollectionEntriesPage({
   ]);
 
   const parsedParams = parseSearchParams(rawSearchParams);
+  const activeLocale =
+    typeof parsedParams.language === 'string' && parsedParams.language
+      ? parsedParams.language
+      : await adminLocale();
+  if (activeLocale !== 'all' && !parsedParams.language) {
+    parsedParams.language = activeLocale;
+  }
   const [{ data, totalCount }, counts] = await Promise.all([
     collectionsService.getPaginatedEntries({
       collectionId: collection.id,
@@ -65,9 +73,7 @@ export default async function CollectionEntriesPage({
     }),
     collectionsService.getStatusCounts(
       collection.id,
-      typeof parsedParams.language === 'string' && parsedParams.language
-        ? parsedParams.language
-        : undefined
+      activeLocale !== 'all' ? activeLocale : undefined
     ),
   ]);
 

@@ -155,13 +155,13 @@ export function MediaBrowser({
       <div className="flex flex-wrap items-center gap-2">
         <label className="relative min-w-48 flex-1">
           <span className="sr-only">Search media</span>
-          <Search className="absolute left-2.5 top-2.5 size-4 text-steel-400" />
+          <Search className="absolute start-2.5 top-2.5 size-4 text-steel-400" />
           <input
             type="search"
             value={filter.search}
             onChange={e => setFilter(f => ({ ...f, search: e.target.value }))}
             placeholder="Search by name or alt text"
-            className="h-9 w-full rounded-md border border-steel-200 bg-white pl-8 pr-3 text-sm dark:border-dark-300 dark:bg-dark-100"
+            className="h-9 w-full rounded-md border border-steel-200 bg-white ps-8 pe-3 text-sm dark:border-dark-300 dark:bg-dark-100"
           />
         </label>
         <select
@@ -224,7 +224,7 @@ export function MediaBrowser({
       >
         {loading && !items.length ? (
           <div className="flex h-48 items-center justify-center text-sm text-steel-500">
-            <Loader2 className="mr-2 size-4 animate-spin" /> Loading media…
+            <Loader2 className="me-2 size-4 animate-spin" /> Loading media…
           </div>
         ) : !items.length ? (
           <div className="flex h-48 flex-col items-center justify-center gap-2 text-center text-sm text-steel-500">
@@ -255,7 +255,7 @@ export function MediaBrowser({
                   >
                     <MediaThumb item={item} />
                     {!item.alt && item.mime.startsWith('image/') && (
-                      <span className="absolute left-1 top-1 rounded bg-amber-500/90 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                      <span className="absolute start-1 top-1 rounded bg-amber-500/90 px-1.5 py-0.5 text-[10px] font-medium text-white">
                         No alt
                       </span>
                     )}

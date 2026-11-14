@@ -1,0 +1,9 @@
+{
+  "title": "Cuenta",
+  "profile": "Perfil",
+  "interfaceLanguage": "Idioma de la interfaz",
+  "interfaceLanguageHint": "Elige el idioma de los botones y etiquetas del panel. Déjalo en Automático para seguir el idioma del contenido.",
+  "automaticLanguage": "Automático (seguir idioma del contenido)",
+  "savePreferences": "Guardar preferencias",
+  "preferencesSaved": "Idioma de la interfaz actualizado"
+}

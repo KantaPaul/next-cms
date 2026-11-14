@@ -232,9 +232,9 @@ const IMAGE_ASPECT_CLASS: Record<LoopImageAspect, string> = {
 const GAP_CLASS = { sm: 'gap-2', md: 'gap-4', lg: 'gap-6' } as const;
 
 const ALIGN_CLASS: Record<LoopAlign, string> = {
-  left: 'text-left',
+  left: 'text-start',
   center: 'text-center',
-  right: 'text-right',
+  right: 'text-end',
 };
 
 const LINE_CLAMP_CLASS: Record<Exclude<LoopMaxLines, 'none'>, string> = {
@@ -621,7 +621,7 @@ function LoopFeaturedGallerySlider({
       {mainTrigger}
 
       {showFeaturedPill && currentIdx === 0 && hasMulti && (
-        <span className="pointer-events-none absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-black/65 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
+        <span className="pointer-events-none absolute start-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-black/65 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
           Featured
         </span>
       )}
@@ -644,7 +644,7 @@ function LoopFeaturedGallerySlider({
               e.stopPropagation();
               setActiveIndex((currentIdx - 1 + count) % count);
             }}
-            className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/60 p-1.5 text-white opacity-85 shadow-sm backdrop-blur-sm transition hover:bg-black/80 group-hover/gallery:opacity-100"
+            className="absolute start-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/60 p-1.5 text-white opacity-85 shadow-sm backdrop-blur-sm transition hover:bg-black/80 group-hover/gallery:opacity-100"
           >
             <ChevronLeft className="size-4" />
           </button>
@@ -656,11 +656,11 @@ function LoopFeaturedGallerySlider({
               e.stopPropagation();
               setActiveIndex((currentIdx + 1) % count);
             }}
-            className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/60 p-1.5 text-white opacity-85 shadow-sm backdrop-blur-sm transition hover:bg-black/80 group-hover/gallery:opacity-100"
+            className="absolute end-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-black/60 p-1.5 text-white opacity-85 shadow-sm backdrop-blur-sm transition hover:bg-black/80 group-hover/gallery:opacity-100"
           >
             <ChevronRight className="size-4" />
           </button>
-          <div className=" absolute bottom-2.5 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/55 px-2.5 py-1 backdrop-blur-sm">
+          <div className=" absolute bottom-2.5 start-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/55 px-2.5 py-1 backdrop-blur-sm">
             {images.map((src, idx) => (
               <button
                 key={`${src}-${idx}`}
@@ -872,7 +872,7 @@ function LoopItemFieldRowView({
             data-loop-multi-fields={keys.join(',')}
             data-loop-multi-layout="table"
           >
-            <table className="w-full border-collapse text-left text-sm">
+            <table className="w-full border-collapse text-start text-sm">
               <tbody>
                 {keys.map(k => {
                   const meta = previewFields.find(f => f.path === k);
@@ -916,7 +916,7 @@ function LoopItemFieldRowView({
       if (multiLayout === 'list') {
         return (
           <ul
-            className="flex list-disc flex-col gap-1 pl-5"
+            className="flex list-disc flex-col gap-1 ps-5"
             data-loop-multi-fields={keys.join(',')}
             data-loop-multi-layout="list"
           >
@@ -1222,7 +1222,7 @@ function LoopItemFieldRowView({
           : arrayLayout === 'row'
             ? 'flex flex-wrap items-start gap-3'
             : arrayLayout === 'list'
-              ? 'list-disc space-y-1.5 pl-5'
+              ? 'list-disc space-y-1.5 ps-5'
               : 'space-y-2.5';
 
       const itemsNodes = rawVal.map((elVal, elIdx) => {
@@ -1905,7 +1905,7 @@ function LoopItemFieldRowView({
           isButton
             ? 's-primary-bg inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-xs transition hover:opacity-90'
             : 's-primary-text inline-flex items-center gap-1 text-sm font-semibold hover:underline',
-          align === 'center' ? 'mx-auto' : align === 'right' ? 'ml-auto' : ''
+          align === 'center' ? 'mx-auto' : align === 'right' ? 'ms-auto' : ''
         )
       );
 

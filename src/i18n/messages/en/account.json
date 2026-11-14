@@ -1,0 +1,9 @@
+{
+  "title": "Account",
+  "profile": "Profile",
+  "interfaceLanguage": "Interface language",
+  "interfaceLanguageHint": "Choose the language used for admin buttons and labels. Leave on Automatic to follow the active content language.",
+  "automaticLanguage": "Automatic (follow content language)",
+  "savePreferences": "Save preferences",
+  "preferencesSaved": "Interface language updated"
+}

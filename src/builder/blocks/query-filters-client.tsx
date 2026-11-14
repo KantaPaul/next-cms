@@ -902,7 +902,7 @@ export function QueryFilterClient({
           >
             <span {...labelEl}>Search</span>
             <div className="relative flex items-center">
-              <Search className="s-muted pointer-events-none absolute left-3 size-4" />
+              <Search className="s-muted pointer-events-none absolute start-3 size-4" />
               <input
                 type="search"
                 name={paramName('q')}
@@ -913,7 +913,7 @@ export function QueryFilterClient({
                 {...el(
                   styled,
                   'input',
-                  's-surface s-border s-radius h-10 w-full border pl-9 pr-3 text-sm'
+                  's-surface s-border s-radius h-10 w-full border ps-9 pe-3 text-sm'
                 )}
               />
             </div>
@@ -1278,7 +1278,7 @@ export function QueryFilterClient({
                     { focusResults: true }
                   );
                 }}
-                className="s-primary-text ml-1 font-semibold hover:underline"
+                className="s-primary-text ms-1 font-semibold hover:underline"
               >
                 Clear all
               </a>

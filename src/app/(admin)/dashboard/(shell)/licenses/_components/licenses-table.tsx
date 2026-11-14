@@ -2,7 +2,7 @@
 
 import { format } from 'date-fns';
 import { KeyRound } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import type React from 'react';
 import { LicenseStatusBadge } from './license-status-badge';
 import type { LicenseListItem } from './types';
@@ -16,7 +16,7 @@ export function LicensesTable({ items, children }: LicensesTableProps) {
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
+        <table className="w-full text-start text-sm">
           <thead className="bg-slate-50 dark:bg-slate-950/50 border-b border-slate-200 dark:border-slate-800 text-xs text-slate-500 uppercase tracking-wider">
             <tr>
               <th className="px-6 py-3 font-semibold">License ID</th>
@@ -25,7 +25,7 @@ export function LicensesTable({ items, children }: LicensesTableProps) {
               <th className="px-6 py-3 font-semibold">Issued / Expires</th>
               <th className="px-6 py-3 font-semibold">Reassignments</th>
               <th className="px-6 py-3 font-semibold">Last Validated</th>
-              <th className="px-6 py-3 font-semibold text-right">Action</th>
+              <th className="px-6 py-3 font-semibold text-end">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -97,7 +97,7 @@ export function LicensesTable({ items, children }: LicensesTableProps) {
                         )
                       : 'Never'}
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4 text-end">
                     <Link
                       href={`/dashboard/licenses/${lic.publicId}`}
                       className="text-xs font-medium text-primary hover:underline"

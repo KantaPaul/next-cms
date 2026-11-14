@@ -1,5 +1,5 @@
 import { Blocks } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { pagesServices } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
 import { AccessDenied } from '@/components/organisms/access-denied';
 import { PageHeader } from '@/components/organisms/page-header';

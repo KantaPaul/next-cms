@@ -42,6 +42,11 @@ import { BLOG_CATEGORIES, BLOG_TAGS, BUILDER_POSTS, POST_IMAGES } from './sectio
 import { seedPostTypes } from './sections/post-types';
 import { seedSiteTemplates } from './sections/templates';
 import { searchIndex } from '@/server/services/search.service';
+import { clearSiteData, type DemoUserRefs } from './lib/site';
+import { AGENCY_SITE_ID, seedAgencySite } from './sites/agency';
+import { BLOG_SITE_ID, seedBlogSite } from './sites/blog';
+import { DOCS_SITE_ID, seedDocsSite } from './sites/docs';
+import { PORTFOLIO_SITE_ID, seedPortfolioSite } from './sites/portfolio';
 
 const TEST_PASSWORD = 'Test1234!';
 
@@ -78,6 +83,51 @@ async function truncateAll() {
 }
 
 async function main() {
+  const siteArg = process.argv.find((a) => a.startsWith('--site='))?.slice('--site='.length);
+  if (siteArg && siteArg !== 'main') {
+    const emailMap = new Map<string, { id: string; roleId: string | null }>();
+    const existingUsers = await db
+      .select({ id: schema.users.id, email: schema.users.email, roleId: schema.users.roleId })
+      .from(schema.users);
+    for (const u of existingUsers) emailMap.set(u.email, u);
+
+    const admin = emailMap.get('admin@nextcms.test');
+    const editor = emailMap.get('editor@nextcms.test');
+    const author = emailMap.get('author@nextcms.test');
+    const viewer = emailMap.get('viewer@nextcms.test');
+    if (!admin || !editor || !author || !viewer || !admin.roleId || !editor.roleId || !author.roleId || !viewer.roleId) {
+      throw new Error('Base seed users not found. Run full "pnpm db:seed" first.');
+    }
+
+    const refs: DemoUserRefs = {
+      adminId: admin.id,
+      editorId: editor.id,
+      authorId: author.id,
+      viewerId: viewer.id,
+      adminRoleId: admin.roleId,
+      editorRoleId: editor.roleId,
+      authorRoleId: author.roleId,
+      viewerRoleId: viewer.roleId,
+    };
+
+    if (siteArg === 'blog') {
+      await clearSiteData(BLOG_SITE_ID);
+      await seedBlogSite(refs);
+    } else if (siteArg === 'agency') {
+      await clearSiteData(AGENCY_SITE_ID);
+      await seedAgencySite(refs);
+    } else if (siteArg === 'docs') {
+      await clearSiteData(DOCS_SITE_ID);
+      await seedDocsSite(refs);
+    } else if (siteArg === 'portfolio') {
+      await clearSiteData(PORTFOLIO_SITE_ID);
+      await seedPortfolioSite(refs);
+    } else {
+      throw new Error(`Unknown --site=${siteArg}. Expected: blog, agency, docs, portfolio`);
+    }
+    console.info(`\nSelective reseed for --site=${siteArg} complete.`);
+    return;
+  }
   console.info('Cleaning database...');
   const cleaned = await truncateAll();
   console.info(`Tables truncated: ${cleaned}.`);
@@ -1071,6 +1121,22 @@ async function main() {
   console.info(
     `Audit logs: ${totalAuditLogs}, sessions: ${totalSessions}, accounts: ${totalAccounts}`
   );
+
+  const demoRefs: DemoUserRefs = {
+    adminId: adminUser.id,
+    editorId: editorUser.id,
+    authorId: authorUser.id,
+    viewerId: viewerUser.id,
+    adminRoleId: adminRole.id,
+    editorRoleId: editorRole.id,
+    authorRoleId: authorRole.id,
+    viewerRoleId: viewerRole.id,
+  };
+  console.info('\nSeeding multi-language demo sites (en, es, ar)...');
+  await seedBlogSite(demoRefs);
+  await seedAgencySite(demoRefs);
+  await seedDocsSite(demoRefs);
+  await seedPortfolioSite(demoRefs);
 
   console.info('\nSeed complete. Test accounts (password: Test1234!):');
   console.info('  admin@nextcms.test   - Admin');

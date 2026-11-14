@@ -573,19 +573,19 @@ const COLUMN_BG = {
 };
 
 const COL_ALIGN_MOBILE: Record<HeaderColAlign, string> = {
-  start: 's-mob-justify-start s-mob-text-left',
+  start: 's-mob-justify-start s-mob-text-start',
   center: 's-mob-justify-center s-mob-text-center',
-  end: 's-mob-justify-end s-mob-text-right',
+  end: 's-mob-justify-end s-mob-text-end',
 };
 const COL_ALIGN_TABLET: Record<HeaderColAlign, string> = {
-  start: 's-tabonly-justify-start s-tabonly-text-left',
+  start: 's-tabonly-justify-start s-tabonly-text-start',
   center: 's-tabonly-justify-center s-tabonly-text-center',
-  end: 's-tabonly-justify-end s-tabonly-text-right',
+  end: 's-tabonly-justify-end s-tabonly-text-end',
 };
 const COL_ALIGN_DESKTOP: Record<HeaderColAlign, string> = {
-  start: 's-desk-justify-start s-desk-text-left',
+  start: 's-desk-justify-start s-desk-text-start',
   center: 's-desk-justify-center s-desk-text-center',
-  end: 's-desk-justify-end s-desk-text-right',
+  end: 's-desk-justify-end s-desk-text-end',
 };
 
 const COL_VALIGN: Record<HeaderColAlign, string> = {
@@ -824,7 +824,7 @@ export function GlobalRef(p: GlobalRefProps) {
       )}
     >
       {p.editing && (
-        <span className="absolute right-2 top-2 z-10 rounded bg-violet-600 px-2 py-0.5 text-[11px] font-medium text-white">
+        <span className="absolute end-2 top-2 z-10 rounded bg-violet-600 px-2 py-0.5 text-[11px] font-medium text-white">
           Global · {p.globalBlockName ?? 'block'}
         </span>
       )}

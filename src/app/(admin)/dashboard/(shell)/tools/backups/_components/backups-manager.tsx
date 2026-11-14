@@ -228,9 +228,9 @@ export function BackupsManager({
             onClick={handleCreateBackup}
           >
             {creating ? (
-              <Loader2 className="mr-2 size-4 animate-spin" />
+              <Loader2 className="me-2 size-4 animate-spin" />
             ) : (
-              <Archive className="mr-2 size-4" />
+              <Archive className="me-2 size-4" />
             )}
             {creating ? 'Creating backup…' : 'Create backup'}
           </Button>
@@ -352,9 +352,9 @@ export function BackupsManager({
         <div className="flex justify-end">
           <Button type="submit" variant="outline" disabled={savingSchedule}>
             {savingSchedule ? (
-              <Loader2 className="mr-2 size-4 animate-spin" />
+              <Loader2 className="me-2 size-4 animate-spin" />
             ) : (
-              <Save className="mr-2 size-4" />
+              <Save className="me-2 size-4" />
             )}
             Save schedule
           </Button>
@@ -418,7 +418,7 @@ export function BackupsManager({
                     <>
                       <Button asChild variant="outline" size="sm">
                         <a href={`/api/dashboard/backups/${item.id}/download`}>
-                          <Download className="mr-1.5 size-3.5" />
+                          <Download className="me-1.5 size-3.5" />
                           Download
                         </a>
                       </Button>
@@ -431,7 +431,7 @@ export function BackupsManager({
                           setConfirmName('');
                         }}
                       >
-                        <RotateCcw className="mr-1.5 size-3.5" />
+                        <RotateCcw className="me-1.5 size-3.5" />
                         Restore
                       </Button>
                     </>
@@ -443,7 +443,7 @@ export function BackupsManager({
                     disabled={isPending}
                     onClick={() => handleDelete(item.id)}
                   >
-                    <Trash2 className="mr-1.5 size-3.5" />
+                    <Trash2 className="me-1.5 size-3.5" />
                     Delete
                   </Button>
                 </div>
@@ -528,7 +528,7 @@ export function BackupsManager({
               }
               onClick={handleRestore}
             >
-              {restoring && <Loader2 className="mr-2 size-4 animate-spin" />}
+              {restoring && <Loader2 className="me-2 size-4 animate-spin" />}
               {restoring ? 'Restoring…' : 'Restore backup'}
             </Button>
           </DialogFooter>

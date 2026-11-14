@@ -90,7 +90,7 @@ export type VideoLibraryProps = {
 
 /** Grid card link or button; keeps a visible focus ring for keyboard users. */
 const GRID_CARD_CLASS =
-  'group block h-full cursor-pointer rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--site-primary)] focus-visible:ring-offset-2';
+  'group block h-full cursor-pointer rounded-lg text-start outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--site-primary)] focus-visible:ring-offset-2';
 
 function formatDuration(seconds: number | null) {
   if (!seconds) return null;
@@ -105,7 +105,7 @@ const DEMO_VIDEOS: VideoLibraryVideoItem[] = [
     id: 'demo-yt-1',
     siteId: 'demo',
     playlistId: null,
-    title: 'Introducing Next CMS Visual Builder',
+    title: 'Introducing Meridian Visual Builder',
     slug: 'introducing-next-cms-visual-builder',
     url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
     provider: 'youtube',
@@ -403,7 +403,7 @@ export function VideoLibrary({
   const searchEl = el(
     { elements },
     'search',
-    's-border h-9 w-full rounded-lg border bg-[var(--site-bg)] pl-9 pr-8 text-sm text-[var(--site-fg)] transition placeholder:text-[var(--site-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--site-primary)]'
+    's-border h-9 w-full rounded-lg border bg-[var(--site-bg)] ps-9 pe-8 text-sm text-[var(--site-fg)] transition placeholder:text-[var(--site-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--site-primary)]'
   );
   const filterEl = el({ elements }, 'filter');
   const listItemEl = el({ elements }, 'listItem');
@@ -494,7 +494,7 @@ export function VideoLibrary({
       {/* Search Input */}
       {resolvedSettings.showSearch && (
         <div className="relative">
-          <Search className="s-muted absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+          <Search className="s-muted absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
@@ -507,7 +507,7 @@ export function VideoLibrary({
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              className="s-muted absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 hover:text-[var(--site-fg)]"
+              className="s-muted absolute end-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 hover:text-[var(--site-fg)]"
               title="Clear search"
             >
               <X className="h-3.5 w-3.5" />
@@ -611,7 +611,7 @@ export function VideoLibrary({
           )}
         </div>
       ) : (
-        <ul className="flex max-h-[520px] flex-col gap-2 overflow-y-auto pr-1">
+        <ul className="flex max-h-[520px] flex-col gap-2 overflow-y-auto pe-1">
           {filtered.map(video => {
             const isSelected = (selected?.id ?? null) === video.id;
             return (
@@ -620,7 +620,7 @@ export function VideoLibrary({
                   type="button"
                   onClick={() => setSelectedId(video.id)}
                   className={cn(
-                    'group flex w-full items-start gap-3 rounded-lg border p-2 text-left transition',
+                    'group flex w-full items-start gap-3 rounded-lg border p-2 text-start transition',
                     isSelected
                       ? 's-soft-primary border-[var(--site-primary)] shadow-sm'
                       : 's-border bg-[var(--site-bg)] hover:bg-[var(--site-surface)]',
@@ -643,7 +643,7 @@ export function VideoLibrary({
                       </div>
                     )}
                     {video.duration ? (
-                      <span className="absolute bottom-1 right-1 rounded bg-black/80 px-1 py-0.5 text-[10px] font-medium text-white">
+                      <span className="absolute bottom-1 end-1 rounded bg-black/80 px-1 py-0.5 text-[10px] font-medium text-white">
                         {formatDuration(video.duration)}
                       </span>
                     ) : null}
@@ -783,7 +783,7 @@ export function VideoLibrary({
                           </div>
                         </div>
                         {video.duration ? (
-                          <span className="absolute bottom-2 right-2 rounded bg-black/80 px-1.5 py-0.5 text-xs font-medium text-white">
+                          <span className="absolute bottom-2 end-2 rounded bg-black/80 px-1.5 py-0.5 text-xs font-medium text-white">
                             {formatDuration(video.duration)}
                           </span>
                         ) : null}

@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { pagesServices } from '@/app/(admin)/dashboard/(shell)/pages/_modules/pages.service';
 import { PAGES } from '@/config/pages';
 import { analyticsService } from '@/server/services/analytics.service';
@@ -125,7 +125,7 @@ export default async function DashboardPage() {
                   >
                     {p.title}
                   </Link>
-                  <span className="ml-2 shrink-0 text-xs capitalize text-steel-500">
+                  <span className="ms-2 shrink-0 text-xs capitalize text-steel-500">
                     {p.status}
                   </span>
                 </li>

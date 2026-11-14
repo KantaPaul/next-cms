@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import {
   CommentsModerationView,
   parseCommentStatusParam,

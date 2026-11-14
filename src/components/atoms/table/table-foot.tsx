@@ -7,7 +7,7 @@ export function TableFoot({
   return (
     <tfoot
       className={cn(
-        'TableFoot-root divide-y border-steel-200 text-left dark:divide-dark-300 dark:border-dark-300',
+        'TableFoot-root divide-y border-steel-200 text-start dark:divide-dark-300 dark:border-dark-300',
         props.className
       )}
     >

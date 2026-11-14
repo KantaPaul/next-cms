@@ -22,7 +22,7 @@ export type BlogFiltersProps = {
 
 const fieldClass =
   's-border s-radius h-10 rounded-md border bg-transparent px-3 text-sm outline-none focus-visible:ring-2';
-const selectClass = `${fieldClass} pr-8`;
+const selectClass = `${fieldClass} pe-8`;
 
 /**
  * A GET form on the current page, so filters work without JavaScript. Selects submit on change;
@@ -65,13 +65,13 @@ export function BlogFilters(p: BlogFiltersProps) {
       {p.showSearch && (
         <label className="relative min-w-56 flex-1">
           <span className="sr-only">Search posts</span>
-          <Search className="s-muted pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2" />
+          <Search className="s-muted pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2" />
           <input
             type="search"
             name="q"
             defaultValue={p.active.q ?? ''}
             placeholder="Search posts"
-            {...el(p, 'filterInput', cn(fieldClass, 'w-full pl-9'))}
+            {...el(p, 'filterInput', cn(fieldClass, 'w-full ps-9'))}
           />
         </label>
       )}

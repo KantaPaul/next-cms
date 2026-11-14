@@ -2,6 +2,7 @@
 
 import { ThumbsDown, ThumbsUp } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { cmsApi, cmsSiteHeaders } from '@/lib/cms-api';
 import {
   type FormEvent,
   useEffect,
@@ -152,10 +153,10 @@ export function CommentForm({
     setState('sending');
     setError(null);
     try {
-      const response = await fetch('/api/comments', {
+      const response = await fetch(cmsApi('/api/comments'), {
         method: 'POST',
         body: new FormData(event.currentTarget),
-        headers: { Accept: 'application/json' },
+        headers: { Accept: 'application/json', ...cmsSiteHeaders() },
       });
       if (response.ok) {
         const okData = (await response.json().catch(() => ({}))) as {
@@ -304,7 +305,7 @@ export function CommentForm({
         tabIndex={-1}
         autoComplete="off"
         aria-hidden="true"
-        className="absolute -left-[9999px] h-px w-px overflow-hidden"
+        className="absolute -start-[9999px] h-px w-px overflow-hidden"
       />
       {TURNSTILE_SITE_KEY && !editing ? (
         <div className="cf-turnstile" data-sitekey={TURNSTILE_SITE_KEY} />
@@ -471,11 +472,12 @@ export function CommentReactions({
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch('/api/comments/react', {
+      const res = await fetch(cmsApi('/api/comments/react'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
+          ...cmsSiteHeaders(),
         },
         body: JSON.stringify({ commentId, value: next }),
       });

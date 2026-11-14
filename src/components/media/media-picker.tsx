@@ -157,7 +157,7 @@ export function MediaField({
             type="button"
             aria-label="Remove image"
             onClick={() => onChange('')}
-            className="absolute right-1.5 top-1.5 rounded-full bg-black/60 p-1 text-white hover:bg-black/80"
+            className="absolute end-1.5 top-1.5 rounded-full bg-black/60 p-1 text-white hover:bg-black/80"
           >
             <X className="size-3.5" />
           </button>
@@ -264,7 +264,7 @@ export function MultiMediaField({
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={url} alt="" className="size-full object-cover" />
               {isFeaturedField && idx === 0 && (
-                <span className="absolute left-1.5 top-1.5 rounded bg-indigo-600/90 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-sm">
+                <span className="absolute start-1.5 top-1.5 rounded bg-indigo-600/90 px-1.5 py-0.5 text-[10px] font-medium text-white shadow-sm">
                   Featured
                 </span>
               )}
@@ -272,7 +272,7 @@ export function MultiMediaField({
                 type="button"
                 aria-label="Remove image"
                 onClick={() => onChange(value.filter((_, i) => i !== idx))}
-                className="absolute right-1.5 top-1.5 rounded-full bg-black/65 p-1 text-white hover:bg-black/85"
+                className="absolute end-1.5 top-1.5 rounded-full bg-black/65 p-1 text-white hover:bg-black/85"
               >
                 <X className="size-3" />
               </button>
@@ -335,7 +335,7 @@ export function MultiMediaField({
           className="h-8 min-w-0 flex-1 rounded-md border border-steel-200 bg-white px-2 text-xs dark:border-dark-300 dark:bg-dark-100"
         />
         <Button type="button" size="sm" variant="outline" onClick={addUrl}>
-          <Plus className="mr-1 size-3.5" />
+          <Plus className="me-1 size-3.5" />
           Add URL
         </Button>
         <Button

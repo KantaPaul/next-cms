@@ -30,7 +30,7 @@ import {
   Save,
   Trash2,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useId, useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
@@ -160,7 +160,7 @@ export function MenusManager({
                       onClick={() => setSelectedId(menu.id)}
                       aria-current={menu.id === selected?.id}
                       className={cn(
-                        'flex w-full flex-col items-start rounded-md px-3 py-2 text-left text-sm transition hover:bg-steel-100 dark:hover:bg-dark-300',
+                        'flex w-full flex-col items-start rounded-md px-3 py-2 text-start text-sm transition hover:bg-steel-100 dark:hover:bg-dark-300',
                         menu.id === selected?.id &&
                           'bg-indigo-50 text-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-100'
                       )}
@@ -631,7 +631,7 @@ function MenuEditor({
                         items={item.children.map(c => c.key)}
                         strategy={verticalListSortingStrategy}
                       >
-                        <ol className="ml-8 mt-2 flex flex-col gap-2 border-l border-steel-200 pl-3 dark:border-dark-300">
+                        <ol className="ms-8 mt-2 flex flex-col gap-2 border-s border-steel-200 ps-3 dark:border-dark-300">
                           {item.children.map(child => (
                             <SortableRow
                               key={child.key}
@@ -779,7 +779,7 @@ function SortableRow({
           <button
             type="button"
             onClick={onToggle}
-            className="flex min-w-0 flex-1 items-center gap-2 text-left text-sm"
+            className="flex min-w-0 flex-1 items-center gap-2 text-start text-sm"
             aria-expanded={open}
           >
             {open ? (

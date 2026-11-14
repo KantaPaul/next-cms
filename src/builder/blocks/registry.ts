@@ -55,6 +55,19 @@ import {
   Timeline,
 } from './marketing';
 import { Newsletter } from './newsletter';
+import {
+  ApiTable,
+  BeforeAfter,
+  Callout,
+  DocSearch,
+  DocsPager,
+  DocsSidebar,
+  Kbd,
+  PortfolioGrid,
+  ProjectMeta,
+  ReadingProgress,
+  Steps,
+} from './phase5-blocks';
 import { PrivacyRequest } from './privacy-request';
 import { Audio } from './audio';
 import { BookmarksDrawer } from './bookmarks-client';
@@ -161,6 +174,17 @@ export const builtInComponents = {
   Hotspot,
   Lottie,
   PrivacyRequest,
+  Callout,
+  Steps,
+  Kbd,
+  ApiTable,
+  BeforeAfter,
+  ReadingProgress,
+  DocsSidebar,
+  DocsPager,
+  DocSearch,
+  PortfolioGrid,
+  ProjectMeta,
 };
 
 export const getBlockComponents = () => ({

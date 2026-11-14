@@ -83,7 +83,7 @@ export function TemplatePicker({ templates }: { templates: TemplateOption[] }) {
               type="button"
               onClick={() => choose(null, option.type)}
               className={cn(
-                'relative flex flex-col items-start gap-1 rounded-lg border p-4 text-left transition hover:border-steel-400',
+                'relative flex flex-col items-start gap-1 rounded-lg border p-4 text-start transition hover:border-steel-400',
                 selected
                   ? 'border-indigo-500 ring-2 ring-indigo-200'
                   : 'border-steel-200 dark:border-dark-300'
@@ -95,7 +95,7 @@ export function TemplatePicker({ templates }: { templates: TemplateOption[] }) {
                 {option.description}
               </span>
               {selected && (
-                <Check className="absolute right-3 top-3 size-4 text-indigo-600" />
+                <Check className="absolute end-3 top-3 size-4 text-indigo-600" />
               )}
             </button>
           );
@@ -105,7 +105,7 @@ export function TemplatePicker({ templates }: { templates: TemplateOption[] }) {
           disabled={!aiEnabled}
           onClick={() => choose(null, 'builder', true)}
           className={cn(
-            'relative flex flex-col items-start gap-1 rounded-lg border p-4 text-left transition enabled:hover:border-steel-400 disabled:cursor-not-allowed disabled:opacity-60',
+            'relative flex flex-col items-start gap-1 rounded-lg border p-4 text-start transition enabled:hover:border-steel-400 disabled:cursor-not-allowed disabled:opacity-60',
             aiSelected
               ? 'border-violet-500 ring-2 ring-violet-200'
               : 'border-steel-200 dark:border-dark-300'
@@ -119,7 +119,7 @@ export function TemplatePicker({ templates }: { templates: TemplateOption[] }) {
               : 'Describe the page and review generated blocks in the builder'}
           </span>
           {aiSelected && (
-            <Check className="absolute right-3 top-3 size-4 text-violet-600" />
+            <Check className="absolute end-3 top-3 size-4 text-violet-600" />
           )}
         </button>
         {templates.map(template => {
@@ -130,7 +130,7 @@ export function TemplatePicker({ templates }: { templates: TemplateOption[] }) {
               type="button"
               onClick={() => choose(template.id, template.editorType)}
               className={cn(
-                'relative flex flex-col overflow-hidden rounded-lg border text-left transition hover:border-steel-400',
+                'relative flex flex-col overflow-hidden rounded-lg border text-start transition hover:border-steel-400',
                 selected
                   ? 'border-indigo-500 ring-2 ring-indigo-200'
                   : 'border-steel-200 dark:border-dark-300'
@@ -156,7 +156,7 @@ export function TemplatePicker({ templates }: { templates: TemplateOption[] }) {
                 )}
               </div>
               {selected && (
-                <Check className="absolute right-3 top-3 size-4 rounded-full bg-white text-indigo-600" />
+                <Check className="absolute end-3 top-3 size-4 rounded-full bg-white text-indigo-600" />
               )}
             </button>
           );

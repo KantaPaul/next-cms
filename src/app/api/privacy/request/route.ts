@@ -3,6 +3,10 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { env } from '@/env.mjs';
 import { clientIp } from '@/server/lib/client-ip';
+import {
+  checkPublicCors,
+  handlePublicCorsOptions,
+} from '@/server/lib/public-cors-site';
 import { privacyService } from '@/server/services/privacy.service';
 import { siteContext } from '@/server/services/site-context';
 import { siteSettingsService } from '@/server/services/site-settings.service';
@@ -12,19 +16,33 @@ const requestSchema = z.object({
   type: z.enum(['export', 'erase']),
 });
 
+export async function OPTIONS(request: Request) {
+  return handlePublicCorsOptions(request);
+}
+
 export async function POST(request: Request) {
+  const cors = await checkPublicCors(request);
+  if (!cors.allowed) {
+    return NextResponse.json(
+      { error: cors.reason ?? 'Forbidden' },
+      { status: 403 }
+    );
+  }
   let raw: unknown;
   try {
     raw = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Invalid request body' },
+      { status: 400, headers: cors.headers }
+    );
   }
 
   const parsed = requestSchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json(
       { error: parsed.error.issues[0]?.message || 'Invalid input' },
-      { status: 400 }
+      { status: 400, headers: cors.headers }
     );
   }
 
@@ -42,7 +60,7 @@ export async function POST(request: Request) {
   if (!baseUrl) {
     return NextResponse.json(
       { error: 'Privacy requests are not available yet.' },
-      { status: 503 }
+      { status: 503, headers: cors.headers }
     );
   }
 
@@ -61,17 +79,23 @@ export async function POST(request: Request) {
     // e.g. no signing secret configured in production
     return NextResponse.json(
       { error: 'Privacy requests are not available yet.' },
-      { status: 503 }
+      { status: 503, headers: cors.headers }
     );
   }
 
   if (!res.ok) {
-    return NextResponse.json({ error: res.error }, { status: res.status });
+    return NextResponse.json(
+      { error: res.error },
+      { status: res.status, headers: cors.headers }
+    );
   }
 
-  return NextResponse.json({
-    ok: true,
-    message:
-      'If that email address is valid, we sent a confirmation link (valid for 24 hours).',
-  });
+  return NextResponse.json(
+    {
+      ok: true,
+      message:
+        'If that email address is valid, we sent a confirmation link (valid for 24 hours).',
+    },
+    { headers: cors.headers }
+  );
 }

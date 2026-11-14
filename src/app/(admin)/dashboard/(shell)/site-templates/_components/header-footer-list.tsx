@@ -15,7 +15,7 @@ import {
   Plus,
   Search,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
@@ -550,7 +550,7 @@ export function HeaderFooterList({
             size="sm"
             onClick={() => setCreateOpen(true)}
           >
-            <Plus className="mr-1.5 size-4" />
+            <Plus className="me-1.5 size-4" />
             New {noun(activeTab)} template
           </Button>
         )}
@@ -757,7 +757,7 @@ function NewHeaderFooterDialog({
               <span className="text-xs font-medium text-steel-700 dark:text-steel-300">
                 Choose a starter template
               </span>
-              <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-1">
+              <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pe-1">
                 {starters.map(s => {
                   const selected = starter === s.key;
                   return (
@@ -766,7 +766,7 @@ function NewHeaderFooterDialog({
                       type="button"
                       onClick={() => pickStarter(s.key)}
                       className={cn(
-                        'flex flex-col text-left p-3 rounded-lg border transition-all',
+                        'flex flex-col text-start p-3 rounded-lg border transition-all',
                         selected
                           ? 'border-[var(--site-primary,#3b82f6)] bg-[var(--site-primary,#3b82f6)]/5 ring-1 ring-[var(--site-primary,#3b82f6)]'
                           : 'border-steel-200 dark:border-dark-300 hover:border-steel-300 dark:hover:border-dark-200 bg-white dark:bg-dark-100'
@@ -790,7 +790,7 @@ function NewHeaderFooterDialog({
                   type="button"
                   onClick={() => pickStarter('blank')}
                   className={cn(
-                    'flex flex-col text-left p-3 rounded-lg border transition-all',
+                    'flex flex-col text-start p-3 rounded-lg border transition-all',
                     starter === 'blank'
                       ? 'border-[var(--site-primary,#3b82f6)] bg-[var(--site-primary,#3b82f6)]/5 ring-1 ring-[var(--site-primary,#3b82f6)]'
                       : 'border-steel-200 dark:border-dark-300 hover:border-steel-300 dark:hover:border-dark-200 bg-white dark:bg-dark-100'

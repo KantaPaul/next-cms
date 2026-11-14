@@ -1,5 +1,5 @@
 import { Settings } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { AccessDenied } from '@/components/organisms/access-denied';
 import { PageHeader } from '@/components/organisms/page-header';
 import { PAGES } from '@/config/pages';
@@ -60,7 +60,7 @@ export default async function LicensesPage({
   return (
     <>
       <PageHeader title={TITLE} breadcrumbs={breadcrumbs}>
-        <div className="w-full text-right">
+        <div className="w-full text-end">
           <Link
             href={PAGES.DASHBOARD.SETTINGS_LICENSE}
             className="inline-flex items-center gap-2 rounded-md bg-secondary px-4 py-2 text-sm font-medium hover:bg-secondary/80 border text-foreground"

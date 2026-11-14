@@ -1,7 +1,7 @@
 'use client';
 
 import { MoreHorizontal, MoreVertical } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import type { JSX } from 'react';
 // import { Loader } from 'rizzui';
 import type { ButtonProps } from '@/components/ui/button';

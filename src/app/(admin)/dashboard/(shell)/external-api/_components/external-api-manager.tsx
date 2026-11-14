@@ -389,12 +389,12 @@ export function ExternalApiManager({
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="relative">
-              <Search className="text-muted-foreground absolute top-2.5 left-2.5 size-4" />
+              <Search className="text-muted-foreground absolute top-2.5 start-2.5 size-4" />
               <Input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search saved APIs…"
-                className="pl-8"
+                className="ps-8"
               />
             </div>
 
@@ -421,7 +421,7 @@ export function ExternalApiManager({
                       <button
                         type="button"
                         onClick={() => setDraft(recordToDraft(api))}
-                        className="w-full text-left"
+                        className="w-full text-start"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <span className="truncate font-medium text-sm">
@@ -857,7 +857,7 @@ export function ExternalApiManager({
                       }))
                     }
                   >
-                    <Plus className="mr-1 size-3.5" />
+                    <Plus className="me-1 size-3.5" />
                     Add param
                   </Button>
                 </div>
@@ -942,7 +942,7 @@ export function ExternalApiManager({
                       }))
                     }
                   >
-                    <Plus className="mr-1 size-3.5" />
+                    <Plus className="me-1 size-3.5" />
                     Add data filter
                   </Button>
                 </div>

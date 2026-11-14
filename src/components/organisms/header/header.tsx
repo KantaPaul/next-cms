@@ -1,5 +1,5 @@
 import { ExternalLink } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { Box, Flex } from '@/components/atoms/layout';
 import { ThemeToggle } from '@/components/atoms/theme-toggle';
 import AuthDropdown from '@/components/molecules/auth-dropdown/auth-dropdown';
@@ -35,7 +35,7 @@ export default async function Header() {
         'sticky inset-x-0 top-0 z-50'
       )}
     >
-      {/* <SidebarTrigger className="ml-1" /> */}
+      {/* <SidebarTrigger className="ms-1" /> */}
 
       <SidebarTrigger />
       <Button asChild size="sm" variant="outline">
@@ -53,12 +53,12 @@ export default async function Header() {
           <ExternalLink /> Visit site
         </Link>
       </Button>
-      <Flex justify="between" className="h-full gap-3 pl-1">
+      <Flex justify="between" className="h-full gap-3 ps-1">
         <Logo className="order-2 block md:ms-1 lg:hidden" />
 
         <Flex
           justify="end"
-          className="order-3 flex w-full ml-auto items-center gap-1.5 md:gap-3 lg:gap-4"
+          className="order-3 flex w-full ms-auto items-center gap-1.5 md:gap-3 lg:gap-4"
         >
           <ExportWebsiteButton />
           <SiteSwitcher current={currentSite} memberships={memberships} />
@@ -68,7 +68,7 @@ export default async function Header() {
           />
           <ThemeToggle />
           {/* <TopBarPanel /> */}
-          {/* <Box className="order-2 ml-1 items-center justify-center md:order-0 md:ml-0 lg:flex"> */}
+          {/* <Box className="order-2 ms-1 items-center justify-center md:order-0 md:ms-0 lg:flex"> */}
           <AuthDropdown user={user} />
           {/* </Box> */}
         </Flex>

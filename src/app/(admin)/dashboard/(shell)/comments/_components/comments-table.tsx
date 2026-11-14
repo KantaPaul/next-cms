@@ -175,7 +175,7 @@ export function CommentsTable({
               <p className="mt-1 text-xs text-muted-foreground">
                 {row.isReply ? 'Reply on ' : 'On '}
                 {row.targetTypeLabel ? (
-                  <span className="mr-1.5 rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium">
+                  <span className="me-1.5 rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium">
                     {row.targetTypeLabel}
                   </span>
                 ) : null}

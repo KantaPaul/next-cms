@@ -264,7 +264,7 @@ function DatePickerInner<IsRange extends boolean | undefined = false>(
             disabled={disabled}
             aria-expanded={open}
             className={cn(
-              'group flex h-9 md:h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-left text-sm transition-colors',
+              'group flex h-9 md:h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-start text-sm transition-colors',
               'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none',
               'disabled:cursor-not-allowed disabled:opacity-50',
               error && 'border-destructive focus-visible:ring-destructive/20',
@@ -276,7 +276,7 @@ function DatePickerInner<IsRange extends boolean | undefined = false>(
               <span className="truncate">{displayText}</span>
             </div>
 
-            <div className="flex items-center gap-1 pl-1">
+            <div className="flex items-center gap-1 ps-1">
               {isClearable && hasValue && !disabled && (
                 <span
                   role="button"

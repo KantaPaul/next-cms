@@ -1,0 +1,12 @@
+{
+  "title": "Ajustes",
+  "general": "General",
+  "branding": "Marca",
+  "localization": "Idiomas",
+  "seo": "SEO",
+  "export": "Exportar",
+  "siteMode": "Modo del sitio",
+  "blocks": "Bloques",
+  "exportApiBase": "URL del punto final del CMS",
+  "exportAllowedOrigins": "Orígenes de exportación permitidos"
+}

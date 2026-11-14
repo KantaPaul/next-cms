@@ -355,7 +355,7 @@ export function TagsManager({ tags }: { tags: Tag[] }) {
           {tags.map(tag => (
             <li
               key={tag.id}
-              className="group flex items-center gap-1.5 rounded-full border py-1 pl-3 pr-1 text-sm"
+              className="group flex items-center gap-1.5 rounded-full border py-1 ps-3 pe-1 text-sm"
               style={{
                 borderColor: `${tag.color}66`,
                 backgroundColor: `${tag.color}14`,

@@ -2,7 +2,7 @@
 
 import { formatDistanceToNow } from 'date-fns';
 import { Copy, Languages, Link2, Plus, RefreshCw, Trash2 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';

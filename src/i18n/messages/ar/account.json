@@ -1,0 +1,9 @@
+{
+  "title": "الحساب",
+  "profile": "الملف الشخصي",
+  "interfaceLanguage": "لغة الواجهة",
+  "interfaceLanguageHint": "اختر لغة أزرار وتسميات لوحة التحكم. اتركه تلقائياً ليتبع لغة المحتوى النشطة.",
+  "automaticLanguage": "تلقائي (يتبع لغة المحتوى)",
+  "savePreferences": "حفظ التفضيلات",
+  "preferencesSaved": "تم تحديث لغة الواجهة"
+}

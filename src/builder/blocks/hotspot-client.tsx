@@ -146,7 +146,7 @@ export function Hotspot(p: HotspotProps) {
               {/* Tooltip Content */}
               {(isActive || (p.editing && draggingId === spot.id)) && (
                 <div
-                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-56 rounded-xl border s-border s-surface p-3.5 shadow-xl text-left animate-in fade-in zoom-in-95 pointer-events-auto"
+                  className="absolute bottom-full start-1/2 -translate-x-1/2 mb-3 w-56 rounded-xl border s-border s-surface p-3.5 shadow-xl text-start animate-in fade-in zoom-in-95 pointer-events-auto"
                 >
                   <h4 className="text-sm font-bold text-[var(--site-fg)]">
                     {spot.title}

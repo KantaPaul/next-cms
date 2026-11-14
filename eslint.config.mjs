@@ -99,6 +99,20 @@ const eslintConfig = [
             },
           ],
         },
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "CallExpression[callee.property.name=/^(push|replace)$/] > Literal[value=/^\\/dashboard/]",
+          message:
+            'Use adminHref() or useAdminHref() with PAGES.DASHBOARD.* instead of a raw /dashboard string.',
+        },
+        {
+          selector:
+            "CallExpression[callee.name='redirect'] > Literal[value=/^\\/dashboard/]",
+          message:
+            'Use adminRedirect() or adminHref() instead of a raw /dashboard string.',
+        },
       ],
     },
   },

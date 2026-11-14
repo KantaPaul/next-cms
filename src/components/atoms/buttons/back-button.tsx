@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronLeft, Loader2 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { useRouter } from 'next/navigation';
 import { forwardRef } from 'react';
 import { Button, type ButtonProps } from '@/components/ui/button';

@@ -1,0 +1,13 @@
+{
+  "blocks": "Bloques",
+  "styles": "Estilos",
+  "settings": "Ajustes",
+  "layers": "Capas",
+  "classes": "Clases",
+  "undo": "Deshacer",
+  "redo": "Rehacer",
+  "desktop": "Escritorio",
+  "tablet": "Tableta",
+  "mobile": "Móvil",
+  "insertBlock": "Insertar bloque"
+}

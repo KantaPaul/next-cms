@@ -778,7 +778,7 @@ export function QueryLoop({
         ) : layout === 'table' ? (
           /* Table layout (R576 / QRY-06) */
           <div className="s-border s-surface s-radius overflow-x-auto border">
-            <table className="w-full border-collapse text-left text-sm">
+            <table className="w-full border-collapse text-start text-sm">
               <thead>
                 <tr className="s-border border-b font-semibold">
                   <th className="px-4 py-3">Title</th>

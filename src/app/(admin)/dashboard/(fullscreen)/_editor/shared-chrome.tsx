@@ -37,7 +37,7 @@ import { ArrowLeft, Triangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { PERMISSIONS } from '@/config/permissions';
 import { useCan } from '@/providers/access.provider';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { type ReactNode, useSyncExternalStore } from 'react';
 
 const SAVE_STATE: Record<QueueStatus, SaveState> = {
@@ -272,10 +272,12 @@ export function SharedChrome({
                 title={kindLabel}
                 className="flex items-center gap-1.5 text-xs font-bold tracking-tight text-[var(--ne-text)]"
               >
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--ne-radius-md)] bg-[var(--ne-primary)] text-xs font-bold text-white shadow-2xs">
-                  N
-                </span>
-                <span>NextCMS</span>
+                <img
+                  src="/brand/mark.svg"
+                  alt=""
+                  className="h-5 w-5 shrink-0"
+                />
+                <span>Meridian</span>
               </span>
               {status && (
                 <span className="rounded-[var(--ne-radius-sm)] bg-[var(--ne-surface-subtle)] px-1.5 py-0.5 text-[10px] capitalize text-[var(--ne-text-muted)]">

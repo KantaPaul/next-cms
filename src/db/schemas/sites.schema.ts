@@ -15,7 +15,7 @@ const { cascade } = relationConfig;
 
 export const DEFAULT_SITE_ID = 'default';
 
-export type SiteLocale = { code: string; label: string };
+export type SiteLocale = { code: string; label: string; dir?: 'ltr' | 'rtl' };
 
 export const DEFAULT_SITE_LOCALES: SiteLocale[] = [
   { code: 'en', label: 'English' },

@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { AlertTriangle, Copy, Loader2, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { useRouter } from 'next/navigation';
 import { MediaField } from '@/components/media/media-picker';
 import { Badge } from '@/components/ui/badge';
@@ -762,11 +762,11 @@ export function SettingsForm({
                   className="flex items-center justify-between gap-3 p-2 rounded-md border border-steel-100 dark:border-dark-400 bg-steel-50/50 dark:bg-dark-200/50 text-xs"
                 >
                   <div className="min-w-0">
-                    <span className="inline-block rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[11px] text-amber-800 mr-2">
+                    <span className="inline-block rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[11px] text-amber-800 me-2">
                       {item.query}
                     </span>
                     <span className="font-semibold">{item.title}</span>
-                    <span className="ml-2 text-steel-400">({item.path})</span>
+                    <span className="ms-2 text-steel-400">({item.path})</span>
                   </div>
                   <Button
                     type="button"
@@ -1297,7 +1297,7 @@ export function SettingsForm({
                       disabled={!token}
                       onClick={() => handleCopyPreviewLink(token)}
                     >
-                      <Copy className="mr-1.5 size-3.5" />
+                      <Copy className="me-1.5 size-3.5" />
                       Copy preview link
                     </Button>
                     <Button
@@ -1309,7 +1309,7 @@ export function SettingsForm({
                     >
                       <RefreshCw
                         className={cn(
-                          'mr-1.5 size-3.5',
+                          'me-1.5 size-3.5',
                           regeneratingToken && 'animate-spin'
                         )}
                       />

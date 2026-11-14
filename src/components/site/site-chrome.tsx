@@ -1,5 +1,5 @@
 import { headers } from 'next/headers';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { getGlobalBlockContent } from '@/app/(admin)/dashboard/(shell)/templates/_modules/templates.actions';
 import { renderBuilderContent } from '@/builder/render-content';
 import { HeaderShell } from '@/components/site/header-shell';

@@ -80,7 +80,7 @@ export function AddLink({ editor, setIsOpen, isOpen }: LinkSelectorProps) {
         align="center"
         sideOffset={15}
       >
-        <div className="flex w-full items-center gap-2 overflow-hidden rounded border border-steel-200 bg-white pr-2 dark:border-steel-600 dark:bg-steel-800">
+        <div className="flex w-full items-center gap-2 overflow-hidden rounded border border-steel-200 bg-white pe-2 dark:border-steel-600 dark:bg-steel-800">
           <Input
             ref={inputRef}
             // size="sm"

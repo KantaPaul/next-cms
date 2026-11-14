@@ -297,7 +297,7 @@ export function Pricing(p: PricingProps) {
   const badgeEl = el(
     p,
     'badge',
-    's-primary-bg absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-xs font-semibold'
+    's-primary-bg absolute -top-3 start-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-xs font-semibold'
   );
   const descEl = el(p, 'description', 's-muted mt-1 text-sm');
   const periodEl = el(p, 'period', 's-muted text-sm');
@@ -1068,12 +1068,12 @@ export function Timeline(p: TimelineProps) {
   const lineEl = el(
     p,
     'line',
-    'relative space-y-8 border-l border-[color:var(--site-border)] pl-8'
+    'relative space-y-8 border-s border-[color:var(--site-border)] ps-8'
   );
   const dotEl = el(
     p,
     'dot',
-    'absolute -left-[37px] size-3 rounded-full bg-[color:var(--site-primary)]'
+    'absolute -start-[37px] size-3 rounded-full bg-[color:var(--site-primary)]'
   );
   const dateEl = el(p, 'date', 's-primary-text text-sm font-semibold');
   const titleEl = el(p, 'title', 'text-lg font-semibold');

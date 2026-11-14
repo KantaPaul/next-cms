@@ -44,21 +44,21 @@ export interface EnhancedColumn<T> extends Column<T> {
   getSize: () => number;
 }
 
-export const baseStyles = 'px-4 py-3 whitespace-nowrap text-left text-sm';
+export const baseStyles = 'px-4 py-3 whitespace-nowrap text-start text-sm';
 export const centerCell = 'flex items-center';
 export const headerStyles =
-  'px-4 py-3 whitespace-nowrap text-left text-sm font-medium';
+  'px-4 py-3 whitespace-nowrap text-start text-sm font-medium';
 export const borderColor = 'border-steel-100 dark:border-dark-300';
 export const headerClassNames = 'font-medium text-steel-400 dark:text-dark-600';
 export const cellClassNames = 'align-middle text-steel-700 dark:text-dark-800';
 const stickyBorder =
   'before:w-[1px] before:absolute before:h-full before:content-[""] before:bg-steel-100 dark:before:bg-dark-300 before:top-0';
 const stickyClassNames = cn(
-  'right-0 bg-white md:sticky dark:bg-dark-100',
+  'end-0 bg-white md:sticky dark:bg-dark-100',
   stickyBorder
 );
-const stickyLeftClassNames = 'before:-right-px';
-const stickyRightClassNames = 'before:-left-px';
+const stickyLeftClassNames = 'before:-end-px';
+const stickyRightClassNames = 'before:-start-px';
 const defaultColumnSize = 200;
 
 function calculateTemplateColumns<T>(columns: Column<T>[]) {
@@ -338,7 +338,7 @@ export function TableGrid<TData>({
               className={cn(
                 headerStyles,
                 headerClassNames,
-                index < columns.length - 1 && `border-r ${borderColor}`,
+                index < columns.length - 1 && `border-e ${borderColor}`,
                 column.sticky && stickyClassNames,
                 column.sticky === 'left' && stickyLeftClassNames,
                 column.sticky === 'right' && stickyRightClassNames,
@@ -407,7 +407,7 @@ export function TableGrid<TData>({
                         baseStyles,
                         cellClassNames,
                         colIndex < columnsLength - 1 &&
-                          `border-r ${borderColor}`,
+                          `border-e ${borderColor}`,
                         column.sticky && stickyClassNames,
                         column.sticky === 'left' && stickyLeftClassNames,
                         column.sticky === 'right' && stickyRightClassNames,
@@ -475,7 +475,7 @@ export function TableGrid<TData>({
                     baseStyles,
                     cell &&
                       colIndex < enhancedColumns.length - 1 &&
-                      `border-r ${borderColor}`,
+                      `border-e ${borderColor}`,
                     column.sticky && stickyClassNames,
                     column.sticky === 'left' && stickyLeftClassNames,
                     column.sticky === 'right' && stickyRightClassNames,

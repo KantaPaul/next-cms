@@ -14,7 +14,7 @@ import {
   Upload,
   XCircle,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -319,12 +319,12 @@ export function ImportWizard({
               >
                 {uploading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="me-2 h-4 w-4 animate-spin" />
                     Parsing file…
                   </>
                 ) : (
                   <>
-                    <Upload className="mr-2 h-4 w-4" />
+                    <Upload className="me-2 h-4 w-4" />
                     Select file
                   </>
                 )}
@@ -368,7 +368,7 @@ export function ImportWizard({
                     setReportEntries([]);
                   }}
                 >
-                  <RotateCcw className="mr-2 h-4 w-4" />
+                  <RotateCcw className="me-2 h-4 w-4" />
                   New import
                 </Button>
               </div>
@@ -420,7 +420,7 @@ export function ImportWizard({
                     <FileCode2 className="h-4 w-4 text-muted-foreground" />
                     Elementor widgets falling back to plain text:
                   </div>
-                  <ul className="mt-1.5 list-disc space-y-0.5 pl-5 text-xs text-muted-foreground">
+                  <ul className="mt-1.5 list-disc space-y-0.5 ps-5 text-xs text-muted-foreground">
                     {counts.fallbackWidgets.map((fw, i) => (
                       <li key={`${fw.widget}-${fw.pageTitle}-${i}`}>
                         <code>{fw.widget}</code> on <strong>{fw.pageTitle}</strong>{' '}
@@ -552,7 +552,7 @@ export function ImportWizard({
                         size="sm"
                         onClick={handleCancel}
                       >
-                        <PauseCircle className="mr-2 h-4 w-4" />
+                        <PauseCircle className="me-2 h-4 w-4" />
                         Cancel
                       </Button>
                     ) : (
@@ -561,7 +561,7 @@ export function ImportWizard({
                           size="sm"
                           onClick={() => void runLoop(activeJob)}
                         >
-                          <Play className="mr-2 h-4 w-4" />
+                          <Play className="me-2 h-4 w-4" />
                           {activeJob.status === 'cancelled' ||
                           progress.processed > 0
                             ? 'Resume import'
@@ -572,7 +572,7 @@ export function ImportWizard({
                     {activeJob.status === 'done' && (
                       <Button variant="outline" size="sm" asChild>
                         <a href={`/api/import/${activeJob.id}/report?format=csv`}>
-                          <Download className="mr-2 h-4 w-4" />
+                          <Download className="me-2 h-4 w-4" />
                           Download CSV
                         </a>
                       </Button>
@@ -621,7 +621,7 @@ export function ImportWizard({
                     <div className="font-semibold text-amber-800 dark:text-amber-300">
                       Warnings ({activeJob.report.warnings.length})
                     </div>
-                    <ul className="list-disc pl-4 space-y-0.5 text-muted-foreground">
+                    <ul className="list-disc ps-4 space-y-0.5 text-muted-foreground">
                       {activeJob.report.warnings.slice(0, 20).map((w, idx) => (
                         <li key={idx}>{w}</li>
                       ))}
@@ -637,7 +637,7 @@ export function ImportWizard({
                         <TableHead>Title</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Details</TableHead>
-                        <TableHead className="text-right">Open</TableHead>
+                        <TableHead className="text-end">Open</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -677,7 +677,7 @@ export function ImportWizard({
                             <TableCell className="text-xs text-muted-foreground max-w-sm truncate">
                               {entry.message || entry.newUrl || '—'}
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="text-end">
                               {entry.dashboardUrl ? (
                                 <Link
                                   href={entry.dashboardUrl}

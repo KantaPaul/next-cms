@@ -97,9 +97,9 @@ const SIZE_TAG: Record<Exclude<TextSize, 'auto'>, 'h1' | 'h2' | 'h3' | 'p'> = {
 const GAP_CLASS = { sm: 'gap-2', md: 'gap-4', lg: 'gap-8' } as const;
 
 const ALIGN_CLASS: Record<Align, string> = {
-  left: 'text-left',
+  left: 'text-start',
   center: 'text-center',
-  right: 'text-right',
+  right: 'text-end',
 };
 
 function styleOf(style: ElementStyle | undefined): {
@@ -203,7 +203,7 @@ function FieldValue({
         alt={label}
         className={cn(
           'max-h-96 max-w-full rounded-lg object-cover',
-          align === 'center' ? 'mx-auto' : align === 'right' ? 'ml-auto' : '',
+          align === 'center' ? 'mx-auto' : align === 'right' ? 'ms-auto' : '',
           ...valueStyle.classes
         )}
         style={valueStyle.style}
@@ -220,7 +220,7 @@ function FieldValue({
           overlayId={row.overlayId}
           className={cn(
             'block w-fit max-w-full',
-            align === 'center' ? 'mx-auto' : align === 'right' ? 'ml-auto' : ''
+            align === 'center' ? 'mx-auto' : align === 'right' ? 'ms-auto' : ''
           )}
           lightbox={{
             image: galleryImages[0],
@@ -239,7 +239,7 @@ function FieldValue({
           className={cn(
             'overflow-hidden rounded-lg max-w-full',
             useGallery ? 'w-full' : 'w-fit',
-            align === 'center' ? 'mx-auto' : align === 'right' ? 'ml-auto' : ''
+            align === 'center' ? 'mx-auto' : align === 'right' ? 'ms-auto' : ''
           )}
         >
           <div data-motion={JSON.stringify(row.motion)}>{mediaNode}</div>
@@ -318,7 +318,7 @@ function FieldValue({
             rel={newTab ? 'noopener noreferrer' : undefined}
             className={cn(
               's-primary-bg inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-white shadow-xs transition hover:opacity-90',
-              align === 'center' ? 'mx-auto' : align === 'right' ? 'ml-auto' : '',
+              align === 'center' ? 'mx-auto' : align === 'right' ? 'ms-auto' : '',
               ...valueStyle.classes
             )}
             style={valueStyle.style}

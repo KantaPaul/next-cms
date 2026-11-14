@@ -1,7 +1,7 @@
 'use client';
 
 import { Globe, KeyRound, LogOut, ShieldCheck } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import * as React from 'react';
 import { MenuTrigger } from '@/components/molecules/auth-dropdown/menu-trigger';
 import {
@@ -51,14 +51,14 @@ export default function AuthDropdown({ user }: { user: User }) {
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href={PAGES.DASHBOARD.ACCOUNT} className="cursor-pointer">
-            <KeyRound className="mr-2 size-4" />
+            <KeyRound className="me-2 size-4" />
             <span>Account</span>
           </Link>
         </DropdownMenuItem>
         <Can permission={PERMISSIONS.SETTINGS_MANAGE}>
           <DropdownMenuItem asChild>
             <Link href={PAGES.DASHBOARD.SITES} className="cursor-pointer">
-              <Globe className="mr-2 size-4" />
+              <Globe className="me-2 size-4" />
               <span>Sites</span>
             </Link>
           </DropdownMenuItem>
@@ -66,7 +66,7 @@ export default function AuthDropdown({ user }: { user: User }) {
         <Can permission={PERMISSIONS.LICENSES_MANAGE}>
           <DropdownMenuItem asChild>
             <Link href={PAGES.DASHBOARD.LICENSES} className="cursor-pointer">
-              <ShieldCheck className="mr-2 size-4" />
+              <ShieldCheck className="me-2 size-4" />
               <span>Licenses</span>
             </Link>
           </DropdownMenuItem>
@@ -75,7 +75,7 @@ export default function AuthDropdown({ user }: { user: User }) {
           onClick={handleLogOut}
           className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive"
         >
-          <LogOut className="mr-2 size-4" />
+          <LogOut className="me-2 size-4" />
           <span>Sign Out</span>
         </DropdownMenuItem>
       </DropdownMenuContent>

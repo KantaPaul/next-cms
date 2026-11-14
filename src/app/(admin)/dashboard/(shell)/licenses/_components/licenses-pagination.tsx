@@ -1,6 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { PAGES } from '@/config/pages';
+import { useAdminHref } from '@/providers/site-locales';
 import { Button } from '@/components/ui/button';
 
 interface LicensesPaginationProps {
@@ -21,6 +23,7 @@ export function LicensesPagination({
   currentStatus = '',
 }: LicensesPaginationProps) {
   const router = useRouter();
+  const toAdminHref = useAdminHref();
 
   if (totalPages <= 1) return null;
 
@@ -29,7 +32,7 @@ export function LicensesPagination({
     if (currentSearch) params.set('q', currentSearch);
     if (currentStatus) params.set('status', currentStatus);
     params.set('page', String(newPage));
-    router.push(`/dashboard/licenses?${params.toString()}`);
+    router.push(toAdminHref(`${PAGES.DASHBOARD.LICENSES}?${params.toString()}`));
   };
 
   return (

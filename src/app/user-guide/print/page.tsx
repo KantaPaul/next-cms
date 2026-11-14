@@ -3,7 +3,7 @@ import { GUIDE_CSS, renderGuideBody } from '@/content/user-guide';
 
 export const metadata: Metadata = {
   title: 'User guide (printable)',
-  description: 'The complete Next CMS user guide on one page, ready to print or save as PDF.',
+  description: 'The complete Meridian user guide on one page, ready to print or save as PDF.',
 };
 
 // Lives outside the (site) group: it needs no site header/footer, and with

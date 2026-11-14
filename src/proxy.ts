@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { ADMIN_BAR_HINT_COOKIE } from '@/lib/admin-bar';
+import { dashboardLocale } from '@/lib/locale/admin-href';
 import {
   SITE_MODE_BYPASS_COOKIE,
   SITE_MODE_BYPASS_QUERY,
@@ -13,7 +14,6 @@ function skip(pathname: string) {
   return (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
-    pathname.startsWith('/dashboard') ||
     pathname.startsWith('/login') ||
     pathname.startsWith('/media') ||
     pathname === '/robots.txt' ||
@@ -100,14 +100,25 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   if (skip(pathname)) return NextResponse.next();
 
-  // Never trust client-sent site selection headers. The proxy is the only
-  // place allowed to set x-cms-site-slug (from the first path segment) and
-  // x-cms-host (from the real request host).
+  // Never trust client-sent site or locale selection headers.
   const headers = new Headers(request.headers);
   headers.delete('x-cms-host');
   headers.delete('x-cms-site-slug');
   headers.delete('x-cms-site-mode-bypass');
+  headers.delete('x-cms-admin-locale');
   headers.set('x-cms-host', request.headers.get('host') ?? '');
+
+  if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
+    const { locale, rewritePath } = dashboardLocale(pathname);
+    headers.set('x-pathname', rewritePath ?? pathname);
+    if (locale && rewritePath) {
+      headers.set('x-cms-admin-locale', locale);
+      const url = request.nextUrl.clone();
+      url.pathname = rewritePath;
+      return NextResponse.rewrite(url, { request: { headers } });
+    }
+    return NextResponse.next({ request: { headers } });
+  }
 
   const siteSlug = siteSlugFromPath(pathname);
   if (siteSlug) headers.set('x-cms-site-slug', siteSlug);

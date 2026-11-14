@@ -184,7 +184,7 @@ function CommentItem({
           <ol
             className={cn(
               'mt-2',
-              depth < 4 && 'border-l border-[var(--site-border)] pl-3 sm:pl-4'
+              depth < 4 && 'border-s border-[var(--site-border)] ps-3 sm:ps-4'
             )}
           >
             {c.replies.map(r => (
@@ -234,7 +234,7 @@ export function Comments(p: CommentsProps) {
         >
           {p.heading || 'Comments'}
           {total > 0 ? (
-            <span className="s-muted ml-2 text-lg font-normal">({total})</span>
+            <span className="s-muted ms-2 text-lg font-normal">({total})</span>
           ) : null}
         </h2>
 

@@ -76,7 +76,7 @@ export function SheetProvider(): JSX.Element {
         )}
       >
         {(content?.title || content?.description) && (
-          <SheetHeader className="border-b border-border px-6 py-5 pr-12">
+          <SheetHeader className="border-b border-border px-6 py-5 pe-12">
             {content?.title && <SheetTitle>{content.title}</SheetTitle>}
             {content?.description && (
               <SheetDescription>{content.description}</SheetDescription>

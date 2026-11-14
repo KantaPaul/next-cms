@@ -144,9 +144,9 @@ export function TableOfContents(p: TableOfContentsProps) {
                 const isActive = activeId === item.id;
                 const indentClass =
                   hierarchical && item.level === 'h3'
-                    ? 'pl-4 text-xs'
+                    ? 'ps-4 text-xs'
                     : hierarchical && item.level === 'h4'
-                      ? 'pl-8 text-xs'
+                      ? 'ps-8 text-xs'
                       : '';
 
                 return (

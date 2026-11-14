@@ -12,7 +12,7 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
@@ -218,7 +218,7 @@ function TemplatesGrid({
                     type="button"
                     size="sm"
                     variant="ghost"
-                    className="ml-auto text-red-600 hover:text-red-700"
+                    className="ms-auto text-red-600 hover:text-red-700"
                     disabled={pendingId === template.id}
                     onClick={() => remove(template)}
                     aria-label={`Delete ${template.name}`}

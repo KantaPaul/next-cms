@@ -1,0 +1,13 @@
+{
+  "required": "This field is required",
+  "invalidType": "Expected {expected}",
+  "minLength": "Must be at least {min} characters",
+  "maxLength": "Must be at most {max} characters",
+  "minNumber": "Must be at least {min}",
+  "maxNumber": "Must be at most {max}",
+  "tooSmall": "Value is too small",
+  "tooBig": "Value is too large",
+  "invalidEmail": "Enter a valid email address",
+  "invalidUrl": "Enter a valid URL",
+  "invalidFormat": "Invalid format"
+}

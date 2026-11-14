@@ -5,7 +5,7 @@ export function TableHead({
   ...props
 }: React.TableHTMLAttributes<HTMLTableElement>) {
   return (
-    <thead className={cn('TableHead-root text-left', props.className)}>
+    <thead className={cn('TableHead-root text-start', props.className)}>
       {children}
     </thead>
   );

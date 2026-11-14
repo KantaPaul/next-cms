@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <defs>
+    <linearGradient id="meridian-grad" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B3FD8" />
+      <stop offset="100%" stop-color="#7C5CFF" />
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="28" height="28" rx="8" fill="url(#meridian-grad)" />
+  <path
+    d="M9 11.5C12.5 8.5 19.5 8.5 23 11.5M8.5 16H23.5M9 20.5C12.5 23.5 19.5 23.5 23 20.5M16 7.5C12.5 12 12.5 20 16 24.5"
+    stroke="#FFFFFF"
+    stroke-width="2.2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

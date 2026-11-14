@@ -24,7 +24,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils/cn';
 
-const stickyClassName = cn('sticky right-0 bg-white dark:bg-dark-100');
+const stickyClassName = cn('sticky end-0 bg-white dark:bg-dark-100');
 
 export function FieldArray<TFieldValues extends FieldValues>({
   variant = 'text',
@@ -192,13 +192,13 @@ export function FieldArray<TFieldValues extends FieldValues>({
               key={`${cell.name}-header-${subIndex}`}
               className={cn(
                 baseStyles,
-                'border-r',
+                'border-e',
                 borderColor,
                 headerClassNames,
-                // Remove border-r on the last header of the last conditional field
+                // Remove border-e on the last header of the last conditional field
                 subIndex === activeFields.length - 1 &&
                   index === array.length - 1 &&
-                  'border-r-0',
+                  'border-e-0',
                 cell.headerClassName
               )}
             >
@@ -213,10 +213,10 @@ export function FieldArray<TFieldValues extends FieldValues>({
             key={cell.name as string}
             className={cn(
               baseStyles,
-              'border-r',
+              'border-e',
               borderColor,
               headerClassNames,
-              array.length - 1 === index && 'border-r-0',
+              array.length - 1 === index && 'border-e-0',
               cell.headerClassName
               // column.className
             )}
@@ -233,7 +233,7 @@ export function FieldArray<TFieldValues extends FieldValues>({
             baseStyles,
             borderColor,
             stickyClassName,
-            'border-l bg-white/60 backdrop-blur-sm',
+            'border-s bg-white/60 backdrop-blur-sm',
             headerClassNames
             // column.className
           )}
@@ -299,11 +299,11 @@ export function FieldArray<TFieldValues extends FieldValues>({
                         index={fieldIndex}
                         rowData={watchedValues?.[fieldIndex]}
                         className={cn(
-                          'border-steel-100 border-t border-r dark:border-dark-300',
-                          // Remove border-r on the last field of the conditional group
+                          'border-steel-100 border-t border-e dark:border-dark-300',
+                          // Remove border-e on the last field of the conditional group
                           subIndex === activeFields.length - 1 &&
                             array.length - 1 === index &&
-                            'border-r-0',
+                            'border-e-0',
                           cell.className
                         )}
                         name={
@@ -342,8 +342,8 @@ export function FieldArray<TFieldValues extends FieldValues>({
                     index={fieldIndex}
                     rowData={watchedValues?.[fieldIndex]}
                     className={cn(
-                      'border-steel-100 border-t border-r dark:border-dark-300',
-                      array.length - 1 === index && 'border-r-0',
+                      'border-steel-100 border-t border-e dark:border-dark-300',
+                      array.length - 1 === index && 'border-e-0',
                       isFieldArraySwitch && 'justify-center px-3.5',
                       cell.className
                     )}
@@ -360,7 +360,7 @@ export function FieldArray<TFieldValues extends FieldValues>({
             {!column.disableColumnRepeat && (
               <FieldArrayActions
                 className={cn(
-                  'field-array-action flex items-center justify-start gap-2 border-steel-100 border-t border-l px-3 dark:border-dark-300',
+                  'field-array-action flex items-center justify-start gap-2 border-steel-100 border-t border-s px-3 dark:border-dark-300',
                   stickyClassName,
                   'bg-white/60 backdrop-blur-sm'
                 )}
@@ -394,7 +394,7 @@ export function FieldArray<TFieldValues extends FieldValues>({
                 baseStyles,
                 cell &&
                   colIndex < footerRow.length - 1 &&
-                  `border-r ${borderColor}`,
+                  `border-e ${borderColor}`,
                 cell?.className
               )}
             >
@@ -406,7 +406,7 @@ export function FieldArray<TFieldValues extends FieldValues>({
             <div
               className={cn(
                 baseStyles,
-                'border-l',
+                'border-s',
                 borderColor,
                 stickyClassName,
                 'bg-white/60 backdrop-blur-sm'

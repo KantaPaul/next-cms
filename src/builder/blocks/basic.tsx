@@ -162,7 +162,7 @@ export function IconBox(p: IconBoxProps) {
           'items-center text-center',
         position === 'top' &&
           align === 'right' &&
-          'items-end text-right'
+          'items-end text-end'
       )}
     >
       {p.title && (
@@ -187,10 +187,10 @@ export function IconBox(p: IconBoxProps) {
           (align === 'center'
             ? 'items-center text-center'
             : align === 'right'
-              ? 'items-end text-right'
-              : 'items-start text-left'),
-        position === 'left' && 'flex-row items-start text-left',
-        position === 'right' && 'flex-row-reverse items-start text-right',
+              ? 'items-end text-end'
+              : 'items-start text-start'),
+        position === 'left' && 'flex-row items-start text-start',
+        position === 'right' && 'flex-row-reverse items-start text-end',
         boxEl.className
       )}
       style={boxEl.style}
@@ -283,7 +283,7 @@ export function ImageBox(p: ImageBoxProps) {
       className={cn(
         'flex flex-col',
         position === 'top' && align === 'center' && 'items-center text-center',
-        position === 'top' && align === 'right' && 'items-end text-right'
+        position === 'top' && align === 'right' && 'items-end text-end'
       )}
     >
       {p.title && (
@@ -308,10 +308,10 @@ export function ImageBox(p: ImageBoxProps) {
           (align === 'center'
             ? 'items-center text-center'
             : align === 'right'
-              ? 'items-end text-right'
-              : 'items-start text-left'),
-        position === 'left' && 'flex-row items-start text-left',
-        position === 'right' && 'flex-row-reverse items-start text-right',
+              ? 'items-end text-end'
+              : 'items-start text-start'),
+        position === 'left' && 'flex-row items-start text-start',
+        position === 'right' && 'flex-row-reverse items-start text-end',
         boxEl.className
       )}
       style={boxEl.style}
@@ -477,8 +477,8 @@ export function StarRating(p: StarRatingProps) {
           align === 'center'
             ? 'items-center text-center'
             : align === 'right'
-              ? 'items-end text-right'
-              : 'items-start text-left'
+              ? 'items-end text-end'
+              : 'items-start text-start'
         )}
         aria-label={`Rating: ${rating} out of ${scale} stars`}
       >
@@ -493,7 +493,7 @@ export function StarRating(p: StarRatingProps) {
         >
           {stars}
           {p.showScore && (
-            <span className={cn('ml-2', scoreEl.className)} style={scoreEl.style}>
+            <span className={cn('ms-2', scoreEl.className)} style={scoreEl.style}>
               {rating}/{scale}
             </span>
           )}

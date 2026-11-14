@@ -2,7 +2,7 @@
 
 import { format } from 'date-fns';
 import { Copy, LayoutGrid, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useState } from 'react';
 import { toast } from 'sonner';
@@ -97,7 +97,7 @@ export function LoopTemplatesList({
         </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-steel-200 dark:border-dark-300">
-          <table className="w-full text-left text-sm">
+          <table className="w-full text-start text-sm">
             <thead className="border-b border-steel-200 bg-steel-50 text-xs uppercase text-steel-500 dark:border-dark-300 dark:bg-dark-100">
               <tr>
                 <th className="px-4 py-2.5 font-medium">Name</th>

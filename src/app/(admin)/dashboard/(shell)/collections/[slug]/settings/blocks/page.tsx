@@ -1,5 +1,5 @@
 import { ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { buildBlockManagerEditors } from '@/app/(admin)/dashboard/(shell)/settings/blocks/editors';
 import { AccessDenied } from '@/components/organisms/access-denied';
 import { PageHeader } from '@/components/organisms/page-header';

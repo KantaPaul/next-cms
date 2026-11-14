@@ -124,8 +124,8 @@ export function Counter(p: CounterProps) {
           align === 'center'
             ? 'items-center text-center'
             : align === 'right'
-              ? 'items-end text-right'
-              : 'items-start text-left'
+              ? 'items-end text-end'
+              : 'items-start text-start'
         )}
       >
         <span className={numberEl.className} style={numberEl.style}>

@@ -1,0 +1,13 @@
+{
+  "blocks": "Blocks",
+  "styles": "Styles",
+  "settings": "Settings",
+  "layers": "Layers",
+  "classes": "Classes",
+  "undo": "Undo",
+  "redo": "Redo",
+  "desktop": "Desktop",
+  "tablet": "Tablet",
+  "mobile": "Mobile",
+  "insertBlock": "Insert block"
+}

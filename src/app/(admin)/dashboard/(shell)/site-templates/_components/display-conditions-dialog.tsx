@@ -268,7 +268,7 @@ export function DisplayConditionsDialog({
                   </p>
                 </div>
               ) : (
-                <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                <div className="space-y-2.5 max-h-72 overflow-y-auto pe-1">
                   {rules.map((rule, idx) => (
                     <div
                       key={idx}
@@ -342,7 +342,7 @@ export function DisplayConditionsDialog({
                 onClick={addRule}
                 className="w-full text-xs"
               >
-                <Plus className="size-3.5 mr-1" />
+                <Plus className="size-3.5 me-1" />
                 Add condition
               </Button>
             </div>

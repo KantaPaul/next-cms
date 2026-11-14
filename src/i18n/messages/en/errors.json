@@ -1,0 +1,6 @@
+{
+  "generic": "Something went wrong",
+  "notFound": "Not found",
+  "unauthorized": "Unauthorized",
+  "forbidden": "You do not have permission to perform this action."
+}

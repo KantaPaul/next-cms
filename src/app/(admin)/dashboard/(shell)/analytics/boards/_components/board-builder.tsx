@@ -30,7 +30,7 @@ import {
   Table2,
   Trash2,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { useRouter } from 'next/navigation';
 import {
   useCallback,
@@ -381,7 +381,7 @@ export function BoardBuilder({
             </button>
           ))}
         </div>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ms-auto flex items-center gap-2">
           <Button
             type="button"
             size="sm"
@@ -430,7 +430,7 @@ export function BoardBuilder({
               <button
                 type="button"
                 onClick={insertTrafficOverview}
-                className="mt-2 flex items-center gap-2 rounded-md border border-dashed border-indigo-300 px-2 py-2 text-left text-xs text-indigo-700 hover:bg-indigo-50 dark:border-indigo-700 dark:text-indigo-300 dark:hover:bg-indigo-950/40"
+                className="mt-2 flex items-center gap-2 rounded-md border border-dashed border-indigo-300 px-2 py-2 text-start text-xs text-indigo-700 hover:bg-indigo-50 dark:border-indigo-700 dark:text-indigo-300 dark:hover:bg-indigo-950/40"
               >
                 <LayoutDashboard className="size-4 shrink-0" />
                 Traffic overview
@@ -530,7 +530,7 @@ function PaletteItem({
       {...listeners}
       {...attributes}
       className={cn(
-        'flex items-center gap-2 rounded-md border border-steel-200 px-2 py-2 text-left text-sm capitalize hover:bg-steel-50 dark:border-dark-300 dark:hover:bg-dark-200',
+        'flex items-center gap-2 rounded-md border border-steel-200 px-2 py-2 text-start text-sm capitalize hover:bg-steel-50 dark:border-dark-300 dark:hover:bg-dark-200',
         isDragging && 'opacity-40'
       )}
     >

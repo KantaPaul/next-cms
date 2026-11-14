@@ -157,7 +157,7 @@ export function NativePlayer({
         onCanPlay={handleCanPlay}
       />
       {lockSeek && (
-        <div className="absolute top-2 right-2 pointer-events-none">
+        <div className="absolute top-2 end-2 pointer-events-none">
           <span className="px-3 py-1 rounded bg-black/60 text-white text-xs font-medium">
             Seek locked
           </span>

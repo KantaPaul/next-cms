@@ -1,6 +1,6 @@
 import isEmpty from 'lodash/isEmpty';
 import { ChevronDown, Plus } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 
 import {
   ActionDropdown,
@@ -68,7 +68,7 @@ export default function CreateButton({
         side="bottom"
         align="end"
         className={cn(
-          'ml-5 min-w-48 border-steel-100 p-0 shadow-md dark:border-dark-300 dark:bg-dark-200'
+          'ms-5 min-w-48 border-steel-100 p-0 shadow-md dark:border-dark-300 dark:bg-dark-200'
         )}
       >
         {options?.map(option => (

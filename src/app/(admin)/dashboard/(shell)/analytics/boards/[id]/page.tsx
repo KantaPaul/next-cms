@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { notFound } from 'next/navigation';
 import { PAGES } from '@/config/pages';
 import { defaultWidgetTitle } from '@/db/schemas/analytics.schema';

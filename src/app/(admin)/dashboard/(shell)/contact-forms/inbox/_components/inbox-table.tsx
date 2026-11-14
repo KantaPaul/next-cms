@@ -1,7 +1,7 @@
 'use client';
 
 import { format } from 'date-fns';
-import Link from 'next/link';
+import Link from '@/components/atoms/next/link';
 import { PAGES } from '@/config/pages';
 import {
   TableBody,

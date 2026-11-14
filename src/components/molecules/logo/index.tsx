@@ -1,5 +1,6 @@
 import Link from '@/components/atoms/next/link';
 import { Preview } from '@/components/molecules/logo/preview';
+import { BRAND } from '@/config/brand';
 import { CONFIG } from '@/config';
 import { PAGES } from '@/config/pages';
 import { cn } from '@/lib/utils/cn';
@@ -19,7 +20,7 @@ export function Logo({
         className
       )}
     >
-      <Preview logo={''} darkModeLogo={''} appName={CONFIG.APP_NAME} />
+      <Preview logo={BRAND.logo} darkModeLogo={BRAND.logoDark} appName={CONFIG.APP_NAME} />
     </Link>
   );
 }

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 36" fill="none">
+  <defs>
+    <linearGradient id="meridian-logo-dark-grad" x1="2" y1="2" x2="30" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B3FD8" />
+      <stop offset="100%" stop-color="#7C5CFF" />
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="32" height="32" rx="9" fill="url(#meridian-logo-dark-grad)" />
+  <path
+    d="M10.5 13C14 9.8 22 9.8 25.5 13M9.8 18H26.2M10.5 23C14 26.2 22 26.2 25.5 23M18 8.5C14.2 13.5 14.2 22.5 18 27.5"
+    stroke="#FFFFFF"
+    stroke-width="2.3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <text
+    x="44"
+    y="24"
+    fill="#F8FAFC"
+    font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+    font-size="19"
+    font-weight="600"
+    letter-spacing="-0.02em"
+  >Meridian</text>
+</svg>
